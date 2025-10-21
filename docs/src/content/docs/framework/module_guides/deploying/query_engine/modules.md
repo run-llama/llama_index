@@ -16,6 +16,7 @@ Then check out the rest of the sections below.
 - [Text-to-SQL](/python/examples/index_structs/struct_indices/sqlindexdemo)
 - [JSON Query Engine](/python/examples/query_engine/json_query_engine)
 - [Pandas Query Engine](/python/examples/query_engine/pandas_query_engine)
+- [Polars Query Engine](/python/examples/query_engine/polars_query_engine)
 - [JSONalyze Query Engine](/python/examples/query_engine/jsonalyze_query_engine)
 - [Knowledge Graph Query Engine](/python/examples/query_engine/knowledge_graph_query_engine)
 - [KG RAG Retriever](/python/examples/query_engine/knowledge_graph_rag_query_engine)

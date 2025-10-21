@@ -39,11 +39,7 @@ class TypeResolutionMixin:
         ref_name = self._extract_ref_name(field_schema["$ref"])
 
         if ref_name not in defs:
-            return self.properties_cache.get(ref_name) or self._create_model(
-                defs[ref_name],
-                ref_name,
-                defs,
-            )
+            return self.properties_cache.get(ref_name)
 
         ref_schema = defs[ref_name]
 
@@ -106,8 +102,16 @@ class TypeCreationMixin:
 
     def _create_dict_type(self: "McpToolSpec", schema: dict, defs: dict) -> type:
         """Create a Dict type from schema."""
-        value_type = self._resolve_field_type(schema["additionalProperties"], defs)
-        return Dict[str, value_type]
+        additional_props = schema.get("additionalProperties")
+
+        if additional_props is False or additional_props is None:
+            return Dict[str, Any]
+
+        if isinstance(additional_props, dict):
+            value_type = self._resolve_field_type(additional_props, defs)
+            return Dict[str, value_type]
+
+        return Dict[str, Any]
 
     def _is_simple_array(self: "McpToolSpec", schema: dict) -> bool:
         """Check if schema is a simple array type."""
@@ -115,7 +119,13 @@ class TypeCreationMixin:
 
     def _is_simple_object(self: "McpToolSpec", schema: dict) -> bool:
         """Check if schema is a simple object type."""
-        return schema.get("type") == "object" and "additionalProperties" in schema
+        additional_props = schema.get("additionalProperties")
+        return (
+            schema.get("type") == "object"
+            and "additionalProperties" in schema
+            and additional_props is not False
+            and isinstance(additional_props, dict)
+        )
 
     def _extract_ref_name(self: "McpToolSpec", ref_path: str) -> str:
         """Extract reference name from $ref path."""

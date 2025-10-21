@@ -8,6 +8,7 @@ ALLOWED_IMPORTS = {
     "time",
     "datetime",
     "pandas",
+    "polars",
     "scipy",
     "numpy",
     "matplotlib",

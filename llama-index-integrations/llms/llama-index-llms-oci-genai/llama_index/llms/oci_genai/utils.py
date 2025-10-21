@@ -41,6 +41,14 @@ CHAT_MODELS = {
     "meta.llama-3.3-70b-instruct": 128000,
     "meta.llama-4-scout-17b-16e-instruct": 192000,
     "meta.llama-4-maverick-17b-128e-instruct-fp8": 512000,
+    "xai.grok-code-fast-1": 256000,
+    "xai.grok-4-fast-reasoning": 2000000,
+    "xai.grok-4-fast-non-reasoning": 2000000,
+    "xai.grok-4": 128000,
+    "xai.grok-3": 131072,
+    "xai.grok-3-fast": 131072,
+    "xai.grok-3-mini": 131072,
+    "xai.grok-3-mini-fast": 131072,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -694,10 +702,343 @@ class MetaProvider(Provider):
         )
 
 
-PROVIDERS = {
-    "cohere": CohereProvider(),
-    "meta": MetaProvider(),
-}
+class XAIProvider(Provider):
+    def __init__(self) -> None:
+        try:
+            from oci.generative_ai_inference import models
+        except ImportError as ex:
+            raise ModuleNotFoundError(
+                "Could not import oci python package. "
+                "Please make sure you have the oci package installed."
+            ) from ex
+
+        # Completion
+        self.oci_completion_request = models.LlamaLlmInferenceRequest
+
+        # Generic chat request and message models
+        self.oci_chat_request = models.GenericChatRequest
+        self.oci_chat_message = {
+            "USER": models.UserMessage,
+            "SYSTEM": models.SystemMessage,
+            "ASSISTANT": models.AssistantMessage,
+            "TOOL": models.ToolMessage,
+        }
+
+        # Content models
+        self.oci_chat_message_text_content = models.TextContent
+        self.oci_chat_message_image_content = models.ImageContent
+        self.oci_chat_message_image_url = models.ImageUrl
+
+        # Tooling models for Generic format
+        self.oci_tool = models.FunctionDefinition
+        self.oci_tool_call = models.FunctionCall
+
+        self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
+
+    def completion_response_to_text(self, response: Any) -> str:
+        return response.data.inference_response.choices[0].text
+
+    def completion_stream_to_text(self, event_data: Any) -> str:
+        return event_data["text"]
+
+    def chat_response_to_text(self, response: Any) -> str:
+        message = response.data.chat_response.choices[0].message
+        content = message.content[0] if getattr(message, "content", None) else None
+        return content.text if content else ""
+
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        content = event_data.get("message", {}).get("content", None)
+        if not content:
+            return ""
+        return content[0]["text"]
+
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        chat_resp = response.data.chat_response
+        info: Dict[str, Any] = {
+            "finish_reason": chat_resp.choices[0].finish_reason,
+        }
+        if hasattr(chat_resp, "time_created"):
+            try:
+                info["time_created"] = str(chat_resp.time_created)
+            except Exception:
+                pass
+
+        # Extract tool calls from assistant message (Generic format)
+        try:
+            print("Hello")
+            assistant_message = chat_resp.choices[0].message
+
+            tool_calls = getattr(assistant_message, "tool_calls", None)
+            if tool_calls:
+                formatted: List[Dict[str, Any]] = []
+                for tc in tool_calls:
+                    name = getattr(tc, "name", None)
+                    arguments = getattr(tc, "arguments", None) or getattr(
+                        tc, "parameters", None
+                    )
+                    tc_id = getattr(tc, "id", None) or uuid.uuid4().hex[:]
+                    if name is None:
+                        continue
+                    if isinstance(arguments, dict):
+                        input_str = json.dumps(arguments)
+                    else:
+                        input_str = arguments
+                    formatted.append(
+                        {"toolUseId": tc_id, "name": name, "input": input_str}
+                    )
+                if formatted:
+                    info["tool_calls"] = formatted
+        except Exception:
+            pass
+
+        return info
+
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        info: Dict[str, Any] = {
+            "finish_reason": event_data.get("finishReason"),
+        }
+        tc_list = (
+            event_data.get("functionCalls")
+            or event_data.get("toolCalls")
+            or event_data.get("tool_calls")
+        )
+        if tc_list:
+            formatted: List[Dict[str, Any]] = []
+            for tc in tc_list:
+                if isinstance(tc, dict):
+                    name = tc.get("name")
+                    arguments = tc.get("arguments") or tc.get("parameters")
+                    tc_id = tc.get("id") or uuid.uuid4().hex[:]
+                else:
+                    name = getattr(tc, "name", None)
+                    arguments = getattr(tc, "arguments", None) or getattr(
+                        tc, "parameters", None
+                    )
+                    tc_id = getattr(tc, "id", None) or uuid.uuid4().hex[:]
+                if name is None:
+                    continue
+                if isinstance(arguments, dict):
+                    input_str = json.dumps(arguments)
+                else:
+                    input_str = arguments
+                formatted.append({"toolUseId": tc_id, "name": name, "input": input_str})
+            if formatted:
+                info["tool_calls"] = formatted
+
+        return {k: v for k, v in info.items() if v is not None}
+
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+        role_map = {
+            "user": "USER",
+            "system": "SYSTEM",
+            "chatbot": "ASSISTANT",
+            "assistant": "ASSISTANT",
+            "tool": "TOOL",
+            "function": "TOOL",
+        }
+
+        oci_messages: List[Any] = []
+        for msg in messages:
+            content_blocks = getattr(msg, "blocks", None) or msg.content or ""
+            role_key = msg.role if isinstance(msg.role, str) else msg.role.value
+            role = role_map[role_key]
+
+            if role == "TOOL":
+                tool_call_id = msg.additional_kwargs.get("tool_call_id")
+                if tool_call_id is None:
+                    continue
+                contents = self._process_message_content(content_blocks)
+                oci_messages.append(
+                    self.oci_chat_message[role](
+                        role="TOOL", tool_call_id=tool_call_id, content=contents
+                    )
+                )
+                continue
+
+            if role == "ASSISTANT":
+                contents = (
+                    self._process_message_content(content_blocks)
+                    if content_blocks
+                    else None
+                )
+                tool_calls_li = msg.additional_kwargs.get("tool_calls", [])
+                oci_tool_calls = None
+                if tool_calls_li and self.oci_tool_call is not None:
+                    oci_tool_calls = []
+                    for tc in tool_calls_li:
+                        validate_tool_call(tc)
+                        name = tc.get("name")
+                        arguments = tc.get("input")
+                        if not isinstance(arguments, str):
+                            arguments = json.dumps(arguments)
+                        tc_id = tc.get("toolUseId")
+                        try:
+                            if tc_id is not None:
+                                oci_tool_calls.append(
+                                    self.oci_tool_call(
+                                        name=name, arguments=arguments, id=tc_id
+                                    )
+                                )
+                            else:
+                                oci_tool_calls.append(
+                                    self.oci_tool_call(name=name, arguments=arguments)
+                                )
+                        except TypeError:
+                            oci_tool_calls.append(
+                                self.oci_tool_call(name=name, arguments=arguments)
+                            )
+
+                kwargs: Dict[str, Any] = {}
+                if contents is not None:
+                    kwargs["content"] = contents
+                if oci_tool_calls:
+                    kwargs["tool_calls"] = oci_tool_calls
+                oci_messages.append(self.oci_chat_message[role](**kwargs))
+                continue
+
+            contents = self._process_message_content(content_blocks)
+            oci_messages.append(self.oci_chat_message[role](content=contents))
+
+        return {
+            "messages": oci_messages,
+            "api_format": self.chat_api_format,
+            "top_k": -1,
+        }
+
+    def _process_message_content(
+        self, content: Union[str, List[Union[TextBlock, ImageBlock]]]
+    ) -> List[Any]:
+        if isinstance(content, str):
+            return [self.oci_chat_message_text_content(text=content)]
+        if not isinstance(content, list):
+            raise ValueError("Message content must be a string or blocks.")
+        processed: List[Any] = []
+        for item in content:
+            if isinstance(item, TextBlock):
+                processed.append(self.oci_chat_message_text_content(text=item.text))
+            elif isinstance(item, ImageBlock):
+                processed.append(
+                    self.oci_chat_message_image_content(
+                        image_url=self.oci_chat_message_image_url(url=str(item.url))
+                    )
+                )
+            else:
+                raise ValueError(
+                    f"Items in blocks must be TextBlock or ImageBlock, got: {type(item)}"
+                )
+        return processed
+
+    def convert_to_oci_tool(
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
+        try:
+            from oci.generative_ai_inference import models
+        except ImportError as ex:
+            raise ModuleNotFoundError(
+                "Could not import oci python package. "
+                "Please make sure you have the oci package installed."
+            ) from ex
+
+        def _fn_properties_from_callable(fn: Callable) -> Dict[str, Any]:
+            sig = inspect.signature(fn)
+            properties: Dict[str, Any] = {}
+            required: List[str] = []
+            py_to_json = {
+                str: "string",
+                int: "integer",
+                float: "number",
+                bool: "boolean",
+            }
+            for name, param in sig.parameters.items():
+                ann = param.annotation
+                json_type = (
+                    py_to_json.get(ann, "string") if isinstance(ann, type) else "string"
+                )
+                if param.default is inspect._empty:
+                    required.append(name)
+                properties[name] = {
+                    "type": json_type,
+                    "description": f"Parameter: {name}",
+                }
+            return {"properties": properties, "required": required}
+
+        if isinstance(tool, BaseTool):
+            tool_name = getattr(tool, "name", None) or getattr(
+                tool.metadata, "name", None
+            )
+            tool_desc = getattr(tool, "description", None)
+            if tool_desc is None and (tool_fn := getattr(tool, "fn", None)) is not None:
+                tool_desc = tool_fn.__doc__
+                if tool_name is None:
+                    tool_name = tool_fn.__name__
+            if tool_desc is None:
+                tool_desc = getattr(tool.metadata, "description", None)
+            if not tool_name or not tool_desc:
+                raise ValueError(f"Tool {tool} does not have a name or description.")
+
+            params_dict = tool.metadata.get_parameters_dict() or {}
+            properties = params_dict.get("properties", {})
+            required = params_dict.get("required", [])
+            return models.FunctionDefinition(
+                type="FUNCTION",
+                name=tool_name,
+                description=tool_desc,
+                parameters={
+                    "type": "object",
+                    "properties": properties,
+                    "required": required,
+                },
+            )
+
+        if isinstance(tool, dict):
+            if not all(k in tool for k in ("title", "description", "properties")):
+                raise ValueError(
+                    "Unsupported dict type. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
+                )
+            return models.FunctionDefinition(
+                type="FUNCTION",
+                name=tool.get("title"),
+                description=tool.get("description"),
+                parameters={
+                    "type": "object",
+                    "properties": tool.get("properties", {}),
+                    "required": tool.get("required", []),
+                },
+            )
+
+        if isinstance(tool, type) and issubclass(tool, BaseModel):
+            schema = tool.model_json_schema()
+            return models.FunctionDefinition(
+                type="FUNCTION",
+                name=schema.get("title", tool.__name__),
+                description=schema.get("description", tool.__name__),
+                parameters={
+                    "type": "object",
+                    "properties": schema.get("properties", {}),
+                    "required": schema.get("required", []),
+                },
+            )
+
+        if callable(tool):
+            schema_like = _fn_properties_from_callable(tool)
+            return models.FunctionDefinition(
+                type="FUNCTION",
+                name=tool.__name__,
+                description=tool.__doc__ or f"Callable function: {tool.__name__}",
+                parameters={
+                    "type": "object",
+                    "properties": schema_like["properties"],
+                    "required": schema_like["required"],
+                },
+            )
+
+        raise ValueError(
+            f"Unsupported tool type {type(tool)}. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
+        )
+
+
+PROVIDERS = {"cohere": CohereProvider(), "meta": MetaProvider(), "xai": XAIProvider()}
 
 
 def get_provider(model: str, provider_name: str = None) -> Any:

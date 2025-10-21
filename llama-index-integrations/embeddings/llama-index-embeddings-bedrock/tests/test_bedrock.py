@@ -181,7 +181,11 @@ class TestBedrockEmbedding(TestCase):
                 "amazon.titan-embed-text-v2:0",
                 "amazon.titan-embed-g1-text-02",
             ],
-            "cohere": ["cohere.embed-english-v3", "cohere.embed-multilingual-v3"],
+            "cohere": [
+                "cohere.embed-english-v3",
+                "cohere.embed-multilingual-v3",
+                "cohere.embed-v4:0",
+            ],
         }
 
         bedrock_embedding = BedrockEmbedding(
@@ -196,3 +200,117 @@ class TestBedrockEmbedding(TestCase):
         assert "botocore_session" in json_schema["properties"]
         assert json_schema["properties"]["botocore_session"].get("default") is None
         assert "botocore_session" not in json_schema.get("required", [])
+
+    def test_get_text_embedding_cohere_v4_nested_format(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"embeddings": {"float": [exp_embed]}}
+
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+        self.assertEqual(embedding, exp_embed)
+
+    def test_get_text_embedding_cohere_v4_direct_float_format(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"float": [exp_embed]}
+
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+        self.assertEqual(embedding, exp_embed)
+
+    def test_get_text_embedding_batch_cohere_v4_format(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"embeddings": {"float": [exp_embed, exp_embed]}}
+        mock_request = [self.exp_query, self.exp_query]
+
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding_batch(texts=mock_request)
+
+        bedrock_stubber.deactivate()
+
+        self.assertEqual(len(embedding), 2)
+
+        for i in range(2):
+            self.assertEqual(embedding[i], exp_embed)
+
+    def test_get_text_embedding_cohere_unexpected_format(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"unexpected_key": "unexpected_value"}
+
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        bedrock_stubber.activate()
+        with pytest.raises(
+            ValueError, match="Unexpected Cohere embedding response format"
+        ):
+            bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()

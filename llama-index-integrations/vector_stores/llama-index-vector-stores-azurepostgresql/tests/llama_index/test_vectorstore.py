@@ -16,6 +16,7 @@ from llama_index.core.schema import (
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
 )
 from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
 from llama_index.vector_stores.azure_postgres.common import DiskANN
@@ -316,16 +317,18 @@ class TestAzurePGVectorStore:
         assert not remaining_set, "All document IDs should have been deleted"
 
     @pytest.mark.parametrize(
-        ["query", "embedding", "k", "filters"],
+        ["query", "embedding", "k", "filters", "mode"],
         [
-            ("query about cats", [0.99] * 1536, 2, None),
-            ("query about animals", [0.5] * 1536, 3, None),
-            ("query about cats", [0.99] * 1536, 2, "filter1"),
-            ("query about cats", [0.99] * 1536, 2, "filter2"),
+            ("query about cats", [0.99] * 1536, 2, None, None),
+            ("query about cats", [0.99] * 1536, 2, None, "hybrid"),
+            ("query about animals", [0.5] * 1536, 3, None, None),
+            ("query about cats", [0.99] * 1536, 2, "filter1", None),
+            ("query about cats", [0.99] * 1536, 2, "filter2", None),
         ],
         indirect=["filters"],
         ids=[
             "search-cats",
+            "search-cats-hybrid",
             "search-animals",
             "search-cats-filtered",
             "search-cats-multifiltered",
@@ -338,6 +341,7 @@ class TestAzurePGVectorStore:
         embedding: list[float],
         k: int,
         filters: MetadataFilters | None,
+        mode: str | None,
     ):
         """Run a similarity query and assert returned documents match expectations.
 
@@ -350,6 +354,11 @@ class TestAzurePGVectorStore:
             query_embedding=embedding,
             similarity_top_k=k,
             filters=filters,
+            mode=(
+                VectorStoreQueryMode.HYBRID
+                if mode == "hybrid"
+                else VectorStoreQueryMode.DEFAULT
+            ),
         )
         results = vectorstore.query(query=vsquery)
 

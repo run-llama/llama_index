@@ -84,6 +84,11 @@ class NodeParser(TransformComponent, ABC):
     def _postprocess_parsed_nodes(
         self, nodes: List[BaseNode], parent_doc_map: Dict[str, Document]
     ) -> List[BaseNode]:
+        # Track search position per document to handle duplicate text correctly
+        # Nodes are assumed to be in document order from _parse_nodes
+        # We track the START position (not end) to allow for overlapping chunks
+        doc_search_positions: Dict[str, int] = {}
+
         for i, node in enumerate(nodes):
             parent_doc = parent_doc_map.get(node.ref_doc_id or "", None)
             parent_node = node.source_node
@@ -95,16 +100,22 @@ class NodeParser(TransformComponent, ABC):
                             NodeRelationship.SOURCE: parent_doc.source_node,
                         }
                     )
-                start_char_idx = parent_doc.text.find(
-                    node.get_content(metadata_mode=MetadataMode.NONE)
-                )
+
+                # Get or initialize search position for this document
+                doc_id = node.ref_doc_id or ""
+                search_start = doc_search_positions.get(doc_id, 0)
+
+                # Search for node content starting from the last found position
+                node_content = node.get_content(metadata_mode=MetadataMode.NONE)
+                start_char_idx = parent_doc.text.find(node_content, search_start)
 
                 # update start/end char idx
                 if start_char_idx >= 0 and isinstance(node, TextNode):
                     node.start_char_idx = start_char_idx
-                    node.end_char_idx = start_char_idx + len(
-                        node.get_content(metadata_mode=MetadataMode.NONE)
-                    )
+                    node.end_char_idx = start_char_idx + len(node_content)
+                    # Update search position to start from next character after this node's START
+                    # This allows overlapping chunks to be found correctly
+                    doc_search_positions[doc_id] = start_char_idx + 1
 
                 # update metadata
                 if self.include_metadata:

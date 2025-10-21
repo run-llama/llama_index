@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -378,11 +378,11 @@ css = [
 
 [[package]]
 name = "certifi"
-version = "2025.4.26"
+version = "2025.10.5"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e8/9e/c05b3920a3b7d20d3d3310465f50348e5b3694f4f88c6daf736eef3024c4/certifi-2025.4.26.tar.gz", hash = "sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6", size = 160705, upload-time = "2025-04-26T02:12:29.51Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/5b/b6ce21586237c77ce67d01dc5507039d444b630dd76611bbca2d8e5dcd91/certifi-2025.10.5.tar.gz", hash = "sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43", size = 164519, upload-time = "2025-10-05T04:12:15.808Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl", hash = "sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3", size = 159618, upload-time = "2025-04-26T02:12:27.662Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/37/af0d2ef3967ac0d6113837b44a4f0bfe1328c2b9763bd5b1744520e5cfed/certifi-2025.10.5-py3-none-any.whl", hash = "sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de", size = 163286, upload-time = "2025-10-05T04:12:14.03Z" },
 ]
 
 [[package]]
@@ -1703,7 +1703,7 @@ requires-dist = [
     { name = "imdbpy", specifier = "==2022.7.9" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas" },
-    { name = "selenium", specifier = "==4.8.3" },
+    { name = "selenium", specifier = ">=4.15.1,<5" },
     { name = "webdriver-manager", specifier = "==4.0.1" },
 ]
 
@@ -3508,17 +3508,19 @@ wheels = [
 
 [[package]]
 name = "selenium"
-version = "4.8.3"
+version = "4.36.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "trio" },
     { name = "trio-websocket" },
+    { name = "typing-extensions" },
     { name = "urllib3", extra = ["socks"] },
+    { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/f6/5c1251e5e52fa41b1f7e3add82ab7332ed60eff72cb4efc71be85fde77ef/selenium-4.8.3.tar.gz", hash = "sha256:61cda3a304f82637162bc155cae7bf88fdb04c115fa2cb1c1c2e1358fcd19a9f", size = 6332823, upload-time = "2023-03-24T18:09:16.701Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/35/33d3d84e3399c9d00b489aeccfdc78115e149e45816fb8fe84274329e8a2/selenium-4.36.0.tar.gz", hash = "sha256:0eced83038736c3a013b824116df0b6dbb83e93721545f51b680451013416723", size = 913613, upload-time = "2025-10-02T15:24:37.483Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/4b/e964eaca99d249eb3109ac75af551601923ba727c915db43c82311a0b16a/selenium-4.8.3-py3-none-any.whl", hash = "sha256:28430ac54a54fa59ad1f5392a1b89b169fe3ab2c2ccd1a9a10b6fe74f36cd6da", size = 6536841, upload-time = "2023-03-24T18:09:13.576Z" },
+    { url = "https://files.pythonhosted.org/packages/74/9e/642a355e43a4ebf68bc4f00dd4ab264f635079c5dc7ed6d9991a0c2be3d7/selenium-4.36.0-py3-none-any.whl", hash = "sha256:525fdfe96b99c27d9a2c773c75aa7413f4c24bdb7b9749c1950aa3b5f79ed915", size = 9587029, upload-time = "2025-10-02T15:24:35.025Z" },
 ]
 
 [[package]]
@@ -3971,11 +3973,11 @@ wheels = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.13.2"
+version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f6/37/23083fcd6e35492953e8d2aaaa68b860eb422b34627b13f2ce3eb6106061/typing_extensions-4.13.2.tar.gz", hash = "sha256:e6c81219bd689f51865d9e372991c540bda33a0379d5573cddb9a3a23f7caaef", size = 106967, upload-time = "2025-04-10T14:19:05.416Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/94/1a15dd82efb362ac84269196e94cf00f187f7ed21c242792a923cdb1c61f/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466", size = 109391, upload-time = "2025-08-25T13:49:26.313Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl", hash = "sha256:a439e7c04b49fec3e5d3e2beaa21755cadbbdc391694e28ccdd36ca4a1408f8c", size = 45806, upload-time = "2025-04-10T14:19:03.967Z" },
+    { url = "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548", size = 44614, upload-time = "2025-08-25T13:49:24.86Z" },
 ]
 
 [[package]]
@@ -4023,11 +4025,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "1.26.20"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/e8/6ff5e6bc22095cfc59b6ea711b687e2b7ed4bdb373f7eeec370a97d7392f/urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32", size = 307380, upload-time = "2024-08-29T15:43:11.37Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/cf/8435d5a7159e2a9c83a95896ed596f68cf798005fe107cc655b5c5c14704/urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e", size = 144225, upload-time = "2024-08-29T15:43:08.921Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
 ]
 
 [package.optional-dependencies]
