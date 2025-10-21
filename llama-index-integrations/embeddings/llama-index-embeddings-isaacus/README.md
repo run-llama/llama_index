@@ -84,7 +84,9 @@ doc_embedding = doc_embedder.get_text_embedding("This is a legal document.")
 
 # For queries (this is the default for get_query_embedding)
 query_embedder = IsaacusEmbedding()
-query_embedding = query_embedder.get_query_embedding("Find documents about contracts")
+query_embedding = query_embedder.get_query_embedding(
+    "Find documents about contracts"
+)
 ```
 
 ### Async Usage
@@ -175,22 +177,22 @@ The integration includes proper error handling for common issues:
 
 ## Configuration Options
 
-| Parameter            | Type  | Default                         | Description                                                    |
-| -------------------- | ----- | ------------------------------- | -------------------------------------------------------------- |
-| `model`              | str   | "kanon-2-embedder"              | The embedding model to use                                     |
-| `api_key`            | str   | `os.getenv("ISAACUS_API_KEY")`  | The API key for Isaacus                                        |
-| `base_url`           | str   | "https://api.isaacus.com/v1"    | The base URL for Isaacus API                                   |
-| `dimensions`         | int   | None (model default)            | Optional: reduce embedding dimensionality                      |
-| `task`               | str   | None                            | Task type: "retrieval/query" or "retrieval/document"           |
-| `overflow_strategy`  | str   | "drop_end"                      | Strategy for handling overflow: "drop_end" or None             |
-| `timeout`            | float | 60.0                            | Timeout for requests in seconds                                |
-| `embed_batch_size`   | int   | 100                             | Batch size for embedding calls                                 |
+| Parameter           | Type  | Default                        | Description                                          |
+| ------------------- | ----- | ------------------------------ | ---------------------------------------------------- |
+| `model`             | str   | "kanon-2-embedder"             | The embedding model to use                           |
+| `api_key`           | str   | `os.getenv("ISAACUS_API_KEY")` | The API key for Isaacus                              |
+| `base_url`          | str   | "https://api.isaacus.com/v1"   | The base URL for Isaacus API                         |
+| `dimensions`        | int   | None (model default)           | Optional: reduce embedding dimensionality            |
+| `task`              | str   | None                           | Task type: "retrieval/query" or "retrieval/document" |
+| `overflow_strategy` | str   | "drop_end"                     | Strategy for handling overflow: "drop_end" or None   |
+| `timeout`           | float | 60.0                           | Timeout for requests in seconds                      |
+| `embed_batch_size`  | int   | 100                            | Batch size for embedding calls                       |
 
 ## Environment Variables
 
-| Variable           | Description                    |
-| ------------------ | ------------------------------ |
-| `ISAACUS_API_KEY`  | The API key for Isaacus (required) |
+| Variable           | Description                             |
+| ------------------ | --------------------------------------- |
+| `ISAACUS_API_KEY`  | The API key for Isaacus (required)      |
 | `ISAACUS_BASE_URL` | The base URL for Isaacus API (optional) |
 
 ## Testing

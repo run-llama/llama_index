@@ -49,9 +49,7 @@ class IsaacusEmbedding(BaseEmbedding):
         default=DEFAULT_ISAACUS_MODEL,
         description="The model to use for embeddings.",
     )
-    api_key: Optional[str] = Field(
-        default=None, description="The API key for Isaacus."
-    )
+    api_key: Optional[str] = Field(default=None, description="The API key for Isaacus.")
     base_url: Optional[str] = Field(
         default=None, description="The base URL for Isaacus API."
     )
