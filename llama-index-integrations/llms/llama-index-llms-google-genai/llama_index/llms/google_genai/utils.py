@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 from collections.abc import Sequence
 from io import BytesIO
@@ -372,14 +373,52 @@ async def chat_message_to_gemini(
     )
 
 
+def _remove_additional_properties_from_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively remove additionalProperties fields from JSON schema.
+
+    Gemini API does not support additionalProperties in function calling schemas.
+    See: https://github.com/googleapis/python-genai/issues/70
+    """
+    if not isinstance(schema, dict):
+        return schema
+
+    cleaned = copy.deepcopy(schema)
+
+    if "additionalProperties" in cleaned:
+        del cleaned["additionalProperties"]
+
+    for key, value in cleaned.items():
+        if isinstance(value, dict):
+            cleaned[key] = _remove_additional_properties_from_schema(value)
+        elif isinstance(value, list):
+            cleaned[key] = [
+                _remove_additional_properties_from_schema(item)
+                if isinstance(item, dict)
+                else item
+                for item in value
+            ]
+
+    return cleaned
+
+
 def convert_schema_to_function_declaration(
     client: google.genai.client, tool: "BaseTool"
 ):
     if not tool.metadata.fn_schema:
         raise ValueError("fn_schema is missing")
 
-    # Get the JSON schema
-    root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
+    original_schema_method = tool.metadata.fn_schema.model_json_schema
+    tool.metadata.fn_schema.model_json_schema = (
+        lambda *a, **kw: _remove_additional_properties_from_schema(
+            original_schema_method(*a, **kw)
+        )
+    )
+
+    try:
+        root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
+    finally:
+        tool.metadata.fn_schema.model_json_schema = original_schema_method
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
     if len(description_parts) > 1:

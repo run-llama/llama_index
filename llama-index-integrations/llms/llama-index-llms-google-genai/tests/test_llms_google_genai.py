@@ -1842,3 +1842,52 @@ async def test_thoughts_with_async_chat() -> None:
         )
         != 0
     )
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_additional_properties_removed_from_schema(llm: GoogleGenAI) -> None:
+    """
+    Test that additionalProperties is removed from schemas for Gemini compatibility.
+
+    See: https://github.com/googleapis/python-genai/issues/70
+    """
+    from pydantic import ConfigDict
+
+    class ModelWithAdditionalProperties(BaseModel):
+        """A model that generates additionalProperties in its schema."""
+
+        model_config = ConfigDict(extra="allow")
+
+        required_field: str = Field(description="A required field")
+        optional_field: Optional[int] = Field(
+            default=None, description="An optional field"
+        )
+
+    function_tool = get_function_tool(ModelWithAdditionalProperties)
+
+    schema = function_tool.metadata.fn_schema.model_json_schema()
+    assert "additionalProperties" in schema
+
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert converted.name == "ModelWithAdditionalProperties"
+    assert converted.description is not None
+    assert converted.parameters is not None
+    assert "required_field" in converted.parameters.properties
+    assert "optional_field" in converted.parameters.properties
+
+    schema_dict = converted.parameters.model_dump()
+
+    def check_no_additional_properties(obj, path="root"):
+        """Recursively verify no additionalProperties fields exist."""
+        if isinstance(obj, dict):
+            assert "additionalProperties" not in obj, (
+                f"Found additionalProperties at {path}"
+            )
+            for key, value in obj.items():
+                check_no_additional_properties(value, f"{path}.{key}")
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                check_no_additional_properties(item, f"{path}[{i}]")
+
+    check_no_additional_properties(schema_dict)
