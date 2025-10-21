@@ -33,7 +33,7 @@ test_integration = [
 name = "llama-index-embeddings-isaacus"
 version = "0.1.0"
 description = "llama-index embeddings isaacus integration"
-authors = [{name = "LlamaIndex", email = "dev@llamaindex.ai"}]
+authors = [{name = "Isaacus", email = "hello@isaacus.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
@@ -58,7 +58,7 @@ contains_example = true
 import_path = "llama_index.embeddings.isaacus"
 
 [tool.llamahub.class_authors]
-IsaacusEmbedding = "isaacus-team"
+IsaacusEmbedding = "adlumal"
 
 [tool.mypy]
 disallow_untyped_defs = true
