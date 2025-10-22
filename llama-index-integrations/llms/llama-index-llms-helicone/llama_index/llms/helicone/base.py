@@ -1,9 +1,7 @@
 from typing import Any, Dict, Optional
 
-from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
@@ -43,15 +41,35 @@ class Helicone(OpenAILike):
 
     """
 
-    model: str = Field(description="Model served via Helicone AI Gateway.")
-    context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of context tokens for the model.",
-        gt=0,
+    model: str = Field(
+        description=(
+            "OpenAI-compatible model name routed via the Helicone AI Gateway. "
+            "Learn more about [provider routing](https://docs.helicone.ai/gateway/provider-routing). "
+            "All models are visible [here](https://www.helicone.ai/models)."
+        )
     )
-    is_chat_model: bool = Field(
-        default=True,
-        description=LLMMetadata.model_fields["is_chat_model"].description,
+    api_base: Optional[str] = Field(
+        default=DEFAULT_API_BASE,
+        description=(
+            "Base URL for the Helicone AI Gateway. Can also be set via the "
+            "HELICONE_API_BASE environment variable. See the "
+            "[Gateway overview](https://docs.helicone.ai/gateway/overview)."
+        ),
+    )
+    api_key: Optional[str] = Field(
+        description=(
+            "Helicone API key used to authorize requests (Authorization: Bearer). "
+            "Provide directly or set via HELICONE_API_KEY. Generate your API key "
+            "in the [dashboard settings](https://us.helicone.ai/settings/api-keys). "
+        ),
+    )
+    default_headers: Optional[Dict[str, str]] = Field(
+        default=None,
+        description=(
+            "Additional HTTP headers to include with requests. The Helicone "
+            "Authorization header is added automatically from api_key. See "
+            "[custom properties](https://docs.helicone.ai/features/advanced-usage/custom-properties)/[headers](https://docs.helicone.ai/helicone-headers/header-directory)."
+        ),
     )
 
     def __init__(
