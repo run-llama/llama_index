@@ -28,8 +28,8 @@ dev = [
 name = "llama-index-llms-helicone"
 version = "0.1.0"
 description = "llama-index llms helicone (OpenAI-compatible) integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<3.14"
+authors = [{name = "Hammad Shami", email = "hammad@helicone.ai"}]
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
