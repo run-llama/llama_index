@@ -261,6 +261,7 @@ async def chat_message_to_gemini(
     message: ChatMessage, use_file_api: bool = False, client: Optional[Client] = None
 ) -> Union[types.Content, types.File]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
+    unique_tool_calls = []
     parts = []
     part = None
     for index, block in enumerate(message.blocks):
@@ -320,6 +321,7 @@ async def chat_message_to_gemini(
             part = types.Part.from_function_call(
                 name=block.tool_name, args=cast(Dict[str, Any], block.tool_kwargs)
             )
+            unique_tool_calls.append((block.tool_name, str(block.tool_kwargs)))
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -335,18 +337,22 @@ async def chat_message_to_gemini(
                 )
             parts.append(part)
 
-    # keep this block for compatibility with older chat histories
     for tool_call in message.additional_kwargs.get("tool_calls", []):
         if isinstance(tool_call, dict):
-            part = types.Part.from_function_call(
-                name=tool_call.get("name"), args=tool_call.get("args")
-            )
-            part.thought_signature = tool_call.get("thought_signature")
+            if (
+                tool_call.get("name", ""),
+                str(tool_call.get("args", {})),
+            ) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.get("name", ""), args=tool_call.get("args", {})
+                )
+                part.thought_signature = tool_call.get("thought_signature")
         else:
-            part = types.Part.from_function_call(
-                name=tool_call.name, args=tool_call.args
-            )
-            part.thought_signature = tool_call.thought_signature
+            if (tool_call.name, str(tool_call.args)) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.name, args=tool_call.args
+                )
+                part.thought_signature = tool_call.thought_signature
         parts.append(part)
 
     # the tool call id is the name of the tool
