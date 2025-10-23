@@ -3,6 +3,8 @@
 import logging
 from typing import Any, List, Optional
 
+import isaacus
+
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
@@ -136,14 +138,6 @@ class IsaacusEmbedding(BaseEmbedding):
         self.timeout = timeout
 
         # Initialize Isaacus clients
-        try:
-            import isaacus
-        except ImportError:
-            raise ImportError(
-                "Please install the isaacus package to use IsaacusEmbedding: "
-                "`pip install isaacus`"
-            )
-
         self._client = isaacus.Isaacus(
             api_key=api_key,
             base_url=base_url,
