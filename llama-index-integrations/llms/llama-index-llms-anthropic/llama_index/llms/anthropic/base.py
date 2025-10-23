@@ -37,7 +37,6 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
-from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
@@ -46,6 +45,7 @@ from llama_index.llms.anthropic.utils import (
     is_anthropic_prompt_caching_supported_model,
     is_function_calling_model,
     messages_to_anthropic_messages,
+    update_tool_calls,
 )
 
 import anthropic
@@ -524,9 +524,9 @@ class Anthropic(FunctionCallingLLM):
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
-                            argument_dict = parse_partial_json(cur_tool_json)
+                            argument_dict = json.loads(cur_tool_json)
                             cur_tool_call.input = argument_dict
-                        except ValueError:
+                        except json.JSONDecodeError:
                             pass
 
                     if cur_tool_call is not None:
@@ -535,20 +535,12 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
 
                     for tool_call in tool_calls_to_send:
-                        if tool_call.id not in [
-                            block.tool_call_id
-                            for block in content
-                            if isinstance(block, ToolCallBlock)
-                        ]:
-                            content.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.name,
-                                    tool_kwargs=cast(
-                                        Dict[str, Any] | str, tool_call.input
-                                    ),
-                                )
-                            )
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
 
                     yield AnthropicChatResponse(
                         message=ChatMessage(
@@ -577,20 +569,12 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
 
                     for tool_call in tool_calls_to_send:
-                        if tool_call.id not in [
-                            block.tool_call_id
-                            for block in content
-                            if isinstance(block, ToolCallBlock)
-                        ]:
-                            content.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.name,
-                                    tool_kwargs=cast(
-                                        Dict[str, Any] | str, tool_call.input
-                                    ),
-                                )
-                            )
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
 
                     yield AnthropicChatResponse(
                         message=ChatMessage(
@@ -738,7 +722,7 @@ class Anthropic(FunctionCallingLLM):
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
-                            argument_dict = parse_partial_json(cur_tool_json)
+                            argument_dict = json.loads(cur_tool_json)
                             cur_tool_call.input = argument_dict
                         except ValueError:
                             pass
@@ -749,20 +733,12 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
 
                     for tool_call in tool_calls_to_send:
-                        if tool_call.id not in [
-                            block.tool_call_id
-                            for block in content
-                            if isinstance(block, ToolCallBlock)
-                        ]:
-                            content.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.name,
-                                    tool_kwargs=cast(
-                                        Dict[str, Any] | str, tool_call.input
-                                    ),
-                                )
-                            )
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
 
                     yield AnthropicChatResponse(
                         message=ChatMessage(
@@ -791,20 +767,12 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
 
                     for tool_call in tool_calls_to_send:
-                        if tool_call.id not in [
-                            block.tool_call_id
-                            for block in content
-                            if isinstance(block, ToolCallBlock)
-                        ]:
-                            content.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.name,
-                                    tool_kwargs=cast(
-                                        Dict[str, Any] | str, tool_call.input
-                                    ),
-                                )
-                            )
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
 
                     yield AnthropicChatResponse(
                         message=ChatMessage(

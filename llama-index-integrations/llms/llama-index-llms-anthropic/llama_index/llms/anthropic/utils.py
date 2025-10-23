@@ -209,6 +209,7 @@ def blocks_to_anthropic_blocks(
 ) -> List[AnthropicContentBlock]:
     anthropic_blocks: List[AnthropicContentBlock] = []
     global_cache_control: Optional[CacheControlEphemeralParam] = None
+    unique_tool_calls = []
 
     if kwargs.get("cache_control"):
         global_cache_control = CacheControlEphemeralParam(**kwargs["cache_control"])
@@ -272,6 +273,7 @@ def blocks_to_anthropic_blocks(
                     anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, ToolCallBlock):
+            unique_tool_calls.append((block.tool_call_id, block.tool_name))
             anthropic_blocks.append(
                 ToolUseBlockParam(
                     id=block.tool_call_id or "",
@@ -299,18 +301,22 @@ def blocks_to_anthropic_blocks(
     # keep this code for compatibility with older chat histories
     tool_calls = kwargs.get("tool_calls", [])
     for tool_call in tool_calls:
-        assert "id" in tool_call
-        assert "input" in tool_call
-        assert "name" in tool_call
+        try:
+            assert "id" in tool_call
+            assert "input" in tool_call
+            assert "name" in tool_call
 
-        anthropic_blocks.append(
-            ToolUseBlockParam(
-                id=tool_call["id"],
-                input=tool_call["input"],
-                name=tool_call["name"],
-                type="tool_use",
-            )
-        )
+            if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                anthropic_blocks.append(
+                    ToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
+                    )
+                )
+        except AssertionError:
+            continue
 
     return anthropic_blocks
 
@@ -419,6 +425,33 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-opus-20240229",
     "claude-3-opus-latest",
 )
+
+
+def update_tool_calls(blocks: list[ContentBlock], tool_call: ToolCallBlock) -> None:
+    if len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0:
+        blocks.append(tool_call)
+        return
+    elif not any(
+        block.tool_call_id == tool_call.tool_call_id
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        blocks.append(tool_call)
+        return
+    elif any(
+        block.tool_call_id == tool_call.tool_call_id
+        and block.tool_kwargs == tool_call.tool_kwargs
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        return
+    else:
+        for i, block in enumerate(blocks):
+            if isinstance(block, ToolCallBlock):
+                if block.tool_call_id == tool_call.tool_call_id:
+                    blocks[i] = tool_call
+                    break
+        return
 
 
 def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
