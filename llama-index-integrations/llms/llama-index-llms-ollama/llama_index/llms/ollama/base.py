@@ -273,7 +273,10 @@ class Ollama(FunctionCallingLLM):
                     raise ValueError(f"Unsupported block type: {type(block)}")
 
             # keep this code for compatibility with older chat histories
-            if "tool_calls" in message.additional_kwargs:
+            if (
+                "tool_calls" in message.additional_kwargs
+                and len(cur_ollama_message.get("tool_calls", [])) == 0
+            ):
                 cur_ollama_message["tool_calls"] = message.additional_kwargs[
                     "tool_calls"
                 ]
