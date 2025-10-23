@@ -15,7 +15,7 @@ from typing import (
     Union,
     cast,
 )
-
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -524,9 +524,9 @@ class Anthropic(FunctionCallingLLM):
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
-                            argument_dict = json.loads(cur_tool_json)
+                            argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
-                        except json.JSONDecodeError:
+                        except ValueError:
                             pass
 
                     if cur_tool_call is not None:
@@ -722,7 +722,7 @@ class Anthropic(FunctionCallingLLM):
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
-                            argument_dict = json.loads(cur_tool_json)
+                            argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
                         except ValueError:
                             pass
