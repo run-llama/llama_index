@@ -115,6 +115,7 @@ def to_mistral_chatmessage(
 ) -> List[Messages]:
     new_messages = []
     for m in messages:
+        unique_tool_calls = []
         tool_calls_li = [
             block for block in m.blocks if isinstance(block, ToolCallBlock)
         ]
@@ -129,9 +130,18 @@ def to_mistral_chatmessage(
                     ),
                 )
             )
+            unique_tool_calls.append(
+                (tool_call_li.tool_call_id, tool_call_li.tool_name)
+            )
         # try with legacy tool calls for compatibility with older chat histories
-        if len(tool_calls) == 0:
-            tool_calls = m.additional_kwargs.get("tool_calls", [])
+        if len(m.additional_kwargs.get("tool_calls", [])) > 0:
+            tcs = m.additional_kwargs.get("tool_calls", [])
+            for tc in tcs:
+                if (
+                    isinstance(tc, ToolCall)
+                    and (tc.id, tc.function.name) not in unique_tool_calls
+                ):
+                    tool_calls.append(tc)
         chunks = to_mistral_chunks(m.blocks)
         if m.role == MessageRole.USER:
             new_messages.append(UserMessage(content=chunks))
@@ -355,7 +365,6 @@ class MistralAI(FunctionCallingLLM):
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
 
         if self.model in MISTRAL_AI_REASONING_MODELS:
-            print(response.choices[0].message.content)
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content or []
             )
@@ -468,7 +477,7 @@ class MistralAI(FunctionCallingLLM):
                     # If thinking hasn't ended, don't include it in the delta
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
-                    blocks.append(TextBlock(text=content))
+                blocks.append(TextBlock(text=content))
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -503,7 +512,6 @@ class MistralAI(FunctionCallingLLM):
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
-            print(response.choices[0].message.content)
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content or []
             )
@@ -627,7 +635,7 @@ class MistralAI(FunctionCallingLLM):
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
 
-                    blocks.append(TextBlock(text=content))
+                blocks.append(TextBlock(text=content))
 
                 yield ChatResponse(
                     message=ChatMessage(
