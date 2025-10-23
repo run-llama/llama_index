@@ -2,6 +2,7 @@
 
 import os
 from llama_index.embeddings.isaacus import IsaacusEmbedding
+from llama_index.core.base.embeddings.base import similarity
 
 
 def main():
@@ -52,8 +53,6 @@ def main():
     print()
 
     # Demonstrate similarity (cosine similarity)
-    from llama_index.core.base.embeddings.base import similarity
-
     print("Calculating similarities between query and documents...")
     for i, text in enumerate(texts):
         doc_emb = doc_embedder.get_text_embedding(text)
