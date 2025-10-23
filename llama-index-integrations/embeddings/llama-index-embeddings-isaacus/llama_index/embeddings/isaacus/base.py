@@ -1,7 +1,7 @@
 """Isaacus embeddings file."""
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 import isaacus
 
@@ -58,11 +58,11 @@ class IsaacusEmbedding(BaseEmbedding):
     dimensions: Optional[int] = Field(
         default=None, description="The desired embedding dimensionality."
     )
-    task: Optional[str] = Field(
+    task: Optional[Literal["retrieval/query", "retrieval/document"]] = Field(
         default=None,
         description="Task type: 'retrieval/query' or 'retrieval/document'.",
     )
-    overflow_strategy: Optional[str] = Field(
+    overflow_strategy: Optional[Literal["drop_end"]] = Field(
         default="drop_end", description="Strategy for handling overflow."
     )
     timeout: float = Field(default=60.0, description="Timeout for requests in seconds.")
@@ -76,8 +76,8 @@ class IsaacusEmbedding(BaseEmbedding):
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         dimensions: Optional[int] = None,
-        task: Optional[str] = None,
-        overflow_strategy: Optional[str] = "drop_end",
+        task: Optional[Literal["retrieval/query", "retrieval/document"]] = None,
+        overflow_strategy: Optional[Literal["drop_end"]] = "drop_end",
         timeout: float = 60.0,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
@@ -124,29 +124,28 @@ class IsaacusEmbedding(BaseEmbedding):
 
         super().__init__(
             model_name=model,
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            dimensions=dimensions,
+            task=task,
+            overflow_strategy=overflow_strategy,
+            timeout=timeout,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
         )
 
-        self.model = model
-        self.api_key = api_key
-        self.base_url = base_url
-        self.dimensions = dimensions
-        self.task = task
-        self.overflow_strategy = overflow_strategy
-        self.timeout = timeout
-
         # Initialize Isaacus clients
         self._client = isaacus.Isaacus(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout,
         )
         self._aclient = isaacus.AsyncIsaacus(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            timeout=self.timeout,
         )
 
     @classmethod
