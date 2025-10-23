@@ -1,5 +1,5 @@
 """
-Default query for PandasIndex.
+Default query for PolarsIndex.
 
 WARNING: This tool provides the LLM with access to the `eval` function.
 Arbitrary code execution is possible on the machine running this tool.
@@ -11,26 +11,25 @@ require heavy sandboxing or virtual machines
 import logging
 from typing import Any, Dict, Optional
 
-import pandas as pd
+import polars as pl
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
-from llama_index.core.indices.struct_store.pandas import PandasIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import QueryBundle
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
-from llama_index.experimental.query_engine.pandas.prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.experimental.query_engine.pandas.output_parser import (
-    PandasInstructionParser,
+from llama_index.experimental.query_engine.polars.prompts import DEFAULT_POLARS_PROMPT
+from llama_index.experimental.query_engine.polars.output_parser import (
+    PolarsInstructionParser,
 )
 
 logger = logging.getLogger(__name__)
 
 
 DEFAULT_INSTRUCTION_STR = (
-    "1. Convert the query to executable Python code using Pandas.\n"
+    "1. Convert the query to executable Python code using Polars.\n"
     "2. The final line of code should be a Python expression that can be called with the `eval()` function.\n"
     "3. The code should represent a solution to the query.\n"
     "4. PRINT ONLY THE EXPRESSION.\n"
@@ -42,8 +41,8 @@ DEFAULT_INSTRUCTION_STR = (
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "Given an input question, synthesize a response from the query results.\n"
     "Query: {query_str}\n\n"
-    "Pandas Instructions (optional):\n{pandas_instructions}\n\n"
-    "Pandas Output: {pandas_output}\n\n"
+    "Polars Instructions (optional):\n{polars_instructions}\n\n"
+    "Polars Output: {polars_output}\n\n"
     "Response: "
 )
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
@@ -51,11 +50,11 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 )
 
 
-class PandasQueryEngine(BaseQueryEngine):
+class PolarsQueryEngine(BaseQueryEngine):
     """
-    Pandas query engine.
+    Polars query engine.
 
-    Convert natural language to Pandas python code.
+    Convert natural language to Polars python code.
 
     WARNING: This tool provides the Agent access to the `eval` function.
     Arbitrary code execution is possible on the machine running this tool.
@@ -64,18 +63,15 @@ class PandasQueryEngine(BaseQueryEngine):
 
 
     Args:
-        df (pd.DataFrame): Pandas dataframe to use.
+        df (pl.DataFrame): Polars dataframe to use.
         instruction_str (Optional[str]): Instruction string to use.
-        instruction_parser (Optional[PandasInstructionParser]): The output parser
-            that takes the pandas query output string and returns a string.
-            It defaults to PandasInstructionParser and takes pandas DataFrame,
+        instruction_parser (Optional[PolarsInstructionParser]): The output parser
+            that takes the polars query output string and returns a string.
+            It defaults to PolarsInstructionParser and takes polars DataFrame,
             and any output kwargs as parameters.
-            eg.kwargs["max_colwidth"] = [int] is used to set the length of text
-            that each column can display during str(df). Set it to a higher number
-            if there is possibly long text in the dataframe.
-        pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
+        polars_prompt (Optional[BasePromptTemplate]): Polars prompt to use.
         output_kwargs (dict): Additional output processor kwargs for the
-            PandasInstructionParser.
+            PolarsInstructionParser.
         head (int): Number of rows to show in the table context.
         verbose (bool): Whether to print verbose output.
         llm (Optional[LLM]): Language model to use.
@@ -86,20 +82,20 @@ class PandasQueryEngine(BaseQueryEngine):
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
 
     Examples:
-        `pip install llama-index-experimental`
+        `pip install llama-index-experimental polars`
 
         ```python
-        import pandas as pd
-        from llama_index.experimental.query_engine.pandas import PandasQueryEngine
+        import polars as pl
+        from llama_index.experimental.query_engine.polars import PolarsQueryEngine
 
-        df = pd.DataFrame(
+        df = pl.DataFrame(
             {
                 "city": ["Toronto", "Tokyo", "Berlin"],
                 "population": [2930000, 13960000, 3645000]
             }
         )
 
-        query_engine = PandasQueryEngine(df=df, verbose=True)
+        query_engine = PolarsQueryEngine(df=df, verbose=True)
 
         response = query_engine.query("What is the population of Tokyo?")
         ```
@@ -108,10 +104,10 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         instruction_str: Optional[str] = None,
-        instruction_parser: Optional[PandasInstructionParser] = None,
-        pandas_prompt: Optional[BasePromptTemplate] = None,
+        instruction_parser: Optional[PolarsInstructionParser] = None,
+        polars_prompt: Optional[BasePromptTemplate] = None,
         output_kwargs: Optional[dict] = None,
         head: int = 5,
         verbose: bool = False,
@@ -124,9 +120,9 @@ class PandasQueryEngine(BaseQueryEngine):
         self._df = df
 
         self._head = head
-        self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
+        self._polars_prompt = polars_prompt or DEFAULT_POLARS_PROMPT
         self._instruction_str = instruction_str or DEFAULT_INSTRUCTION_STR
-        self._instruction_parser = instruction_parser or PandasInstructionParser(
+        self._instruction_parser = instruction_parser or PolarsInstructionParser(
             df, output_kwargs or {}
         )
         self._verbose = verbose
@@ -146,66 +142,53 @@ class PandasQueryEngine(BaseQueryEngine):
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
         return {
-            "pandas_prompt": self._pandas_prompt,
+            "polars_prompt": self._polars_prompt,
             "response_synthesis_prompt": self._response_synthesis_prompt,
         }
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
-        if "pandas_prompt" in prompts:
-            self._pandas_prompt = prompts["pandas_prompt"]
+        if "polars_prompt" in prompts:
+            self._polars_prompt = prompts["polars_prompt"]
         if "response_synthesis_prompt" in prompts:
             self._response_synthesis_prompt = prompts["response_synthesis_prompt"]
 
-    @classmethod
-    def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":
-        logger.warning(
-            "PandasIndex is deprecated. "
-            "Directly construct PandasQueryEngine with df instead."
-        )
-        return cls(df=index.df, **kwargs)
-
     def _get_table_context(self) -> str:
         """Get table context."""
-        pd.set_option("display.max_colwidth", None)
-        pd.set_option("display.max_columns", None)
-        # since head() is only used.
-        pd.set_option("display.max_rows", self._head)
-        pd.set_option("display.width", None)
         return str(self._df.head(self._head))
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         context = self._get_table_context()
 
-        pandas_response_str = self._llm.predict(
-            self._pandas_prompt,
+        polars_response_str = self._llm.predict(
+            self._polars_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
             instruction_str=self._instruction_str,
         )
 
         if self._verbose:
-            print_text(f"> Pandas Instructions:\n```\n{pandas_response_str}\n```\n")
-        pandas_output = self._instruction_parser.parse(pandas_response_str)
+            print_text(f"> Polars Instructions:\n```\n{polars_response_str}\n```\n")
+        polars_output = self._instruction_parser.parse(polars_response_str)
         if self._verbose:
-            print_text(f"> Pandas Output: {pandas_output}\n")
+            print_text(f"> Polars Output: {polars_output}\n")
 
         response_metadata = {
-            "pandas_instruction_str": pandas_response_str,
-            "raw_pandas_output": pandas_output,
+            "polars_instruction_str": polars_response_str,
+            "raw_polars_output": polars_output,
         }
         if self._synthesize_response:
             response_str = str(
                 self._llm.predict(
                     self._response_synthesis_prompt,
                     query_str=query_bundle.query_str,
-                    pandas_instructions=pandas_response_str,
-                    pandas_output=pandas_output,
+                    polars_instructions=polars_response_str,
+                    polars_output=polars_output,
                 )
             )
         else:
-            response_str = str(pandas_output)
+            response_str = str(polars_output)
 
         return Response(response=response_str, metadata=response_metadata)
 
@@ -213,38 +196,38 @@ class PandasQueryEngine(BaseQueryEngine):
         """Answer a query asynchronously."""
         context = self._get_table_context()
 
-        pandas_response_str = await self._llm.apredict(
-            self._pandas_prompt,
+        polars_response_str = await self._llm.apredict(
+            self._polars_prompt,
             df_str=context,
             query_str=query_bundle.query_str,
             instruction_str=self._instruction_str,
         )
 
         if self._verbose:
-            print_text(f"> Pandas Instructions:\n```\n{pandas_response_str}\n```\n")
-        pandas_output = self._instruction_parser.parse(pandas_response_str)
+            print_text(f"> Polars Instructions:\n```\n{polars_response_str}\n```\n")
+        polars_output = self._instruction_parser.parse(polars_response_str)
         if self._verbose:
-            print_text(f"> Pandas Output: {pandas_output}\n")
+            print_text(f"> Polars Output: {polars_output}\n")
 
         response_metadata = {
-            "pandas_instruction_str": pandas_response_str,
-            "raw_pandas_output": pandas_output,
+            "polars_instruction_str": polars_response_str,
+            "raw_polars_output": polars_output,
         }
         if self._synthesize_response:
             response_str = str(
                 await self._llm.apredict(
                     self._response_synthesis_prompt,
                     query_str=query_bundle.query_str,
-                    pandas_instructions=pandas_response_str,
-                    pandas_output=pandas_output,
+                    polars_instructions=polars_response_str,
+                    polars_output=polars_output,
                 )
             )
         else:
-            response_str = str(pandas_output)
+            response_str = str(polars_output)
 
         return Response(response=response_str, metadata=response_metadata)
 
 
 # legacy
-NLPandasQueryEngine = PandasQueryEngine
-GPTNLPandasQueryEngine = PandasQueryEngine
+NLPolarsQueryEngine = PolarsQueryEngine
+GPTNLPolarsQueryEngine = PolarsQueryEngine

@@ -24,6 +24,46 @@ class Models(str, Enum):
     TITAN_EMBEDDING_G1_TEXT_02 = "amazon.titan-embed-g1-text-02"
     COHERE_EMBED_ENGLISH_V3 = "cohere.embed-english-v3"
     COHERE_EMBED_MULTILINGUAL_V3 = "cohere.embed-multilingual-v3"
+    COHERE_EMBED_V4 = "cohere.embed-v4:0"
+
+
+def _parse_cohere_response(
+    response_body: Dict[str, Any], is_batch: bool
+) -> Union[List[float], List[List[float]]]:
+    """
+    Parse Cohere embedding response, handling both v3 and v4 formats.
+
+    Args:
+        response_body: The response from Bedrock
+        is_batch: Whether this is a batch request
+
+    Returns:
+        Single embedding vector or list of embedding vectors
+
+    Raises:
+        ValueError: If the response format is unexpected
+
+    """
+    embeddings = response_body.get("embeddings", response_body)
+
+    if isinstance(embeddings, dict):
+        if "float" in embeddings:
+            embeddings = embeddings["float"]
+        elif "embeddings" in embeddings:
+            nested = embeddings["embeddings"]
+            if isinstance(nested, dict) and "float" in nested:
+                embeddings = nested["float"]
+            else:
+                embeddings = nested
+        else:
+            raise ValueError(
+                f"Unexpected Cohere embedding response format: {type(embeddings)}"
+            )
+
+    if isinstance(embeddings, list):
+        return embeddings if is_batch else embeddings[0]
+
+    raise ValueError(f"Unexpected Cohere embedding response format: {type(embeddings)}")
 
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
@@ -31,9 +71,7 @@ PROVIDER_SPECIFIC_IDENTIFIERS = {
         "get_embeddings_func": lambda r, isbatch: r.get("embedding"),
     },
     PROVIDERS.COHERE.value: {
-        "get_embeddings_func": lambda r, isbatch: (
-            r.get("embeddings") if isbatch else r.get("embeddings")[0]
-        ),
+        "get_embeddings_func": _parse_cohere_response,
     },
 }
 

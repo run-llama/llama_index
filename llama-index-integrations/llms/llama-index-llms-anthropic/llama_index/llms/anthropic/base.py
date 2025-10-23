@@ -474,6 +474,7 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
                     ):
+                        content_delta = ""
                         citation = r.delta.citation
                         if str(citation) not in tracked_citations:
                             tracked_citations.add(str(citation))
@@ -490,6 +491,7 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
+                        content_delta = ""
                         if not isinstance(cur_block, LIThinkingBlock):
                             cur_block = LIThinkingBlock(
                                 content="",
@@ -500,6 +502,7 @@ class Anthropic(FunctionCallingLLM):
                                 r.delta.signature
                             )
                     elif isinstance(r.delta, ThinkingDelta):
+                        content_delta = ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
                                 content=r.delta.thinking or "",
@@ -508,21 +511,22 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
+                        content_delta = ""
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
                     elif isinstance(r.delta, InputJSONDelta) and not isinstance(
                         cur_tool_call, ToolUseBlock
                     ):
                         # TODO: handle server-side tool calls
-                        pass
+                        content_delta = ""
                     else:
+                        content_delta = ""
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError(
                                 "Tool call not started, but got block type "
                                 + str(type(r.delta))
                             )
-                        content_delta = r.delta.partial_json
-                        cur_tool_json += content_delta
+                        cur_tool_json += r.delta.partial_json or ""
                         try:
                             argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
@@ -582,7 +586,7 @@ class Anthropic(FunctionCallingLLM):
                             blocks=content,
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
 
@@ -672,6 +676,7 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
                     ):
+                        content_delta = ""
                         citation = r.delta.citation
                         if str(citation) not in tracked_citations:
                             tracked_citations.add(str(citation))
@@ -688,6 +693,7 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
+                        content_delta = ""
                         if not isinstance(cur_block, LIThinkingBlock):
                             cur_block = LIThinkingBlock(
                                 content="",
@@ -698,6 +704,7 @@ class Anthropic(FunctionCallingLLM):
                                 r.delta.signature
                             )
                     elif isinstance(r.delta, ThinkingDelta):
+                        content_delta = ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
                                 content=r.delta.thinking or "",
@@ -706,21 +713,22 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
+                        content_delta = ""
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
                     elif isinstance(r.delta, InputJSONDelta) and not isinstance(
                         cur_tool_call, ToolUseBlock
                     ):
                         # TODO: handle server-side tool calls
-                        pass
+                        content_delta = ""
                     else:
+                        content_delta = ""
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError(
                                 "Tool call not started, but got block type "
                                 + str(type(r.delta))
                             )
-                        content_delta = r.delta.partial_json
-                        cur_tool_json += content_delta
+                        cur_tool_json += r.delta.partial_json or ""
                         try:
                             argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
@@ -780,7 +788,7 @@ class Anthropic(FunctionCallingLLM):
                             blocks=content,
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
 
