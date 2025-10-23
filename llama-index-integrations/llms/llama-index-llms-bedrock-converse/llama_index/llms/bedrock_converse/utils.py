@@ -363,7 +363,9 @@ def messages_to_converse_messages(
     converse_messages = []
     system_prompt = []
     current_system_prompt = ""
+
     for message in messages:
+        unique_tool_calls = []
         if message.role == MessageRole.SYSTEM:
             # we iterate over blocks, if content was used, the blocks are added anyway
             for block in message.blocks:
@@ -420,6 +422,13 @@ def messages_to_converse_messages(
                 )
                 if bedrock_format_block:
                     content.append(bedrock_format_block)
+                    if "toolUse" in bedrock_format_block:
+                        unique_tool_calls.append(
+                            (
+                                bedrock_format_block["toolUse"]["toolUseId"],
+                                bedrock_format_block["toolUse"]["name"],
+                            )
+                        )
 
             if content:
                 converse_messages.append(
@@ -437,25 +446,28 @@ def messages_to_converse_messages(
         tool_calls = message.additional_kwargs.get("tool_calls", [])
         content = []
         for tool_call in tool_calls:
-            assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
-            assert "input" in tool_call, f"`input` not found in {tool_call}"
-            assert "name" in tool_call, f"`name` not found in {tool_call}"
-            tool_input = tool_call["input"] if tool_call["input"] else {}
-            if isinstance(tool_input, str):
-                try:
-                    tool_input = json.loads(tool_input or "{}")
-                except json.JSONDecodeError:
-                    tool_input = {}
-
-            content.append(
-                {
-                    "toolUse": {
-                        "input": tool_input,
-                        "toolUseId": tool_call["toolUseId"],
-                        "name": tool_call["name"],
-                    }
-                }
-            )
+            try:
+                assert "toolUseId" in tool_call
+                assert "input" in tool_call
+                assert "name" in tool_call
+                if (tool_call["toolUseId"], tool_call["name"]) not in unique_tool_calls:
+                    tool_input = tool_call["input"] if tool_call["input"] else {}
+                    if isinstance(tool_input, str):
+                        try:
+                            tool_input = json.loads(tool_input or "{}")
+                        except json.JSONDecodeError:
+                            tool_input = {}
+                    content.append(
+                        {
+                            "toolUse": {
+                                "input": tool_input,
+                                "toolUseId": tool_call["toolUseId"],
+                                "name": tool_call["name"],
+                            }
+                        }
+                    )
+            except AssertionError:
+                continue
         if len(content) > 0:
             converse_messages.append(
                 {
