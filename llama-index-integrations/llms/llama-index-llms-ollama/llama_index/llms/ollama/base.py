@@ -231,6 +231,7 @@ class Ollama(FunctionCallingLLM):
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []
+        unique_tool_calls = []
         for message in messages:
             cur_ollama_message = {
                 "role": message.role.value,
@@ -269,17 +270,26 @@ class Ollama(FunctionCallingLLM):
                                 }
                             ]
                         )
+                    unique_tool_calls.append((block.tool_name, str(block.tool_kwargs)))
                 else:
                     raise ValueError(f"Unsupported block type: {type(block)}")
 
             # keep this code for compatibility with older chat histories
-            if (
-                "tool_calls" in message.additional_kwargs
-                and len(cur_ollama_message.get("tool_calls", [])) == 0
-            ):
-                cur_ollama_message["tool_calls"] = message.additional_kwargs[
-                    "tool_calls"
-                ]
+            if "tool_calls" in message.additional_kwargs:
+                if (
+                    "tool_calls" not in cur_ollama_message
+                    or cur_ollama_message["tool_calls"] == []
+                ):
+                    cur_ollama_message["tool_calls"] = message.additional_kwargs[
+                        "tool_calls"
+                    ]
+                else:
+                    for tool_call in message.additional_kwargs["tool_calls"]:
+                        if (
+                            tool_call.get("name", ""),
+                            str(tool_call.get("arguments", {})),
+                        ) not in unique_tool_calls:
+                            cur_ollama_message["tool_calls"].append(tool_call)
 
             ollama_messages.append(cur_ollama_message)
 
