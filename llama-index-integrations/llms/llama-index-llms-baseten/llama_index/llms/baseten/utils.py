@@ -14,6 +14,7 @@ SUPPORTED_MODEL_SLUGS = [
     "Qwen/Qwen3-235B-A22B-Instruct-2507",
     "Qwen/Qwen3-Coder-480B-A35B-Instruct",
     "openai/gpt-oss-120b",
+    "ai-org/GLM-4.6",
 ]
 
 

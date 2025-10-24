@@ -23,7 +23,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformationFull
 from mcp import types
-
+from pydantic import AnyUrl
 
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 
@@ -305,17 +305,17 @@ class BasicMCPClient(ClientSession):
             return await session.list_tools()
 
     # Resource methods
-    async def list_resources(self) -> types.ListToolsRequest:
+    async def list_resources(self) -> types.ListToolsResult:
         """List all available resources on the MCP server."""
         async with self._run_session() as session:
             return await session.list_resources()
 
-    async def list_resource_templates(self) -> types.ListToolsRequest:
+    async def list_resource_templates(self) -> types.ListToolsResult:
         """List all dynamic available resources on the MCP server."""
         async with self._run_session() as session:
             return await session.list_resource_templates()
 
-    async def read_resource(self, resource_name: str) -> types.ReadResourceResult:
+    async def read_resource(self, resource_uri: AnyUrl) -> types.ReadResourceResult:
         """
         Read a resource from the MCP server.
 
@@ -324,7 +324,7 @@ class BasicMCPClient(ClientSession):
 
         """
         async with self._run_session() as session:
-            return await session.read_resource(resource_name)
+            return await session.read_resource(resource_uri)
 
     ## ----- Prompt methods -----
 

@@ -10,7 +10,6 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,19 +25,16 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-postgres"
-version = "0.7.1"
-description = "llama-index vector_stores postgres integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+name = "llama-index-llms-helicone"
+version = "0.1.0"
+description = "llama-index llms helicone (OpenAI-compatible) integration"
+authors = [{name = "Hammad Shami", email = "hammad@helicone.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pgvector>=0.3.6,<1.0.0",
-    "psycopg2-binary>=2.9.9,<3.0.0",
-    "asyncpg>=0.29.0,<1.0.0",
+    "llama-index-llms-openai-like>=0.5.0,<0.6",
     "llama-index-core>=0.13.0,<0.15",
-    "sqlalchemy[asyncio]>=1.4.49,<2.1",
 ]
 
 [tool.codespell]
@@ -56,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.postgres"
+import_path = "llama_index.llms.helicone"
 
 [tool.llamahub.class_authors]
-PGVectorStore = "llama-index"
+Helicone = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -68,6 +64,8 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
-filterwarnings = ["ignore::DeprecationWarning:"]
-markers = ["asyncio"]
+filterwarnings = [
+    # Ignore pytest internal deprecation warnings on Python 3.13
+    "ignore:ast.Str is deprecated:DeprecationWarning:_pytest",
+    "ignore:ast.NameConstant is deprecated:DeprecationWarning:_pytest",
+]
