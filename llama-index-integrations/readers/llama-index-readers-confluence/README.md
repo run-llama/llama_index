@@ -51,6 +51,23 @@ include attachments, this is set to `False` by default, if set to `True` all att
 ConfluenceReader will extract the text from the attachments and add it to the Document object.
 Currently supported attachment types are: PDF, PNG, JPEG/JPG, SVG, Word and Excel.
 
+### Optional Dependencies
+
+**SVG Support**: SVG processing requires additional dependencies that can cause installation issues on some systems.
+To enable SVG attachment processing, install with the `svg` extra:
+
+```bash
+pip install llama-index-readers-confluence[svg]
+```
+
+If SVG dependencies are not installed, SVG attachments will be skipped with a warning in the logs, but all other
+functionality will work normally. This allows the package to be installed on systems where the SVG dependencies
+(svglib and its transitive dependency pycairo) cannot be built.
+
+**Migration Note for Existing Users**: If you were previously using SVG processing and want to continue doing so,
+you need to install the svg extra as shown above. Alternatively, you can provide a custom SVG parser using the
+`custom_parsers` parameter (see Advanced Configuration section and `examples/svg_parsing_examples.py` for details).
+
 ## Advanced Configuration
 
 The ConfluenceReader supports several advanced configuration options for customizing the reading behavior:
@@ -98,7 +115,8 @@ confluence_parsers = {
     # ConfluenceFileType.CSV: CSVParser(),
     # ConfluenceFileType.SPREADSHEET: ExcelParser(),
     # ConfluenceFileType.MARKDOWN: MarkdownParser(),
-    # ConfluenceFileType.TEXT: TextParser()
+    # ConfluenceFileType.TEXT: TextParser(),
+    # ConfluenceFileType.SVG: CustomSVGParser(),  # Custom SVG parser to avoid pycairo issues
 }
 
 reader = ConfluenceReader(
@@ -107,6 +125,10 @@ reader = ConfluenceReader(
     custom_parsers=confluence_parsers,
 )
 ```
+
+For SVG parsing examples including alternatives to the built-in parser, see `examples/svg_parsing_examples.py`.
+
+````
 
 **Processing Callbacks**:
 
@@ -425,3 +447,4 @@ print(f"Processing completed. Total documents: {len(documents)}")
 ```
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
+````
