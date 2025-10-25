@@ -4,7 +4,7 @@ import pytest
 from ollama import Client
 from typing import Annotated
 
-from llama_index.core.base.llms.types import ThinkingBlock, TextBlock
+from llama_index.core.base.llms.types import ThinkingBlock, TextBlock, ToolCallBlock
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
@@ -358,4 +358,81 @@ async def test_async_chat_with_tools_returns_empty_array_if_no_tools_were_called
             ChatMessage(role="user", content="Hello, how are you?"),
         ],
     )
-    assert response.message.additional_kwargs.get("tool_calls", []) == []
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+@pytest.mark.asyncio
+async def test_chat_methods_with_tool_input() -> None:
+    llm = Ollama(model=thinking_test_model)
+    input_messages = [
+        ChatMessage(
+            role="user",
+            content="Hello, can you tell me what is the weather today in London?",
+        ),
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking for the weather in London, so I should use the get_weather tool"
+                ),
+                ToolCallBlock(
+                    tool_name="get_weather_tool", tool_kwargs={"location": "London"}
+                ),
+                TextBlock(
+                    text="The weather in London is rainy with a temperature of 15°C."
+                ),
+            ],
+        ),
+        ChatMessage(
+            role="user",
+            content="Can you tell me what input did you give to the 'get_weather' tool? (do not call any other tool)",
+        ),
+    ]
+    response = llm.chat(messages=input_messages)
+    assert response.message.content is not None
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
+    aresponse = await llm.achat(messages=input_messages)
+    assert aresponse.message.content is not None
+    assert (
+        len(
+            [
+                block
+                for block in aresponse.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
+    response_stream = llm.stream_chat(messages=input_messages)
+    blocks = []
+    for r in response_stream:
+        blocks.extend(r.message.blocks)
+    assert len([block for block in blocks if isinstance(block, TextBlock)]) > 0
+    assert len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0
+    aresponse_stream = await llm.astream_chat(messages=input_messages)
+    ablocks = []
+    async for r in aresponse_stream:
+        ablocks.extend(r.message.blocks)
+    assert len([block for block in ablocks if isinstance(block, TextBlock)]) > 0
+    assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) == 0
