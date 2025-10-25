@@ -30,6 +30,7 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 COMPLETION_MODELS = {}  # completion endpoint has been deprecated
 
 CHAT_MODELS = {
+    "cohere.command-a-03-2025": 256000,
     "cohere.command-r-16k": 16000,
     "cohere.command-r-plus": 128000,
     "cohere.command-r-08-2024": 128000,
