@@ -16,6 +16,7 @@ from llama_index.core.base.llms.types import (
     CitationBlock,
     ThinkingBlock,
     ContentBlock,
+    ToolCallBlock,
 )
 
 from anthropic.types import (
@@ -24,6 +25,7 @@ from anthropic.types import (
     DocumentBlockParam,
     ThinkingBlockParam,
     ImageBlockParam,
+    ToolUseBlockParam,
     CacheControlEphemeralParam,
     Base64PDFSourceParam,
 )
@@ -207,6 +209,7 @@ def blocks_to_anthropic_blocks(
 ) -> List[AnthropicContentBlock]:
     anthropic_blocks: List[AnthropicContentBlock] = []
     global_cache_control: Optional[CacheControlEphemeralParam] = None
+    unique_tool_calls = []
 
     if kwargs.get("cache_control"):
         global_cache_control = CacheControlEphemeralParam(**kwargs["cache_control"])
@@ -269,6 +272,19 @@ def blocks_to_anthropic_blocks(
                 if global_cache_control:
                     anthropic_blocks[-1]["cache_control"] = global_cache_control
 
+        elif isinstance(block, ToolCallBlock):
+            unique_tool_calls.append((block.tool_call_id, block.tool_name))
+            anthropic_blocks.append(
+                ToolUseBlockParam(
+                    id=block.tool_call_id or "",
+                    input=block.tool_kwargs,
+                    name=block.tool_name,
+                    type="tool_use",
+                )
+            )
+            if global_cache_control:
+                anthropic_blocks[-1]["cache_control"] = global_cache_control
+
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
                 anthropic_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
@@ -282,20 +298,25 @@ def blocks_to_anthropic_blocks(
         else:
             raise ValueError(f"Unsupported block type: {type(block)}")
 
+    # keep this code for compatibility with older chat histories
     tool_calls = kwargs.get("tool_calls", [])
     for tool_call in tool_calls:
-        assert "id" in tool_call
-        assert "input" in tool_call
-        assert "name" in tool_call
+        try:
+            assert "id" in tool_call
+            assert "input" in tool_call
+            assert "name" in tool_call
 
-        anthropic_blocks.append(
-            ToolUseBlockParam(
-                id=tool_call["id"],
-                input=tool_call["input"],
-                name=tool_call["name"],
-                type="tool_use",
-            )
-        )
+            if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                anthropic_blocks.append(
+                    ToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
+                    )
+                )
+        except AssertionError:
+            continue
 
     return anthropic_blocks
 
@@ -359,9 +380,15 @@ def messages_to_anthropic_messages(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 # Anthropic models that support prompt caching
@@ -398,6 +425,33 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-opus-20240229",
     "claude-3-opus-latest",
 )
+
+
+def update_tool_calls(blocks: list[ContentBlock], tool_call: ToolCallBlock) -> None:
+    if len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0:
+        blocks.append(tool_call)
+        return
+    elif not any(
+        block.tool_call_id == tool_call.tool_call_id
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        blocks.append(tool_call)
+        return
+    elif any(
+        block.tool_call_id == tool_call.tool_call_id
+        and block.tool_kwargs == tool_call.tool_kwargs
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        return
+    else:
+        for i, block in enumerate(blocks):
+            if isinstance(block, ToolCallBlock):
+                if block.tool_call_id == tool_call.tool_call_id:
+                    blocks[i] = tool_call
+                    break
+        return
 
 
 def is_anthropic_prompt_caching_supported_model(model: str) -> bool:

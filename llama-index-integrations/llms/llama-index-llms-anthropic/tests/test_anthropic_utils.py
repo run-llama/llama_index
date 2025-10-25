@@ -1,7 +1,9 @@
 from llama_index.llms.anthropic.utils import (
     is_anthropic_prompt_caching_supported_model,
     ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS,
+    update_tool_calls,
 )
+from llama_index.core.base.llms.types import ToolCallBlock, TextBlock
 
 
 class TestAnthropicPromptCachingSupport:
@@ -106,3 +108,34 @@ class TestAnthropicPromptCachingSupport:
         assert not is_anthropic_prompt_caching_supported_model(
             "CLAUDE-SONNET-4-5-20250929"
         )
+
+
+def test_update_tool_calls() -> None:
+    blocks = [TextBlock(text="hello world")]
+    update_tool_calls(
+        blocks, ToolCallBlock(tool_call_id="1", tool_name="hello", tool_kwargs={})
+    )  # type: ignore
+    assert len(blocks) == 2
+    assert isinstance(blocks[1], ToolCallBlock)
+    assert blocks[1].tool_call_id == "1"
+    assert blocks[1].tool_name == "hello"
+    assert blocks[1].tool_kwargs == {}
+    update_tool_calls(
+        blocks,
+        ToolCallBlock(
+            tool_call_id="1", tool_name="hello", tool_kwargs={"name": "John"}
+        ),
+    )  # type: ignore
+    assert len(blocks) == 2
+    assert isinstance(blocks[1], ToolCallBlock)
+    assert blocks[1].tool_call_id == "1"
+    assert blocks[1].tool_name == "hello"
+    assert blocks[1].tool_kwargs == {"name": "John"}
+    update_tool_calls(
+        blocks, ToolCallBlock(tool_call_id="2", tool_name="hello", tool_kwargs={})
+    )  # type: ignore
+    assert len(blocks) == 3
+    assert isinstance(blocks[2], ToolCallBlock)
+    assert blocks[2].tool_call_id == "2"
+    assert blocks[2].tool_name == "hello"
+    assert blocks[2].tool_kwargs == {}
