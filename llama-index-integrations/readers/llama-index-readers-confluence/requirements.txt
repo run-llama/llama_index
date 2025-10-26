@@ -5,6 +5,5 @@ pdf2image
 Pillow
 docx2txt
 xlrd
+svglib
 retrying
-# Optional: SVG support (may require system dependencies for pycairo)
-# svglib>=1.5.1,<1.6.0

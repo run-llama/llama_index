@@ -13,7 +13,6 @@ class FileType(Enum):
     SPREADSHEET = "spreadsheet"
     PRESENTATION = "presentation"
     PDF = "pdf"
-    SVG = "svg"
     UNKNOWN = "unknown"
 
 

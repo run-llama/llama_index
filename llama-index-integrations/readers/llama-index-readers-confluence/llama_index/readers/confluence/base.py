@@ -1159,23 +1159,15 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         return text
 
     def process_svg(self, link):
-        """
-        Process SVG attachments by converting them to images and extracting text.
-
-        Note: This method requires optional SVG dependencies. Install them with:
-        pip install llama-index-readers-confluence[svg]
-
-        If SVG dependencies are not available, a warning will be logged and an empty string returned.
-
-        Alternatively, you can provide a custom SVG parser via the custom_parsers parameter.
-        """
         try:
             import pytesseract  # type: ignore
             from PIL import Image  # type: ignore
+            from reportlab.graphics import renderPM  # type: ignore
+            from svglib.svglib import svg2rlg  # type: ignore
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `Pillow` package not found, please run"
-                " `pip install pytesseract Pillow`"
+                "`pytesseract`, `Pillow`, or `svglib` package not found, please run"
+                " `pip install pytesseract Pillow svglib`"
             )
 
         response = self.confluence.request(path=link, absolute=True)
@@ -1188,37 +1180,14 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         ):
             return text
 
-        # Check for custom parser first
-        if FileType.SVG in self.custom_parsers and self.custom_parser_manager:
-            return self.custom_parser_manager.process_with_custom_parser(
-                FileType.SVG, response.content, "svg"
-            )
+        drawing = svg2rlg(BytesIO(response.content))
 
-        # Check for optional SVG parsing dependencies
-        try:
-            from reportlab.graphics import renderPM  # type: ignore
-            from svglib.svglib import svg2rlg  # type: ignore
-        except ImportError:
-            self.logger.warning(
-                "SVG processing skipped: Optional dependencies not installed. "
-                "To enable SVG processing, install with: "
-                "pip install 'llama-index-readers-confluence[svg]' "
-                "or provide a custom SVG parser via the custom_parsers parameter."
-            )
-            return ""
+        img_data = BytesIO()
+        renderPM.drawToFile(drawing, img_data, fmt="PNG")
+        img_data.seek(0)
+        image = Image.open(img_data)
 
-        try:
-            drawing = svg2rlg(BytesIO(response.content))
-
-            img_data = BytesIO()
-            renderPM.drawToFile(drawing, img_data, fmt="PNG")
-            img_data.seek(0)
-            image = Image.open(img_data)
-
-            return pytesseract.image_to_string(image)
-        except Exception as e:
-            self.logger.error(f"Error processing SVG file at {link}: {e}")
-            return ""
+        return pytesseract.image_to_string(image)
 
 
 if __name__ == "__main__":
