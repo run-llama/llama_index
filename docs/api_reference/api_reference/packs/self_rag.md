@@ -1,4 +1,3 @@
 ::: llama_index.packs.self_rag
-    options:
-      members:
-        - SelfRAGPack
+options:
+members: - SelfRAGPack
