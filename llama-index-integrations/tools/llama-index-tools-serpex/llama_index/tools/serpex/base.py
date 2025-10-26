@@ -4,7 +4,6 @@ import os
 from typing import Any, Dict, List, Optional
 
 import requests
-
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -147,9 +146,7 @@ class SerpexToolSpec(BaseToolSpec):
                 url = result.get("url", "")
                 snippet = result.get("snippet", "No description available")
 
-                formatted_results.append(
-                    f"{i}. {title}\n" f"   URL: {url}\n" f"   {snippet}\n"
-                )
+                formatted_results.append(f"{i}. {title}\n   URL: {url}\n   {snippet}\n")
 
             results_text = f"Search results for '{query}':\n\n"
             results_text += "\n".join(formatted_results)
@@ -159,9 +156,7 @@ class SerpexToolSpec(BaseToolSpec):
             if metadata:
                 num_results = metadata.get("number_of_results", 0)
                 response_time = metadata.get("response_time", 0)
-                results_text += (
-                    f"\n\n(Found {num_results} results in {response_time}ms)"
-                )
+                results_text += f"\n\n(Found {num_results} results in {response_time}ms)"
 
             return [Document(text=results_text)]
 

@@ -18,10 +18,7 @@ from llama_index.agent.openai import OpenAIAgent
 serpex_tool = SerpexToolSpec(api_key="your_serpex_api_key")
 
 # Create agent with the tool
-agent = OpenAIAgent.from_tools(
-    serpex_tool.to_tool_list(),
-    verbose=True
-)
+agent = OpenAIAgent.from_tools(serpex_tool.to_tool_list(), verbose=True)
 
 # Use the agent
 response = agent.chat("What are the latest AI developments?")
@@ -33,23 +30,16 @@ print(response)
 ```python
 # Use specific search engine
 serpex_tool = SerpexToolSpec(
-    api_key="your_api_key",
-    engine="google"  # or 'bing', 'duckduckgo', 'brave', etc.
+    api_key="your_api_key", engine="google"  # or 'bing', 'duckduckgo', 'brave', etc.
 )
 
 # Search with time filter
 results = serpex_tool.search(
-    "recent AI news",
-    num_results=10,
-    time_range="day"  # 'day', 'week', 'month', 'year'
+    "recent AI news", num_results=10, time_range="day"  # 'day', 'week', 'month', 'year'
 )
 
 # Use different engines for different queries
-results = serpex_tool.search(
-    "privacy tools",
-    engine="duckduckgo",
-    num_results=5
-)
+results = serpex_tool.search("privacy tools", engine="duckduckgo", num_results=5)
 ```
 
 ## API Key
