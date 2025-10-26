@@ -1,3 +1,5 @@
 ::: llama_index.readers.oracleai
-options:
-members: - OracleReader - OracleTextSplitter
+    options:
+      members:
+        - OracleReader
+        - OracleTextSplitter
