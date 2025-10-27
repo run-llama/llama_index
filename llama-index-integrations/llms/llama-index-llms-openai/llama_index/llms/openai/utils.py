@@ -63,7 +63,6 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5-mini-2025-08-07": 400000,
     "gpt-5-nano": 400000,
     "gpt-5-nano-2025-08-07": 400000,
-    "gpt-5-chat-latest": 400000,
     "gpt-5-pro": 400000,
     "gpt-5-pro-2025-10-06": 400000,
 }
@@ -119,6 +118,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4.1-2025-04-14": 1047576,
     "gpt-4.1-mini-2025-04-14": 1047576,
     "gpt-4.1-nano-2025-04-14": 1047576,
+    # Latest GPT-5-chat supports setting temperature, so putting it here
+    "gpt-5-chat-latest": 128000,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
