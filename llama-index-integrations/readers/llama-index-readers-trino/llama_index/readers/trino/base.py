@@ -73,9 +73,7 @@ class TrinoReader(BaseReader):
                 raise
         return self._conn, self._cursor
 
-    def execute_query(
-        self, query: str, conn: trino.dbapi.Connection, cur: trino.dbapi.Cursor
-    ):
+    def execute_query(self, query: str):
         """
         Executes Query againg Trino instance
 
