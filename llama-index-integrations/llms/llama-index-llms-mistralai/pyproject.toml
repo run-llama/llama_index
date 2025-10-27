@@ -33,7 +33,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "mistralai>=1.8.2",
+    "mistralai>=1.9.11",
     "llama-index-core>=0.14.5,<0.15",
 ]
 
