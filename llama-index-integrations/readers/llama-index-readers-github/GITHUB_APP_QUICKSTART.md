@@ -153,7 +153,7 @@ pip install llama-index-readers-github[github-app]
 
 **Solution:** Check that your private key is valid:
 
-- Should start with `-----BEGIN RSA PRIVATE KEY-----`
+- Should have RSA headers
 - Should be the complete key including header and footer
 - Should be the `.pem` file downloaded from GitHub
 
