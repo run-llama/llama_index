@@ -13,6 +13,7 @@ repos:
         exclude: llama-index-core/llama_index/core/_static
       - id: check-yaml
         exclude: llama-index-core/llama_index/core/_static
+      - id: detect-private-key
       - id: end-of-file-fixer
         exclude: llama-index-core/llama_index/core/_static
       - id: mixed-line-ending
