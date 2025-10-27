@@ -10,7 +10,7 @@ from llama_index.embeddings.voyageai.base import CONTEXT_MODELS
 def test_embedding_class():
     emb = VoyageEmbedding(model_name="", voyage_api_key="NOT_A_VALID_KEY")
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == ""
 
 
@@ -19,7 +19,7 @@ def test_embedding_class_voyage_2():
         model_name="voyage-2", voyage_api_key="NOT_A_VALID_KEY", truncation=True
     )
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == "voyage-2"
     assert emb.truncation
     assert emb.output_dimension is None
@@ -45,7 +45,7 @@ def test_embedding_class_voyage_3_large_with_output_dimension():
         output_dimension=512,
     )
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == "voyage-3-large"
     assert emb.truncation is None
     assert emb.output_dimension == 512
@@ -59,7 +59,7 @@ def test_embedding_class_voyage_3_large_with_output_dtype():
         output_dtype="float",
     )
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == "voyage-3-large"
     assert emb.truncation is None
     assert emb.output_dimension is None
@@ -78,7 +78,7 @@ def test_embedding_class_context_model():
         output_dimension=1024,
     )
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == "voyage-context-3"
     assert emb.output_dimension == 1024
     assert emb.output_dtype is None
@@ -93,7 +93,7 @@ def test_embedding_class_context_model_with_params():
         output_dimension=512,
     )
     assert isinstance(emb, BaseEmbedding)
-    assert emb.embed_batch_size == 2048
+    assert emb.embed_batch_size == 1000
     assert emb.model_name == "voyage-context-3"
     assert emb.output_dimension == 512
     assert emb.output_dtype == "float"
@@ -195,7 +195,7 @@ def test_build_batches_respects_max_batch_size():
     emb = VoyageEmbedding(
         model_name="voyage-2",
         voyage_api_key="NOT_A_VALID_KEY",
-        embed_batch_size=2048,  # Default, but should cap at 1000
+        embed_batch_size=1000,  # Default, but should cap at 1000
     )
 
     # Mock tokenize to return small token counts
@@ -353,7 +353,7 @@ def test_automatic_batching_due_to_token_limits():
     emb = VoyageEmbedding(
         model_name="voyage-2",
         voyage_api_key="NOT_A_VALID_KEY",
-        # Use default batch_size (2048) - batching should happen due to token limits
+        # Use default batch_size (1000) - batching should happen due to token limits
     )
 
     # Mock tokenize to return large token counts
