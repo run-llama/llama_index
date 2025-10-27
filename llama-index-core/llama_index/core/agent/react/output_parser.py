@@ -86,9 +86,14 @@ class ReActOutputParser(BaseOutputParser):
             Answer: <answer>
             ```
         """
-        thought_idx = output.find("Thought:") if "Thought:" in output else None
-        action_idx = output.find("Action:") if "Action:" in output else None
-        answer_idx = output.find("Answer:") if "Answer:" in output else None
+        # Use regex to find properly formatted keywords at line boundaries
+        thought_match = re.search(r"^\s*Thought:", output, re.MULTILINE)
+        action_match = re.search(r"^\s*Action:", output, re.MULTILINE)
+        answer_match = re.search(r"^\s*Answer:", output, re.MULTILINE)
+
+        thought_idx = thought_match.start() if thought_match else None
+        action_idx = action_match.start() if action_match else None
+        answer_idx = answer_match.start() if answer_match else None
 
         if thought_idx is None and action_idx is None and answer_idx is None:
             # NOTE: handle the case where the agent directly outputs the answer
