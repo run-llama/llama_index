@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 from binascii import Error as BinasciiError
 from enum import Enum
-from io import BufferedIOBase
+from io import IOBase
 from pathlib import Path
 from typing import (
     Annotated,
@@ -61,7 +61,7 @@ class ImageBlock(BaseModel):
 
     block_type: Literal["image"] = "image"
     image: bytes | None = None
-    buffer: BufferedIOBase | None = None
+    buffer: IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     image_mimetype: str | None = None
@@ -117,7 +117,7 @@ class ImageBlock(BaseModel):
             guess = filetype.guess(img_data)
             self.image_mimetype = guess.mime if guess else None
 
-    def resolve_image(self, as_base64: bool = False) -> BufferedIOBase:
+    def resolve_image(self, as_base64: bool = False) -> IOBase:
         """
         Resolve an image such that PIL can read it.
 
@@ -147,7 +147,7 @@ class AudioBlock(BaseModel):
 
     block_type: Literal["audio"] = "audio"
     audio: bytes | None = None
-    buffer: BufferedIOBase | None = None
+    buffer: IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     format: str | None = None
@@ -191,7 +191,7 @@ class AudioBlock(BaseModel):
             guess = filetype.guess(audio_data)
             self.format = guess.extension if guess else None
 
-    def resolve_audio(self, as_base64: bool = False) -> BufferedIOBase:
+    def resolve_audio(self, as_base64: bool = False) -> IOBase:
         """
         Resolve an audio such that PIL can read it.
 
@@ -220,7 +220,7 @@ class VideoBlock(BaseModel):
 
     block_type: Literal["video"] = "video"
     video: bytes | None = None
-    buffer: BufferedIOBase | None = None
+    buffer: IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     video_mimetype: str | None = None
@@ -271,9 +271,9 @@ class VideoBlock(BaseModel):
             if guess and guess.mime.startswith("video/"):
                 self.video_mimetype = guess.mime
 
-    def resolve_video(self, as_base64: bool = False) -> BufferedIOBase:
+    def resolve_video(self, as_base64: bool = False) -> IOBase:
         """
-        Resolve a video file to a BufferedIOBase buffer.
+        Resolve a video file to a IOBase buffer.
 
         Args:
             as_base64 (bool): whether to return the video as base64-encoded bytes
@@ -301,7 +301,7 @@ class DocumentBlock(BaseModel):
 
     block_type: Literal["document"] = "document"
     data: Optional[bytes] = None
-    buffer: BufferedIOBase | None = None
+    buffer: IOBase | None = None
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
     title: Optional[str] = None
@@ -327,7 +327,7 @@ class DocumentBlock(BaseModel):
 
         return self
 
-    def resolve_document(self) -> BufferedIOBase:
+    def resolve_document(self) -> IOBase:
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
@@ -346,16 +346,16 @@ class DocumentBlock(BaseModel):
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
 
-    def _get_b64_string(self, data_buffer: BufferedIOBase) -> str:
+    def _get_b64_string(self, data_buffer: IOBase) -> str:
         """
-        Get base64-encoded string from a BufferedIOBase buffer.
+        Get base64-encoded string from a IOBase buffer.
         """
         data = data_buffer.read()
         return base64.b64encode(data).decode("utf-8")
 
-    def _get_b64_bytes(self, data_buffer: BufferedIOBase) -> bytes:
+    def _get_b64_bytes(self, data_buffer: IOBase) -> bytes:
         """
-        Get base64-encoded bytes from a BufferedIOBase buffer.
+        Get base64-encoded bytes from a IOBase buffer.
         """
         data = data_buffer.read()
         return base64.b64encode(data)
