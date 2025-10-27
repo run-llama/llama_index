@@ -62,10 +62,13 @@ class ImageBlock(BaseModel):
 
     block_type: Literal["image"] = "image"
     image: bytes | None = None
+    buffer: BytesIO | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     image_mimetype: str | None = None
     detail: str | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("url", mode="after")
     @classmethod
@@ -123,7 +126,7 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
-        data_buffer = resolve_binary(
+        data_buffer = self.buffer or resolve_binary(
             raw_bytes=self.image,
             path=self.path,
             url=str(self.url) if self.url else None,
@@ -145,9 +148,12 @@ class AudioBlock(BaseModel):
 
     block_type: Literal["audio"] = "audio"
     audio: bytes | None = None
+    buffer: BytesIO | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     format: str | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("url", mode="after")
     @classmethod
@@ -194,7 +200,7 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
-        data_buffer = resolve_binary(
+        data_buffer = self.buffer or resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
             url=str(self.url) if self.url else None,
@@ -215,11 +221,14 @@ class VideoBlock(BaseModel):
 
     block_type: Literal["video"] = "video"
     video: bytes | None = None
+    buffer: BytesIO | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     video_mimetype: str | None = None
     detail: str | None = None
     fps: int | None = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("url", mode="after")
     @classmethod
@@ -271,7 +280,7 @@ class VideoBlock(BaseModel):
             as_base64 (bool): whether to return the video as base64-encoded bytes
 
         """
-        data_buffer = resolve_binary(
+        data_buffer = self.buffer or resolve_binary(
             raw_bytes=self.video,
             path=self.path,
             url=str(self.url) if self.url else None,
@@ -293,10 +302,13 @@ class DocumentBlock(BaseModel):
 
     block_type: Literal["document"] = "document"
     data: Optional[bytes] = None
+    buffer: BytesIO | None = None
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
     title: Optional[str] = None
     document_mimetype: Optional[str] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @model_validator(mode="after")
     def document_validation(self) -> Self:
@@ -320,7 +332,7 @@ class DocumentBlock(BaseModel):
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
-        data_buffer = resolve_binary(
+        data_buffer = self.buffer or resolve_binary(
             raw_bytes=self.data,
             path=self.path,
             url=str(self.url) if self.url else None,
