@@ -86,7 +86,11 @@ class ReActOutputParser(BaseOutputParser):
             Answer: <answer>
             ```
         """
-        if "Thought:" not in output and "Action:" not in output:
+        thought_idx = output.find("Thought:") if "Thought:" in output else None
+        action_idx = output.find("Action:") if "Action:" in output else None
+        answer_idx = output.find("Answer:") if "Answer:" in output else None
+
+        if thought_idx is None and action_idx is None and answer_idx is None:
             # NOTE: handle the case where the agent directly outputs the answer
             # instead of following the thought-answer format
             return ResponseReasoningStep(
@@ -96,10 +100,16 @@ class ReActOutputParser(BaseOutputParser):
             )
 
         # An "Action" should take priority over an "Answer"
-        if "Action:" in output and "Answer:" not in output:
+        if (
+            action_idx is not None
+            and answer_idx is not None
+            and action_idx < answer_idx
+        ):
+            return parse_action_reasoning_step(output)
+        elif action_idx is not None and answer_idx is None:
             return parse_action_reasoning_step(output)
 
-        if "Answer:" in output:
+        if answer_idx is not None:
             thought, answer = extract_final_response(output)
             return ResponseReasoningStep(
                 thought=thought, response=answer, is_streaming=is_streaming
