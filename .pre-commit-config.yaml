@@ -13,8 +13,6 @@ repos:
         exclude: llama-index-core/llama_index/core/_static
       - id: check-yaml
         exclude: llama-index-core/llama_index/core/_static
-      - id: detect-private-key
-        exclude: llama-index-integrations/readers/llama-index-readers-github/(tests/test_github_app_auth\.py|GITHUB_APP_QUICKSTART\.md)
       - id: end-of-file-fixer
         exclude: llama-index-core/llama_index/core/_static
       - id: mixed-line-ending

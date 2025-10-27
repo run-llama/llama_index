@@ -33,33 +33,7 @@ except ImportError:
 
 # Sample RSA private key for testing (this is a test key, not a real private key)
 # pragma: allowlist secret
-TEST_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-MIIEogIBAAKCAQEAt1MofR1vp4mQvSbPpZdsLwjAkRH/1zsI1KCvp2ZBYb2sx8Ee
-HcHpOpuoOcFqiFAr5dg6J5qXPv05IlHbRbS2umqr+ULDi3lcLqRTNSxyl25FPbvH
-DrbmObfpU3lDSWPbaoE/tJeHc+D7S9L5Ct7dWwcUUUhi7ob4ZVjtwlcoweazVRPP
-6Y+FLSNKb5WCrdfG+AryKn/Jj7celgkzE/zQ6UQZvN5z7DbmaUAjItTAjqZbtxeB
-R16ae89J7k9rAoOTilHhgPVWHYsrJC0jAmv9ocxh7e3o8Wr2tY/mG7KRV7i6i6iH
-CyqV34mXDlzpEAssx2z8u7QN/oMsfRHiscwPywIDAQABAoIBAAj3+b3CYEOoYHaW
-PNn1tG1KEhyLXD3uSzgWpT8BquHoCZAf7gicg6BwCg4UJfYFsOyrNn20O6XfB/51
-w7vRo7RTvl+sXZEevpzXixEk9yw10Os8dnhfmnNgAHtzwDSb4WLKAqxanAJ6yeUV
-0Y2vqfXwmDleEbhoX9q/KYV0qpQlz150MhMvDCjzonWdy9KZwmkS3WL7mUDjZNXD
-36EmwNptxXWLYdyOHWLl9GDCUE9aFl1tcSjohuMDz3lEPDetf70N4opRLZZ6a+TC
-99KeKTjs2QmKYvluG+lkA90iKUkMjSVeDtrtk54VU7mJ78w4z846lCmzMhEQ38Li
-U5JN7oUCgYEA2XiaGlKods8ycqSRrgYSynt5KUuCWffASFkch8eqdErl0xTI7xWh
-yBOLOJ3ka6d6wklH3mK8avEkzPi7DgkVkHuNdJt+BxTA2F/hMVHJ6oCSuBXXtiYY
-YbzVMTUT+Ft8nFGND4WWeltd6qpsrEBvGQ/FJ41Y/EeSCAQINvjMJo0CgYEA183a
-Woe9RoVVCFpZtujx5e6sp9gy2bVl6uZA1Yi72RaKxR3+VNnHNuc2yN7SvOY0CL+s
-Wt+d7iyAapyTX0HB9tTaTRFVtoeIMvlQNvuaZNO8X2RSxWGhNps2w+8e+kbUKVfj
-6Ud1e7pjxisPDzCSlyORz1SEDFx6BxG6gJt6xbcCgYAifYgjSJzDSxU7LXKVYQ01
-4+NRc1JXJn3ue4OU3UvhaceNdKxxjsK70q2v6wrBMCy+B5VIZexwIZKul3xDO5mZ
-8p56sfaI9Peo2XwDsG8PrBiY7Y3qq5wOVD6TsVFbgFcBC8YNgihde4QnpaPapdV4
-6hFgtoA4crlsYAdVgJwQOQKBgAxv57Kp+gWTb5ggpOT+vdozjC3MLvoPE0WbaYck
-7zaOrwa3OM4pEuseHjErblfGqJ8MdOFz28U7OVdrmK63uncAQ2iHpDn1y6qsZawV
-igtfjI6u2HpZqxHblidqo41nAZk0YIU0QhgUYOWt25tTgE9HlIKva0DPH5VCt03s
-KAI3AoGAd45J62IeKg8A+L1+pbJslpa0gwuvbhIS3IX0KZ/6rgngM2frLdE7OB5x
-tgNs/+L2MI6a3lvRq+8/T76qjsJid4Ixr5tOMRY47Mztl4lWdeo0UrILbt/Djpvb
-lOT6WX8uBf+XhyUBKDotbYk5fCOJrI6i12C5I4oo34k9qpZTmLk=
------END RSA PRIVATE KEY-----"""
+TEST_PRIVATE_KEY = "Your RSA PRIVATE KEY here"
 
 
 @pytest.mark.skipif(not HAS_JWT, reason="PyJWT not installed")
