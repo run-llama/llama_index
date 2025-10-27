@@ -16,6 +16,7 @@ from typing import (
     Type,
     Union,
     Callable,
+    Literal,
 )
 
 
@@ -139,9 +140,9 @@ class GoogleGenAI(FunctionCallingLLM):
         default=None,
         description="Google GenAI tool to use for the model to augment responses.",
     )
-    use_file_api: bool = Field(
-        default=True,
-        description="Whether or not to use the FileAPI for large files (>20MB).",
+    file_mode: Literal["inline", "fileapi", "hybrid"] = Field(
+        default="hybrid",
+        description="Whether to use inline-only, FileAPI-only or both for handling files.",
     )
 
     _max_tokens: int = PrivateAttr()
@@ -165,7 +166,7 @@ class GoogleGenAI(FunctionCallingLLM):
         is_function_calling_model: bool = True,
         cached_content: Optional[str] = None,
         built_in_tool: Optional[types.Tool] = None,
-        use_file_api: bool = True,
+        file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -214,7 +215,7 @@ class GoogleGenAI(FunctionCallingLLM):
             max_retries=max_retries,
             cached_content=cached_content,
             built_in_tool=built_in_tool,
-            use_file_api=use_file_api,
+            file_mode=file_mode,
             **kwargs,
         )
 
@@ -309,7 +310,7 @@ class GoogleGenAI(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = asyncio.run(
             prepare_chat_params(
-                self.model, messages, self.use_file_api, self._client, **params
+                self.model, messages, self.file_mode, self._client, **params
             )
         )
         chat = self._client.chats.create(**chat_kwargs)
@@ -317,7 +318,7 @@ class GoogleGenAI(FunctionCallingLLM):
             next_msg.parts if isinstance(next_msg, types.Content) else next_msg
         )
 
-        if self.use_file_api:
+        if self.file_mode in ("fileapi", "hybrid"):
             asyncio.run(
                 delete_uploaded_files([*chat_kwargs["history"], next_msg], self._client)
             )
@@ -332,14 +333,14 @@ class GoogleGenAI(FunctionCallingLLM):
         }
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = await prepare_chat_params(
-            self.model, messages, self.use_file_api, self._client, **params
+            self.model, messages, self.file_mode, self._client, **params
         )
         chat = self._client.aio.chats.create(**chat_kwargs)
         response = await chat.send_message(
             next_msg.parts if isinstance(next_msg, types.Content) else next_msg
         )
 
-        if self.use_file_api:
+        if self.file_mode in ("fileapi", "hybrid"):
             await delete_uploaded_files(
                 [*chat_kwargs["history"], next_msg], self._client
             )
@@ -366,7 +367,7 @@ class GoogleGenAI(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = asyncio.run(
             prepare_chat_params(
-                self.model, messages, self.use_file_api, self._client, **params
+                self.model, messages, self.file_mode, self._client, **params
             )
         )
         chat = self._client.chats.create(**chat_kwargs)
@@ -399,7 +400,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
-            if self.use_file_api:
+            if self.file_mode in ("fileapi", "hybrid"):
                 asyncio.run(
                     delete_uploaded_files(
                         [*chat_kwargs["history"], next_msg], self._client
@@ -423,7 +424,7 @@ class GoogleGenAI(FunctionCallingLLM):
         }
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = await prepare_chat_params(
-            self.model, messages, self.use_file_api, self._client, **params
+            self.model, messages, self.file_mode, self._client, **params
         )
         chat = self._client.aio.chats.create(**chat_kwargs)
 
@@ -463,7 +464,7 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             yield llama_resp
 
-            if self.use_file_api:
+            if self.file_mode in ("fileapi", "hybrid"):
                 await delete_uploaded_files(
                     [*chat_kwargs["history"], next_msg], self._client
                 )
@@ -586,9 +587,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
         messages = prompt.format_messages(**prompt_args)
         contents = [
-            asyncio.run(
-                chat_message_to_gemini(message, self.use_file_api, self._client)
-            )
+            asyncio.run(chat_message_to_gemini(message, self.file_mode, self._client))
             for message in messages
         ]
         response = self._client.models.generate_content(
@@ -605,7 +604,7 @@ class GoogleGenAI(FunctionCallingLLM):
             },
         )
 
-        if self.use_file_api:
+        if self.file_mode in ("fileapi", "hybrid"):
             asyncio.run(delete_uploaded_files(contents, self._client))
 
         if isinstance(response.parsed, BaseModel):
@@ -637,7 +636,7 @@ class GoogleGenAI(FunctionCallingLLM):
             messages = prompt.format_messages(**prompt_args)
             contents = [
                 asyncio.run(
-                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
             ]
@@ -647,7 +646,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 config=generation_config,
             )
 
-            if self.use_file_api:
+            if self.file_mode in ("fileapi", "hybrid"):
                 asyncio.run(delete_uploaded_files(contents, self._client))
 
             if isinstance(response.parsed, BaseModel):
@@ -684,7 +683,7 @@ class GoogleGenAI(FunctionCallingLLM):
             messages = prompt.format_messages(**prompt_args)
             contents = await asyncio.gather(
                 *[
-                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    chat_message_to_gemini(message, self.file_mode, self._client)
                     for message in messages
                 ]
             )
@@ -694,7 +693,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 config=generation_config,
             )
 
-            if self.use_file_api:
+            if self.file_mode in ("fileapi", "hybrid"):
                 await delete_uploaded_files(contents, self._client)
 
             if isinstance(response.parsed, BaseModel):
@@ -731,7 +730,7 @@ class GoogleGenAI(FunctionCallingLLM):
             messages = prompt.format_messages(**prompt_args)
             contents = [
                 asyncio.run(
-                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
             ]
@@ -758,7 +757,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         if streaming_model:
                             yield streaming_model
 
-                if self.use_file_api:
+                if self.file_mode in ("fileapi", "hybrid"):
                     asyncio.run(delete_uploaded_files(contents, self._client))
 
             return gen()
@@ -791,7 +790,7 @@ class GoogleGenAI(FunctionCallingLLM):
             messages = prompt.format_messages(**prompt_args)
             contents = await asyncio.gather(
                 *[
-                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    chat_message_to_gemini(message, self.file_mode, self._client)
                     for message in messages
                 ]
             )
@@ -818,7 +817,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         if streaming_model:
                             yield streaming_model
 
-                if self.use_file_api:
+                if self.file_mode in ("fileapi", "hybrid"):
                     await delete_uploaded_files(contents, self._client)
 
             return gen()
