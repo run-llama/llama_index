@@ -1,6 +1,7 @@
 """Tests for GitHub App authentication."""
 
 import time
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,7 +34,7 @@ except ImportError:
 
 # Sample RSA private key for testing (this is a test key, not a real private key)
 # pragma: allowlist secret
-TEST_PRIVATE_KEY = "Your RSA PRIVATE KEY here"
+TEST_PRIVATE_KEY = os.getenv("TEST_PRIVATE_KEY", "not-a-private-key")
 
 
 @pytest.mark.skipif(not HAS_JWT, reason="PyJWT not installed")
@@ -90,6 +91,10 @@ class TestGitHubAppAuth:
 
         assert auth.base_url == "https://github.enterprise.com/api/v3"
 
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     def test_generate_jwt(self):
         """Test JWT generation."""
         auth = GitHubAppAuth(
@@ -112,6 +117,10 @@ class TestGitHubAppAuth:
         )
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     async def test_get_installation_token_success(self):
         """Test successful installation token retrieval."""
         auth = GitHubAppAuth(
@@ -160,6 +169,10 @@ class TestGitHubAppAuth:
         assert token == "cached_token"
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     async def test_get_installation_token_refreshes_expired(self):
         """Test that expired token is refreshed."""
         auth = GitHubAppAuth(
@@ -187,6 +200,10 @@ class TestGitHubAppAuth:
             assert auth._token_cache == "ghs_new_token_456"
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     async def test_get_installation_token_refreshes_when_near_expiry(self):
         """Test that token is refreshed when near expiry (within buffer)."""
         auth = GitHubAppAuth(
@@ -213,6 +230,10 @@ class TestGitHubAppAuth:
             assert token == "ghs_refreshed_token"
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     async def test_get_installation_token_force_refresh(self):
         """Test force refresh of token."""
         auth = GitHubAppAuth(
@@ -240,6 +261,10 @@ class TestGitHubAppAuth:
             mock_client.post.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        condition=TEST_PRIVATE_KEY == "not-a-private-key",
+        reason="An SSH private key is not available",
+    )
     async def test_get_installation_token_http_error(self):
         """Test handling of HTTP errors."""
         auth = GitHubAppAuth(
