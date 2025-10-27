@@ -5,52 +5,67 @@
 ## [2025-10-26]
 
 ### llama-index-core [0.14.6]
+
 - Add allow_parallel_tool_calls for non-streaming ([#20117](https://github.com/run-llama/llama_index/pull/20117))
 - Fix invalid use of field-specific metadata ([#20122](https://github.com/run-llama/llama_index/pull/20122))
 - update doc for SemanticSplitterNodeParser ([#20125](https://github.com/run-llama/llama_index/pull/20125))
 - fix rare cases when sentence splits are larger than chunk size ([#20147](https://github.com/run-llama/llama_index/pull/20147))
 
 ### llama-index-embeddings-bedrock [0.7.0]
+
 - Fix BedrockEmbedding to support Cohere v4 response format ([#20094](https://github.com/run-llama/llama_index/pull/20094))
 
 ### llama-index-embeddings-isaacus [0.1.0]
+
 - feat: Isaacus embeddings integration ([#20124](https://github.com/run-llama/llama_index/pull/20124))
 
 ### llama-index-embeddings-oci-genai [0.4.2]
+
 - Update OCI GenAI cohere models ([#20146](https://github.com/run-llama/llama_index/pull/20146))
 
 ### llama-index-llms-anthropic [0.9.7]
+
 - Fix double token stream in anthropic llm ([#20108](https://github.com/run-llama/llama_index/pull/20108))
 - Ensure anthropic content delta only has user facing response ([#20113](https://github.com/run-llama/llama_index/pull/20113))
 
 ### llama-index-llms-baseten [0.1.7]
+
 - add GLM ([#20121](https://github.com/run-llama/llama_index/pull/20121))
 
 ### llama-index-llms-helicone [0.1.0]
+
 - integrate helicone to llama-index ([#20131](https://github.com/run-llama/llama_index/pull/20131))
 
 ### llama-index-llms-oci-genai [0.6.4]
+
 - Update OCI GenAI cohere models ([#20146](https://github.com/run-llama/llama_index/pull/20146))
 
 ### llama-index-llms-openai [0.6.5]
+
 - chore: openai vbump ([#20095](https://github.com/run-llama/llama_index/pull/20095))
 
 ### llama-index-readers-imdb-review [0.4.2]
+
 - chore: Update selenium dependency in imdb-review reader ([#20105](https://github.com/run-llama/llama_index/pull/20105))
 
 ### llama-index-retrievers-bedrock [0.5.0]
+
 - feat(bedrock): add async support for AmazonKnowledgeBasesRetriever ([#20114](https://github.com/run-llama/llama_index/pull/20114))
 
 ### llama-index-retrievers-superlinked [0.1.3]
+
 - Update README.md ([#19829](https://github.com/run-llama/llama_index/pull/19829))
 
 ### llama-index-storage-kvstore-postgres [0.4.2]
+
 - fix: Replace raw SQL string interpolation with proper SQLAlchemy parameterized APIs in PostgresKVStore ([#20104](https://github.com/run-llama/llama_index/pull/20104))
 
 ### llama-index-tools-mcp [0.4.3]
+
 - Fix BasicMCPClient resource signatures ([#20118](https://github.com/run-llama/llama_index/pull/20118))
 
 ### llama-index-vector-stores-postgres [0.7.1]
+
 - Add GIN index support for text array metadata in PostgreSQL vector store ([#20130](https://github.com/run-llama/llama_index/pull/20130))
 
 ## [2025-10-15]
