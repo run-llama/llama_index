@@ -43,8 +43,6 @@ keywords = [
     "data federation",
     "sql",
 ]
-# CRITICAL: Add the native Trino Python client as a dependency
-# Note: We use the llama-index-core version from the source template
 dependencies = ["llama-index-core>=0.13.0,<0.15", "trino>=0.316.0"]
 
 [tool.codespell]
@@ -66,11 +64,11 @@ contains_example = false
 import_path = "llama_index.readers.trino"
 
 [tool.llamahub.class_authors]
-# Your new class name
+# My new class name
 TrinoReader = "Joshua Fordyce"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"  # Updated to align with your project's min Python version
+python_version = "3.10"

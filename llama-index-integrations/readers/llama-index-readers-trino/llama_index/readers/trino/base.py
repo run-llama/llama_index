@@ -5,8 +5,6 @@ import trino
 import logging
 
 logger = logging.getLogger(__name__)
-# You will use the trino-python-client here
-# import trino  # or whatever alias you use
 
 
 class TrinoReader(BaseReader):
@@ -55,7 +53,7 @@ class TrinoReader(BaseReader):
             "schema": schema,
         }
 
-    def configureConnection(self) -> Tuple[trino.dbapi.Connection, trino.dbapi.Cursor]:
+    def configure_Connection(self) -> Tuple[trino.dbapi.Connection, trino.dbapi.Cursor]:
         """
         Configure Connection for Trino Datawarehouse
         """
@@ -88,10 +86,10 @@ class TrinoReader(BaseReader):
 
         """
         try:
-            cur.execute(query)
+            self._cursor.execute(query)
 
-            rows = cur.fetchall()
-            return [rows, cur.description]
+            rows = self._cursor.fetchall()
+            return [rows, self._cursor.description]
         except trino.dbapi.DatabaseError as e:
             print(f"Trino connection failed: {e}")
             raise
@@ -109,7 +107,7 @@ class TrinoReader(BaseReader):
         conn = None
         cur = None
         try:
-            conn, cur = self.configureConnection()
+            conn, cur = self.configure_Connection()
             if not conn or not cur:
                 logger.warning("Could not establish connection; returning empty list")
                 return []
