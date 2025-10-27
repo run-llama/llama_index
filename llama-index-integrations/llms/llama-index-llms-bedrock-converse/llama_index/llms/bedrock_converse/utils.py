@@ -454,6 +454,7 @@ def tools_to_converse_tools(
     tool_choice: Optional[dict] = None,
     tool_required: bool = False,
     tool_caching: bool = False,
+    supports_forced_tool_calls: bool = True,
 ) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
@@ -481,6 +482,10 @@ def tools_to_converse_tools(
 
     if tool_caching:
         converse_tools.append({"cachePoint": {"type": "default"}})
+
+    tool_choice = tool_choice or {"auto": {}}
+    if supports_forced_tool_calls and tool_required:
+        tool_choice = {"any": {}}
 
     return {
         "tools": converse_tools,
