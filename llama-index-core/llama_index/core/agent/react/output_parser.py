@@ -87,9 +87,9 @@ class ReActOutputParser(BaseOutputParser):
             ```
         """
         # Use regex to find properly formatted keywords at line boundaries
-        thought_match = re.search(r"^\s*Thought:", output, re.MULTILINE)
-        action_match = re.search(r"^\s*Action:", output, re.MULTILINE)
-        answer_match = re.search(r"^\s*Answer:", output, re.MULTILINE)
+        thought_match = re.search(r"Thought:", output, re.MULTILINE)
+        action_match = re.search(r"Action:", output, re.MULTILINE)
+        answer_match = re.search(r"Answer:", output, re.MULTILINE)
 
         thought_idx = thought_match.start() if thought_match else None
         action_idx = action_match.start() if action_match else None

@@ -142,7 +142,7 @@ def retry_calculator_agent():
                 ),
                 ChatMessage(
                     role=MessageRole.ASSISTANT,
-                    content=r"Thought: The result is 8\Answer: The sum is 8",
+                    content=r"Thought: The result is 8\nAnswer: The sum is 8",
                 ),
             ]
         ),
