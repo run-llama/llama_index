@@ -147,6 +147,7 @@ def test_cached_content_in_response_vertexai() -> None:
     mock_response.candidates[0].content.parts[0].function_call.id = ""
     mock_response.candidates[0].content.parts[0].function_call.name = "hello"
     mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -177,6 +178,7 @@ def test_cached_content_without_cached_content_vertexai() -> None:
     mock_response.candidates[0].content.parts[0].function_call.id = ""
     mock_response.candidates[0].content.parts[0].function_call.name = "hello"
     mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None

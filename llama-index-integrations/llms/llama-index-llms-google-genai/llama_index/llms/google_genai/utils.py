@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from collections.abc import Sequence
 from io import BytesIO
@@ -195,6 +196,19 @@ def chat_from_gemini_response(
                         tool_kwargs=part.function_call.args or {},
                     )
                 )
+            if part.function_response:
+                # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
+                additional_kwargs["tool_call_id"] = part.function_response.id
+                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                print("RESPONSE", json.dumps(part.function_response.response))
+                return ChatResponse(
+                    message=ChatMessage(
+                        role=role, content=json.dumps(part.function_response.response)
+                    ),
+                    raw=raw,
+                    additional_kwargs=additional_kwargs,
+                )
+
     if thought_tokens:
         thinking_blocks = [
             i

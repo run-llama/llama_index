@@ -889,6 +889,7 @@ def test_cached_content_in_response() -> None:
     mock_response.candidates[0].content.parts[0].function_call.id = ""
     mock_response.candidates[0].content.parts[0].function_call.name = "hello"
     mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -919,6 +920,7 @@ def test_cached_content_without_cached_content() -> None:
     mock_response.candidates[0].content.parts[0].function_call.id = ""
     mock_response.candidates[0].content.parts[0].function_call.name = "hello"
     mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -950,6 +952,8 @@ def test_thoughts_in_response() -> None:
     mock_response.candidates[0].content.parts[1].inline_data = None
     mock_response.candidates[0].content.parts[1].thought = None
     mock_response.candidates[0].content.parts[1].function_call = None
+    mock_response.candidates[0].content.parts[1].function_response = None
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
     mock_response.candidates[0].content.parts[1].model_dump = MagicMock(return_value={})
     mock_response.prompt_feedback = None
@@ -992,6 +996,7 @@ def test_thoughts_without_thought_response() -> None:
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
     mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -1110,6 +1115,7 @@ def test_built_in_tool_in_response() -> None:
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
     mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = MagicMock()
     mock_response.usage_metadata.model_dump.return_value = {
@@ -1550,6 +1556,7 @@ def test_code_execution_response_parts() -> None:
     mock_text_part.inline_data = None
     mock_text_part.thought = None
     mock_text_part.function_call = None
+    mock_text_part.function_response = None
 
     mock_code_part = MagicMock()
     mock_code_part.text = None
@@ -1560,6 +1567,7 @@ def test_code_execution_response_parts() -> None:
         "language": types.Language.PYTHON,
     }
     mock_code_part.function_call = None
+    mock_code_part.function_response = None
 
     mock_result_part = MagicMock()
     mock_result_part.text = None
@@ -1570,12 +1578,14 @@ def test_code_execution_response_parts() -> None:
         "output": "Sum of first 50 primes: 5117",
     }
     mock_result_part.function_call = None
+    mock_result_part.function_response = None
 
     mock_final_text_part = MagicMock()
     mock_final_text_part.text = "The sum of the first 50 prime numbers is 5117."
     mock_final_text_part.inline_data = None
     mock_final_text_part.thought = None
     mock_final_text_part.function_call = None
+    mock_final_text_part.function_response = None
 
     mock_candidate.content.parts = [
         mock_text_part,
