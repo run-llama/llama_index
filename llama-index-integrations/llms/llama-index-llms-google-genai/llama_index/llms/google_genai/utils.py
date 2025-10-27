@@ -181,6 +181,13 @@ def chat_from_gemini_response(
                 )
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.function_call:
+                if (
+                    part.thought_signature
+                    not in additional_kwargs["thought_signatures"]
+                ):
+                    additional_kwargs["thought_signatures"].append(
+                        part.thought_signature
+                    )
                 content_blocks.append(
                     ToolCallBlock(
                         tool_call_id=part.function_call.id or "",
