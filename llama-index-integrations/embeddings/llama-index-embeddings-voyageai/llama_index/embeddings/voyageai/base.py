@@ -17,7 +17,6 @@ from llama_index.core.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_BATCH_SIZE = 2048
 MAX_BATCH_SIZE = 1000
 
 MULTIMODAL_MODELS = ["voyage-multimodal-3"]
@@ -94,7 +93,7 @@ class VoyageEmbedding(MultiModalEmbedding):
             )
 
         if embed_batch_size is None:
-            embed_batch_size = DEFAULT_BATCH_SIZE
+            embed_batch_size = MAX_BATCH_SIZE
 
         super().__init__(
             model_name=model_name,
