@@ -266,6 +266,7 @@ class BedrockConverse(FunctionCallingLLM):
             application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
             thinking=thinking,
+            supports_forced_tool_calls=supports_forced_tool_calls,
         )
 
         self._config = None
