@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Sequence
-from io import BytesIO
+from io import BufferedIOBase
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -223,7 +223,7 @@ def chat_from_gemini_response(
 
 
 async def create_file_part(
-    file_buffer: BytesIO,
+    file_buffer: BufferedIOBase,
     mime_type: str,
     file_mode: Literal["inline", "fileapi", "hybrid"],
     client: Optional[Client],
