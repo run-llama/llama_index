@@ -32,7 +32,7 @@ authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.13.0,<0.15", "aioboto3>=10.1.0"]
+dependencies = ["llama-index-core>=0.13.0,<0.15", "aioboto3>=15"]
 
 [tool.codespell]
 check-filenames = true
