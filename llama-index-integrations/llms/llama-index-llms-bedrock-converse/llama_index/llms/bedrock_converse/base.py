@@ -167,6 +167,10 @@ class BedrockConverse(FunctionCallingLLM):
         description="Specifies the thinking configuration of a reasoning model. Only applicable to Anthropic and DeepSeek models",
         default=None,
     )
+    supports_forced_tool_calls: bool = Field(
+        default=True,
+        description="Whether the model supports forced tool calls. If True, the model can be forced to call at least 1 or more tools.",
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -210,6 +214,7 @@ class BedrockConverse(FunctionCallingLLM):
         application_inference_profile_arn: Optional[str] = None,
         trace: Optional[str] = None,
         thinking: Optional[ThinkingDict] = None,
+        supports_forced_tool_calls: bool = True,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -261,6 +266,7 @@ class BedrockConverse(FunctionCallingLLM):
             application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
             thinking=thinking,
+            supports_forced_tool_calls=supports_forced_tool_calls,
         )
 
         self._config = None
@@ -913,6 +919,7 @@ class BedrockConverse(FunctionCallingLLM):
             tool_choice=tool_choice,
             tool_required=tool_required,
             tool_caching=tool_caching,
+            supports_forced_tool_calls=self.supports_forced_tool_calls,
         )
 
         return {
