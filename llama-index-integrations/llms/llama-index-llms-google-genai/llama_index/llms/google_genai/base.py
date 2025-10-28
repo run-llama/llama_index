@@ -562,7 +562,7 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.tool_call_id or "",
+                    tool_id=tool_call.tool_name,
                     tool_name=tool_call.tool_name,
                     tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
                 )
