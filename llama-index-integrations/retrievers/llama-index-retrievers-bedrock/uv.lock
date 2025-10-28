@@ -1719,7 +1719,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-retrievers-bedrock"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -1751,7 +1751,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioboto3", specifier = ">=10.1.0,<11.0.0" },
+    { name = "aioboto3", specifier = ">=10.1.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
