@@ -42,6 +42,7 @@ class SemanticSplitterNodeParser(NodeParser):
         buffer_size (int): number of sentences to group together when evaluating semantic similarity
         embed_model: (BaseEmbedding): embedding model to use
         sentence_splitter (Optional[Callable]): splits text into sentences
+        breakpoint_percentile_threshold (int): dissimilarity threshold for creating semantic breakpoints, lower value will generate more nodes
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     DocumentBlock,
     TextBlock,
@@ -16,6 +16,7 @@ from llama_index.core.llms import (
     ChatResponse,
     CachePoint,
     CacheControl,
+    ToolCallBlock,
 )
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
@@ -244,7 +245,7 @@ def pdf_url() -> str:
 def test_tool_required():
     llm = Anthropic(model="claude-3-5-sonnet-latest")
 
-    search_tool = FunctionTool.from_defaults(fn=search)
+    search_tool = FunctionTool.from_defaults(fn=search, name="search")
 
     # Test with tool_required=True
     response = llm.chat_with_tools(
@@ -253,8 +254,24 @@ def test_tool_required():
         tool_required=True,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert response.message.additional_kwargs["tool_calls"] is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        any(
+            block.tool_name == "search"
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -264,7 +281,16 @@ def test_tool_required():
     )
     assert isinstance(response, AnthropicChatResponse)
     # Should not use tools for a simple greeting
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     # should not blow up with no tools (regression test)
     response = llm.chat_with_tools(
@@ -273,7 +299,16 @@ def test_tool_required():
         tool_required=False,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.skipif(
