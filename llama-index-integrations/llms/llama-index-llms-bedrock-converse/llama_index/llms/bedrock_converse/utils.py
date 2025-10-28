@@ -483,15 +483,18 @@ def tools_to_converse_tools(
     if tool_caching:
         converse_tools.append({"cachePoint": {"type": "default"}})
 
-    tool_choice = tool_choice or {"auto": {}}
-    if supports_forced_tool_calls and tool_required:
+    if tool_choice:
+        tool_choice = tool_choice
+    elif supports_forced_tool_calls and tool_required:
         tool_choice = {"any": {}}
+    else:
+        tool_choice = {"auto": {}}
 
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
         # e.g. { "auto": {} }
-        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+        "toolChoice": tool_choice,
     }
 
 
