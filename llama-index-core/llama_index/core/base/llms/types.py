@@ -354,8 +354,8 @@ class DocumentBlock(BaseModel):
         if not self.title:
             self.title = "input_document"
 
-        # skip data validation if it's not provided
-        if not self.data:
+        # skip data validation if no byte is provided
+        if not self.data or not isinstance(self.data, bytes):
             return self
 
         try:
