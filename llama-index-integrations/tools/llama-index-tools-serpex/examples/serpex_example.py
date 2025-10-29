@@ -18,9 +18,7 @@ def basic_search_example():
     tool = SerpexToolSpec()
 
     # Perform search
-    results = tool.search(
-        "latest developments in artificial intelligence", num_results=5
-    )
+    results = tool.search("latest developments in artificial intelligence", num_results=5)
 
     for doc in results:
         print(doc.text)
@@ -83,14 +81,11 @@ def agent_example():
 
         # Create agent
         llm = OpenAI(model="gpt-4")
-        agent = OpenAIAgent.from_tools(
-            serpex_tool.to_tool_list(), llm=llm, verbose=True
-        )
+        agent = OpenAIAgent.from_tools(serpex_tool.to_tool_list(), llm=llm, verbose=True)
 
         # Ask question that requires web search
         response = agent.chat(
-            "What are the latest features announced for LlamaIndex? "
-            "Search the web for recent news."
+            "What are the latest features announced for LlamaIndex? Search the web for recent news."
         )
         print(response)
 
