@@ -18,6 +18,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from couchbase.collection import Collection
+from couchbase.scope import Scope
+from couchbase.bucket import Bucket
+from couchbase.cluster import Cluster
 import couchbase.search as search
 from couchbase.options import SearchOptions, QueryOptions
 from couchbase.vector_search import VectorQuery, VectorSearch
@@ -35,6 +39,17 @@ class QueryVectorSearchType(str, Enum):
 
     ANN = "ANN"
     KNN = "KNN"
+
+
+class QueryVectorSearchSimilarity(str, Enum):
+    """Enum for similarity metrics supported by Couchbase GSI."""
+
+    COSINE = "COSINE"
+    DOT = "DOT"
+    L2 = "L2"
+    EUCLIDEAN = "EUCLIDEAN"
+    L2_SQUARED = "L2_SQUARED"
+    EUCLIDEAN_SQUARED = "EUCLIDEAN_SQUARED"
 
 
 def _transform_couchbase_filter_condition(condition: str) -> str:
@@ -220,16 +235,17 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
     # Default batch size
     DEFAULT_BATCH_SIZE: int = 100
 
-    _cluster: Any = PrivateAttr()
-    _bucket: Any = PrivateAttr()
-    _scope: Any = PrivateAttr()
-    _collection: Any = PrivateAttr()
+    _cluster: Cluster = PrivateAttr()
+    _bucket: Bucket = PrivateAttr()
+    _scope: Scope = PrivateAttr()
+    _collection: Collection = PrivateAttr()
     _bucket_name: str = PrivateAttr()
     _scope_name: str = PrivateAttr()
     _collection_name: str = PrivateAttr()
     _text_key: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
     _metadata_key: str = PrivateAttr()
+    _query_options: QueryOptions = PrivateAttr()
 
     def __init__(
         self,
@@ -240,6 +256,7 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
         text_key: Optional[str] = "text",
         embedding_key: Optional[str] = "embedding",
         metadata_key: Optional[str] = "metadata",
+        query_options: Optional[QueryOptions] = None,
     ) -> None:
         """
         Base initialization for Couchbase Vector Stores.
@@ -255,6 +272,8 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
                 Defaults to "embedding".
             metadata_key (Optional[str], optional): The field for the document metadata.
                 Defaults to "metadata".
+            query_options (Optional[QueryOptions]): Query options for SQL++ queries.
+                Defaults to None.
 
         Returns:
             None
@@ -292,7 +311,7 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
         self._text_key = text_key
         self._embedding_key = embedding_key
         self._metadata_key = metadata_key
-
+        self._query_options = query_options
         # Check if the bucket exists
         if not self._check_bucket_exists():
             raise ValueError(
@@ -387,9 +406,13 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
 
         """
         try:
-            document_field = self._metadata_key + ".ref_doc_id"
+            document_field = f"`{self._metadata_key}`.`ref_doc_id`"
             query = f"DELETE FROM `{self._collection_name}` WHERE {document_field} = $ref_doc_id"
-            self._scope.query(query, ref_doc_id=ref_doc_id).execute()
+            query_options = (
+                self._query_options.copy() if self._query_options else QueryOptions()
+            )
+            query_options["named_parameters"] = {"ref_doc_id": ref_doc_id}
+            self._scope.query(query, query_options).execute()
             logger.debug(f"Deleted document {ref_doc_id}")
         except Exception:
             logger.error(f"Error deleting document {ref_doc_id}")
@@ -518,6 +541,7 @@ class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
         embedding_key: Optional[str] = "embedding",
         metadata_key: Optional[str] = "metadata",
         scoped_index: bool = True,
+        query_options: Optional[QueryOptions] = None,
     ) -> None:
         """
         Initializes a connection to a Couchbase Vector Store using FTS.
@@ -536,6 +560,8 @@ class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
                 Defaults to "metadata".
             scoped_index (Optional[bool]): specify whether the index is a scoped index.
                 Set to True by default.
+            query_options (Optional[QueryOptions]): Query options for SQL++ queries.
+                Defaults to None.
 
         Returns:
             None
@@ -549,6 +575,7 @@ class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
             text_key=text_key,
             embedding_key=embedding_key,
             metadata_key=metadata_key,
+            query_options=query_options,
         )
 
         if not index_name:
@@ -715,12 +742,12 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
         scope_name: str,
         collection_name: str,
         search_type: Union[QueryVectorSearchType, str],
-        similarity: str,
+        similarity: Union[QueryVectorSearchSimilarity, str],
         nprobes: Optional[int] = None,
         text_key: Optional[str] = "text",
         embedding_key: Optional[str] = "embedding",
         metadata_key: Optional[str] = "metadata",
-        query_timeout: Optional[timedelta] = None,
+        query_options: Optional[QueryOptions] = None,
     ) -> None:
         """
         Initializes a connection to a Couchbase Vector Store using GSI.
@@ -742,7 +769,7 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
                 Defaults to "embedding".
             metadata_key (Optional[str], optional): The field for the document metadata.
                 Defaults to "metadata".
-            query_timeout (Optional[timedelta]): Timeout for SQL++ queries.
+            query_options (Optional[QueryOptions]): Query options for SQL++ queries.
                 Defaults to 60 seconds.
 
         Returns:
@@ -757,14 +784,22 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
             text_key=text_key,
             embedding_key=embedding_key,
             metadata_key=metadata_key,
+            query_options=query_options,
         )
 
         if isinstance(search_type, str):
             search_type = QueryVectorSearchType(search_type)
 
         self._search_type = search_type
-        self._similarity = similarity
-        self._query_timeout = query_timeout or timedelta(seconds=60)
+        self._similarity = (
+            similarity.upper()
+            if isinstance(similarity, str)
+            else (
+                similarity.value
+                if isinstance(similarity, QueryVectorSearchSimilarity)
+                else None
+            )
+        )
         self._nprobes = nprobes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -784,7 +819,7 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
 
         k = query.similarity_top_k
         query_context = (
-            f"{self._bucket_name}.{self._scope_name}.{self._collection_name}"
+            f"`{self._bucket_name}`.`{self._scope_name}`.`{self._collection_name}`"
         )
 
         # Convert embedding to string representation for query
@@ -806,7 +841,7 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
         if query.output_fields:
             fields = query.output_fields.join(",")
         else:
-            fields = "*, meta().id as id"
+            fields = "d.*, meta().id as id"
 
         nprobes = self._nprobes
         if kwargs.get("nprobes"):
@@ -821,20 +856,16 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
 
         # Build the SQL++ query
         query_str = f"""
-        SELECT {fields}, {distance_function_exp} as distance
+        SELECT {fields}, {distance_function_exp} as score
         FROM {query_context} d
         {where_clause}
-        ORDER BY distance
+        ORDER BY score
         LIMIT {k}
         """
 
         try:
             # Execute the query
-            query_options = QueryOptions(
-                timeout=self._query_timeout,
-            )
-
-            result = self._cluster.query(query_str, query_options)
+            result = self._cluster.query(query_str, self._query_options)
 
             top_k_nodes = []
             top_k_scores = []
@@ -844,13 +875,12 @@ class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
             for row in result.rows():
                 doc_id = row.get("id", "")
                 text = row.get(self._text_key, "")
-                score = row.get("distance", 0.0)
+                score = row.get("score")
 
                 # Extract metadata
                 metadata_dict = {}
                 if self._metadata_key in row:
                     metadata_dict = row[self._metadata_key]
-
                 try:
                     node = metadata_dict_to_node(metadata_dict, text)
                     node.node_id = doc_id

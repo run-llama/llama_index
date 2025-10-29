@@ -19,6 +19,7 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.vector_stores.couchbase import CouchbaseQueryVectorStore
 from llama_index.vector_stores.couchbase.base import QueryVectorSearchType
+from llama_index.vector_stores.couchbase.base import QueryVectorSearchSimilarity
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import VectorStoreIndex
 
@@ -28,6 +29,7 @@ from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
 from couchbase.logic.options import KnownConfigProfiles
+from couchbase.options import QueryOptions
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
 BUCKET_NAME = os.getenv("COUCHBASE_BUCKET_NAME", "")
@@ -136,6 +138,7 @@ def create_scope_and_collection(
         from couchbase.exceptions import (
             ScopeAlreadyExistsException,
             CollectionAlreadyExistsException,
+            QueryIndexAlreadyExistsException,
         )
 
         bucket = cluster.bucket(bucket_name)
@@ -152,6 +155,13 @@ def create_scope_and_collection(
                 collection_name=collection_name, scope_name=scope_name
             )
         except CollectionAlreadyExistsException:
+            pass
+
+        try:
+            bucket.scope(scope_name).collection(
+                collection_name
+            ).query_indexes().create_primary_index()
+        except QueryIndexAlreadyExistsException:
             pass
 
     except Exception as e:
@@ -291,6 +301,9 @@ class TestCouchbaseQueryVectorStore:
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
+            search_type=QueryVectorSearchType.ANN,
+            similarity=QueryVectorSearchSimilarity.DOT,
+            nprobes=50,
         )
 
     def test_initialization_default_params(self) -> None:
@@ -300,11 +313,14 @@ class TestCouchbaseQueryVectorStore:
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
+            search_type=QueryVectorSearchType.ANN,
+            similarity=QueryVectorSearchSimilarity.COSINE,
+            nprobes=50,
         )
 
         assert vector_store._search_type == QueryVectorSearchType.ANN
-        assert vector_store._dimension == 1536
-        assert vector_store._similarity == "cosine"
+        assert vector_store._similarity == QueryVectorSearchSimilarity.COSINE
+        assert vector_store._nprobes == 50
         assert vector_store._text_key == "text"
         assert vector_store._embedding_key == "embedding"
         assert vector_store._metadata_key == "metadata"
@@ -318,21 +334,19 @@ class TestCouchbaseQueryVectorStore:
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
             search_type=QueryVectorSearchType.KNN,
-            dimension=768,
             similarity="euclidean",
             text_key="content",
             embedding_key="vector",
             metadata_key="meta",
-            query_timeout=custom_timeout,
+            query_options=QueryOptions(timeout=custom_timeout),
         )
 
         assert vector_store._search_type == QueryVectorSearchType.KNN
-        assert vector_store._dimension == 768
-        assert vector_store._similarity == "euclidean"
+        assert vector_store._similarity == QueryVectorSearchSimilarity.EUCLIDEAN
         assert vector_store._text_key == "content"
         assert vector_store._embedding_key == "vector"
         assert vector_store._metadata_key == "meta"
-        assert vector_store._query_timeout == custom_timeout
+        assert vector_store._query_options["timeout"] == custom_timeout
 
     def test_initialization_with_string_search_type(self) -> None:
         """Test initialization with string search type."""
@@ -342,9 +356,12 @@ class TestCouchbaseQueryVectorStore:
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
             search_type="KNN",
+            similarity="EUCLIDEAN",
         )
 
         assert vector_store._search_type == QueryVectorSearchType.KNN
+        assert vector_store._similarity == QueryVectorSearchSimilarity.EUCLIDEAN
+        assert vector_store._nprobes is None
 
     def test_add_documents(self, node_embeddings: List[TextNode]) -> None:
         """Test adding documents to Couchbase query vector store."""
@@ -387,6 +404,8 @@ class TestCouchbaseQueryVectorStore:
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
             search_type=QueryVectorSearchType.KNN,
+            similarity=QueryVectorSearchSimilarity.L2,
+            nprobes=50,
         )
 
         # Add nodes to the couchbase vector store
@@ -557,7 +576,11 @@ class TestCouchbaseQueryVectorStore:
         self, node_embeddings: List[TextNode]
     ) -> None:
         """Test different similarity metrics."""
-        similarity_metrics = ["cosine", "euclidean", "dot"]
+        similarity_metrics = [
+            QueryVectorSearchSimilarity.COSINE,
+            QueryVectorSearchSimilarity.EUCLIDEAN,
+            QueryVectorSearchSimilarity.DOT,
+        ]
 
         for metric in similarity_metrics:
             # Create vector store with specific similarity metric
@@ -567,6 +590,8 @@ class TestCouchbaseQueryVectorStore:
                 scope_name=SCOPE_NAME,
                 collection_name=COLLECTION_NAME,
                 similarity=metric,
+                search_type=QueryVectorSearchType.ANN,
+                nprobes=50,
             )
 
             # Add nodes to the vector store
@@ -592,6 +617,9 @@ class TestCouchbaseQueryVectorStore:
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
+            search_type=QueryVectorSearchType.ANN,
+            similarity=QueryVectorSearchSimilarity.COSINE,
+            nprobes=50,
             text_key="content",
             embedding_key="vector",
             metadata_key="meta",
@@ -662,10 +690,6 @@ class TestCouchbaseQueryVectorStore:
         assert result.similarities is not None
         assert len(result.similarities) == 2
 
-        # Verify scores are meaningful (should be positive distances)
-        for score in result.similarities:
-            assert score >= 0
-
     def test_vector_search_relevance(self, node_embeddings: List[TextNode]) -> None:
         """Test that vector search returns relevant results."""
         # Add nodes to the vector store
@@ -683,12 +707,14 @@ class TestCouchbaseQueryVectorStore:
         result = self.vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 3
 
-        # The first result should be the most similar (lowest distance for cosine)
+        # The first result should be the most similar (lowest distance for dot product)
         assert result.nodes[0].get_content(metadata_mode=MetadataMode.NONE) == "foo"
 
         # Verify scores are ordered (ascending for distance-based similarity)
         scores = result.similarities
-        assert scores[0] >= scores[1] >= scores[2]
+        print(f"scores: {scores}")
+        assert scores[0] <= scores[1]
+        assert scores[1] <= scores[2]
 
     def test_large_batch_processing(self) -> None:
         """Test handling of larger document batches."""
