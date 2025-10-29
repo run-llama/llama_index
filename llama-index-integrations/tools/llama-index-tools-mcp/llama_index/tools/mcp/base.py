@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from mcp.client.session import ClientSession
-from mcp.types import Resource
+from mcp.types import Resource, ResourceTemplate
 from pydantic import BaseModel, Field, create_model
 
 from llama_index.core.tools.function_tool import FunctionTool
@@ -125,6 +125,31 @@ class McpToolSpec(BaseToolSpec):
         )
         return []
 
+    async def fetch_resource_templates(self) -> List[ResourceTemplate]:
+        """
+        An asynchronous method to get the resource templates list from MCP Client.
+        """
+        response = await self.client.list_resource_templates()
+        resource_templates = (
+            response.resourceTemplates
+            if hasattr(response, "resourceTemplates")
+            else []
+        )
+        if self.allowed_tools is None:
+            return resource_templates
+
+        if any(self.allowed_tools):
+            return [
+                template
+                for template in resource_templates
+                if template.name in self.allowed_tools
+            ]
+
+        logging.warning(
+            "Returning an empty resource template list due to the empty `allowed_tools` list. Please ensure `allowed_tools` is set appropriately."
+        )
+        return []
+
     def _create_tool_fn(self, tool_name: str) -> Callable:
         """
         Create a tool call function for a specified MCP tool name. The function internally wraps the call_tool call to the MCP Client.
@@ -144,6 +169,17 @@ class McpToolSpec(BaseToolSpec):
             return await self.client.read_resource(resource_uri)
 
         return async_resource_fn
+
+    def _create_resource_template_fn(self, uri_template: str) -> Callable:
+        """
+        Create a resource call function for a specified MCP resource template. The function internally wraps the read_resource call to the MCP Client.
+        """
+
+        async def async_resource_template_fn(**kwargs):
+            resource_uri = uri_template.format(**kwargs)
+            return await self.client.read_resource(resource_uri)
+
+        return async_resource_template_fn
 
     async def to_tool_list_async(self) -> List[FunctionTool]:
         """
@@ -182,6 +218,23 @@ class McpToolSpec(BaseToolSpec):
                         description=resource.description,
                     )
                 )
+
+            resource_templates_list = await self.fetch_resource_templates()
+            for template in resource_templates_list:
+                fn = self._create_resource_template_fn(template.uriTemplate)
+                # Create a Pydantic model based on the tool inputSchema
+                model_schema = create_model_from_json_schema(
+                    template.parameters, model_name=f"{template.name}_Schema"
+                )
+                metadata = ToolMetadata(
+                    name=template.name,
+                    description=template.description,
+                    fn_schema=model_schema,
+                )
+                function_tool = FunctionTool.from_defaults(
+                    async_fn=fn, tool_metadata=metadata
+                )
+                function_tool_list.append(function_tool)
 
         return function_tool_list
 
