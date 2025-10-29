@@ -105,7 +105,7 @@ def main():
     # Make sure API key is set
     if not os.environ.get("SERPEX_API_KEY"):
         print("Please set SERPEX_API_KEY environment variable")
-        print("Get your API key at: https://serpex.io/dashboard")
+        print("Get your API key at: https://serpex.dev/dashboard")
         return
 
     # Run examples
