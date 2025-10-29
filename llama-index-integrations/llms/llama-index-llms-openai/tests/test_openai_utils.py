@@ -440,8 +440,8 @@ def test_gpt_5_chat_latest_model_support() -> None:
 
     # Test that model has correct context size
     context_size = openai_modelname_to_contextsize(model_name)
-    assert context_size == 400000, (
-        f"{model_name} should have 400000 tokens context, got {context_size}"
+    assert context_size == 128000, (
+        f"{model_name} should have 128000 tokens context, got {context_size}"
     )
 
     # Test that model is in CHAT_MODELS

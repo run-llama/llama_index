@@ -454,6 +454,7 @@ def tools_to_converse_tools(
     tool_choice: Optional[dict] = None,
     tool_required: bool = False,
     tool_caching: bool = False,
+    supports_forced_tool_calls: bool = True,
 ) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
@@ -482,11 +483,18 @@ def tools_to_converse_tools(
     if tool_caching:
         converse_tools.append({"cachePoint": {"type": "default"}})
 
+    if tool_choice:
+        tool_choice = tool_choice
+    elif supports_forced_tool_calls and tool_required:
+        tool_choice = {"any": {}}
+    else:
+        tool_choice = {"auto": {}}
+
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
         # e.g. { "auto": {} }
-        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+        "toolChoice": tool_choice,
     }
 
 
@@ -555,6 +563,7 @@ def converse_with_retry(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
@@ -595,6 +604,10 @@ def converse_with_retry(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
 
     converse_kwargs = join_two_dicts(
         converse_kwargs,
@@ -636,6 +649,7 @@ async def converse_with_retry_async(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
@@ -682,6 +696,10 @@ async def converse_with_retry_async(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
     converse_kwargs = join_two_dicts(
         converse_kwargs,
         {
