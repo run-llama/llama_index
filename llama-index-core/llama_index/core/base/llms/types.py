@@ -60,8 +60,7 @@ class ImageBlock(BaseModel):
     """A representation of image data to directly pass to/from the LLM."""
 
     block_type: Literal["image"] = "image"
-    image: bytes | None = None
-    buffer: IOBase | None = None
+    image: bytes | IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     image_mimetype: str | None = None
@@ -80,6 +79,16 @@ class ImageBlock(BaseModel):
 
         return AnyUrl(url=url)
 
+    @field_serializer("image")
+    def serialize_image(self, image: bytes | IOBase | None) -> bytes | None:
+        """Serialize the image field."""
+        if isinstance(image, bytes):
+            return image
+        if isinstance(image, IOBase):
+            image.seek(0)
+            return image.read()
+        return None
+
     @model_validator(mode="after")
     def image_to_base64(self) -> Self:
         """
@@ -89,7 +98,7 @@ class ImageBlock(BaseModel):
         we try to guess it using the filetype library. To avoid resource-intense
         operations, we won't load the path or the URL to guess the mimetype.
         """
-        if not self.image:
+        if not self.image or not isinstance(self.image, bytes):
             if not self.image_mimetype:
                 path = self.path or self.url
                 if path:
@@ -125,11 +134,15 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
-        data_buffer = self.buffer or resolve_binary(
-            raw_bytes=self.image,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=as_base64,
+        data_buffer = (
+            self.image
+            if isinstance(self.image, IOBase)
+            else resolve_binary(
+                raw_bytes=self.image,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
         )
 
         # Check size by seeking to end and getting position
@@ -146,8 +159,7 @@ class AudioBlock(BaseModel):
     """A representation of audio data to directly pass to/from the LLM."""
 
     block_type: Literal["audio"] = "audio"
-    audio: bytes | None = None
-    buffer: IOBase | None = None
+    audio: bytes | IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     format: str | None = None
@@ -162,6 +174,16 @@ class AudioBlock(BaseModel):
             return url
         return AnyUrl(url=url)
 
+    @field_serializer("audio")
+    def serialize_audio(self, audio: bytes | IOBase | None) -> bytes | None:
+        """Serialize the audio field."""
+        if isinstance(audio, bytes):
+            return audio
+        if isinstance(audio, IOBase):
+            audio.seek(0)
+            return audio.read()
+        return None
+
     @model_validator(mode="after")
     def audio_to_base64(self) -> Self:
         """
@@ -171,7 +193,7 @@ class AudioBlock(BaseModel):
         we try to guess it using the filetype library. To avoid resource-intense
         operations, we won't load the path or the URL to guess the mimetype.
         """
-        if not self.audio:
+        if not self.audio or not isinstance(self.audio, bytes):
             return self
 
         try:
@@ -199,11 +221,15 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
-        data_buffer = self.buffer or resolve_binary(
-            raw_bytes=self.audio,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=as_base64,
+        data_buffer = (
+            self.audio
+            if isinstance(self.audio, IOBase)
+            else resolve_binary(
+                raw_bytes=self.audio,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
         )
         # Check size by seeking to end and getting position
         data_buffer.seek(0, 2)  # Seek to end
@@ -211,7 +237,7 @@ class AudioBlock(BaseModel):
         data_buffer.seek(0)  # Reset to beginning
 
         if size == 0:
-            raise ValueError("resolve_image returned zero bytes")
+            raise ValueError("resolve_audio returned zero bytes")
         return data_buffer
 
 
@@ -219,8 +245,7 @@ class VideoBlock(BaseModel):
     """A representation of video data to directly pass to/from the LLM."""
 
     block_type: Literal["video"] = "video"
-    video: bytes | None = None
-    buffer: IOBase | None = None
+    video: bytes | IOBase | None = None
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     video_mimetype: str | None = None
@@ -239,6 +264,16 @@ class VideoBlock(BaseModel):
             return None
         return AnyUrl(url=url)
 
+    @field_serializer("video")
+    def serialize_video(self, video: bytes | IOBase | None) -> bytes | None:
+        """Serialize the video field."""
+        if isinstance(video, bytes):
+            return video
+        if isinstance(video, IOBase):
+            video.seek(0)
+            return video.read()
+        return None
+
     @model_validator(mode="after")
     def video_to_base64(self) -> "VideoBlock":
         """
@@ -246,7 +281,7 @@ class VideoBlock(BaseModel):
 
         If video data is passed but no mimetype is provided, try to infer it.
         """
-        if not self.video:
+        if not self.video or not isinstance(self.image, bytes):
             if not self.video_mimetype:
                 path = self.path or self.url
                 if path:
@@ -279,11 +314,15 @@ class VideoBlock(BaseModel):
             as_base64 (bool): whether to return the video as base64-encoded bytes
 
         """
-        data_buffer = self.buffer or resolve_binary(
-            raw_bytes=self.video,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=as_base64,
+        data_buffer = (
+            self.video
+            if isinstance(self.video, IOBase)
+            else resolve_binary(
+                raw_bytes=self.video,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
         )
 
         # Check size by seeking to end and getting position
@@ -301,7 +340,6 @@ class DocumentBlock(BaseModel):
 
     block_type: Literal["document"] = "document"
     data: Optional[bytes] = None
-    buffer: IOBase | None = None
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
     title: Optional[str] = None
@@ -327,15 +365,29 @@ class DocumentBlock(BaseModel):
 
         return self
 
+    @field_serializer("data")
+    def serialize_data(self, data: bytes | IOBase | None) -> bytes | None:
+        """Serialize the data field."""
+        if isinstance(data, bytes):
+            return data
+        if isinstance(data, IOBase):
+            data.seek(0)
+            return data.read()
+        return None
+
     def resolve_document(self) -> IOBase:
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
-        data_buffer = self.buffer or resolve_binary(
-            raw_bytes=self.data,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=False,
+        data_buffer = (
+            self.data
+            if isinstance(self.data, IOBase)
+            else resolve_binary(
+                raw_bytes=self.data,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=False,
+            )
         )
         # Check size by seeking to end and getting position
         data_buffer.seek(0, 2)  # Seek to end
@@ -343,7 +395,7 @@ class DocumentBlock(BaseModel):
         data_buffer.seek(0)  # Reset to beginning
 
         if size == 0:
-            raise ValueError("resolve_image returned zero bytes")
+            raise ValueError("resolve_document returned zero bytes")
         return data_buffer
 
     def _get_b64_string(self, data_buffer: IOBase) -> str:
