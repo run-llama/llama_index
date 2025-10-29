@@ -174,7 +174,7 @@ class McpToolSpec(BaseToolSpec):
         if self.include_resources:
             resources_list = await self.fetch_resources()
             for resource in resources_list:
-                fn = self._create_resource_fn(resource.name)
+                fn = self._create_resource_fn(resource.uri)
                 function_tool_list.append(
                     FunctionTool.from_defaults(
                         async_fn=fn,
