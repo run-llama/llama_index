@@ -281,7 +281,7 @@ class VideoBlock(BaseModel):
 
         If video data is passed but no mimetype is provided, try to infer it.
         """
-        if not self.video or not isinstance(self.image, bytes):
+        if not self.video or not isinstance(self.video, bytes):
             if not self.video_mimetype:
                 path = self.path or self.url
                 if path:
