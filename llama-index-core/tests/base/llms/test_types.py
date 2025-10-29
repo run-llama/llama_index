@@ -175,7 +175,7 @@ def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
 
 def test_image_block_resolve_image_buffer(png_1px: bytes):
     buffer = BytesIO(png_1px)
-    b = ImageBlock(buffer=buffer)
+    b = ImageBlock(image=buffer)
 
     img = b.resolve_image()
     assert isinstance(img, BytesIO)
@@ -406,7 +406,7 @@ def test_video_block_resolve_video_bytes(mp4_bytes: bytes, mp4_base64: bytes):
 
 def test_video_block_resolve_video_buffer(mp4_bytes: bytes):
     buffer = BytesIO(mp4_bytes)
-    b = VideoBlock(buffer=buffer)
+    b = VideoBlock(video=buffer)
 
     vid = b.resolve_video()
     assert isinstance(vid, BytesIO)
