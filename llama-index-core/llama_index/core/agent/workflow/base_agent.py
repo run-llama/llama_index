@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import functools
 import warnings
 import inspect
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
@@ -288,6 +289,12 @@ class BaseWorkflowAgent(
             else:
                 tool_output = await tool.acall(**tool_input)
         except Exception as e:
+            # raise to wait
+            waiting_for_event_exception = _get_waiting_for_event_exception()
+            if waiting_for_event_exception and isinstance(
+                e, waiting_for_event_exception
+            ):
+                raise
             tool_output = ToolOutput(
                 content=str(e),
                 tool_name=tool.metadata.get_name(),
@@ -623,3 +630,15 @@ class BaseWorkflowAgent(
                 start_event=start_event,
                 ctx=ctx,
             )
+
+
+@functools.lru_cache(maxsize=1)
+def _get_waiting_for_event_exception() -> Type[Exception] | None:
+    try:
+        # Special exception introduced in workflows 2.9.0 as a way to fully pause waiting steps.
+        # If it exists, check for it and re-raise
+        from workflows.runtime.types.results import WaitingForEvent
+
+        return WaitingForEvent
+    except ImportError:
+        return None
