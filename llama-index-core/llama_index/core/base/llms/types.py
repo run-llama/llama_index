@@ -339,7 +339,7 @@ class DocumentBlock(BaseModel):
     """A representation of a document to directly pass to the LLM."""
 
     block_type: Literal["document"] = "document"
-    data: Optional[bytes] = None
+    data: bytes | IOBase | None = None
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
     title: Optional[str] = None
