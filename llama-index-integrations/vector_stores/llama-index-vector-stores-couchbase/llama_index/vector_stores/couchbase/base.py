@@ -521,10 +521,19 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
 
 class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
     """
-    Couchbase Vector Store using Full-Text Search (FTS).
+    Couchbase Vector Store using Search Vector Indexes (FTS-based).
+
+    This implementation uses Couchbase's Search Vector Indexes, which combine
+    Full-Text Search (FTS) with vector search capabilities. Ideal for hybrid
+    searches combining vector similarity, full-text search, and geospatial queries.
+
+    Supports datasets up to tens of millions of documents.
+    Requires Couchbase Server 7.6 or later.
 
     To use, you should have the ``couchbase`` python package installed.
 
+    For more information, see:
+    https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html
     """
 
     _index_name: str = PrivateAttr()
@@ -723,12 +732,32 @@ class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
 
 class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
     """
-    Couchbase Vector Store using Global Secondary Index (GSI) with vector search capabilities.
+    Couchbase Vector Store using Query Service with vector search capabilities.
 
-    This implementation supports:
-    - BHIVE indexes for high-performance ANN vector search
-    - Composite Secondary Indexes with vector search functions
-    - Various similarity metrics (cosine, euclidean, dot_product)
+    This implementation supports both Hyperscale Vector Indexes and Composite Vector
+    Indexes, which use the Couchbase Query Service with SQL++ and vector search functions.
+
+    Hyperscale Vector Indexes:
+    - Purpose-built for pure vector searches at massive scale
+    - Lowest memory footprint (most index data on disk)
+    - Higher accuracy at lower quantizations
+    - Best for content discovery, RAG workflows, image search, anomaly detection
+
+    Composite Vector Indexes:
+    - Combine Global Secondary Index (GSI) with vector search functions
+    - Scalar filters applied BEFORE vector search (reduces vectors to compare)
+    - Best for searches combining vector similarity with scalar filters
+    - Useful for compliance requirements (can exclude results based on scalars)
+
+    Key features:
+    - Supports both ANN (Approximate) and KNN (Exact) nearest neighbor searches
+    - Can scale to billions of documents
+    - Various similarity metrics (COSINE, DOT, L2/EUCLIDEAN, L2_SQUARED)
+
+    Requires Couchbase Server 8.0 or later.
+
+    For more information, see:
+    https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html
     """
 
     _search_type: QueryVectorSearchType = PrivateAttr()

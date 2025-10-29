@@ -6,6 +6,7 @@ from llama_index.vector_stores.couchbase.base import (
     CouchbaseQueryVectorStore,  # GSI-based with BHIVE support
     CouchbaseVectorStoreBase,  # Base class
     QueryVectorSearchType,  # Enum for search types
+    QueryVectorSearchSimilarity,  # Enum for similarity metrics
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "CouchbaseQueryVectorStore",
     "CouchbaseVectorStoreBase",
     "QueryVectorSearchType",
+    "QueryVectorSearchSimilarity",
 ]
