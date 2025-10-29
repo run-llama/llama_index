@@ -305,7 +305,7 @@ class BasicMCPClient(ClientSession):
             return await session.list_tools()
 
     # Resource methods
-    async def list_resources(self) -> types.ListToolsRequest:
+    async def list_resources(self) -> types.ListResourcesResult:
         """List all available resources on the MCP server."""
         async with self._run_session() as session:
             return await session.list_resources()
