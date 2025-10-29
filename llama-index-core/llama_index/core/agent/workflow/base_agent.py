@@ -633,7 +633,7 @@ class BaseWorkflowAgent(
 
 
 @functools.lru_cache(maxsize=1)
-def _get_waiting_for_event_exception() -> Type[Exception] | None:
+def _get_waiting_for_event_exception() -> Optional[Type[Exception]]:
     try:
         # Special exception introduced in workflows 2.9.0 as a way to fully pause waiting steps.
         # If it exists, check for it and re-raise
