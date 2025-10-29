@@ -843,11 +843,6 @@ class LLM(BaseLLM):
                 sources=tool_outputs,
             )
         except Exception as e:
-            import logging
-
-            logging.basicConfig(level=logging.DEBUG)
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error occurred while running the tool: {e}", exc_info=True)
             output = AgentChatResponse(
                 response="An error occurred while running the tool: " + str(e),
                 sources=[],
