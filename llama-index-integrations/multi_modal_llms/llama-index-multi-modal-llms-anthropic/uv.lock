@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1824,7 +1824,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-multi-modal-llms-anthropic"
-version = "0.4.1"
+version = "0.4.4"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -1861,7 +1861,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.34.2" },
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "llama-index-llms-anthropic", specifier = ">=0.8.0,<0.9" },
+    { name = "llama-index-llms-anthropic", specifier = ">=0.8.0,<0.10" },
 ]
 
 [package.metadata.requires-dev]

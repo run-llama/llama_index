@@ -78,14 +78,13 @@ def generate_anthropic_multi_modal_chat_message(
         return [ChatMessage.model_validate({"role": role, "content": prompt})]
 
     # if image_documents is not empty, return text with images chat message
-    completion_content = []
-    if all(isinstance(doc, ImageNode) for doc in image_documents):
+    if all(isinstance(doc, (ImageNode, ImageDocument)) for doc in image_documents):
         image_docs: List[ImageBlock] = [
             image_node_to_image_block(doc) for doc in image_documents
         ]
     else:
         image_docs = cast(List[ImageBlock], image_documents)
-    blocks = image_docs.extend([TextBlock(text=prompt)])
+    blocks = [*image_docs, TextBlock(text=prompt)]
     return [ChatMessage(role=role, blocks=blocks)]
 
 
