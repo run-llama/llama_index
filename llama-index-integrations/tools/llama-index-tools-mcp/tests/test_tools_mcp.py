@@ -68,3 +68,35 @@ async def test_get_zero_tools_async(client: BasicMCPClient):
     tool_spec = McpToolSpec(client, allowed_tools=[])
     tools = await tool_spec.to_tool_list_async()
     assert len(tools) == 0
+
+@pytest.mark.asyncio
+async def test_resource_tool_uses_uri_not_name(client: BasicMCPClient):
+    """
+    Tests that a tool from a static resource is executable.
+    """
+    tool_spec = McpToolSpec(
+        client, allowed_tools=["get_app_config"], include_resources=True
+    )
+    tools = await tool_spec.to_tool_list_async()
+
+    assert len(tools) == 1
+    tool = tools[0]
+    assert tool.metadata.name == "get_app_config"
+
+    # This call should succeed now that the bug is fixed.
+    result = await tool.acall()
+    assert "MCP Test Server" in result.raw_output.contents[0].text
+
+
+@pytest.mark.asyncio
+async def test_dynamic_resource_template_tool_is_created(client: BasicMCPClient):
+    """
+    Tests that a tool is created for a dynamic resource template.
+    """
+    tool_spec = McpToolSpec(client, include_resources=True)
+    tools = await tool_spec.to_tool_list_async()
+
+    # The server.py defines a dynamic resource template named 'get_user_profile'.
+    # This should now be found.
+    tool_names = {t.metadata.name for t in tools}
+    assert "get_user_profile" in tool_names
