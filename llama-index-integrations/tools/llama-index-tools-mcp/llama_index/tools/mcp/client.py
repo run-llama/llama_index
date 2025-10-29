@@ -310,7 +310,8 @@ class BasicMCPClient(ClientSession):
         async with self._run_session() as session:
             return await session.list_resources()
 
-    async def list_resource_templates(self) -> types.ListResourceTemplatesResult:
+        #AI?  What about changing the list_resource_templates definition to:  async def list_resource_templates(self) -> types.ListToolsRequest:
+    async def list_resource_templates(self) -> types.ListResourceTemplatesResult: 
         """List all available resource templates on the MCP server."""
         async with self._run_session() as session:
             return await session.list_resource_templates()
