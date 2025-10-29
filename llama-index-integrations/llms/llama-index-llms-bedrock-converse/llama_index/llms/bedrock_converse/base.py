@@ -4,6 +4,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -157,6 +158,13 @@ class BedrockConverse(FunctionCallingLLM):
     guardrail_version: Optional[str] = Field(
         description="The version number for the guardrail. The value can also be DRAFT"
     )
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = Field(
+        description=(
+            "The stream processing mode to use when leveraging a guardrail in a streaming request (ConverseStream). "
+            "If set, the specified mode will be included in the request's guardrail configuration object, altering the streaming response behavior. "
+            "If a value is not provided, no mode will be explicitly included in the request's guardrail configuration object, and thus Amazon Bedrock's default, Synchronous Mode, will be used."
+        )
+    )
     application_inference_profile_arn: Optional[str] = Field(
         description="The ARN of an application inference profile to invoke in place of the model. If provided, make sure the model argument refers to the same one underlying the application inference profile."
     )
@@ -211,6 +219,7 @@ class BedrockConverse(FunctionCallingLLM):
         output_parser: Optional[BaseOutputParser] = None,
         guardrail_identifier: Optional[str] = None,
         guardrail_version: Optional[str] = None,
+        guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
         application_inference_profile_arn: Optional[str] = None,
         trace: Optional[str] = None,
         thinking: Optional[ThinkingDict] = None,
@@ -263,6 +272,7 @@ class BedrockConverse(FunctionCallingLLM):
             botocore_config=botocore_config,
             guardrail_identifier=guardrail_identifier,
             guardrail_version=guardrail_version,
+            guardrail_stream_processing_mode=guardrail_stream_processing_mode,
             application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
             thinking=thinking,
@@ -474,6 +484,7 @@ class BedrockConverse(FunctionCallingLLM):
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
+            guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
             **all_kwargs,
         )
@@ -668,6 +679,7 @@ class BedrockConverse(FunctionCallingLLM):
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
+            guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
             boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
