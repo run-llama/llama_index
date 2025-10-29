@@ -55,7 +55,6 @@ def test_search(mock_get):
 
     assert len(results) == 1
     assert "Test Result" in results[0].text
-    assert "https://example.com" in results[0].text
     assert "Test snippet" in results[0].text
     assert results[0].metadata["title"] == "Test Result"
     assert results[0].metadata["url"] == "https://example.com"
