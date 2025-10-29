@@ -86,13 +86,16 @@ class SerpexToolSpec(BaseToolSpec):
                 'month', 'year'.
 
         Returns:
-            List of Document objects containing search results.
-            Each document's text contains formatted search results.
+            List of Document objects, one per search result.
+            Each document contains the title, URL, and snippet in its text,
+            with metadata including search details.
 
         Examples:
             >>> tool = SerpexToolSpec(api_key="your_key")
             >>> results = tool.search("LlamaIndex tutorial", num_results=5)
             >>> for doc in results:
+            ...     print(f"Title: {doc.metadata['title']}")
+            ...     print(f"URL: {doc.metadata['url']}")
             ...     print(doc.text)
 
             >>> # Search with specific engine
@@ -138,33 +141,35 @@ class SerpexToolSpec(BaseToolSpec):
             results_list = data.get("results", [])
 
             if not results_list:
-                return [Document(text="No search results found.")]
+                return []
 
-            # Format results as readable text
-            formatted_results = []
-            for i, result in enumerate(results_list[:num_results], 1):
+            # Get metadata
+            api_metadata = data.get("metadata", {})
+            num_results_total = api_metadata.get("number_of_results", 0)
+            response_time = api_metadata.get("response_time", 0)
+
+            # Create documents for each result
+            documents = []
+            for result in results_list[:num_results]:
                 title = result.get("title", "No title")
                 url = result.get("url", "")
                 snippet = result.get("snippet", "No description available")
 
-                formatted_results.append(
-                    f"{i}. {title}\n" f"   URL: {url}\n" f"   {snippet}\n"
-                )
+                text = f"{title}\nURL: {url}\n{snippet}"
 
-            results_text = f"Search results for '{query}':\n\n"
-            results_text += "\n".join(formatted_results)
+                metadata = {
+                    "title": title,
+                    "url": url,
+                    "snippet": snippet,
+                    "number_of_results": num_results_total,
+                    "response_time": response_time,
+                    "query": query,
+                    "engine": engine or self.engine,
+                }
 
-            # Add metadata
-            metadata = data.get("metadata", {})
-            if metadata:
-                num_results = metadata.get("number_of_results", 0)
-                response_time = metadata.get("response_time", 0)
-                results_text += (
-                    f"\n\n(Found {num_results} results in {response_time}ms)"
-                )
+                documents.append(Document(text=text, metadata=metadata))
 
-            return [Document(text=results_text)]
+            return documents
 
         except requests.exceptions.RequestException as e:
-            error_msg = f"Error calling SERPEX API: {str(e)}"
-            return [Document(text=error_msg)]
+            raise e

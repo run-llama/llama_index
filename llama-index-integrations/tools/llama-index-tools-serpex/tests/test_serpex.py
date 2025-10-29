@@ -57,6 +57,12 @@ def test_search(mock_get):
     assert "Test Result" in results[0].text
     assert "https://example.com" in results[0].text
     assert "Test snippet" in results[0].text
+    assert results[0].metadata["title"] == "Test Result"
+    assert results[0].metadata["url"] == "https://example.com"
+    assert results[0].metadata["snippet"] == "Test snippet"
+    assert results[0].metadata["number_of_results"] == 1
+    assert results[0].metadata["response_time"] == 100
+    assert results[0].metadata["query"] == "test query"
 
 
 @patch("requests.get")
@@ -130,29 +136,24 @@ def test_search_no_results(mock_get):
     tool = SerpexToolSpec(api_key="test-key")
     results = tool.search("nonexistent query")
 
-    assert len(results) == 1
-    assert "No search results found" in results[0].text
+    assert len(results) == 0
 
 
 @patch("requests.get")
 def test_search_api_error(mock_get):
-    """Test search handles API errors."""
+    """Test search raises API errors."""
     mock_get.side_effect = requests.exceptions.RequestException("API Error")
 
     tool = SerpexToolSpec(api_key="test-key")
-    results = tool.search("test query")
-
-    assert len(results) == 1
-    assert "Error calling SERPEX API" in results[0].text
+    with pytest.raises(requests.exceptions.RequestException):
+        tool.search("test query")
 
 
 # Integration test (requires real API key)
-@pytest.mark.skip(reason="Requires real SERPEX API key")
+@pytest.mark.skipif(not os.environ.get("SERPEX_API_KEY"), reason="Requires real SERPEX API key")
 def test_real_search():
     """Test real search with actual API."""
     api_key = os.environ.get("SERPEX_API_KEY")
-    if not api_key:
-        pytest.skip("SERPEX_API_KEY not set")
 
     tool = SerpexToolSpec(api_key=api_key)
     results = tool.search("LlamaIndex", num_results=5)
@@ -161,12 +162,10 @@ def test_real_search():
     assert "LlamaIndex" in results[0].text or "llama" in results[0].text.lower()
 
 
-@pytest.mark.skip(reason="Requires real SERPEX API key")
+@pytest.mark.skipif(not os.environ.get("SERPEX_API_KEY"), reason="Requires real SERPEX API key")
 def test_real_search_with_filters():
     """Test real search with filters."""
     api_key = os.environ.get("SERPEX_API_KEY")
-    if not api_key:
-        pytest.skip("SERPEX_API_KEY not set")
 
     tool = SerpexToolSpec(api_key=api_key, engine="duckduckgo")
     results = tool.search("AI news", num_results=3, time_range="week")
