@@ -16,7 +16,6 @@ from typing import (
     Type,
     Union,
     cast,
-    get_args,
     runtime_checkable,
 )
 
@@ -44,6 +43,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ToolCallBlock,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -65,7 +66,6 @@ from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
-    OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
     from_openai_message,
@@ -79,7 +79,7 @@ from llama_index.llms.openai.utils import (
     update_tool_calls,
     is_json_schema_supported,
 )
-from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -123,9 +123,15 @@ class Tokenizer(Protocol):
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class OpenAI(FunctionCallingLLM):
@@ -162,7 +168,7 @@ class OpenAI(FunctionCallingLLM):
 
         llm = OpenAI(model="gpt-3.5-turbo")
 
-        stream = llm.stream("Hi, write a short story")
+        stream = llm.stream_complete("Hi, write a short story")
 
         for r in stream:
             print(r.delta, end="")
@@ -228,7 +234,7 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+    reasoning_effort: Optional[Literal["low", "medium", "high", "minimal"]] = Field(
         default=None,
         description="The effort to use for reasoning models.",
     )
@@ -530,14 +536,12 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(client, AzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
 
                 if delta is None:
                     continue
@@ -550,17 +554,27 @@ class OpenAI(FunctionCallingLLM):
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
+                blocks.append(TextBlock(text=content))
 
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
                         additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
@@ -790,6 +804,7 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     # check if the first chunk has neither content nor tool_calls
@@ -803,10 +818,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(aclient, AsyncAzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 if delta is None:
@@ -820,17 +832,27 @@ class OpenAI(FunctionCallingLLM):
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
+                blocks.append(TextBlock(text=content))
 
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
                         additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
@@ -968,43 +990,78 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        if tool_calls:
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            tool_selections = []
+            for tool_call in tool_calls:
+                # this should handle both complete and partial jsons
+                try:
+                    if isinstance(tool_call.tool_kwargs, str):
+                        argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                    else:
+                        argument_dict = tool_call.tool_kwargs
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.tool_call_id or "",
+                        tool_name=tool_call.tool_name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            else:
-                return []
 
-        tool_selections = []
-        for tool_call in tool_calls:
-            if not isinstance(tool_call, get_args(OpenAIToolCall)):
-                raise ValueError("Invalid tool_call object")
-            if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+            return tool_selections
+        else:  # keep it backward-compatible
+            tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
-            # this should handle both complete and partial jsons
-            try:
-                argument_dict = parse_partial_json(tool_call.function.arguments)
-            except (ValueError, TypeError, JSONDecodeError):
-                argument_dict = {}
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.id,
-                    tool_name=tool_call.function.name,
-                    tool_kwargs=argument_dict,
+            tool_selections = []
+            for tool_call in tool_calls:
+                if tool_call.type != "function":
+                    raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
+
+                # this should handle both complete and partial jsons
+                try:
+                    argument_dict = parse_partial_json(tool_call.function.arguments)
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.id,
+                        tool_name=tool_call.function.name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            )
 
-        return tool_selections
+            return tool_selections
 
     def _prepare_schema(
         self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
     ) -> Dict[str, Any]:
-        from openai.resources.beta.chat.completions import _type_to_response_format
+        from openai.resources.chat.completions.completions import (
+            _type_to_response_format,
+        )
 
         llm_kwargs = llm_kwargs or {}
         llm_kwargs["response_format"] = _type_to_response_format(output_cls)
@@ -1012,7 +1069,7 @@ class OpenAI(FunctionCallingLLM):
             del llm_kwargs["tool_choice"]
         return llm_kwargs
 
-    def _should_use_structure_outputs(self):
+    def _should_use_structure_outputs(self) -> bool:
         return (
             self.pydantic_program_mode == PydanticProgramMode.DEFAULT
             and is_json_schema_supported(self.model)

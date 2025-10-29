@@ -24,6 +24,8 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ImageBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -52,7 +54,7 @@ from llama_index.llms.mistralai.utils import (
 )
 
 from mistralai import Mistral
-from mistralai.models import ToolCall
+from mistralai.models import ToolCall, FunctionCall
 from mistralai.models import (
     Messages,
     AssistantMessage,
@@ -62,6 +64,7 @@ from mistralai.models import (
     TextChunk,
     ImageURLChunk,
     ContentChunk,
+    ThinkChunk,
 )
 
 if TYPE_CHECKING:
@@ -77,6 +80,11 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
     for content_block in content_blocks:
         if isinstance(content_block, TextBlock):
             content_chunks.append(TextChunk(text=content_block.text))
+        elif isinstance(content_block, ThinkingBlock):
+            if content_block.content:
+                content_chunks.append(
+                    ThinkChunk(thinking=[TextChunk(text=content_block.content)])
+                )
         elif isinstance(content_block, ImageBlock):
             if content_block.url:
                 content_chunks.append(ImageURLChunk(image_url=str(content_block.url)))
@@ -95,6 +103,8 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                         image_url=f"data:{image_mimetype};base64,{base_64_str}"
                     )
                 )
+        elif isinstance(content_block, ToolCallBlock):
+            pass
         else:
             raise ValueError(f"Unsupported content block type {type(content_block)}")
     return content_chunks
@@ -105,7 +115,33 @@ def to_mistral_chatmessage(
 ) -> List[Messages]:
     new_messages = []
     for m in messages:
-        tool_calls = m.additional_kwargs.get("tool_calls")
+        unique_tool_calls = []
+        tool_calls_li = [
+            block for block in m.blocks if isinstance(block, ToolCallBlock)
+        ]
+        tool_calls = []
+        for tool_call_li in tool_calls_li:
+            tool_calls.append(
+                ToolCall(
+                    id=tool_call_li.tool_call_id,
+                    function=FunctionCall(
+                        name=tool_call_li.tool_name,
+                        arguments=tool_call_li.tool_kwargs,
+                    ),
+                )
+            )
+            unique_tool_calls.append(
+                (tool_call_li.tool_call_id, tool_call_li.tool_name)
+            )
+        # try with legacy tool calls for compatibility with older chat histories
+        if len(m.additional_kwargs.get("tool_calls", [])) > 0:
+            tcs = m.additional_kwargs.get("tool_calls", [])
+            for tc in tcs:
+                if (
+                    isinstance(tc, ToolCall)
+                    and (tc.id, tc.function.name) not in unique_tool_calls
+                ):
+                    tool_calls.append(tc)
         chunks = to_mistral_chunks(m.blocks)
         if m.role == MessageRole.USER:
             new_messages.append(UserMessage(content=chunks))
@@ -128,9 +164,15 @@ def to_mistral_chatmessage(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class MistralAI(FunctionCallingLLM):
@@ -289,17 +331,29 @@ class MistralAI(FunctionCallingLLM):
             **kwargs,
         }
 
-    def _separate_thinking(self, response: str) -> Tuple[str, str]:
+    def _separate_thinking(
+        self, response: Union[str, List[ContentChunk]]
+    ) -> Tuple[str, str]:
         """Separate the thinking from the response."""
-        match = THINKING_REGEX.search(response)
-        if match:
-            return match.group(1), response.replace(match.group(0), "")
+        content = ""
+        if isinstance(response, str):
+            content = response
+        else:
+            for chunk in response:
+                if isinstance(chunk, ThinkChunk):
+                    for c in chunk.thinking:
+                        if isinstance(c, TextChunk):
+                            content += c.text + "\n"
 
-        match = THINKING_START_REGEX.search(response)
+        match = THINKING_REGEX.search(content)
+        if match:
+            return match.group(1), content.replace(match.group(0), "")
+
+        match = THINKING_START_REGEX.search(content)
         if match:
             return match.group(0), ""
 
-        return "", response
+        return "", content
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -308,32 +362,51 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat.complete(messages=messages, **all_kwargs)
+        blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
 
-        additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
             thinking_txt, response_txt = self._separate_thinking(
-                response.choices[0].message.content
+                response.choices[0].message.content or []
             )
             if thinking_txt:
-                additional_kwargs["thinking"] = thinking_txt
+                blocks.append(ThinkingBlock(content=thinking_txt))
+
+            response_txt_think_show = ""
+            if response.choices[0].message.content:
+                if isinstance(response.choices[0].message.content, str):
+                    response_txt_think_show = response.choices[0].message.content
+                else:
+                    for chunk in response.choices[0].message.content:
+                        if isinstance(chunk, TextBlock):
+                            response_txt_think_show += chunk.text + "\n"
+                        if isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    response_txt_think_show += c.text + "\n"
 
             response_txt = (
-                response_txt
-                if not self.show_thinking
-                else response.choices[0].message.content
+                response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
             response_txt = response.choices[0].message.content
 
+        blocks.append(TextBlock(text=response_txt))
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls is not None:
-            additional_kwargs["tool_calls"] = tool_calls
+            for tool_call in tool_calls:
+                if isinstance(tool_call, ToolCall):
+                    blocks.append(
+                        ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_kwargs=tool_call.function.arguments,
+                            tool_name=tool_call.function.name,
+                        )
+                    )
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response_txt,
-                additional_kwargs=additional_kwargs,
+                blocks=blocks,
             ),
             raw=dict(response),
         )
@@ -358,38 +431,60 @@ class MistralAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
 
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
-                additional_kwargs = {}
                 if delta.tool_calls:
-                    additional_kwargs["tool_calls"] = delta.tool_calls
+                    for tool_call in delta.tool_calls:
+                        if isinstance(tool_call, ToolCall):
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_call_id=tool_call.id,
+                                    tool_name=tool_call.function.name,
+                                    tool_kwargs=tool_call.function.arguments,
+                                )
+                            )
 
                 content_delta = delta.content or ""
-                content += content_delta
+                content_delta_str = ""
+                if isinstance(content_delta, str):
+                    content_delta_str = content_delta
+                else:
+                    for chunk in content_delta:
+                        if isinstance(chunk, TextChunk):
+                            content_delta_str += chunk.text + "\n"
+                        elif isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    content_delta_str += c.text + "\n"
+                        else:
+                            continue
+
+                content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
 
                     if thinking_txt:
-                        additional_kwargs["thinking"] = thinking_txt
+                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
                     # If thinking hasn't ended, don't include it in the delta
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
+                blocks.append(TextBlock(text=content))
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
                     ),
-                    delta=content_delta,
+                    delta=content_delta_str,
                     raw=chunk,
                 )
 
@@ -414,30 +509,62 @@ class MistralAI(FunctionCallingLLM):
             messages=messages, **all_kwargs
         )
 
+        blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
             thinking_txt, response_txt = self._separate_thinking(
-                response.choices[0].message.content
+                response.choices[0].message.content or []
             )
             if thinking_txt:
-                additional_kwargs["thinking"] = thinking_txt
+                blocks.append(ThinkingBlock(content=thinking_txt))
+
+            response_txt_think_show = ""
+            if response.choices[0].message.content:
+                if isinstance(response.choices[0].message.content, str):
+                    response_txt_think_show = response.choices[0].message.content
+                else:
+                    for chunk in response.choices[0].message.content:
+                        if isinstance(chunk, TextBlock):
+                            response_txt_think_show += chunk.text + "\n"
+                        if isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    response_txt_think_show += c.text + "\n"
 
             response_txt = (
-                response_txt
-                if not self.show_thinking
-                else response.choices[0].message.content
+                response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
             response_txt = response.choices[0].message.content
 
+        blocks.append(TextBlock(text=response_txt))
+
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls is not None:
-            additional_kwargs["tool_calls"] = tool_calls
+            for tool_call in tool_calls:
+                if isinstance(tool_call, ToolCall):
+                    blocks.append(
+                        ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_kwargs=tool_call.function.arguments,
+                            tool_name=tool_call.function.name,
+                        )
+                    )
+                else:
+                    if isinstance(tool_call[1], (str, dict)):
+                        blocks.append(
+                            ToolCallBlock(
+                                tool_kwargs=tool_call[1], tool_name=tool_call[0]
+                            )
+                        )
+            additional_kwargs["tool_calls"] = (
+                tool_calls  # keep this to avoid tool calls loss if tool call does not fall within the validation scenarios above
+            )
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response_txt,
+                blocks=blocks,
                 additional_kwargs=additional_kwargs,
             ),
             raw=dict(response),
@@ -463,22 +590,44 @@ class MistralAI(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
-                additional_kwargs = {}
                 if delta.tool_calls:
-                    additional_kwargs["tool_calls"] = delta.tool_calls
+                    for tool_call in delta.tool_calls:
+                        if isinstance(tool_call, ToolCall):
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_call_id=tool_call.id,
+                                    tool_name=tool_call.function.name,
+                                    tool_kwargs=tool_call.function.arguments,
+                                )
+                            )
 
                 content_delta = delta.content or ""
-                content += content_delta
+                content_delta_str = ""
+                if isinstance(content_delta, str):
+                    content_delta_str = content_delta
+                else:
+                    for chunk in content_delta:
+                        if isinstance(chunk, TextChunk):
+                            content_delta_str += chunk.text + "\n"
+                        elif isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    content_delta_str += c.text + "\n"
+                        else:
+                            continue
+
+                content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
                     if thinking_txt:
-                        additional_kwargs["thinking"] = thinking_txt
+                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
@@ -486,13 +635,14 @@ class MistralAI(FunctionCallingLLM):
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
 
+                blocks.append(TextBlock(text=content))
+
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
                     ),
-                    delta=content_delta,
+                    delta=content_delta_str,
                     raw=chunk,
                 )
 
@@ -553,7 +703,11 @@ class MistralAI(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -565,15 +719,15 @@ class MistralAI(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if not isinstance(tool_call, ToolCall):
-                raise ValueError("Invalid tool_call object")
-
-            argument_dict = json.loads(tool_call.function.arguments)
+            if isinstance(tool_call.tool_kwargs, str):
+                argument_dict = json.loads(tool_call.tool_kwargs)
+            else:
+                argument_dict = tool_call.tool_kwargs
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.id,
-                    tool_name=tool_call.function.name,
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )

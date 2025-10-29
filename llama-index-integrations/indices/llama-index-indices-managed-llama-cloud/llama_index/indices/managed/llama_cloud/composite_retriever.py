@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from deprecated import deprecated
 import httpx
 from llama_cloud import (
     CompositeRetrievalMode,
@@ -21,9 +22,14 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
     resolve_retriever,
     page_screenshot_nodes_to_node_with_score,
+    DEPRECATION_REASON,
 )
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
         self,
@@ -222,11 +228,18 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             rerank_config if rerank_config is not None else self._rerank_config
         )
 
+        # Inject rerank_top_n into rerank_config if specified
+        if rerank_top_n is not None and rerank_top_n != OMIT:
+            if rerank_config is None or rerank_config == OMIT:
+                rerank_config = ReRankConfig(top_n=rerank_top_n)
+            else:
+                # Update existing rerank_config with top_n
+                rerank_config = rerank_config.copy(update={"top_n": rerank_top_n})
+
         if self._persisted:
             result = self._client.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
             )
@@ -234,7 +247,6 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             result = self._client.retrievers.direct_retrieve(
                 project_id=self.project.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,
@@ -254,6 +266,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        rerank_config: Optional[ReRankConfig] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
 
@@ -262,19 +275,25 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             rerank_config if rerank_config is not None else self._rerank_config
         )
 
+        # Inject rerank_top_n into rerank_config if specified
+        if rerank_top_n is not None and rerank_top_n != OMIT:
+            if rerank_config is None or rerank_config == OMIT:
+                rerank_config = ReRankConfig(top_n=rerank_top_n)
+            else:
+                # Update existing rerank_config with top_n
+                rerank_config = rerank_config.copy(update={"top_n": rerank_top_n})
+
         if self._persisted:
             result = await self._aclient.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
                 rerank_config=rerank_config,
-                rerank_top_n=rerank_top_n,
                 query=query_bundle.query_str,
             )
         else:
             result = await self._aclient.retrievers.direct_retrieve(
                 project_id=self.project.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,

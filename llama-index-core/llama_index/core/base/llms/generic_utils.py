@@ -1,4 +1,7 @@
 import os
+import base64
+from binascii import Error as BinasciiError
+from pathlib import Path
 from typing import Any, Awaitable, Callable, List, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -10,7 +13,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+    ImageBlock,
 )
+from llama_index.core.schema import ImageNode
 
 
 def messages_to_history_str(messages: Sequence[ChatMessage]) -> str:
@@ -322,3 +327,40 @@ def get_from_param_or_env(
             f" `{env_key}` which contains it, or pass"
             f"  `{key}` as a named parameter."
         )
+
+
+def image_node_to_image_block(image_node: ImageNode) -> ImageBlock:
+    """
+    Get an ImageBlock from an ImageNode.
+
+    Args:
+        image_node (ImageNode): ImageNode to convert.
+
+    Returns:
+        ImageBlock: block representation of the node.
+
+    Raises:
+        ValueError: when the image provided within the ImageNode is not correctly base64-encoded.
+
+    """
+    if isinstance(image_node.image, str):
+        try:
+            return ImageBlock(image=base64.b64decode(image_node.image, validate=True))
+        except BinasciiError:
+            raise ValueError("The provided image string is not base64-encoded")
+    elif image_node.image is None:
+        if image_node.image_path is not None:
+            image_path: Optional[Path] = Path(image_node.image_path)
+        elif "file_path" in image_node.metadata:
+            image_path = image_node.metadata["file_path"]
+        else:
+            image_path = image_node.image_path
+        return ImageBlock(
+            image=image_node.image,
+            url=image_node.image_url,
+            image_mimetype=image_node.image_mimetype,
+            path=image_path,
+        )
+
+    else:
+        raise ValueError("image_node.image is neither a string or None.")

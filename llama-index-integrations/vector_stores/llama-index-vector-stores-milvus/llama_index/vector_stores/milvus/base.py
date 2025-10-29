@@ -12,7 +12,7 @@ from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
     get_default_sparse_embedding_function,
@@ -402,6 +402,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             f"Successfully set properties for collection: {self.collection_name}"
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "MilvusVectorStore"
+
     @property
     def client(self) -> MilvusClient:
         """Get client."""
@@ -683,7 +688,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if "_node_content" in item:
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
+            else:
+                raise ValueError(
+                    "Node content not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -716,7 +731,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if "_node_content" in item:
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
+            else:
+                raise ValueError(
+                    "Node content not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -890,6 +915,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
@@ -1348,7 +1374,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         field_name=field_name,
                         datatype=field_type,
                         max_length=max_length,
-                        **self.sparse_embedding_field.get_field_kwargs(),
+                        **self.sparse_embedding_function.get_field_kwargs(),
                     )
                 else:
                     schema.add_field(
@@ -1406,13 +1432,18 @@ class MilvusVectorStore(BasePydanticVectorStore):
         ids = []
         # Parse the results
         for hit in results[0]:
-            metadata = {
-                "_node_content": hit["entity"].get("_node_content", None),
-                "_node_type": hit["entity"].get("_node_type", None),
-            }
-            for key in self.output_fields:
-                metadata[key] = hit["entity"].get(key)
-            node = metadata_dict_to_node(metadata)
+            if "_node_content" in hit["entity"]:
+                metadata = {
+                    "_node_content": hit["entity"].get("_node_content", None),
+                    "_node_type": hit["entity"].get("_node_type", None),
+                }
+                for key in self.output_fields:
+                    metadata[key] = hit["entity"].get(key)
+                node = metadata_dict_to_node(metadata)
+            else:
+                node = TextNode(
+                    metadata={key: hit["entity"].get(key) for key in self.output_fields}
+                )
 
             # Set the text field if it exists
             if self.text_key in hit["entity"]:

@@ -1,11 +1,14 @@
 import os
 import httpx
 from unittest.mock import MagicMock
+from typing import List
 
 import pytest
 from pathlib import Path
+from pydantic import BaseModel
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     DocumentBlock,
     TextBlock,
@@ -13,7 +16,9 @@ from llama_index.core.llms import (
     ChatResponse,
     CachePoint,
     CacheControl,
+    ToolCallBlock,
 )
+from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.base import AnthropicChatResponse
@@ -240,7 +245,7 @@ def pdf_url() -> str:
 def test_tool_required():
     llm = Anthropic(model="claude-3-5-sonnet-latest")
 
-    search_tool = FunctionTool.from_defaults(fn=search)
+    search_tool = FunctionTool.from_defaults(fn=search, name="search")
 
     # Test with tool_required=True
     response = llm.chat_with_tools(
@@ -249,8 +254,24 @@ def test_tool_required():
         tool_required=True,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert response.message.additional_kwargs["tool_calls"] is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        any(
+            block.tool_name == "search"
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -260,7 +281,16 @@ def test_tool_required():
     )
     assert isinstance(response, AnthropicChatResponse)
     # Should not use tools for a simple greeting
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     # should not blow up with no tools (regression test)
     response = llm.chat_with_tools(
@@ -269,7 +299,16 @@ def test_tool_required():
         tool_required=False,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.skipif(
@@ -377,11 +416,233 @@ def test_cache_point_to_cache_control() -> None:
         ),
     ]
     ant_messages, _ = messages_to_anthropic_messages(messages)
-    print(ant_messages[0]["content"][-1]["cache_control"])
-    assert (
-        ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["type"]
-        == "ephemeral"
+    assert ant_messages[0]["content"][-1]["cache_control"]["type"] == "ephemeral"
+    assert ant_messages[0]["content"][-1]["cache_control"]["ttl"] == "5m"
+
+
+def test_thinking_input():
+    messages = [
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                ThinkingBlock(content="Hello"),
+                TextBlock(text="World"),
+            ],
+        ),
+    ]
+    ant_messages, _ = messages_to_anthropic_messages(messages)
+    assert ant_messages[0]["role"] == "assistant"
+    assert ant_messages[0]["content"][0]["type"] == "thinking"
+    assert ant_messages[0]["content"][0]["thinking"] == "Hello"
+    assert ant_messages[0]["content"][1]["type"] == "text"
+    assert ant_messages[0]["content"][1]["text"] == "World"
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking():
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
     )
-    assert (
-        ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["ttl"] == "5m"
+    res = llm.chat(
+        messages=[
+            ChatMessage(
+                content="Please solve the following equation for x: x^2+12x+7=0. Please think before providing a response."
+            )
+        ]
     )
+    assert any(isinstance(block, ThinkingBlock) for block in res.message.blocks)
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in res.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        > 0
+    )
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking_with_structured_output():
+    # Example from: https://docs.llamaindex.ai/en/stable/examples/llm/anthropic/#structured-prediction
+    class MenuItem(BaseModel):
+        """A menu item in a restaurant."""
+
+        course_name: str
+        is_vegetarian: bool
+
+    class Restaurant(BaseModel):
+        """A restaurant with name, city, and cuisine."""
+
+        name: str
+        city: str
+        cuisine: str
+        menu_items: List[MenuItem]
+
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
+    )
+    prompt_tmpl = PromptTemplate("Generate a restaurant in a given city {city_name}")
+
+    restaurant_obj = (
+        llm.as_structured_llm(Restaurant)
+        .complete(prompt_tmpl.format(city_name="Miami"))
+        .raw
+    )
+
+    assert isinstance(restaurant_obj, Restaurant)
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking_with_tool_should_fail():
+    class MenuItem(BaseModel):
+        """A menu item in a restaurant."""
+
+        course_name: str
+        is_vegetarian: bool
+
+    class Restaurant(BaseModel):
+        """A restaurant with name, city, and cuisine."""
+
+        name: str
+        city: str
+        cuisine: str
+        menu_items: List[MenuItem]
+
+    def generate_restaurant(restaurant: Restaurant) -> Restaurant:
+        return restaurant
+
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
+    )
+
+    # Raises an exception because Anthropic doesn't support tool choice when thinking is enabled
+    with pytest.raises(Exception):
+        llm.chat_with_tools(
+            user_msg="Generate a restaurant in a given city Miami",
+            tools=[generate_restaurant],
+            tool_choice={"type": "any"},
+        )
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_supported_model():
+    """Test cache_idx handling with a model that supports prompt caching."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+        ChatMessage(role=MessageRole.USER, content="User message 2"),
+    ]
+
+    # Use a model that supports caching with cache_idx=2
+    # This should cache messages[0] (SYSTEM), messages[1] (USER), messages[2] (ASSISTANT)
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=2, model="claude-sonnet-4-5-20250929"
+    )
+
+    # cache_idx=2 means cache up to and including index 2 in original messages
+    # anthropic_messages[0] = messages[1] (USER) - should have cache
+    # anthropic_messages[1] = messages[2] (ASSISTANT) - should have cache
+    # anthropic_messages[2] = messages[3] (USER) - should NOT have cache
+    assert "cache_control" in anthropic_messages[0]["content"][0]
+    assert anthropic_messages[0]["content"][0]["cache_control"]["type"] == "ephemeral"
+    assert "cache_control" in anthropic_messages[1]["content"][0]
+    assert anthropic_messages[1]["content"][0]["cache_control"]["type"] == "ephemeral"
+    assert "cache_control" not in anthropic_messages[2]["content"][0]
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_unsupported_model():
+    """Test cache_idx handling with a model that doesn't support prompt caching."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+    ]
+
+    # Use a model that doesn't support caching
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=1, model="claude-2.1"
+    )
+
+    # No messages should have cache_control when model doesn't support it
+    for msg in anthropic_messages:
+        assert "cache_control" not in msg["content"][0]
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_no_model():
+    """Test cache_idx handling when no model is specified (should allow caching)."""
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+    ]
+
+    # No model specified - should include cache_control
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=0, model=None
+    )
+
+    # First message should have cache_control when model is None
+    assert "cache_control" in anthropic_messages[0]["content"][0]
+    assert anthropic_messages[0]["content"][0]["cache_control"]["type"] == "ephemeral"
+
+
+def test_prepare_chat_with_tools_caching_supported_model():
+    """Test tool caching with a model that supports prompt caching."""
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+
+    # Prepare tools with prompt caching enabled
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+    )
+
+    # Should have cache_control on last tool
+    assert len(result["tools"]) == 1
+    assert "cache_control" in result["tools"][0]
+    assert result["tools"][0]["cache_control"]["type"] == "ephemeral"
+
+
+def test_prepare_chat_with_tools_caching_unsupported_model(caplog):
+    """Test tool caching with a model that doesn't support prompt caching."""
+    llm = Anthropic(model="claude-2.1")
+
+    # Prepare tools with prompt caching enabled but unsupported model
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+    )
+
+    # Should not have cache_control when model doesn't support it
+    assert len(result["tools"]) == 1
+    assert "cache_control" not in result["tools"][0]
+
+    # Check that warning was logged
+    assert "does not support prompt caching" in caplog.text
+    assert "claude-2.1" in caplog.text

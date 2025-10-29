@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from llama_index.core.readers.base import BasePydanticReader
@@ -76,6 +77,8 @@ class TrafilaturaWebReader(BasePydanticReader):
                 include_links=include_links,
                 **kwargs,
             )
-            documents.append(Document(text=response, id_=url))
+            documents.append(
+                Document(text=response, id_=str(uuid.uuid4()), metadata={"url": url})
+            )
 
         return documents

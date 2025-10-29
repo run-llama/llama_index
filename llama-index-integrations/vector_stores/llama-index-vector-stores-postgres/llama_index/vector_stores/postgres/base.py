@@ -8,10 +8,10 @@ from typing import (
     Optional,
     Type,
     Union,
-    TYPE_CHECKING,
     Set,
     Tuple,
     Literal,
+    Callable,
 )
 
 import asyncpg  # noqa
@@ -36,9 +36,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-if TYPE_CHECKING:
-    from sqlalchemy.sql.selectable import Select
-
+from sqlalchemy.sql.selectable import Select
 
 PGType = Literal[
     "text",
@@ -51,6 +49,8 @@ PGType = Literal[
     "date",
     "timestamp",
     "uuid",
+    # Array type for GIN indexing
+    "text[]",
 ]
 
 
@@ -58,6 +58,7 @@ class DBEmbeddingRow(NamedTuple):
     node_id: str
     text: str
     metadata: dict
+    custom_fields: dict
     similarity: float
 
 
@@ -82,6 +83,7 @@ def get_data_model(
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
     from sqlalchemy.dialects.postgresql import (
+        ARRAY,
         BIGINT,
         JSON,
         JSONB,
@@ -106,6 +108,8 @@ def get_data_model(
         "date": Date,
         "timestamp": DateTime,
         "uuid": UUID,
+        # Array type for GIN indexing
+        "text[]": ARRAY(String),
     }
 
     indexed_metadata_keys = indexed_metadata_keys or set()
@@ -132,14 +136,32 @@ def get_data_model(
     else:
         embedding_col = Column(Vector(embed_dim))  # type: ignore
 
-    metadata_indices = [
+    # BTREE indices for scalar types (existing behavior)
+    btree_indices = [
         Index(
             f"{indexname}_{key}_{pg_type.replace(' ', '_')}",
             cast(column("metadata_").op("->>")(key), pg_type_map[pg_type]),
             postgresql_using="btree",
         )
         for key, pg_type in indexed_metadata_keys
+        if pg_type != "text[]"
     ]
+
+    # GIN indices for text arrays (enables fast array operations with ?|, ?&, @> operators)
+    gin_indices = [
+        Index(
+            f"{indexname}_{key}_gin",
+            cast(
+                column("metadata_").op("->")(key), JSONB
+            ),  # Cast to JSONB for GIN index compatibility
+            postgresql_using="gin",
+        )
+        for key, pg_type in indexed_metadata_keys
+        if pg_type == "text[]"
+    ]
+
+    # Combine both types of indices
+    metadata_indices = btree_indices + gin_indices
 
     if hybrid_search:
 
@@ -260,6 +282,9 @@ class PGVectorStore(BasePydanticVectorStore):
     )
     _async_session: sqlalchemy.ext.asyncio.AsyncSession = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
+    _customize_query_fn: Optional[Callable[[Select, Any, Any], Select]] = PrivateAttr(
+        default=None
+    )
 
     def __init__(
         self,
@@ -281,6 +306,7 @@ class PGVectorStore(BasePydanticVectorStore):
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
         indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None,
+        customize_query_fn: Optional[Callable[[Select, Any, Any], Select]] = None,
     ) -> None:
         """
         Constructor.
@@ -305,6 +331,7 @@ class PGVectorStore(BasePydanticVectorStore):
             engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
             async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
             indexed_metadata_keys (Optional[List[Tuple[str, str]]], optional): Set of metadata keys with their type to index. Defaults to None.
+            customize_query_fn (Optional[Callable[[Select, Any, Any], Select]], optional): Function used to customize PostgreSQL queries. Defaults to None.
 
         """
         table_name = table_name.lower() if table_name else "llamaindex"
@@ -363,6 +390,8 @@ class PGVectorStore(BasePydanticVectorStore):
                 "Both engine and async_engine must be provided, or both must be None"
             )
 
+        self._customize_query_fn = customize_query_fn
+
     async def close(self) -> None:
         if not self._is_initialized:
             return
@@ -400,6 +429,7 @@ class PGVectorStore(BasePydanticVectorStore):
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         use_halfvec: bool = False,
         indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None,
+        customize_query_fn: Optional[Callable[[Select, Any, Any], Select]] = None,
     ) -> "PGVectorStore":
         """
         Construct from params.
@@ -427,6 +457,7 @@ class PGVectorStore(BasePydanticVectorStore):
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
             indexed_metadata_keys (Optional[Set[Tuple[str, str]]], optional): Set of metadata keys to index. Defaults to None.
+            customize_query_fn (Optional[Callable[[Select, Any, Any], Select]], optional): Function used to customize PostgreSQL queries. Defaults to None.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -455,6 +486,7 @@ class PGVectorStore(BasePydanticVectorStore):
             create_engine_kwargs=create_engine_kwargs,
             use_halfvec=use_halfvec,
             indexed_metadata_keys=indexed_metadata_keys,
+            customize_query_fn=customize_query_fn,
         )
 
     @property
@@ -507,7 +539,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            self._base.metadata.create_all(session.connection())
+            self._table_class.__table__.create(session.connection(), checkfirst=True)
 
     def _create_extension(self) -> None:
         import sqlalchemy
@@ -644,6 +676,10 @@ class PGVectorStore(BasePydanticVectorStore):
             return "ILIKE"
         elif operator == FilterOperator.IS_EMPTY:
             return "IS NULL"
+        elif operator == FilterOperator.ANY:
+            return "?|"
+        elif operator == FilterOperator.ALL:
+            return "?&"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -662,6 +698,17 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
+            )
+        elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
+            # Expects a text array stored in the metadata, and a list of values to compare
+            # Works with text[] arrays using PostgreSQL ?| (ANY) and ?& (ALL) operators
+            # Example: metadata_::jsonb->'tags' ?| array['AI', 'ML']
+            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"array[{filter_value}]"
             )
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
@@ -748,8 +795,9 @@ class PGVectorStore(BasePydanticVectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
     ) -> Any:
-        from sqlalchemy import select, text
+        from sqlalchemy import text, select
 
         stmt = select(  # type: ignore
             self._table_class.id,
@@ -758,6 +806,9 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.metadata_,
             self._table_class.embedding.cosine_distance(embedding).label("distance"),
         ).order_by(text("distance asc"))
+
+        if self._customize_query_fn is not None:
+            stmt = self._customize_query_fn(stmt, self._table_class, **kwargs)
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
@@ -768,7 +819,7 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> List[DBEmbeddingRow]:
-        stmt = self._build_query(embedding, limit, metadata_filters)
+        stmt = self._build_query(embedding, limit, metadata_filters, **kwargs)
         with self._session() as session, session.begin():
             from sqlalchemy import text
 
@@ -795,6 +846,11 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
+                    custom_fields={
+                        key: val
+                        for key, val in item._asdict().items()
+                        if key not in ["id", "node_id", "text", "metadata_", "distance"]
+                    },
                     similarity=(1 - item.distance) if item.distance is not None else 0,
                 )
                 for item in res.all()
@@ -807,7 +863,7 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> List[DBEmbeddingRow]:
-        stmt = self._build_query(embedding, limit, metadata_filters)
+        stmt = self._build_query(embedding, limit, metadata_filters, **kwargs)
         async with self._async_session() as async_session, async_session.begin():
             from sqlalchemy import text
 
@@ -831,6 +887,11 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
+                    custom_fields={
+                        key: val
+                        for key, val in item._asdict().items()
+                        if key not in ["id", "node_id", "text", "metadata_", "distance"]
+                    },
                     similarity=(1 - item.distance) if item.distance is not None else 0,
                 )
                 for item in res.all()
@@ -841,9 +902,10 @@ class PGVectorStore(BasePydanticVectorStore):
         query_str: Optional[str],
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
     ) -> Any:
-        from sqlalchemy import select, type_coerce
-        from sqlalchemy.sql import func, text
+        from sqlalchemy import type_coerce
+        from sqlalchemy.sql import func, text, select
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
@@ -858,16 +920,18 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        # Replace '&' with '|' to perform an OR search for higher recall
-        config_type_coerce = type_coerce(self.text_search_config, REGCONFIG)
+        # Remove special characters used by ts_query (essentially, all punctuation except single periods within words)
+        # and collapse multiple spaces
+        query_str = re.sub(r"(?!\b\.\b)\W+", " ", query_str).strip()
+
+        # Replace space with "|" to perform an OR search for higher recall
+        query_str = query_str.replace(" ", "|")
+
         ts_query = func.to_tsquery(
-            config_type_coerce,
-            func.replace(
-                func.text(func.plainto_tsquery(config_type_coerce, query_str)),
-                "&",
-                "|",
-            ),
+            type_coerce(self.text_search_config, REGCONFIG),
+            query_str,
         )
+
         stmt = (
             select(  # type: ignore
                 self._table_class.id,
@@ -879,6 +943,9 @@ class PGVectorStore(BasePydanticVectorStore):
             .where(self._table_class.text_search_tsv.op("@@")(ts_query))
             .order_by(text("rank desc"))
         )
+
+        if self._customize_query_fn is not None:
+            stmt = self._customize_query_fn(stmt, self._table_class, **kwargs)
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
@@ -897,6 +964,11 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
+                    custom_fields={
+                        key: val
+                        for key, val in item._asdict().items()
+                        if key not in ["id", "node_id", "text", "metadata_", "rank"]
+                    },
                     similarity=item.rank,
                 )
                 for item in res.all()
@@ -916,6 +988,11 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
+                    custom_fields={
+                        key: val
+                        for key, val in item._asdict().items()
+                        if key not in ["id", "node_id", "text", "metadata_", "rank"]
+                    },
                     similarity=item.rank,
                 )
                 for item in res.all()
@@ -986,6 +1063,8 @@ class PGVectorStore(BasePydanticVectorStore):
                     text=db_embedding_row.text,
                     metadata=db_embedding_row.metadata,
                 )
+            if db_embedding_row.custom_fields:
+                node.metadata["custom_fields"] = db_embedding_row.custom_fields
             similarities.append(db_embedding_row.similarity)
             ids.append(db_embedding_row.node_id)
             nodes.append(node)
@@ -1052,7 +1131,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         with self._session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             session.execute(stmt)
@@ -1064,7 +1143,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         async with self._async_session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             await session.execute(stmt)
@@ -1192,6 +1271,11 @@ class PGVectorStore(BasePydanticVectorStore):
                 text = item.text
                 metadata = item.metadata_
                 embedding = item.embedding
+                custom_fields = {
+                    key: val
+                    for key, val in item._asdict().items()
+                    if key not in ["id", "node_id", "text", "metadata_"]
+                }
 
                 try:
                     node = metadata_dict_to_node(metadata)
@@ -1205,7 +1289,6 @@ class PGVectorStore(BasePydanticVectorStore):
                         embedding=embedding,
                     )
                 nodes.append(node)
-
         return nodes
 
     async def aget_nodes(
@@ -1244,6 +1327,11 @@ class PGVectorStore(BasePydanticVectorStore):
                 text = item.text
                 metadata = item.metadata_
                 embedding = item.embedding
+                custom_fields = {
+                    key: val
+                    for key, val in item._asdict().items()
+                    if key not in ["id", "node_id", "text", "metadata_"]
+                }
 
                 try:
                     node = metadata_dict_to_node(metadata)
@@ -1256,6 +1344,7 @@ class PGVectorStore(BasePydanticVectorStore):
                         metadata=metadata,
                         embedding=embedding,
                     )
+
                 nodes.append(node)
 
             return nodes

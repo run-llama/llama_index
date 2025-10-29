@@ -1,5 +1,6 @@
 """Google's hosted Gemini API."""
 
+import asyncio
 import functools
 import os
 import typing
@@ -35,6 +36,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ThinkingBlock,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -52,6 +55,7 @@ from llama_index.llms.google_genai.utils import (
     prepare_chat_params,
     handle_streaming_flexible_model,
     create_retry_decorator,
+    delete_uploaded_files,
 )
 
 import google.genai
@@ -127,6 +131,18 @@ class GoogleGenAI(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=True, description="Whether the model is a function calling model."
     )
+    cached_content: Optional[str] = Field(
+        default=None,
+        description="Cached content to use for the model.",
+    )
+    built_in_tool: Optional[types.Tool] = Field(
+        default=None,
+        description="Google GenAI tool to use for the model to augment responses.",
+    )
+    use_file_api: bool = Field(
+        default=True,
+        description="Whether or not to use the FileAPI for large files (>20MB).",
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -147,6 +163,9 @@ class GoogleGenAI(FunctionCallingLLM):
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
+        cached_content: Optional[str] = None,
+        built_in_tool: Optional[types.Tool] = None,
+        use_file_api: bool = True,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -193,6 +212,9 @@ class GoogleGenAI(FunctionCallingLLM):
             callback_manager=callback_manager,
             is_function_calling_model=is_function_calling_model,
             max_retries=max_retries,
+            cached_content=cached_content,
+            built_in_tool=built_in_tool,
+            use_file_api=use_file_api,
             **kwargs,
         )
 
@@ -201,14 +223,31 @@ class GoogleGenAI(FunctionCallingLLM):
         self._model_meta = model_meta
         # store this as a dict and not as a pydantic model so we can more easily
         # merge it later
-        self._generation_config = (
-            generation_config.model_dump()
-            if generation_config
-            else types.GenerateContentConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens,
+        if generation_config:
+            self._generation_config = generation_config.model_dump()
+            if cached_content:
+                self._generation_config.setdefault("cached_content", cached_content)
+            if built_in_tool is not None:
+                if self._generation_config.get("tools") is None:
+                    self._generation_config["tools"] = []
+                if isinstance(self._generation_config["tools"], list):
+                    if len(self._generation_config["tools"]) > 0:
+                        raise ValueError(
+                            "Providing multiple Google GenAI tools or mixing with custom tools is not supported."
+                        )
+                self._generation_config["tools"].append(built_in_tool)
+        else:
+            config_kwargs = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+                "cached_content": cached_content,
+            }
+            if built_in_tool:
+                config_kwargs["tools"] = [built_in_tool]
+
+            self._generation_config = types.GenerateContentConfig(
+                **config_kwargs
             ).model_dump()
-        )
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
         )
@@ -268,9 +307,21 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
+        next_msg, chat_kwargs = asyncio.run(
+            prepare_chat_params(
+                self.model, messages, self.use_file_api, self._client, **params
+            )
+        )
         chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message(next_msg.parts)
+        response = chat.send_message(
+            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+        )
+
+        if self.use_file_api:
+            asyncio.run(
+                delete_uploaded_files([*chat_kwargs["history"], next_msg], self._client)
+            )
+
         return chat_from_gemini_response(response)
 
     @llm_retry_decorator
@@ -280,9 +331,19 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
+        next_msg, chat_kwargs = await prepare_chat_params(
+            self.model, messages, self.use_file_api, self._client, **params
+        )
         chat = self._client.aio.chats.create(**chat_kwargs)
-        response = await chat.send_message(next_msg.parts)
+        response = await chat.send_message(
+            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+        )
+
+        if self.use_file_api:
+            await delete_uploaded_files(
+                [*chat_kwargs["history"], next_msg], self._client
+            )
+
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
@@ -303,13 +364,20 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
+        next_msg, chat_kwargs = asyncio.run(
+            prepare_chat_params(
+                self.model, messages, self.use_file_api, self._client, **params
+            )
+        )
         chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message_stream(next_msg.parts)
+        response = chat.send_message_stream(
+            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
             existing_tool_calls = []
+            thoughts = ""
             for r in response:
                 if not r.candidates:
                     continue
@@ -317,15 +385,26 @@ class GoogleGenAI(FunctionCallingLLM):
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 if content_delta:
-                    content += content_delta
+                    if top_candidate.content.parts[0].thought:
+                        thoughts += content_delta
+                    else:
+                        content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 existing_tool_calls.extend(
                     llama_resp.message.additional_kwargs.get("tool_calls", [])
                 )
                 llama_resp.delta = content_delta
-                llama_resp.message.content = content
+                llama_resp.message.blocks = [TextBlock(text=content)]
+                llama_resp.message.blocks.append(ThinkingBlock(content=thoughts))
                 llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
+
+            if self.use_file_api:
+                asyncio.run(
+                    delete_uploaded_files(
+                        [*chat_kwargs["history"], next_msg], self._client
+                    )
+                )
 
         return gen()
 
@@ -343,13 +422,18 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
+        next_msg, chat_kwargs = await prepare_chat_params(
+            self.model, messages, self.use_file_api, self._client, **params
+        )
         chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             existing_tool_calls = []
-            async for r in await chat.send_message_stream(next_msg.parts):
+            thoughts = ""
+            async for r in await chat.send_message_stream(
+                next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+            ):
                 if candidates := r.candidates:
                     if not candidates:
                         continue
@@ -359,7 +443,10 @@ class GoogleGenAI(FunctionCallingLLM):
                         if parts := response_content.parts:
                             content_delta = parts[0].text
                             if content_delta:
-                                content += content_delta
+                                if parts[0].thought:
+                                    thoughts += content_delta
+                                else:
+                                    content += content_delta
                             llama_resp = chat_from_gemini_response(r)
                             existing_tool_calls.extend(
                                 llama_resp.message.additional_kwargs.get(
@@ -367,11 +454,19 @@ class GoogleGenAI(FunctionCallingLLM):
                                 )
                             )
                             llama_resp.delta = content_delta
-                            llama_resp.message.content = content
+                            llama_resp.message.blocks = [TextBlock(text=content)]
+                            llama_resp.message.blocks.append(
+                                ThinkingBlock(content=thoughts)
+                            )
                             llama_resp.message.additional_kwargs["tool_calls"] = (
                                 existing_tool_calls
                             )
                             yield llama_resp
+
+            if self.use_file_api:
+                await delete_uploaded_files(
+                    [*chat_kwargs["history"], next_msg], self._client
+                )
 
         return gen()
 
@@ -470,9 +565,9 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.name,
-                    tool_name=tool_call.name,
-                    tool_kwargs=dict(tool_call.args),
+                    tool_id=tool_call["name"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=tool_call["args"],
                 )
             )
 
@@ -490,9 +585,15 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         messages = prompt.format_messages(**prompt_args)
+        contents = [
+            asyncio.run(
+                chat_message_to_gemini(message, self.use_file_api, self._client)
+            )
+            for message in messages
+        ]
         response = self._client.models.generate_content(
             model=self.model,
-            contents=list(map(chat_message_to_gemini, messages)),
+            contents=contents,
             **{
                 **llm_kwargs,
                 **{
@@ -503,6 +604,9 @@ class GoogleGenAI(FunctionCallingLLM):
                 },
             },
         )
+
+        if self.use_file_api:
+            asyncio.run(delete_uploaded_files(contents, self._client))
 
         if isinstance(response.parsed, BaseModel):
             return response.parsed
@@ -531,12 +635,20 @@ class GoogleGenAI(FunctionCallingLLM):
             generation_config["response_schema"] = output_cls
 
             messages = prompt.format_messages(**prompt_args)
-            contents = list(map(chat_message_to_gemini, messages))
+            contents = [
+                asyncio.run(
+                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                )
+                for message in messages
+            ]
             response = self._client.models.generate_content(
                 model=self.model,
                 contents=contents,
                 config=generation_config,
             )
+
+            if self.use_file_api:
+                asyncio.run(delete_uploaded_files(contents, self._client))
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -570,12 +682,20 @@ class GoogleGenAI(FunctionCallingLLM):
             generation_config["response_schema"] = output_cls
 
             messages = prompt.format_messages(**prompt_args)
-            contents = list(map(chat_message_to_gemini, messages))
+            contents = await asyncio.gather(
+                *[
+                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    for message in messages
+                ]
+            )
             response = await self._client.aio.models.generate_content(
                 model=self.model,
                 contents=contents,
                 config=generation_config,
             )
+
+            if self.use_file_api:
+                await delete_uploaded_files(contents, self._client)
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -609,7 +729,12 @@ class GoogleGenAI(FunctionCallingLLM):
             generation_config["response_schema"] = output_cls
 
             messages = prompt.format_messages(**prompt_args)
-            contents = list(map(chat_message_to_gemini, messages))
+            contents = [
+                asyncio.run(
+                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                )
+                for message in messages
+            ]
 
             def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
                 flexible_model = create_flexible_model(output_cls)
@@ -632,6 +757,9 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+
+                if self.use_file_api:
+                    asyncio.run(delete_uploaded_files(contents, self._client))
 
             return gen()
         else:
@@ -661,7 +789,12 @@ class GoogleGenAI(FunctionCallingLLM):
             generation_config["response_schema"] = output_cls
 
             messages = prompt.format_messages(**prompt_args)
-            contents = list(map(chat_message_to_gemini, messages))
+            contents = await asyncio.gather(
+                *[
+                    chat_message_to_gemini(message, self.use_file_api, self._client)
+                    for message in messages
+                ]
+            )
 
             async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
                 flexible_model = create_flexible_model(output_cls)
@@ -684,6 +817,9 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+
+                if self.use_file_api:
+                    await delete_uploaded_files(contents, self._client)
 
             return gen()
         else:

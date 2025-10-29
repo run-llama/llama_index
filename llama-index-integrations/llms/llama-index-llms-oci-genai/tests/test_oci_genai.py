@@ -7,7 +7,13 @@ import pytest
 from pytest import MonkeyPatch
 
 from llama_index.llms.oci_genai import OCIGenAI
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    TextBlock,
+    ImageBlock,
+)
 from llama_index.core.tools import FunctionTool
 import json
 
@@ -49,7 +55,7 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
-        elif provider == "MetaProvider":
+        elif provider == "MetaProvider" or provider == "XAIProvider":
             return MockResponseDict(
                 {
                     "status": 200,
@@ -86,6 +92,8 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
         "cohere.command-r-plus",
         "meta.llama-3-70b-instruct",
         "meta.llama-3.1-70b-instruct",
+        "xai.grok-3-mini",
+        "xai.grok-4-fast-non-reasoning",
     ],
 )
 def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
@@ -123,7 +131,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     "headers": {"content-length": "1234"},
                 }
             )
-        elif provider == "MetaProvider":
+        elif provider == "MetaProvider" or provider == "XAIProvider":
             response = MockResponseDict(
                 {
                     "status": 200,
@@ -169,7 +177,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     ]
 
     # For Meta provider, we expect fewer fields in additional_kwargs
-    if provider == "MetaProvider":
+    if provider == "MetaProvider" or provider == "XAIProvider":
         additional_kwargs = {
             "finish_reason": "stop",
             "time_created": "2024-11-03T12:00:00Z",
@@ -205,7 +213,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "test_model_id", ["cohere.command-r-16k", "cohere.command-r-plus"]
+    "test_model_id", ["cohere.command-r-16k", "cohere.command-r-plus", "xai.grok-4"]
 )
 def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test chat_with_tools call to OCI Generative AI LLM service with tool calling."""
@@ -229,14 +237,27 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
     # Mock the client response
     def mocked_response(*args, **kwargs):
         response_text = "Assistant chat reply."
-        tool_calls = [
-            MockResponseDict(
-                {
-                    "name": "mock_tool_function",
-                    "parameters": {"param1": "test"},
-                }
-            )
-        ]
+        tool_calls = []
+        if provider == "CohereProvider":
+            tool_calls = [
+                MockResponseDict(
+                    {
+                        "name": "mock_tool_function",
+                        "parameters": {"param1": "test"},
+                    }
+                )
+            ]
+        elif provider == "XAIProvider":
+            tool_calls = [
+                MockResponseDict(
+                    {
+                        "arguments": '{"param1": "test"}',
+                        "name": "mock_tool_function",
+                        "id": "call_38131587",
+                    }
+                )
+            ]
+
         response = None
         if provider == "CohereProvider":
             response = MockResponseDict(
@@ -263,6 +284,46 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
                     "headers": {"content-length": "1234"},
                 }
             )
+        elif provider == "XAIProvider":
+            response = MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {
+                                                                    "text": "",
+                                                                }
+                                                            )
+                                                        ],
+                                                        "role": "ASSISTANT",
+                                                        "tool_calls": tool_calls,
+                                                    }
+                                                ),
+                                                "finish_reason": "tool_calls",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-0987654321",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
         else:
             # MetaProvider does not support tools
             raise NotImplementedError("Tools not supported for this provider.")
@@ -276,31 +337,56 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
     )
 
     # Expected response structure
-    expected_tool_calls = [
-        {
-            "name": "mock_tool_function",
-            "toolUseId": actual_response.message.additional_kwargs["tool_calls"][0][
-                "toolUseId"
-            ],
-            "input": json.dumps({"param1": "test"}),
-        }
-    ]
+    expected_tool_calls = []
 
-    expected_response = ChatResponse(
-        message=ChatMessage(
-            role=MessageRole.ASSISTANT,
-            content="Assistant chat reply.",
-            additional_kwargs={
-                "finish_reason": "stop",
-                "documents": [],
-                "citations": [],
-                "search_queries": [],
-                "is_search_required": False,
-                "tool_calls": expected_tool_calls,
-            },
-        ),
-        raw={},
-    )
+    if provider == "CohereProvider":
+        expected_tool_calls = [
+            {
+                "name": "mock_tool_function",
+                "toolUseId": actual_response.message.additional_kwargs["tool_calls"][0][
+                    "toolUseId"
+                ],
+                "input": json.dumps({"param1": "test"}),
+            }
+        ]
+    elif provider == "XAIProvider":
+        expected_tool_calls = [
+            {
+                "name": "mock_tool_function",
+                "toolUseId": "1234",
+                "input": json.dumps({"param1": "test"}),
+            }
+        ]
+
+    expected_response = None
+    if provider == "CohereProvider":
+        expected_response = ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="Assistant chat reply.",
+                additional_kwargs={
+                    "finish_reason": "stop",
+                    "documents": [],
+                    "citations": [],
+                    "search_queries": [],
+                    "is_search_required": False,
+                    "tool_calls": expected_tool_calls,
+                },
+            ),
+            raw={},
+        )
+    elif provider == "XAIProvider":
+        expected_response = ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="",
+                additional_kwargs={
+                    "finish_reason": "tool_calls",
+                    "tool_calls": expected_tool_calls,
+                },
+            ),
+            raw={},
+        )
 
     # Compare everything except the toolUseId which is randomly generated
     assert actual_response.message.role == expected_response.message.role
@@ -326,3 +412,87 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
 
     # Check additional_kwargs
     assert actual_response.additional_kwargs == expected_response.additional_kwargs
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["meta.llama-3-70b-instruct", "meta.llama-3.1-70b-instruct", "xai.grok-4"],
+)
+def test_llm_multimodal_chat_with_image(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Test multimodal chat call to OCI Generative AI LLM service with image input."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_response(*args, **kwargs):
+        response_text = "The image contains the OCI logo."
+        return MockResponseDict(
+            {
+                "status": 200,
+                "data": MockResponseDict(
+                    {
+                        "chat_response": MockResponseDict(
+                            {
+                                "choices": [
+                                    MockResponseDict(
+                                        {
+                                            "message": MockResponseDict(
+                                                {
+                                                    "content": [
+                                                        MockResponseDict(
+                                                            {"text": response_text}
+                                                        )
+                                                    ]
+                                                }
+                                            ),
+                                            "finish_reason": "stop",
+                                        }
+                                    )
+                                ],
+                                "time_created": "2024-07-02T12:00:00Z",
+                            }
+                        ),
+                        "model_id": test_model_id,
+                        "model_version": "1.0",
+                    }
+                ),
+                "request_id": "req-0987654321",
+                "headers": {"content-length": "1234"},
+            }
+        )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII="
+    messages = [
+        ChatMessage(
+            role="user",
+            content=[
+                TextBlock(text="What is in this image?"),
+                ImageBlock(image_url=image_url),
+            ],
+        )
+    ]
+
+    expected = ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="The image contains the OCI logo.",
+            additional_kwargs={
+                "finish_reason": "stop",
+                "time_created": "2024-07-02T12:00:00Z",
+            },
+        ),
+        raw={},
+        additional_kwargs={
+            "model_id": test_model_id,
+            "model_version": "1.0",
+            "request_id": "req-0987654321",
+            "content-length": "1234",
+        },
+    )
+
+    actual = llm.chat(messages)
+
+    assert actual.message.content == expected.message.content

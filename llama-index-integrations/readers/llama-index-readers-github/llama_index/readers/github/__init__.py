@@ -11,11 +11,29 @@ from llama_index.readers.github.repository.base import (
     GithubRepositoryReader,
 )
 
-__all__ = [
-    "GithubClient",
-    "GithubRepositoryReader",
-    "GitHubRepositoryCollaboratorsReader",
-    "GitHubCollaboratorsClient",
-    "GitHubRepositoryIssuesReader",
-    "GitHubIssuesClient",
-]
+try:
+    from llama_index.readers.github.github_app_auth import (
+        GitHubAppAuth,
+        GitHubAppAuthenticationError,
+    )
+
+    __all__ = [
+        "GithubClient",
+        "GithubRepositoryReader",
+        "GitHubRepositoryCollaboratorsReader",
+        "GitHubCollaboratorsClient",
+        "GitHubRepositoryIssuesReader",
+        "GitHubIssuesClient",
+        "GitHubAppAuth",
+        "GitHubAppAuthenticationError",
+    ]
+except ImportError:
+    # PyJWT not installed, GitHub App auth not available
+    __all__ = [
+        "GithubClient",
+        "GithubRepositoryReader",
+        "GitHubRepositoryCollaboratorsReader",
+        "GitHubCollaboratorsClient",
+        "GitHubRepositoryIssuesReader",
+        "GitHubIssuesClient",
+    ]

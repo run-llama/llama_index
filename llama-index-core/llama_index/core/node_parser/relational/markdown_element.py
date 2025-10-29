@@ -26,6 +26,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         elements = self.extract_elements(
             node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
+        elements = self.extract_html_tables(elements)
         table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
         self.extract_table_summaries(table_elements)
@@ -58,6 +59,75 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
             n.relationships[NodeRelationship.SOURCE] = source_document
             n.metadata.update(node.metadata)
         return nodes
+
+    def extract_html_tables(self, elements: List[Element]) -> List[Element]:
+        """
+        Extract html tables from text.
+
+        Returns:
+            List[Element]: text elements split by table_text element
+
+        """
+        new_elements = []
+        for element in elements:
+            if element.type != "text":
+                # skip when it is not text
+                new_elements.append(element)
+                continue
+            else:
+                text = element.element
+                last_pos = 0
+                i = 0
+                n = len(text)
+
+                while i < n:
+                    table_start = text.find("<table>", i)
+                    if table_start == -1:
+                        break
+
+                    table_end = text.find("</table>", table_start)
+                    if table_end - table_start <= 7:
+                        # not a valid <table></table>
+                        break
+
+                    # extract text before the table
+                    pre_text = text[last_pos:table_start].strip()
+                    if pre_text:
+                        new_elements.append(
+                            Element(
+                                id=f"{element.id}_{len(new_elements)}",
+                                type="text",
+                                element=pre_text,
+                            )
+                        )
+
+                    # extract the html table
+                    table_content = text[
+                        table_start : table_end + 8
+                    ]  # 8 is length of </table>
+                    new_elements.append(
+                        Element(
+                            id=f"{element.id}_{len(new_elements)}",
+                            type="table_text",
+                            element=table_content,
+                        )
+                    )
+
+                    last_pos = table_end + 8
+                    i = last_pos
+
+                # add the last piece of text
+                final_text = text[last_pos:].strip()
+                if final_text:
+                    new_elements.append(
+                        Element(
+                            id=f"{element.id}_{len(new_elements)}",
+                            type="text",
+                            element=final_text,
+                        )
+                    )
+
+        return new_elements
 
     def extract_elements(
         self,
@@ -106,7 +176,6 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                     currentElement = Element(
                         id=f"id_{len(elements)}", type="text", element=line
                     )
-
             elif currentElement is not None and currentElement.type == "code":
                 currentElement.element += "\n" + line
 

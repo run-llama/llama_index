@@ -4,6 +4,7 @@ from llama_index.core.tools import FunctionTool
 import pytest
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import resolve_tool_choice
+from llama_index.core.base.llms.types import ToolCallBlock
 
 
 def test_text_inference_embedding_class():
@@ -165,3 +166,31 @@ def test_tool_required():
     )
     print(repr(response))
     assert len(response.message.additional_kwargs["tool_calls"]) == 1
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 1
+    )
+
+
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None, reason="OpenAI API key not available"
+)
+def test_streaming_with_usage_tokens():
+    llm = OpenAI(
+        model="gpt-4.1-mini",
+        additional_kwargs={"stream_options": {"include_usage": True}},
+    )
+    response_gen = llm.stream_complete("What is the capital of France?")
+    intermediate_response = None
+    for chunk in response_gen:
+        intermediate_response = chunk
+
+    assert intermediate_response.additional_kwargs["prompt_tokens"] > 0
+    assert intermediate_response.additional_kwargs["completion_tokens"] > 0
+    assert intermediate_response.additional_kwargs["total_tokens"] > 0

@@ -29,6 +29,9 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     AudioBlock,
     DocumentBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+    ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -53,6 +56,15 @@ O1_MODELS: Dict[str, int] = {
     "o3-pro-2025-06-10": 200000,
     "o4-mini": 200000,
     "o4-mini-2025-04-16": 200000,
+    # gpt-5 is a reasoning model, putting it in the o models list
+    "gpt-5": 400000,
+    "gpt-5-2025-08-07": 400000,
+    "gpt-5-mini": 400000,
+    "gpt-5-mini-2025-08-07": 400000,
+    "gpt-5-nano": 400000,
+    "gpt-5-nano-2025-08-07": 400000,
+    "gpt-5-pro": 400000,
+    "gpt-5-pro-2025-10-06": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -106,6 +118,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4.1-2025-04-14": 1047576,
     "gpt-4.1-mini-2025-04-14": 1047576,
     "gpt-4.1-nano-2025-04-14": 1047576,
+    # Latest GPT-5-chat supports setting temperature, so putting it here
+    "gpt-5-chat-latest": 128000,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
@@ -188,15 +202,15 @@ JSON_SCHEMA_MODELS = [
     "o1-pro",
     "o3",
     "o3-mini",
-    "gpt-4.1",
     "gpt-4o",
     "gpt-4.1",
+    "gpt-5",
 ]
 
 
 def is_json_schema_supported(model: str) -> bool:
     try:
-        from openai.resources.beta.chat import completions
+        from openai.resources.chat.completions import completions
 
         if not hasattr(completions, "_type_to_response_format"):
             return False
@@ -337,6 +351,21 @@ def to_openai_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "text", "text": block.text})
             content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+                mimetype = block._guess_mimetype()
+            content.append(
+                {
+                    "type": "input_file",
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                }
+            )
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -372,6 +401,30 @@ def to_openai_message_dict(
                     },
                 }
             )
+        elif isinstance(block, ToolCallBlock):
+            try:
+                function_dict = {
+                    "type": "function",
+                    "function": {
+                        "name": block.tool_name,
+                        "arguments": block.tool_kwargs,
+                    },
+                    "id": block.tool_call_id,
+                }
+
+                if len(content) == 0 or content[-1]["type"] != "text":
+                    content.append(
+                        {"type": "text", "text": "", "tool_calls": [function_dict]}
+                    )
+                elif content[-1]["type"] == "text" and "tool_calls" in content[-1]:
+                    content[-1]["tool_calls"].append(function_dict)
+                elif content[-1]["type"] == "text" and "tool_calls" not in content[-1]:
+                    content[-1]["tool_calls"] = [function_dict]
+            except Exception:
+                logger.warning(
+                    f"It was not possible to convert ToolCallBlock with call id {block.tool_call_id or '`no call id`'} to a valid message, skipping..."
+                )
+                continue
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -379,6 +432,9 @@ def to_openai_message_dict(
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
     # Reference: https://platform.openai.com/docs/api-reference/chat/create
+    already_has_tool_calls = any(
+        isinstance(block, ToolCallBlock) for block in message.blocks
+    )
     content_txt = (
         None
         if content_txt == ""
@@ -386,6 +442,7 @@ def to_openai_message_dict(
         and (
             "function_call" in message.additional_kwargs
             or "tool_calls" in message.additional_kwargs
+            or already_has_tool_calls
         )
         else content_txt
     )
@@ -411,6 +468,13 @@ def to_openai_message_dict(
                 else content
             ),
         }
+        if already_has_tool_calls:
+            existing_tool_calls = []
+            for c in content:
+                existing_tool_calls.extend(c.get("tool_calls", []))
+
+            if existing_tool_calls:
+                message_dict["tool_calls"] = existing_tool_calls
 
     # TODO: O1 models do not support system prompts
     if (
@@ -421,10 +485,14 @@ def to_openai_message_dict(
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
-    # NOTE: openai messages have additional arguments:
-    # - function messages have `name`
-    # - assistant messages have optional `function_call`
-    message_dict.update(message.additional_kwargs)
+    if (
+        "tool_calls" in message.additional_kwargs
+        or "function_call" in message.additional_kwargs
+    ) and not already_has_tool_calls:
+        message_dict.update(message.additional_kwargs)
+
+    if "tool_call_id" in message.additional_kwargs:
+        message_dict["tool_call_id"] = message.additional_kwargs["tool_call_id"]
 
     null_keys = [key for key, value in message_dict.items() if value is None]
     # if drop_none is True, remove keys with None values
@@ -443,10 +511,15 @@ def to_openai_responses_message_dict(
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
+    tool_calls = []
+    reasoning = []
 
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            content.append({"type": "input_text", "text": block.text})
+            if message.role.value == "user":
+                content.append({"type": "input_text", "text": block.text})
+            else:
+                content.append({"type": "output_text", "text": block.text})
             content_txt += block.text
         elif isinstance(block, DocumentBlock):
             if not block.data:
@@ -455,6 +528,7 @@ def to_openai_responses_message_dict(
                 mimetype = block._guess_mimetype()
             else:
                 b64_string = block.data.decode("utf-8")
+                mimetype = block._guess_mimetype()
             content.append(
                 {
                     "type": "input_file",
@@ -481,9 +555,41 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+        elif isinstance(block, ThinkingBlock):
+            if block.content and "id" in block.additional_information:
+                reasoning.append(
+                    {
+                        "type": "reasoning",
+                        "id": block.additional_information["id"],
+                        "summary": [
+                            {"type": "summary_text", "text": block.content or ""}
+                        ],
+                    }
+                )
+        elif isinstance(block, ToolCallBlock):
+            tool_calls.extend(
+                [
+                    {
+                        "type": "function_call",
+                        "arguments": block.tool_kwargs,
+                        "call_id": block.tool_call_id,
+                        "name": block.tool_name,
+                    }
+                ]
+            )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+
+    if "tool_calls" in message.additional_kwargs:
+        message_dicts = [
+            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
+            for tool_call in message.additional_kwargs["tool_calls"]
+        ]
+
+        return [*reasoning, *message_dicts]
+    elif tool_calls:
+        return [*reasoning, *tool_calls]
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
@@ -519,16 +625,6 @@ def to_openai_responses_message_dict(
         }
 
         return message_dict
-    elif "tool_calls" in message.additional_kwargs:
-        message_dicts = [
-            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
-            for tool_call in message.additional_kwargs["tool_calls"]
-        ]
-
-        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
-            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
-
-        return message_dicts
 
     # there are some cases (like image generation or MCP tool call) that only support the string input
     # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
@@ -564,6 +660,9 @@ def to_openai_responses_message_dict(
     if drop_none:
         for key in null_keys:
             message_dict.pop(key)
+
+    if reasoning:
+        return [*reasoning, message_dict]
 
     return message_dict  # type: ignore
 
@@ -617,13 +716,22 @@ def from_openai_message(
     role = openai_message.role
     # NOTE: Azure OpenAI returns function calling messages without a content key
     if "text" in modalities and openai_message.content:
-        blocks = [TextBlock(text=openai_message.content or "")]
+        blocks: List[ContentBlock] = [TextBlock(text=openai_message.content or "")]
     else:
-        blocks = []
+        blocks: List[ContentBlock] = []
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
+        for tool_call in tool_calls:
+            if tool_call.function:
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.function.name or "",
+                        tool_kwargs=tool_call.function.arguments or {},
+                    )
+                )
         additional_kwargs.update(tool_calls=tool_calls)
 
     if openai_message.audio and "audio" in modalities:
@@ -711,6 +819,14 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
                     blocks.append(ImageBlock(image=img, detail=detail))
                 else:
                     blocks.append(ImageBlock(url=img, detail=detail))
+            elif t == "function_call":
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=elem.get("call_id"),
+                        tool_name=elem.get("name", ""),
+                        tool_kwargs=elem.get("arguments", {}),
+                    )
+                )
             else:
                 msg = f"Unsupported message type: {t}"
                 raise ValueError(msg)

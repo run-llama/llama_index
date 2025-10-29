@@ -653,7 +653,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        super().__init__()
+        super().__init__(**kwargs)
         base_user_agent = "llamaindex-python"
         self._user_agent = (
             f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
@@ -808,6 +808,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "AzureAISearchVectorStore"
 
     @property
     def client(self) -> Any:
@@ -1206,7 +1211,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
 
         # NOTE: users can provide odata_filters directly to the query and any other search parameters like scoring_profile etc .
-        odata_filters = kwargs.get("odata_filters") or kwargs.get("odata_filter")
+        odata_filters = kwargs.pop("odata_filters", None) or kwargs.pop(
+            "odata_filter", None
+        )
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1262,9 +1269,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         odata_filter = None
 
         # NOTE: users can provide odata_filters directly to the query
-        odata_filters = kwargs.get("odata_filters")
+        odata_filters = kwargs.pop("odata_filters", None) or kwargs.pop(
+            "odata_filter", None
+        )
         if odata_filters is not None:
-            odata_filter = odata_filter
+            odata_filter = odata_filters
         else:
             if query.filters is not None:
                 odata_filter = self._create_odata_filter(query.filters)

@@ -4,23 +4,31 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from pathlib import Path
+from typing import List
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
     TextBlock,
     DocumentBlock,
     ChatResponse,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
 from llama_index.llms.openai.utils import to_openai_message_dicts
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
+from openai.types.responses.response_reasoning_item import Content, Summary
 from openai.types.responses import (
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseOutputTextAnnotationAddedEvent,
     ResponseFunctionCallArgumentsDoneEvent,
+    ResponseReasoningItem,
+    ResponseOutputItem,
+    ResponseOutputText,
+    ResponseOutputItemDoneEvent,
 )
 from pydantic import BaseModel, Field
 
@@ -120,7 +128,6 @@ def test_parse_response_output():
 def test_process_response_event():
     """Test the static process_response_event method for streaming responses."""
     # Initial state
-    tool_calls = []
     built_in_tool_calls = []
     additional_kwargs = {}
     current_tool_call = None
@@ -133,21 +140,60 @@ def test_process_response_event():
         delta="Hello",
         type="response.output_text.delta",
         sequence_number=1,
+        logprobs=[],
     )
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        tool_calls=tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
         current_tool_call=current_tool_call,
         track_previous_responses=False,
     )
 
-    updated_blocks, updated_tool_calls, _, _, _, _, delta = result
+    updated_blocks, _, _, _, _, delta = result
     assert updated_blocks == [TextBlock(text="Hello")]
     assert delta == "Hello"
-    assert updated_tool_calls == []
+
+    event = ResponseOutputItemDoneEvent(
+        item=ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[
+                Content(text="hello world", type="reasoning_text"),
+                Content(text="this is a test", type="reasoning_text"),
+            ],
+            encrypted_content=None,
+            status=None,
+        ),
+        output_index=1,
+        sequence_number=1,
+        type="response.output_item.done",
+    )
+
+    result = OpenAIResponses.process_response_event(
+        event=event,
+        built_in_tool_calls=built_in_tool_calls,
+        additional_kwargs=additional_kwargs,
+        current_tool_call=current_tool_call,
+        track_previous_responses=False,
+    )
+
+    updated_blocks, _, _, _, _, _ = result
+    assert updated_blocks == [
+        ThinkingBlock(
+            block_type="thinking",
+            content="hello world\nthis is a test",
+            num_tokens=None,
+            additional_information={
+                "id": "1",
+                "type": "reasoning",
+                "encrypted_content": None,
+                "status": None,
+            },
+        )
+    ]
 
     # Test function call arguments delta
     current_tool_call = ResponseFunctionToolCall(
@@ -160,7 +206,6 @@ def test_process_response_event():
     )
 
     event = ResponseFunctionCallArgumentsDeltaEvent(
-        content_index=0,
         item_id="123",
         output_index=0,
         type="response.function_call_arguments.delta",
@@ -170,14 +215,13 @@ def test_process_response_event():
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        tool_calls=updated_tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
         current_tool_call=current_tool_call,
         track_previous_responses=False,
     )
 
-    _, _, _, _, updated_call, _, _ = result
+    _, _, _, updated_call, _, _ = result
     assert updated_call.arguments == '{"arg": "value"'
 
     # Test function call arguments done
@@ -191,23 +235,25 @@ def test_process_response_event():
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        tool_calls=updated_tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
         current_tool_call=updated_call,
         track_previous_responses=False,
     )
 
-    _, completed_tool_calls, _, _, final_current_call, _, _ = result
+    final_blocks, _, _, final_current_call, _, _ = result
+    completed_tool_calls = [
+        block for block in final_blocks if isinstance(block, ToolCallBlock)
+    ]
     assert len(completed_tool_calls) == 1
-    assert completed_tool_calls[0].arguments == '{"arg": "value"}'
-    assert completed_tool_calls[0].status == "completed"
+    assert completed_tool_calls[0].tool_kwargs == '{"arg": "value"}'
+    assert completed_tool_calls[0].tool_call_id == "123"
+    assert completed_tool_calls[0].tool_name == "test_function"
     assert final_current_call is None
 
 
 def test_process_response_event_with_text_annotation():
     """Test process_response_event handles ResponseOutputTextAnnotationAddedEvent."""
-    tool_calls = []
     built_in_tool_calls = []
     additional_kwargs = {}
     current_tool_call = None
@@ -218,14 +264,13 @@ def test_process_response_event_with_text_annotation():
         output_index=0,
         content_index=0,
         annotation_index=0,
-        type="response.output_text_annotation.added",
+        type="response.output_text.annotation.added",
         annotation={"type": "test_annotation", "value": 42},
         sequence_number=1,
     )
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        tool_calls=tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
         current_tool_call=current_tool_call,
@@ -233,7 +278,7 @@ def test_process_response_event_with_text_annotation():
     )
 
     # The annotation should be added to additional_kwargs["annotations"]
-    _, _, _, updated_additional_kwargs, _, _, _ = result
+    _, _, updated_additional_kwargs, _, _, _ = result
     assert "annotations" in updated_additional_kwargs
     assert updated_additional_kwargs["annotations"] == [
         {"type": "test_annotation", "value": 42}
@@ -242,18 +287,15 @@ def test_process_response_event_with_text_annotation():
 
 def test_get_tool_calls_from_response():
     """Test extracting tool calls from a chat response."""
-    tool_call = ResponseFunctionToolCall(
-        id="call_123",
-        call_id="123",
-        type="function_call",
-        name="test_function",
-        arguments='{"arg1": "value1", "arg2": 42}',
-        status="completed",
-    )
-
     # Create a mock chat response with tool calls
     chat_response = MagicMock()
-    chat_response.message.additional_kwargs = {"tool_calls": [tool_call]}
+    chat_response.message.blocks = [
+        ToolCallBlock(
+            tool_call_id="123",
+            tool_name="test_function",
+            tool_kwargs='{"arg1": "value1", "arg2": 42}',
+        )
+    ]
 
     with (
         patch("llama_index.llms.openai.responses.SyncOpenAI"),
@@ -557,23 +599,195 @@ def test_tool_required():
         tools=[search_tool],
         tool_required=True,
     )
-    assert len(response.message.additional_kwargs["tool_calls"]) == 1
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 1
+    )
 
 
 def test_messages_to_openai_responses_messages():
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
         ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="1",
+                    tool_name="get_capital_city_by_state",
+                    tool_kwargs="{'state': 'France'}",
+                )
+            ],
+        ),
         ChatMessage(role=MessageRole.ASSISTANT, content="Paris"),
         ChatMessage(role=MessageRole.USER, content="What is the capital of Germany?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="2",
+                    tool_name="get_capital_city_by_state",
+                    tool_kwargs="{'state': 'Germany'}",
+                )
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking a simple question related to the capital of Germany, I should answer it concisely",
+                    additional_information={"id": "123456789"},
+                ),
+                TextBlock(text="Berlin"),
+            ],
+        ),
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
-    assert len(openai_messages) == 4
+    assert len(openai_messages) == 8
     assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
     assert openai_messages[1]["content"] == "What is the capital of France?"
-    assert openai_messages[2]["role"] == "assistant"
-    assert openai_messages[2]["content"] == "Paris"
-    assert openai_messages[3]["role"] == "user"
-    assert openai_messages[3]["content"] == "What is the capital of Germany?"
+    assert openai_messages[2] == {
+        "type": "function_call",
+        "arguments": "{'state': 'France'}",
+        "call_id": "1",
+        "name": "get_capital_city_by_state",
+    }
+    assert openai_messages[3]["role"] == "assistant"
+    assert openai_messages[3]["content"] == "Paris"
+    assert openai_messages[4]["role"] == "user"
+    assert openai_messages[4]["content"] == "What is the capital of Germany?"
+    assert openai_messages[5] == {
+        "type": "function_call",
+        "arguments": "{'state': 'Germany'}",
+        "call_id": "2",
+        "name": "get_capital_city_by_state",
+    }
+
+    assert openai_messages[6]["type"] == "reasoning"
+    assert (
+        openai_messages[6]["id"] == messages[6].blocks[0].additional_information["id"]
+    )
+    assert openai_messages[6]["summary"][0]["text"] == messages[6].blocks[0].content
+
+    assert openai_messages[7]["role"] == "assistant"
+    assert len(openai_messages[7]["content"]) == 1
+    assert openai_messages[7]["content"][0]["text"] == messages[6].blocks[1].text
+
+
+@pytest.fixture()
+def response_output() -> List[ResponseOutputItem]:
+    return [
+        ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[
+                Content(text="hello world", type="reasoning_text"),
+                Content(text="this is a test", type="reasoning_text"),
+            ],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[Content(text="another test", type="reasoning_text")],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[Summary(text="hello", type="summary_text")],
+            type="reasoning",
+            content=[Content(text="another test", type="reasoning_text")],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[
+                Summary(text="hello", type="summary_text"),
+                Summary(text="world", type="summary_text"),
+            ],
+            type="reasoning",
+            content=None,
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseFunctionToolCall(
+            arguments="{'hello': 'world'}",
+            call_id="1",
+            name="test",
+            type="function_call",
+            status="completed",
+        ),
+        ResponseOutputMessage(
+            id="1",
+            content=[
+                ResponseOutputText(annotations=[], text="hey there", type="output_text")
+            ],
+            role="assistant",
+            status="completed",
+            type="message",
+        ),
+    ]
+
+
+class OpenAIResponsesMock(OpenAIResponses):
+    def __init__(self):
+        pass
+
+
+def test__parse_response_output(response_output: List[ResponseOutputItem]):
+    result = OpenAIResponsesMock()._parse_response_output(output=response_output)
+    assert (
+        len(
+            [
+                block
+                for block in result.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 4
+    )
+    assert (
+        len([block for block in result.message.blocks if isinstance(block, TextBlock)])
+        == 1
+    )
+    assert (
+        len(
+            [
+                block
+                for block in result.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 1
+    )
+    tool_call = [
+        block for block in result.message.blocks if isinstance(block, ToolCallBlock)
+    ][0]
+    assert tool_call.tool_call_id == "1"
+    assert tool_call.tool_name == "test"
+    assert tool_call.tool_kwargs == "{'hello': 'world'}"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][0].content == "hello world\nthis is a test"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][1].content == "another test"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][2].content == "another test\nhello"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][3].content == "hello\nworld"

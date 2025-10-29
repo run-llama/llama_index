@@ -1,3 +1,0 @@
-# Querying Graphs
-
-TODO

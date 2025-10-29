@@ -10,14 +10,14 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from functools import reduce
-from itertools import repeat
+from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import (
     Optional,
     Any,
     Callable,
     Generator,
+    Iterable,
     Type,
     cast,
     Union,
@@ -307,9 +307,41 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         )
 
     def is_empty_file(self, path: Path | PurePosixPath) -> bool:
-        if isinstance(path, PurePosixPath):
-            path = Path(path)
-        return path.is_file() and len(path.read_bytes()) == 0
+        return self.fs.isfile(str(path)) and self.fs.info(str(path)).get("size", 0) == 0
+
+    def _is_directory(self, path: Path | PurePosixPath) -> bool:
+        """
+        Check if a path is a directory, with special handling for S3 filesystems.
+
+        For S3 filesystems, directories are often represented as 0-byte objects
+        ending with '/'. This method provides more reliable directory detection
+        than fs.isdir() alone.
+        """
+        try:
+            # First try the standard isdir check
+            if self.fs.isdir(path):
+                return True
+
+            # For non-default filesystems (like S3), also check for directory placeholders
+            if not is_default_fs(self.fs):
+                try:
+                    info = self.fs.info(str(path))
+                    # Check if it's a 0-byte object ending with '/'
+                    # This is how S3 typically represents directory placeholders
+                    if (
+                        info.get("size", 0) == 0
+                        and str(path).endswith("/")
+                        and info.get("type") != "file"
+                    ):
+                        return True
+                except Exception:
+                    # If we can't get info, fall back to the original isdir check
+                    pass
+
+            return False
+        except Exception:
+            # If anything fails, assume it's not a directory to be safe
+            return False
 
     def _add_files(self, input_dir: Path | PurePosixPath) -> list[Path | PurePosixPath]:
         """Add files."""
@@ -333,7 +365,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     else:
                         rejected_files.add(_Path(str(file)))
 
-        file_refs: list[str] = []
+        file_refs: list[Union[Path, PurePosixPath]] = []
         limit = (
             self.num_files_limit
             if self.num_files_limit is not None and self.num_files_limit > 0
@@ -348,13 +380,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 c += 1
                 if limit and c > limit:
                     break
-                file_refs.append(os.path.join(root, file))
+                file_refs.append(_Path(root, file))
 
-        for _ref in file_refs:
+        for ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            ref = _Path(_ref)
-            is_dir = self.fs.isdir(ref)
+            is_dir = self._is_directory(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
@@ -475,10 +506,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
         fs = kwargs.get("fs", self.fs)
 
-        path_func = Path if is_default_fs(fs) else PurePosixPath
+        _Path = Path if is_default_fs(fs) else PurePosixPath
 
         return SimpleDirectoryReader.load_file(
-            input_file=path_func(resource_id),
+            input_file=_Path(resource_id),
             file_metadata=file_metadata,
             file_extractor=file_extractor,
             filename_as_id=filename_as_id,
@@ -499,9 +530,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         errors = kwargs.get("errors", self.errors)
         raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
         fs = kwargs.get("fs", self.fs)
+        _Path = Path if is_default_fs(fs) else PurePosixPath
 
         return await SimpleDirectoryReader.aload_file(
-            input_file=Path(resource_id),
+            input_file=_Path(resource_id),
             file_metadata=file_metadata,
             file_extractor=file_extractor,
             filename_as_id=filename_as_id,
@@ -704,8 +736,17 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         """
         documents = []
 
-        files_to_process = self.input_files
         fs = fs or self.fs
+        load_file_with_args = partial(
+            SimpleDirectoryReader.load_file,
+            file_metadata=self.file_metadata,
+            file_extractor=self.file_extractor,
+            filename_as_id=self.filename_as_id,
+            encoding=self.encoding,
+            errors=self.errors,
+            raise_on_error=self.raise_on_error,
+            fs=fs,
+        )
 
         if num_workers and num_workers > 1:
             num_cpus = multiprocessing.cpu_count()
@@ -716,21 +757,18 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 )
                 num_workers = num_cpus
 
-            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                results = p.starmap(
-                    SimpleDirectoryReader.load_file,
-                    zip(
-                        files_to_process,
-                        repeat(self.file_metadata),
-                        repeat(self.file_extractor),
-                        repeat(self.filename_as_id),
-                        repeat(self.encoding),
-                        repeat(self.errors),
-                        repeat(self.raise_on_error),
-                        repeat(fs),
+            with multiprocessing.get_context("spawn").Pool(num_workers) as pool:
+                map_iterator = cast(
+                    Iterable[list[Document]],
+                    get_tqdm_iterable(
+                        pool.imap(load_file_with_args, self.input_files),
+                        show_progress=show_progress,
+                        desc="Loading files",
+                        total=len(self.input_files),
                     ),
                 )
-                documents = reduce(lambda x, y: x + y, results)
+                for result in map_iterator:
+                    documents.extend(result)
 
         else:
             files_to_process = cast(
@@ -742,18 +780,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 ),
             )
             for input_file in files_to_process:
-                documents.extend(
-                    SimpleDirectoryReader.load_file(
-                        input_file=input_file,
-                        file_metadata=self.file_metadata,
-                        file_extractor=self.file_extractor,
-                        filename_as_id=self.filename_as_id,
-                        encoding=self.encoding,
-                        errors=self.errors,
-                        raise_on_error=self.raise_on_error,
-                        fs=fs,
-                    )
-                )
+                documents.extend(load_file_with_args(input_file))
 
         return self._exclude_metadata(documents)
 

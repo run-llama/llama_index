@@ -25,14 +25,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-llms-servam"
-version = "0.1.2"
-description = "llama-index llms servam integration"
-authors = [{name = "Yash Parmar", email = "yashp3020@gmail.com"}]
+name = "llama-index-llms-sarvam"
+version = "0.2.1"
+description = "llama-index llms sarvam integration"
+authors = [
+    {name = "Yash Parmar", email = "yashp3020@gmail.com"},
+    {name = "Advik sharma", email = "scince5678@gmail.com"},
+]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-llms-openai-like>=0.4.0,<0.5"]
+dependencies = ["llama-index-llms-openai-like>=0.5.0,<0.6"]
 
 [tool.codespell]
 check-filenames = true
@@ -49,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.servam"
+import_path = "llama_index.llms.sarvam"
 
 [tool.llamahub.class_authors]
-Servam = "yash-parmar"
+Sarvam = ["yash-parmar", "advik-sharma"]
 
 [tool.mypy]
 disallow_untyped_defs = true

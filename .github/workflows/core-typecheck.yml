@@ -10,15 +10,15 @@ jobs:
   core-typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
-        run: uv python install
+        run: uv python install 3.12
 
       - name: Run Mypy
         working-directory: llama-index-core

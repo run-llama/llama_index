@@ -6,7 +6,7 @@ An index that is built on top of an existing Qdrant collection.
 """
 
 import logging
-from typing import Any, List, Optional, Tuple, cast
+from typing import Any, Callable, List, Optional, Tuple, Union, cast
 
 import qdrant_client
 from qdrant_client import QdrantClient, AsyncQdrantClient
@@ -52,6 +52,7 @@ from qdrant_client.http.models import (
     IsEmptyCondition,
 )
 from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -97,6 +98,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
         text_key (str): Name of the field holding the text information, Defaults to 'text'
         dense_vector_name (Optional[str]): Custom name for the dense vector field. Defaults to 'text-dense'
         sparse_vector_name (Optional[str]): Custom name for the sparse vector field. Defaults to 'text-sparse-new'
+        shard_number (Optional[int]): Shard number for sharding the collection
+        sharding_method (Optional[rest.ShardingMethod]): Sharding method for the collection
+        replication_factor (Optional[int]): Replication factor for the collection
+        write_consistency_factor (Optional[int]): Write consistency factor for the collection
+        shard_key_selector_fn (Optional[Callable[..., rest.ShardKeySelector]]): Function to select shard keys
+        shard_keys (Optional[list[rest.ShardKey]]): List of shard keys
+        payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]]: List of payload field indexes
 
     Notes:
         For backward compatibility, the vector store will automatically detect the vector format
@@ -149,6 +157,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
     _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
     _legacy_vector_format: Optional[bool] = PrivateAttr()
+    _shard_key_selector_fn: Optional[Callable[..., rest.ShardKeySelector]] = (
+        PrivateAttr()
+    )
+    _shard_keys: Optional[list[rest.ShardKey]] = PrivateAttr()
+    _shard_number: Optional[int] = PrivateAttr()
+    _sharding_method: Optional[rest.ShardingMethod] = PrivateAttr()
+    _replication_factor: Optional[int] = PrivateAttr()
+    _write_consistency_factor: Optional[int] = PrivateAttr()
+    _payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]] = PrivateAttr()
 
     def __init__(
         self,
@@ -173,6 +190,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
         text_key: Optional[str] = "text",
         dense_vector_name: Optional[str] = None,
         sparse_vector_name: Optional[str] = None,
+        shard_number: Optional[int] = None,
+        sharding_method: Optional[rest.ShardingMethod] = None,
+        shard_key_selector_fn: Optional[Callable[..., rest.ShardKeySelector]] = None,
+        shard_keys: Optional[list[rest.ShardKey]] = None,
+        replication_factor: Optional[int] = None,
+        write_consistency_factor: Optional[int] = None,
+        payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -195,6 +219,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
             dense_vector_name=dense_vector_name,
             sparse_vector_name=sparse_vector_name,
         )
+        # Track if the user provided their own sparse functions. This is to prevent
+        # them from being overwritten by the lazy-init correction for async clients.
+        self._user_provided_sparse_doc_fn = sparse_doc_fn is not None
+        self._user_provided_sparse_query_fn = sparse_query_fn is not None
 
         if (
             client is None
@@ -230,12 +258,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._client = client
             self._aclient = aclient
 
+        self._payload_indexes = payload_indexes
+
         # Check if collection exists and detect vector format
         self._legacy_vector_format = None
         if self._client is not None:
             self._collection_initialized = self._collection_exists(collection_name)
             if self._collection_initialized:
                 self._detect_vector_format(collection_name)
+                if self._payload_indexes:
+                    self._create_payload_indexes()
         else:
             # Need to do lazy init for async clients
             self._collection_initialized = False
@@ -244,12 +276,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if enable_hybrid or fastembed_sparse_model is not None:
             enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
-                collection_name, fastembed_sparse_model=fastembed_sparse_model
+                collection_name,
+                fastembed_sparse_model=fastembed_sparse_model,
             )
             self._sparse_query_fn = (
                 sparse_query_fn
                 or self.get_default_sparse_query_encoder(
-                    collection_name, fastembed_sparse_model=fastembed_sparse_model
+                    collection_name,
+                    fastembed_sparse_model=fastembed_sparse_model,
                 )
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
@@ -259,6 +293,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_config = sparse_config
         self._dense_config = dense_config
         self._quantization_config = quantization_config
+
+        self._shard_number = shard_number
+        self._sharding_method = sharding_method
+        self._shard_key_selector_fn = shard_key_selector_fn
+        self._shard_keys = shard_keys
+        self._replication_factor = replication_factor
+        self._write_consistency_factor = write_consistency_factor
+
+        if self._sharding_method == rest.ShardingMethod.CUSTOM:
+            self._validate_custom_sharding()
 
     @classmethod
     def class_name(cls) -> str:
@@ -353,6 +397,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
+        shard_identifier: Optional[Any] = None,
     ) -> List[BaseNode]:
         """
         Get nodes from the index.
@@ -360,6 +405,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+            shard_identifier (Optional[Any]): Shard identifier for the query.
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
@@ -395,11 +442,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
             filter.must_not if filter.must_not and len(filter.must_not) > 0 else None
         )
 
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
+
         response = self._client.scroll(
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
             with_vectors=True,
+            shard_key_selector=shard_key_selector,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -409,6 +463,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
+        shard_identifier: Optional[Any] = None,
     ) -> List[BaseNode]:
         """
         Asynchronous method to get nodes from the index.
@@ -416,6 +471,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+            shard_identifier (Optional[Any]): Shard identifier for the query.
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
@@ -444,21 +501,34 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             filter = Filter(should=should)
 
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
+
         response = await self._aclient.scroll(
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
             with_vectors=True,
+            shard_key_selector=shard_key_selector,
         )
 
         return self.parse_to_query_result(response[0]).nodes
 
-    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+    def add(
+        self,
+        nodes: List[BaseNode],
+        shard_identifier: Optional[Any] = None,
+        **add_kwargs: Any,
+    ) -> List[str]:
         """
         Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+            shard_identifier (Optional[Any]): Shard identifier for the nodes
 
         """
         if len(nodes) > 0 and not self._collection_initialized:
@@ -472,6 +542,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes, self.sparse_vector_name)
 
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
+
         self._client.upload_points(
             collection_name=self.collection_name,
             points=points,
@@ -479,16 +555,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
             parallel=self.parallel,
             max_retries=self.max_retries,
             wait=True,
+            shard_key_selector=shard_key_selector,
         )
 
         return ids
 
-    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+        shard_identifier: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> List[str]:
         """
         Asynchronous method to add nodes to Qdrant index.
 
         Args:
             nodes: List[BaseNode]: List of nodes with embeddings.
+            shard_identifier: Optional[Any]: Shard identifier for the nodes.
 
         Returns:
             List of node IDs that were added to the index.
@@ -497,8 +580,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ValueError: If trying to using async methods without aclient
 
         """
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         self._ensure_async_client()
 
         collection_initialized = await self._acollection_exists(self.collection_name)
@@ -508,11 +589,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 collection_name=self.collection_name,
                 vector_size=len(nodes[0].get_embedding()),
             )
+            collection_initialized = True
+
         if collection_initialized and self._legacy_vector_format is None:
             # If collection exists but we haven't detected the vector format yet
             await self._adetect_vector_format(self.collection_name)
 
         points, ids = self._build_points(nodes, self.sparse_vector_name)
+
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
 
         for batch in iter_batch(points, self.batch_size):
             retries = 0
@@ -521,6 +610,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     await self._aclient.upsert(
                         collection_name=self.collection_name,
                         points=batch,
+                        shard_key_selector=shard_key_selector,
                     )
                     break
                 except (RpcError, UnexpectedResponse) as exc:
@@ -530,50 +620,78 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return ids
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(
+        self,
+        ref_doc_id: str,
+        shard_identifier: Optional[Any] = None,
+        **delete_kwargs: Any,
+    ) -> None:
         """
         Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+            shard_identifier (Optional[Any]): Shard identifier for the nodes.
 
         """
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
         self._client.delete(
             collection_name=self.collection_name,
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key=DOCUMENT_ID_KEY, match=rest.MatchValue(value=ref_doc_id)
+                        key=DOCUMENT_ID_KEY,
+                        match=rest.MatchValue(value=ref_doc_id),
                     )
                 ]
             ),
+            shard_key_selector=shard_key_selector,
         )
 
-    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    async def adelete(
+        self,
+        ref_doc_id: str,
+        shard_identifier: Optional[Any] = None,
+        **delete_kwargs: Any,
+    ) -> None:
         """
         Asynchronous method to delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+            shard_identifier (Optional[Any]): Shard identifier for the nodes.
 
         """
         self._ensure_async_client()
+
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
 
         await self._aclient.delete(
             collection_name=self.collection_name,
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key=DOCUMENT_ID_KEY, match=rest.MatchValue(value=ref_doc_id)
+                        key=DOCUMENT_ID_KEY,
+                        match=rest.MatchValue(value=ref_doc_id),
                     )
                 ]
             ),
+            shard_key_selector=shard_key_selector,
         )
 
     def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
+        shard_identifier: Optional[Any] = None,
         **delete_kwargs: Any,
     ) -> None:
         """
@@ -582,6 +700,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]): List of node IDs to delete.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+            shard_identifier (Optional[Any]): Shard identifier for the nodes.
 
         """
         should = []
@@ -601,15 +720,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             filter = Filter(should=should)
 
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
+
         self._client.delete(
             collection_name=self.collection_name,
             points_selector=filter,
+            shard_key_selector=shard_key_selector,
         )
 
     async def adelete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
+        shard_identifier: Optional[Any] = None,
         **delete_kwargs: Any,
     ) -> None:
         """
@@ -618,6 +745,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]): List of node IDs to delete.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+            shard_identifier (Optional[Any]): Shard identifier for the nodes.
 
         """
         self._ensure_async_client()
@@ -639,9 +767,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             filter = Filter(should=should)
 
+        shard_key_selector = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
+
         await self._aclient.delete(
             collection_name=self.collection_name,
             points_selector=filter,
+            shard_key_selector=shard_key_selector,
         )
 
     def clear(self) -> None:
@@ -667,9 +802,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -694,13 +826,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     # Newly created collection will have the new sparse vector name
                     sparse_vectors_config={self.sparse_vector_name: sparse_config},
                     quantization_config=self._quantization_config,
+                    shard_number=self._shard_number,
+                    replication_factor=self._replication_factor,
+                    sharding_method=self._sharding_method,
+                    write_consistency_factor=self._write_consistency_factor,
                 )
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config=dense_config,
                     quantization_config=self._quantization_config,
+                    shard_number=self._shard_number,
+                    replication_factor=self._replication_factor,
+                    sharding_method=self._sharding_method,
+                    write_consistency_factor=self._write_consistency_factor,
                 )
+
+            if self._shard_keys:
+                self._create_shard_keys()
 
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
@@ -711,6 +854,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     field_name=DOCUMENT_ID_KEY,
                     field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
+
+            if self._payload_indexes:
+                self._create_payload_indexes()
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
@@ -718,13 +864,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
             )
+
+            if self._shard_keys:
+                self._create_shard_keys()
+
+            if self._payload_indexes:
+                self._create_payload_indexes()
+
         self._collection_initialized = True
 
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -746,13 +896,25 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     vectors_config={self.dense_vector_name: dense_config},
                     sparse_vectors_config={self.sparse_vector_name: sparse_config},
                     quantization_config=self._quantization_config,
+                    shard_number=self._shard_number,
+                    replication_factor=self._replication_factor,
+                    sharding_method=self._sharding_method,
+                    write_consistency_factor=self._write_consistency_factor,
                 )
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
                     vectors_config=dense_config,
                     quantization_config=self._quantization_config,
+                    shard_number=self._shard_number,
+                    replication_factor=self._replication_factor,
+                    sharding_method=self._sharding_method,
+                    write_consistency_factor=self._write_consistency_factor,
                 )
+
+            if self._shard_keys:
+                await self._acreate_shard_keys()
+
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
             # https://qdrant.tech/documentation/concepts/indexing
@@ -762,6 +924,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     field_name=DOCUMENT_ID_KEY,
                     field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
+
+            if self._payload_indexes:
+                await self._acreate_payload_indexes()
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
@@ -769,6 +934,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
             )
+
+            if self._shard_keys:
+                await self._acreate_shard_keys()
+
+            if self._payload_indexes:
+                await self._acreate_payload_indexes()
+
         self._collection_initialized = True
 
     def _collection_exists(self, collection_name: str) -> bool:
@@ -778,6 +950,68 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
         return await self._aclient.collection_exists(collection_name)
+
+    def _create_shard_keys(self) -> None:
+        """Create shard keys in Qdrant collection."""
+        if not self._shard_keys:
+            return
+
+        for shard_key in self._shard_keys:
+            try:
+                self._client.create_shard_key(
+                    collection_name=self.collection_name,
+                    shard_key=shard_key,
+                )
+            except (RpcError, ValueError, UnexpectedResponse) as exc:
+                if "already exists" not in str(exc):
+                    raise exc  # noqa: TRY201
+                logger.warning(
+                    "Shard key %s already exists, skipping creation.",
+                    shard_key,
+                )
+                continue
+
+    async def _acreate_shard_keys(self) -> None:
+        """Asynchronous method to create shard keys in Qdrant collection."""
+        if not self._shard_keys:
+            return
+
+        for shard_key in self._shard_keys:
+            try:
+                await self._aclient.create_shard_key(
+                    collection_name=self.collection_name,
+                    shard_key=shard_key,
+                )
+            except (RpcError, ValueError, UnexpectedResponse) as exc:
+                if "already exists" not in str(exc):
+                    raise exc  # noqa: TRY201
+                logger.warning(
+                    "Shard key %s already exists, skipping creation.",
+                    shard_key,
+                )
+                continue
+
+    def _create_payload_indexes(self) -> None:
+        """Create payload indexes in Qdrant collection."""
+        if not self._payload_indexes:
+            return
+        for payload_index in self._payload_indexes:
+            self._client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=payload_index["field_name"],
+                field_schema=payload_index["field_schema"],
+            )
+
+    async def _acreate_payload_indexes(self) -> None:
+        """Create payload indexes in Qdrant collection."""
+        if not self._payload_indexes:
+            return
+        for payload_index in self._payload_indexes:
+            await self._aclient.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=payload_index["field_name"],
+                field_schema=payload_index["field_schema"],
+            )
 
     def query(
         self,
@@ -798,6 +1032,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
             query_filter = qdrant_filters
         else:
             query_filter = cast(Filter, self._build_query_filter(query))
+
+        shard_identifier = kwargs.get("shard_identifier")
+        shard_key = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier is not None
+            else None
+        )
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -826,6 +1067,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
@@ -838,6 +1080,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -880,6 +1123,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -898,6 +1142,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -915,11 +1160,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ),
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
+                shard_key_selector=shard_key,
             )
             return self.parse_to_query_result(response)
 
     async def aquery(
-        self, query: VectorStoreQuery, **kwargs: Any
+        self,
+        query: VectorStoreQuery,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
         Asynchronous method to query index for top k most similar nodes.
@@ -943,6 +1191,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         # Check if we need to detect vector format
         if self._legacy_vector_format is None:
             await self._adetect_vector_format(self.collection_name)
+
+        # Get shard_identifier if provided
+        shard_identifier = kwargs.get("shard_identifier")
+        shard_key = (
+            self._generate_shard_key_selector(shard_identifier)
+            if shard_identifier
+            else None
+        )
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -971,6 +1227,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
@@ -983,6 +1240,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -1024,6 +1282,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -1041,6 +1300,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
+                        shard_key=shard_key,
                     ),
                 ],
             )
@@ -1057,6 +1317,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ),
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
+                shard_key_selector=shard_key,
             )
 
             return self.parse_to_query_result(response)
@@ -1282,16 +1543,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return False
 
     def get_default_sparse_doc_encoder(
-        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
+        self,
+        collection_name: str,
+        fastembed_sparse_model: Optional[str] = None,
     ) -> SparseEncoderCallable:
         """
         Get the default sparse document encoder.
-        Use old format for backward compatibility if detected.
+        For async-only clients, assumes new format initially.
+        Will be auto-corrected on first async operation if collection uses old format.
         """
-        if self.use_old_sparse_encoder(collection_name):
-            # Update the sparse vector name to use the old format
-            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
+        if self._client is not None:
+            if self.use_old_sparse_encoder(collection_name):
+                self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+                return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
@@ -1299,16 +1563,22 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return fastembed_sparse_encoder()
 
     def get_default_sparse_query_encoder(
-        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
+        self,
+        collection_name: str,
+        fastembed_sparse_model: Optional[str] = None,
     ) -> SparseEncoderCallable:
         """
         Get the default sparse query encoder.
-        Use old format for backward compatibility if detected.
+        For async-only clients, assumes new format initially.
+        Will be auto-corrected on first async operation if collection uses old format.
         """
-        if self.use_old_sparse_encoder(collection_name):
-            # Update the sparse vector name to use the old format
-            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
+        if self._client is not None:
+            if self.use_old_sparse_encoder(collection_name):
+                # Update the sparse vector name to use the old format
+                self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+                return default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-query"
+                )
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
@@ -1317,13 +1587,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _detect_vector_format(self, collection_name: str) -> None:
         """
-        Detect the vector format of an existing collection.
-        This allows backward compatibility with collections that were created before
-        the refactoring to use named vectors consistently.
+        Detect and handle old vector formats from existing collections.
+        - named vs non-named vectors
+        - new sparse vector field name vs old sparse vector field name
         """
         try:
+            old_sparse_name = self.sparse_vector_name  # Store state before detection
+
             collection_info = self._client.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
+            sparse_vectors = collection_info.config.params.sparse_vectors or {}
 
             # Check if we have an unnamed vector format (where name is empty string)
             if isinstance(vectors_config, dict):
@@ -1335,6 +1608,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # Using unnamed vector format from earlier versions
                 self._legacy_vector_format = True
                 self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+
+            # Detect sparse vector name if any sparse vectors configured
+            if isinstance(sparse_vectors, dict) and len(sparse_vectors) > 0:
+                if self.sparse_vector_name in sparse_vectors:
+                    pass
+                elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
+                    self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+
+            # If the name changed, our initial assumption was wrong. Correct it.
+            if self.enable_hybrid and old_sparse_name != self.sparse_vector_name:
+                self._reinitialize_sparse_encoders()
 
         except Exception as e:
             logger.warning(
@@ -1343,11 +1627,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _adetect_vector_format(self, collection_name: str) -> None:
         """
-        Asynchronous method to detect the vector format of an existing collection.
+        Asynchronous method to detect and handle old vector formats from existing collections.
         """
         try:
+            old_sparse_name = self.sparse_vector_name  # Store state before detection
+
             collection_info = await self._aclient.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
+            sparse_vectors = collection_info.config.params.sparse_vectors or {}
 
             # Check if we have an unnamed vector format (where name is empty string)
             if isinstance(vectors_config, dict):
@@ -1360,7 +1647,72 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self._legacy_vector_format = True
                 self.dense_vector_name = LEGACY_UNNAMED_VECTOR
 
+            # Detect sparse vector name and correct if necessary
+            if isinstance(sparse_vectors, dict) and len(sparse_vectors) > 0:
+                if self.sparse_vector_name in sparse_vectors:
+                    pass
+                elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
+                    self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+
+            # If the name changed, our initial assumption was wrong. Correct it.
+            if self.enable_hybrid and old_sparse_name != self.sparse_vector_name:
+                self._reinitialize_sparse_encoders()
+
         except Exception as e:
             logger.warning(
                 f"Could not detect vector format for collection {collection_name}: {e}"
             )
+
+    def _reinitialize_sparse_encoders(self) -> None:
+        """Recreate default sparse encoders after vector format detection, respecting user-provided functions."""
+        if not self.enable_hybrid:
+            return
+
+        # Only override the doc function if the user did NOT provide one
+        if not self._user_provided_sparse_doc_fn:
+            if self.sparse_vector_name == DEFAULT_SPARSE_VECTOR_NAME_OLD:
+                self._sparse_doc_fn = default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-doc"
+                )
+            else:
+                self._sparse_doc_fn = fastembed_sparse_encoder(
+                    model_name=self.fastembed_sparse_model
+                )
+
+        # Only override the query function if the user did NOT provide one
+        if not self._user_provided_sparse_query_fn:
+            if self.sparse_vector_name == DEFAULT_SPARSE_VECTOR_NAME_OLD:
+                self._sparse_query_fn = default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-query"
+                )
+            else:
+                self._sparse_query_fn = fastembed_sparse_encoder(
+                    model_name=self.fastembed_sparse_model
+                )
+
+    def _validate_custom_sharding(
+        self,
+    ):
+        """
+        Validate custom sharding configuration.
+        """
+        if not self._shard_key_selector_fn:
+            raise ValueError(
+                "Must provide a shard_key_selector_fn for custom sharding."
+            )
+        if not self._shard_keys:
+            raise ValueError("Must provide shard_keys for custom sharding.")
+
+    def _generate_shard_key_selector(
+        self, shard_identifier: Any
+    ) -> Union[rest.ShardKeySelector, None]:
+        """
+        Generate a shard key selector based on the shard identifier.
+        """
+        if (
+            self._shard_key_selector_fn is not None
+            and self._sharding_method == rest.ShardingMethod.CUSTOM
+        ):
+            return self._shard_key_selector_fn(shard_identifier)
+
+        return None
