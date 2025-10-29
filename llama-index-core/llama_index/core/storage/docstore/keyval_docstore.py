@@ -395,7 +395,7 @@ class KVDocumentStore(BaseDocumentStore):
 
         return RefDocInfo(
             metadata=ref_doc_info_dict.get("metadata", {}),
-            node_ids=ref_doc_info_dict.get("node_ids", [])
+            node_ids=ref_doc_info_dict.get("node_ids", []),
         )
 
     def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
