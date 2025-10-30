@@ -716,6 +716,7 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-sglang
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-isaacus
             - ../../llama-index-integrations/llms/llama-index-llms-helicone
+            - ../../llama-index-integrations/tools/llama-index-tools-serpex
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:
