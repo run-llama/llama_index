@@ -35,6 +35,7 @@ jobs:
         working-directory: docs
         run: |
           uv run --with toml --with pyaml scripts/prepare_for_build.py
+          uv run pre-commit run
 
       - name: Prepare Versions
         id: prepare
