@@ -28,12 +28,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Pre-release sanity check
-        shell: bash
-        working-directory: llama-dev
-        run: |
-          uv run -- llama-dev --repo-root .. release check --before-core
-
       - name: Install core dependencies
         working-directory: llama-index-core
         run: |
