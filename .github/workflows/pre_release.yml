@@ -35,7 +35,6 @@ jobs:
         working-directory: docs
         run: |
           uv run --with toml --with pyaml scripts/prepare_for_build.py
-          uv run pre-commit run -a || true
 
       - name: Prepare Versions
         id: prepare
@@ -49,6 +48,7 @@ jobs:
           uv run -- llama-dev --repo-root .. release changelog
           VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          uv run pre-commit run -a || true
 
       - name: Create Release PR
         id: rpr
