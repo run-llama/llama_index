@@ -6,6 +6,7 @@ from typing import Any, List
 
 import pytest
 import time
+import json
 
 from llama_index.core.schema import MetadataMode, TextNode, Document
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -20,6 +21,9 @@ from llama_index.vector_stores.couchbase import (
 )
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import VectorStoreIndex
+from couchbase.cluster import Cluster
+from couchbase.management.logic.search_index_logic import SearchIndex
+from couchbase.exceptions import SearchIndexNotFoundException
 
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
@@ -57,7 +61,98 @@ def text_to_embedding(text: str) -> List[float]:
     )
 
 
-def get_cluster() -> Any:
+def create_scope_and_collection(
+    cluster: Cluster, bucket_name: str, scope_name: str, collection_name: str
+) -> None:
+    """Create scope and collection if they don't exist."""
+    try:
+        from couchbase.exceptions import (
+            ScopeAlreadyExistsException,
+            CollectionAlreadyExistsException,
+            QueryIndexAlreadyExistsException,
+        )
+
+        bucket = cluster.bucket(bucket_name)
+
+        # Create scope if it doesn't exist
+        try:
+            bucket.collections().create_scope(scope_name=scope_name)
+        except ScopeAlreadyExistsException:
+            pass
+
+        # Create collection if it doesn't exist
+        try:
+            bucket.collections().create_collection(
+                collection_name=collection_name, scope_name=scope_name
+            )
+        except CollectionAlreadyExistsException:
+            pass
+
+        try:
+            bucket.scope(scope_name).collection(
+                collection_name
+            ).query_indexes().create_primary_index()
+        except QueryIndexAlreadyExistsException:
+            pass
+
+    except Exception as e:
+        # Log the error but don't fail - collection might already exist
+        pass
+
+
+def create_vector_index(
+    cluster: Cluster,
+    bucket_name: str,
+    scope_name: str,
+    collection_name: str,
+    index_name: str,
+) -> None:
+    """Create vector index if it doesn't exist."""
+    bucket = cluster.bucket(BUCKET_NAME)
+    scope = bucket.scope(SCOPE_NAME)
+    index_definition = load_json_file(f"{os.path.dirname(__file__)}/vector_index.json")
+
+    sim = scope.search_indexes()
+    try:
+        sim.get_index(index_name=index_definition["name"])
+    except SearchIndexNotFoundException as e:
+        type = index_definition["params"]["mapping"]["types"][
+            "____scope.collection_____"
+        ]
+        del index_definition["params"]["mapping"]["types"]["____scope.collection_____"]
+        index_definition["params"]["mapping"]["types"][
+            f"{SCOPE_NAME}.{COLLECTION_NAME}"
+        ] = type
+        search_index = SearchIndex(
+            name=index_definition["name"],
+            source_name=BUCKET_NAME,
+            source_type=index_definition["sourceType"],
+            params=index_definition["params"],
+            plan_params=index_definition["planParams"],
+        )
+        sim.upsert_index(search_index)
+
+    #  Wait for the index to be ready
+    max_retries = 10
+    retry_interval = 2  # seconds
+    for attempt in range(max_retries):
+        try:
+            # Check if index exists and is ready by getting document count
+            sim.get_indexed_documents_count(index_definition["name"])
+            # If we can get the count, the index is ready
+            break
+        except Exception as e:
+            pass
+
+        time.sleep(retry_interval)
+        if attempt == max_retries - 1:
+            pytest.skip(
+                f"Index {index_definition['name']} not ready after {max_retries} attempts"
+            )
+
+
+@pytest.fixture(scope="session")
+def cluster() -> Cluster:
     """Get a couchbase cluster object."""
     from datetime import timedelta
 
@@ -69,17 +164,15 @@ def get_cluster() -> Any:
     options = ClusterOptions(auth)
     connect_string = CONNECTION_STRING
     cluster = Cluster(connect_string, options)
-
+    bucket = cluster.bucket(BUCKET_NAME)
     # Wait until the cluster is ready for use.
     cluster.wait_until_ready(timedelta(seconds=5))
+    create_scope_and_collection(cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
+    create_vector_index(cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME, INDEX_NAME)
 
-    return cluster
-
-
-@pytest.fixture()
-def cluster() -> Any:
-    """Get a couchbase cluster object."""
-    return get_cluster()
+    yield cluster
+    bucket.collections().drop_scope(SCOPE_NAME)
+    cluster.close()
 
 
 def delete_documents(
@@ -113,13 +206,13 @@ def node_embeddings() -> list[TextNode]:
             embedding=text_to_embedding("bar"),
         ),
         TextNode(
-            text="baz",
+            text="cake",
             id_="469e9537-7bc5-4669-9ff6-baa0ed086236",
             metadata={
                 "genre": "Thriller",
                 "pages": 20,
             },
-            embedding=text_to_embedding("baz"),
+            embedding=text_to_embedding("cake"),
         ),
     ]
 
@@ -128,34 +221,36 @@ def node_embeddings() -> list[TextNode]:
     not set_all_env_vars(), reason="missing Couchbase environment variables"
 )
 class TestCouchbaseSearchVectorStore:
-    @classmethod
-    def setup_method(self) -> None:
-        self.cluster = get_cluster()
-        # Delete all the documents in the collection
-        delete_documents(self.cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
-        self.vector_store = CouchbaseSearchVectorStore(
-            cluster=self.cluster,
+    @pytest.fixture()
+    def vector_store(self, cluster: Cluster) -> CouchbaseSearchVectorStore:
+        yield CouchbaseSearchVectorStore(
+            cluster=cluster,
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
         )
+        delete_documents(cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
 
-    def test_add_documents(self, node_embeddings: List[TextNode]) -> None:
+    def test_add_documents(
+        self, vector_store: CouchbaseSearchVectorStore, node_embeddings: List[TextNode]
+    ) -> None:
         """Test adding documents to Couchbase vector store."""
         input_doc_ids = [node_embedding.id_ for node_embedding in node_embeddings]
         # Add nodes to the couchbase vector
-        doc_ids = self.vector_store.add(node_embeddings)
+        doc_ids = vector_store.add(node_embeddings)
 
         # Ensure that all nodes are returned & they are the same as input
         assert len(doc_ids) == len(node_embeddings)
         for doc_id in doc_ids:
             assert doc_id in input_doc_ids
 
-    def test_search(self, node_embeddings: List[TextNode]) -> None:
+    def test_search(
+        self, vector_store: CouchbaseSearchVectorStore, node_embeddings: List[TextNode]
+    ) -> None:
         """Test end to end Couchbase vector search."""
         # Add nodes to the couchbase vector
-        self.vector_store.add(node_embeddings)
+        vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -165,7 +260,7 @@ class TestCouchbaseSearchVectorStore:
             query_embedding=text_to_embedding("foo"), similarity_top_k=1
         )
 
-        result = self.vector_store.query(q)
+        result = vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
         assert (
             result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
@@ -173,12 +268,12 @@ class TestCouchbaseSearchVectorStore:
         )
         assert result.similarities is not None
 
-    def test_delete_doc(self) -> None:
+    def test_delete_doc(self, vector_store: CouchbaseSearchVectorStore) -> None:
         """Test delete document from Couchbase vector store."""
-        storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
         # Add nodes to the couchbase vector
-        VectorStoreIndex.from_documents(
+        store_index = VectorStoreIndex.from_documents(
             [
                 Document(
                     text="hello",
@@ -198,33 +293,35 @@ class TestCouchbaseSearchVectorStore:
             similarity_top_k=1,
         )
 
-        result = self.vector_store.query(q)
+        result = vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
 
         # Identify the document to delete
         ref_id_to_delete = result.nodes[0].ref_doc_id
 
         # Delete the document
-        self.vector_store.delete(ref_doc_id=ref_id_to_delete)
+        vector_store.delete(ref_doc_id=ref_id_to_delete)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
 
         # Ensure that no results are returned
-        result = self.vector_store.query(q)
+        result = vector_store.query(q)
         assert len(result.nodes) == 0
 
-    def test_search_with_filter(self, node_embeddings: List[TextNode]) -> None:
+    def test_search_with_filter(
+        self, vector_store: CouchbaseSearchVectorStore, node_embeddings: List[TextNode]
+    ) -> None:
         """Test end to end Couchbase vector search with filter."""
         # Add nodes to the couchbase vector
-        self.vector_store.add(node_embeddings)
+        vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
 
         # similarity search
         q = VectorStoreQuery(
-            query_embedding=text_to_embedding("baz"),
+            query_embedding=text_to_embedding("cake"),
             similarity_top_k=1,
             filters=MetadataFilters(
                 filters=[
@@ -234,17 +331,19 @@ class TestCouchbaseSearchVectorStore:
             ),
         )
 
-        result = self.vector_store.query(q)
+        result = vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
         assert (
             result.nodes[0].metadata.get("genre") == "Thriller"
             and result.nodes[0].metadata.get("pages") == 20
         )
 
-    def test_hybrid_search(self, node_embeddings: List[TextNode]) -> None:
+    def test_hybrid_search(
+        self, vector_store: CouchbaseSearchVectorStore, node_embeddings: List[TextNode]
+    ) -> None:
         """Test the hybrid search functionality."""
         # Add nodes to the couchbase vector
-        self.vector_store.add(node_embeddings)
+        vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -253,7 +352,7 @@ class TestCouchbaseSearchVectorStore:
             query_embedding=text_to_embedding("baz"),
             similarity_top_k=1,
         )
-        result = self.vector_store.query(query)
+        result = vector_store.query(query)
 
         # similarity search
         hybrid_query = VectorStoreQuery(
@@ -261,7 +360,7 @@ class TestCouchbaseSearchVectorStore:
             similarity_top_k=1,
         )
 
-        hybrid_result = self.vector_store.query(
+        hybrid_result = vector_store.query(
             hybrid_query,
             cb_search_options={
                 "query": {"field": "metadata.genre", "match": "Thriller"}
@@ -273,49 +372,51 @@ class TestCouchbaseSearchVectorStore:
         ) == hybrid_result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
         assert result.similarities[0] <= hybrid_result.similarities[0]
 
-    def test_output_fields(self, node_embeddings: List[TextNode]) -> None:
+    def test_output_fields(
+        self, vector_store: CouchbaseSearchVectorStore, node_embeddings: List[TextNode]
+    ) -> None:
         """Test the output fields functionality."""
         # Add nodes to the couchbase vector
-        self.vector_store.add(node_embeddings)
+        vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
 
         q = VectorStoreQuery(
-            query_embedding=text_to_embedding("baz"),
+            query_embedding=text_to_embedding("cake"),
             similarity_top_k=1,
             output_fields=["text", "metadata.genre"],
         )
 
-        result = self.vector_store.query(q)
+        result = vector_store.query(q)
 
         assert result.nodes is not None and len(result.nodes) == 1
-        assert result.nodes[0].get_content(metadata_mode=MetadataMode.NONE) == "baz"
+        assert result.nodes[0].get_content(metadata_mode=MetadataMode.NONE) == "cake"
         assert result.nodes[0].metadata.get("genre") == "Thriller"
 
 
-class TestCouchbaseVectorStore(TestCouchbaseSearchVectorStore):
-    @classmethod
-    def setup_method(self) -> None:
-        self.cluster = get_cluster()
-        # Delete all the documents in the collection
-        delete_documents(self.cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
+def load_json_file(file_path):
+    with open(file_path, "r") as file:
+        return json.load(file)
 
-        # Now, actually instantiate and assign to self.vector_store so inherited tests use it.
-        # The warning has already been checked.
-        self.vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
+
+class TestCouchbaseVectorStore(TestCouchbaseSearchVectorStore):
+    @pytest.fixture()
+    def vector_store(self, cluster: Cluster) -> CouchbaseVectorStore:
+        yield CouchbaseVectorStore(
+            cluster=cluster,
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
         )
+        delete_documents(cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
 
-    def test_deprecation_warning(self) -> None:
+    def test_deprecation_warning(self, cluster: Cluster) -> None:
         """Test that a deprecation warning is raised when instantiating CouchbaseVectorStore."""
         with pytest.warns(DeprecationWarning) as warnings_raised:
             CouchbaseVectorStore(
-                cluster=self.cluster,
+                cluster=cluster,
                 bucket_name=BUCKET_NAME,
                 scope_name=SCOPE_NAME,
                 collection_name=COLLECTION_NAME,
