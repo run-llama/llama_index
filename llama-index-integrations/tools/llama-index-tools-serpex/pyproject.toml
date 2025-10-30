@@ -48,6 +48,13 @@ exclude = ["**/BUILD"]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.serpex"
+
+[tool.llamahub.class_authors]
+SerpexToolSpec = "llama-index"
+
 [tool.mypy]
 python_version = "3.9"
 disallow_untyped_defs = true
