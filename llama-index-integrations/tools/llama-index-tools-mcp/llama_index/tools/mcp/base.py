@@ -224,7 +224,7 @@ class McpToolSpec(BaseToolSpec):
                 fn = self._create_resource_template_fn(template.uriTemplate)
                 # Create a Pydantic model based on the tool inputSchema
                 model_schema = create_model_from_json_schema(
-                    template.parameters, model_name=f"{template.name}_Schema"
+                    template.parameters, model_name=f"{template.name}_Schema"   #AI? this code you added - template does not have parameters
                 )
                 metadata = ToolMetadata(
                     name=template.name,
