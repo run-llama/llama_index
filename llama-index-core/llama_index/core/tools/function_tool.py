@@ -209,8 +209,13 @@ class FunctionTool(AsyncBaseTool):
             # 4. Replace signature in one go
             fn_sig = fn_sig.replace(parameters=final_params)
 
-            # 5. Ensure the description is set
-            description = description or docstring.strip()
+            # 5. Build description
+            if description is None:
+                description = f"{name}{fn_sig}\n"
+                if docstring:
+                    description += docstring
+
+                description = description.strip()
 
             # 6. Build fn_schema only if not already provided
             if fn_schema is None:
