@@ -56,6 +56,7 @@ as the storage backend for `VectorStoreIndex`.
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - WordLift (`WordliftVectorStore`). [Quickstart](https://docs.wordlift.io/llm-connectors/wordlift-vector-store/). [Python Client](https://pypi.org/project/wordlift-client/).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
+- ZeusDB (`ZeusDBVectorStore`). [Installation/Quickstart](https://docs.zeusdb.com/en/latest/vector_database/getting_started.html)
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
 A detailed API reference is [found here](/python/framework-api-reference/storage/vector_store).
@@ -958,6 +959,48 @@ retriever = index.as_retriever(filters=filters)
 result = retriever.retrieve("What is inception about?")
 ```
 
+**ZeusDB**
+
+```python
+from llama_index.core import VectorStoreIndex, Document, StorageContext
+from llama_index.vector_stores.zeusdb import ZeusDBVectorStore
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
+
+# Set up embedding model and LLM
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.llm = OpenAI(model="gpt-5")
+
+# Create ZeusDB vector store
+vector_store = ZeusDBVectorStore(
+    dim=1536,  # OpenAI embedding dimension
+    distance="cosine",
+    index_type="hnsw"
+)
+
+# Create storage context
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+# Create documents
+documents = [
+    Document(text="ZeusDB is a high-performance vector database."),
+    Document(text="LlamaIndex provides RAG capabilities."),
+    Document(text="Vector search enables semantic similarity.")
+]
+
+# Create index and store documents
+index = VectorStoreIndex.from_documents(
+    documents,
+    storage_context=storage_context
+)
+
+# Query the index
+query_engine = index.as_query_engine()
+response = query_engine.query("What is ZeusDB?")
+print(response)
+```
+
 **Zilliz**
 
 - Zilliz Cloud (hosted version of Milvus) uses the Milvus Index with some extra arguments.
@@ -1200,3 +1243,4 @@ documents = reader.load_data(
 - [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
 - [WordLift](/python/examples/vector_stores/wordliftdemo)
 - [Zep](/python/examples/vector_stores/zepindexdemo)
+- [ZeusDB](/python/examples/vector_stores/zeusdbindexdemo)
