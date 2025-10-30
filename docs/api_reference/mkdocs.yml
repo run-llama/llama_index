@@ -223,14 +223,6 @@ plugins:
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-falkordb
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-kuzu
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-nebula
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-ollama
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-azure-openai
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-replicate
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-gemini
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-replicate-multi-modal
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nebius
             - ../../llama-index-integrations/agent/llama-index-agent-openai
             - ../../llama-index-integrations/agent/llama-index-agent-openai-legacy
             - ../../llama-index-integrations/agent/llama-index-agent-dashscope
@@ -452,7 +444,6 @@ plugins:
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-llamafile
             - ../../llama-index-integrations/callbacks/llama-index-callbacks-langfuse
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-jinaai-rerank
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-anthropic
             - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-elasticsearch
             - ../../llama-index-integrations/llms/llama-index-llms-friendli
             - ../../llama-index-integrations/llms/llama-index-llms-modelscope
@@ -584,8 +575,6 @@ plugins:
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-oracledb
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-oracleai
             - ../../llama-index-integrations/readers/llama-index-readers-oracleai
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
             - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-vertex-endpoint
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-objectbox
@@ -607,10 +596,7 @@ plugins:
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-hnswlib
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-oceanbase
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-gaudi
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openvino
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-zhipuai
             - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-postgres
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-reka
             - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-couchbase
             - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-couchbase
             - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-couchbase
@@ -624,7 +610,6 @@ plugins:
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-colpali-rerank
             - ../../llama-index-integrations/readers/llama-index-readers-gitbook
             - ../../llama-index-integrations/llms/llama-index-llms-siliconflow
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
             - ../../llama-index-integrations/tools/llama-index-tools-elevenlabs
             - ../../llama-index-integrations/llms/llama-index-llms-nebius
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
@@ -633,7 +618,6 @@ plugins:
             - ../../llama-index-integrations/graph_rag/llama-index-graph-rag-cognee
             - ../../llama-index-integrations/llms/llama-index-llms-keywordsai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-opea
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-bedrock
             - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-tablestore
             - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-tablestore
             - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-tablestore
@@ -697,7 +681,6 @@ plugins:
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-ApertureDB
             - ../../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
             - ../../llama-index-integrations/tools/llama-index-tools-artifact-editor
-            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
             - ../../llama-index-integrations/protocols/llama-index-protocols-ag-ui
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
             - ../../llama-index-integrations/tools/llama-index-tools-hive
