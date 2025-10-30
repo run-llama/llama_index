@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from string import Formatter
 from typing import Any, Callable, Dict, List, Optional, Type
 
 from mcp.client.session import ClientSession
@@ -223,8 +224,24 @@ class McpToolSpec(BaseToolSpec):
             for template in resource_templates_list:
                 fn = self._create_resource_template_fn(template.uriTemplate)
                 # Create a Pydantic model based on the tool inputSchema
+                # Extract parameters from uriTemplate
+                # e.g. users://{user_id}/profile -> ['user_id']
+                params = [
+                    fname
+                    for _, fname, _, _ in Formatter().parse(template.uriTemplate)
+                    if fname
+                ]
+
+                # Create a JSON schema for the parameters
+                schema = {
+                    "type": "object",
+                    "properties": {
+                        param: {"type": "string", "title": param} for param in params
+                    },
+                    "required": params,
+                }
                 model_schema = create_model_from_json_schema(
-                    template.parameters, model_name=f"{template.name}_Schema"   #AI? this code you added - template does not have parameters
+                    schema, model_name=f"{template.name}_Schema"
                 )
                 metadata = ToolMetadata(
                     name=template.name,
