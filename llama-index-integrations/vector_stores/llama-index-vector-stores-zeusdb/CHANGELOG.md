@@ -26,9 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Async API naming**: Renamed `aadd()` to `async_add()` to align with LlamaIndex standard async method naming conventions. The adapter now uses the official LlamaIndex async API (`async_add`, `aquery`, `adelete`, `adelete_nodes`, `aclear`) for consistency across the ecosystem.
+- **Async API naming**: Renamed `add()` to `async_add()` to align with LlamaIndex standard async method naming conventions. The adapter now uses the official LlamaIndex async API (`async_add`, `aquery`, `adelete`, `adelete_nodes`, `aclear`) for consistency across the ecosystem.
 - Updated async examples to use standard LlamaIndex async method names instead of custom aliases.
-- Updated documentation strings to reference `async_add()` instead of `aadd()`.
+- Updated documentation strings to reference `async_add()` instead of `add()`.
 
 ---
 
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Delete examples - Added `examples/delete_examples.py` demonstrating supported deletion operations and workarounds.
 - Test coverage - Added tests for ID-based deletion and proper error handling for unsupported operations.
-- Addeed Product **Quantization (PQ) support** - Full support for memory-efficient vector compression with automatic training
+- Added Product **Quantization (PQ) support** - Full support for memory-efficient vector compression with automatic training
 - **Persistence Support**: Complete save/load functionality for ZeusDB indexes
   - Save indexes to disk with `save_index(path)`
   - Load indexes from disk with `load_index(path)`
@@ -47,8 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cross-platform compatibility for sharing indexes between systems
   - Added comprehensive persistence examples (`examples/persistence_examples.py`)
 - **Async Support**: Full asynchronous operation support for non-blocking workflows
-  - `aadd()` - Add nodes asynchronously
-  - `aquery()` - Query asynchronously  
+  - `add()` - Add nodes asynchronously
+  - `aquery()` - Query asynchronously
   - `adelete_nodes()` - Delete nodes by IDs asynchronously
   - Thread-offloaded async wrappers using `asyncio.to_thread()`
 - **MMR (Maximal Marginal Relevance) Search**: Diversity-focused retrieval for comprehensive results

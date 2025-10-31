@@ -66,7 +66,6 @@ async def example_basic_async():
     # Async add
     print(f"Adding {len(nodes)} nodes asynchronously...")
     start = time.perf_counter()
-    # node_ids = await vector_store.aadd(nodes)
     node_ids = await vector_store.async_add(nodes)
     add_time = (time.perf_counter() - start) * 1000
     print(f"  ✅ Added {len(node_ids)} nodes in {add_time:.2f}ms")
@@ -137,7 +136,6 @@ async def example_concurrent_queries():
         node.embedding = embed_model.get_text_embedding(text)
         nodes.append(node)
 
-    # await vector_store.aadd(nodes)
     await vector_store.async_add(nodes)
     print(f"  ✅ Added {len(nodes)} documents")
     print()
@@ -240,7 +238,6 @@ async def example_concurrent_processing():
             node.embedding = embed_model.get_text_embedding(text)
             nodes.append(node)
 
-        # node_ids = await vector_store.aadd(nodes)
         node_ids = await vector_store.async_add(nodes)
         elapsed = (time.perf_counter() - start) * 1000
 
@@ -286,7 +283,6 @@ async def example_error_handling():
         node.embedding = embed_model.get_text_embedding(node.text)
         nodes.append(node)
 
-    # node_ids = await vector_store.aadd(nodes)
     node_ids = await vector_store.async_add(nodes)
     print(f"Added {len(node_ids)} documents")
     print()
@@ -372,7 +368,6 @@ async def example_timeouts():
     print("Adding documents with timeout...")
     try:
         node_ids = await asyncio.wait_for(
-            # vector_store.aadd(nodes),
             vector_store.async_add(nodes),
             timeout=10.0,  # 10 second timeout
         )
@@ -436,7 +431,6 @@ async def main():
         print("  • Quick prototypes and experiments")
         print()
         print("📚 Available async methods:")
-        # print("  • aadd(nodes) - Add nodes asynchronously")
         print("  • async_add(nodes) - Add nodes asynchronously")
         print("  • aquery(query) - Query asynchronously")
         print("  • adelete_nodes(node_ids) - Delete by IDs asynchronously")

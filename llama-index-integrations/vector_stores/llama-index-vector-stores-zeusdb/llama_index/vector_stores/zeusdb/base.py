@@ -817,7 +817,6 @@ class ZeusDBVectorStore(BasePydanticVectorStore):
     # Async wrappers (thread offload)
     # -------------------------
 
-    # async def aadd(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
     async def async_add(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
         """Thread-offloaded async variant of add()."""
         return await asyncio.to_thread(self.add, nodes, **kwargs)

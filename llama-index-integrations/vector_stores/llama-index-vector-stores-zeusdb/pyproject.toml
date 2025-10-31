@@ -38,15 +38,15 @@ dependencies = [
 [project.optional-dependencies]
 # Install with: uv pip install -e ".[dev]"
 dev = [
-    "pytest>=8.4", 
-    "pytest-asyncio>=1.2.0", 
-    "pytest-mock>=3.15", 
-    "ruff>=0.12", 
-    "black>=25.9", 
-    "mypy>=1.17", 
+    "pytest>=8.4",
+    "pytest-asyncio>=1.2.0",
+    "pytest-mock>=3.15",
+    "ruff>=0.12",
+    "black>=25.9",
+    "mypy>=1.17",
     "pre-commit>=4.3",
     "codespell[toml]>=2.2.6",
-    # "ipython>=9.5", 
+    # "ipython>=9.5",
     "ipython>=8.10.0", #need support for python 3.10
     "jupyter>=1.0.0",
     "pylint>=3.3", # Latest
@@ -55,7 +55,7 @@ dev = [
     # "types-setuptools>=80.9", # Latest
     "llama-index-embeddings-openai>=0.5.1",
     "llama-index-llms-openai>=0.6.6",
-    "python-dotenv>=1.1.1",  # For examples and environment variable loading    
+    "python-dotenv>=1.1.1",  # For examples and environment variable loading
 ]
 
 [project.urls]

@@ -9,7 +9,7 @@ ZeusDB vector database integration for LlamaIndex. Connect LlamaIndex's RAG fram
 - **Advanced Filtering**: Comprehensive metadata filtering with complex operators
 - **MMR Support**: Maximal Marginal Relevance for diverse, non-redundant results
 - **Quantization**: Product Quantization (PQ) for memory-efficient vector storage
-- **Async Support**: Async wrappers for non-blocking operations (`aadd`, `aquery`, `adelete_nodes`)
+- **Async Support**: Async methods for non-blocking operations (`async_add`, `aquery`, `adelete_nodes`)
 
 ## Installation
 
@@ -117,15 +117,48 @@ Non-blocking operations for web servers and concurrent workflows:
 
 ```python
 import asyncio
+from llama_index.core.schema import TextNode
 
-# Async add
-node_ids = await vector_store.aadd(nodes)
+# In Jupyter, use nest_asyncio to handle event loops
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError:
+    pass
 
-# Async query
-results = await vector_store.aquery(query_obj)
+async def async_operations():
+    # Create nodes
+    nodes = [
+        TextNode(text=f"Document {i}", metadata={"doc_id": i})
+        for i in range(10)
+    ]
+    
+    # Generate embeddings (required before adding)
+    embed_model = Settings.embed_model
+    for node in nodes:
+        node.embedding = embed_model.get_text_embedding(node.text)
+    
+    # Add nodes asynchronously
+    node_ids = await vector_store.async_add(nodes)
+    print(f"Added {len(node_ids)} nodes")
+    
+    # Query asynchronously
+    query_embedding = embed_model.get_text_embedding("document")
+    query_obj = VectorStoreQuery(
+        query_embedding=query_embedding,
+        similarity_top_k=3
+    )
+    
+    results = await vector_store.aquery(query_obj)
+    print(f"Found {len(results.ids or [])} results")
+    
+    # Delete asynchronously
+    await vector_store.adelete_nodes(node_ids=node_ids[:2])
+    print(f"Deleted 2 nodes, {vector_store.get_vector_count()} remaining")
 
-# Async delete
-await vector_store.adelete_nodes(node_ids=["id1", "id2"])
+# Run async function
+await async_operations()  # In Jupyter
+# asyncio.run(async_operations())  # In regular Python scripts
 ```
 
 ### Metadata Filtering
@@ -155,7 +188,7 @@ results = vector_store.query(
 )
 ```
 
-**Supported operators**: EQ, NE, GT, GTE, LT, LTE, IN, NIN, ANY, ALL, CONTAINS, TEXT_MATCH, TEXT_MATCH_INSENSITIVE
+**Supported operators**: EQ, NE, GT, GTE, LT, LTE, IN, ANY, ALL, CONTAINS, TEXT_MATCH, TEXT_MATCH_INSENSITIVE
 
 ## Configuration
 
