@@ -9,7 +9,7 @@ By default, the `AgentWorkflow` is stateless between runs. This means that the a
 To maintain state, we need to keep track of the previous state. In LlamaIndex, Workflows have a `Context` class that can be used to maintain state within and between runs. Since the AgentWorkflow is just a pre-built Workflow, we can also use it now.
 
 ```python
-from llama_index.core.workflow import Context
+from workflows import Context
 ```
 
 To maintain state between runs, we'll create a new Context called ctx. We pass in our workflow to properly configure this Context object for the workflow that will use it.
@@ -50,12 +50,13 @@ The Context is serializable, so it can be saved to a database, file, etc. and lo
 
 The JsonSerializer is a simple serializer that uses `json.dumps` and `json.loads` to serialize and deserialize the context.
 
-The JsonPickleSerializer is a serializer that uses pickle to serialize and deserialize the context. If you have objects in your context that are not serializable, you can use this serializer.
+The PickleSerializer is a serializer that uses pickle to serialize and deserialize the context. If you have objects in your context that are not serializable, you can use this serializer.
 
 We bring in our serializers as any other import:
 
 ```python
-from llama_index.core.workflow import JsonPickleSerializer, JsonSerializer
+from workflows.context import PickleSerializer
+from workflows.context.serializers import JsonSerializer
 ```
 
 We can then serialize our context to a dictionary and save it to a file:

@@ -11,14 +11,8 @@ The first is subclassing: workflows are just regular Python classes, which means
 Here's our base workflow:
 
 ```python
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-    Event,
-    Context,
-)
+from workflows import Workflow, step, Context
+from workflows.events import StartEvent, StopEvent, Event
 
 
 class Step2Event(Event):

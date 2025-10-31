@@ -15,10 +15,7 @@ To get a human in the loop, we'll get our tool to emit an event that isn't recei
 We have built-in `InputRequiredEvent` and `HumanResponseEvent` events to use for this purpose. If you want to capture different forms of human input, you can subclass these events to match your own preferences. Let's import them:
 
 ```python
-from llama_index.core.workflow import (
-    InputRequiredEvent,
-    HumanResponseEvent,
-)
+from workflows.events import InputRequiredEvent, HumanResponseEvent
 ```
 
 Next we'll create a tool that performs a hypothetical dangerous task. There are a couple of new things happening here:
@@ -29,7 +26,7 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 - The `requirements` argument is used to specify that we want to wait for a HumanResponseEvent with a specific `user_name`.
 
 ```python
-from llama_index.core.workflow import Context
+from workflows import Context
 
 
 async def dangerous_task(ctx: Context) -> str:

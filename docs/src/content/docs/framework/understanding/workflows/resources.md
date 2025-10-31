@@ -17,14 +17,9 @@ resources can lead to unexpected behaviour, let's see it in detail.
 First of all, to use resources within our code, we need to import `Resource` from the `resource` submodule:
 
 ```python
-from llama_index.core.workflow.resource import Resource
-from llama_index.core.workflow import (
-    Event,
-    step,
-    StartEvent,
-    StopEvent,
-    Workflow,
-)
+from workflows.resource import Resource
+from workflows import Workflow, step
+from workflows.events import Event, StartEvent, StopEvent
 ```
 
 `Resource` wraps a function or callable that must return an object of the same type as the one in the resource
