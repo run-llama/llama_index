@@ -13,6 +13,8 @@ import numpy as np
 import io
 
 from tests.schemas import TestName, TestMethod, TestList
+# If you're running "make test" from the llama-index-tools-mcp subdir, then use the below line
+#from schemas import TestName, TestMethod, TestList
 
 
 @asynccontextmanager
