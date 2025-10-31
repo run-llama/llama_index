@@ -63,6 +63,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Timescale                  |                         | ✓                  |               | ✓      | ✓               | ✓                             |
 | Typesense                  | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
 | Upstash                    | cloud                   |                    |               |        | ✓               |                               |
+| VectorX DB                 | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Vearch                     | self-hosted             | ✓                  |               | ✓      | ✓               |                               |
 | Vespa                      | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | Vertex AI Vector Search    | cloud                   | ✓                  |               | ✓      | ✓               |                               |
@@ -123,6 +124,7 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [Tencent](/python/examples/vector_stores/tencentvectordbindexdemo)
 - [Timesacle](/python/examples/vector_stores/timescalevector)
 - [Upstash](/python/examples/vector_stores/upstashvectordemo)
+- [VectorX DB](/python/examples/vector_stores/vectorxdbdemo)
 - [Vearch](/python/examples/vector_stores/vearchdemo)
 - [Vespa](/python/examples/vector_stores/vespaindexdemo)
 - [Vertex AI Vector Search](/python/examples/vector_stores/vertexaivectorsearchdemo)

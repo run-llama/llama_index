@@ -95,17 +95,21 @@ class ReActAgent(BaseWorkflowAgent):
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=last_chat_response.delta or "",
-                    response=last_chat_response.message.content or "",
-                    raw=raw,
-                    current_agent_name=self.name,
-                    thinking_delta=last_chat_response.additional_kwargs.get(
-                        "thinking_delta", None
-                    ),
+            # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+            # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+            # so just don't write events if the context is not running.
+            if ctx.is_running:
+                ctx.write_event_to_stream(
+                    AgentStream(
+                        delta=last_chat_response.delta or "",
+                        response=last_chat_response.message.content or "",
+                        raw=raw,
+                        current_agent_name=self.name,
+                        thinking_delta=last_chat_response.additional_kwargs.get(
+                            "thinking_delta", None
+                        ),
+                    )
                 )
-            )
 
         return last_chat_response
 
@@ -136,9 +140,13 @@ class ReActAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
-        ctx.write_event_to_stream(
-            AgentInput(input=input_chat, current_agent_name=self.name)
-        )
+        # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+        # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+        # so just don't write events if the context is not running.
+        if ctx.is_running:
+            ctx.write_event_to_stream(
+                AgentInput(input=input_chat, current_agent_name=self.name)
+            )
 
         # Initial LLM call
         if self.streaming:

@@ -1889,7 +1889,7 @@ type = [
 requires-dist = [
     { name = "aiohttp", specifier = "~=3.0" },
     { name = "azure-identity", specifier = "~=1.0" },
-    { name = "llama-index-core", specifier = "~=0.13.0" },
+    { name = "llama-index-core", specifier = ">=0.13,<0.15" },
     { name = "numpy", specifier = "~=2.0" },
     { name = "pgvector", specifier = "~=0.4.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "~=3.0" },
