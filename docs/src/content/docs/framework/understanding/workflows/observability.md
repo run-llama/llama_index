@@ -105,15 +105,17 @@ Step step_three produced event StopEvent
 
 ## Visualizing most recent execution
 
-If you're running a workflow step by step, or you have just executed a workflow with branching, you can get the visualizer to draw only exactly which steps just executed using `draw_most_recent_execution`:
+If you have just executed a workflow with branching, you can get the visualizer to draw only exactly which steps just executed using `draw_most_recent_execution`:
 
 ```python
 from llama_index.utils.workflow import draw_most_recent_execution
 
-draw_most_recent_execution(w, filename="last_execution.html")
+handler = w.run()
+await handler
+draw_most_recent_execution(handler, filename="last_execution.html")
 ```
 
-Note that instead of passing the class name you are passing the instance of the workflow, `w`.
+Note that instead of passing the class name you are passing the handler object returned by `run`.
 
 ## Checkpointing
 

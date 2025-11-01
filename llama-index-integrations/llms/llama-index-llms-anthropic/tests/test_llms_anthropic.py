@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     DocumentBlock,
     TextBlock,
@@ -16,6 +16,7 @@ from llama_index.core.llms import (
     ChatResponse,
     CachePoint,
     CacheControl,
+    ToolCallBlock,
 )
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
@@ -244,7 +245,7 @@ def pdf_url() -> str:
 def test_tool_required():
     llm = Anthropic(model="claude-3-5-sonnet-latest")
 
-    search_tool = FunctionTool.from_defaults(fn=search)
+    search_tool = FunctionTool.from_defaults(fn=search, name="search")
 
     # Test with tool_required=True
     response = llm.chat_with_tools(
@@ -253,8 +254,24 @@ def test_tool_required():
         tool_required=True,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert response.message.additional_kwargs["tool_calls"] is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        any(
+            block.tool_name == "search"
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -264,7 +281,16 @@ def test_tool_required():
     )
     assert isinstance(response, AnthropicChatResponse)
     # Should not use tools for a simple greeting
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     # should not blow up with no tools (regression test)
     response = llm.chat_with_tools(
@@ -273,7 +299,16 @@ def test_tool_required():
         tool_required=False,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.skipif(
@@ -515,3 +550,99 @@ def test_thinking_with_tool_should_fail():
             tools=[generate_restaurant],
             tool_choice={"type": "any"},
         )
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_supported_model():
+    """Test cache_idx handling with a model that supports prompt caching."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+        ChatMessage(role=MessageRole.USER, content="User message 2"),
+    ]
+
+    # Use a model that supports caching with cache_idx=2
+    # This should cache messages[0] (SYSTEM), messages[1] (USER), messages[2] (ASSISTANT)
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=2, model="claude-sonnet-4-5-20250929"
+    )
+
+    # cache_idx=2 means cache up to and including index 2 in original messages
+    # anthropic_messages[0] = messages[1] (USER) - should have cache
+    # anthropic_messages[1] = messages[2] (ASSISTANT) - should have cache
+    # anthropic_messages[2] = messages[3] (USER) - should NOT have cache
+    assert "cache_control" in anthropic_messages[0]["content"][0]
+    assert anthropic_messages[0]["content"][0]["cache_control"]["type"] == "ephemeral"
+    assert "cache_control" in anthropic_messages[1]["content"][0]
+    assert anthropic_messages[1]["content"][0]["cache_control"]["type"] == "ephemeral"
+    assert "cache_control" not in anthropic_messages[2]["content"][0]
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_unsupported_model():
+    """Test cache_idx handling with a model that doesn't support prompt caching."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="System prompt"),
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+    ]
+
+    # Use a model that doesn't support caching
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=1, model="claude-2.1"
+    )
+
+    # No messages should have cache_control when model doesn't support it
+    for msg in anthropic_messages:
+        assert "cache_control" not in msg["content"][0]
+
+
+def test_messages_to_anthropic_messages_with_cache_idx_no_model():
+    """Test cache_idx handling when no model is specified (should allow caching)."""
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="User message 1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Assistant response 1"),
+    ]
+
+    # No model specified - should include cache_control
+    anthropic_messages, system_prompt = messages_to_anthropic_messages(
+        messages, cache_idx=0, model=None
+    )
+
+    # First message should have cache_control when model is None
+    assert "cache_control" in anthropic_messages[0]["content"][0]
+    assert anthropic_messages[0]["content"][0]["cache_control"]["type"] == "ephemeral"
+
+
+def test_prepare_chat_with_tools_caching_supported_model():
+    """Test tool caching with a model that supports prompt caching."""
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
+
+    # Prepare tools with prompt caching enabled
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+    )
+
+    # Should have cache_control on last tool
+    assert len(result["tools"]) == 1
+    assert "cache_control" in result["tools"][0]
+    assert result["tools"][0]["cache_control"]["type"] == "ephemeral"
+
+
+def test_prepare_chat_with_tools_caching_unsupported_model(caplog):
+    """Test tool caching with a model that doesn't support prompt caching."""
+    llm = Anthropic(model="claude-2.1")
+
+    # Prepare tools with prompt caching enabled but unsupported model
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+    )
+
+    # Should not have cache_control when model doesn't support it
+    assert len(result["tools"]) == 1
+    assert "cache_control" not in result["tools"][0]
+
+    # Check that warning was logged
+    assert "does not support prompt caching" in caplog.text
+    assert "claude-2.1" in caplog.text

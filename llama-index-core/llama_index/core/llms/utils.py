@@ -52,7 +52,6 @@ def resolve_llm(
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
                 f"{e!s}"
-                "\nTo disable the LLM entirely, set llm=None."
                 "\n******"
             )
 
