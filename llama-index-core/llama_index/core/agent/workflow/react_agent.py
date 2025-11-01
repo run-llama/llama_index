@@ -16,7 +16,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, TextBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
@@ -278,11 +278,19 @@ class ReActAgent(BaseWorkflowAgent):
                 await memory.aput(reasoning_msg)
                 await ctx.store.set(self.reasoning_key, [])
 
-            # remove "Answer:" from the response
-            if output.response.content and "Answer:" in output.response.content:
-                start_idx = output.response.content.find("Answer:")
+            # Find the text block in the response to modify it directly
+            text_block = None
+            for block in output.response.blocks:
+                if isinstance(block, TextBlock):
+                    text_block = block
+                    break
+
+            # remove "Answer:" from the response (now checking text_block.text)
+            if text_block and "Answer:" in text_block.text:
+                start_idx = text_block.text.find("Answer:")
                 if start_idx != -1:
-                    output.response.content = output.response.content[
+                    # Modify the .text attribute of the block, NOT response.content
+                    text_block.text = text_block.text[
                         start_idx + len("Answer:") :
                     ].strip()
 
