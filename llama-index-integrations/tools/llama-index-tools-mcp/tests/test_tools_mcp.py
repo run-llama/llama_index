@@ -151,3 +151,40 @@ def test_additional_properties_false_parsing(client: BasicMCPClient):
     assert tool_spec._is_simple_object(schema_dict)
     result_type = tool_spec._create_dict_type(schema_dict, {})
     assert result_type == Dict[str, str]
+
+
+@pytest.mark.asyncio
+async def test_resource_tool_uses_uri_not_name(client: BasicMCPClient):
+    """
+    Tests that a tool from a static resource is executable.
+
+    This test is designed to FAIL with the current bug, because the tool's
+    internal function is created with the resource's name ('get_app_config')
+    instead of its URI ('config://app'), causing the client call to fail.
+    """
+    tool_spec = McpToolSpec(
+        client, allowed_tools=["get_app_config"], include_resources=True
+    )
+    tools = await tool_spec.to_tool_list_async()
+
+    assert len(tools) == 1
+    tool = tools[0]
+    assert tool.metadata.name == "get_app_config"
+
+    # This call will fail due to the bug.
+    result = await tool.acall()
+    assert "MCP Test Server" in result.content
+
+
+@pytest.mark.asyncio
+async def test_dynamic_resource_template_tool_is_created(client: BasicMCPClient):
+    """
+    Tests that a tool is created for a dynamic resource template.
+    """
+    tool_spec = McpToolSpec(client, include_resources=True)
+    tools = await tool_spec.to_tool_list_async()
+
+    # The server.py defines a dynamic resource template named 'get_user_profile'.
+    # This should now be found.
+    tool_names = {t.metadata.name for t in tools}
+    assert "get_user_profile" in tool_names
