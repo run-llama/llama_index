@@ -173,6 +173,15 @@ def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     assert img.read() == png_1px_b64
 
 
+def test_image_block_resolve_image_buffer(png_1px: bytes):
+    buffer = BytesIO(png_1px)
+    b = ImageBlock(image=buffer)
+
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+
 def test_image_block_resolve_image_path(
     tmp_path: Path, png_1px_b64: bytes, png_1px: bytes
 ):
@@ -393,6 +402,15 @@ def test_video_block_resolve_video_bytes(mp4_bytes: bytes, mp4_base64: bytes):
     vid = b.resolve_video(as_base64=True)
     assert isinstance(vid, BytesIO)
     assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_video_buffer(mp4_bytes: bytes):
+    buffer = BytesIO(mp4_bytes)
+    b = VideoBlock(video=buffer)
+
+    vid = b.resolve_video()
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_bytes
 
 
 def test_video_block_resolve_video_path(
