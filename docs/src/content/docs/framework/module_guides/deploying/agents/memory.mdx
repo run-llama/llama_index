@@ -63,7 +63,7 @@ response = await agent.run(
 You can get the latest memory from an agent by grabbing it from the agent context:
 
 ```python
-from llama_index.core.workflow import Context
+from workflows import Context
 
 ctx = Context(agent)
 
@@ -277,7 +277,7 @@ In comparison, the `Memory` object is a simpler object, holding only `ChatMessag
 In most practical cases, you will end up using both. If you aren't customizing the memory, then serializing the `Context` object will be sufficient.
 
 ```python
-from llama_index.core.workflow import Context
+from workflows import Context
 
 ctx = Context(workflow)
 

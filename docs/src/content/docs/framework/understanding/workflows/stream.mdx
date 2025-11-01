@@ -9,14 +9,8 @@ Workflows can be complex -- they are designed to handle complex, branching, conc
 To get this done, let's bring in all the deps we need:
 
 ```python
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-    Event,
-    Context,
-)
+from workflows import Workflow, step, Context
+from workflows.events import StartEvent, StopEvent, Event
 import asyncio
 from llama_index.llms.openai import OpenAI
 from llama_index.utils.workflow import draw_all_possible_flows

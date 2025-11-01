@@ -23,12 +23,8 @@ pip install llama-index-utils-workflow
 The minimal dependencies for a workflow are:
 
 ```python
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-)
+from workflows import Workflow, step
+from workflows.events import StartEvent, StopEvent
 ```
 
 ## Single-step workflow
@@ -117,13 +113,8 @@ Multiple steps are created by defining custom events that can be emitted by step
 We bring in our imports as before, plus a new import for `Event`:
 
 ```python
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-    Event,
-)
+from workflows import Workflow, step
+from workflows.events import StartEvent, StopEvent, Event
 from llama_index.utils.workflow import draw_all_possible_flows
 ```
 
