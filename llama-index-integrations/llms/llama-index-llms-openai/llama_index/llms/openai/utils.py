@@ -361,7 +361,7 @@ def to_openai_message_dict(
                 mimetype = block._guess_mimetype()
             content.append(
                 {
-                    "type": "input_file",
+                    "type": "file",
                     "filename": block.title,
                     "file_data": f"data:{mimetype};base64,{b64_string}",
                 }
