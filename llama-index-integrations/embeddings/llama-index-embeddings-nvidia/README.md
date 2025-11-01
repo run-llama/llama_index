@@ -19,12 +19,7 @@ The following example connects to the NVIDIA Retrieval QA E5 Embedding Model.
 
 
 
-## Get Started
-
-Use the following procedures to get started with the `llama-index-embeddings-nvidia` package.
-
-
-### Install the Package
+## Install the Package
 
 To install the `llama-index-embeddings-nvidia` package, run the following code.
 
@@ -33,7 +28,7 @@ pip install llama-index-embeddings-nvidia
 ```
 
 
-### Access the NVIDIA API Catalog
+## Access the NVIDIA API Catalog
 
 To get access to the NVIDIA API Catalog, do the following:
 
