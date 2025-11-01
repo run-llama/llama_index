@@ -2,9 +2,12 @@ import os
 from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import base64
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import DocumentBlock, MessageRole
+from llama_index.llms.openai.utils import to_openai_message_dict
 
 import openai
 from openai.types.chat.chat_completion import (
@@ -544,3 +547,47 @@ async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
 
     # Verify the result has the expected structure
     assert isinstance(result.raw, Person)
+
+
+def test_document_block_to_openai_dict_type(tmp_path, monkeypatch):
+    """
+    Tests that `to_openai_message_dict` serializes a DocumentBlock
+    with the correct 'type' field ("file" instead of "input_file").
+
+    This test uses monkeypatch to override the problematic
+    `_guess_mimetype` function to return the value we want.
+    """
+
+    # 1. Create a real temporary file
+    fake_file_content = "This is a test document."
+    fake_file_path = tmp_path / "test_doc.txt"
+    fake_file_path.write_text(fake_file_content)
+
+    # 2. Create the DocumentBlock
+    doc_block = DocumentBlock(path=fake_file_path, title="test_doc.txt")
+
+    # 3. --- THIS IS THE FIX FOR THE TEST ---
+    # We will force the `_guess_mimetype` method on this *specific*
+    # object to just return "text/plain".
+    monkeypatch.setattr(doc_block, "_guess_mimetype", lambda: "text/plain")
+
+    message = ChatMessage(role=MessageRole.USER, blocks=[doc_block])
+
+    # 4. Call the function you found
+    result_dict = to_openai_message_dict(message)
+
+    # 5. Check the 'content' part
+    assert isinstance(result_dict.get("content"), list)
+    content_part = result_dict["content"][0]
+
+    # 6. --- THIS IS THE ASSERTION WE WANT TO FAIL ---
+    #    BEFORE THE FIX: Fails with "assert 'input_file' == 'file'"
+    #    AFTER THE FIX: Passes
+    assert content_part["type"] == "file"
+
+    # 7. This assertion will now PASS
+    assert content_part["filename"] == "test_doc.txt"
+
+    # 8. This assertion will also now PASS (because of our mock)
+    expected_b64 = base64.b64encode(fake_file_content.encode("utf-8")).decode("utf-8")
+    assert f"data:text/plain;base64,{expected_b64}" in content_part["file_data"]
