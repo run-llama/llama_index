@@ -1,8 +1,8 @@
 <!-- Most sibling folders are using this title format -->
 # LlamaIndex Postprocessor Integration: NVIDIA NIM Microservices
 
-The `llama-index-postprocessor-nvidia-rerank` package contains LlamaIndex integrations building applications with [NVIDIA NIM microservices](https://developer.nvidia.com/nim). 
-With the NVIDIA embeddings connector, you can connect to, and generate content from, compatible models.
+The `llama-index-postprocessor-nvidia-rerank` package contains LlamaIndex integrations for building applications with [NVIDIA NIM microservices](https://developer.nvidia.com/nim). 
+With the NVIDIA postprocessor connector, you can use a reranking NIM to rerank processed data.
 
 NVIDIA NIM supports models across domains like chat, embedding, and re-ranking, from the community as well as from NVIDIA. 
 Each model is optimized by NVIDIA to deliver the best performance on NVIDIA-accelerated infrastructure and is packaged as a NIM, 
@@ -14,16 +14,11 @@ After you explore, you can download NIM microservices from the API catalog, whic
 The ability to run models on-premises or in your own cloud gives your enterprise ownership of your customizations and full control of your IP and AI application. 
 
 Use this documentation to learn how to install the `llama-index-postprocessor-nvidia-rerank` package 
-and use it to explore common functionality surrounding text-generative and embedding models.
+and use it to rerank parsed nodes.
 
 
 
-## Get Started
-
-Use the following procedures to get started with the `llama-index-postprocessor-nvidia-rerank` package.
-
-
-### Install the Package
+## Install the Package
 
 To install the `llama-index-postprocessor-nvidia-rerank` package, run the following code.
 
@@ -33,7 +28,7 @@ pip install --upgrade llama-index llama-index-core llama-index-postprocessor-nvi
 ```
 
 
-### Access the NVIDIA API Catalog
+## Access the NVIDIA API Catalog
 
 To get access to the NVIDIA API Catalog, do the following:
 
@@ -64,7 +59,7 @@ You can now use your key to access endpoints on the NVIDIA API Catalog.
 
 ## Work with the API Catalog
 
-The following example uploads and parses data, and then calls the reranking NIM.
+The following example loads and parses data, and then calls the reranking NIM.
 
 ```python
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
