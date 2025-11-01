@@ -94,4 +94,4 @@ embedder = NVIDIAEmbeddings(base_url="http://localhost:8080/v1")
 
 ## Related Topics
 
-- [Overview of NeMo Retriever Text Embedding NIM](https://nim-tme.gitlab-master-pages.nvidia.com/documentation/latest/docs/nemo-retriever/text-embedding/latest/overview.html)
+- [Overview of NeMo Retriever Text Embedding NIM](https://docs.nvidia.com/nim/nemo-retriever/text-embedding/latest/overview.html)
