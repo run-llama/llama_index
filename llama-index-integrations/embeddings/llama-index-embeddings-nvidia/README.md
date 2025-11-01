@@ -1,7 +1,7 @@
 <!-- Most sibling folders are using this title format -->
 # LlamaIndex Embeddings Integration: NVIDIA NIM Microservices
 
-The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations building applications with [NVIDIA NIM microservices](https://developer.nvidia.com/nim). 
+The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations for building applications with [NVIDIA NIM microservices](https://developer.nvidia.com/nim). 
 With the NVIDIA embeddings connector, you can connect to, and generate content from, compatible models.
 
 NVIDIA NIM supports models across domains like chat, embedding, and re-ranking, from the community as well as from NVIDIA. 
