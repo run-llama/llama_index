@@ -1,5 +1,6 @@
 import pytest
 from importlib.util import find_spec
+from unittest.mock import MagicMock, patch
 from llama_index.core.storage.kvstore.types import BaseKVStore
 from llama_index.storage.kvstore.postgres import PostgresKVStore
 
@@ -51,3 +52,201 @@ def test_initialization():
     assert sum(errors) == 3
     assert pgstore4._engine is None
     assert pgstore4._async_engine is None
+
+
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
+def test_schema_creation_uses_safe_api():
+    import sqlalchemy
+
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    mock_session_instance = MagicMock()
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__enter__.return_value = mock_session_instance
+    mock_session_ctx.__exit__.return_value = None
+
+    mock_begin_ctx = MagicMock()
+    mock_begin_ctx.__enter__.return_value = MagicMock()
+    mock_begin_ctx.__exit__.return_value = None
+    mock_session_instance.begin.return_value = mock_begin_ctx
+
+    mock_session_factory = MagicMock(return_value=mock_session_ctx)
+
+    with (
+        patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
+        patch.object(
+            sqlalchemy.ext.asyncio,
+            "create_async_engine",
+            return_value=mock_async_engine,
+        ),
+        patch("sqlalchemy.orm.sessionmaker", return_value=mock_session_factory),
+    ):
+        pgstore = PostgresKVStore(
+            table_name="test_table",
+            connection_string="postgresql://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            schema_name="test_schema",
+            perform_setup=False,
+        )
+
+        pgstore._connect()
+        pgstore._create_schema_if_not_exists()
+
+        execute_calls = mock_session_instance.execute.call_args_list
+        assert len(execute_calls) == 1
+
+        from sqlalchemy.schema import CreateSchema
+
+        executed_statement = execute_calls[0][0][0]
+        assert isinstance(executed_statement, CreateSchema)
+        assert executed_statement.element == "test_schema"
+        assert executed_statement.if_not_exists is True
+
+
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
+def test_put_all_uses_safe_insert():
+    import sqlalchemy
+
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    mock_session_instance = MagicMock()
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__enter__.return_value = mock_session_instance
+    mock_session_ctx.__exit__.return_value = None
+
+    mock_session_factory = MagicMock(return_value=mock_session_ctx)
+
+    with (
+        patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
+        patch.object(
+            sqlalchemy.ext.asyncio,
+            "create_async_engine",
+            return_value=mock_async_engine,
+        ),
+        patch("sqlalchemy.orm.sessionmaker", return_value=mock_session_factory),
+    ):
+        pgstore = PostgresKVStore(
+            table_name="test_table",
+            connection_string="postgresql://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            schema_name="test_schema",
+            perform_setup=False,
+        )
+        pgstore._connect()
+        pgstore._is_initialized = True
+
+        test_data = [("key1", {"value": "data1"}), ("key2", {"value": "data2"})]
+        pgstore.put_all(test_data)
+
+        execute_calls = mock_session_instance.execute.call_args_list
+        assert len(execute_calls) >= 1
+
+        executed_statement = execute_calls[-1][0][0]
+        assert hasattr(executed_statement, "compile")
+
+
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
+@pytest.mark.asyncio
+async def test_aput_all_uses_safe_insert():
+    import sqlalchemy
+    from unittest.mock import AsyncMock
+
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    mock_session_instance = MagicMock()
+    mock_session_ctx_manager = MagicMock()
+    mock_session_ctx_manager.__aenter__ = AsyncMock(return_value=mock_session_instance)
+    mock_session_ctx_manager.__aexit__ = AsyncMock(return_value=None)
+
+    mock_async_session_factory = MagicMock(return_value=mock_session_ctx_manager)
+
+    with (
+        patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
+        patch.object(
+            sqlalchemy.ext.asyncio,
+            "create_async_engine",
+            return_value=mock_async_engine,
+        ),
+        patch("sqlalchemy.orm.sessionmaker", return_value=mock_async_session_factory),
+    ):
+        pgstore = PostgresKVStore(
+            table_name="test_table",
+            connection_string="postgresql://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            schema_name="test_schema",
+            perform_setup=False,
+        )
+        pgstore._connect()
+        pgstore._is_initialized = True
+
+        mock_session_instance.execute = AsyncMock()
+        mock_session_instance.commit = AsyncMock()
+
+        test_data = [("key1", {"value": "data1"}), ("key2", {"value": "data2"})]
+        await pgstore.aput_all(test_data)
+
+        execute_calls = mock_session_instance.execute.call_args_list
+        assert len(execute_calls) >= 1
+
+        executed_statement = execute_calls[-1][0][0]
+        assert hasattr(executed_statement, "compile")
+
+
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
+def test_schema_name_with_special_characters():
+    import sqlalchemy
+
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    mock_session_instance = MagicMock()
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__enter__.return_value = mock_session_instance
+    mock_session_ctx.__exit__.return_value = None
+
+    mock_begin_ctx = MagicMock()
+    mock_begin_ctx.__enter__.return_value = MagicMock()
+    mock_begin_ctx.__exit__.return_value = None
+    mock_session_instance.begin.return_value = mock_begin_ctx
+
+    mock_session_factory = MagicMock(return_value=mock_session_ctx)
+
+    with (
+        patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
+        patch.object(
+            sqlalchemy.ext.asyncio,
+            "create_async_engine",
+            return_value=mock_async_engine,
+        ),
+        patch("sqlalchemy.orm.sessionmaker", return_value=mock_session_factory),
+    ):
+        special_schema = "test'schema"
+        pgstore = PostgresKVStore(
+            table_name="test_table",
+            connection_string="postgresql://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            schema_name=special_schema,
+            perform_setup=False,
+        )
+
+        pgstore._connect()
+        pgstore._create_schema_if_not_exists()
+
+        execute_calls = mock_session_instance.execute.call_args_list
+        assert len(execute_calls) == 1
+
+        from sqlalchemy.schema import CreateSchema
+
+        executed_statement = execute_calls[0][0][0]
+        assert isinstance(executed_statement, CreateSchema)

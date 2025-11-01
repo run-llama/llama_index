@@ -60,8 +60,10 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
+    "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
+    "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -106,8 +108,10 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-5-haiku-20241022-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -136,8 +140,10 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-5-haiku-20241022-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
     "meta.llama3-2-1b-instruct-v1:0",
@@ -157,6 +163,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
     "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
@@ -166,8 +173,10 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
 BEDROCK_REASONING_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
 )
 
@@ -445,6 +454,7 @@ def tools_to_converse_tools(
     tool_choice: Optional[dict] = None,
     tool_required: bool = False,
     tool_caching: bool = False,
+    supports_forced_tool_calls: bool = True,
 ) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
@@ -473,11 +483,18 @@ def tools_to_converse_tools(
     if tool_caching:
         converse_tools.append({"cachePoint": {"type": "default"}})
 
+    if tool_choice:
+        tool_choice = tool_choice
+    elif supports_forced_tool_calls and tool_required:
+        tool_choice = {"any": {}}
+    else:
+        tool_choice = {"auto": {}}
+
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
         # e.g. { "auto": {} }
-        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+        "toolChoice": tool_choice,
     }
 
 
@@ -546,6 +563,7 @@ def converse_with_retry(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
@@ -586,6 +604,10 @@ def converse_with_retry(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
 
     converse_kwargs = join_two_dicts(
         converse_kwargs,
@@ -627,6 +649,7 @@ async def converse_with_retry_async(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
@@ -673,6 +696,10 @@ async def converse_with_retry_async(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
     converse_kwargs = join_two_dicts(
         converse_kwargs,
         {

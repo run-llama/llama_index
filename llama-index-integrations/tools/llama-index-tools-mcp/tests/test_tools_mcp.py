@@ -127,3 +127,27 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
 
     assert json_schema["type"] == "object"
     assert set(json_schema["required"]) == {"name", "method", "lst"}
+
+
+def test_additional_properties_false_parsing(client: BasicMCPClient):
+    """Test that schemas with additionalProperties: false are parsed correctly."""
+    from typing import Dict, Any
+
+    tool_spec = McpToolSpec(client)
+
+    # Test case 1: additionalProperties is False
+    schema_false = {"type": "object", "additionalProperties": False}
+    assert not tool_spec._is_simple_object(schema_false)
+    result_type = tool_spec._create_dict_type(schema_false, {})
+    assert result_type == Dict[str, Any]
+
+    # Test case 2: additionalProperties is None
+    schema_none = {"type": "object", "additionalProperties": None}
+    result_type = tool_spec._create_dict_type(schema_none, {})
+    assert result_type == Dict[str, Any]
+
+    # Test case 3: additionalProperties is a dict (should be treated as simple object)
+    schema_dict = {"type": "object", "additionalProperties": {"type": "string"}}
+    assert tool_spec._is_simple_object(schema_dict)
+    result_type = tool_spec._create_dict_type(schema_dict, {})
+    assert result_type == Dict[str, str]
