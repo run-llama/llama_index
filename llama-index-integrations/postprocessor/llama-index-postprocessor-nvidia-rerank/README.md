@@ -64,32 +64,7 @@ You can now use your key to access endpoints on the NVIDIA API Catalog.
 
 ## Work with the API Catalog
 
-To call the reranking NIM, use the following code.
-
-```python
-from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
-
-... more code goes here ...
-
-rerank = NVIDIARerank()
-```
-
-
-## Supported models
-
-Querying `available_models` will still give you all of the other models offered by your API credentials.
-
-```python
-from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
-
-rerank.available_models
-```
-
-**To find out more about a specific model, please navigate to the NVIDIA NIM section of ai.nvidia.com [as linked here](https://docs.api.nvidia.com/nim/).**
-
-## Reranking
-
-Below is an example:
+The following example uploads and parses data, and then calls the reranking NIM.
 
 ```python
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
@@ -98,36 +73,34 @@ from llama_index.core import Document
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.core.node_parser import SentenceSplitter, SimpleFileNodeParser
 
+# Load your API key from an environment variable
+my_key = os.environ["NVIDIA_API_KEY"]
 
-# load documents
+# Load documents
 documents = SimpleDirectoryReader("/path_to_your_data_folder").load_data()
 
-# use API Catalog's reranker model
-my_key = os.environ["NVIDIA_API_KEY"]
+# Set the reranker to use the API Catalog's default reranker model
 rerank = NVIDIARerank()
 
-# parse nodes
+# Parse data into nodes
 parser = SentenceSplitter(separator="\n", chunk_size=200, chunk_overlap=0)
 nodes = parser.get_nodes_from_documents(documents)
-# rerank
-rerank.postprocess_nodes(nodes, query_str=query)
+
+# Rerank the nodes
+rerank.postprocess_nodes(nodes, query_str="What is the capital of France?")
 ```
 
-### Custom HTTP Client
 
-If you need more control over HTTP settings (e.g., timeouts, proxies, retries), you can pass your own `httpx.Client` instance to the `NVIDIARerank` initializer:
+
+## Available Models
+
+You can querying `available_models` to get a list of the models available with your API credentials. 
+For details about each model, refer to [Models](https://docs.api.nvidia.com/nim/reference/models-1).
 
 ```python
-import httpx
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 
-# Create a custom httpx client with a 10-second timeout
-custom_client = httpx.Client(timeout=10.0)
-
-# Pass the custom client to the reranker
-rerank = NVIDIARerank(
-    base_url="http://localhost:1976/v1", http_client=custom_client
-)
+rerank.available_models
 ```
 
 
@@ -144,6 +117,27 @@ from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 
 # connect to a reranking NIM running at localhost:1976
 rerank = NVIDIARerank(base_url="http://localhost:1976/v1")
+```
+
+
+
+## Use Your Own Custom HTTP Client
+
+If you need more control over HTTP settings, such as timeouts, proxies, and retries, you can use your own custom HTTP client. 
+Use the following code to pass an instance of your HTTP client to the `NVIDIARerank` initializer.
+
+```python
+import httpx
+from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
+
+# Create a custom httpx client with a 10-second timeout
+custom_client = httpx.Client(timeout=10.0)
+
+# Pass the custom client to the reranker
+rerank = NVIDIARerank(
+    base_url="http://localhost:1976/v1", 
+    http_client=custom_client
+)
 ```
 
 
