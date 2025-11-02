@@ -646,3 +646,97 @@ def test_prepare_chat_with_tools_caching_unsupported_model(caplog):
     # Check that warning was logged
     assert "does not support prompt caching" in caplog.text
     assert "claude-2.1" in caplog.text
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test streaming metadata",
+)
+def test_stream_chat_usage_and_stop_reason():
+    """
+    Test that streaming captures usage metadata and stop_reason from RawMessageDeltaEvent.
+
+    This addresses issue #20194 - Anthropic RawMessageDeltaEvent support.
+    The streaming API should capture:
+    - input_tokens and output_tokens from usage metadata
+    - stop_reason (e.g., 'end_turn', 'max_tokens') to understand why streaming stopped
+    """
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    messages = [
+        ChatMessage(role="user", content="Say hello in 3 words"),
+    ]
+
+    # Stream the response
+    stream_resp = llm.stream_chat(messages)
+    last_chunk = None
+    for chunk in stream_resp:
+        last_chunk = chunk
+
+    # Verify we got a response
+    assert last_chunk is not None
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Check that usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, (
+        "Usage metadata should be captured from RawMessageDeltaEvent"
+    )
+    assert "input_tokens" in usage, "Usage should include input_tokens"
+    assert "output_tokens" in usage, "Usage should include output_tokens"
+    assert isinstance(usage["input_tokens"], int)
+    assert isinstance(usage["output_tokens"], int)
+    assert usage["input_tokens"] > 0, "Should have processed input tokens"
+    assert usage["output_tokens"] > 0, "Should have generated output tokens"
+
+    # Check that stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, (
+        "stop_reason should be captured from RawMessageDeltaEvent"
+    )
+    # Typical stop reasons: "end_turn", "max_tokens", "stop_sequence", "tool_use"
+    assert isinstance(stop_reason, str)
+    print(f"Stop reason: {stop_reason}")
+    print(f"Usage: {usage}")
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test async streaming metadata",
+)
+@pytest.mark.asyncio
+async def test_astream_chat_usage_and_stop_reason():
+    """
+    Test that async streaming captures usage metadata and stop_reason.
+
+    Async version of the streaming metadata test for issue #20194.
+    """
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    messages = [
+        ChatMessage(role="user", content="Count to 5"),
+    ]
+
+    # Stream the response asynchronously
+    stream_resp = await llm.astream_chat(messages)
+    last_chunk = None
+    async for chunk in stream_resp:
+        last_chunk = chunk
+
+    # Verify we got a response
+    assert last_chunk is not None
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Check that usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, "Usage metadata should be captured in async streaming"
+    assert "input_tokens" in usage
+    assert "output_tokens" in usage
+    assert isinstance(usage["input_tokens"], int)
+    assert isinstance(usage["output_tokens"], int)
+    assert usage["output_tokens"] > 0
+
+    # Check that stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, "stop_reason should be captured in async streaming"
+    assert isinstance(stop_reason, str)
+    print(f"Async - Stop reason: {stop_reason}")
+    print(f"Async - Usage: {usage}")
