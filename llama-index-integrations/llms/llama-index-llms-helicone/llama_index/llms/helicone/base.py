@@ -35,7 +35,9 @@ class Helicone(OpenAILike):
             model="gpt-4o-mini",  # works across providers
         )
 
-        response = llm.complete("Hello World!")
+        message: ChatMessage = ChatMessage(role="user", content="Hello world!")
+
+        response = helicone.chat(messages=[message])
         print(str(response))
         ```
 
