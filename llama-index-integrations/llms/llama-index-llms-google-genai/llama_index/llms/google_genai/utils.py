@@ -191,7 +191,7 @@ def chat_from_gemini_response(
                     )
                 content_blocks.append(
                     ToolCallBlock(
-                        tool_call_id=part.function_call.id or "",
+                        tool_call_id=part.function_call.name or "",
                         tool_name=part.function_call.name or "",
                         tool_kwargs=part.function_call.args or {},
                     )
@@ -200,7 +200,6 @@ def chat_from_gemini_response(
                 # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
                 additional_kwargs["tool_call_id"] = part.function_response.id
                 role = ROLES_FROM_GEMINI[top_candidate.content.role]
-                print("RESPONSE", json.dumps(part.function_response.response))
                 return ChatResponse(
                     message=ChatMessage(
                         role=role, content=json.dumps(part.function_response.response)
