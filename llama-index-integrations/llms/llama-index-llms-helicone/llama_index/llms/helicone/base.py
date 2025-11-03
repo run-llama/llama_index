@@ -29,6 +29,7 @@ class Helicone(OpenAILike):
 
         ```python
         from llama_index.llms.helicone import Helicone
+        from llama_index.llms.openai_like.base import ChatMessage
 
         llm = Helicone(
             api_key="<helicone-api-key>",
