@@ -2,7 +2,7 @@ import pytest
 from unittest import mock
 from llama_index.core.readers.base import BaseReader
 import inspect
-from llama_index.base import TrinoReader
+from llama_index.readers.trino.base import TrinoReader
 
 # Mock Data to simulate a query result from Trino
 MOCK_COLUMNS = [("product_id", "varchar"), ("name", "varchar"), ("price", "double")]
