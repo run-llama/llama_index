@@ -32,6 +32,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     CachePoint,
     ThinkingBlock,
+    ToolCallBlock,
 )
 
 
@@ -303,6 +304,23 @@ def _content_block_to_bedrock_format(
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
+    elif isinstance(block, ToolCallBlock):
+        if isinstance(block.tool_kwargs, str):
+            try:
+                tool_input = json.loads(block.tool_kwargs or "{}")
+            except json.JSONDecodeError:
+                tool_input = {}
+        else:
+            tool_input = block.tool_kwargs
+
+        return {
+            "toolUse": {
+                "input": tool_input,
+                "toolUseId": block.tool_call_id or "",
+                "name": block.tool_name,
+            }
+        }
+
     else:
         logger.warning(f"Unsupported block type: {type(block)}")
         return None
@@ -345,7 +363,9 @@ def messages_to_converse_messages(
     converse_messages = []
     system_prompt = []
     current_system_prompt = ""
+
     for message in messages:
+        unique_tool_calls = []
         if message.role == MessageRole.SYSTEM:
             # we iterate over blocks, if content was used, the blocks are added anyway
             for block in message.blocks:
@@ -402,6 +422,13 @@ def messages_to_converse_messages(
                 )
                 if bedrock_format_block:
                     content.append(bedrock_format_block)
+                    if "toolUse" in bedrock_format_block:
+                        unique_tool_calls.append(
+                            (
+                                bedrock_format_block["toolUse"]["toolUseId"],
+                                bedrock_format_block["toolUse"]["name"],
+                            )
+                        )
 
             if content:
                 converse_messages.append(
@@ -411,6 +438,7 @@ def messages_to_converse_messages(
                     }
                 )
 
+        # keep this code here for compatibility with older chat histories
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,
@@ -418,25 +446,28 @@ def messages_to_converse_messages(
         tool_calls = message.additional_kwargs.get("tool_calls", [])
         content = []
         for tool_call in tool_calls:
-            assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
-            assert "input" in tool_call, f"`input` not found in {tool_call}"
-            assert "name" in tool_call, f"`name` not found in {tool_call}"
-            tool_input = tool_call["input"] if tool_call["input"] else {}
-            if isinstance(tool_input, str):
-                try:
-                    tool_input = json.loads(tool_input or "{}")
-                except json.JSONDecodeError:
-                    tool_input = {}
-
-            content.append(
-                {
-                    "toolUse": {
-                        "input": tool_input,
-                        "toolUseId": tool_call["toolUseId"],
-                        "name": tool_call["name"],
-                    }
-                }
-            )
+            try:
+                assert "toolUseId" in tool_call
+                assert "input" in tool_call
+                assert "name" in tool_call
+                if (tool_call["toolUseId"], tool_call["name"]) not in unique_tool_calls:
+                    tool_input = tool_call["input"] if tool_call["input"] else {}
+                    if isinstance(tool_input, str):
+                        try:
+                            tool_input = json.loads(tool_input or "{}")
+                        except json.JSONDecodeError:
+                            tool_input = {}
+                    content.append(
+                        {
+                            "toolUse": {
+                                "input": tool_input,
+                                "toolUseId": tool_call["toolUseId"],
+                                "name": tool_call["name"],
+                            }
+                        }
+                    )
+            except AssertionError:
+                continue
         if len(content) > 0:
             converse_messages.append(
                 {
@@ -499,9 +530,15 @@ def tools_to_converse_tools(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], Any]:
