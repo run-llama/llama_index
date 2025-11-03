@@ -2,6 +2,7 @@
 .pants.d/
 dist/
 migration_scripts/
+/uv.lock
 
 # IDEs
 .idea
@@ -36,3 +37,4 @@ llama-index-core/llama_index/core/_static
 **/*.egg-info/
 **/.coverage
 **/coverage.xml
+\nstorage/

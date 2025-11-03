@@ -1,3 +1,4 @@
+from typing import Literal
 import pytest
 from llama_index.llms.bedrock_converse.utils import (
     get_model_name,
@@ -547,3 +548,52 @@ def test_converse_with_retry_list_system_prompt():
     assert response is not None
     assert "system" in captured_kwargs
     assert captured_kwargs["system"] == system_prompt
+
+
+@pytest.mark.parametrize("stream_processing_mode", ["sync", "async"])
+def test_converse_with_retry_guardrail_stream_processing_mode(
+    stream_processing_mode: Literal["sync", "async"],
+):
+    """
+    Test use of guardrail_stream_processing_mode in converse_with_retry with streaming.
+    """
+    client = MockClient()
+
+    with patch.object(client, "converse_stream") as patched_converse_stream:
+        converse_with_retry(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=True,  # with streaming
+            guardrail_identifier="IDENT",
+            guardrail_version="DRAFT",
+            guardrail_stream_processing_mode=stream_processing_mode,
+        )
+        call_kwargs = patched_converse_stream.call_args.kwargs
+        assert "guardrailConfig" in call_kwargs
+        assert "streamProcessingMode" in call_kwargs["guardrailConfig"]
+        assert (
+            call_kwargs["guardrailConfig"]["streamProcessingMode"]
+            == stream_processing_mode
+        )
+
+
+def test_converse_with_retry_guardrail_stream_processing_mode_without_stream():
+    """
+    Test use of guardrail_stream_processing_mode in converse_with_retry WITHOUT streaming.
+    """
+    client = MockClient()
+
+    with patch.object(client, "converse") as patched_converse_stream:
+        converse_with_retry(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=False,  # without streaming
+            guardrail_identifier="IDENT",
+            guardrail_version="DRAFT",
+            guardrail_stream_processing_mode="async",
+        )
+        call_kwargs = patched_converse_stream.call_args.kwargs
+        assert "guardrailConfig" in call_kwargs
+        assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]

@@ -17,7 +17,6 @@ except ImportError:
 async def test_return_direct_e2e():
     from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
     from llama_index.core.tools import FunctionTool
-    from llama_index.core.workflow import Context
     from llama_index.llms.openai import OpenAI
 
     if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "sk-" + (
@@ -54,11 +53,9 @@ async def test_return_direct_e2e():
         llm=llm,
         system_prompt="You are a test agent for testing function call. Execute the tools requested as-is so that the results can be evaluated",
     )
-    ctx = Context(agent)
 
     handler = agent.run(
         "Run the return_direct_tool(False), observe the output. if error, retry based on the error message",
-        ctx=ctx,
     )
 
     ever_error = False
