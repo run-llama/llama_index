@@ -66,6 +66,10 @@ def item_to_document(item: Dict, config: Dict) -> Dict:
 
 
 def setup_metadata(item: Dict, config: Dict) -> Dict:
+    """
+    Set up metadata for the document from the scraped item.
+    """
+
     metadata = {}
 
     for key in config["metadata_keys"]:
@@ -76,6 +80,10 @@ def setup_metadata(item: Dict, config: Dict) -> Dict:
 
 
 def remove_metadata_keys(item: Dict, config: Dict) -> Dict:
+    """
+    Remove metadata keys from the scraped item if keep_keys is False.
+    """
+
     if not config["keep_keys"]:
         for key in config["metadata_keys"]:
             item.pop(key, None)

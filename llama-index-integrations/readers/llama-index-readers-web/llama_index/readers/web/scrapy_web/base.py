@@ -1,9 +1,8 @@
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Union
 from multiprocessing import Process, Queue
 
 from scrapy.spiders import Spider
 
-from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
