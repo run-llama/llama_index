@@ -34,7 +34,7 @@ Settings.llm = OpenAI(model="gpt-5")
 vector_store = ZeusDBVectorStore(
     dim=1536,  # OpenAI embedding dimension
     distance="cosine",
-    index_type="hnsw"
+    index_type="hnsw",
 )
 
 # Create storage context
@@ -44,13 +44,12 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = [
     Document(text="ZeusDB is a high-performance vector database."),
     Document(text="LlamaIndex provides RAG capabilities."),
-    Document(text="Vector search enables semantic similarity.")
+    Document(text="Vector search enables semantic similarity."),
 ]
 
 # Create index and store documents
 index = VectorStoreIndex.from_documents(
-    documents,
-    storage_context=storage_context
+    documents, storage_context=storage_context
 )
 
 # Query the index
@@ -86,7 +85,7 @@ results = vector_store.query(
     VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=5),
     mmr=True,
     fetch_k=20,
-    mmr_lambda=0.7  # 0.0=max diversity, 1.0=pure relevance
+    mmr_lambda=0.7,  # 0.0=max diversity, 1.0=pure relevance
 )
 
 # Note: MMR automatically enables return_vector=True for diversity calculation
@@ -102,12 +101,12 @@ vector_store = ZeusDBVectorStore(
     dim=1536,
     distance="cosine",
     quantization_config={
-        'type': 'pq',
-        'subvectors': 8,
-        'bits': 8,
-        'training_size': 1000,
-        'storage_mode': 'quantized_only'
-    }
+        "type": "pq",
+        "subvectors": 8,
+        "bits": 8,
+        "training_size": 1000,
+        "storage_mode": "quantized_only",
+    },
 )
 ```
 
@@ -122,9 +121,11 @@ from llama_index.core.schema import TextNode
 # In Jupyter, use nest_asyncio to handle event loops
 try:
     import nest_asyncio
+
     nest_asyncio.apply()
 except ImportError:
     pass
+
 
 async def async_operations():
     # Create nodes
@@ -132,29 +133,29 @@ async def async_operations():
         TextNode(text=f"Document {i}", metadata={"doc_id": i})
         for i in range(10)
     ]
-    
+
     # Generate embeddings (required before adding)
     embed_model = Settings.embed_model
     for node in nodes:
         node.embedding = embed_model.get_text_embedding(node.text)
-    
+
     # Add nodes asynchronously
     node_ids = await vector_store.async_add(nodes)
     print(f"Added {len(node_ids)} nodes")
-    
+
     # Query asynchronously
     query_embedding = embed_model.get_text_embedding("document")
     query_obj = VectorStoreQuery(
-        query_embedding=query_embedding,
-        similarity_top_k=3
+        query_embedding=query_embedding, similarity_top_k=3
     )
-    
+
     results = await vector_store.aquery(query_obj)
     print(f"Found {len(results.ids or [])} results")
-    
+
     # Delete asynchronously
     await vector_store.adelete_nodes(node_ids=node_ids[:2])
     print(f"Deleted 2 nodes, {vector_store.get_vector_count()} remaining")
+
 
 # Run async function
 await async_operations()  # In Jupyter
@@ -169,21 +170,22 @@ Filter results by metadata:
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterOperator,
-    FilterCondition
+    FilterCondition,
 )
 
 # Create metadata filter
-filters = MetadataFilters.from_dicts([
-    {"key": "category", "value": "tech", "operator": FilterOperator.EQ},
-    {"key": "year", "value": 2024, "operator": FilterOperator.GTE}
-], condition=FilterCondition.AND)
+filters = MetadataFilters.from_dicts(
+    [
+        {"key": "category", "value": "tech", "operator": FilterOperator.EQ},
+        {"key": "year", "value": 2024, "operator": FilterOperator.GTE},
+    ],
+    condition=FilterCondition.AND,
+)
 
 # Query with filters
 results = vector_store.query(
     VectorStoreQuery(
-        query_embedding=query_embedding,
-        similarity_top_k=5,
-        filters=filters
+        query_embedding=query_embedding, similarity_top_k=5, filters=filters
     )
 )
 ```
@@ -192,15 +194,15 @@ results = vector_store.query(
 
 ## Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `dim` | Vector dimension | Required |
-| `distance` | Distance metric (`cosine`, `l2`, `l1`) | `cosine` |
-| `index_type` | Index type (`hnsw`) | `hnsw` |
-| `m` | HNSW connectivity parameter | 16 |
-| `ef_construction` | HNSW build-time search depth | 200 |
-| `expected_size` | Expected number of vectors | 10000 |
-| `quantization_config` | PQ quantization settings | None |
+| Parameter             | Description                            | Default  |
+| --------------------- | -------------------------------------- | -------- |
+| `dim`                 | Vector dimension                       | Required |
+| `distance`            | Distance metric (`cosine`, `l2`, `l1`) | `cosine` |
+| `index_type`          | Index type (`hnsw`)                    | `hnsw`   |
+| `m`                   | HNSW connectivity parameter            | 16       |
+| `ef_construction`     | HNSW build-time search depth           | 200      |
+| `expected_size`       | Expected number of vectors             | 10000    |
+| `quantization_config` | PQ quantization settings               | None     |
 
 ## License
 

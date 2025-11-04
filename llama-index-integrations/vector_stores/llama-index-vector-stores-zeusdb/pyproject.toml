@@ -8,8 +8,8 @@ version = "0.1.5"
 description = "LlamaIndex integration for ZeusDB vector database. Enterprise-grade RAG with high-performance vector search."
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-license = { text = "MIT" }
-authors = [{ name = "ZeusDB", email = "contact@zeusdb.com" }]
+license = {text = "MIT"}
+authors = [{name = "ZeusDB", email = "contact@zeusdb.com"}]
 keywords = [
     "vector-database",
     "embeddings",
@@ -47,11 +47,11 @@ dev = [
     "pre-commit>=4.3",
     "codespell[toml]>=2.2.6",
     # "ipython>=9.5",
-    "ipython>=8.10.0", #need support for python 3.10
+    "ipython>=8.10.0",  # need support for python 3.10
     "jupyter>=1.0.0",
-    "pylint>=3.3", # Latest
+    "pylint>=3.3",  # Latest
     # "tree-sitter-languages>=1.10.2", # Not compatible with 3.13
-    "types-requests>=2.32", # Latest KEEP
+    "types-requests>=2.32",  # Latest KEEP
     # "types-setuptools>=80.9", # Latest
     "llama-index-embeddings-openai>=0.5.1",
     "llama-index-llms-openai>=0.6.6",
@@ -63,29 +63,16 @@ Homepage = "https://github.com/zeusdb/llama-index-vector-stores-zeusdb"
 Repository = "https://github.com/zeusdb/llama-index-vector-stores-zeusdb"
 Issues = "https://github.com/zeusdb/llama-index-vector-stores-zeusdb/issues"
 
-# --- LlamaHub metadata (REQUIRED for the PR) ---
-[tool.llamahub]
-contains_example = true
-import_path = "llama_index.vector_stores.zeusdb"
-
-[tool.llamahub.class_authors]
-ZeusDBVectorStore = "zeusdb"
-# ----------------------------------------------------------
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
-
-[tool.mypy]
-disallow_untyped_defs = true
-exclude = ["_static", "build", "examples", "notebooks", "venv", ".venv"]
-ignore_missing_imports = true
-python_version = "3.10"
-
-[tool.hatch.build.targets.wheel]
-packages = ["llama_index"]
-include = ["llama_index/vector_stores/zeusdb/py.typed"]
+[tool.hatch]
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -96,23 +83,23 @@ include = [
     "llama_index/vector_stores/zeusdb/py.typed",
 ]
 
-[tool.ruff]
-line-length = 88
-target-version = "py310"
+[tool.hatch.build.targets.wheel]
+packages = ["llama_index"]
+include = ["llama_index/vector_stores/zeusdb/py.typed"]
 
-[tool.ruff.lint]
-select = [
-    "E",     # pycodestyle errors
-    "F",     # pyflakes
-    "I",     # isort
-    "UP",    # pyupgrade
-]
-ignore = []
+# --- LlamaHub metadata (REQUIRED for the PR) ---
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.vector_stores.zeusdb"
 
-[tool.black]
-line-length = 88
-target-version = ['py310', 'py311', 'py312']
-include = '\.pyi?$'
+[tool.llamahub.class_authors]
+ZeusDBVectorStore = "zeusdb"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv", ".venv"]
+ignore_missing_imports = true
+python_version = "3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -120,6 +107,19 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "UP",  # pyupgrade
+]
+ignore = []
 
 [tool.ruff.lint.isort]
 known-first-party = ["llama_index"]
