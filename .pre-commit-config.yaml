@@ -2,9 +2,6 @@
 default_language_version:
   python: python3
 
-# Globally ignore example notebooks under docs/examples/
-exclude: ^docs/examples/
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
