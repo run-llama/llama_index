@@ -619,6 +619,21 @@ class Anthropic(FunctionCallingLLM):
                         }
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
                 elif isinstance(r, RawMessageStopEvent):
                     # Final event - no additional data to capture
                     pass
@@ -851,6 +866,21 @@ class Anthropic(FunctionCallingLLM):
                         }
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
                 elif isinstance(r, RawMessageStopEvent):
                     # Final event - no additional data to capture
                     pass
