@@ -1,15 +1,13 @@
-import json
-import os
 from typing import List, Optional, Dict, Union
+from multiprocessing import Process, Queue
 
-from scrapy.spiders import Spider, signals
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
+from scrapy.spiders import Spider
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
+from .utils import run_spider_process, load_scrapy_settings
 
 class ScrapyWebReader(BasePydanticReader):
     """
@@ -34,7 +32,6 @@ class ScrapyWebReader(BasePydanticReader):
     project_path: Optional[str] = ""
     metadata_keys: Optional[List[str]] = []
     keep_keys: bool = False
-    _settings: Dict = PrivateAttr()
 
     def __init__(self, project_path: Optional[str] = "",
                  metadata_keys: Optional[List[str]] = [],
@@ -44,8 +41,6 @@ class ScrapyWebReader(BasePydanticReader):
             metadata_keys=metadata_keys,
             keep_keys=keep_keys,
         )
-
-        self._settings = self._load_settings()
 
     @classmethod
     def class_name(cls) -> str:
@@ -63,49 +58,25 @@ class ScrapyWebReader(BasePydanticReader):
             List[Document]: List of documents extracted from the web pages.
         """
 
-        documents = []
+        documents_queue = Queue()
 
-        def item_scraped(item, response, spider):
-            documents.append(self._item_to_document(dict(item)))
+        config = {
+            "keep_keys": self.keep_keys,
+            "metadata_keys": self.metadata_keys,
+            "settings": load_scrapy_settings(self.project_path),
+        }
 
-        process = CrawlerProcess(settings=self._settings)
-        crawler = process.create_crawler(spider)
-        crawler.signals.connect(item_scraped, signal=signals.item_scraped)
+        # Running each spider in a separate process as Scrapy uses
+        # twisted reactor which can only be run once in a process
+        process = Process(
+            target=run_spider_process,
+            args=(spider, documents_queue, config)
+        )
 
-        process.crawl(crawler)
         process.start()
+        process.join()
 
-        return documents
+        if documents_queue.empty():
+            return []
 
-    def _item_to_document(self, item: Dict) -> Document:
-        metadata = self._setup_metadata(item)
-        item = self._remove_metadata_keys(item)
-
-        return Document(text=json.dumps(item), metadata=metadata)
-
-    def _setup_metadata(self, item: Dict) -> Dict:
-        metadata = {}
-
-        for key in self.metadata_keys:
-            if key in item:
-                metadata[key] = item[key]
-
-        return metadata
-
-    def _remove_metadata_keys(self, item: Dict) -> Dict:
-        if not self.keep_keys:
-            for key in self.metadata_keys:
-                item.pop(key, None)
-
-        return item
-
-    def _load_settings(self) -> Dict:
-        if not self.project_path:
-            return {}
-
-        if not os.path.exists(self.project_path):
-            return {}
-
-        os.chdir(self.project_path)
-
-        return get_project_settings() or {}
+        return documents_queue.get()
