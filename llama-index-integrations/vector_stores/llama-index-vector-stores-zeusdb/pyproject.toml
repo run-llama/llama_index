@@ -31,7 +31,7 @@ classifiers = [
 ]
 # Runtime dependencies
 dependencies = [
-    "llama-index-core>=0.14.6",  # Latest release as of Oct 26, 2025
+    "llama-index-core>=0.13.0,<0.15",
     "zeusdb>=0.0.8",  # Megapackage version
 ]
 
@@ -72,6 +72,7 @@ include = '\.pyi?$'
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
 [tool.hatch]
 
 [tool.hatch.build.targets.sdist]
