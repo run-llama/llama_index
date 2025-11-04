@@ -111,7 +111,7 @@ class TrinoReader(BaseReader):
                 return []
             # 1. Connect to Trino using self.conn_params
 
-            results = self.execute_query(query, conn, cur)
+            results = self.execute_query(query)
 
             column_names = [desc[0] for desc in results[1]]
 
