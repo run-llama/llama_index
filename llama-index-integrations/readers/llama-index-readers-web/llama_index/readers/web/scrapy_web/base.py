@@ -58,6 +58,11 @@ class ScrapyWebReader(BasePydanticReader):
             List[Document]: List of documents extracted from the web pages.
         """
 
+        if not self._is_spider_correct_type(spider):
+            raise ValueError(
+                "Invalid spider type. Provide a Spider class or spider name with project path."
+            )
+
         documents_queue = Queue()
 
         config = {
@@ -80,3 +85,9 @@ class ScrapyWebReader(BasePydanticReader):
             return []
 
         return documents_queue.get()
+
+    def _is_spider_correct_type(self, spider: Union[Spider, str]) -> bool:
+        if isinstance(spider, str) and not self.project_path:
+            return False
+
+        return True
