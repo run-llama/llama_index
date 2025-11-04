@@ -7,10 +7,11 @@ import requests
 from llama_index.readers.web import ScrapyWebReader
 
 try:
-	from scrapy.spiders import Spider
-	SCRAPY_AVAILABLE = True
+    from scrapy.spiders import Spider
+
+    SCRAPY_AVAILABLE = True
 except ImportError:
-	SCRAPY_AVAILABLE = False
+    SCRAPY_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not SCRAPY_AVAILABLE, reason="Scrapy not installed")
 
@@ -38,7 +39,9 @@ def test_scrapy_web_reader_with_spider_class():
 
 @pytestmark
 def test_scrapy_web_reader_with_zip_project(tmp_path):
-    project_zip_url = "https://github.com/scrapy/quotesbot/archive/refs/heads/master.zip"
+    project_zip_url = (
+        "https://github.com/scrapy/quotesbot/archive/refs/heads/master.zip"
+    )
     response = requests.get(project_zip_url)
     response.raise_for_status()
 

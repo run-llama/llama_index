@@ -8,6 +8,7 @@ from llama_index.core.schema import Document
 
 from .utils import run_spider_process, load_scrapy_settings
 
+
 class ScrapyWebReader(BasePydanticReader):
     """
     Scrapy web page reader.
@@ -26,15 +27,19 @@ class ScrapyWebReader(BasePydanticReader):
 
         keep_keys (bool): Whether to keep metadata keys in items.
             Defaults to False.
+
     """
 
     project_path: Optional[str] = ""
     metadata_keys: Optional[List[str]] = []
     keep_keys: bool = False
 
-    def __init__(self, project_path: Optional[str] = "",
-                 metadata_keys: Optional[List[str]] = [],
-                 keep_keys: bool = False):
+    def __init__(
+        self,
+        project_path: Optional[str] = "",
+        metadata_keys: Optional[List[str]] = [],
+        keep_keys: bool = False,
+    ):
         super().__init__(
             project_path=project_path,
             metadata_keys=metadata_keys,
@@ -55,8 +60,8 @@ class ScrapyWebReader(BasePydanticReader):
 
         Returns:
             List[Document]: List of documents extracted from the web pages.
-        """
 
+        """
         if not self._is_spider_correct_type(spider):
             raise ValueError(
                 "Invalid spider type. Provide a Spider class or spider name with project path."
@@ -73,8 +78,7 @@ class ScrapyWebReader(BasePydanticReader):
         # Running each spider in a separate process as Scrapy uses
         # twisted reactor which can only be run once in a process
         process = Process(
-            target=run_spider_process,
-            args=(spider, documents_queue, config)
+            target=run_spider_process, args=(spider, documents_queue, config)
         )
 
         process.start()
@@ -86,7 +90,4 @@ class ScrapyWebReader(BasePydanticReader):
         return documents_queue.get()
 
     def _is_spider_correct_type(self, spider: Union[Spider, str]) -> bool:
-        if isinstance(spider, str) and not self.project_path:
-            return False
-
-        return True
+        return not (isinstance(spider, str) and not self.project_path)

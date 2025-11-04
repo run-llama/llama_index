@@ -16,8 +16,10 @@ The `ScrapyWebReader` can be used in 2 ways
 2. By providing the path to a Scrapy project.
 
 ### 1. Using with Scrapy Spider Class
+
 ```python
 from llama_index.readers.web import ScrapyWebReader
+
 
 class SampleSpider(Spider):
     name = "sample_spider"
@@ -26,11 +28,13 @@ class SampleSpider(Spider):
     def parse(self, response):
         ...
 
+
 reader = ScrapyWebReader()
 docs = reader.load_data(SampleSpider)
 ```
 
 ### 2. Using with Scrapy Project Path
+
 ```python
 from llama_index.readers.web import ScrapyWebReader
 
