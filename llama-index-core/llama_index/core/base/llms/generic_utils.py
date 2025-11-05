@@ -51,7 +51,36 @@ def messages_to_prompt(messages: Sequence[ChatMessage]) -> str:
 
 
 def prompt_to_messages(prompt: str) -> List[ChatMessage]:
-    """Convert a string prompt to a sequence of messages."""
+    """Convert a string prompt to a sequence of messages.
+
+    Args:
+        prompt: A string prompt to convert to messages.
+
+    Raises:
+        TypeError: If prompt is not a string, with helpful suggestions.
+
+    Note:
+        If you want to pass structured messages or message lists, use
+        chat() or stream_chat() methods instead of complete() or stream_complete().
+    """
+    if not isinstance(prompt, str):
+        # Provide helpful error messages for common mistakes
+        if isinstance(prompt, list):
+            suggestion = ""
+            if len(prompt) == 1 and isinstance(prompt[0], str):
+                # Common mistake: wrapping string in a list
+                suggestion = f" Did you mean to pass {repr(prompt[0])} instead of {repr(prompt)}?"
+
+            raise TypeError(
+                f"prompt must be a string, got a list with {len(prompt)} element(s).{suggestion}\n"
+                f"For structured messages, use chat() or stream_chat() methods."
+            )
+        else:
+            raise TypeError(
+                f"prompt must be a string, got {type(prompt).__name__}.\n"
+                f"For structured messages, use chat() or stream_chat() methods."
+            )
+
     return [ChatMessage(role=MessageRole.USER, content=prompt)]
 
 
