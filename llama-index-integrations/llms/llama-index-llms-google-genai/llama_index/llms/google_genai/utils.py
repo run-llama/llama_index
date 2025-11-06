@@ -14,7 +14,6 @@ from typing import (
     Literal,
     cast,
 )
-from io import BytesIO
 import typing
 
 import google.genai.types as types
