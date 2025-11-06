@@ -391,6 +391,8 @@ class GoogleGenAI(FunctionCallingLLM):
                     else:
                         content += content_delta
                 llama_resp = chat_from_gemini_response(r)
+                llama_resp.delta = llama_resp.delta or content_delta or ""
+
                 if content:
                     llama_resp.message.blocks = [TextBlock(text=content)]
                 if thoughts:
@@ -400,7 +402,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                     else:
                         llama_resp.message.blocks = [ThinkingBlock(content=thoughts)]
-                    yield llama_resp
+                yield llama_resp
 
             if self.use_file_api:
                 asyncio.run(
@@ -450,6 +452,8 @@ class GoogleGenAI(FunctionCallingLLM):
                                 else:
                                     content += content_delta
                             llama_resp = chat_from_gemini_response(r)
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
+
                             if content:
                                 llama_resp.message.blocks = [TextBlock(text=content)]
                             if thoughts:
