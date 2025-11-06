@@ -71,8 +71,8 @@ def resolve_embed_model(
                 f"{e!s}"
                 "\nConsider using embed_model='local'.\n"
                 "Visit our documentation for more embedding options: "
-                "https://docs.llamaindex.ai/en/stable/module_guides/models/"
-                "embeddings.html#modules"
+                "https://developers.llamaindex.ai/python/framework/module_guides/"
+                "models/embeddings/"
                 "\n******"
             )
     # for image multi-modal embeddings

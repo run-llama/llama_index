@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     DocumentBlock,
     TextBlock,
@@ -16,6 +16,7 @@ from llama_index.core.llms import (
     ChatResponse,
     CachePoint,
     CacheControl,
+    ToolCallBlock,
 )
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
@@ -35,7 +36,7 @@ def test_text_inference_embedding_class():
 )
 def test_anthropic_through_vertex_ai():
     anthropic_llm = Anthropic(
-        model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet@20240620"),
+        model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5@20250929"),
         region=os.getenv("ANTHROPIC_REGION", "europe-west1"),
         project_id=os.getenv("ANTHROPIC_PROJECT_ID"),
     )
@@ -59,7 +60,7 @@ def test_anthropic_through_vertex_ai():
 def test_anthropic_through_bedrock():
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
-        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
@@ -134,7 +135,7 @@ async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
-        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
@@ -205,7 +206,7 @@ def test_anthropic_tokenizer():
     mock_client.beta = mock_beta
 
     # Create the Anthropic instance with our mock
-    anthropic_llm = Anthropic(model="claude-3-5-sonnet-20241022")
+    anthropic_llm = Anthropic(model="claude-sonnet-4-5-20250929")
     anthropic_llm._client = mock_client
 
     # Test that tokenizer implements the protocol
@@ -222,7 +223,7 @@ def test_anthropic_tokenizer():
     # Verify the mock was called correctly
     mock_messages.count_tokens.assert_called_once_with(
         messages=[{"role": "user", "content": test_text}],
-        model="claude-3-5-sonnet-20241022",
+        model="claude-sonnet-4-5-20250929",
     )
 
 
@@ -242,9 +243,9 @@ def pdf_url() -> str:
     reason="Anthropic API key not available to test Anthropic integration",
 )
 def test_tool_required():
-    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
 
-    search_tool = FunctionTool.from_defaults(fn=search)
+    search_tool = FunctionTool.from_defaults(fn=search, name="search")
 
     # Test with tool_required=True
     response = llm.chat_with_tools(
@@ -253,8 +254,24 @@ def test_tool_required():
         tool_required=True,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert response.message.additional_kwargs["tool_calls"] is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        any(
+            block.tool_name == "search"
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -264,7 +281,16 @@ def test_tool_required():
     )
     assert isinstance(response, AnthropicChatResponse)
     # Should not use tools for a simple greeting
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     # should not blow up with no tools (regression test)
     response = llm.chat_with_tools(
@@ -273,7 +299,16 @@ def test_tool_required():
         tool_required=False,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.skipif(
@@ -281,7 +316,7 @@ def test_tool_required():
     reason="Anthropic API key not available to test Anthropic document uploading ",
 )
 def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
-    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    llm = Anthropic(model="claude-sonnet-4-5-20250929")
     pdf_path = tmp_path / "test.pdf"
     pdf_content = httpx.get(pdf_url).content
     pdf_path.write_bytes(pdf_content)

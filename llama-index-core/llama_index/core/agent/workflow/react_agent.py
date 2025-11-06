@@ -16,7 +16,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, TextBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
@@ -95,17 +95,21 @@ class ReActAgent(BaseWorkflowAgent):
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=last_chat_response.delta or "",
-                    response=last_chat_response.message.content or "",
-                    raw=raw,
-                    current_agent_name=self.name,
-                    thinking_delta=last_chat_response.additional_kwargs.get(
-                        "thinking_delta", None
-                    ),
+            # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+            # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+            # so just don't write events if the context is not running.
+            if ctx.is_running:
+                ctx.write_event_to_stream(
+                    AgentStream(
+                        delta=last_chat_response.delta or "",
+                        response=last_chat_response.message.content or "",
+                        raw=raw,
+                        current_agent_name=self.name,
+                        thinking_delta=last_chat_response.additional_kwargs.get(
+                            "thinking_delta", None
+                        ),
+                    )
                 )
-            )
 
         return last_chat_response
 
@@ -136,9 +140,13 @@ class ReActAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
-        ctx.write_event_to_stream(
-            AgentInput(input=input_chat, current_agent_name=self.name)
-        )
+        # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+        # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+        # so just don't write events if the context is not running.
+        if ctx.is_running:
+            ctx.write_event_to_stream(
+                AgentInput(input=input_chat, current_agent_name=self.name)
+            )
 
         # Initial LLM call
         if self.streaming:
@@ -270,11 +278,19 @@ class ReActAgent(BaseWorkflowAgent):
                 await memory.aput(reasoning_msg)
                 await ctx.store.set(self.reasoning_key, [])
 
-            # remove "Answer:" from the response
-            if output.response.content and "Answer:" in output.response.content:
-                start_idx = output.response.content.find("Answer:")
+            # Find the text block in the response to modify it directly
+            text_block = None
+            for block in output.response.blocks:
+                if isinstance(block, TextBlock):
+                    text_block = block
+                    break
+
+            # remove "Answer:" from the response (now checking text_block.text)
+            if text_block and "Answer:" in text_block.text:
+                start_idx = text_block.text.find("Answer:")
                 if start_idx != -1:
-                    output.response.content = output.response.content[
+                    # Modify the .text attribute of the block, NOT response.content
+                    text_block.text = text_block.text[
                         start_idx + len("Answer:") :
                     ].strip()
 

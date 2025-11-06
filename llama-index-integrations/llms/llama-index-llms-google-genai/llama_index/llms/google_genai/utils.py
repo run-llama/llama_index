@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from collections.abc import Sequence
 from io import IOBase
@@ -11,7 +12,9 @@ from typing import (
     Type,
     Tuple,
     Literal,
+    cast,
 )
+from io import BytesIO
 import typing
 
 import google.genai.types as types
@@ -30,6 +33,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     VideoBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -189,16 +193,32 @@ def chat_from_gemini_response(
                 )
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.function_call:
-                if "tool_calls" not in additional_kwargs:
-                    additional_kwargs["tool_calls"] = []
-                additional_kwargs["tool_calls"].append(
-                    {
-                        "id": part.function_call.id if part.function_call.id else "",
-                        "name": part.function_call.name,
-                        "args": part.function_call.args,
-                        "thought_signature": part.thought_signature,
-                    }
+                if (
+                    part.thought_signature
+                    not in additional_kwargs["thought_signatures"]
+                ):
+                    additional_kwargs["thought_signatures"].append(
+                        part.thought_signature
+                    )
+                content_blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=part.function_call.name or "",
+                        tool_name=part.function_call.name or "",
+                        tool_kwargs=part.function_call.args or {},
+                    )
                 )
+            if part.function_response:
+                # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
+                additional_kwargs["tool_call_id"] = part.function_response.id
+                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                return ChatResponse(
+                    message=ChatMessage(
+                        role=role, content=json.dumps(part.function_response.response)
+                    ),
+                    raw=raw,
+                    additional_kwargs=additional_kwargs,
+                )
+
     if thought_tokens:
         thinking_blocks = [
             i
@@ -276,6 +296,7 @@ async def chat_message_to_gemini(
     client: Optional[Client] = None,
 ) -> tuple[types.Content, list[str]]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
+    unique_tool_calls = []
     parts = []
     file_api_names = []
     part = None
@@ -329,6 +350,11 @@ async def chat_message_to_gemini(
                 part.thought_signature = block.additional_information.get(
                     "thought_signature", None
                 )
+        elif isinstance(block, ToolCallBlock):
+            part = types.Part.from_function_call(
+                name=block.tool_name, args=cast(Dict[str, Any], block.tool_kwargs)
+            )
+            unique_tool_calls.append((block.tool_name, str(block.tool_kwargs)))
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -350,15 +376,20 @@ async def chat_message_to_gemini(
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
         if isinstance(tool_call, dict):
-            part = types.Part.from_function_call(
-                name=tool_call.get("name"), args=tool_call.get("args")
-            )
-            part.thought_signature = tool_call.get("thought_signature")
+            if (
+                tool_call.get("name", ""),
+                str(tool_call.get("args", {})),
+            ) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.get("name", ""), args=tool_call.get("args", {})
+                )
+                part.thought_signature = tool_call.get("thought_signature")
         else:
-            part = types.Part.from_function_call(
-                name=tool_call.name, args=tool_call.args
-            )
-            part.thought_signature = tool_call.thought_signature
+            if (tool_call.name, str(tool_call.args)) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.name, args=tool_call.args
+                )
+                part.thought_signature = tool_call.thought_signature
         parts.append(part)
 
     # the tool call id is the name of the tool

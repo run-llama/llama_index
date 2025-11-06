@@ -418,6 +418,7 @@ async def test_async_pipeline_dedup_duplicates_only() -> None:
     assert len(nodes) == 0
 
 
+@pytest.mark.asyncio
 async def test_async_pipeline_parallel() -> None:
     document1 = Document.example()
     document1.id_ = "1"

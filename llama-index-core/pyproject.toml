@@ -20,6 +20,7 @@ dev = [
     "pytest-cov~=5.0",
     "pytest-dotenv==0.5.2",
     "pytest-mock==3.11.1",
+    "pytest-timeout>=2.4.0",
     "rake-nltk==1.0.6",
     "ruff==0.11.11",
     "tree-sitter",
@@ -31,7 +32,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.14.6"
+version = "0.14.7"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -77,7 +78,7 @@ dependencies = [
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
     "banks>=2.2.0,<3",
     "aiosqlite",
-    "llama-index-workflows>=2,<3",
+    "llama-index-workflows>=2,<3,!=2.9.0",
     "setuptools>=80.9.0",
     "platformdirs",
 ]
