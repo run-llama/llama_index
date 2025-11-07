@@ -7,10 +7,18 @@ import types
 
 import pytest
 
+# Import llama_index.core types at module level so conftest can mock them FIRST
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilters,
+    VectorStoreQuery,
+)
 
-# -----------------------------
+
+# --------- -------- -----------
 # Minimal in-memory ZeusDB fake
-# -----------------------------
+# ------- -------- ------------
 def _cosine_distance(a, b):
     dot = sum(x * y for x, y in zip(a, b))
     na = math.sqrt(sum(x * x for x in a)) or 1e-12
@@ -223,8 +231,6 @@ def test_add_and_query_basic(ZeusDBVectorStore):
     assert set(out_ids) == {"1", "2"}
 
     q = [1.0, 0.0, 0.0]
-    from llama_index.core.vector_stores.types import VectorStoreQuery
-
     res = store.query(VectorStoreQuery(query_embedding=q, similarity_top_k=1))
     assert res.ids and res.similarities
     assert res.ids[0] in {"1", "2"}
@@ -241,14 +247,7 @@ def test_filters_and_delete_nodes(ZeusDBVectorStore):
     ]
     store.add(nodes)
 
-    from llama_index.core.vector_stores.types import (
-        FilterCondition,
-        FilterOperator,
-        MetadataFilters,
-        VectorStoreQuery,
-    )
-
-    mf = MetadataFilters.from_dicts(
+    mf = MetadataFilters.from_dicts(  # type: ignore[misc]
         [
             {"key": "category", "value": "x", "operator": FilterOperator.EQ},
         ],
@@ -310,8 +309,6 @@ def test_delete_nodes_by_id_works(ZeusDBVectorStore):
 
     assert store.get_vector_count() == 1
 
-    from llama_index.core.vector_stores.types import VectorStoreQuery
-
     res = store.query(
         VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
     )
@@ -366,8 +363,6 @@ async def test_async_paths(ZeusDBVectorStore):
     assert ids == ["1"]
 
     q = [1.0, 0.0, 0.0]
-    from llama_index.core.vector_stores.types import VectorStoreQuery
-
     res = await store.aquery(VectorStoreQuery(query_embedding=q, similarity_top_k=1))
     assert res.ids and res.ids[0] == "1"
 
@@ -393,8 +388,6 @@ def test_query_with_mmr(ZeusDBVectorStore):
         FakeNode("n3", [0.8, 0.2, 0.0], {}, id_="3", ref_doc_id="d"),
     ]
     store.add(nodes)
-
-    from llama_index.core.vector_stores.types import VectorStoreQuery
 
     # request k=2 with MMR enabled; fetch_k larger to force rerank variety
     res = store.query(
