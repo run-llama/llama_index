@@ -21,16 +21,16 @@ See the associated guides below:
 - [Nebula Graph Store](/python/examples/index_structs/knowledge_graph/nebulagraphkgindexdemo)
 - [Knowledge Graph Query Engine](/python/examples/query_engine/knowledge_graph_query_engine)
 
-## `KuzuGraphStore`
+## `LadybugGraphStore`
 
-We support a `KuzuGraphStore` integration, for persisting triples directly in [Kuzu](https://kuzudb.com).
+We support a `LadybugGraphStore` integration, for persisting triples directly in [Ladybug](https://ladybugdb.com).
 Additionally, we support the `PropertyGraphIndex`, which allows you to store and query property graphs
-using a Kuzu backend.
+using a Ladybug backend.
 
 See the associated guides below:
 
-- [Kuzu Graph Store](/python/examples/index_structs/knowledge_graph/kuzugraphdemo)
-- [Kuzu Graph Store](/python/examples/property_graph/property_graph_kuzu)
+- [Ladybug Graph Store](/python/examples/index_structs/knowledge_graph/LadybugGraphDemo)
+- [Ladybug Graph Store](/python/examples/property_graph/property_graph_ladybug)
 
 ## `FalkorDBGraphStore`
 
