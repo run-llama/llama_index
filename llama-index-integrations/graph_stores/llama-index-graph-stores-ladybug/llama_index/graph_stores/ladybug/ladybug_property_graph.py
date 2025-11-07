@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 
-import llama_index.graph_stores.kuzu.utils as utils
+import llama_index.graph_stores.ladybug.utils as utils
 from llama_index.core.graph_stores.types import (
     ChunkNode,
     EntityNode,
@@ -12,29 +12,29 @@ from llama_index.core.graph_stores.types import (
 from llama_index.core.graph_stores.utils import value_sanitize
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
-import kuzu
+import real_ladybug as lb
 
 # Threshold for max number of returned triplets
 LIMIT = 100
 Triple = Tuple[str, str, str]
 
 
-class KuzuPropertyGraphStore(PropertyGraphStore):
+class LadybugPropertyGraphStore(PropertyGraphStore):
     """
-    Kùzu Property Graph Store.
+    Ladybug Property Graph Store.
 
-    This class implements a Kùzu property graph store.
+    This class implements a Ladybug property graph store.
 
-    Kùzu can be installed and used with this simple command:
+    Ladybug can be installed and used with this simple command:
 
     ```
-    pip install kuzu
+    pip install real_ladybug
     ```
     """
 
     def __init__(
         self,
-        db: kuzu.Database,
+        db: lb.Database,
         relationship_schema: Optional[List[Tuple[str, str, str]]] = None,
         has_structured_schema: Optional[bool] = False,
         sanitize_query_output: Optional[bool] = True,
@@ -43,7 +43,7 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         embed_dimension: Optional[int] = None,
     ) -> None:
         self.db = db
-        self.connection = kuzu.Connection(self.db)
+        self.connection = lb.Connection(self.db)
         self.use_vector_index = use_vector_index
 
         # Initialize embedding dimension with auto-detection and fallback logic
@@ -57,8 +57,8 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 self.connection.execute("INSTALL vector; LOAD vector;")
             except RuntimeError:
                 # print("Warning: Skipping installing vector extension due to RuntimeError:", e)
-                # print("Check that you can install Kuzu's vector extension by running: " \
-                #       "`INSTALL vector; LOAD vector;` in a Kuzu CLI session."
+                # print("Check that you can install Ladybug's vector extension by running: " \
+                #       "`INSTALL vector; LOAD vector;` in a Ladybug CLI session."
                 # )
                 pass
 
@@ -104,7 +104,7 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
             )
 
     @property
-    def client(self) -> kuzu.Connection:
+    def client(self) -> lb.Connection:
         return self.connection
 
     def get_entities(self) -> List[str]:
@@ -190,7 +190,7 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
             if len(row) > 1 and row[1] == "chunk_embedding_index":
                 return
 
-        # Check if table has any data - Kuzu requires data before creating vector index
+        # Check if table has any data - Ladybug requires data before creating vector index
         count_result = self.connection.execute(
             f"MATCH (n:{table_name}) RETURN COUNT(n)"
         )
@@ -374,7 +374,7 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         """Perform vector similarity search on Chunk nodes."""
         self._ensure_vector_indexes()
 
-        # Use Kuzu's vector index for similarity search
+        # Use Ladybug's vector index for similarity search
         result = self.connection.execute(
             """
             CALL QUERY_VECTOR_INDEX(
@@ -753,4 +753,4 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         )
 
 
-KuzuPGStore = KuzuPropertyGraphStore
+LadybugPGStore = LadybugPropertyGraphStore

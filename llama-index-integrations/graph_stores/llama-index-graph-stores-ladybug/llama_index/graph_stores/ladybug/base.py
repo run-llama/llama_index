@@ -1,13 +1,13 @@
-"""Kùzu graph store index."""
+"""Ladybug graph store index."""
 
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.graph_stores.types import GraphStore
 
-import kuzu
+import real_ladybug as lb
 
 
-class KuzuGraphStore(GraphStore):
+class LadybugGraphStore(GraphStore):
     def __init__(
         self,
         database: Any,
@@ -16,7 +16,7 @@ class KuzuGraphStore(GraphStore):
         **kwargs: Any,
     ) -> None:
         self.database = database
-        self.connection = kuzu.Connection(database)
+        self.connection = lb.Connection(database)
         self.node_table_name = node_table_name
         self.rel_table_name = rel_table_name
         self.init_schema()
@@ -205,13 +205,13 @@ class KuzuGraphStore(GraphStore):
         persist_dir: str,
         node_table_name: str = "entity",
         rel_table_name: str = "links",
-    ) -> "KuzuGraphStore":
+    ) -> "LadybugGraphStore":
         """Load from persist dir."""
-        database = kuzu.Database(persist_dir)
+        database = lb.Database(persist_dir)
         return cls(database, node_table_name, rel_table_name)
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "KuzuGraphStore":
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "LadybugGraphStore":
         """
         Initialize graph store from configuration dictionary.
 

@@ -1,13 +1,13 @@
 from typing import List, Optional, Tuple, _LiteralGenericAlias, get_args
 
-import kuzu
+import real_ladybug as lb
 
 Triple = Tuple[str, str, str]
 
 
 def create_fresh_database(db: str) -> None:
     """
-    Create a new Kùzu database by removing existing database directory and its contents.
+    Create a new Ladybug database by removing existing database directory and its contents.
     """
     import shutil
 
@@ -67,7 +67,7 @@ def lookup_relation(relation: str, triples: List[Triple]) -> Triple:
 
 
 def create_chunk_node_table(
-    connection: kuzu.Connection, embedding_dimension: Optional[int] = None
+    connection: lb.Connection, embedding_dimension: Optional[int] = None
 ) -> None:
     # For now, the additional `properties` dict from LlamaIndex is stored as a string
     # TODO: See if it makes sense to add better support for property metadata as columns
@@ -96,7 +96,7 @@ def create_chunk_node_table(
     )
 
 
-def create_entity_node_tables(connection: kuzu.Connection, entities: List[str]) -> None:
+def create_entity_node_tables(connection: lb.Connection, entities: List[str]) -> None:
     for tbl_name in entities:
         # Entity tables don't need embedding columns - only Chunk nodes have embeddings
         # For now, the additional `properties` dict from LlamaIndex is stored as a string
@@ -121,7 +121,7 @@ def create_entity_node_tables(connection: kuzu.Connection, entities: List[str]) 
 
 
 def create_entity_relationship_table(
-    connection: kuzu.Connection, label: str, src_id: str, dst_id: str
+    connection: lb.Connection, label: str, src_id: str, dst_id: str
 ) -> None:
     connection.execute(
         f"""
@@ -135,7 +135,7 @@ def create_entity_relationship_table(
 
 
 def create_relation_tables(
-    connection: kuzu.Connection, entities: List[str], relationship_schema: List[Triple]
+    connection: lb.Connection, entities: List[str], relationship_schema: List[Triple]
 ) -> None:
     # Create relationship tables for each entity
     for src, rel_label, dst in relationship_schema:

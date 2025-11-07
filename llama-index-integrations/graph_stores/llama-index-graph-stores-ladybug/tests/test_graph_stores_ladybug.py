@@ -3,7 +3,7 @@ from typing import Generator
 
 import pytest
 from llama_index.core.graph_stores.types import GraphStore
-from llama_index.graph_stores.kuzu import KuzuGraphStore
+from llama_index.graph_stores.ladybug import LadybugGraphStore
 
 # Track all database files created during tests for cleanup
 _test_db_files = []
@@ -32,16 +32,16 @@ def setup_and_teardown():
 
 
 @pytest.fixture()
-def kuzu_graph_store() -> Generator[KuzuGraphStore, None, None]:
-    """Fixture for KuzuGraphStore with proper cleanup."""
-    import kuzu
+def ladybug_graph_store() -> Generator[LadybugGraphStore, None, None]:
+    """Fixture for LadybugGraphStore with proper cleanup."""
+    import real_ladybug as lb
 
-    db_file = "test_kuzu_graph_store.kuzu"
+    db_file = "test_ladybug_graph_store.ladybug"
     Path(db_file).unlink(missing_ok=True)
     _test_db_files.append(db_file)
 
-    db = kuzu.Database(db_file)
-    store = KuzuGraphStore(db)
+    db = lb.Database(db_file)
+    store = LadybugGraphStore(db)
 
     yield store
 
@@ -52,16 +52,16 @@ def kuzu_graph_store() -> Generator[KuzuGraphStore, None, None]:
         pass
 
 
-def test_kuzu_graph_store():
-    names_of_bases = [b.__name__ for b in KuzuGraphStore.__bases__]
+def test_ladybug_graph_store():
+    names_of_bases = [b.__name__ for b in LadybugGraphStore.__bases__]
     assert GraphStore.__name__ in names_of_bases
 
 
-def test_kuzu_graph_store_basic_operations(kuzu_graph_store: KuzuGraphStore):
+def test_ladybug_graph_store_basic_operations(ladybug_graph_store: LadybugGraphStore):
     """Test basic graph store operations."""
     # Test that the store can be instantiated and basic operations work
     # This ensures database files are properly created and cleaned up
-    store = kuzu_graph_store
+    store = ladybug_graph_store
 
     # Basic triplet operations should not crash
     store.upsert_triplet("subject", "predicate", "object")

@@ -6,7 +6,7 @@ import pytest
 from llama_index.core.graph_stores.types import ChunkNode, EntityNode, Relation
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
-from llama_index.graph_stores.kuzu import KuzuPropertyGraphStore
+from llama_index.graph_stores.ladybug import LadybugPropertyGraphStore
 
 # Track all database files created during tests for cleanup
 _test_db_files = []
@@ -35,16 +35,16 @@ def setup_and_teardown():
 
 
 @pytest.fixture()
-def pg_store() -> Generator[KuzuPropertyGraphStore, None, None]:
-    import kuzu
+def pg_store() -> Generator[LadybugPropertyGraphStore, None, None]:
+    import real_ladybug as lb
 
     # Remove existing database file
-    db_file = "llama_test_db.kuzu"
+    db_file = "llama_test_db.ladybug"
     Path(db_file).unlink(missing_ok=True)
     _test_db_files.append(db_file)
 
-    db = kuzu.Database(db_file)
-    pg_store = KuzuPropertyGraphStore(db)
+    db = lb.Database(db_file)
+    pg_store = LadybugPropertyGraphStore(db)
     pg_store.structured_query("MATCH (n) DETACH DELETE n")
     pg_store._test_db_file = db_file
 
@@ -58,24 +58,24 @@ def pg_store() -> Generator[KuzuPropertyGraphStore, None, None]:
 
 
 @pytest.fixture()
-def pg_store_with_vectors() -> Generator[KuzuPropertyGraphStore, None, None]:
+def pg_store_with_vectors() -> Generator[LadybugPropertyGraphStore, None, None]:
     """Fixture for pg_store with vector indexing enabled."""
     import uuid
 
-    import kuzu
+    import real_ladybug as lb
 
     # Use unique database file name to avoid conflicts
-    db_file = f"llama_test_db_vector_{uuid.uuid4().hex[:8]}.kuzu"
+    db_file = f"llama_test_db_vector_{uuid.uuid4().hex[:8]}.ladybug"
     Path(db_file).unlink(missing_ok=True)
     _test_db_files.append(db_file)
 
-    db = kuzu.Database(db_file)
+    db = lb.Database(db_file)
 
     # Mock embedding model for testing
     mock_embed_model = Mock()
     mock_embed_model.get_text_embedding.return_value = [0.1] * 384
 
-    pg_store = KuzuPropertyGraphStore(
+    pg_store = LadybugPropertyGraphStore(
         db=db, use_vector_index=True, embed_model=mock_embed_model, embed_dimension=384
     )
     pg_store.structured_query("MATCH (n) DETACH DELETE n")
@@ -111,7 +111,7 @@ def sample_chunk_nodes() -> List[ChunkNode]:
     ]
 
 
-def test_kuzudb_pg_store(pg_store: KuzuPropertyGraphStore) -> None:
+def test_ladybugdb_pg_store(pg_store: LadybugPropertyGraphStore) -> None:
     # Create a two entity nodes
     entity1 = EntityNode(label="PERSON", name="Logan")
     entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")
@@ -175,7 +175,7 @@ def test_kuzudb_pg_store(pg_store: KuzuPropertyGraphStore) -> None:
     assert len(text_nodes) == 0
 
 
-def test_create_vector_index_disabled(pg_store: KuzuPropertyGraphStore) -> None:
+def test_create_vector_index_disabled(pg_store: LadybugPropertyGraphStore) -> None:
     """Test _create_vector_index when use_vector_index is False."""
     pg_store.use_vector_index = False
 
@@ -189,13 +189,13 @@ def test_create_vector_index_disabled(pg_store: KuzuPropertyGraphStore) -> None:
 
 
 def test_create_vector_index_no_data(
-    pg_store_with_vectors: KuzuPropertyGraphStore,
+    pg_store_with_vectors: LadybugPropertyGraphStore,
 ) -> None:
     """Test _create_vector_index when table has no embedding data."""
-    # Try to create index on empty table - should not create index since Kuzu requires data first
+    # Try to create index on empty table - should not create index since Ladybug requires data first
     pg_store_with_vectors._create_vector_index("Chunk")
 
-    # Should not create index since no data exists (Kuzu requirement)
+    # Should not create index since no data exists (Ladybug requirement)
     indexes_result = pg_store_with_vectors.connection.execute(
         "CALL SHOW_INDEXES() RETURN *"
     )
@@ -204,7 +204,7 @@ def test_create_vector_index_no_data(
 
 
 def test_create_vector_index_with_data(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test _create_vector_index with actual embedding data."""
     # First insert chunk nodes with embeddings
@@ -219,7 +219,7 @@ def test_create_vector_index_with_data(
 
 
 def test_create_vector_index_already_exists(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test _create_vector_index when index already exists."""
     # Insert data
@@ -248,7 +248,7 @@ def test_create_vector_index_already_exists(
     assert initial_count == final_count
 
 
-def test_ensure_vector_indexes_disabled(pg_store: KuzuPropertyGraphStore) -> None:
+def test_ensure_vector_indexes_disabled(pg_store: LadybugPropertyGraphStore) -> None:
     """Test _ensure_vector_indexes when use_vector_index is False."""
     pg_store.use_vector_index = False
 
@@ -262,7 +262,7 @@ def test_ensure_vector_indexes_disabled(pg_store: KuzuPropertyGraphStore) -> Non
 
 
 def test_ensure_vector_indexes_enabled(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test _ensure_vector_indexes with vector indexing enabled."""
     # Insert chunk nodes with embeddings
@@ -276,7 +276,7 @@ def test_ensure_vector_indexes_enabled(
 
 
 def test_refresh_vector_index(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test refresh_vector_index method."""
     # Insert chunk nodes with embeddings
@@ -293,7 +293,7 @@ def test_refresh_vector_index(
 
 
 def test_vector_query_with_mock_results(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test vector_query method with mocked vector search results."""
     # Insert chunk nodes with embeddings
@@ -359,7 +359,7 @@ def test_vector_query_with_mock_results(
 
 
 def test_vector_query_ensures_indexes(
-    pg_store_with_vectors: KuzuPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
+    pg_store_with_vectors: LadybugPropertyGraphStore, sample_chunk_nodes: List[ChunkNode]
 ) -> None:
     """Test that vector_query calls _ensure_vector_indexes."""
     # Insert chunk nodes with embeddings
