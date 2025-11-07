@@ -578,33 +578,33 @@ class LadybugPropertyGraphStore(PropertyGraphStore):
 
         ignore_rels = ignore_rels or []
         for record in response:
-            for item in record["rel"]["_rels"]:
+            for item in record["rel"]["_RELS"]:
                 if item["label"] in ignore_rels:
                     continue
 
-                src_table = item["_src"]["table"]
-                dst_table = item["_src"]["table"]
+                src_table = item["_SRC"]["table"]
+                dst_table = item["_SRC"]["table"]
                 id_map = {
-                    src_table: record["e"]["_id"],
+                    src_table: record["e"]["_ID"],
                     dst_table: record["other"]["id"],
                 }
                 source = EntityNode(
                     name=record["e"]["name"],
-                    label=record["e"]["_label"],
+                    label=record["e"]["_LABEL"],
                     properties=utils.get_filtered_props(
-                        record["e"], ["_id", "name", "_label"]
+                        record["e"], ["_ID", "name", "_LABEL"]
                     ),
                 )
                 target = EntityNode(
                     name=record["other"]["name"],
-                    label=record["other"]["_label"],
+                    label=record["other"]["_LABEL"],
                     properties=utils.get_filtered_props(
-                        record["e"], ["_id", "name", "_label"]
+                        record["e"], ["_ID", "name", "_LABEL"]
                     ),
                 )
                 rel = Relation(
-                    source_id=id_map.get(item["_src"]["table"], "unknown"),
-                    target_id=id_map.get(item["_dst"]["table"], "unknown"),
+                    source_id=id_map.get(item["_SRC"]["table"], "unknown"),
+                    target_id=id_map.get(item["_DST"]["table"], "unknown"),
                     label=item["label"],
                 )
                 triples.append([source, rel, target])
