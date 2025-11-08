@@ -219,7 +219,7 @@ class PostgresKVStore(BaseKVStore):
             inspector = inspect(session.connection())
             existing_schemas = inspector.get_schema_names()
             if self.schema_name not in existing_schemas:
-                session.execute(CreateSchema(self.schema_name, if_not_exists=True))
+                session.execute(CreateSchema(self.schema_name))
             session.commit()
 
     def _create_tables_if_not_exists(self) -> None:

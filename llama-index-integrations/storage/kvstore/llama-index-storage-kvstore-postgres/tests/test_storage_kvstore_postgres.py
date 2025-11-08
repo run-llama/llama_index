@@ -57,13 +57,16 @@ def test_initialization():
 @pytest.mark.skipif(
     no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
-def test_schema_creation_uses_safe_api():
+def test_schema_creation_uses_inspect_when_schema_does_not_exist():
     import sqlalchemy
 
     mock_engine = MagicMock()
     mock_async_engine = MagicMock()
 
     mock_session_instance = MagicMock()
+    mock_session_instance.connection.return_value = MagicMock()
+    mock_session_instance.commit = MagicMock()
+
     mock_session_ctx = MagicMock()
     mock_session_ctx.__enter__.return_value = mock_session_instance
     mock_session_ctx.__exit__.return_value = None
@@ -75,6 +78,9 @@ def test_schema_creation_uses_safe_api():
 
     mock_session_factory = MagicMock(return_value=mock_session_ctx)
 
+    mock_inspector = MagicMock()
+    mock_inspector.get_schema_names.return_value = []
+
     with (
         patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
         patch.object(
@@ -83,6 +89,10 @@ def test_schema_creation_uses_safe_api():
             return_value=mock_async_engine,
         ),
         patch("sqlalchemy.orm.sessionmaker", return_value=mock_session_factory),
+        patch(
+            "llama_index.storage.kvstore.postgres.base.inspect",
+            return_value=mock_inspector,
+        ),
     ):
         pgstore = PostgresKVStore(
             table_name="test_table",
@@ -95,6 +105,11 @@ def test_schema_creation_uses_safe_api():
         pgstore._connect()
         pgstore._create_schema_if_not_exists()
 
+        from llama_index.storage.kvstore.postgres.base import inspect
+
+        inspect.assert_called_once_with(mock_session_instance.connection())
+        mock_inspector.get_schema_names.assert_called_once()
+
         execute_calls = mock_session_instance.execute.call_args_list
         assert len(execute_calls) == 1
 
@@ -103,7 +118,65 @@ def test_schema_creation_uses_safe_api():
         executed_statement = execute_calls[0][0][0]
         assert isinstance(executed_statement, CreateSchema)
         assert executed_statement.element == "test_schema"
-        assert executed_statement.if_not_exists is True
+
+
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
+def test_schema_creation_uses_inspect_when_schema_exists():
+    import sqlalchemy
+
+    mock_engine = MagicMock()
+    mock_async_engine = MagicMock()
+
+    mock_session_instance = MagicMock()
+    mock_session_instance.connection.return_value = MagicMock()
+    mock_session_instance.commit = MagicMock()
+
+    mock_session_ctx = MagicMock()
+    mock_session_ctx.__enter__.return_value = mock_session_instance
+    mock_session_ctx.__exit__.return_value = None
+
+    mock_begin_ctx = MagicMock()
+    mock_begin_ctx.__enter__.return_value = MagicMock()
+    mock_begin_ctx.__exit__.return_value = None
+    mock_session_instance.begin.return_value = mock_begin_ctx
+
+    mock_session_factory = MagicMock(return_value=mock_session_ctx)
+
+    mock_inspector = MagicMock()
+    mock_inspector.get_schema_names.return_value = ["test_schema"]
+
+    with (
+        patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
+        patch.object(
+            sqlalchemy.ext.asyncio,
+            "create_async_engine",
+            return_value=mock_async_engine,
+        ),
+        patch("sqlalchemy.orm.sessionmaker", return_value=mock_session_factory),
+        patch(
+            "llama_index.storage.kvstore.postgres.base.inspect",
+            return_value=mock_inspector,
+        ),
+    ):
+        pgstore = PostgresKVStore(
+            table_name="test_table",
+            connection_string="postgresql://user:pass@localhost/db",
+            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
+            schema_name="test_schema",
+            perform_setup=False,
+        )
+
+        pgstore._connect()
+        pgstore._create_schema_if_not_exists()
+
+        from llama_index.storage.kvstore.postgres.base import inspect
+
+        inspect.assert_called_once_with(mock_session_instance.connection())
+        mock_inspector.get_schema_names.assert_called_once()
+
+        mock_session_instance.execute.assert_not_called()
 
 
 @pytest.mark.skipif(
