@@ -32,7 +32,7 @@ name = "llama-index-readers-trino"
 version = "0.1.0"  # Starting version for a new integration
 description = "LlamaIndex Data Loader for Trino distributed SQL query engine."
 authors = [{name = "Joshua Fordyce", email = "jfordyce1@fordham.edu"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9,=<3.13"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "Joshua Fordyce"}]
