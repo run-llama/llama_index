@@ -5,7 +5,7 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 try:
     import sqlalchemy
     import sqlalchemy.ext.asyncio  # noqa
-    from sqlalchemy import Column, Index, Integer, UniqueConstraint
+    from sqlalchemy import Column, Index, Integer, UniqueConstraint, inspect
     from sqlalchemy.schema import CreateSchema
 except ImportError:
     raise ImportError("`sqlalchemy[asyncio]` package should be pre installed")
@@ -216,7 +216,10 @@ class PostgresKVStore(BaseKVStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            session.execute(CreateSchema(self.schema_name, if_not_exists=True))
+            inspector = inspect(session.connection())
+            existing_schemas = inspector.get_schema_names()
+            if self.schema_name not in existing_schemas:
+                session.execute(CreateSchema(self.schema_name, if_not_exists=True))
             session.commit()
 
     def _create_tables_if_not_exists(self) -> None:
