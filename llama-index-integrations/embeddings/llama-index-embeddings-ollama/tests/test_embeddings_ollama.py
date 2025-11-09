@@ -10,7 +10,7 @@ from ollama import Client
 
 # This section of code checks and actual integration with a local ollama server (if it exists)
 # And the actual embedding
-test_model = os.environ.get("OLLAMA_TEST_MODEL", "xllama3.1:latest")
+test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
 
 try:
     client = Client()  # pragma: no cover
