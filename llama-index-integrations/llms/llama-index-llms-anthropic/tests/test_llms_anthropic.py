@@ -722,13 +722,17 @@ def test_stream_chat_usage_and_stop_reason_mock():
 
     # Verify usage metadata was captured
     usage = last_chunk.message.additional_kwargs.get("usage")
-    assert usage is not None, "Usage metadata should be captured from RawMessageDeltaEvent"
+    assert usage is not None, (
+        "Usage metadata should be captured from RawMessageDeltaEvent"
+    )
     assert usage["input_tokens"] == 15
     assert usage["output_tokens"] == 8
 
     # Verify stop_reason was captured
     stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
-    assert stop_reason is not None, "stop_reason should be captured from RawMessageDeltaEvent"
+    assert stop_reason is not None, (
+        "stop_reason should be captured from RawMessageDeltaEvent"
+    )
     assert stop_reason == "end_turn"
 
 
@@ -775,7 +779,9 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     llm = Anthropic(model="claude-3-5-sonnet-latest")
     mock_async_client = AsyncMock()
     # For async client, the create method should be an AsyncMock that returns the generator
-    mock_async_client.messages.create = AsyncMock(return_value=mock_async_stream_generator())
+    mock_async_client.messages.create = AsyncMock(
+        return_value=mock_async_stream_generator()
+    )
     llm._aclient = mock_async_client
 
     # Test astream_chat
