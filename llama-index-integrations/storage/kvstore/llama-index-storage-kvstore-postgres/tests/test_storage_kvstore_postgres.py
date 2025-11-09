@@ -298,7 +298,7 @@ def test_schema_name_with_special_characters():
     mock_session_factory = MagicMock(return_value=mock_session_ctx)
 
     mock_inspector = MagicMock()
-    mock_inspector.get_schema_names.return_value = ["test_schema"]
+    mock_inspector.get_schema_names.return_value = []
 
     with (
         patch.object(sqlalchemy, "create_engine", return_value=mock_engine),
