@@ -5,6 +5,8 @@ from unittest.mock import patch
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 
+from ollama import Client
+
 
 # This section of code checks and actual integration with a local ollama server (if it exists)
 # And the actual embedding
@@ -29,7 +31,7 @@ except Exception:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-def test_ollama_embedding() -> None: 
+def test_ollama_embedding() -> None:
     """Test ollama connection and embedding."""
     emb = OllamaEmbedding(model_name=test_model)
 
@@ -49,7 +51,6 @@ def test_ollama_embedding() -> None:
 
     assert query_embedding != text_embedding
     assert len(query_embedding) == len(text_embedding)
-    
 
 
 def test_embedding_class():
