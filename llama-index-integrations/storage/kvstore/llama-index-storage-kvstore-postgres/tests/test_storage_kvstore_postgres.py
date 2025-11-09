@@ -65,7 +65,6 @@ def test_schema_creation_uses_inspect_when_schema_does_not_exist():
 
     mock_session_instance = MagicMock()
     mock_session_instance.connection.return_value = MagicMock()
-    mock_session_instance.commit = MagicMock()
 
     mock_session_ctx = MagicMock()
     mock_session_ctx.__enter__.return_value = mock_session_instance
@@ -131,7 +130,6 @@ def test_schema_creation_uses_inspect_when_schema_exists():
 
     mock_session_instance = MagicMock()
     mock_session_instance.connection.return_value = MagicMock()
-    mock_session_instance.commit = MagicMock()
 
     mock_session_ctx = MagicMock()
     mock_session_ctx.__enter__.return_value = mock_session_instance
@@ -235,7 +233,12 @@ async def test_aput_all_uses_safe_insert():
     mock_engine = MagicMock()
     mock_async_engine = MagicMock()
 
-    mock_session_instance = MagicMock()
+    mock_session_instance = AsyncMock()
+    mock_begin_ctx_manager = MagicMock()
+    mock_begin_ctx_manager.__aenter__ = AsyncMock()
+    mock_begin_ctx_manager.__aexit__ = AsyncMock()
+    mock_session_instance.begin.return_value = mock_begin_ctx_manager
+
     mock_session_ctx_manager = MagicMock()
     mock_session_ctx_manager.__aenter__ = AsyncMock(return_value=mock_session_instance)
     mock_session_ctx_manager.__aexit__ = AsyncMock(return_value=None)
@@ -262,7 +265,6 @@ async def test_aput_all_uses_safe_insert():
         pgstore._is_initialized = True
 
         mock_session_instance.execute = AsyncMock()
-        mock_session_instance.commit = AsyncMock()
 
         test_data = [("key1", {"value": "data1"}), ("key2", {"value": "data2"})]
         await pgstore.aput_all(test_data)
