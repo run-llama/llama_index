@@ -60,6 +60,7 @@ def test_embedding_class():
     assert isinstance(emb, BaseEmbedding)
 
 
+@pytest.mark.asyncio
 class TestInstructionFunctionality:
     """Test cases for the new instruction functionality."""
 
