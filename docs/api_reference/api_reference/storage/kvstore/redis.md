@@ -1,3 +1,4 @@
 ::: llama_index.storage.kvstore.redis
-options:
-members: - RedisKVStore
+    options:
+      members:
+        - RedisKVStore
