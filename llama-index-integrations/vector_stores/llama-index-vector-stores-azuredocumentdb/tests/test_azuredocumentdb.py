@@ -1,4 +1,4 @@
-"""Test Azue CosmosDB MongoDB vCore Vector Search functionality."""
+"""Test Azure DocumentDB  Vector Search functionality."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ try:
 
     INDEX_NAME = "llamaindex-test-index"
     NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
-    CONNECTION_STRING = os.environ.get("AZURE_COSMOSDB_MONGODB_URI")
+    CONNECTION_STRING = os.environ.get("AZURE_DOCUMENTDB_URI")
     DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
     test_client = MongoClient(CONNECTION_STRING)  # type: ignore
     collection = test_client[DB_NAME][COLLECTION_NAME]
@@ -24,7 +24,7 @@ except (ImportError, Exception):
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
-from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
+from llama_index.vector_stores.azuredocumentdb import AzureDocumentDBVectorSearch
 
 
 @pytest.fixture(scope="session")
@@ -63,8 +63,8 @@ def node_embeddings() -> list[TextNode]:
 
 
 @pytest.mark.skipif(not pymongo_available, reason="pymongo is not available")
-@pytest.mark.skip(reason="Need to manually provide a valid Azure CosmosDB MongoDB URI")
-class TestAzureMongovCoreVectorSearch:
+@pytest.mark.skip(reason="Need to manually provide a valid Azure DocumentDB URI")
+class TestAzureDocumentDBVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
@@ -81,14 +81,14 @@ class TestAzureMongovCoreVectorSearch:
         collection.delete_many({})  # type: ignore[index]
 
     def test_add_and_delete(self) -> None:
-        vector_store = AzureCosmosDBMongoDBVectorSearch(
+        vector_store = AzureDocumentDBVectorSearch(
             mongodb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             index_name=INDEX_NAME,
             cosmos_search_kwargs={"dimensions": 3},
         )
-        sleep(1)  # waits for azure cosmosdb mongodb to update
+        sleep(1)  # waits for Azure DocumentDB to update
         vector_store.add(
             [
                 TextNode(
@@ -109,7 +109,7 @@ class TestAzureMongovCoreVectorSearch:
         assert collection.count_documents({}) == 0
 
     def test_query(self, node_embeddings: List[TextNode]) -> None:
-        vector_store = AzureCosmosDBMongoDBVectorSearch(
+        vector_store = AzureDocumentDBVectorSearch(
             mongodb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
@@ -117,7 +117,7 @@ class TestAzureMongovCoreVectorSearch:
             cosmos_search_kwargs={"dimensions": 3},
         )
         vector_store.add(node_embeddings)  # type: ignore
-        sleep(1)  # wait for azure cosmodb mongodb to update the index
+        sleep(1)  # wait for Azure DocumentDB to update the index
 
         res = vector_store.query(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)

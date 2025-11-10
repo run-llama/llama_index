@@ -25,9 +25,9 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-azurecosmosmongo"
+name = "llama-index-vector-stores-azuredocumentdb"
 version = "0.7.1"
-description = "llama-index vector_stores azurecosmosmongo integration"
+description = "llama-index vector_stores azuredocumentdb integration"
 authors = [{name = "Aayush Kataria", email = "aayushkataria3011@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
@@ -52,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.azurecosmosmongo"
+import_path = "llama_index.vector_stores.azuredocumentdb"
 
 [tool.llamahub.class_authors]
-AzureCosmosDBMongoDBVectorSearch = "llama-index"
+AzureDocumentDBVectorSearch = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
