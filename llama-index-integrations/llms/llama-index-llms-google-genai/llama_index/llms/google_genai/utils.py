@@ -145,15 +145,23 @@ def chat_from_gemini_response(
         **response_feedback,
     }
     thought_tokens: Optional[int] = None
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
+
+        # Set token usage information as required by MLFlow Tracing
+        additional_kwargs["prompt_tokens"] = response.usage_metadata.prompt_token_count
+        additional_kwargs["completion_tokens"] = (
+            response.usage_metadata.candidates_token_count
+        )
+        additional_kwargs["total_tokens"] = response.usage_metadata.total_token_count
+
         if response.usage_metadata.thoughts_token_count:
             thought_tokens = response.usage_metadata.thoughts_token_count
 
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content
 
-    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
     content_blocks = []
     if (
         len(response.candidates) > 0
