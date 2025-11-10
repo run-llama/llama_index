@@ -59,6 +59,9 @@ from anthropic.types import (
     RawContentBlockDeltaEvent,
     RawContentBlockStartEvent,
     RawContentBlockStopEvent,
+    RawMessageDeltaEvent,
+    RawMessageStartEvent,
+    RawMessageStopEvent,
     TextBlock,
     TextDelta,
     ThinkingBlock,
@@ -462,6 +465,9 @@ class Anthropic(FunctionCallingLLM):
             cur_citations: List[Dict[str, Any]] = []
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
+            # Track usage metadata and stop_reason from RawMessage events
+            usage_metadata: Dict[str, Any] = {}
+            stop_reason: Optional[str] = None
             for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
@@ -550,6 +556,10 @@ class Anthropic(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
                         ),
                         citations=cur_citations,
                         delta=content_delta,
@@ -584,11 +594,49 @@ class Anthropic(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
                         ),
                         citations=cur_citations,
                         delta="",
                         raw=dict(r),
                     )
+                elif isinstance(r, RawMessageStartEvent):
+                    # Capture initial usage metadata from message_start
+                    if hasattr(r.message, "usage") and r.message.usage:
+                        usage_metadata = {
+                            "input_tokens": r.message.usage.input_tokens,
+                            "output_tokens": r.message.usage.output_tokens,
+                        }
+                elif isinstance(r, RawMessageDeltaEvent):
+                    # Update usage metadata and capture stop_reason from message_delta
+                    if hasattr(r, "usage") and r.usage:
+                        usage_metadata = {
+                            "input_tokens": r.usage.input_tokens,
+                            "output_tokens": r.usage.output_tokens,
+                        }
+                    if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
+                        stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
+                elif isinstance(r, RawMessageStopEvent):
+                    # Final event - no additional data to capture
+                    pass
 
         return gen()
 
@@ -664,6 +712,9 @@ class Anthropic(FunctionCallingLLM):
             cur_citations: List[Dict[str, Any]] = []
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
+            # Track usage metadata and stop_reason from RawMessage events
+            usage_metadata: Dict[str, Any] = {}
+            stop_reason: Optional[str] = None
             async for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
@@ -752,6 +803,10 @@ class Anthropic(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
                         ),
                         citations=cur_citations,
                         delta=content_delta,
@@ -786,11 +841,49 @@ class Anthropic(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
                         ),
                         citations=cur_citations,
                         delta="",
                         raw=dict(r),
                     )
+                elif isinstance(r, RawMessageStartEvent):
+                    # Capture initial usage metadata from message_start
+                    if hasattr(r.message, "usage") and r.message.usage:
+                        usage_metadata = {
+                            "input_tokens": r.message.usage.input_tokens,
+                            "output_tokens": r.message.usage.output_tokens,
+                        }
+                elif isinstance(r, RawMessageDeltaEvent):
+                    # Update usage metadata and capture stop_reason from message_delta
+                    if hasattr(r, "usage") and r.usage:
+                        usage_metadata = {
+                            "input_tokens": r.usage.input_tokens,
+                            "output_tokens": r.usage.output_tokens,
+                        }
+                    if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
+                        stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
+                elif isinstance(r, RawMessageStopEvent):
+                    # Final event - no additional data to capture
+                    pass
 
         return gen()
 
