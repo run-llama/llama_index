@@ -1,4 +1,3 @@
 ::: llama_index.llms.anthropic
-    options:
-      members:
-        - Anthropic
+options:
+members: - Anthropic

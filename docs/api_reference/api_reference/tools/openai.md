@@ -1,4 +1,3 @@
 ::: llama_index.tools.openai
-    options:
-      members:
-        - OpenAIImageGenerationToolSpec
+options:
+members: - OpenAIImageGenerationToolSpec

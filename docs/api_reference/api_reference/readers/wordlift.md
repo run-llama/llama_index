@@ -1,4 +1,3 @@
 ::: llama_index.readers.wordlift
-    options:
-      members:
-        - WordLiftLoader
+options:
+members: - WordLiftLoader

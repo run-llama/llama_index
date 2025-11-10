@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.langchain
-    options:
-      members:
-        - LangchainEmbedding
+options:
+members: - LangchainEmbedding
