@@ -4,6 +4,67 @@ title: ChangeLog
 
 <!--- generated changelog --->
 
+## [2025-10-30]
+
+### llama-index-core [0.14.7]
+
+- Feat/serpex tool integration ([#20141](https://github.com/run-llama/llama_index/pull/20141))
+- Fix outdated error message about setting LLM ([#20157](https://github.com/run-llama/llama_index/pull/20157))
+- Fixing some recently failing tests ([#20165](https://github.com/run-llama/llama_index/pull/20165))
+- Fix: update lock to latest workflow and fix issues ([#20173](https://github.com/run-llama/llama_index/pull/20173))
+- fix: ensure full docstring is used in FunctionTool ([#20175](https://github.com/run-llama/llama_index/pull/20175))
+- fix api docs build ([#20180](https://github.com/run-llama/llama_index/pull/20180))
+
+### llama-index-embeddings-voyageai [0.5.0]
+
+- Updating the VoyageAI integration ([#20073](https://github.com/run-llama/llama_index/pull/20073))
+
+### llama-index-llms-anthropic [0.10.0]
+
+- feat: integrate anthropic with tool call block ([#20100](https://github.com/run-llama/llama_index/pull/20100))
+
+### llama-index-llms-bedrock-converse [0.10.7]
+
+- feat: Add support for Bedrock Guardrails streamProcessingMode ([#20150](https://github.com/run-llama/llama_index/pull/20150))
+- bedrock structured output optional force ([#20158](https://github.com/run-llama/llama_index/pull/20158))
+
+### llama-index-llms-fireworks [0.4.5]
+
+- Update FireworksAI models ([#20169](https://github.com/run-llama/llama_index/pull/20169))
+
+### llama-index-llms-mistralai [0.9.0]
+
+- feat: mistralai integration with tool call block ([#20103](https://github.com/run-llama/llama_index/pull/20103))
+
+### llama-index-llms-ollama [0.9.0]
+
+- feat: integrate ollama with tool call block ([#20097](https://github.com/run-llama/llama_index/pull/20097))
+
+### llama-index-llms-openai [0.6.6]
+
+- Allow setting temp of gpt-5-chat ([#20156](https://github.com/run-llama/llama_index/pull/20156))
+
+### llama-index-readers-confluence [0.5.0]
+
+- feat(confluence): make SVG processing optional to fix pycairo install… ([#20115](https://github.com/run-llama/llama_index/pull/20115))
+
+### llama-index-readers-github [0.9.0]
+
+- Add GitHub App authentication support ([#20106](https://github.com/run-llama/llama_index/pull/20106))
+
+### llama-index-retrievers-bedrock [0.5.1]
+
+- Fixing some recently failing tests ([#20165](https://github.com/run-llama/llama_index/pull/20165))
+
+### llama-index-tools-serpex [0.1.0]
+
+- Feat/serpex tool integration ([#20141](https://github.com/run-llama/llama_index/pull/20141))
+- add missing toml info ([#20186](https://github.com/run-llama/llama_index/pull/20186))
+
+### llama-index-vector-stores-couchbase [0.6.0]
+
+- Add Hyperscale and Composite Vector Indexes support for Couchbase vector-store ([#20170](https://github.com/run-llama/llama_index/pull/20170))
+
 ## [2025-10-26]
 
 ### llama-index-core [0.14.6]
