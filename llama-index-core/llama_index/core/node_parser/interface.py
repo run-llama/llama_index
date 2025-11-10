@@ -39,7 +39,7 @@ def _serialize_id_func(f: Callable) -> Any:
 
 IdFuncCallable = Annotated[
     Callable,
-    Field(validate_default=True),
+    Field(),
     BeforeValidator(_validate_id_func),
     WithJsonSchema({"type": "string"}, mode="serialization"),
     WithJsonSchema({"type": "string"}, mode="validation"),
