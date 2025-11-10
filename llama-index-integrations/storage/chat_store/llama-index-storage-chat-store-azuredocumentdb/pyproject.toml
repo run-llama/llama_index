@@ -25,9 +25,9 @@ dev = [
 ]
 
 [project]
-name = "llama-index-storage-chat-store-azurecosmosmongovcore"
+name = "llama-index-storage-chat-store-azuredocumentdb"
 version = "1.2.1"
-description = "llama-index storage-chat-store azure cosmosdb mongo vcore integration"
+description = "llama-index storage-chat-store Azure DocumentDB integration"
 authors = [{name = "Aayush Kataria", email = "aayushkataria3011@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
@@ -52,7 +52,7 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.storage.chat_store.azurecosmosmongovcore"
+import_path = "llama_index.storage.chat_store.azuredocumentdb"
 
 [tool.llamahub.class_authors]
 AzureCosmosNoSqlChatStore = "Aayush"
