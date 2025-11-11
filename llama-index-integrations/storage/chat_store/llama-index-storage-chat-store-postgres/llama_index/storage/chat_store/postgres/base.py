@@ -10,6 +10,7 @@ from sqlalchemy import (
     delete,
     select,
     create_engine,
+    inspect,
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from llama_index.core.llms import ChatMessage
@@ -24,12 +25,27 @@ def get_data_model(
     index_name: str,
     schema_name: str,
     use_jsonb: bool = False,
+    use_legacy_table_name: bool = False,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
+
+    Args:
+        base: SQLAlchemy declarative base
+        index_name: The table name to use
+        schema_name: The schema name
+        use_jsonb: Whether to use JSONB instead of JSON
+        use_legacy_table_name: If True, adds 'data_' prefix for backward compatibility
+
     """
-    tablename = f"data_{index_name}"  # dynamic table name
-    class_name = f"Data{index_name}"  # dynamic class name
+    # Use the table name as-is by default, or add 'data_' prefix for legacy compatibility
+    if use_legacy_table_name:
+        tablename = f"data_{index_name}"
+        class_name = f"Data{index_name}"
+    else:
+        tablename = index_name
+        # Capitalize first letter for class name
+        class_name = f"{index_name[0].upper()}{index_name[1:]}"
 
     chat_dtype = JSONB if use_jsonb else JSON
 
@@ -78,6 +94,11 @@ class PostgresChatStore(BaseChatStore):
             schema_name=schema_name.lower(),
         )
 
+        # Check if legacy table (with 'data_' prefix) exists
+        use_legacy_table_name = self._check_legacy_table_exists(
+            session, table_name, schema_name
+        )
+
         # sqlalchemy model
         base = declarative_base()
         self._table_class = get_data_model(
@@ -85,6 +106,7 @@ class PostgresChatStore(BaseChatStore):
             table_name,
             schema_name,
             use_jsonb=use_jsonb,
+            use_legacy_table_name=use_legacy_table_name,
         )
         self._session = session
         self._async_session = async_session
@@ -151,6 +173,25 @@ class PostgresChatStore(BaseChatStore):
         _async_engine = create_async_engine(async_connection_string)
         async_session = sessionmaker(_async_engine, class_=AsyncSession)
         return session, async_session
+
+    def _check_legacy_table_exists(
+        self, session: sessionmaker, table_name: str, schema_name: str
+    ) -> bool:
+        """
+        Check if a legacy table with 'data_' prefix exists.
+
+        Returns True if the legacy table exists doesn't,
+        indicating we should use the legacy naming for backward compatibility.
+        """
+        legacy_table_name = f"data_{table_name}"
+
+        with session() as session, session.begin():
+            inspector = inspect(session.connection())
+            existing_tables = inspector.get_table_names(schema=schema_name)
+            return (
+                legacy_table_name in existing_tables
+                and table_name not in existing_tables
+            )
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
