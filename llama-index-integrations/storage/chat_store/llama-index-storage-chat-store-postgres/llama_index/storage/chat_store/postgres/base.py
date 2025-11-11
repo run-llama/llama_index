@@ -96,15 +96,15 @@ class PostgresChatStore(BaseChatStore):
 
         # Check if legacy table (with 'data_' prefix) exists
         use_legacy_table_name = self._check_legacy_table_exists(
-            session, table_name, schema_name
+            session, self.table_name, self.schema_name
         )
 
         # sqlalchemy model
         base = declarative_base()
         self._table_class = get_data_model(
             base,
-            table_name,
-            schema_name,
+            self.table_name,
+            self.schema_name,
             use_jsonb=use_jsonb,
             use_legacy_table_name=use_legacy_table_name,
         )
@@ -180,7 +180,7 @@ class PostgresChatStore(BaseChatStore):
         """
         Check if a legacy table with 'data_' prefix exists.
 
-        Returns True if the legacy table exists doesn't,
+        Returns True if the legacy table exists but the new table doesn't,
         indicating we should use the legacy naming for backward compatibility.
         """
         legacy_table_name = f"data_{table_name}"
