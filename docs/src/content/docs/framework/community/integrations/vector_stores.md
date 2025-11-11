@@ -18,8 +18,8 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
-- Azure DocumentDB (`AzureDocumentDBVectorSearch`). [Quickstart](https://aka.ms/documentdb)
 - Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
+- Azure DocumentDB (`AzureDocumentDBVectorSearch`). [Quickstart](https://aka.ms/documentdb)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
 - Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
