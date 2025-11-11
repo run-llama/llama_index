@@ -18,7 +18,7 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
-- Azure Cosmos DB Mongo vCore(`AzureCosmosDBMongoDBVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search?tabs=diskann)
+- Azure DocumentDB (`AzureDocumentDBVectorSearch`). [Quickstart](https://aka.ms/documentdb)
 - Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
@@ -243,21 +243,21 @@ vector_store = AzureAISearchVectorStore(
 )
 ```
 
-**Azure CosmosDB Mongo vCore**
+**Azure DocumentDB**
 
 ```python
 import pymongo
 import os
-from llama_index.vector_stores.azurecosmosmongo import (
-    AzureCosmosDBMongoDBVectorSearch,
+from llama_index.vector_stores.azuredocumentdb import (
+    AzureDocumentDBVectorSearch,
 )
 
-# Set up the connection string with your Azure CosmosDB MongoDB URI
+# Set up the connection string with your Azure DocumentDB URI
 connection_string = os.getenv("YOUR_AZURE_COSMOSDB_MONGODB_URI")
 mongodb_client = pymongo.MongoClient(connection_string)
 
-# Create an instance of AzureCosmosDBMongoDBVectorSearch
-vector_store = AzureCosmosDBMongoDBVectorSearch(
+# Create an instance of AzureDocumentDBVectorSearch
+vector_store = AzureDocumentDBVectorSearch(
     mongodb_client=mongodb_client,
     db_name="demo_vectordb",
     collection_name="paul_graham_essay",

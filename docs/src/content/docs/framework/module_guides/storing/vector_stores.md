@@ -21,8 +21,8 @@ We are actively adding more integrations and improving feature coverage for each
 | Apache Cassandra®         | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
 | Astra DB                   | cloud                   | ✓                  |               | ✓      | ✓               |                               |
 | Azure AI Search            | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
-| Azure CosmosDB Mongo vCore | cloud                   |                    |               | ✓      | ✓               |                               |
 | Azure CosmosDB NoSql       | cloud                   |                    |               | ✓      | ✓               |                               |
+| Azure DocumentDB           | cloud                   |                    |               | ✓      | ✓               |                               |
 | BaiduVectorDB              | cloud                   | ✓                  | ✓             |        | ✓               |                               |
 | ChatGPT Retrieval Plugin   | aggregator              |                    |               | ✓      | ✓               |                               |
 | Chroma                     | self-hosted             | ✓                  |               | ✓      | ✓               |                               |
@@ -78,8 +78,8 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [Astra DB](/python/examples/vector_stores/astradbindexdemo)
 - [Async Index Creation](/python/examples/vector_stores/asyncindexcreationdemo)
 - [Azure AI Search](/python/examples/vector_stores/azureaisearchindexdemo)
-- [Azure Cosmos DB Mongo vCore](/python/examples/vector_stores/azurecosmosdbmongodbvcoredemo)
 - [Azure Cosmos DB NoSql](/python/examples/vector_stores/azurecosmosdbnosqldemo)
+- [Azure DocumentDB](/python/examples/vector_stores/azuredocumentdbdemo)
 - [Baidu](/python/examples/vector_stores/baiduvectordbindexdemo)
 - [Caasandra](/python/examples/vector_stores/cassandraindexdemo)
 - [Chromadb](/python/examples/vector_stores/chromaindexdemo)
