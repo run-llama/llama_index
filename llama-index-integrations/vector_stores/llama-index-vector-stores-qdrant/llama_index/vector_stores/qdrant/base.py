@@ -1475,6 +1475,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 conditions.append(
                     IsEmptyCondition(is_empty=PayloadField(key=subfilter.key))
                 )
+            else:
+                # Unsupported filter operator
+                raise NotImplementedError(
+                    f"Filter operator {subfilter.operator} is not supported by Qdrant vector store. "
+                    f"Supported operators: EQ, NE, GT, GTE, LT, LTE, IN, NIN, TEXT_MATCH, IS_EMPTY"
+                )
 
         filter = Filter()
         if filters.condition == FilterCondition.AND:
