@@ -8,8 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "dev:api": "cd api_reference && poetry install && poetry run mkdocs build -d ../.mkdocs/ && npx http-server ../.mkdocs/",
-    "dev:all": "sh -c 'pnpm dev & pnpm run dev:api & wait'"
+    "dev:api": "cd api_reference && poetry install && poetry run mkdocs build -d ../.mkdocs/ && npx http-server ../.mkdocs/"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.6",
