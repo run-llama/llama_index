@@ -58,6 +58,7 @@ from llama_index.llms.google_genai.utils import (
     prepare_chat_params,
     handle_streaming_flexible_model,
     create_retry_decorator,
+    adelete_uploaded_files,
     delete_uploaded_files,
 )
 
@@ -320,7 +321,8 @@ class GoogleGenAI(FunctionCallingLLM):
             next_msg.parts if isinstance(next_msg, types.Content) else next_msg
         )
 
-        asyncio.run(delete_uploaded_files(file_api_names, self._client))
+        if self.file_mode in ("fileapi", "hybrid"):
+            delete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response)
 
@@ -339,7 +341,8 @@ class GoogleGenAI(FunctionCallingLLM):
             next_msg.parts if isinstance(next_msg, types.Content) else next_msg
         )
 
-        await delete_uploaded_files(file_api_names, self._client)
+        if self.file_mode in ("fileapi", "hybrid"):
+            await adelete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response)
 
@@ -400,7 +403,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 yield llama_resp
 
             if self.file_mode in ("fileapi", "hybrid"):
-                asyncio.run(delete_uploaded_files(file_api_names, self._client))
+                delete_uploaded_files(file_api_names, self._client)
 
         return gen()
 
@@ -458,7 +461,8 @@ class GoogleGenAI(FunctionCallingLLM):
                                     ]
                             yield llama_resp
 
-            await delete_uploaded_files(file_api_names, self._client)
+            if self.file_mode in ("fileapi", "hybrid"):
+                await adelete_uploaded_files(file_api_names, self._client)
 
         return gen()
 
@@ -602,7 +606,8 @@ class GoogleGenAI(FunctionCallingLLM):
             },
         )
 
-        asyncio.run(delete_uploaded_files(file_api_names, self._client))
+        if self.file_mode in ("fileapi", "hybrid"):
+            delete_uploaded_files(file_api_names, self._client)
 
         if isinstance(response.parsed, BaseModel):
             return response.parsed
@@ -646,7 +651,8 @@ class GoogleGenAI(FunctionCallingLLM):
                 config=generation_config,
             )
 
-            asyncio.run(delete_uploaded_files(file_api_names, self._client))
+            if self.file_mode in ("fileapi", "hybrid"):
+                delete_uploaded_files(file_api_names, self._client)
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -695,7 +701,8 @@ class GoogleGenAI(FunctionCallingLLM):
                 config=generation_config,
             )
 
-            await delete_uploaded_files(file_api_names, self._client)
+            if self.file_mode in ("fileapi", "hybrid"):
+                await adelete_uploaded_files(file_api_names, self._client)
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -760,7 +767,8 @@ class GoogleGenAI(FunctionCallingLLM):
                         if streaming_model:
                             yield streaming_model
 
-                asyncio.run(delete_uploaded_files(file_api_names, self._client))
+                if self.file_mode in ("fileapi", "hybrid"):
+                    delete_uploaded_files(file_api_names, self._client)
 
             return gen()
         else:
@@ -821,7 +829,8 @@ class GoogleGenAI(FunctionCallingLLM):
                         if streaming_model:
                             yield streaming_model
 
-                await delete_uploaded_files(file_api_names, self._client)
+                if self.file_mode in ("fileapi", "hybrid"):
+                    await adelete_uploaded_files(file_api_names, self._client)
 
             return gen()
         else:

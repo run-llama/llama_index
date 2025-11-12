@@ -290,11 +290,17 @@ async def create_file_part(
     ), file.name
 
 
-async def delete_uploaded_files(file_api_names: list[str], client: Client) -> None:
+async def adelete_uploaded_files(file_api_names: list[str], client: Client) -> None:
     """Delete files uploaded with File API."""
     await asyncio.gather(
         *[client.aio.files.delete(name=name) for name in file_api_names]
     )
+
+
+def delete_uploaded_files(file_api_names: list[str], client: Client) -> None:
+    """Delete files uploaded with File API."""
+    for name in file_api_names:
+        client.files.delete(name=name)
 
 
 async def chat_message_to_gemini(
