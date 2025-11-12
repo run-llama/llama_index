@@ -43,9 +43,10 @@ def get_data_model(
         tablename = f"data_{index_name}"
         class_name = f"Data{index_name}"
     else:
-        tablename = index_name
-        # Capitalize first letter for class name
-        class_name = f"{index_name[0].upper()}{index_name[1:]}"
+        tablename = index_name or "chatstore"
+        class_name = (
+            f"{index_name[0].upper()}{index_name[1:]}" if index_name else "Chatstore"
+        )
 
     chat_dtype = JSONB if use_jsonb else JSON
 

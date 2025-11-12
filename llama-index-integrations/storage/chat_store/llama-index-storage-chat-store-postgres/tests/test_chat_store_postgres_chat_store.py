@@ -365,3 +365,31 @@ def test_legacy_table_name_detection(
                 )
             )
         engine.dispose()
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_empty_table_name_defaults_to_chatstore(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    table_name = ""
+    default_table_name = "chatstore"
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        table_name=table_name,
+    )
+
+    try:
+        assert chat_store._table_class.__tablename__ == default_table_name
+
+        with chat_store._session() as session:
+            inspector = inspect(session.bind)
+            tables = inspector.get_table_names(schema=chat_store.schema_name)
+            assert default_table_name in tables
+            assert table_name not in tables  # Ensure empty name table wasn't created
+    finally:
+        with chat_store._session() as session, session.begin():
+            session.execute(
+                text(
+                    f'DROP TABLE IF EXISTS "{chat_store.schema_name}"."{default_table_name}" CASCADE'
+                )
+            )
