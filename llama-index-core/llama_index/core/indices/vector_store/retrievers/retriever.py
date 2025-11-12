@@ -91,9 +91,13 @@ class VectorIndexRetriever(BaseRetriever):
 
     def _needs_embedding(self) -> bool:
         """Check if the current query mode requires embeddings."""
-        return self._vector_store.is_embedding_query and self._vector_store_query_mode not in (
-            VectorStoreQueryMode.TEXT_SEARCH,
-            VectorStoreQueryMode.SPARSE,
+        return (
+            self._vector_store.is_embedding_query
+            and self._vector_store_query_mode
+            not in (
+                VectorStoreQueryMode.TEXT_SEARCH,
+                VectorStoreQueryMode.SPARSE,
+            )
         )
 
     @dispatcher.span
