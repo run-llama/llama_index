@@ -369,3 +369,47 @@ def test_method_table_error(
     # when
     with pytest.raises(TableNotFoundError):
         getattr(vector_store, method)(**kwargs)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb and huggingface locally to run this test.",
+)
+@pytest.mark.parametrize("query_type", ["fts", "hybrid"])
+def test_fts_index_ready_flag(
+    tmp_path: Path, text_node_list: list[TextNode], embed_model, query_type: str
+) -> None:
+    # given
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"),
+        mode="overwrite",
+    )
+    vector_store.add(text_node_list)
+    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model)
+
+    # then - flag should be False initially
+    assert vector_store._fts_index_ready is False
+
+    # when - perform FTS | Hybrid query
+    index.as_retriever(vector_store_kwargs={"query_type": query_type}).retrieve("test1")
+
+    # then - flag should be True after FTS index is created
+    assert vector_store._fts_index_ready is True
+
+    # when - add more data
+    new_node = TextNode(
+        text="test4",
+        id_="44444444-4444-4444-4444-444444444444",
+        relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-3")},
+    )
+    new_node.embedding = embed_model.get_text_embedding(new_node.text)
+    vector_store.add([new_node])
+
+    # then - flag should be False after adding data
+    assert vector_store._fts_index_ready is False
+
+    # when - perform another FTS | Hybrid query
+    index.as_retriever(vector_store_kwargs={"query_type": query_type}).retrieve("test4")
+
+    # then - flag should be True again after FTS index is recreated
+    assert vector_store._fts_index_ready is True

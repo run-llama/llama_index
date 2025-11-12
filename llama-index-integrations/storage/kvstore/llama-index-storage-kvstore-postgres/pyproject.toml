@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-kvstore-postgres"
-version = "0.4.2"
+version = "0.4.3"
 description = "llama-index kvstore postgres integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
