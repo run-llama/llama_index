@@ -44,9 +44,10 @@ def get_data_model(
         class_name = f"Data{index_name}"
     else:
         tablename = index_name or "chatstore"
-        class_name = (
-            f"{index_name[0].upper()}{index_name[1:]}" if index_name else "Chatstore"
-        )
+        if index_name:
+            class_name = f"{index_name[0].upper()}{index_name[1:]}"
+        else:
+            class_name = "Chatstore"
 
     chat_dtype = JSONB if use_jsonb else JSON
 
@@ -181,18 +182,22 @@ class PostgresChatStore(BaseChatStore):
         """
         Check if a legacy table with 'data_' prefix exists.
 
-        Returns True if the legacy table exists but the new table doesn't,
-        indicating we should use the legacy naming for backward compatibility.
+        Args:
+            session: SQLAlchemy sessionmaker instance
+            table_name: The base table name (without prefix)
+            schema_name: The database schema name
+
+        Returns:
+            bool: True if the legacy table exists
+                  indicating we should use the legacy naming for backward compatibility.
+
         """
         legacy_table_name = f"data_{table_name}"
 
-        with session() as session, session.begin():
-            inspector = inspect(session.connection())
+        with session() as sess, sess.begin():
+            inspector = inspect(sess.connection())
             existing_tables = inspector.get_table_names(schema=schema_name)
-            return (
-                legacy_table_name in existing_tables
-                and table_name not in existing_tables
-            )
+            return legacy_table_name in existing_tables
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():

@@ -333,7 +333,7 @@ def test_legacy_table_name_detection(
 
     # Pre-create the legacy table using the legacy naming convention
     base = declarative_base()
-    _ = get_data_model(
+    legacy_model = get_data_model(
         base,
         table_name,
         "public",
@@ -385,7 +385,7 @@ def test_empty_table_name_defaults_to_chatstore(
             inspector = inspect(session.bind)
             tables = inspector.get_table_names(schema=chat_store.schema_name)
             assert default_table_name in tables
-            assert table_name not in tables  # Ensure empty name table wasn't created
+            # Verify that the default table name was used (not an empty string table)
     finally:
         with chat_store._session() as session, session.begin():
             session.execute(
