@@ -3,11 +3,12 @@ Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Sear
 
 """
 
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar, cast
 
 from llama_index.core.vector_stores.types import (
     FilterCondition,
     FilterOperator,
+    MetadataFilter,
     MetadataFilters,
 )
 
@@ -23,7 +24,7 @@ def fulltext_search_stage(
     search_field: str,
     index_name: str,
     operator: str = "text",
-    filter: Optional[Dict[str, Any]] = None,
+    search_filter: Optional[Dict[str, Any]] = None,
     limit: int = 10,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:
@@ -44,22 +45,54 @@ def fulltext_search_stage(
         - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
 
     """
+    # Backward compatibility shim:
+    # Historically this function accepted a parameter named `filter` containing Atlas Search compound clauses.
+    # We renamed it to `search_filter` for clarity (to distinguish from MQL filters used by $vectorSearch).
+    # If callers still supply `filter=...`, we map it here unless both are provided, in which case we raise.
+    legacy_filter = kwargs.pop("filter", None)
+    if legacy_filter is not None and search_filter is not None:
+        raise ValueError("Provide only one of 'search_filter' or legacy 'filter'.")
+    if legacy_filter is not None and search_filter is None:
+        # Emit a deprecation warning to encourage callers to migrate.
+        import warnings
+
+        warnings.warn(
+            "`filter` parameter is deprecated for Atlas Full-Text Search. "
+            "Please use `search_filter` instead. Support for the legacy name might be removed in a future release.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        search_filter = legacy_filter
+
+    text_clause = {operator: {"query": query, "path": search_field}}
+    compound: Dict[str, Any] = {"must": [text_clause]}
+
+    # Merge in optional Atlas Search compound clauses produced by filters_to_search_filter or legacy `filter`.
+    # "search_filter" expected shape: {must: [...], should: [...], mustNot: [...], minimumShouldMatch: int}
+    if search_filter:
+        if search_filter.get("must"):
+            compound["must"].extend(search_filter["must"])
+        if search_filter.get("should"):
+            compound["should"] = search_filter["should"]
+            if "minimumShouldMatch" in search_filter:
+                compound["minimumShouldMatch"] = search_filter["minimumShouldMatch"]
+        if search_filter.get("mustNot"):
+            compound["mustNot"] = search_filter["mustNot"]
+
     pipeline = [
         {
             "$search": {
                 "index": index_name,
-                operator: {"query": query, "path": search_field},
+                "compound": compound,
             }
-        },
+        }
     ]
-    if filter:
-        pipeline.append({"$match": filter})
     pipeline.append({"$limit": limit})
     return pipeline
 
 
 def filters_to_mql(
-    filters: MetadataFilters, metadata_key: str = "metadata"
+    filters: Optional[MetadataFilters], metadata_key: str = "metadata"
 ) -> Dict[str, Any]:
     """
     Converts Llama-index's MetadataFilters into the MQL expected by $vectorSearch query.
@@ -125,6 +158,69 @@ def filters_to_mql(
     return mql
 
 
+def filters_to_search_filter(
+    filters: Optional[MetadataFilters], metadata_key: str = "metadata"
+) -> Dict[str, Any]:
+    """Converts MetadataFilters into Atlas Search compound filter format."""
+    if filters is None or not filters.filters:
+        return {}
+
+    def prepare_path(key: str) -> str:
+        return (
+            f"{metadata_key}.{key}" if not key.startswith(f"{metadata_key}.") else key
+        )
+
+    condition = filters.condition or FilterCondition.AND
+    must: List[Dict[str, Any]] = []
+    should: List[Dict[str, Any]] = []
+    must_not: List[Dict[str, Any]] = []
+
+    for mf in cast(List[MetadataFilter], filters.filters):
+        path = prepare_path(mf.key)
+        operator = mf.operator or FilterOperator.EQ
+        value = mf.value
+
+        if operator == FilterOperator.NE:
+            must_not.append({"equals": {"path": path, "value": value}})
+            continue
+        if operator == FilterOperator.NIN:
+            values = value if isinstance(value, list) else [value]
+            must_not.append({"in": {"path": path, "value": values}})
+            continue
+
+        if operator in (
+            FilterOperator.GT,
+            FilterOperator.GTE,
+            FilterOperator.LT,
+            FilterOperator.LTE,
+        ):
+            range_operator = map_lc_mql_filter_operators(operator).replace("$", "")
+            clause: Dict[str, Any] = {
+                "range": {"path": path, range_operator: value}
+            }
+        elif operator == FilterOperator.IN:
+            values = value if isinstance(value, list) else [value]
+            clause = {"in": {"path": path, "value": values}}
+        else:
+            clause = {"equals": {"path": path, "value": value}}
+
+        if condition == FilterCondition.OR:
+            should.append(clause)
+        else:
+            must.append(clause)
+
+    compound: Dict[str, Any] = {}
+    if must:
+        compound["must"] = must
+    if should:
+        compound["should"] = should
+        compound["minimumShouldMatch"] = 1
+    if must_not:
+        compound["mustNot"] = must_not
+
+    return compound
+
+
 def vector_search_stage(
     query_vector: List[float],
     search_field: str,
@@ -153,18 +249,22 @@ def vector_search_stage(
         Dictionary defining the $vectorSearch
 
     """
-    if filter is None:
-        filter = {}
-    return {
+    stage: Dict[str, Any] = {
         "$vectorSearch": {
             "index": index_name,
             "path": search_field,
             "queryVector": query_vector,
             "numCandidates": limit * oversampling_factor,
             "limit": limit,
-            "filter": filter,
         }
     }
+
+    # Only include filter when an actual predicate is provided. Passing an empty
+    # dict can result in intermittent zero-hit queries on freshly ingested data.
+    if filter:
+        stage["$vectorSearch"]["filter"] = filter
+
+    return stage
 
 
 def combine_pipelines(
