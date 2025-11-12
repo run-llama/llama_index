@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-web"
-version = "0.5.5"
+version = "0.5.6"
 description = "llama-index readers web integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -86,6 +86,7 @@ dependencies = [
     "markdownify>=1.1.0",
     "oxylabs>=2.0.0",
     "firecrawl-py>=4.3.3",
+    "Scrapy>=2.13.3",
 ]
 
 [tool.codespell]
@@ -121,6 +122,7 @@ ReadabilityWebPageReader = "pandazki"
 RssNewsReader = "ruze00"
 RssReader = "bborn"
 ScrapflyReader = "mazen-r"
+ScrapyWebReader = "hammadbinsajjad"
 SimpleWebPageReader = "thejessezhang"
 SitemapReader = "selamanse"
 SpiderReader = "WilliamEspegren"

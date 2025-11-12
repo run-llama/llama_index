@@ -301,6 +301,7 @@ class BaseWorkflowAgent(
                 raw_input=tool_input,
                 raw_output=str(e),
                 is_error=True,
+                exception=e,
             )
 
         return tool_output
