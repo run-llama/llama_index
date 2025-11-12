@@ -1376,10 +1376,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _build_subfilter(self, filters: MetadataFilters) -> Filter:
         conditions = []
         for subfilter in filters.filters:
-            # only for exact match
-            if isinstance(subfilter, MetadataFilters) and len(subfilter.filters) > 0:
-                conditions.append(self._build_subfilter(subfilter))
-            elif not subfilter.operator or subfilter.operator == FilterOperator.EQ:
+            # Handle nested MetadataFilters
+            if isinstance(subfilter, MetadataFilters):
+                if len(subfilter.filters) > 0:
+                    conditions.append(self._build_subfilter(subfilter))
+                # Skip empty MetadataFilters
+                continue
+
+            # Handle MetadataFilter with operators
+            if not subfilter.operator or subfilter.operator == FilterOperator.EQ:
                 if isinstance(subfilter.value, float):
                     conditions.append(
                         FieldCondition(
