@@ -312,7 +312,7 @@ def test_table_name_without_prefix(
         assert chat_store._table_class.__tablename__ == table_name
 
         with chat_store._session() as session:
-            inspector = inspect(session.bind)
+            inspector = inspect(session.connection())
             tables = inspector.get_table_names(schema=chat_store.schema_name)
             assert table_name in tables
             assert f"data_{table_name}" not in tables
@@ -333,7 +333,7 @@ def test_legacy_table_name_detection(
 
     # Pre-create the legacy table using the legacy naming convention
     base = declarative_base()
-    legacy_model = get_data_model(
+    get_data_model(
         base,
         table_name,
         "public",
@@ -353,7 +353,7 @@ def test_legacy_table_name_detection(
         assert chat_store._table_class.__tablename__ == f"data_{table_name}"
 
         with chat_store._session() as session:
-            inspector = inspect(session.bind)
+            inspector = inspect(session.connection())
             tables = inspector.get_table_names(schema=chat_store.schema_name)
             assert f"data_{table_name}" in tables
             assert table_name not in tables
@@ -382,7 +382,7 @@ def test_empty_table_name_defaults_to_chatstore(
         assert chat_store._table_class.__tablename__ == default_table_name
 
         with chat_store._session() as session:
-            inspector = inspect(session.bind)
+            inspector = inspect(session.connection())
             tables = inspector.get_table_names(schema=chat_store.schema_name)
             assert default_table_name in tables
             # Verify that the default table name was used (not an empty string table)

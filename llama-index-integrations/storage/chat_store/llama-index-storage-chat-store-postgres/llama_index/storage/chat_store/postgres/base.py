@@ -38,16 +38,13 @@ def get_data_model(
         use_legacy_table_name: If True, adds 'data_' prefix for backward compatibility
 
     """
-    # Use the table name as-is by default, or add 'data_' prefix for legacy compatibility
     if use_legacy_table_name:
         tablename = f"data_{index_name}"
         class_name = f"Data{index_name}"
     else:
-        tablename = index_name or "chatstore"
-        if index_name:
-            class_name = f"{index_name[0].upper()}{index_name[1:]}"
-        else:
-            class_name = "Chatstore"
+        index_name = index_name or "chatstore"
+        tablename = index_name
+        class_name = f"{index_name[0].upper()}{index_name[1:]}"
 
     chat_dtype = JSONB if use_jsonb else JSON
 
