@@ -199,14 +199,23 @@ def test_filters_to_search_filter_is_empty() -> None:
     if "must" in search_filter:
         # find nested compound with should or mustNot exists
         assert any(
-            clause.get("compound") and (
-                clause["compound"].get("should") or clause["compound"].get("mustNot")
-            )
+            clause.get("compound") and clause["compound"].get("should")
             for clause in search_filter["must"]
-        ) or any(
-            clause.get("equals") and clause["equals"]["value"] in (None, [])
-            for clause in search_filter["must"]
+        ), "Expected compound should wrapper for IS_EMPTY"
+        # The should branches should contain equals null and a compound mustNot exists; no empty array literal
+        compound_clause = next(
+            clause for clause in search_filter["must"] if clause.get("compound")
         )
+        should_branches = compound_clause["compound"]["should"]
+        assert any(
+            b.get("equals") and b["equals"]["value"] is None for b in should_branches
+        )
+        assert any(
+            b.get("compound") and b["compound"].get("mustNot") for b in should_branches
+        )
+        assert not any(
+            b.get("equals") and b["equals"]["value"] == [] for b in should_branches
+        ), "Empty array literal should be omitted"
     else:
         # OR path (should) -- minimumShouldMatch present
         assert "should" in search_filter
@@ -214,8 +223,12 @@ def test_filters_to_search_filter_is_empty() -> None:
         assert any(
             clause.get("compound") and clause["compound"].get("mustNot")
             for clause in search_filter["should"]
-        )
+        ), "Missing mustNot exists branch"
         assert any(
-            clause.get("equals") and clause["equals"]["value"] in (None, [])
+            clause.get("equals") and clause["equals"]["value"] is None
             for clause in search_filter["should"]
-        )
+        ), "Missing equals null branch"
+        assert not any(
+            clause.get("equals") and clause["equals"]["value"] == []
+            for clause in search_filter["should"]
+        ), "Empty array literal should be omitted"

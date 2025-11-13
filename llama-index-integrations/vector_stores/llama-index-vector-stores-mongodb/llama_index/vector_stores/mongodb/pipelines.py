@@ -182,11 +182,8 @@ def filters_to_search_filter(
         if operator == FilterOperator.IS_EMPTY:
             empty_clauses = [
                 {"equals": {"path": path, "value": None}},  # null
-                {"equals": {"path": path, "value": []}},  # empty array
+                {"compound": {"mustNot": [{"exists": {"path": path}}]}},  # field missing
             ]
-            empty_clauses.append(
-                {"compound": {"mustNot": [{"exists": {"path": path}}]}}
-            )
 
             if condition == FilterCondition.OR:
                 should.extend(empty_clauses)
