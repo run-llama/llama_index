@@ -20,7 +20,14 @@ import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-
+def _mode_requires_embedding(mode: VectorStoreQueryMode) -> bool:
+    """Return True only for modes that need dense embeddings."""
+    return mode in {
+        VectorStoreQueryMode.DEFAULT,
+        VectorStoreQueryMode.MMR,
+        VectorStoreQueryMode.HYBRID,
+        VectorStoreQueryMode.SEMANTIC_HYBRID,
+    }
 class VectorIndexRetriever(BaseRetriever):
     """
     Vector index retriever.
@@ -90,31 +97,36 @@ class VectorIndexRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
 
     @dispatcher.span
-    def _retrieve(
-        self,
-        query_bundle: QueryBundle,
-    ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
-                query_bundle.embedding = (
-                    self._embed_model.get_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
-                    )
-                )
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        if (
+            self._vector_store.is_embedding_query
+            and _mode_requires_embedding(self._vector_store_query_mode)
+            and query_bundle.embedding is None
+            and len(query_bundle.embedding_strs) > 0
+        ):
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
         return self._get_nodes_with_embeddings(query_bundle)
 
     @dispatcher.span
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         embedding = query_bundle.embedding
-        if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
-                embed_model = self._embed_model
-                embedding = await embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
+        if (
+            self._vector_store.is_embedding_query
+            and _mode_requires_embedding(self._vector_store_query_mode)
+            and embedding is None
+            and len(query_bundle.embedding_strs) > 0
+        ):
+            embedding = await self._embed_model.aget_agg_embedding_from_queries(
+                query_bundle.embedding_strs
+            )
+
         return await self._aget_nodes_with_embeddings(
             QueryBundle(query_str=query_bundle.query_str, embedding=embedding)
         )
+
+
 
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
@@ -131,7 +143,6 @@ class VectorIndexRetriever(BaseRetriever):
             sparse_top_k=self._sparse_top_k,
             hybrid_top_k=self._hybrid_top_k,
         )
-
     def _determine_nodes_to_fetch(
         self, query_result: VectorStoreQueryResult
     ) -> list[str]:
