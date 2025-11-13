@@ -205,3 +205,83 @@ Run just these tests:
 ```bash
 pytest llama-index-integrations/vector_stores/llama-index-vector-stores-mongodb/tests/test_mongodb_pipelines.py -q
 ```
+
+### Structural Emptiness: `FilterOperator.IS_EMPTY`
+
+The `IS_EMPTY` operator lets you match documents where a metadata field is structurally "empty". A field is considered empty if:
+
+- It is **missing** entirely from the document
+- It is explicitly set to **`null`**
+- It exists and is an **empty array `[]`**
+
+This tri-state interpretation is useful when upstream ingestion may omit a key, store `null`, or normalize to an empty list interchangeably.
+
+Implementation details:
+
+| Layer | Translation |
+|-------|-------------|
+| MQL pre-filter (`filters_to_mql`) | Expands one `IS_EMPTY` into a nested `$or` with three branches: `{key: {"$exists": false}}`, `{key: None}`, `{key: []}` |
+| Atlas Search (`filters_to_search_filter`) | Builds a nested compound: two `equals` clauses (null, empty array) plus a `mustNot exists` clause for the missing case. In AND contexts it's wrapped in a `compound.should` group with `minimumShouldMatch: 1`; in OR contexts each branch is added to the top-level `should`. |
+
+Usage examples:
+
+Match documents where `metadata.country` is empty (missing/null/[]):
+
+```python
+filters = MetadataFilters(
+  filters=[
+    MetadataFilter(
+      key="country",  # logical key under metadata
+      value=None,      # pydantic requires value field; ignored for IS_EMPTY
+      operator=FilterOperator.IS_EMPTY,
+    )
+  ]
+)
+vector_filter = filters_to_mql(filters)
+# vector_filter example output:
+# {"$or": [
+#   {"metadata.country": {"$exists": False}},
+#   {"metadata.country": None},
+#   {"metadata.country": []}
+# ]}
+```
+
+Combine allowed list OR emptiness (value present in list OR field missing/null/empty array):
+
+```python
+filters = MetadataFilters(
+  filters=[
+    MetadataFilter(
+      key="country",
+      value=["FR", "CA"],
+      operator=FilterOperator.IN,
+    ),
+    MetadataFilter(
+      key="country",
+      value=None,  # ignored for IS_EMPTY
+      operator=FilterOperator.IS_EMPTY,
+    ),
+  ],
+  condition=FilterCondition.OR,
+)
+```
+
+AND combination (e.g. empty country AND year >= 2024):
+
+```python
+filters = MetadataFilters(
+  filters=[
+    MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY),
+    MetadataFilter(key="year", value=2024, operator=FilterOperator.GTE),
+  ],
+  condition=FilterCondition.AND,
+)
+```
+
+Notes & caveats:
+
+- Equality to an empty array matches only a field stored as `[]`; if your ingestion uses `null` or omission instead, those branches still cover you.
+- `IS_EMPTY` is structural and therefore not mapped in `map_lc_mql_filter_operators`; attempting to call that mapping directly with `IS_EMPTY` will raise.
+- Provide `value=None` when constructing the `MetadataFilter` to satisfy pydantic, though the value is ignored.
+- If you need to exclude just one emptiness form (e.g. treat missing as different from `null`), use explicit negative filters (`NE`, `NIN`) or add a custom ingestion normalization step before indexing.
+

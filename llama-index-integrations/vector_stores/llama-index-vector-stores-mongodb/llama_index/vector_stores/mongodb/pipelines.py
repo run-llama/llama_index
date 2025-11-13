@@ -124,33 +124,25 @@ def filters_to_mql(
             f"{metadata_key}.{key}" if not key.startswith(f"{metadata_key}.") else key
         )
 
+    def _mql_clause(mf: MetadataFilter) -> Dict[str, Any]:
+        key = prepare_key(mf.key)
+        if mf.operator == FilterOperator.IS_EMPTY:
+            return {
+                "$or": [
+                    {key: {"$exists": False}},  # field missing
+                    {key: None},  # field explicitly set to null
+                    {key: []},  # field is an empty array
+                ]
+            }
+        return {key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+
     if len(filters.filters) == 1:
         mf = filters.filters[0]
-        mql = {
-            prepare_key(mf.key): {map_lc_mql_filter_operators(mf.operator): mf.value}
-        }
+        mql = _mql_clause(cast(MetadataFilter, mf))
     elif filters.condition == FilterCondition.AND:
-        mql = {
-            "$and": [
-                {
-                    prepare_key(mf.key): {
-                        map_lc_mql_filter_operators(mf.operator): mf.value
-                    }
-                }
-                for mf in filters.filters
-            ]
-        }
+        mql = {"$and": [_mql_clause(cast(MetadataFilter, mf)) for mf in filters.filters]}
     elif filters.condition == FilterCondition.OR:
-        mql = {
-            "$or": [
-                {
-                    prepare_key(mf.key): {
-                        map_lc_mql_filter_operators(mf.operator): mf.value
-                    }
-                }
-                for mf in filters.filters
-            ]
-        }
+        mql = {"$or": [_mql_clause(cast(MetadataFilter, mf)) for mf in filters.filters]}
     else:
         logger.debug(f"filters.condition not recognized. Returning empty dict")
         mql = {}
@@ -186,6 +178,28 @@ def filters_to_search_filter(
         if operator == FilterOperator.NIN:
             values = value if isinstance(value, list) else [value]
             must_not.append({"in": {"path": path, "value": values}})
+            continue
+
+        if operator == FilterOperator.IS_EMPTY:
+            empty_clauses = [
+                {"equals": {"path": path, "value": None}},  # null
+                {"equals": {"path": path, "value": []}},  # empty array
+            ]
+            empty_clauses.append(
+                {"compound": {"mustNot": [{"exists": {"path": path}}]}}
+            )
+
+            if condition == FilterCondition.OR:
+                should.extend(empty_clauses)
+            else:
+                must.append(
+                    {
+                        "compound": {
+                            "should": empty_clauses,
+                            "minimumShouldMatch": 1,
+                        }
+                    }
+                )
             continue
 
         if operator in (
@@ -291,6 +305,7 @@ def map_lc_mql_filter_operators(operator: FilterOperator) -> str:
         FilterOperator.NIN: "$nin",  # = "nin"  metadata not in value array (string, number)
         # FilterOperator.TEXT_MATCH: "NA", #  not supported as filter. See $text
         # FilterOperator.CONTAINS: "NA", # not supported as filter. Try $in
+        # FilterOperator.IS_EMPTY intentionally omitted (structural: handled separately in filters_to_mql)
     }
     if operator not in operator_map:
         error_msg = f"Unsupported filter operator: {operator}"

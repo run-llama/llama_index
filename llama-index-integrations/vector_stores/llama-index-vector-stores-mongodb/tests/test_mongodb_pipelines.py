@@ -109,3 +109,82 @@ def test_fulltext_search_stage_search_filter_explicit() -> None:
         clause.get("equals") and clause["equals"]["value"] == "en"
         for clause in compound["must"]
     )
+
+
+def test_filters_to_mql_is_empty_single() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY)
+        ]
+    )
+    mql = filters_to_mql(filters)
+    assert "$or" in mql, "IS_EMPTY single filter should expand to $or grouping"
+    clauses = mql["$or"]
+    # Expect three branches: $exists False, None equality, empty array equality
+    keys = [next(iter(c.keys())) for c in clauses]
+    assert all(k == "metadata.country" for k in keys)
+    assert any(clause["metadata.country"] == [] for clause in clauses)
+    assert any(clause["metadata.country"] is None for clause in clauses)
+    assert any(
+        clause["metadata.country"].get("$exists") is False
+        for clause in clauses
+        if isinstance(clause.get("metadata.country"), dict)
+    )
+
+
+def test_filters_to_mql_is_empty_or_with_in() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="country",
+                value=["FR", "CA"],
+                operator=FilterOperator.IN,
+            ),
+            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY),
+        ],
+        condition=FilterCondition.OR,
+    )
+    mql = filters_to_mql(filters)
+    assert "$or" in mql
+    # Ensure first IN clause present
+    assert any(
+        "metadata.country" in clause
+        and isinstance(clause["metadata.country"], dict)
+        and clause["metadata.country"].get("$in") == ["FR", "CA"]
+        for clause in mql["$or"]
+    )
+    # Ensure nested $or for IS_EMPTY present
+    assert any("$or" in clause for clause in mql["$or"])
+
+
+def test_filters_to_search_filter_is_empty() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY)
+        ]
+    )
+    search_filter = filters_to_search_filter(filters)
+    # AND context for single filter -> expect nested compound in must
+    if "must" in search_filter:
+        # find nested compound with should or mustNot exists
+        assert any(
+            clause.get("compound") and (
+                clause["compound"].get("should") or clause["compound"].get("mustNot")
+            )
+            for clause in search_filter["must"]
+        ) or any(
+            clause.get("equals") and clause["equals"]["value"] in (None, [])
+            for clause in search_filter["must"]
+        )
+    else:
+        # OR path (should) -- minimumShouldMatch present
+        assert "should" in search_filter
+        assert search_filter.get("minimumShouldMatch") == 1
+        assert any(
+            clause.get("compound") and clause["compound"].get("mustNot")
+            for clause in search_filter["should"]
+        )
+        assert any(
+            clause.get("equals") and clause["equals"]["value"] in (None, [])
+            for clause in search_filter["should"]
+        )
