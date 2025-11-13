@@ -36,7 +36,11 @@ class TestToolSpec(BaseToolSpec):
         return f"foo {arg1} {arg2}"
 
     def bar(self, arg1: bool) -> str:
-        """Bar."""
+        """
+        Bar.
+
+        With extra.
+        """
         return f"bar {arg1}"
 
     async def afoo(self, arg1: str, arg2: int) -> str:
@@ -75,13 +79,16 @@ def test_tool_spec() -> None:
     assert not tools[0].requires_context
 
     assert tools[1].metadata.name == "bar"
-    assert tools[1].metadata.description == "bar(arg1: bool) -> str\nBar."
+    assert (
+        tools[1].metadata.description
+        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+    )
     assert str(tools[1](True)) == "bar True"
     assert tools[1].ctx_param_name is None
     assert not tools[1].requires_context
 
     assert tools[2].metadata.name == "abc"
-    assert tools[2].metadata.description == "abc(arg1: str) -> str\n"
+    assert tools[2].metadata.description == "abc(arg1: str) -> str"
     assert (
         tools[2].metadata.fn_schema.model_json_schema()["properties"]
         == AbcSchema.model_json_schema()["properties"]
@@ -90,7 +97,7 @@ def test_tool_spec() -> None:
     assert not tools[2].requires_context
 
     assert tools[3].metadata.name == "abc_with_ctx"
-    assert tools[3].metadata.description == "abc_with_ctx(arg1: str) -> str\n"
+    assert tools[3].metadata.description == "abc_with_ctx(arg1: str) -> str"
     assert (
         tools[3].metadata.fn_schema.model_json_schema()["properties"]
         == AbcSchema.model_json_schema()["properties"]
@@ -115,7 +122,10 @@ def test_tool_spec() -> None:
     assert fn_schema["properties"]["arg1"]["type"] == "string"
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"
-    assert tools[1].metadata.description == "bar(arg1: bool) -> str\nBar."
+    assert (
+        tools[1].metadata.description
+        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+    )
     assert tools[1].metadata.fn_schema is not None
     fn_schema = tools[1].metadata.fn_schema.model_json_schema()
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
@@ -155,7 +165,7 @@ def test_tool_spec_subset() -> None:
     tools = tool_spec.to_tool_list(spec_functions=["abc"])
     assert len(tools) == 1
     assert tools[0].metadata.name == "abc"
-    assert tools[0].metadata.description == "abc(arg1: str) -> str\n"
+    assert tools[0].metadata.description == "abc(arg1: str) -> str"
     assert (
         tools[0].metadata.fn_schema.model_json_schema()["properties"]
         == AbcSchema.model_json_schema()["properties"]

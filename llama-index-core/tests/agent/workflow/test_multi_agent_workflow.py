@@ -15,12 +15,13 @@ from llama_index.core.llms import (
 )
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool, ToolSelection
-from llama_index.core.workflow import (
-    Context,
-    WorkflowRuntimeError,
+from workflows import Context
+from workflows.events import (
     HumanResponseEvent,
     InputRequiredEvent,
 )
+from workflows.context import PickleSerializer
+from workflows.errors import WorkflowRuntimeError
 
 
 class MockLLM(MockLLM):
@@ -482,6 +483,73 @@ async def test_max_iterations():
 
     # Set max iterations to 101 to avoid error
     _ = workflow.run(user_msg="test", max_iterations=101)
+
+
+@pytest.mark.asyncio
+async def test_workflow_pickle_serialize_and_resume():
+    """Pause workflow, pickle-serialize context, and resume from serialized context."""
+
+    async def hitl(ctx: Context):
+        resp = await ctx.wait_for_event(
+            HumanResponseEvent,
+            waiter_event=InputRequiredEvent(prefix="Provide your name to continue"),
+        )
+        return f"Your name is {resp.response}"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[hitl],
+        llm=MockLLM(
+            responses=[
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="handing off",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="one",
+                                tool_name="hitl",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
+            ],
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        root_agent="agent",
+    )
+
+    handler = workflow.run(user_msg="test")
+
+    # Wait for pause point, then serialize context with pickle serializer via to_dict
+    ctx_dict = None
+    async for ev in handler.stream_events():
+        if isinstance(ev, InputRequiredEvent):
+            serializer = PickleSerializer()
+            ctx_dict = handler.ctx.to_dict(serializer=serializer)
+
+            await handler.cancel_run()
+            break
+
+    assert ctx_dict is not None
+
+    # Deserialize context and resume workflow using from_dict with serializer
+    serializer = PickleSerializer()
+    new_ctx = Context.from_dict(workflow, ctx_dict, serializer=serializer)
+
+    handler = workflow.run(user_msg="test", ctx=new_ctx)
+    handler.ctx.send_event(HumanResponseEvent(response="Jane Doe"))
+
+    response = await handler
+
+    assert response is not None
+    assert "HITL successful" in str(response)
 
 
 @pytest.mark.asyncio

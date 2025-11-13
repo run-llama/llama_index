@@ -6,45 +6,64 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 DEFAULT_FIREWORKS_API_BASE = "https://api.fireworks.ai/inference/v1"
 DEFAULT_FIREWORKS_API_VERSION = ""
 
-LLAMA_MODELS = {
-    "accounts/fireworks/models/llama-v2-7b-chat": 4096,
-    "accounts/fireworks/models/llama-v2-13b-chat": 4096,
-    "accounts/fireworks/models/llama-v2-70b-chat": 4096,
-    "accounts/fireworks/models/llama-v2-34b-code-instruct": 16384,
-    "accounts/fireworks/models/llamaguard-7b": 4096,
-    "accounts/fireworks/models/llama-v3-8b-instruct": 8192,
-    "accounts/fireworks/models/llama-v3-70b-instruct": 8192,
+SERVERLESS_MODELS = {
+    "accounts/fireworks/models/deepseek-v3p1-terminus": 163840,
+    "accounts/fireworks/models/kimi-k2-instruct-0905": 262144,
+    "accounts/fireworks/models/glm-4p6": 202752,
+    "accounts/fireworks/models/deepseek-v3p1": 163840,
+    "accounts/fireworks/models/gpt-oss-120b": 131072,
+    "accounts/fireworks/models/gpt-oss-20b": 131072,
+    "accounts/fireworks/models/kimi-k2-instruct": 131072,
+    "accounts/fireworks/models/qwen3-235b-a22b-instruct-2507": 262144,
+    "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct": 262144,
+    "accounts/fireworks/models/qwen3-235b-a22b-thinking-2507": 262144,
+    "accounts/fireworks/models/qwen3-235b-a22b": 131072,
+    "accounts/fireworks/models/deepseek-r1-0528": 163840,
+    "accounts/fireworks/models/glm-4p5": 131072,
+    "accounts/fireworks/models/llama4-maverick-instruct-basic": 1048576,
+    "accounts/fireworks/models/qwen2p5-vl-32b-instruct": 128000,
     "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
+    "accounts/fireworks/models/deepseek-v3-0324": 163840,
+    "accounts/fireworks/models/llama-v3p3-70b-instruct": 131072,
     "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
-    "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
-    "accounts/fireworks/models/llama-v3p2-1b-instruct": 131072,
-    "accounts/fireworks/models/llama-v3p2-3b-instruct": 131072,
-    "accounts/fireworks/models/llama-v3p2-11b-vision-instruct": 131072,
-    "accounts/fireworks/models/llama-v3p2-90b-vision-instruct": 131072,
+    "accounts/fireworks/models/llama4-scout-instruct-basic": 1048576,
+    "accounts/fireworks/models/qwen3-8b": 40960,
+    "accounts/fireworks/models/qwen3-embedding-8b": 40960,
+    "accounts/fireworks/models/qwen3-vl-235b-a22b-instruct": 32768,
+    "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking": 32768,
+    "accounts/fireworks/models/qwen3-reranker-8b": 40960,
+    "accounts/fireworks/models/qwen3-vl-30b-a3b-instruct": 32768,
+    "accounts/fireworks/models/qwen3-vl-30b-a3b-thinking": 32768,
+    "accounts/fireworks/models/minimax-m2": 131072,
 }
 
-MISTRAL_MODELS = {
-    "accounts/fireworks/models/mistral-7b-instruct-4k": 16384,
-    "accounts/fireworks/models/mixtral-8x7b-instruct": 32768,
-    "accounts/fireworks/models/firefunction-v1": 32768,
-    "accounts/fireworks/models/mixtral-8x22b-instruct": 65536,
-}
 
 FUNCTION_CALLING_MODELS = {
-    "accounts/fireworks/models/firefunction-v2": 8192,
+    "accounts/fireworks/models/deepseek-v3p1-terminus": 163840,
+    "accounts/fireworks/models/kimi-k2-instruct-0905": 262144,
+    "accounts/fireworks/models/glm-4p6": 202752,
+    "accounts/fireworks/models/deepseek-v3p1": 163840,
+    "accounts/fireworks/models/gpt-oss-120b": 131072,
+    "accounts/fireworks/models/kimi-k2-instruct": 131072,
+    "accounts/fireworks/models/qwen3-235b-a22b-instruct-2507": 262144,
+    "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct": 262144,
+    "accounts/fireworks/models/qwen3-235b-a22b": 131072,
+    "accounts/fireworks/models/deepseek-r1-0528": 163840,
+    "accounts/fireworks/models/glm-4p5": 131072,
+    "accounts/fireworks/models/llama4-maverick-instruct-basic": 1048576,
+    "accounts/fireworks/models/deepseek-v3-0324": 163840,
+    "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
+    "accounts/fireworks/models/llama4-scout-instruct-basic": 1048576,
+    "accounts/fireworks/models/qwen3-8b": 40960,
+    "accounts/fireworks/models/qwen3-vl-235b-a22b-instruct": 32768,
+    "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking": 32768,
+    "accounts/fireworks/models/minimax-m2": 131072,
 }
 
-DEEPSEEK_MODELS = {
-    "accounts/fireworks/models/deepseek-v3": 131072,
-    "accounts/fireworks/models/deepseek-v3p1": 131072,
-    "accounts/fireworks/models/deepseek-r1": 163840,
-}
 
 ALL_AVAILABLE_MODELS = {
-    **LLAMA_MODELS,
-    **MISTRAL_MODELS,
+    **SERVERLESS_MODELS,
     **FUNCTION_CALLING_MODELS,
-    **DEEPSEEK_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}
@@ -66,15 +85,6 @@ def fireworks_modelname_to_contextsize(modelname: str) -> int:
             max_tokens = fireworks_modelname_to_contextsize(model_name)
 
     """
-    # handling finetuned models
-    # TO BE FILLED
-
-    if modelname in DISCONTINUED_MODELS:
-        raise ValueError(
-            f"Fireworks hosted model {modelname} has been discontinued. "
-            "Please choose another model."
-        )
-
     context_size = ALL_AVAILABLE_MODELS.get(modelname)
 
     if context_size is None:
@@ -87,7 +97,8 @@ def fireworks_modelname_to_contextsize(modelname: str) -> int:
 
 
 def is_function_calling_model(model: str) -> bool:
-    return "function" in model
+    """Check if a model supports function calling."""
+    return model in FUNCTION_CALLING_MODELS
 
 
 def _message_to_fireworks_prompt(message: ChatMessage) -> Dict[str, Any]:

@@ -226,6 +226,7 @@ def test_process_response_event():
 
     # Test function call arguments done
     event = ResponseFunctionCallArgumentsDoneEvent(
+        name="test_function",
         item_id="123",
         output_index=0,
         type="response.function_call_arguments.done",

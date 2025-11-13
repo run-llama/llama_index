@@ -1,6 +1,10 @@
+from dataclasses import dataclass
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from typing import Any
+
+from workflows import Workflow
+from workflows.events import Event
 
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
@@ -10,6 +14,23 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import ToolOutput
 from llama_index.core.workflow import Context
 from llama_index.core.memory import BaseMemory
+
+
+@dataclass
+class MockContext:
+    events: list[Event]
+    context: Context
+
+
+def mock_context(workflow: Workflow) -> MockContext:
+    ctx = Context(workflow)
+    events = []
+
+    def write_event_to_stream(event):
+        events.append(event)
+
+    ctx.write_event_to_stream = write_event_to_stream
+    return MockContext(events=events, context=ctx)
 
 
 @pytest.fixture()
@@ -96,11 +117,11 @@ async def test_code_act_agent_basic_execution(
     )
 
     # Create context
-    ctx = Context(agent)
+    mock_ctx = mock_context(agent)
 
     # Take step
     output = await agent.take_step(
-        ctx=ctx,
+        ctx=mock_ctx.context,
         llm_input=[ChatMessage(role="user", content="Say hello")],
         tools=[],
         memory=mock_memory,
@@ -134,11 +155,11 @@ async def test_code_act_agent_tool_handling(
     )
 
     # Create context
-    ctx = Context(agent)
+    mock_ctx = mock_context(agent)
 
     # Take step
     output = await agent.take_step(
-        ctx=ctx,
+        ctx=mock_ctx.context,
         llm_input=[ChatMessage(role="user", content="What is 2 + 2?")],
         tools=[],
         memory=mock_memory,
@@ -156,14 +177,14 @@ async def test_code_act_agent_tool_handling(
             return_direct=False,
         )
     ]
-    await agent.handle_tool_call_results(ctx, tool_results, mock_memory)
+    await agent.handle_tool_call_results(mock_ctx.context, tool_results, mock_memory)
 
     # Verify scratchpad was updated
-    scratchpad = await ctx.store.get("scratchpad")
+    scratchpad = await mock_ctx.context.store.get("scratchpad")
     assert len(scratchpad) == 2  # User message and assistant response
     assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
 
     # Finalize
-    final_output = await agent.finalize(ctx, output, mock_memory)
+    final_output = await agent.finalize(mock_ctx.context, output, mock_memory)
     assert isinstance(final_output, AgentOutput)
     assert mock_memory.aput_messages.called  # Verify memory was updated
