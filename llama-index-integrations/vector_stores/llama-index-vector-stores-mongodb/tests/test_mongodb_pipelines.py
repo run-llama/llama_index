@@ -114,21 +114,20 @@ def test_fulltext_search_stage_search_filter_explicit() -> None:
 def test_filters_to_mql_is_empty_single() -> None:
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY)
+            MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY)
         ]
     )
     mql = filters_to_mql(filters)
     assert "$or" in mql, "IS_EMPTY single filter should expand to $or grouping"
     clauses = mql["$or"]
-    # Expect three branches: $exists False, None equality, empty array equality
+    # Expect two branches: $exists False, None equality (empty array omitted for $vectorSearch pre-filter)
     keys = [next(iter(c.keys())) for c in clauses]
-    assert all(k == "metadata.country" for k in keys)
-    assert any(clause["metadata.country"] == [] for clause in clauses)
-    assert any(clause["metadata.country"] is None for clause in clauses)
+    assert all(k == "metadata.tags" for k in keys)
+    assert any(clause["metadata.tags"] is None for clause in clauses)
     assert any(
-        clause["metadata.country"].get("$exists") is False
+        clause["metadata.tags"].get("$exists") is False
         for clause in clauses
-        if isinstance(clause.get("metadata.country"), dict)
+        if isinstance(clause.get("metadata.tags"), dict)
     )
 
 
@@ -136,11 +135,11 @@ def test_filters_to_mql_is_empty_or_with_in() -> None:
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="country",
-                value=["FR", "CA"],
+                key="tags",
+                value=["news", "ai"],
                 operator=FilterOperator.IN,
             ),
-            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY),
+            MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY),
         ],
         condition=FilterCondition.OR,
     )
@@ -148,19 +147,51 @@ def test_filters_to_mql_is_empty_or_with_in() -> None:
     assert "$or" in mql
     # Ensure first IN clause present
     assert any(
-        "metadata.country" in clause
-        and isinstance(clause["metadata.country"], dict)
-        and clause["metadata.country"].get("$in") == ["FR", "CA"]
+        "metadata.tags" in clause
+        and isinstance(clause["metadata.tags"], dict)
+        and clause["metadata.tags"].get("$in") == ["news", "ai"]
         for clause in mql["$or"]
     )
-    # Ensure nested $or for IS_EMPTY present
-    assert any("$or" in clause for clause in mql["$or"])
+    # Ensure nested $or for IS_EMPTY present (now only two branches: exists False OR null)
+    nested_or = [clause for clause in mql["$or"] if "$or" in clause]
+    assert nested_or, "Nested $or for IS_EMPTY should be present"
+    assert all(len(inner["$or"]) == 2 for inner in nested_or)
+
+
+def test_filters_to_mql_is_empty_or_with_in_prefixed_key() -> None:
+    """Ensure keys already prefixed with `metadata.` are not double-prefixed and expansion is correct."""
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="metadata.tags", value=["opensource"], operator=FilterOperator.IN
+            ),
+            MetadataFilter(
+                key="metadata.tags", value=None, operator=FilterOperator.IS_EMPTY
+            ),
+        ],
+        condition=FilterCondition.OR,
+    )
+    mql = filters_to_mql(filters)
+    assert "$or" in mql
+    # IN clause present without double prefix
+    assert any(
+        "metadata.tags" in clause
+        and isinstance(clause["metadata.tags"], dict)
+        and clause["metadata.tags"].get("$in") == ["opensource"]
+        for clause in mql["$or"]
+    )
+    # Nested OR for IS_EMPTY present (two branches: exists False or null)
+    nested = [clause for clause in mql["$or"] if "$or" in clause]
+    assert nested, "Expected nested $or for IS_EMPTY"
+    assert all(len(inner["$or"]) == 2 for inner in nested)
+    # No empty array literal branch
+    assert all([] not in [sub.get("metadata.tags") for sub in inner["$or"]] for inner in nested)
 
 
 def test_filters_to_search_filter_is_empty() -> None:
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY)
+            MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY)
         ]
     )
     search_filter = filters_to_search_filter(filters)

@@ -131,7 +131,6 @@ def filters_to_mql(
                 "$or": [
                     {key: {"$exists": False}},  # field missing
                     {key: None},  # field explicitly set to null
-                    {key: []},  # field is an empty array
                 ]
             }
         return {key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
