@@ -295,4 +295,3 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
         Interrupts the input/output audio streaming.
         """
         self.interface.interrupt()
-
