@@ -1,3 +1,4 @@
+import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -13,7 +14,6 @@ from sqlalchemy import (
     select,
     insert,
     update,
-    text,
 )
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.schema import CreateSchema
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serializer
@@ -70,6 +71,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         db_schema: Optional[str] = None,
     ):
         """Initialize the SQLAlchemy chat store."""
+        if db_schema is not None:
+            self._validate_schema_name(db_schema)
         super().__init__(
             table_name=table_name,
             async_database_uri=async_database_uri or DEFAULT_ASYNC_DATABASE_URI,
@@ -77,6 +80,15 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         )
         self._async_engine = async_engine
         self._db_data = db_data
+
+    @staticmethod
+    def _validate_schema_name(schema_name: str) -> None:
+        """Validate schema name to prevent SQL injection."""
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]{0,62}$", schema_name):
+            raise ValueError(
+                f"Invalid schema name: {schema_name}. Schema names must start with a letter or underscore, "
+                "contain only alphanumeric characters and underscores, and be at most 63 characters long."
+            )
 
     @staticmethod
     def _is_in_memory_uri(uri: Optional[str]) -> bool:
@@ -140,9 +152,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
             # Create schema if it doesn't exist (PostgreSQL, SQL Server, etc.)
             async with async_engine.begin() as conn:
-                await conn.execute(
-                    text(f'CREATE SCHEMA IF NOT EXISTS "{self.db_schema}"')
-                )
+                await conn.execute(CreateSchema(self.db_schema, if_not_exists=True))
 
         # Create messages table with status column
         self._table = Table(
