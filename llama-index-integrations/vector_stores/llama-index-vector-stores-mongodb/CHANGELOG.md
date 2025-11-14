@@ -16,7 +16,7 @@
 
 - Type safety and static analysis support
 
-## [v0.1.9] - Unreleased
+## [v0.9.0] - Unreleased
 
 ### Performance
 
