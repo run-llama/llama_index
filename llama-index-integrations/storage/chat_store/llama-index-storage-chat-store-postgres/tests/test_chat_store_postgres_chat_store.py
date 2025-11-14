@@ -10,7 +10,10 @@ from sqlalchemy.orm import declarative_base
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.postgres import PostgresChatStore
-from llama_index.storage.chat_store.postgres.base import get_data_model
+from llama_index.storage.chat_store.postgres.base import (
+    get_data_model,
+    _validate_postgres_identifier,
+)
 
 try:
     import asyncpg  # noqa
@@ -25,6 +28,41 @@ except ImportError:
 def test_class():
     names_of_base_classes = [b.__name__ for b in PostgresChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
+
+
+def test_validate_postgres_identifier_valid():
+    valid_identifiers = [
+        "public",
+        "test_schema",
+        "_private",
+        "schema123",
+        "myschema",
+        "a",
+        "A",
+        "_",
+        "a" * 63,
+    ]
+    for identifier in valid_identifiers:
+        _validate_postgres_identifier(identifier, "test")
+
+
+def test_validate_postgres_identifier_invalid():
+    invalid_cases = [
+        ("", "empty string"),
+        ("123invalid", "starts with number"),
+        ("test-schema", "contains hyphen"),
+        ("test.schema", "contains dot"),
+        ("test schema", "contains space"),
+        ("test; DROP DATABASE", "contains semicolon"),
+        ("test' OR '1'='1", "contains quote"),
+        ("test--comment", "contains double hyphen"),
+        ("a" * 64, "exceeds 63 characters"),
+        ("test@schema", "contains special char"),
+        ("test#schema", "contains hash"),
+    ]
+    for identifier, reason in invalid_cases:
+        with pytest.raises(ValueError, match="PostgreSQL"):
+            _validate_postgres_identifier(identifier, "test")
 
 
 @pytest.fixture(scope="session")

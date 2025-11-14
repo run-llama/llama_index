@@ -1,3 +1,4 @@
+import re
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -13,11 +14,26 @@ from sqlalchemy import (
     inspect,
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.schema import CreateSchema
 from llama_index.core.llms import ChatMessage
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.dialects.postgresql import JSON, ARRAY, JSONB, VARCHAR
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.storage.chat_store.base import BaseChatStore
+
+
+def _validate_postgres_identifier(
+    identifier: str, identifier_type: str = "identifier"
+) -> None:
+    if not identifier:
+        raise ValueError(f"PostgreSQL {identifier_type} cannot be empty")
+    if len(identifier) > 63:
+        raise ValueError(f"PostgreSQL {identifier_type} cannot exceed 63 characters")
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", identifier):
+        raise ValueError(
+            f"PostgreSQL {identifier_type} must start with a letter or underscore "
+            f"and contain only letters, numbers, and underscores"
+        )
 
 
 def get_data_model(
@@ -88,22 +104,26 @@ class PostgresChatStore(BaseChatStore):
         schema_name: str = "public",
         use_jsonb: bool = False,
     ):
+        table_name_lower = table_name.lower()
+        schema_name_lower = schema_name.lower()
+
+        _validate_postgres_identifier(table_name_lower, "table name")
+        _validate_postgres_identifier(schema_name_lower, "schema name")
+
         super().__init__(
-            table_name=table_name.lower(),
-            schema_name=schema_name.lower(),
+            table_name=table_name_lower,
+            schema_name=schema_name_lower,
         )
 
-        # Check if legacy table (with 'data_' prefix) exists
         use_legacy_table_name = self._check_legacy_table_exists(
-            session, self.table_name, self.schema_name
+            session, table_name_lower, schema_name_lower
         )
 
-        # sqlalchemy model
         base = declarative_base()
         self._table_class = get_data_model(
             base,
-            self.table_name,
-            self.schema_name,
+            table_name_lower,
+            schema_name_lower,
             use_jsonb=use_jsonb,
             use_legacy_table_name=use_legacy_table_name,
         )
@@ -198,19 +218,8 @@ class PostgresChatStore(BaseChatStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            # Check if the specified schema exists with "CREATE" statement
-            check_schema_statement = text(
-                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
-            )
-            result = session.execute(check_schema_statement).fetchone()
-
-            # If the schema does not exist, then create it
-            if not result:
-                create_schema_statement = text(
-                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
-                )
-                session.execute(create_schema_statement)
-
+            create_schema_statement = CreateSchema(self.schema_name, if_not_exists=True)
+            session.execute(create_schema_statement)
             session.commit()
 
     def _create_tables_if_not_exists(self, base) -> None:
