@@ -236,6 +236,7 @@ class Vllm(LLM):
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
+            "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_new_tokens,
             "n": self.n,
@@ -435,8 +436,7 @@ class VllmServer(Vllm):
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=False)
         output = get_response(response)
-
-        return CompletionResponse(text=output[0])
+        return CompletionResponse(text=output)
 
     @llm_completion_callback()
     def stream_complete(

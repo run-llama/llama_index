@@ -6,7 +6,9 @@ import requests
 
 def get_response(response: requests.Response) -> List[str]:
     data = json.loads(response.content)
-    return data["text"]
+    if "text" not in data and "choices" in data:
+        return data["choices"][0]["text"]
+    return data["text"][0]
 
 
 def post_http_request(
