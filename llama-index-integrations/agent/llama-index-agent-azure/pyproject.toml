@@ -34,7 +34,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "azure-ai-projects >= 1.0.0b11",
+    "azure-ai-projects >= 1.0.0b11, < 2.0.0",
     "azure-ai-agents >= 1.0.0b3",
     "azure-identity",
     "openai>=1.14.0",
