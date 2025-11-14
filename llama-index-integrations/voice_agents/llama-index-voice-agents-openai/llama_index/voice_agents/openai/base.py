@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 from .utils import get_tool_by_name
 
 DEFAULT_WS_URL = "wss://api.openai.com/v1/realtime"
-DEFALT_MODEL = "gpt-4o-realtime-preview"
+DEFAULT_MODEL = "gpt-4o-realtime-preview"
 
 
 class OpenAIVoiceAgent(BaseVoiceAgent):
@@ -67,7 +67,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
         )
         if not self.ws:
             if not model:
-                model = DEFALT_MODEL
+                model = DEFAULT_MODEL
             if not self.ws_url:
                 self.ws_url = DEFAULT_WS_URL
             url = self.ws_url + "?model=" + model
