@@ -10,7 +10,7 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
 
 
 class DefaultToolFnSchema(BaseModel):
@@ -99,6 +99,8 @@ class ToolOutput(BaseModel):
     raw_output: Any
     is_error: bool = False
 
+    _exception: Optional[Exception] = PrivateAttr(default=None)
+
     def __init__(
         self,
         tool_name: str,
@@ -107,6 +109,7 @@ class ToolOutput(BaseModel):
         raw_input: Optional[Dict[str, Any]] = None,
         raw_output: Optional[Any] = None,
         is_error: bool = False,
+        exception: Optional[Exception] = None,
     ):
         if content and blocks:
             raise ValueError("Cannot provide both content and blocks.")
@@ -125,6 +128,8 @@ class ToolOutput(BaseModel):
             is_error=is_error,
         )
 
+        self._exception = exception
+
     @property
     def content(self) -> str:
         """Get the content of the tool output."""
@@ -136,6 +141,11 @@ class ToolOutput(BaseModel):
     def content(self, content: str) -> None:
         """Set the content of the tool output."""
         self.blocks = [TextBlock(text=content)]
+
+    @property
+    def exception(self) -> Optional[Exception]:
+        """Get the exception of the tool output."""
+        return self._exception
 
     def __str__(self) -> str:
         """String."""

@@ -1,7 +1,7 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Sequence, Optional
+from typing import Any, Callable, Dict, List, Sequence
 from typing_extensions import Annotated
 
 from llama_index.core.bridge.pydantic import (
@@ -39,7 +39,7 @@ def _serialize_id_func(f: Callable) -> Any:
 
 IdFuncCallable = Annotated[
     Callable,
-    Field(validate_default=True),
+    Field(),
     BeforeValidator(_validate_id_func),
     WithJsonSchema({"type": "string"}, mode="serialization"),
     WithJsonSchema({"type": "string"}, mode="validation"),
@@ -60,8 +60,8 @@ class NodeParser(TransformComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
-    id_func: Optional[IdFuncCallable] = Field(
-        default=None,
+    id_func: IdFuncCallable = Field(
+        default=default_id_func,
         description="Function to generate node IDs.",
     )
 

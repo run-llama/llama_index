@@ -33,6 +33,7 @@ class FunctionAgent(BaseWorkflowAgent):
     ) -> ChatResponse:
         chat_kwargs = {
             "chat_history": current_llm_input,
+            "allow_parallel_tool_calls": self.allow_parallel_tool_calls,
             "tools": tools,
         }
 

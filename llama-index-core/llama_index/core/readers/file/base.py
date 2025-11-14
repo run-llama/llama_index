@@ -736,6 +736,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         """
         documents = []
 
+        fs = fs or self.fs
         load_file_with_args = partial(
             SimpleDirectoryReader.load_file,
             file_metadata=self.file_metadata,
@@ -746,7 +747,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             raise_on_error=self.raise_on_error,
             fs=fs,
         )
-        fs = fs or self.fs
 
         if num_workers and num_workers > 1:
             num_cpus = multiprocessing.cpu_count()

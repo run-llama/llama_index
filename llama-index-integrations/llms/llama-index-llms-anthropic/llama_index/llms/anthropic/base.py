@@ -13,8 +13,9 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
-
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -23,6 +24,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     ContentBlock,
+    ToolCallBlock,
 )
 from llama_index.core.base.llms.types import TextBlock as LITextBlock
 from llama_index.core.base.llms.types import CitationBlock as LICitationBlock
@@ -35,7 +37,6 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
-from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
@@ -44,6 +45,7 @@ from llama_index.llms.anthropic.utils import (
     is_anthropic_prompt_caching_supported_model,
     is_function_calling_model,
     messages_to_anthropic_messages,
+    update_tool_calls,
 )
 
 import anthropic
@@ -57,6 +59,9 @@ from anthropic.types import (
     RawContentBlockDeltaEvent,
     RawContentBlockStartEvent,
     RawContentBlockStopEvent,
+    RawMessageDeltaEvent,
+    RawMessageStartEvent,
+    RawMessageStopEvent,
     TextBlock,
     TextDelta,
     ThinkingBlock,
@@ -351,8 +356,7 @@ class Anthropic(FunctionCallingLLM):
 
     def _get_blocks_and_tool_calls_and_thinking(
         self, response: Any
-    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]]:
-        tool_calls = []
+    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]]]:
         blocks: List[ContentBlock] = []
         citations: List[TextCitation] = []
         tracked_citations: Set[str] = set()
@@ -392,9 +396,15 @@ class Anthropic(FunctionCallingLLM):
                     )
                 )
             elif isinstance(content_block, ToolUseBlock):
-                tool_calls.append(content_block.model_dump())
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=content_block.id,
+                        tool_kwargs=cast(Dict[str, Any] | str, content_block.input),
+                        tool_name=content_block.name,
+                    )
+                )
 
-        return blocks, tool_calls, [x.model_dump() for x in citations]
+        return blocks, [x.model_dump() for x in citations]
 
     @llm_chat_callback()
     def chat(
@@ -412,17 +422,12 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
-            response
-        )
+        blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
-                additional_kwargs={
-                    "tool_calls": tool_calls,
-                },
             ),
             citations=citations,
             raw=dict(response),
@@ -460,6 +465,9 @@ class Anthropic(FunctionCallingLLM):
             cur_citations: List[Dict[str, Any]] = []
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
+            # Track usage metadata and stop_reason from RawMessage events
+            usage_metadata: Dict[str, Any] = {}
+            stop_reason: Optional[str] = None
             for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
@@ -472,6 +480,7 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
                     ):
+                        content_delta = ""
                         citation = r.delta.citation
                         if str(citation) not in tracked_citations:
                             tracked_citations.add(str(citation))
@@ -488,6 +497,7 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
+                        content_delta = ""
                         if not isinstance(cur_block, LIThinkingBlock):
                             cur_block = LIThinkingBlock(
                                 content="",
@@ -498,6 +508,7 @@ class Anthropic(FunctionCallingLLM):
                                 r.delta.signature
                             )
                     elif isinstance(r.delta, ThinkingDelta):
+                        content_delta = ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
                                 content=r.delta.thinking or "",
@@ -506,21 +517,22 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
+                        content_delta = ""
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
                     elif isinstance(r.delta, InputJSONDelta) and not isinstance(
                         cur_tool_call, ToolUseBlock
                     ):
                         # TODO: handle server-side tool calls
-                        pass
+                        content_delta = ""
                     else:
+                        content_delta = ""
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError(
                                 "Tool call not started, but got block type "
                                 + str(type(r.delta))
                             )
-                        content_delta = r.delta.partial_json
-                        cur_tool_json += content_delta
+                        cur_tool_json += r.delta.partial_json or ""
                         try:
                             argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
@@ -532,12 +544,21 @@ class Anthropic(FunctionCallingLLM):
                     else:
                         tool_calls_to_send = cur_tool_calls
 
+                    for tool_call in tool_calls_to_send:
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
                             },
                         ),
                         citations=cur_citations,
@@ -556,18 +577,66 @@ class Anthropic(FunctionCallingLLM):
                         content.append(cur_block)
                         cur_block = None
 
+                    if cur_tool_call is not None:
+                        tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
+                    else:
+                        tool_calls_to_send = cur_tool_calls
+
+                    for tool_call in tool_calls_to_send:
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
                             },
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
+                elif isinstance(r, RawMessageStartEvent):
+                    # Capture initial usage metadata from message_start
+                    if hasattr(r.message, "usage") and r.message.usage:
+                        usage_metadata = {
+                            "input_tokens": r.message.usage.input_tokens,
+                            "output_tokens": r.message.usage.output_tokens,
+                        }
+                elif isinstance(r, RawMessageDeltaEvent):
+                    # Update usage metadata and capture stop_reason from message_delta
+                    if hasattr(r, "usage") and r.usage:
+                        usage_metadata = {
+                            "input_tokens": r.usage.input_tokens,
+                            "output_tokens": r.usage.output_tokens,
+                        }
+                    if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
+                        stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
+                elif isinstance(r, RawMessageStopEvent):
+                    # Final event - no additional data to capture
+                    pass
 
         return gen()
 
@@ -600,17 +669,12 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
-            response
-        )
+        blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
-                additional_kwargs={
-                    "tool_calls": tool_calls,
-                },
             ),
             citations=citations,
             raw=dict(response),
@@ -648,6 +712,9 @@ class Anthropic(FunctionCallingLLM):
             cur_citations: List[Dict[str, Any]] = []
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
+            # Track usage metadata and stop_reason from RawMessage events
+            usage_metadata: Dict[str, Any] = {}
+            stop_reason: Optional[str] = None
             async for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
@@ -660,6 +727,7 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
                     ):
+                        content_delta = ""
                         citation = r.delta.citation
                         if str(citation) not in tracked_citations:
                             tracked_citations.add(str(citation))
@@ -676,6 +744,7 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
+                        content_delta = ""
                         if not isinstance(cur_block, LIThinkingBlock):
                             cur_block = LIThinkingBlock(
                                 content="",
@@ -686,6 +755,7 @@ class Anthropic(FunctionCallingLLM):
                                 r.delta.signature
                             )
                     elif isinstance(r.delta, ThinkingDelta):
+                        content_delta = ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
                                 content=r.delta.thinking or "",
@@ -694,21 +764,22 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
+                        content_delta = ""
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
                     elif isinstance(r.delta, InputJSONDelta) and not isinstance(
                         cur_tool_call, ToolUseBlock
                     ):
                         # TODO: handle server-side tool calls
-                        pass
+                        content_delta = ""
                     else:
+                        content_delta = ""
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError(
                                 "Tool call not started, but got block type "
                                 + str(type(r.delta))
                             )
-                        content_delta = r.delta.partial_json
-                        cur_tool_json += content_delta
+                        cur_tool_json += r.delta.partial_json or ""
                         try:
                             argument_dict = parse_partial_json(cur_tool_json)
                             cur_tool_call.input = argument_dict
@@ -720,12 +791,21 @@ class Anthropic(FunctionCallingLLM):
                     else:
                         tool_calls_to_send = cur_tool_calls
 
+                    for tool_call in tool_calls_to_send:
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
                             },
                         ),
                         citations=cur_citations,
@@ -744,18 +824,66 @@ class Anthropic(FunctionCallingLLM):
                         content.append(cur_block)
                         cur_block = None
 
+                    if cur_tool_call is not None:
+                        tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
+                    else:
+                        tool_calls_to_send = cur_tool_calls
+
+                    for tool_call in tool_calls_to_send:
+                        tc = ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.name,
+                            tool_kwargs=cast(Dict[str, Any] | str, tool_call.input),
+                        )
+                        update_tool_calls(content, tc)
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
                             },
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
+                elif isinstance(r, RawMessageStartEvent):
+                    # Capture initial usage metadata from message_start
+                    if hasattr(r.message, "usage") and r.message.usage:
+                        usage_metadata = {
+                            "input_tokens": r.message.usage.input_tokens,
+                            "output_tokens": r.message.usage.output_tokens,
+                        }
+                elif isinstance(r, RawMessageDeltaEvent):
+                    # Update usage metadata and capture stop_reason from message_delta
+                    if hasattr(r, "usage") and r.usage:
+                        usage_metadata = {
+                            "input_tokens": r.usage.input_tokens,
+                            "output_tokens": r.usage.output_tokens,
+                        }
+                    if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
+                        stop_reason = r.delta.stop_reason
+
+                    # Yield a final chunk with updated metadata including stop_reason
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "usage": usage_metadata if usage_metadata else None,
+                                "stop_reason": stop_reason,
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta="",
+                        raw=dict(r),
+                    )
+                elif isinstance(r, RawMessageStopEvent):
+                    # Final event - no additional data to capture
+                    pass
 
         return gen()
 
@@ -859,7 +987,11 @@ class Anthropic(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -871,24 +1003,16 @@ class Anthropic(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if (
-                "input" not in tool_call
-                or "id" not in tool_call
-                or "name" not in tool_call
-            ):
-                raise ValueError("Invalid tool call.")
-            if tool_call["type"] != "tool_use":
-                raise ValueError("Invalid tool type. Unsupported by Anthropic")
             argument_dict = (
-                json.loads(tool_call["input"])
-                if isinstance(tool_call["input"], str)
-                else tool_call["input"]
+                json.loads(tool_call.tool_kwargs)
+                if isinstance(tool_call.tool_kwargs, str)
+                else tool_call.tool_kwargs
             )
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["id"],
-                    tool_name=tool_call["name"],
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )

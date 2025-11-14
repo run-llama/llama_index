@@ -210,7 +210,39 @@ class PandasQueryEngine(BaseQueryEngine):
         return Response(response=response_str, metadata=response_metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
-        return self._query(query_bundle)
+        """Answer a query asynchronously."""
+        context = self._get_table_context()
+
+        pandas_response_str = await self._llm.apredict(
+            self._pandas_prompt,
+            df_str=context,
+            query_str=query_bundle.query_str,
+            instruction_str=self._instruction_str,
+        )
+
+        if self._verbose:
+            print_text(f"> Pandas Instructions:\n```\n{pandas_response_str}\n```\n")
+        pandas_output = self._instruction_parser.parse(pandas_response_str)
+        if self._verbose:
+            print_text(f"> Pandas Output: {pandas_output}\n")
+
+        response_metadata = {
+            "pandas_instruction_str": pandas_response_str,
+            "raw_pandas_output": pandas_output,
+        }
+        if self._synthesize_response:
+            response_str = str(
+                await self._llm.apredict(
+                    self._response_synthesis_prompt,
+                    query_str=query_bundle.query_str,
+                    pandas_instructions=pandas_response_str,
+                    pandas_output=pandas_output,
+                )
+            )
+        else:
+            response_str = str(pandas_output)
+
+        return Response(response=response_str, metadata=response_metadata)
 
 
 # legacy

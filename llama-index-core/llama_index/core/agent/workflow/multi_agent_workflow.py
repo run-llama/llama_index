@@ -10,6 +10,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
+    _get_waiting_for_event_exception,
 )
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.prompts import (
@@ -304,12 +305,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             else:
                 tool_output = await tool.acall(**tool_input)
         except Exception as e:
+            event_exception = _get_waiting_for_event_exception()
+            if event_exception and isinstance(e, event_exception):
+                raise
             tool_output = ToolOutput(
                 content=str(e),
                 tool_name=tool.metadata.get_name(),
                 raw_input=tool_input,
                 raw_output=str(e),
                 is_error=True,
+                exception=e,
             )
 
         return tool_output
