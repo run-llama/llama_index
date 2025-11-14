@@ -33,5 +33,5 @@
 
 ### Internal
 
-- Reordered operator handling in `filters_to_search_filter` to group negatives, structural emptiness, then range/in/equals for consistency.
+- Reordered operator handling in `filters_to_atlas_search_compound` to group negatives, structural emptiness, then range/in/equals for consistency.
 - Clarified that `IS_EMPTY` is structurally handled and intentionally omitted from `map_lc_mql_filter_operators`.

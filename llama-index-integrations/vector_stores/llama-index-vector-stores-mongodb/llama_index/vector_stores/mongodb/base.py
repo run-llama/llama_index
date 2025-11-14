@@ -26,7 +26,7 @@ from llama_index.core.vector_stores.utils import (
 from llama_index.vector_stores.mongodb.pipelines import (
     combine_pipelines,
     filters_to_mql,
-    filters_to_search_filter,
+    filters_to_atlas_search_compound,
     final_hybrid_stage,
     fulltext_search_stage,
     reciprocal_rank_stage,
@@ -264,7 +264,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         dense_top_k = query.similarity_top_k
 
         vector_filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
-        search_filter = filters_to_search_filter(
+        search_filter = filters_to_atlas_search_compound(
             query.filters, metadata_key=self._metadata_key
         )
 

@@ -67,7 +67,7 @@ def fulltext_search_stage(
     text_clause = {operator: {"query": query, "path": search_field}}
     compound: Dict[str, Any] = {"must": [text_clause]}
 
-    # Merge in optional Atlas Search compound clauses produced by filters_to_search_filter or legacy `filter`.
+    # Merge in optional Atlas Search compound clauses produced by filters_to_atlas_search_compound or legacy `filter`.
     # "search_filter" expected shape: {must: [...], should: [...], mustNot: [...], minimumShouldMatch: int}
     if search_filter:
         if search_filter.get("must"):
@@ -149,7 +149,7 @@ def filters_to_mql(
     return mql
 
 
-def filters_to_search_filter(
+def filters_to_atlas_search_compound(
     filters: Optional[MetadataFilters], metadata_key: str = "metadata"
 ) -> Dict[str, Any]:
     """Converts MetadataFilters into Atlas Search compound filter format."""

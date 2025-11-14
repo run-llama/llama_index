@@ -1,7 +1,7 @@
 import pytest
 
 from llama_index.vector_stores.mongodb.pipelines import (
-    filters_to_search_filter,
+    filters_to_atlas_search_compound,
     filters_to_mql,
     fulltext_search_stage,
     vector_search_stage,
@@ -14,7 +14,7 @@ from llama_index.core.vector_stores.types import (
 )
 
 
-def test_filters_to_search_filter_and_logic() -> None:
+def test_filters_to_atlas_search_compound_and_logic() -> None:
     filters = MetadataFilters(
         filters=[
             MetadataFilter(key="year", value=2020, operator=FilterOperator.GTE),
@@ -22,14 +22,14 @@ def test_filters_to_search_filter_and_logic() -> None:
         ],
         condition=FilterCondition.AND,
     )
-    result = filters_to_search_filter(filters)
+    result = filters_to_atlas_search_compound(filters)
     assert "must" in result
     # range for year + equals for genre
     assert any(clause.get("range") for clause in result["must"])  # year
     assert any(clause.get("equals") for clause in result["must"])  # genre
 
 
-def test_filters_to_search_filter_or_logic_with_negatives() -> None:
+def test_filters_to_atlas_search_compound_or_logic_with_negatives() -> None:
     filters = MetadataFilters(
         filters=[
             MetadataFilter(key="category", value=["a", "b"], operator=FilterOperator.IN),
@@ -37,7 +37,7 @@ def test_filters_to_search_filter_or_logic_with_negatives() -> None:
         ],
         condition=FilterCondition.OR,
     )
-    result = filters_to_search_filter(filters)
+    result = filters_to_atlas_search_compound(filters)
     assert "should" in result and result["minimumShouldMatch"] == 1
     # NE should land in mustNot
     assert "mustNot" in result and any(
@@ -188,13 +188,13 @@ def test_filters_to_mql_is_empty_or_with_in_prefixed_key() -> None:
     assert all([] not in [sub.get("metadata.tags") for sub in inner["$or"]] for inner in nested)
 
 
-def test_filters_to_search_filter_is_empty() -> None:
+def test_filters_to_atlas_search_compound_is_empty() -> None:
     filters = MetadataFilters(
         filters=[
             MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY)
         ]
     )
-    search_filter = filters_to_search_filter(filters)
+    search_filter = filters_to_atlas_search_compound(filters)
     # AND context for single filter -> expect nested compound in must
     if "must" in search_filter:
         # find nested compound with should or mustNot exists
