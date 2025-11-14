@@ -11,7 +11,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 
 from .conftest import lock
 
@@ -42,6 +42,12 @@ def test_vectorstore(
         # 1. Test add()
         ids = vector_store.add(nodes)
         assert set(ids) == {node.node_id for node in nodes}
+        # Post-ingest stabilization (avoid transient zero-result queries right after insert)
+        for _ in range(5):
+            if vector_store._collection.count_documents({}) >= len(ids):
+                break
+            sleep(1)
+        sleep(2)
 
         # 2a. test query(): default (vector search)
         query_str = "What are LLMs useful for?"
@@ -178,3 +184,191 @@ def test_vectorstore(
             else:
                 retries = 0
         assert n_remaining == n_docs - 1
+
+
+# Shared test data setup for DEFAULT mode filter tests
+def _setup_default_mode_filter_test_data(vector_store: MongoDBAtlasVectorSearch) -> None:
+    """Configure index and insert test data for DEFAULT mode filter tests."""
+    collection = vector_store._collection
+    vector_index_name = vector_store._vector_index_name
+
+    # Update vector index to include filter paths
+    index.update_vector_search_index(
+        collection=collection,
+        index_name=vector_index_name,
+        dimensions=1536,
+        path="embedding",
+        similarity="cosine",
+        filters=["metadata.category", "metadata.priority", "metadata.tags"],
+        wait_until_complete=120,
+    )
+
+    # Clean and insert test data
+    vector_store._collection.delete_many({})
+    sleep(1)
+
+    test_nodes = [
+        TextNode(
+            text="Machine learning fundamentals",
+            embedding=[0.9] * 1536,
+            metadata={"category": "ai", "priority": "high", "tags": ["ml", "education"]}
+        ),
+        TextNode(
+            text="Deep learning with neural networks",
+            embedding=[0.85] * 1536,
+            metadata={"category": "ai", "priority": "low", "tags": ["dl", "education"]}
+        ),
+        TextNode(
+            text="Cooking recipes and techniques",
+            embedding=[0.1] * 1536,
+            metadata={"category": "cooking", "priority": "high", "tags": ["recipes"]}
+        ),
+        TextNode(
+            text="Travel destinations in Europe",
+            embedding=[0.05] * 1536,
+            metadata={"category": "travel", "priority": "low", "tags": ["europe"]}
+        ),
+    ]
+
+    ids = vector_store.add(test_nodes)
+    assert len(ids) == 4
+
+    # Wait for indexing
+    for _ in range(5):
+        if vector_store._collection.count_documents({}) >= len(ids):
+            break
+        sleep(1)
+    sleep(7)  # Index rebuild + propagation
+
+
+def test_default_mode_filter_eq_operator_applies_at_database_level(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
+    """
+    Verify EQ filter applied at MongoDB $vectorSearch stage, not post-processed.
+    """
+    with lock:
+        _setup_default_mode_filter_test_data(vector_store)
+
+        query = VectorStoreQuery(
+            query_embedding=[0.88] * 1536,
+            similarity_top_k=10,
+            mode=VectorStoreQueryMode.DEFAULT,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ)
+                ]
+            )
+        )
+
+        # Retry for index propagation
+        result = None
+        for _ in range(10):
+            result = vector_store.query(query)
+            if len(result.nodes) >= 2:
+                break
+            sleep(2)
+
+        assert result is not None
+        assert len(result.nodes) == 2
+        assert all(node.metadata.get("category") == "ai" for node in result.nodes)
+
+        vector_store._collection.delete_many({})
+
+
+def test_default_mode_filter_in_operator_applies_at_database_level(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
+    """
+    Verify IN filter with multiple values applied at MongoDB $vectorSearch stage.
+    """
+    with lock:
+        _setup_default_mode_filter_test_data(vector_store)
+
+        query = VectorStoreQuery(
+            query_embedding=[0.88] * 1536,
+            similarity_top_k=10,
+            mode=VectorStoreQueryMode.DEFAULT,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="tags", value=["ml", "recipes"], operator=FilterOperator.IN)
+                ]
+            )
+        )
+
+        result = vector_store.query(query)
+
+        assert len(result.nodes) == 2
+        assert all(
+            any(tag in node.metadata.get("tags", []) for tag in ["ml", "recipes"])
+            for node in result.nodes
+        )
+
+        vector_store._collection.delete_many({})
+
+
+def test_default_mode_filter_and_condition_applies_at_database_level(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
+    """
+    Verify compound AND filter applied at MongoDB $vectorSearch stage.
+    """
+    with lock:
+        _setup_default_mode_filter_test_data(vector_store)
+
+        query = VectorStoreQuery(
+            query_embedding=[0.88] * 1536,
+            similarity_top_k=10,
+            mode=VectorStoreQueryMode.DEFAULT,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ),
+                    MetadataFilter(key="priority", value="high", operator=FilterOperator.EQ),
+                ],
+                condition=FilterCondition.AND
+            )
+        )
+
+        result = vector_store.query(query)
+
+        assert len(result.nodes) == 1
+        assert result.nodes[0].metadata.get("category") == "ai"
+        assert result.nodes[0].metadata.get("priority") == "high"
+
+        vector_store._collection.delete_many({})
+
+
+def test_default_mode_filter_or_condition_applies_at_database_level(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
+    """
+    Verify compound OR filter applied at MongoDB $vectorSearch stage.
+    """
+    with lock:
+        _setup_default_mode_filter_test_data(vector_store)
+
+        query = VectorStoreQuery(
+            query_embedding=[0.88] * 1536,
+            similarity_top_k=10,
+            mode=VectorStoreQueryMode.DEFAULT,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="category", value="cooking", operator=FilterOperator.EQ),
+                    MetadataFilter(key="priority", value="high", operator=FilterOperator.EQ),
+                ],
+                condition=FilterCondition.OR
+            )
+        )
+
+        # Retry for index propagation
+        result = None
+        for _ in range(10):
+            result = vector_store.query(query)
+            if len(result.nodes) >= 2:
+                break
+            sleep(2)
+
+        assert result is not None
+        assert len(result.nodes) == 2
+
+        vector_store._collection.delete_many({})
