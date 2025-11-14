@@ -218,8 +218,13 @@ class PostgresChatStore(BaseChatStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            create_schema_statement = CreateSchema(self.schema_name, if_not_exists=True)
-            session.execute(create_schema_statement)
+            inspector = inspect(session.connection())
+            existing_schemas = inspector.get_schema_names()
+
+            if self.schema_name not in existing_schemas:
+                create_schema_statement = CreateSchema(self.schema_name)
+                session.execute(create_schema_statement)
+
             session.commit()
 
     def _create_tables_if_not_exists(self, base) -> None:
