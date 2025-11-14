@@ -1,10 +1,21 @@
+"""Integration tests for MongoDB Atlas hybrid search functionality."""
 import os
+import time
+
 import pytest
 
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 
+# Configuration
 MONGODB_URI = os.environ.get("MONGODB_URI")
 DB_NAME = os.environ.get("MONGODB_DATABASE", "llama_index_test_db")
 COLLECTION_NAME = "llama_index_test_hybrid"
@@ -12,14 +23,174 @@ VECTOR_INDEX_NAME = "vector_index_hybrid"
 TEXT_INDEX_NAME = "text_index_hybrid"
 DIM = 8
 TIMEOUT = 120
+MAX_RETRY_ATTEMPTS = 8
+RETRY_DELAY = 1.5
+
+
+def _ensure_index_config(collection, index_name: str, index_type: str) -> None:
+    """Ensure search index exists with proper configuration.
+    
+    Args:
+        collection: MongoDB collection
+        index_name: Name of the index
+        index_type: Either 'vector' or 'text'
+    """
+    existing = {idx["name"]: idx for idx in collection.list_search_indexes()}
+    
+    if index_type == "vector":
+        if index_name not in existing:
+            index.create_vector_search_index(
+                collection=collection,
+                index_name=index_name,
+                dimensions=DIM,
+                path="embedding",
+                similarity="cosine",
+                filters=["metadata.tags"],
+                wait_until_complete=TIMEOUT,
+            )
+        else:
+            # Update to ensure tags filter exists
+            index.update_vector_search_index(
+                collection=collection,
+                index_name=index_name,
+                dimensions=DIM,
+                path="embedding",
+                similarity="cosine",
+                filters=["metadata.tags"],
+                wait_until_complete=TIMEOUT,
+            )
+    
+    elif index_type == "text":
+        text_mapping = {
+            "mappings": {
+                "dynamic": False,
+                "fields": {
+                    "text": {"type": "string"},
+                    "metadata": {
+                        "type": "document",
+                        "fields": {"tags": {"type": "string"}},
+                    },
+                },
+            }
+        }
+        
+        if index_name not in existing:
+            index.create_fulltext_search_index(
+                collection=collection,
+                index_name=index_name,
+                field="text",
+                field_type="string",
+                wait_until_complete=TIMEOUT,
+            )
+            collection.update_search_index(name=index_name, definition=text_mapping)
+        else:
+            # Ensure metadata.tags mapping exists
+            collection.update_search_index(name=index_name, definition=text_mapping)
+
+
+def _wait_for_indexing(vector_store: MongoDBAtlasVectorSearch, timeout: int = 30) -> None:
+    """Wait until documents are searchable via vector query.
+
+    Args:
+        vector_store: MongoDB vector store instance
+        timeout: Maximum wait time in seconds
+
+    Raises:
+        TimeoutError: If documents not searchable within timeout
+    """
+    query = VectorStoreQuery(
+        query_embedding=[0.9] * DIM,
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT
+    )
+
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        try:
+            if vector_store.query(query).nodes:
+                return
+        except Exception:
+            pass
+        time.sleep(0.5)
+    
+    raise TimeoutError(f"Documents not searchable after {timeout}s")
+
+
+def _query_with_retry(
+    vector_store: MongoDBAtlasVectorSearch,
+    query: VectorStoreQuery,
+    min_results: int = 1,
+    max_attempts: int = MAX_RETRY_ATTEMPTS,
+    delay: float = RETRY_DELAY
+):
+    """Execute query with retry logic for index propagation delays.
+
+    Args:
+        vector_store: MongoDB vector store instance
+        query: Query to execute
+        min_results: Minimum expected results
+        max_attempts: Maximum retry attempts
+        delay: Delay between retries in seconds
+        
+    Returns:
+        Query result
+
+    Raises:
+        AssertionError: If minimum results not achieved after all attempts
+    """
+    for attempt in range(max_attempts):
+        result = vector_store.query(query)
+        if len(result.nodes) >= min_results:
+            return result
+        time.sleep(delay if attempt < max_attempts // 2 else delay * 2)
+    
+    raise AssertionError(
+        f"Query returned {len(result.nodes)} nodes after {max_attempts} attempts, "
+        f"expected at least {min_results}"
+    )
+
+
+def _create_test_nodes() -> list[TextNode]:
+    """Create test data nodes with predictable embeddings and metadata.
+
+    Returns nodes with two groups:
+    - Group A: High vector similarity ([0.85-0.9]), contains 'alpha' text, has tags
+    - Group B: Low vector similarity ([0.1-0.2]), no 'alpha' text, varied tag presence
+    """
+    return [
+        TextNode(
+            text="alpha beta gamma",
+            embedding=[0.9] * DIM,
+            metadata={"group": "A", "tags": ["alpha", "news"]}
+        ),
+        TextNode(
+            text="alpha beta",
+            embedding=[0.85] * DIM,
+            metadata={"group": "A", "tags": ["alpha"]}
+        ),
+        TextNode(
+            text="delta epsilon",
+            embedding=[0.1] * DIM,
+            metadata={"group": "B", "tags": None}
+        ),
+        TextNode(
+            text="zeta eta theta",
+            embedding=[0.2] * DIM,
+            metadata={"group": "B"}
+        ),
+    ]
+
 
 @pytest.mark.skipif(
     MONGODB_URI is None,
     reason="Requires MONGODB_URI env variable for integration test",
 )
 class TestHybridIntegration:
+    """Integration tests for hybrid search with vector and text indices."""
+
     @pytest.fixture(scope="class")
     def vector_store(self) -> MongoDBAtlasVectorSearch:
+        """Create MongoDB Atlas vector store instance."""
         import pymongo
         client = pymongo.MongoClient(MONGODB_URI)
         return MongoDBAtlasVectorSearch(
@@ -31,204 +202,84 @@ class TestHybridIntegration:
         )
 
     @pytest.fixture(scope="class")
-    def seeded(self, vector_store: MongoDBAtlasVectorSearch, ensure_indexes: bool) -> bool:
-        # Clear and seed predictable nodes
-        clxn = vector_store.collection
-        clxn.delete_many({})
-        # Two groups: one more text-relevant, one more vector-similar
-        # Include tag variations for IS_EMPTY / IN filter integration tests.
-        # First two documents: tags present with 'alpha' token.
-        # Third document: tags explicitly set to None.
-        # Fourth document: tags key omitted (missing field).
-        nodes = [
-            TextNode(text="alpha beta gamma", embedding=[0.9]*DIM, metadata={"group": "A", "tags": ["alpha", "news"]}),
-            TextNode(text="alpha beta", embedding=[0.85]*DIM, metadata={"group": "A", "tags": ["alpha"]}),
-            TextNode(text="delta epsilon", embedding=[0.1]*DIM, metadata={"group": "B", "tags": None}),
-            TextNode(text="zeta eta theta", embedding=[0.2]*DIM, metadata={"group": "B"}),
-        ]
-        vector_store.add(nodes)
-        # Brief pause to allow indexes to register new documents
-        import time as _time
-        _time.sleep(5)
-        return True
+    def search_indexes(self, vector_store: MongoDBAtlasVectorSearch) -> None:
+        """Ensure vector and text search indexes are configured."""
+        collection = vector_store.collection
+        _ensure_index_config(collection, VECTOR_INDEX_NAME, "vector")
+        _ensure_index_config(collection, TEXT_INDEX_NAME, "text")
 
     @pytest.fixture(scope="class")
-    def ensure_indexes(self, vector_store: MongoDBAtlasVectorSearch) -> bool:
-        clxn = vector_store.collection
-        existing = list(clxn.list_search_indexes())
-        vector_exists = any(idx["name"] == VECTOR_INDEX_NAME for idx in existing)
-        text_exists = any(idx["name"] == TEXT_INDEX_NAME for idx in existing)
+    def test_data(
+        self,
+        vector_store: MongoDBAtlasVectorSearch,
+        search_indexes: None
+    ) -> None:
+        """Seed test collection with predictable data."""
+        vector_store.collection.delete_many({})
+        vector_store.add(_create_test_nodes())
+        _wait_for_indexing(vector_store)
 
-        # Ensure vector index includes metadata.tags as filter path
-        if not vector_exists:
-            index.create_vector_search_index(
-                collection=clxn,
-                index_name=VECTOR_INDEX_NAME,
-                dimensions=DIM,
-                path="embedding",
-                similarity="cosine",
-                filters=["metadata.tags"],
-                wait_until_complete=TIMEOUT,
-            )
-        else:
-            # Update index to add filter if missing
-            try:
-                vector_def = next(i for i in existing if i["name"] == VECTOR_INDEX_NAME)
-                fields = vector_def.get("fields", [])
-                has_tags_filter = any(f.get("path") == "metadata.tags" and f.get("type") == "filter" for f in fields)
-                if not has_tags_filter:
-                    index.update_vector_search_index(
-                        collection=clxn,
-                        index_name=VECTOR_INDEX_NAME,
-                        dimensions=DIM,
-                        path="embedding",
-                        similarity="cosine",
-                        filters=["metadata.tags"],
-                        wait_until_complete=TIMEOUT,
-                    )
-            except Exception:
-                # Fallback: attempt update regardless
-                index.update_vector_search_index(
-                    collection=clxn,
-                    index_name=VECTOR_INDEX_NAME,
-                    dimensions=DIM,
-                    path="embedding",
-                    similarity="cosine",
-                    filters=["metadata.tags"],
-                    wait_until_complete=TIMEOUT,
-                )
+    def test_hybrid_vector_bias(
+        self,
+        vector_store: MongoDBAtlasVectorSearch,
+        test_data: None
+    ) -> None:
+        """Test hybrid search with high alpha (vector-biased).
 
-        # Ensure full-text index maps metadata.tags
-        if not text_exists:
-            index.create_fulltext_search_index(
-                collection=clxn,
-                index_name=TEXT_INDEX_NAME,
-                field="text",
-                field_type="string",
-                wait_until_complete=TIMEOUT,
-            )
-            # After creation, update to include metadata.tags mapping
-            clxn.update_search_index(
-                name=TEXT_INDEX_NAME,
-                definition={
-                    "mappings": {
-                        "dynamic": False,
-                        "fields": {
-                            "text": {"type": "string"},
-                            "metadata": {
-                                "type": "document",
-                                "fields": {"tags": {"type": "string"}},
-                            },
-                        },
-                    }
-                },
-            )
-        else:
-            try:
-                text_def = next(i for i in existing if i["name"] == TEXT_INDEX_NAME)
-                fields = text_def.get("mappings", {}).get("fields", {})
-                has_metadata = "metadata" in fields and "tags" in fields["metadata"].get("fields", {})
-                if not has_metadata:
-                    clxn.update_search_index(
-                        name=TEXT_INDEX_NAME,
-                        definition={
-                            "mappings": {
-                                "dynamic": False,
-                                "fields": {
-                                    "text": {"type": "string"},
-                                    "metadata": {
-                                        "type": "document",
-                                        "fields": {"tags": {"type": "string"}},
-                                    },
-                                },
-                            }
-                        },
-                    )
-            except Exception:
-                # Fallback unconditional update
-                clxn.update_search_index(
-                    name=TEXT_INDEX_NAME,
-                    definition={
-                        "mappings": {
-                            "dynamic": False,
-                            "fields": {
-                                "text": {"type": "string"},
-                                "metadata": {
-                                    "type": "document",
-                                    "fields": {"tags": {"type": "string"}},
-                                },
-                            },
-                        }
-                    },
-                )
-        return True
-
-    def test_hybrid_alpha_bias_vector(self, vector_store: MongoDBAtlasVectorSearch, seeded: bool, ensure_indexes: bool) -> None:
-        query_embedding = [0.9]*DIM  # Close to group A embeddings
-        q = VectorStoreQuery(
-            query_embedding=query_embedding,
-            query_str="alpha",  # Matches first two more strongly by text
+        With alpha=0.8, vector similarity should dominate. Query embedding close
+        to group A should return group A documents first, despite text also matching.
+        """
+        query = VectorStoreQuery(
+            query_embedding=[0.9] * DIM,
+            query_str="alpha",
             similarity_top_k=3,
             hybrid_top_k=3,
             sparse_top_k=3,
             mode=VectorStoreQueryMode.HYBRID,
-            alpha=0.8,  # Bias towards vector similarity
+            alpha=0.8,
         )
-        # Retry to mitigate brief post-ingest index propagation delays
-        attempts = 8
-        res = None
-        import time as _time
-        logs = []
-        while attempts:
-            start = _time.time()
-            res = vector_store.query(q)
-            dur = round((_time.time() - start)*1000, 2)
-            logs.append({"attempt": 9 - attempts, "count": len(res.nodes), "ms": dur})
-            if len(res.nodes) >= 2:
-                break
-            _time.sleep(1.5 if attempts > 4 else 3)
-            attempts -= 1
-        assert res is not None and len(res.nodes) >= 2, f"Hybrid vector-biased query returned <2 nodes; logs={logs}"
-        # With high alpha, vector similarity should dominate; group A expected early.
-        groups = [n.metadata.get("group") for n in res.nodes]
-        assert groups[0] == "A"
 
-    def test_hybrid_alpha_bias_text(self, vector_store: MongoDBAtlasVectorSearch, seeded: bool, ensure_indexes: bool) -> None:
-        query_embedding = [0.2]*DIM  # Closer to group B vectors
-        q = VectorStoreQuery(
-            query_embedding=query_embedding,
-            query_str="alpha",  # Text strongly matches group A
+        result = _query_with_retry(vector_store, query, min_results=2)
+        groups = [node.metadata.get("group") for node in result.nodes]
+
+        assert groups[0] == "A", f"Expected group A first with vector bias, got {groups}"
+
+    def test_hybrid_text_bias(
+        self,
+        vector_store: MongoDBAtlasVectorSearch,
+        test_data: None
+    ) -> None:
+        """Test hybrid search with low alpha (text-biased).
+
+        With alpha=0.2, text relevance should dominate. Query text 'alpha' matches
+        group A documents, so they should appear despite query embedding being closer
+        to group B.
+        """
+        query = VectorStoreQuery(
+            query_embedding=[0.2] * DIM,
+            query_str="alpha",
             similarity_top_k=4,
             hybrid_top_k=4,
             sparse_top_k=4,
             mode=VectorStoreQueryMode.HYBRID,
-            alpha=0.2,  # Bias towards text relevance
+            alpha=0.2,
         )
-        attempts = 8
-        res = None
-        import time as _time
-        logs = []
-        while attempts:
-            start = _time.time()
-            res = vector_store.query(q)
-            dur = round((_time.time() - start)*1000, 2)
-            logs.append({"attempt": 9 - attempts, "count": len(res.nodes), "ms": dur})
-            if len(res.nodes) >= 2:
-                break
-            _time.sleep(1.5 if attempts > 4 else 3)
-            attempts -= 1
-        assert res is not None and len(res.nodes) >= 2, f"Hybrid text-biased query returned <2 nodes; logs={logs}"
-        groups = [n.metadata.get("group") for n in res.nodes]
-        # With low alpha, text relevance should surface group A; ensure group A appears somewhere.
-        assert any(g == "A" for g in groups), f"Expected at least one group A node; got {groups}"
-        # Optionally a B group may appear; not a hard requirement after index adjustments.
-        # (Leave a soft check that at least one unique group returned.)
-        assert len(set(groups)) >= 1
 
-    def test_hybrid_filter_or_in_is_empty(self, vector_store: MongoDBAtlasVectorSearch, seeded: bool, ensure_indexes: bool) -> None:
-        from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters, FilterOperator, FilterCondition
-        # Use embedding similar to tag-bearing docs to guarantee IN branch matches.
-        query_embedding = [0.85] * DIM
+        result = _query_with_retry(vector_store, query, min_results=2)
+        groups = [node.metadata.get("group") for node in result.nodes]
+
+        assert any(g == "A" for g in groups), f"Expected group A with text bias, got {groups}"
+
+    def test_hybrid_filter_or_combination(
+        self,
+        vector_store: MongoDBAtlasVectorSearch,
+        test_data: None
+    ) -> None:
+        """Test hybrid search with OR filter combining IN and IS_EMPTY.
+        
+        Verifies that OR condition with IN and IS_EMPTY operators executes without
+        error. Should match documents where tags contains 'alpha' OR tags is empty/missing.
+        """
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="tags", value=["alpha"], operator=FilterOperator.IN),
@@ -236,8 +287,9 @@ class TestHybridIntegration:
             ],
             condition=FilterCondition.OR,
         )
-        q = VectorStoreQuery(
-            query_embedding=query_embedding,
+
+        query = VectorStoreQuery(
+            query_embedding=[0.85] * DIM,
             query_str="alpha",
             similarity_top_k=6,
             hybrid_top_k=6,
@@ -246,13 +298,20 @@ class TestHybridIntegration:
             alpha=0.5,
             filters=filters,
         )
-        res = vector_store.query(q)
-        # Primary assertion: pipeline executes without PlanExecutor error for OR(IN, IS_EMPTY) scenario.
-        assert res is not None
 
-    def test_hybrid_filter_and_in_is_empty(self, vector_store: MongoDBAtlasVectorSearch, seeded: bool, ensure_indexes: bool) -> None:
-        from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters, FilterOperator, FilterCondition
-        # AND between IN and IS_EMPTY should logically yield zero matches; main assertion is no server error occurs.
+        result = vector_store.query(query)
+        assert result is not None, "Query with OR(IN, IS_EMPTY) should execute without error"
+
+    def test_hybrid_filter_and_contradiction(
+        self,
+        vector_store: MongoDBAtlasVectorSearch,
+        test_data: None
+    ) -> None:
+        """Test hybrid search with logically contradictory AND filter.
+
+        Verifies that AND condition combining IN and IS_EMPTY (which cannot both be
+        true) executes without error and returns zero results.
+        """
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="tags", value=["alpha"], operator=FilterOperator.IN),
@@ -260,8 +319,9 @@ class TestHybridIntegration:
             ],
             condition=FilterCondition.AND,
         )
-        q = VectorStoreQuery(
-            query_embedding=[0.9]*DIM,
+
+        query = VectorStoreQuery(
+            query_embedding=[0.9] * DIM,
             query_str="alpha",
             similarity_top_k=3,
             hybrid_top_k=3,
@@ -270,7 +330,10 @@ class TestHybridIntegration:
             alpha=0.7,
             filters=filters,
         )
-        res = vector_store.query(q)
-        # Should produce zero nodes (cannot be both IN and empty), but must not raise PlanExecutor error.
-        assert res is not None, "Query returned None"
-        assert len(res.nodes) == 0, f"Expected 0 nodes for AND(IN, IS_EMPTY); got {len(res.nodes)}"
+
+        result = vector_store.query(query)
+        assert result is not None, "Query should execute without error"
+        assert len(result.nodes) == 0, (
+            f"AND(IN, IS_EMPTY) should return 0 results, got {len(result.nodes)}"
+        )
+
