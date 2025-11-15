@@ -93,9 +93,7 @@ class TestHtmlTextParser:
         parser = HtmlTextParser()
         html = '<a href="https://example.com">Example</a>'
         result = parser.convert(html)
-        assert "Example" in result
-        assert "example.com" in result
-        assert "(" in result or "[" in result
+        assert "[Example](https://example.com)" in result
 
     @pytest.mark.parametrize(
         ("html_input", "expected_contains"),
@@ -164,8 +162,7 @@ class TestHtmlTextParser:
         assert "First item" in result
         assert "Second item" in result
         assert "code" in result
-        assert "link" in result
-        assert "example.com" in result
+        assert "[link](https://example.com)" in result
 
     def test_nested_lists(self):
         parser = HtmlTextParser()
