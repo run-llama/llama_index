@@ -19,7 +19,7 @@ class MockConfluence:
 
 @pytest.fixture(autouse=True)
 def mock_atlassian_confluence(monkeypatch):
-    monkeypatch.setattr("llama_index.readers.confluence", MockConfluence)
+    monkeypatch.setattr("atlassian.Confluence", MockConfluence)
 
 
 def test_confluence_reader_with_oauth2():
