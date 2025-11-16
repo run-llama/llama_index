@@ -164,6 +164,14 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         llm: Optional[LLMType] = None,
         **kwargs: Any,
     ) -> BaseChatEngine:
+        llm = llm or Settings.llm
+        assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        class_name = llm.class_name()
+        if "multi" not in class_name:
+            logger.warning(
+                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
+
         if chat_mode == ChatMode.CONTEXT:
             from llama_index.core.chat_engine.multi_modal_context import (
                 MultiModalContextChatEngine,
