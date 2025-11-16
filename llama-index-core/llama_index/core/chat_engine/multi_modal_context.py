@@ -204,8 +204,9 @@ class MultiModalContextChatEngine(BaseChatEngine):
                     ChatMessage(role="user", blocks=blocks),
                 ]
             )
+            output = llm_response.message.content or ""
             return Response(
-                response=llm_response.message.content,
+                response=output,
                 source_nodes=nodes,
                 metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
             )
@@ -259,8 +260,9 @@ class MultiModalContextChatEngine(BaseChatEngine):
                     ChatMessage(role="user", blocks=blocks),
                 ]
             )
+            output = llm_response.message.content or ""
             return Response(
-                response=llm_response.message.content,
+                response=output,
                 source_nodes=nodes,
                 metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
             )
