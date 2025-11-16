@@ -192,19 +192,19 @@ class MultiModalContextChatEngine(BaseChatEngine):
                 source_nodes=nodes,
                 metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
             )
-
-        llm_response = self._multi_modal_llm.chat(
-            [
-                ChatMessage(role="system", content=self._system_prompt),
-                *chat_history,
-                ChatMessage(role="user", blocks=blocks),
-            ]
-        )
-        return Response(
-            response=llm_response.message.content,
-            source_nodes=nodes,
-            metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
-        )
+        else:
+            llm_response = self._multi_modal_llm.chat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            return Response(
+                response=llm_response.message.content,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
 
     async def asynthesize(
         self,
@@ -247,19 +247,19 @@ class MultiModalContextChatEngine(BaseChatEngine):
                 source_nodes=nodes,
                 metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
             )
-
-        llm_response = await self._multi_modal_llm.achat(
-            [
-                ChatMessage(role="system", content=self._system_prompt),
-                *chat_history,
-                ChatMessage(role="user", blocks=blocks),
-            ]
-        )
-        return Response(
-            response=llm_response.message.content,
-            source_nodes=nodes,
-            metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
-        )
+        else:
+            llm_response = await self._multi_modal_llm.achat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            return Response(
+                response=llm_response.message.content,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
 
     @trace_method("chat")
     def chat(
