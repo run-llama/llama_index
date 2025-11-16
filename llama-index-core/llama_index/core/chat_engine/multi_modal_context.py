@@ -20,7 +20,7 @@ from llama_index.core.base.response.schema import (
     StreamingResponse,
     AsyncStreamingResponse,
 )
-from llama_index.core.indices.query.schema import QueryBundle  # , QueryType
+from llama_index.core.indices.query.schema import QueryBundle, QueryType
 from llama_index.core.llms import LLM, TextBlock, ChatMessage, ImageBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
@@ -51,7 +51,7 @@ def _get_image_and_text_nodes(
     return image_nodes, text_nodes
 
 
-def _ensure_query_bundle(str_or_query_bundle) -> QueryBundle:
+def _ensure_query_bundle(str_or_query_bundle: QueryType) -> QueryBundle:
     if isinstance(str_or_query_bundle, str):
         return QueryBundle(str_or_query_bundle)
     return str_or_query_bundle
