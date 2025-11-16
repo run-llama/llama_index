@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, List
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseGen,
@@ -107,7 +107,7 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
     last_chat_messages: Optional[Sequence[ChatMessage]] = Field(
         default=None, exclude=True
     )
-    last_called_chat_function: [str] = Field(default=[], exclude=True)
+    last_called_chat_function: List[str] = Field(default=[], exclude=True)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
