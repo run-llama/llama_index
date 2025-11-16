@@ -37,6 +37,7 @@ from llama_index.core.vector_stores.simple import (
     SimpleVectorStore,
 )
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,27 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
+
+    def as_chat_engine(
+        self,
+        chat_mode: ChatMode = ChatMode.BEST,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
+    ) -> BaseChatEngine:
+        if chat_mode == ChatMode.CONTEXT:
+            from llama_index.core.chat_engine.multi_modal_context import (
+                MultiModalContextChatEngine,
+            )
+
+            return MultiModalContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                multi_modal_llm=llm,
+                **kwargs,
+            )
+
+        # TODO: handle CONDENSE_PLUS_CONTEXT
+
+        return super().as_chat_engine(chat_mode, llm, **kwargs)
 
     @classmethod
     def from_vector_store(
