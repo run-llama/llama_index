@@ -29,7 +29,10 @@ from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 
 # from llama_index.core.query_engine.multi_modal import _get_image_and_text_nodes
-from llama_index.core.llms.llm import astream_chat_response_to_tokens
+from llama_index.core.llms.llm import (
+    astream_chat_response_to_tokens,
+    stream_chat_response_to_tokens,
+)
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.settings import Settings
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -187,8 +190,9 @@ class MultiModalContextChatEngine(BaseChatEngine):
                     ChatMessage(role="user", blocks=blocks),
                 ]
             )
+            stream_tokens = stream_chat_response_to_tokens(llm_response)
             return StreamingResponse(
-                response_gen=llm_response,
+                response_gen=stream_tokens,
                 source_nodes=nodes,
                 metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
             )
@@ -322,12 +326,16 @@ class MultiModalContextChatEngine(BaseChatEngine):
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
-                full_response += token.delta
-                yield token
+                full_response += token
+                yield ChatResponse(
+                    message=ChatMessage(
+                        content=full_response, role=MessageRole.ASSISTANT
+                    ),
+                    delta=token,
+                )
 
             user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-
             self._memory.put(user_message)
             self._memory.put(ai_message)
 
