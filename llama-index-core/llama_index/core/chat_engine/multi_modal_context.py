@@ -183,14 +183,14 @@ class MultiModalContextChatEngine(BaseChatEngine):
         )
 
         if streaming:
-            llm_response = self._multi_modal_llm.stream_chat(
+            llm_stream = self._multi_modal_llm.stream_chat(
                 [
                     ChatMessage(role="system", content=self._system_prompt),
                     *chat_history,
                     ChatMessage(role="user", blocks=blocks),
                 ]
             )
-            stream_tokens = stream_chat_response_to_tokens(llm_response)
+            stream_tokens = stream_chat_response_to_tokens(llm_stream)
             return StreamingResponse(
                 response_gen=stream_tokens,
                 source_nodes=nodes,
@@ -239,14 +239,14 @@ class MultiModalContextChatEngine(BaseChatEngine):
         )
 
         if streaming:
-            llm_response = await self._multi_modal_llm.astream_chat(
+            llm_stream = await self._multi_modal_llm.astream_chat(
                 [
                     ChatMessage(role="system", content=self._system_prompt),
                     *chat_history,
                     ChatMessage(role="user", blocks=blocks),
                 ]
             )
-            stream_tokens = await astream_chat_response_to_tokens(llm_response)
+            stream_tokens = await astream_chat_response_to_tokens(llm_stream)
             return AsyncStreamingResponse(
                 response_gen=stream_tokens,
                 source_nodes=nodes,
