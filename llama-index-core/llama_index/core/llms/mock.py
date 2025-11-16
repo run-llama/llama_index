@@ -107,7 +107,7 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
     last_chat_messages: Optional[Sequence[ChatMessage]] = Field(
         default=None, exclude=True
     )
-    last_called_chat_function: Sequence[str] = Field(default=[], exclude=True)
+    last_called_chat_function: [str] = Field(default=[], exclude=True)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -143,7 +143,7 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
         self.last_called_chat_function.append("astream_chat")
         return r
 
-    def reset_memory(self):
+    def reset_memory(self) -> None:
         self.last_chat_messages = None
         self.last_called_chat_function = []
 
