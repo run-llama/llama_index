@@ -51,7 +51,7 @@ def _get_image_and_text_nodes(
     return image_nodes, text_nodes
 
 
-def _ensure_query_bundle(str_or_query_bundle):
+def _ensure_query_bundle(str_or_query_bundle) -> QueryBundle:
     if isinstance(str_or_query_bundle, str):
         return QueryBundle(str_or_query_bundle)
     return str_or_query_bundle
@@ -157,7 +157,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        streaming=False,
+        streaming: bool = False,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
         context_str = "\n\n".join(
@@ -211,7 +211,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         query_bundle: QueryBundle,
         nodes: List[NodeWithScore],
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
-        streaming=False,
+        streaming: bool = False,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
         context_str = "\n\n".join(
@@ -305,7 +305,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
-    ) -> AgentChatResponse:
+    ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -389,7 +389,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
-    ) -> AgentChatResponse:
+    ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             await self._memory.aset(chat_history)
 
