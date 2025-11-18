@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # FastAPI application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llamaindex-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # API Keys (load from .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Application settings
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DATA_DIR=/app/data
+      - STORAGE_DIR=/app/storage
+
+      # LLM settings
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-512}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+
+      # Indexing settings
+      - CHUNK_SIZE=${CHUNK_SIZE:-1024}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-20}
+      - SIMILARITY_TOP_K=${SIMILARITY_TOP_K:-5}
+
+      # Vector store (if using Chroma)
+      - VECTOR_STORE_TYPE=${VECTOR_STORE_TYPE:-}
+      - CHROMA_HOST=${CHROMA_HOST:-chroma}
+      - CHROMA_PORT=${CHROMA_PORT:-8000}
+
+      # Server settings
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      # Persist data and storage
+      - ./data:/app/data
+      - ./storage:/app/storage
+      - app-cache:/app/.cache
+    depends_on:
+      - chroma
+    networks:
+      - llamaindex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Chroma vector database
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: llamaindex-chroma
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=${CHROMA_TELEMETRY:-FALSE}
+    networks:
+      - llamaindex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL (optional - for metadata storage)
+  postgres:
+    image: postgres:15-alpine
+    container_name: llamaindex-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER:-llamaindex}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-llamaindex_password}
+      - POSTGRES_DB=${DB_NAME:-llamaindex}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - llamaindex-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-llamaindex}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis (optional - for caching and session storage)
+  redis:
+    image: redis:7-alpine
+    container_name: llamaindex-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - llamaindex-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx reverse proxy (optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: llamaindex-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - llamaindex-network
+    profiles:
+      - production
+
+networks:
+  llamaindex-network:
+    driver: bridge
+
+volumes:
+  chroma-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  app-cache:
+    driver: local

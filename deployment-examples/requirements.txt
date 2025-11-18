@@ -1,0 +1,46 @@
+# Core dependencies
+llama-index>=0.14.8
+llama-index-core>=0.14.8
+
+# LLM and Embeddings
+llama-index-llms-openai>=0.6.0
+llama-index-embeddings-openai>=0.5.0
+
+# API Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.9
+pydantic>=2.8.0
+
+# Data processing
+llama-index-readers-file>=0.5.0
+
+# Optional: Vector stores (uncomment as needed)
+# llama-index-vector-stores-chroma>=0.4.0
+# llama-index-vector-stores-pinecone>=0.4.0
+# llama-index-vector-stores-qdrant>=0.7.0
+# llama-index-vector-stores-postgres>=0.4.0
+# llama-index-vector-stores-milvus>=0.4.0
+
+# Optional: Additional LLMs (uncomment as needed)
+# llama-index-llms-anthropic>=0.6.0
+# llama-index-llms-huggingface>=0.8.0
+# llama-index-llms-ollama>=0.6.0
+# llama-index-llms-azure-openai>=0.6.0
+
+# Optional: Additional embeddings (uncomment as needed)
+# llama-index-embeddings-huggingface>=0.8.0
+# llama-index-embeddings-fastembed>=0.4.0
+
+# Database (optional)
+# sqlalchemy>=2.0.0
+# psycopg2-binary>=2.9.9
+# asyncpg>=0.29.0
+
+# Utilities
+python-dotenv>=1.0.0
+aiofiles>=24.1.0
+
+# Monitoring and logging (optional)
+# prometheus-client>=0.21.0
+# sentry-sdk[fastapi]>=2.18.0
