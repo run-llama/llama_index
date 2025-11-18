@@ -5,6 +5,7 @@ import uuid
 import hashlib
 
 from typing import List
+from unittest.mock import patch
 
 import pytest
 
@@ -354,6 +355,35 @@ class TestVertexAIVectorStore:
             metadata={"ref_doc_id": ref_id_to_delete},
         )
         assert len(result) == 0
+
+    def test_batch_update_index(self, node_embeddings: List[TextNode]) -> None:
+        """Test batch update path consistency and end-to-end functionality."""
+        if not GCS_BUCKET_NAME:
+            pytest.skip("GCS_BUCKET_NAME not set, skipping batch update test")
+
+        vector_store = self.vector_store()
+        staging_bucket = vector_store._staging_bucket
+
+        with patch.object(
+            staging_bucket, "blob", wraps=staging_bucket.blob
+        ) as mock_blob:
+            initial_nodes = node_embeddings[:5]
+            doc_ids = vector_store.add(initial_nodes)
+
+            assert len(doc_ids) == len(initial_nodes)
+
+            for call in mock_blob.call_args_list:
+                path = call[0][0]
+                assert path.startswith("index/")
+                assert path.endswith("documents.json")
+
+            embed_model = VertexTextEmbedding(project=PROJECT_ID, location=REGION)
+            query_embedding = embed_model.get_query_embedding("denim jeans")
+            q = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=1)
+            result = vector_store.query(q)
+
+            assert result.nodes is not None and len(result.nodes) == 1
+            assert result.nodes[0].id_ in doc_ids
 
 
 def test_class():
