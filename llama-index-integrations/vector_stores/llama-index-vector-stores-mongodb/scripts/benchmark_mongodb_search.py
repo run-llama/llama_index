@@ -5,11 +5,11 @@ Run this script to capture approximate latencies of different query modes after 
 (server-side filtering + removal of empty filter dict).
 
 Usage (from repo root):
-    uv run python llama-index-integrations/vector_stores/llama-index-vector-stores-mongodb/scripts/benchmark_mongodb_search.py
+    python llama-index-integrations/vector_stores/llama-index-vector-stores-mongodb/scripts/benchmark_mongodb_search.py --docs 100000
 
 Requirements:
     - Environment variable MONGODB_URI (Atlas cluster >= M10 with vector & search enabled)
-    - OPENAI_API_KEY or AZURE_OPENAI_API_KEY for embedding
+    - No API keys required (uses synthetic embeddings by default)
 
 Outputs:
     JSON object with per-mode statistics (min/median/mean/max) over N runs.
@@ -18,6 +18,9 @@ Notes:
     This is a lightweight benchmark; results are indicative, not authoritative.
     Network conditions and Atlas load will affect times. For comparative analysis,
     run before and after code changes and diff the JSON outputs.
+    
+    Uses synthetic random embeddings (1536 dimensions) for reproducible benchmarks
+    without API costs. Performance tests MongoDB vector search, not embedding quality.
 """
 
 from __future__ import annotations
@@ -32,7 +35,6 @@ from typing import Callable, Dict, List, Optional
 
 from pymongo import MongoClient
 
-from llama_index.core import Settings
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
@@ -88,8 +90,6 @@ except ModuleNotFoundError:
         raise SystemExit(
             f"Unable to import MongoDBAtlasVectorSearch; checked package_root={package_root}; sys.path={sys.path}\nOriginal error: {e}"
         )
-from llama_index.core.ingestion import IngestionPipeline
-from llama_index.core.node_parser import SentenceSplitter
 
 
 MONGODB_URI = os.environ.get("MONGODB_URI")
@@ -114,42 +114,6 @@ class TimingStats:
     stddev_ms: float
     p90_ms: float
     p95_ms: float
-
-
-def _embed_model() -> None:
-    if Settings.embed_model is not None:
-        return
-    # Lazy import with monorepo path fallback so embeddings integration packages resolve.
-    import sys
-    import os
-
-    def _ensure_embedding_pkg(pkg_dir: str) -> None:
-        # Find the embeddings package directory relative to this script.
-        base = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))  # up to vector_stores
-        integrations_root = os.path.abspath(os.path.join(base, ".."))  # up to llama-index-integrations
-        candidate = os.path.join(integrations_root, "embeddings", pkg_dir)
-        if os.path.isdir(candidate) and candidate not in sys.path:
-            sys.path.insert(0, candidate)
-
-    if "OPENAI_API_KEY" in os.environ:
-        try:
-            from llama_index.embeddings.openai import OpenAIEmbedding  # type: ignore
-        except ModuleNotFoundError:
-            _ensure_embedding_pkg("llama-index-embeddings-openai")
-            from llama_index.embeddings.openai import OpenAIEmbedding  # type: ignore
-        Settings.embed_model = OpenAIEmbedding()
-    elif "AZURE_OPENAI_API_KEY" in os.environ:
-        deployment = os.environ.get("AZURE_TEXT_DEPLOYMENT", "text-embedding-3-small")
-        try:
-            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # type: ignore
-        except ModuleNotFoundError:
-            _ensure_embedding_pkg("llama-index-embeddings-azure-openai")
-            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # type: ignore
-        Settings.embed_model = AzureOpenAIEmbedding(
-            api_key=os.environ["AZURE_OPENAI_API_KEY"], deployment_name=deployment
-        )
-    else:
-        raise SystemExit("Requires OPENAI_API_KEY or AZURE_OPENAI_API_KEY for embeddings")
 
 
 def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
@@ -186,18 +150,13 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
 def _prepare_collection(
     vs: MongoDBAtlasVectorSearch,
     target_docs: int,
-    synthetic: bool = False,
-    quick: bool = False,
 ) -> List[Document]:
     """
-    Populate the collection.
-
-    Modes:
-        synthetic: generate random embeddings (1 embed model call for query + dim probe) instead of real model per doc.
-        quick: avoid sentence splitting; one node per document to reduce embedding calls.
+    Populate the collection with synthetic embeddings.
     
-    Always reuses existing documents and only adds more if needed to reach target_docs.
-    Never deletes existing documents.
+    Uses random 1536-dimensional vectors for fast, reproducible benchmarks
+    without API costs. Always reuses existing documents and only adds more
+    if needed to reach target_docs. Never deletes existing documents.
     """
     existing_count = vs._collection.count_documents({})
     
@@ -221,132 +180,65 @@ def _prepare_collection(
     
     base_lines = Document.example().text.split("\n")[:25]
 
-    # Ingestion strategies
-    if synthetic:
-        # Create random embeddings without calling the model per doc.
-        # Use batched insertion to avoid memory issues with large document counts.
-        import random
-        dims = getattr(Settings.embed_model, "dimensions", None) if Settings.embed_model else None
-        if not dims:
-            # Default to 1536 for OpenAI models to avoid API call
-            dims = 1536
-            print(f"Using default embedding dimension: {dims}")
+    # Generate synthetic embeddings (random 1536-dimensional vectors)
+    import random
+    dims = 1536
+    
+    BATCH_SIZE = 10000  # Process 10k documents at a time
+    sample_docs: List[Document] = []  # Keep a small sample for query generation
+    
+    print(f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents in batches of {BATCH_SIZE}...")
+    total_inserted = 0
+    batch_num = 0
+    
+    while total_inserted < docs_to_add:
+        batch_num += 1
+        batch_start = time.perf_counter()
+        batch_size = min(BATCH_SIZE, docs_to_add - total_inserted)
+        nodes: List[TextNode] = []
+        docs: List[Document] = []
         
-        BATCH_SIZE = 10000  # Process 10k documents at a time
-        MONGO_BATCH_SIZE = 1000  # Insert in smaller chunks to avoid network timeouts
-        sample_docs: List[Document] = []  # Keep a small sample for query generation
-        
-        print(f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents in batches of {BATCH_SIZE}...")
-        total_inserted = 0
-        batch_num = 0
-        
-        while total_inserted < docs_to_add:
-            batch_num += 1
-            batch_start = time.perf_counter()
-            batch_size = min(BATCH_SIZE, docs_to_add - total_inserted)
-            nodes: List[TextNode] = []
-            docs: List[Document] = []
+        # Generate batch of documents
+        gen_start = time.perf_counter()
+        for i in range(batch_size):
+            doc_idx = existing_count + total_inserted + i
+            line_idx = doc_idx % len(base_lines)
+            cycle = doc_idx // len(base_lines)
+            line = base_lines[line_idx]
+            suffix = f" #{cycle}" if cycle > 0 else ""
+            txt = f"{line}{suffix} llamaindex LLM"
+            doc = Document(text=txt, metadata={"text": line, "group": doc_idx % 5})
+            docs.append(doc)
             
-            # Generate batch of documents
-            gen_start = time.perf_counter()
-            for i in range(batch_size):
-                doc_idx = existing_count + total_inserted + i
-                line_idx = doc_idx % len(base_lines)
-                cycle = doc_idx // len(base_lines)
-                line = base_lines[line_idx]
-                suffix = f" #{cycle}" if cycle > 0 else ""
-                txt = f"{line}{suffix} llamaindex LLM"
-                doc = Document(text=txt, metadata={"text": line, "group": doc_idx % 5})
-                docs.append(doc)
-                
-                # Create synthetic embedding
-                embedding = [random.uniform(-1.0, 1.0) for _ in range(dims)]
-                nodes.append(
-                    TextNode(text=doc.text, embedding=embedding, metadata=doc.metadata, id_=str(doc_idx))
-                )
-            gen_time = time.perf_counter() - gen_start
-            
-            # Insert batch via library method (already uses insert_many internally)
-            # Note: Slowness is due to MongoDB vector index updates, not Python overhead
-            insert_start = time.perf_counter()
-            vs.add(nodes)
-            insert_time = time.perf_counter() - insert_start
-            total_inserted += batch_size
-            batch_time = time.perf_counter() - batch_start
-            print(f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s (gen: {gen_time:.1f}s, insert: {insert_time:.1f}s)")
-            
-            # Keep a sample of documents for query generation (from first batch only)
-            if batch_num == 1:
-                sample_docs = docs[:min(25, len(docs))]
+            # Create synthetic embedding
+            embedding = [random.uniform(-1.0, 1.0) for _ in range(dims)]
+            nodes.append(
+                TextNode(text=doc.text, embedding=embedding, metadata=doc.metadata, id_=str(doc_idx))
+            )
+        gen_time = time.perf_counter() - gen_start
         
-        print(f"[{time.strftime('%H:%M:%S')}] Completed insertion. Total documents in collection: {existing_count + total_inserted}")
+        # Insert batch via library method (already uses insert_many internally)
+        # Note: Slowness is due to MongoDB vector index updates, not Python overhead
+        insert_start = time.perf_counter()
+        vs.add(nodes)
+        insert_time = time.perf_counter() - insert_start
+        total_inserted += batch_size
+        batch_time = time.perf_counter() - batch_start
+        print(f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s (gen: {gen_time:.1f}s, insert: {insert_time:.1f}s)")
         
-        # If we didn't insert anything (existing_count >= target_docs), get sample from existing docs
-        if not sample_docs:
-            cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(25)
-            for doc in cursor:
-                sample_docs.append(
-                    Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
-                )
-        
-        return sample_docs
-    else:
-        # Real embedding path (can be quick or full) - also use batching
-        BATCH_SIZE = 1000  # Smaller batches for real embeddings (API rate limits)
-        sample_docs: List[Document] = []
-        
-        print(f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents with real embeddings in batches of {BATCH_SIZE}...")
-        total_inserted = 0
-        batch_num = 0
-        
-        while total_inserted < docs_to_add:
-            batch_num += 1
-            batch_start = time.perf_counter()
-            batch_size = min(BATCH_SIZE, docs_to_add - total_inserted)
-            docs: List[Document] = []
-            
-            # Generate batch of documents
-            for i in range(batch_size):
-                doc_idx = existing_count + total_inserted + i
-                line_idx = doc_idx % len(base_lines)
-                cycle = doc_idx // len(base_lines)
-                line = base_lines[line_idx]
-                suffix = f" #{cycle}" if cycle > 0 else ""
-                txt = f"{line}{suffix} llamaindex LLM"
-                docs.append(Document(text=txt, metadata={"text": line, "group": doc_idx % 5}))
-            
-            # Process batch with embeddings
-            if quick:
-                pipeline = IngestionPipeline(
-                    transformations=[SentenceSplitter(chunk_size=8192, chunk_overlap=0), Settings.embed_model]
-                )
-            else:
-                pipeline = IngestionPipeline(
-                    transformations=[SentenceSplitter(chunk_size=1024, chunk_overlap=200), Settings.embed_model]
-                )
-            nodes = pipeline.run(documents=docs)
-            insert_start = time.perf_counter()
-            vs.add(nodes)
-            insert_time = time.perf_counter() - insert_start
-            total_inserted += batch_size
-            batch_time = time.perf_counter() - batch_start
-            print(f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s, insert: {insert_time:.1f}s")
-            
-            # Keep a sample of documents for query generation (from first batch only)
-            if batch_num == 1:
-                sample_docs = docs[:min(25, len(docs))]
-        
-        print(f"[{time.strftime('%H:%M:%S')}] Completed insertion. Total documents in collection: {existing_count + total_inserted}")
-        
-        # If we didn't insert anything (existing_count >= target_docs), get sample from existing docs
-        if not sample_docs:
-            cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(25)
-            for doc in cursor:
-                sample_docs.append(
-                    Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
-                )
-        
-        return sample_docs
+        # Keep a sample of documents for query generation (from first batch only)
+        if batch_num == 1:
+            sample_docs = docs[:min(25, len(docs))]
+    
+    # If we didn't insert anything (existing_count >= target_docs), get sample from existing docs
+    if not sample_docs:
+        cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(25)
+        for doc in cursor:
+            sample_docs.append(
+                Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
+            )
+    
+    return sample_docs
 
 
 def time_query(label: str, fn: Callable[[], None]) -> List[float]:
@@ -395,25 +287,14 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--warmup", type=int, default=WARMUP, help="Warm-up iterations per mode")
     parser.add_argument("--docs", type=int, default=TARGET_DOCS, help="Target document count to ingest")
     parser.add_argument("--out", type=str, default=EXPORT_PATH, help="Optional JSON output file path")
-    parser.add_argument(
-        "--synthetic",
-        action="store_true",
-        help="Use synthetic random embeddings for ingestion (fast, non-semantic).",
-    )
-    parser.add_argument(
-        "--quick",
-        action="store_true",
-        help="Quick ingest: no splitting (one chunk per doc) to reduce embedding calls.",
-    )
     args = parser.parse_args(argv)
 
     # Override global counters for this invocation
     RUNS = args.runs
     WARMUP = args.warmup
 
-    # Only initialize embedding model if not using synthetic mode
-    if not args.synthetic:
-        _embed_model()
+    # Use synthetic embeddings (1536 dimensions) for benchmark
+    dims = 1536
     
     client = MongoClient(MONGODB_URI)
     vs = MongoDBAtlasVectorSearch(
@@ -424,24 +305,11 @@ def main(argv: Optional[List[str]] = None) -> None:
         fulltext_index_name=FULLTEXT_INDEX_NAME,
     )
     
-    # Determine dimensions - use default for synthetic mode
-    if args.synthetic:
-        dims = 1536  # Default OpenAI dimension
-    else:
-        dims = getattr(Settings.embed_model, "dimensions", None)
-        if not dims:
-            try:
-                probe_vec = Settings.embed_model.get_text_embedding("dimension probe")
-                dims = len(probe_vec)
-            except Exception as e:  # pragma: no cover
-                raise SystemExit(f"Failed to determine embedding dimensions: {e}")
     t0 = time.perf_counter()
     _ensure_indexes(vs, dims=dims)
     index_ensure_ms = (time.perf_counter() - t0) * 1000
     t1 = time.perf_counter()
-    docs = _prepare_collection(
-        vs, target_docs=args.docs, synthetic=args.synthetic, quick=args.quick
-    )
+    docs = _prepare_collection(vs, target_docs=args.docs)
     ingest_ms = (time.perf_counter() - t1) * 1000
     print(
         json.dumps(
@@ -450,10 +318,6 @@ def main(argv: Optional[List[str]] = None) -> None:
                     "docs": len(docs),
                     "index_ensure_ms": round(index_ensure_ms, 2),
                     "ingest_ms": round(ingest_ms, 2),
-                    "mode": {
-                        "synthetic": args.synthetic,
-                        "quick": args.quick,
-                    },
                 }
             }
         )
@@ -463,12 +327,9 @@ def main(argv: Optional[List[str]] = None) -> None:
     vector_query_text = docs[0].text
     hybrid_text_query = "llamaindex"
     
-    # Generate query embedding - use synthetic for synthetic mode
-    if args.synthetic:
-        import random
-        embedding_vector = [random.uniform(-1.0, 1.0) for _ in range(dims)]
-    else:
-        embedding_vector = Settings.embed_model.get_text_embedding(vector_query_text)
+    # Generate synthetic query embedding (random 1536-dimensional vector)
+    import random
+    embedding_vector = [random.uniform(-1.0, 1.0) for _ in range(dims)]
 
     # Filter excluding first doc's text token to exercise filter server-side
     filters = MetadataFilters(
