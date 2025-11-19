@@ -34,6 +34,7 @@ import os
 import statistics
 import time
 import argparse
+import sys
 from dataclasses import dataclass, asdict
 from typing import Callable, Dict, List, Optional, cast
 
@@ -47,15 +48,12 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
-# Fallback for running script from monorepo root where integration distribution isn't installed.
-try:
-    from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch  # type: ignore
-except ModuleNotFoundError:
-    # We are in the monorepo; ascend until we reach the integration package root (contains pyproject.toml
-    # for llama-index-vector-stores-mongodb) then add that directory to sys.path.
-    import sys
-    import os
 
+# Parse --use-local flag early to determine import strategy
+USE_LOCAL = "--use-local" in sys.argv
+
+if USE_LOCAL:
+    # Force use of local version by adding it to sys.path BEFORE attempting import
     cur = os.path.dirname(__file__)  # .../scripts
     target_pyproject = "pyproject.toml"
     package_root = None
@@ -68,6 +66,7 @@ except ModuleNotFoundError:
 
     if package_root and package_root not in sys.path:
         sys.path.insert(0, package_root)
+        print(f"✓ Using LOCAL package from: {package_root}")
 
     # Add monorepo core package path (/_llama-index) if present so embeddings and core modules resolve.
     # Ascend to repository root first.
@@ -83,16 +82,25 @@ except ModuleNotFoundError:
         core_path = os.path.join(repo_root, "_llama-index")
         if core_path not in sys.path:
             sys.path.insert(0, core_path)
+
     # Final fallback: one level up from scripts (integration root) in case detection failed.
     integration_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     if integration_root not in sys.path:
         sys.path.insert(0, integration_root)
+else:
+    print("✓ Using INSTALLED package from environment")
 
-    try:
-        from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch  # type: ignore
-    except ModuleNotFoundError as e:
+# Now import - will use local if --use-local was specified, otherwise installed version
+try:
+    from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch  # type: ignore
+except ModuleNotFoundError as e:
+    if USE_LOCAL:
         raise SystemExit(
-            f"Unable to import MongoDBAtlasVectorSearch; checked package_root={package_root}; sys.path={sys.path}\nOriginal error: {e}"
+            f"Unable to import MongoDBAtlasVectorSearch from local source; sys.path={sys.path}\nOriginal error: {e}"
+        )
+    else:
+        raise SystemExit(
+            f"Unable to import MongoDBAtlasVectorSearch from installed packages. Install with: pip install llama-index-vector-stores-mongodb\nOriginal error: {e}"
         )
 
 
@@ -379,6 +387,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--warmup", type=int, default=WARMUP, help="Warm-up iterations per mode")
     parser.add_argument("--docs", type=int, default=TARGET_DOCS, help="Target document count to ingest")
     parser.add_argument("--out", type=str, default=EXPORT_PATH, help="Optional JSON output file path")
+    parser.add_argument("--use-local", action="store_true", help="Use local source code instead of installed package")
     args = parser.parse_args(argv)
 
     # Override global counters for this invocation
