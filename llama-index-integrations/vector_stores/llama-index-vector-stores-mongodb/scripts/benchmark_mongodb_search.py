@@ -18,9 +18,10 @@ Notes:
     This is a lightweight benchmark; results are indicative, not authoritative.
     Network conditions and Atlas load will affect times. For comparative analysis,
     run before and after code changes and diff the JSON outputs.
-    
+
     Uses synthetic random embeddings (1536 dimensions) for reproducible benchmarks
     without API costs. Performance tests MongoDB vector search, not embedding quality.
+
 """
 
 from __future__ import annotations
@@ -31,11 +32,11 @@ import statistics
 import time
 import argparse
 from dataclasses import dataclass, asdict
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, cast
 
 from pymongo import MongoClient
 
-from llama_index.core.schema import Document, TextNode
+from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
@@ -153,17 +154,17 @@ def _prepare_collection(
 ) -> List[Document]:
     """
     Populate the collection with synthetic embeddings.
-    
+
     Uses random 1536-dimensional vectors for fast, reproducible benchmarks
     without API costs. Always reuses existing documents and only adds more
     if needed to reach target_docs. Never deletes existing documents.
     """
     existing_count = vs._collection.count_documents({})
-    
+    sample_docs: List[Document] = []
+
     if existing_count >= target_docs:
         # Already have enough documents
         print(f"Found {existing_count} existing documents (>= requested {target_docs}). Using existing data.")
-        sample_docs: List[Document] = []
         cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(min(25, existing_count))
         for doc in cursor:
             sample_docs.append(
@@ -173,31 +174,30 @@ def _prepare_collection(
             return sample_docs
         else:
             raise SystemExit("Failed to retrieve sample documents from collection")
-    
+
     # Need to add more documents to reach target
     docs_to_add = target_docs - existing_count
     print(f"Found {existing_count} existing documents. Adding {docs_to_add} more to reach {target_docs}...")
-    
+
     base_lines = Document.example().text.split("\n")[:25]
 
     # Generate synthetic embeddings (random 1536-dimensional vectors)
     import random
     dims = 1536
-    
+
     BATCH_SIZE = 10000  # Process 10k documents at a time
-    sample_docs: List[Document] = []  # Keep a small sample for query generation
-    
+
     print(f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents in batches of {BATCH_SIZE}...")
     total_inserted = 0
     batch_num = 0
-    
+
     while total_inserted < docs_to_add:
         batch_num += 1
         batch_start = time.perf_counter()
         batch_size = min(BATCH_SIZE, docs_to_add - total_inserted)
         nodes: List[TextNode] = []
         docs: List[Document] = []
-        
+
         # Generate batch of documents
         gen_start = time.perf_counter()
         for i in range(batch_size):
@@ -209,27 +209,27 @@ def _prepare_collection(
             txt = f"{line}{suffix} llamaindex LLM"
             doc = Document(text=txt, metadata={"text": line, "group": doc_idx % 5})
             docs.append(doc)
-            
+
             # Create synthetic embedding
             embedding = [random.uniform(-1.0, 1.0) for _ in range(dims)]
             nodes.append(
                 TextNode(text=doc.text, embedding=embedding, metadata=doc.metadata, id_=str(doc_idx))
             )
         gen_time = time.perf_counter() - gen_start
-        
+
         # Insert batch via library method (already uses insert_many internally)
         # Note: Slowness is due to MongoDB vector index updates, not Python overhead
         insert_start = time.perf_counter()
-        vs.add(nodes)
+        vs.add(cast(List[BaseNode], nodes))
         insert_time = time.perf_counter() - insert_start
         total_inserted += batch_size
         batch_time = time.perf_counter() - batch_start
         print(f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s (gen: {gen_time:.1f}s, insert: {insert_time:.1f}s)")
-        
+
         # Keep a sample of documents for query generation (from first batch only)
         if batch_num == 1:
             sample_docs = docs[:min(25, len(docs))]
-    
+
     # If we didn't insert anything (existing_count >= target_docs), get sample from existing docs
     if not sample_docs:
         cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(25)
@@ -237,7 +237,7 @@ def _prepare_collection(
             sample_docs.append(
                 Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
             )
-    
+
     return sample_docs
 
 
@@ -295,8 +295,8 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     # Use synthetic embeddings (1536 dimensions) for benchmark
     dims = 1536
-    
-    client = MongoClient(MONGODB_URI)
+
+    client: MongoClient = MongoClient(MONGODB_URI)
     vs = MongoDBAtlasVectorSearch(
         mongodb_client=client,
         db_name=DB_NAME,
@@ -304,7 +304,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         vector_index_name=VECTOR_INDEX_NAME,
         fulltext_index_name=FULLTEXT_INDEX_NAME,
     )
-    
+
     t0 = time.perf_counter()
     _ensure_indexes(vs, dims=dims)
     index_ensure_ms = (time.perf_counter() - t0) * 1000
@@ -326,7 +326,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     # Pre-build embeddings & query objects
     vector_query_text = docs[0].text
     hybrid_text_query = "llamaindex"
-    
+
     # Generate synthetic query embedding (random 1536-dimensional vector)
     import random
     embedding_vector = [random.uniform(-1.0, 1.0) for _ in range(dims)]
@@ -340,7 +340,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         ]
     )
 
-    def vector_query():
+    def vector_query() -> None:
         vs.query(
             VectorStoreQuery(
                 query_embedding=embedding_vector,
@@ -349,7 +349,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             )
         )
 
-    def filtered_vector_query():
+    def filtered_vector_query() -> None:
         vs.query(
             VectorStoreQuery(
                 query_embedding=embedding_vector,
@@ -359,7 +359,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             )
         )
 
-    def text_query():
+    def text_query() -> None:
         vs.query(
             VectorStoreQuery(
                 query_str=hybrid_text_query,
@@ -368,7 +368,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             )
         )
 
-    def hybrid_query():
+    def hybrid_query() -> None:
         vs.query(
             VectorStoreQuery(
                 query_embedding=embedding_vector,
