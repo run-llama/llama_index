@@ -22,6 +22,9 @@ Notes:
     Uses synthetic random embeddings (1536 dimensions) for reproducible benchmarks
     without API costs. Performance tests MongoDB vector search, not embedding quality.
 
+    Tests both unfiltered and filtered variants of vector, text, and hybrid searches
+    using high-selectivity filters to demonstrate pre-filtering benefits.
+
 """
 
 from __future__ import annotations
@@ -141,11 +144,98 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
         except Exception:
             pass  # Non-fatal; proceed (benchmark will fail later if truly unusable)
     if FULLTEXT_INDEX_NAME not in existing:
-        vs.create_fulltext_search_index(
-            field=vs._text_key,
-            field_type="string",
-            wait_until_complete=180,
+        # Create fulltext index with both the main text field and metadata.text field
+        # This is needed for filtered text search queries
+        from pymongo.operations import SearchIndexModel
+        definition = {
+            "mappings": {
+                "dynamic": False,
+                "fields": {
+                    vs._text_key: {"type": "string"},
+                    "metadata.text": {"type": "token"}
+                }
+            }
+        }
+        vs._collection.create_search_index(
+            SearchIndexModel(
+                definition=definition,
+                name=FULLTEXT_INDEX_NAME,
+                type="search",
+            )
         )
+        # Wait for index to be ready
+        import time
+        timeout = 180
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            indexes = {idx["name"]: idx for idx in vs._collection.list_search_indexes()}
+            if FULLTEXT_INDEX_NAME in indexes:
+                status = indexes[FULLTEXT_INDEX_NAME].get("status")
+                if status == "READY":
+                    break
+            time.sleep(2)
+        else:
+            print(f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s")
+    else:
+        # Index exists - check if it has the correct definition with metadata.text
+        # If not, drop and recreate it
+        from pymongo.operations import SearchIndexModel
+        indexes = {idx["name"]: idx for idx in vs._collection.list_search_indexes()}
+        current_def = indexes.get(FULLTEXT_INDEX_NAME, {})
+        
+        # Check if metadata.text is in the index definition
+        needs_update = True
+        if "latestDefinition" in current_def:
+            mappings = current_def.get("latestDefinition", {}).get("mappings", {})
+            fields = mappings.get("fields", {})
+            if "metadata.text" in fields:
+                needs_update = False
+        
+        if needs_update:
+            print(f"Updating {FULLTEXT_INDEX_NAME} to include metadata.text field...")
+            # Drop the old index
+            vs._collection.drop_search_index(FULLTEXT_INDEX_NAME)
+            
+            # Wait for deletion to complete
+            import time
+            timeout = 60
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                existing_names = {idx["name"] for idx in vs._collection.list_search_indexes()}
+                if FULLTEXT_INDEX_NAME not in existing_names:
+                    break
+                time.sleep(2)
+            
+            # Create new index with correct definition
+            definition = {
+                "mappings": {
+                    "dynamic": False,
+                    "fields": {
+                        vs._text_key: {"type": "string"},
+                        "metadata.text": {"type": "token"}
+                    }
+                }
+            }
+            vs._collection.create_search_index(
+                SearchIndexModel(
+                    definition=definition,
+                    name=FULLTEXT_INDEX_NAME,
+                    type="search",
+                )
+            )
+            
+            # Wait for index to be ready
+            timeout = 180
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                indexes = {idx["name"]: idx for idx in vs._collection.list_search_indexes()}
+                if FULLTEXT_INDEX_NAME in indexes:
+                    status = indexes[FULLTEXT_INDEX_NAME].get("status")
+                    if status == "READY":
+                        break
+                time.sleep(2)
+            else:
+                print(f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s")
 
 
 def _prepare_collection(
@@ -159,12 +249,14 @@ def _prepare_collection(
     without API costs. Always reuses existing documents and only adds more
     if needed to reach target_docs. Never deletes existing documents.
     """
-    existing_count = vs._collection.count_documents({})
+    # Use estimated_document_count() which is much faster than count_documents()
+    # for large collections (uses metadata instead of scanning)
+    existing_count = vs._collection.estimated_document_count()
     sample_docs: List[Document] = []
 
     if existing_count >= target_docs:
         # Already have enough documents
-        print(f"Found {existing_count} existing documents (>= requested {target_docs}). Using existing data.")
+        print(f"Found ~{existing_count} existing documents (>= requested {target_docs}). Using existing data.")
         cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(min(25, existing_count))
         for doc in cursor:
             sample_docs.append(
@@ -177,7 +269,7 @@ def _prepare_collection(
 
     # Need to add more documents to reach target
     docs_to_add = target_docs - existing_count
-    print(f"Found {existing_count} existing documents. Adding {docs_to_add} more to reach {target_docs}...")
+    print(f"Found ~{existing_count} existing documents. Adding {docs_to_add} more to reach {target_docs}...")
 
     base_lines = Document.example().text.split("\n")[:25]
 
@@ -331,11 +423,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     import random
     embedding_vector = [random.uniform(-1.0, 1.0) for _ in range(dims)]
 
-    # Filter excluding first doc's text token to exercise filter server-side
+    # High selectivity filter: matches ~4% of documents (1/25 base_lines)
+    # This demonstrates the performance benefits of server-side pre-filtering
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="text", value=docs[0].metadata["text"], operator=FilterOperator.NE
+                key="text", value=docs[0].metadata["text"], operator=FilterOperator.EQ
             )
         ]
     )
@@ -368,6 +461,16 @@ def main(argv: Optional[List[str]] = None) -> None:
             )
         )
 
+    def filtered_text_query() -> None:
+        vs.query(
+            VectorStoreQuery(
+                query_str=hybrid_text_query,
+                similarity_top_k=5,
+                mode=VectorStoreQueryMode.TEXT_SEARCH,
+                filters=filters,
+            )
+        )
+
     def hybrid_query() -> None:
         vs.query(
             VectorStoreQuery(
@@ -379,13 +482,31 @@ def main(argv: Optional[List[str]] = None) -> None:
             )
         )
 
+    def filtered_hybrid_query() -> None:
+        vs.query(
+            VectorStoreQuery(
+                query_embedding=embedding_vector,
+                query_str=hybrid_text_query,
+                similarity_top_k=5,
+                mode=VectorStoreQueryMode.HYBRID,
+                alpha=0.5,
+                filters=filters,
+            )
+        )
+
     results: Dict[str, TimingStats] = {}
     results["vector"] = stats("vector", time_query("vector", vector_query))
     results["vector_filtered"] = stats(
         "vector_filtered", time_query("vector_filtered", filtered_vector_query)
     )
     results["text_search"] = stats("text_search", time_query("text_search", text_query))
+    results["text_search_filtered"] = stats(
+        "text_search_filtered", time_query("text_search_filtered", filtered_text_query)
+    )
     results["hybrid"] = stats("hybrid", time_query("hybrid", hybrid_query))
+    results["hybrid_filtered"] = stats(
+        "hybrid_filtered", time_query("hybrid_filtered", filtered_hybrid_query)
+    )
 
     summary = {k: asdict(v) for k, v in results.items()}
     print(json.dumps(summary, indent=2))
