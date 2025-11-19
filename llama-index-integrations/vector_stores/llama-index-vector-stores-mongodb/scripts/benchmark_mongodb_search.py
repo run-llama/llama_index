@@ -64,9 +64,12 @@ if USE_LOCAL:
             break
         cur = os.path.join(cur, "..")
 
-    if package_root and package_root not in sys.path:
-        sys.path.insert(0, package_root)
+    if package_root:
+        if package_root not in sys.path:
+            sys.path.insert(0, package_root)
         print(f"✓ Using LOCAL package from: {package_root}")
+    else:
+        print("⚠ Warning: Could not locate local package root, falling back to installed version")
 
     # Add monorepo core package path (/_llama-index) if present so embeddings and core modules resolve.
     # Ascend to repository root first.
