@@ -5,7 +5,6 @@ This file ensures all lines in utils.py and base.py are covered.
 """
 
 import sys
-import warnings
 from unittest.mock import Mock, patch
 from llama_index.llms.ovhcloud.utils import Model
 from llama_index.llms.ovhcloud.base import OVHcloud
@@ -36,7 +35,6 @@ def test_model_class():
     assert len(model_set) == 2  # model and model3 are the same
 
     print("✅ Model class tests passed")
-
 
 
 def test_ovhcloud_class():
@@ -86,6 +84,3 @@ def main():
 if __name__ == "__main__":
     success = main()
     sys.exit(0 if success else 1)
-
-
-

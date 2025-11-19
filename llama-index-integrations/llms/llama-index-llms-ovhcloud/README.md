@@ -36,7 +36,7 @@ from llama_index.llms.ovhcloud import OVHcloud
 # Using with API key
 llm = OVHcloud(
     model="gpt-oss-120b",
-    api_key="YOUR_API_KEY", # Or empty string for free tier with rate limits)
+    api_key="YOUR_API_KEY",  # Or empty string for free tier with rate limits)
 )
 ```
 
@@ -59,9 +59,7 @@ Use chat-style interactions:
 from llama_index.core.llms import ChatMessage
 
 messages = [
-    ChatMessage(
-        role="system", content="You are a helpful assistant"
-    ),
+    ChatMessage(role="system", content="You are a helpful assistant"),
     ChatMessage(role="user", content="What is the capital of France?"),
 ]
 response = llm.chat(messages)
@@ -80,9 +78,7 @@ for r in response:
 
 # Streaming chat
 messages = [
-    ChatMessage(
-        role="system", content="You are a helpful assistant"
-    ),
+    ChatMessage(role="system", content="You are a helpful assistant"),
     ChatMessage(role="user", content="What is the capital of France?"),
 ]
 response = llm.stream_chat(messages)
@@ -104,8 +100,7 @@ print(f"Available models: {model_ids}")
 ## Additional Resources
 
 For more information about OVHcloud AI Endpoints, visit:
+
 - [OVHcloud AI Endpoints Catalog](https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/)
 - [OVHcloud Manager](https://ovh.com/manager)
 - [OVHcloud Help Centre](https://help.ovhcloud.com/csm/world-home?id=csm_index)
-
-

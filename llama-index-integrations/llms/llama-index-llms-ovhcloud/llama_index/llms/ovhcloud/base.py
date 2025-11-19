@@ -8,7 +8,6 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai import OpenAI
-from llama_index.core.bridge.pydantic import Field
 from .utils import Model
 
 DEFAULT_API_BASE = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1"
@@ -109,7 +108,7 @@ class OVHcloud(OpenAI):
         if api_key is None:
             api_key = os.environ.get("OVHCLOUD_API_KEY", "")
         # If api_key is explicitly set to empty string, keep it as empty string
-        
+
         # Use provided api_base or default
         api_base = api_base or DEFAULT_API_BASE
 
@@ -168,4 +167,3 @@ class OVHcloud(OpenAI):
             model_name=self.model,
             is_chat_model=True,
         )
-

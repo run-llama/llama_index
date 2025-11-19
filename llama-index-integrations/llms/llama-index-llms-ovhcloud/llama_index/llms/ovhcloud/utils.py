@@ -1,5 +1,3 @@
-from typing import List
-import warnings
 from llama_index.core.bridge.pydantic import BaseModel
 
 # OVHcloud AI Endpoints supported models
