@@ -67,13 +67,14 @@ def test_vector_search_stage_empty_filter_omitted() -> None:
 
 def test_fulltext_search_stage_legacy_filter_alias() -> None:
     legacy = {"must": [{"equals": {"path": "metadata.genre", "value": "Drama"}}]}
-    pipeline = fulltext_search_stage(
-        query="some text",
-        search_field="text",
-        index_name="search_index",
-        operator="text",
-        filter=legacy,  # legacy parameter name
-    )
+    with pytest.warns(DeprecationWarning, match="`filter` parameter is deprecated"):
+        pipeline = fulltext_search_stage(
+            query="some text",
+            search_field="text",
+            index_name="search_index",
+            operator="text",
+            filter=legacy,  # legacy parameter name
+        )
     search_stage = pipeline[0]["$search"]
     compound = search_stage["compound"]
     assert any(
