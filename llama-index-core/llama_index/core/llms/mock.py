@@ -1,16 +1,22 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, List
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
 from llama_index.core.types import PydanticProgramMode
+
+from pydantic import Field
+import copy
 
 
 class MockLLM(CustomLLM):
@@ -89,3 +95,58 @@ class MockLLMWithNonyieldingChatStream(MockLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         yield from []
+
+
+class MockLLMWithChatMemoryOfLastCall(MockLLM):
+    """
+    Mock LLM that keeps track of chat messages of function calls.
+
+    The idea behind this is to be able to easily checks whether the right messages would have been passed to an actual LLM.
+    """
+
+    last_chat_messages: Optional[Sequence[ChatMessage]] = Field(
+        default=None, exclude=True
+    )
+    last_called_chat_function: List[str] = Field(default=[], exclude=True)
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        r = super().chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("chat")
+        return r
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        r = super().stream_chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("stream_chat")
+        return r
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        r = await super().achat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("achat")
+        return r
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        r = await super().astream_chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("astream_chat")
+        return r
+
+    def reset_memory(self) -> None:
+        self.last_chat_messages = None
+        self.last_called_chat_function = []
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockLLMWithChatMemoryOfLastCall"
