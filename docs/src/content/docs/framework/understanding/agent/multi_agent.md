@@ -92,7 +92,7 @@ You can see the full example in the [agents_as_tools notebook](/python/examples/
 ```python
 import re
 from llama_index.core.agent.workflow import FunctionAgent
-from llama_index.core.workflow import Context
+from workflows import Context
 
 # assume research_agent / write_agent / review_agent defined as before
 # except we really only need the `search_web` tool at a minimum
@@ -199,14 +199,8 @@ from pydantic import BaseModel, Field
 from typing import Any, Optional
 
 from llama_index.core.llms import ChatMessage
-from llama_index.core.workflow import (
-    Context,
-    Event,
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-)
+from workflows import Context, Workflow, step
+from workflows.events import Event, StartEvent, StopEvent
 
 # Assume we created helper functions to call the agents
 

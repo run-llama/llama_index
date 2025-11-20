@@ -11,14 +11,8 @@ To avoid this pitfall, we have a `Context` object available to every step in the
 We need one new import, the `Context` type:
 
 ```python
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-    Event,
-    Context,
-)
+from workflows import Workflow, step, Context
+from workflows.events import StartEvent, StopEvent, Event
 ```
 
 Now we define a `start` event that checks if data has been loaded into the context. If not, it returns a `SetupEvent` which triggers `setup` that loads the data and loops back to `start`.
@@ -97,13 +91,8 @@ Here's a quick example of how you can leverage workflows + pydantic to take adva
 from pydantic import BaseModel, Field, field_validator, field_serializer
 from typing import Union
 
-from llama_index.core.workflow import (
-    Context,
-    Workflow,
-    StartEvent,
-    StopEvent,
-    step,
-)
+from workflows import Context, Workflow, step
+from workflows.events import StartEvent, StopEvent
 
 
 # This is a random object that we want to use in our state
