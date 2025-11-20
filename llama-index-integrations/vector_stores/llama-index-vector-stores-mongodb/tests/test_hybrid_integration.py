@@ -1,4 +1,5 @@
 """Integration tests for MongoDB Atlas hybrid search functionality."""
+
 import os
 import time
 
@@ -28,15 +29,17 @@ RETRY_DELAY = 1.5
 
 
 def _ensure_index_config(collection, index_name: str, index_type: str) -> None:
-    """Ensure search index exists with proper configuration.
-    
+    """
+    Ensure search index exists with proper configuration.
+
     Args:
         collection: MongoDB collection
         index_name: Name of the index
         index_type: Either 'vector' or 'text'
+
     """
     existing = {idx["name"]: idx for idx in collection.list_search_indexes()}
-    
+
     if index_type == "vector":
         if index_name not in existing:
             index.create_vector_search_index(
@@ -59,7 +62,7 @@ def _ensure_index_config(collection, index_name: str, index_type: str) -> None:
                 filters=["metadata.tags"],
                 wait_until_complete=TIMEOUT,
             )
-    
+
     elif index_type == "text":
         text_mapping = {
             "mappings": {
@@ -73,7 +76,7 @@ def _ensure_index_config(collection, index_name: str, index_type: str) -> None:
                 },
             }
         }
-        
+
         if index_name not in existing:
             index.create_fulltext_search_index(
                 collection=collection,
@@ -88,8 +91,11 @@ def _ensure_index_config(collection, index_name: str, index_type: str) -> None:
             collection.update_search_index(name=index_name, definition=text_mapping)
 
 
-def _wait_for_indexing(vector_store: MongoDBAtlasVectorSearch, timeout: int = 30) -> None:
-    """Wait until documents are searchable via vector query.
+def _wait_for_indexing(
+    vector_store: MongoDBAtlasVectorSearch, timeout: int = 30
+) -> None:
+    """
+    Wait until documents are searchable via vector query.
 
     Args:
         vector_store: MongoDB vector store instance
@@ -97,11 +103,12 @@ def _wait_for_indexing(vector_store: MongoDBAtlasVectorSearch, timeout: int = 30
 
     Raises:
         TimeoutError: If documents not searchable within timeout
+
     """
     query = VectorStoreQuery(
         query_embedding=[0.9] * DIM,
         similarity_top_k=1,
-        mode=VectorStoreQueryMode.DEFAULT
+        mode=VectorStoreQueryMode.DEFAULT,
     )
 
     end_time = time.time() + timeout
@@ -112,7 +119,7 @@ def _wait_for_indexing(vector_store: MongoDBAtlasVectorSearch, timeout: int = 30
         except Exception:
             pass
         time.sleep(0.5)
-    
+
     raise TimeoutError(f"Documents not searchable after {timeout}s")
 
 
@@ -121,9 +128,10 @@ def _query_with_retry(
     query: VectorStoreQuery,
     min_results: int = 1,
     max_attempts: int = MAX_RETRY_ATTEMPTS,
-    delay: float = RETRY_DELAY
+    delay: float = RETRY_DELAY,
 ):
-    """Execute query with retry logic for index propagation delays.
+    """
+    Execute query with retry logic for index propagation delays.
 
     Args:
         vector_store: MongoDB vector store instance
@@ -131,19 +139,20 @@ def _query_with_retry(
         min_results: Minimum expected results
         max_attempts: Maximum retry attempts
         delay: Delay between retries in seconds
-        
+
     Returns:
         Query result
 
     Raises:
         AssertionError: If minimum results not achieved after all attempts
+
     """
     for attempt in range(max_attempts):
         result = vector_store.query(query)
         if len(result.nodes) >= min_results:
             return result
         time.sleep(delay if attempt < max_attempts // 2 else delay * 2)
-    
+
     raise AssertionError(
         f"Query returned {len(result.nodes)} nodes after {max_attempts} attempts, "
         f"expected at least {min_results}"
@@ -151,7 +160,8 @@ def _query_with_retry(
 
 
 def _create_test_nodes() -> list[TextNode]:
-    """Create test data nodes with predictable embeddings and metadata.
+    """
+    Create test data nodes with predictable embeddings and metadata.
 
     Returns nodes with two groups:
     - Group A: High vector similarity ([0.85-0.9]), contains 'alpha' text, has tags
@@ -161,23 +171,19 @@ def _create_test_nodes() -> list[TextNode]:
         TextNode(
             text="alpha beta gamma",
             embedding=[0.9] * DIM,
-            metadata={"group": "A", "tags": ["alpha", "news"]}
+            metadata={"group": "A", "tags": ["alpha", "news"]},
         ),
         TextNode(
             text="alpha beta",
             embedding=[0.85] * DIM,
-            metadata={"group": "A", "tags": ["alpha"]}
+            metadata={"group": "A", "tags": ["alpha"]},
         ),
         TextNode(
             text="delta epsilon",
             embedding=[0.1] * DIM,
-            metadata={"group": "B", "tags": None}
+            metadata={"group": "B", "tags": None},
         ),
-        TextNode(
-            text="zeta eta theta",
-            embedding=[0.2] * DIM,
-            metadata={"group": "B"}
-        ),
+        TextNode(text="zeta eta theta", embedding=[0.2] * DIM, metadata={"group": "B"}),
     ]
 
 
@@ -192,6 +198,7 @@ class TestHybridIntegration:
     def vector_store(self) -> MongoDBAtlasVectorSearch:
         """Create MongoDB Atlas vector store instance."""
         import pymongo
+
         client = pymongo.MongoClient(MONGODB_URI)
         return MongoDBAtlasVectorSearch(
             mongodb_client=client,
@@ -210,9 +217,7 @@ class TestHybridIntegration:
 
     @pytest.fixture(scope="class")
     def test_data(
-        self,
-        vector_store: MongoDBAtlasVectorSearch,
-        search_indexes: None
+        self, vector_store: MongoDBAtlasVectorSearch, search_indexes: None
     ) -> None:
         """Seed test collection with predictable data."""
         vector_store.collection.delete_many({})
@@ -220,11 +225,10 @@ class TestHybridIntegration:
         _wait_for_indexing(vector_store)
 
     def test_hybrid_vector_bias(
-        self,
-        vector_store: MongoDBAtlasVectorSearch,
-        test_data: None
+        self, vector_store: MongoDBAtlasVectorSearch, test_data: None
     ) -> None:
-        """Test hybrid search with high alpha (vector-biased).
+        """
+        Test hybrid search with high alpha (vector-biased).
 
         With alpha=0.8, vector similarity should dominate. Query embedding close
         to group A should return group A documents first, despite text also matching.
@@ -242,14 +246,15 @@ class TestHybridIntegration:
         result = _query_with_retry(vector_store, query, min_results=2)
         groups = [node.metadata.get("group") for node in result.nodes]
 
-        assert groups[0] == "A", f"Expected group A first with vector bias, got {groups}"
+        assert groups[0] == "A", (
+            f"Expected group A first with vector bias, got {groups}"
+        )
 
     def test_hybrid_text_bias(
-        self,
-        vector_store: MongoDBAtlasVectorSearch,
-        test_data: None
+        self, vector_store: MongoDBAtlasVectorSearch, test_data: None
     ) -> None:
-        """Test hybrid search with low alpha (text-biased).
+        """
+        Test hybrid search with low alpha (text-biased).
 
         With alpha=0.2, text relevance should dominate. Query text 'alpha' matches
         group A documents, so they should appear despite query embedding being closer
@@ -268,22 +273,25 @@ class TestHybridIntegration:
         result = _query_with_retry(vector_store, query, min_results=2)
         groups = [node.metadata.get("group") for node in result.nodes]
 
-        assert any(g == "A" for g in groups), f"Expected group A with text bias, got {groups}"
+        assert any(g == "A" for g in groups), (
+            f"Expected group A with text bias, got {groups}"
+        )
 
     def test_hybrid_filter_or_combination(
-        self,
-        vector_store: MongoDBAtlasVectorSearch,
-        test_data: None
+        self, vector_store: MongoDBAtlasVectorSearch, test_data: None
     ) -> None:
-        """Test hybrid search with OR filter combining IN and IS_EMPTY.
-        
+        """
+        Test hybrid search with OR filter combining IN and IS_EMPTY.
+
         Verifies that OR condition with IN and IS_EMPTY operators executes without
         error. Should match documents where tags contains 'alpha' OR tags is empty/missing.
         """
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="tags", value=["alpha"], operator=FilterOperator.IN),
-                MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY),
+                MetadataFilter(
+                    key="tags", value=None, operator=FilterOperator.IS_EMPTY
+                ),
             ],
             condition=FilterCondition.OR,
         )
@@ -300,14 +308,15 @@ class TestHybridIntegration:
         )
 
         result = vector_store.query(query)
-        assert result is not None, "Query with OR(IN, IS_EMPTY) should execute without error"
+        assert result is not None, (
+            "Query with OR(IN, IS_EMPTY) should execute without error"
+        )
 
     def test_hybrid_filter_and_contradiction(
-        self,
-        vector_store: MongoDBAtlasVectorSearch,
-        test_data: None
+        self, vector_store: MongoDBAtlasVectorSearch, test_data: None
     ) -> None:
-        """Test hybrid search with logically contradictory AND filter.
+        """
+        Test hybrid search with logically contradictory AND filter.
 
         Verifies that AND condition combining IN and IS_EMPTY (which cannot both be
         true) executes without error and returns zero results.
@@ -315,7 +324,9 @@ class TestHybridIntegration:
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="tags", value=["alpha"], operator=FilterOperator.IN),
-                MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY),
+                MetadataFilter(
+                    key="tags", value=None, operator=FilterOperator.IS_EMPTY
+                ),
             ],
             condition=FilterCondition.AND,
         )
@@ -336,4 +347,3 @@ class TestHybridIntegration:
         assert len(result.nodes) == 0, (
             f"AND(IN, IS_EMPTY) should return 0 results, got {len(result.nodes)}"
         )
-

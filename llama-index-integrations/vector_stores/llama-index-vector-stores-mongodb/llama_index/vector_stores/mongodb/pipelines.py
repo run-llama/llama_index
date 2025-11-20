@@ -139,7 +139,9 @@ def filters_to_mql(
         mf = filters.filters[0]
         mql = _mql_clause(cast(MetadataFilter, mf))
     elif filters.condition == FilterCondition.AND:
-        mql = {"$and": [_mql_clause(cast(MetadataFilter, mf)) for mf in filters.filters]}
+        mql = {
+            "$and": [_mql_clause(cast(MetadataFilter, mf)) for mf in filters.filters]
+        }
     elif filters.condition == FilterCondition.OR:
         mql = {"$or": [_mql_clause(cast(MetadataFilter, mf)) for mf in filters.filters]}
     else:
@@ -182,7 +184,9 @@ def filters_to_atlas_search_compound(
         if operator == FilterOperator.IS_EMPTY:
             empty_clauses = [
                 {"equals": {"path": path, "value": None}},  # null
-                {"compound": {"mustNot": [{"exists": {"path": path}}]}},  # field missing
+                {
+                    "compound": {"mustNot": [{"exists": {"path": path}}]}
+                },  # field missing
             ]
 
             if condition == FilterCondition.OR:
@@ -205,9 +209,7 @@ def filters_to_atlas_search_compound(
             FilterOperator.LTE,
         ):
             range_operator = map_lc_mql_filter_operators(operator).replace("$", "")
-            clause: Dict[str, Any] = {
-                "range": {"path": path, range_operator: value}
-            }
+            clause: Dict[str, Any] = {"range": {"path": path, range_operator: value}}
         elif operator == FilterOperator.IN:
             values = value if isinstance(value, list) else [value]
             clause = {"in": {"path": path, "value": values}}

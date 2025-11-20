@@ -220,10 +220,8 @@ This tri-state interpretation is useful when upstream ingestion may omit a key, 
 
 Implementation details:
 
-| Layer | Translation |
-|-------|-------------|
-| MQL pre-filter (`filters_to_mql`) | Expands one `IS_EMPTY` into a nested `$or` with three branches: `{key: {"$exists": false}}`, `{key: None}`, `{key: []}` |
-| Atlas Search (`filters_to_atlas_search_compound`) | Builds a nested compound: two `equals` clauses (null, empty array) plus a `mustNot exists` clause for the missing case. In AND contexts it's wrapped in a `compound.should` group with `minimumShouldMatch: 1`; in OR contexts each branch is added to the top-level `should`. |
+- **MQL pre-filter (`filters_to_mql`)**: Expands one `IS_EMPTY` into a nested `$or` with three branches: `{key: {"$exists": false}}`, `{key: None}`, `{key: []}`.
+- **Atlas Search (`filters_to_atlas_search_compound`)**: Builds a nested compound: two `equals` clauses (null, empty array) plus a `mustNot exists` clause for the missing case. In AND contexts it's wrapped in a `compound.should` group with `minimumShouldMatch: 1`; in OR contexts each branch is added to the top-level `should`.
 
 Usage examples:
 
@@ -286,4 +284,3 @@ Notes & caveats:
 - `IS_EMPTY` is structural and therefore not mapped in `map_lc_mql_filter_operators`; attempting to call that mapping directly with `IS_EMPTY` will raise.
 - Provide `value=None` when constructing the `MetadataFilter` to satisfy pydantic, though the value is ignored.
 - If you need to exclude just one emptiness form (e.g. treat missing as different from `null`), use explicit negative filters (`NE`, `NIN`) or add a custom ingestion normalization step before indexing.
-

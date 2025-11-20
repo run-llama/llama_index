@@ -59,7 +59,10 @@ if USE_LOCAL:
     package_root = None
     for _ in range(4):  # climb up to 4 levels max
         candidate = os.path.abspath(cur)
-        if os.path.isfile(os.path.join(candidate, target_pyproject)) and "vector-stores-mongodb" in candidate:
+        if (
+            os.path.isfile(os.path.join(candidate, target_pyproject))
+            and "vector-stores-mongodb" in candidate
+        ):
             package_root = candidate
             break
         cur = os.path.join(cur, "..")
@@ -69,12 +72,16 @@ if USE_LOCAL:
             sys.path.insert(0, package_root)
         print(f"✓ Using LOCAL package from: {package_root}")
     else:
-        print("⚠ Warning: Could not locate local package root, falling back to installed version")
+        print(
+            "Warning: Could not locate local package root, falling back to installed version"
+        )
 
     # Add monorepo core package path (/_llama-index) if present so embeddings and core modules resolve.
     # Ascend to repository root first.
     repo_root = None
-    probe = package_root or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    probe = package_root or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..")
+    )
     for _ in range(6):
         candidate = os.path.abspath(probe)
         if os.path.isdir(os.path.join(candidate, "_llama-index")):
@@ -114,7 +121,9 @@ VECTOR_INDEX_NAME = os.environ.get("MONGODB_INDEX", "vector_index")
 FULLTEXT_INDEX_NAME = "fulltext_index"
 RUNS = int(os.environ.get("MONGODB_BENCH_RUNS", 5))
 WARMUP = int(os.environ.get("MONGODB_BENCH_WARMUP", 2))
-TARGET_DOCS = int(os.environ.get("MONGODB_BENCH_TARGET_DOCS", 100))  # scalable corpus size
+TARGET_DOCS = int(
+    os.environ.get("MONGODB_BENCH_TARGET_DOCS", 100)
+)  # scalable corpus size
 EXPORT_PATH = os.environ.get("MONGODB_BENCH_OUT")
 
 
@@ -158,13 +167,14 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
         # Create fulltext index with both the main text field and metadata.text field
         # This is needed for filtered text search queries
         from pymongo.operations import SearchIndexModel
+
         definition = {
             "mappings": {
                 "dynamic": False,
                 "fields": {
                     vs._text_key: {"type": "string"},
-                    "metadata.text": {"type": "token"}
-                }
+                    "metadata.text": {"type": "token"},
+                },
             }
         }
         vs._collection.create_search_index(
@@ -176,6 +186,7 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
         )
         # Wait for index to be ready
         import time
+
         timeout = 180
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -186,14 +197,17 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
                     break
             time.sleep(2)
         else:
-            print(f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s")
+            print(
+                f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s"
+            )
     else:
         # Index exists - check if it has the correct definition with metadata.text
         # If not, drop and recreate it
         from pymongo.operations import SearchIndexModel
+
         indexes = {idx["name"]: idx for idx in vs._collection.list_search_indexes()}
         current_def = indexes.get(FULLTEXT_INDEX_NAME, {})
-        
+
         # Check if metadata.text is in the index definition
         needs_update = True
         if "latestDefinition" in current_def:
@@ -201,30 +215,33 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
             fields = mappings.get("fields", {})
             if "metadata.text" in fields:
                 needs_update = False
-        
+
         if needs_update:
             print(f"Updating {FULLTEXT_INDEX_NAME} to include metadata.text field...")
             # Drop the old index
             vs._collection.drop_search_index(FULLTEXT_INDEX_NAME)
-            
+
             # Wait for deletion to complete
             import time
+
             timeout = 60
             start_time = time.time()
             while time.time() - start_time < timeout:
-                existing_names = {idx["name"] for idx in vs._collection.list_search_indexes()}
+                existing_names = {
+                    idx["name"] for idx in vs._collection.list_search_indexes()
+                }
                 if FULLTEXT_INDEX_NAME not in existing_names:
                     break
                 time.sleep(2)
-            
+
             # Create new index with correct definition
             definition = {
                 "mappings": {
                     "dynamic": False,
                     "fields": {
                         vs._text_key: {"type": "string"},
-                        "metadata.text": {"type": "token"}
-                    }
+                        "metadata.text": {"type": "token"},
+                    },
                 }
             }
             vs._collection.create_search_index(
@@ -234,19 +251,23 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dims: int) -> None:
                     type="search",
                 )
             )
-            
+
             # Wait for index to be ready
             timeout = 180
             start_time = time.time()
             while time.time() - start_time < timeout:
-                indexes = {idx["name"]: idx for idx in vs._collection.list_search_indexes()}
+                indexes = {
+                    idx["name"]: idx for idx in vs._collection.list_search_indexes()
+                }
                 if FULLTEXT_INDEX_NAME in indexes:
                     status = indexes[FULLTEXT_INDEX_NAME].get("status")
                     if status == "READY":
                         break
                 time.sleep(2)
             else:
-                print(f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s")
+                print(
+                    f"Warning: Index {FULLTEXT_INDEX_NAME} did not become READY within {timeout}s"
+                )
 
 
 def _prepare_collection(
@@ -267,11 +288,17 @@ def _prepare_collection(
 
     if existing_count >= target_docs:
         # Already have enough documents
-        print(f"Found ~{existing_count} existing documents (>= requested {target_docs}). Using existing data.")
-        cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(min(25, existing_count))
+        print(
+            f"Found ~{existing_count} existing documents (>= requested {target_docs}). Using existing data."
+        )
+        cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(
+            min(25, existing_count)
+        )
         for doc in cursor:
             sample_docs.append(
-                Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
+                Document(
+                    text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {})
+                )
             )
         if sample_docs:
             return sample_docs
@@ -280,17 +307,22 @@ def _prepare_collection(
 
     # Need to add more documents to reach target
     docs_to_add = target_docs - existing_count
-    print(f"Found ~{existing_count} existing documents. Adding {docs_to_add} more to reach {target_docs}...")
+    print(
+        f"Found ~{existing_count} existing documents. Adding {docs_to_add} more to reach {target_docs}..."
+    )
 
     base_lines = Document.example().text.split("\n")[:25]
 
     # Generate synthetic embeddings (random 1536-dimensional vectors)
     import random
+
     dims = 1536
 
     BATCH_SIZE = 10000  # Process 10k documents at a time
 
-    print(f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents in batches of {BATCH_SIZE}...")
+    print(
+        f"[{time.strftime('%H:%M:%S')}] Inserting {docs_to_add} documents in batches of {BATCH_SIZE}..."
+    )
     total_inserted = 0
     batch_num = 0
 
@@ -316,7 +348,12 @@ def _prepare_collection(
             # Create synthetic embedding
             embedding = [random.uniform(-1.0, 1.0) for _ in range(dims)]
             nodes.append(
-                TextNode(text=doc.text, embedding=embedding, metadata=doc.metadata, id_=str(doc_idx))
+                TextNode(
+                    text=doc.text,
+                    embedding=embedding,
+                    metadata=doc.metadata,
+                    id_=str(doc_idx),
+                )
             )
         gen_time = time.perf_counter() - gen_start
 
@@ -327,18 +364,22 @@ def _prepare_collection(
         insert_time = time.perf_counter() - insert_start
         total_inserted += batch_size
         batch_time = time.perf_counter() - batch_start
-        print(f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s (gen: {gen_time:.1f}s, insert: {insert_time:.1f}s)")
+        print(
+            f"  [{time.strftime('%H:%M:%S')}] Batch {batch_num}: Inserted {batch_size} documents (total: {existing_count + total_inserted}/{target_docs}) - batch: {batch_time:.1f}s (gen: {gen_time:.1f}s, insert: {insert_time:.1f}s)"
+        )
 
         # Keep a sample of documents for query generation (from first batch only)
         if batch_num == 1:
-            sample_docs = docs[:min(25, len(docs))]
+            sample_docs = docs[: min(25, len(docs))]
 
     # If we didn't insert anything (existing_count >= target_docs), get sample from existing docs
     if not sample_docs:
         cursor = vs._collection.find({}, {vs._text_key: 1, "metadata": 1}).limit(25)
         for doc in cursor:
             sample_docs.append(
-                Document(text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {}))
+                Document(
+                    text=doc.get(vs._text_key, ""), metadata=doc.get("metadata", {})
+                )
             )
 
     return sample_docs
@@ -385,12 +426,24 @@ def main(argv: Optional[List[str]] = None) -> None:
         raise SystemExit("MONGODB_URI is required")
     # Declare globals early since we reference them for argparse defaults.
     global RUNS, WARMUP
-    parser = argparse.ArgumentParser(description="MongoDB Atlas Vector & Hybrid benchmark")
+    parser = argparse.ArgumentParser(
+        description="MongoDB Atlas Vector & Hybrid benchmark"
+    )
     parser.add_argument("--runs", type=int, default=RUNS, help="Timed runs per mode")
-    parser.add_argument("--warmup", type=int, default=WARMUP, help="Warm-up iterations per mode")
-    parser.add_argument("--docs", type=int, default=TARGET_DOCS, help="Target document count to ingest")
-    parser.add_argument("--out", type=str, default=EXPORT_PATH, help="Optional JSON output file path")
-    parser.add_argument("--use-local", action="store_true", help="Use local source code instead of installed package")
+    parser.add_argument(
+        "--warmup", type=int, default=WARMUP, help="Warm-up iterations per mode"
+    )
+    parser.add_argument(
+        "--docs", type=int, default=TARGET_DOCS, help="Target document count to ingest"
+    )
+    parser.add_argument(
+        "--out", type=str, default=EXPORT_PATH, help="Optional JSON output file path"
+    )
+    parser.add_argument(
+        "--use-local",
+        action="store_true",
+        help="Use local source code instead of installed package",
+    )
     args = parser.parse_args(argv)
 
     # Override global counters for this invocation
@@ -433,6 +486,7 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     # Generate synthetic query embedding (random 1536-dimensional vector)
     import random
+
     embedding_vector = [random.uniform(-1.0, 1.0) for _ in range(dims)]
 
     # High selectivity filter: matches ~4% of documents (1/25 base_lines)

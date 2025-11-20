@@ -187,7 +187,9 @@ def test_vectorstore(
 
 
 # Shared test data setup for DEFAULT mode filter tests
-def _setup_default_mode_filter_test_data(vector_store: MongoDBAtlasVectorSearch) -> None:
+def _setup_default_mode_filter_test_data(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
     """Configure index and insert test data for DEFAULT mode filter tests."""
     collection = vector_store._collection
     vector_index_name = vector_store._vector_index_name
@@ -211,22 +213,26 @@ def _setup_default_mode_filter_test_data(vector_store: MongoDBAtlasVectorSearch)
         TextNode(
             text="Machine learning fundamentals",
             embedding=[0.9] * 1536,
-            metadata={"category": "ai", "priority": "high", "tags": ["ml", "education"]}
+            metadata={
+                "category": "ai",
+                "priority": "high",
+                "tags": ["ml", "education"],
+            },
         ),
         TextNode(
             text="Deep learning with neural networks",
             embedding=[0.85] * 1536,
-            metadata={"category": "ai", "priority": "low", "tags": ["dl", "education"]}
+            metadata={"category": "ai", "priority": "low", "tags": ["dl", "education"]},
         ),
         TextNode(
             text="Cooking recipes and techniques",
             embedding=[0.1] * 1536,
-            metadata={"category": "cooking", "priority": "high", "tags": ["recipes"]}
+            metadata={"category": "cooking", "priority": "high", "tags": ["recipes"]},
         ),
         TextNode(
             text="Travel destinations in Europe",
             embedding=[0.05] * 1536,
-            metadata={"category": "travel", "priority": "low", "tags": ["europe"]}
+            metadata={"category": "travel", "priority": "low", "tags": ["europe"]},
         ),
     ]
 
@@ -256,9 +262,11 @@ def test_default_mode_filter_eq_operator_applies_at_database_level(
             mode=VectorStoreQueryMode.DEFAULT,
             filters=MetadataFilters(
                 filters=[
-                    MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ)
+                    MetadataFilter(
+                        key="category", value="ai", operator=FilterOperator.EQ
+                    )
                 ]
-            )
+            ),
         )
 
         # Retry for index propagation
@@ -291,9 +299,11 @@ def test_default_mode_filter_in_operator_applies_at_database_level(
             mode=VectorStoreQueryMode.DEFAULT,
             filters=MetadataFilters(
                 filters=[
-                    MetadataFilter(key="tags", value=["ml", "recipes"], operator=FilterOperator.IN)
+                    MetadataFilter(
+                        key="tags", value=["ml", "recipes"], operator=FilterOperator.IN
+                    )
                 ]
-            )
+            ),
         )
 
         result = vector_store.query(query)
@@ -322,11 +332,15 @@ def test_default_mode_filter_and_condition_applies_at_database_level(
             mode=VectorStoreQueryMode.DEFAULT,
             filters=MetadataFilters(
                 filters=[
-                    MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ),
-                    MetadataFilter(key="priority", value="high", operator=FilterOperator.EQ),
+                    MetadataFilter(
+                        key="category", value="ai", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key="priority", value="high", operator=FilterOperator.EQ
+                    ),
                 ],
-                condition=FilterCondition.AND
-            )
+                condition=FilterCondition.AND,
+            ),
         )
 
         result = vector_store.query(query)
@@ -353,11 +367,15 @@ def test_default_mode_filter_or_condition_applies_at_database_level(
             mode=VectorStoreQueryMode.DEFAULT,
             filters=MetadataFilters(
                 filters=[
-                    MetadataFilter(key="category", value="cooking", operator=FilterOperator.EQ),
-                    MetadataFilter(key="priority", value="high", operator=FilterOperator.EQ),
+                    MetadataFilter(
+                        key="category", value="cooking", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key="priority", value="high", operator=FilterOperator.EQ
+                    ),
                 ],
-                condition=FilterCondition.OR
-            )
+                condition=FilterCondition.OR,
+            ),
         )
 
         # Retry for index propagation

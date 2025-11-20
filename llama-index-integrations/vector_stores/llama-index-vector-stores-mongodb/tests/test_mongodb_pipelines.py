@@ -32,7 +32,9 @@ def test_filters_to_atlas_search_compound_and_logic() -> None:
 def test_filters_to_atlas_search_compound_or_logic_with_negatives() -> None:
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(key="category", value=["a", "b"], operator=FilterOperator.IN),
+            MetadataFilter(
+                key="category", value=["a", "b"], operator=FilterOperator.IN
+            ),
             MetadataFilter(key="status", value="archived", operator=FilterOperator.NE),
         ],
         condition=FilterCondition.OR,
@@ -186,7 +188,9 @@ def test_filters_to_mql_is_empty_or_with_in_prefixed_key() -> None:
     assert nested, "Expected nested $or for IS_EMPTY"
     assert all(len(inner["$or"]) == 2 for inner in nested)
     # No empty array literal branch
-    assert all([] not in [sub.get("metadata.tags") for sub in inner["$or"]] for inner in nested)
+    assert all(
+        [] not in [sub.get("metadata.tags") for sub in inner["$or"]] for inner in nested
+    )
 
 
 def test_filters_to_atlas_search_compound_is_empty() -> None:

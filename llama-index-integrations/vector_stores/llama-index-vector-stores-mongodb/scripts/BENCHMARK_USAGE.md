@@ -38,16 +38,19 @@ python scripts/benchmark_mongodb_search.py --docs 100000 --use-local --out local
 ### How It Works
 
 Every benchmark query is automatically tagged with a comment that includes:
+
 - The benchmark identifier: `llama_index_benchmark`
 - Your custom tag: `tag=<your_tag>`
 
 ### Viewing Tagged Queries in Atlas
 
 1. **Performance Advisor**:
+
    - Navigate to: Database → Performance Advisor
    - Look for queries with comment: `llama_index_benchmark tag=<your_tag>`
 
 2. **Query Profiler**:
+
    - Navigate to: Database → Query Profiler
    - Filter by comment to see specific benchmark runs
    - Example search: `llama_index_benchmark tag=before_fix`
@@ -59,6 +62,7 @@ Every benchmark query is automatically tagged with a comment that includes:
 ### Use Cases
 
 **Before/After Comparisons**:
+
 ```bash
 # Run baseline with installed package
 python scripts/benchmark_mongodb_search.py --docs 220000 --tag baseline --out baseline.json
@@ -70,6 +74,7 @@ python scripts/benchmark_mongodb_search.py --docs 220000 --tag optimized --out o
 ```
 
 **Comparing Installed vs Local Versions**:
+
 ```bash
 # Test current installed version
 python scripts/benchmark_mongodb_search.py --docs 100000 --out installed.json
@@ -79,12 +84,14 @@ python scripts/benchmark_mongodb_search.py --docs 100000 --out local.json --use-
 ```
 
 **Testing Different Configurations**:
+
 ```bash
 python scripts/benchmark_mongodb_search.py --tag config_a --runs 10
 python scripts/benchmark_mongodb_search.py --tag config_b --runs 10
 ```
 
 **Environment Testing**:
+
 ```bash
 python scripts/benchmark_mongodb_search.py --tag dev_cluster
 python scripts/benchmark_mongodb_search.py --tag prod_cluster

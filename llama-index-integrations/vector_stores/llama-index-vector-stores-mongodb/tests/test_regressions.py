@@ -71,14 +71,14 @@ def _ensure_indexes(vs: MongoDBAtlasVectorSearch, dimensions: int = 1536) -> Non
         )
 
 
-@pytest.mark.skipif(
-    MONGODB_URI is None, reason="Requires MONGODB_URI in environment"
-)
+@pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
 @pytest.mark.skipif(
     "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ,
     reason="Requires embedding provider API key",
 )
-def test_no_empty_filter_key_in_vector_search_pipeline(atlas_client: MongoClient) -> None:
+def test_no_empty_filter_key_in_vector_search_pipeline(
+    atlas_client: MongoClient,
+) -> None:
     """
     Ensure `$vectorSearch` stage omits `filter` when no predicates provided.
 
@@ -120,6 +120,7 @@ def test_no_empty_filter_key_in_vector_search_pipeline(atlas_client: MongoClient
         _ = qe.query("llamaindex")  # text search path may not build vector stage
         # Force vector mode explicitly via direct vector store query
         from llama_index.core import Settings
+
         embedding_vec = Settings.embed_model.get_text_embedding(doc.text)
         vs.query(
             VectorStoreQuery(
@@ -133,7 +134,11 @@ def test_no_empty_filter_key_in_vector_search_pipeline(atlas_client: MongoClient
     assert captured_pipeline is not None, "Pipeline was not captured"
     # Locate first vector search stage
     vector_stage = next(
-        (stage["$vectorSearch"] for stage in captured_pipeline if "$vectorSearch" in stage),
+        (
+            stage["$vectorSearch"]
+            for stage in captured_pipeline
+            if "$vectorSearch" in stage
+        ),
         None,
     )
     assert vector_stage is not None, "No $vectorSearch stage found in pipeline"
@@ -142,14 +147,14 @@ def test_no_empty_filter_key_in_vector_search_pipeline(atlas_client: MongoClient
     )
 
 
-@pytest.mark.skipif(
-    MONGODB_URI is None, reason="Requires MONGODB_URI in environment"
-)
+@pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
 @pytest.mark.skipif(
     "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ,
     reason="Requires embedding provider API key",
 )
-def test_first_vector_query_returns_top_k_without_retry(atlas_client: MongoClient) -> None:
+def test_first_vector_query_returns_top_k_without_retry(
+    atlas_client: MongoClient,
+) -> None:
     """
     Validate that the first vector query after ingestion returns `similarity_top_k`.
 
@@ -209,9 +214,7 @@ def test_first_vector_query_returns_top_k_without_retry(atlas_client: MongoClien
     )
 
 
-@pytest.mark.skipif(
-    MONGODB_URI is None, reason="Requires MONGODB_URI in environment"
-)
+@pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
 @pytest.mark.skipif(
     "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ,
     reason="Requires embedding provider API key",
@@ -252,12 +255,15 @@ def test_server_side_filter_preserves_top_k(atlas_client: MongoClient) -> None:
     excluded_value = texts[0]
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(key="text", value=[excluded_value], operator=FilterOperator.NIN)
+            MetadataFilter(
+                key="text", value=[excluded_value], operator=FilterOperator.NIN
+            )
         ]
     )
 
     # Direct vector-store query to control mode
     from llama_index.core import Settings
+
     embedding_vec = Settings.embed_model.get_text_embedding(docs[0].text)
     query = VectorStoreQuery(
         query_embedding=embedding_vec,
@@ -280,14 +286,14 @@ def test_server_side_filter_preserves_top_k(atlas_client: MongoClient) -> None:
     assert all(excluded_value not in n.text for n in result.nodes)
 
 
-@pytest.mark.skipif(
-    MONGODB_URI is None, reason="Requires MONGODB_URI in environment"
-)
+@pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
 @pytest.mark.skipif(
     "OPENAI_API_KEY" not in os.environ and "AZURE_OPENAI_API_KEY" not in os.environ,
     reason="Requires embedding provider API key",
 )
-def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient) -> None:
+def test_hybrid_query_uses_both_vector_and_text_stages(
+    atlas_client: MongoClient,
+) -> None:
     """
     Hybrid query should invoke both vector and full-text search stages and fuse results.
 
@@ -322,10 +328,16 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
     from llama_index.core.ingestion import IngestionPipeline
     from llama_index.core.node_parser import SentenceSplitter
     from llama_index.core import Settings
+
     if Settings.embed_model is None:
-        pytest.skip("Embed model not initialized in Settings; fixture should set OPENAI or AZURE embedding model")
+        pytest.skip(
+            "Embed model not initialized in Settings; fixture should set OPENAI or AZURE embedding model"
+        )
     pipeline = IngestionPipeline(
-        transformations=[SentenceSplitter(chunk_size=1024, chunk_overlap=200), Settings.embed_model]
+        transformations=[
+            SentenceSplitter(chunk_size=1024, chunk_overlap=200),
+            Settings.embed_model,
+        ]
     )
     nodes = pipeline.run(documents=docs)
     vs.add(nodes)
@@ -336,8 +348,11 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
     vector_query = docs[0].text
     # Obtain embedding model via global Settings (set by existing fixtures) or fall back to example node's embedding
     from llama_index.core import Settings
+
     if Settings.embed_model is None:
-        pytest.skip("Embed model not initialized in Settings; fixture should set OPENAI or AZURE embedding model")
+        pytest.skip(
+            "Embed model not initialized in Settings; fixture should set OPENAI or AZURE embedding model"
+        )
     embedding = Settings.embed_model.get_text_embedding(vector_query)
 
     top_k = 5
@@ -353,6 +368,7 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
     vs._collection.aggregate = capturing_aggregate  # type: ignore
     try:
         from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
         query = VectorStoreQuery(
             query_embedding=embedding,
             query_str=text_query,
@@ -373,12 +389,15 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
         vs._collection.aggregate = original_aggregate  # type: ignore
 
     assert captured_pipeline is not None, "Hybrid pipeline was not captured"
+
     def stage_contains_search(stages):
         for st in stages:
             if "$search" in st:
                 return True
             # unionWith embeds sub-pipeline
-            if "$unionWith" in st and isinstance(st["$unionWith"].get("pipeline"), list):
+            if "$unionWith" in st and isinstance(
+                st["$unionWith"].get("pipeline"), list
+            ):
                 if stage_contains_search(st["$unionWith"]["pipeline"]):
                     return True
         return False
@@ -387,14 +406,18 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
         for st in stages:
             if "$vectorSearch" in st:
                 return True
-            if "$unionWith" in st and isinstance(st["$unionWith"].get("pipeline"), list):
+            if "$unionWith" in st and isinstance(
+                st["$unionWith"].get("pipeline"), list
+            ):
                 if stage_contains_vector(st["$unionWith"]["pipeline"]):
                     return True
         return False
 
     has_vector = stage_contains_vector(captured_pipeline)
     has_search = stage_contains_search(captured_pipeline)
-    assert has_vector and has_search, "Hybrid query did not include both vector and text stages"
+    assert has_vector and has_search, (
+        "Hybrid query did not include both vector and text stages"
+    )
 
     # Final result size
     assert len(result.ids) == top_k, "Hybrid result did not return requested top_k"
@@ -404,6 +427,9 @@ def test_hybrid_query_uses_both_vector_and_text_stages(atlas_client: MongoClient
         "LlamaIndex" in n.text or "llamaindex" in n.text for n in result.nodes
     )
     contains_llm_term = any("LLM" in n.text for n in result.nodes)
-    assert contains_text_term, "No node contained the full-text query term; hybrid degenerated to vector-only"
-    assert contains_llm_term, "No node contained LLM term; hybrid degenerated to text-only"
-
+    assert contains_text_term, (
+        "No node contained the full-text query term; hybrid degenerated to vector-only"
+    )
+    assert contains_llm_term, (
+        "No node contained LLM term; hybrid degenerated to text-only"
+    )
