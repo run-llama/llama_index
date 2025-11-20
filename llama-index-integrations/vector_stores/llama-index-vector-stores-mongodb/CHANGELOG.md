@@ -25,7 +25,7 @@
 
 ### Added
 
-- Implemented `FilterOperator.IS_EMPTY` semantics for MongoDB integration (Vector + Atlas Search). Field is treated as matching when missing, `null`, or an empty array. MQL translation now expands to a structural `$or`; Atlas Search translation builds nested compound clauses.
+- Implemented `FilterOperator.IS_EMPTY` semantics for MongoDB integration (Vector + Atlas Search). Field is treated as matching when missing or `null`. MQL translation now expands to a structural `$or`; Atlas Search translation builds nested compound clauses.
 - Added helper `_mql_clause` to encapsulate single-filter MQL construction.
 - Added `search_filter` parameter to `fulltext_search_stage()` for clarity (deprecates `filter` parameter for Atlas Search context).
 
