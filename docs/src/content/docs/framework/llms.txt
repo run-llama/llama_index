@@ -29,7 +29,7 @@ Key characteristics of agentic applications include:
 LlamaIndex applications can be grouped into four main categories:
 [**Agents**](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/module_guides/deploying/agents/index.mdx): An automated decision-maker powered by an LLM that interacts with the world via a set of [tools](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps.
 
-[**Workflows**](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/module_guides/workflow/index.mdx): A Workflow in LlamaIndex is a specific event-driven abstraction that allows you to orchestrate a sequence of steps and LLMs calls. Workflows can be used to implement any agentic application, and are a core component of LlamaIndex.
+[**Workflows**](https://github.com/run-llama/workflows-py/blob/main/docs/src/content/docs/llamaagents/workflows/index.md): A Workflow in LlamaIndex is a specific event-driven abstraction that allows you to orchestrate a sequence of steps and LLMs calls. Workflows can be used to implement any agentic application, and are a core component of LlamaIndex.
 
 [**Query Engines**](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/module_guides/deploying/query_engine/index.mdx): A query engine is an end-to-end flow that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
@@ -87,13 +87,13 @@ To get started with LlamaIndex:
 - [Querying](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/querying) - Query engines, retrievers, and response synthesis
 - [Models](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/models) - LLM providers, embeddings, and multi-modal models
 - [Storing](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/storing) - Vector stores and storage backends
-- [Workflows](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/workflow) - Event-driven orchestration and complex pipelines
+- [Workflows](https://github.com/run-llama/workflows-py/blob/main/docs/src/content/docs/llamaagents/workflows) - Event-driven orchestration and complex pipelines
 
 ### Agents and Workflows
 - [Building Agents](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/index.mdx) - Autonomous AI systems with tool use
 - [Agent Tools](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/tools.md) - Available tools and how to create custom ones
 - [Multi-Agent Systems](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/multi_agent.md) - Collaborative agent workflows
-- [Workflow Documentation](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/workflows/index.md) - Event-driven application orchestration
+- [Workflow Documentation](https://github.com/run-llama/workflows-py/blob/main/docs/src/content/docs/llamaagents/workflows/index.md) - Event-driven application orchestration
 - [Human-in-the-Loop](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/human_in_the_loop.md) - Interactive agent workflows
 
 LlamaIndex supports dozens of LLM providers including OpenAI, Anthropic, and local models, with hundreds of data connectors for ingesting diverse data sources.
