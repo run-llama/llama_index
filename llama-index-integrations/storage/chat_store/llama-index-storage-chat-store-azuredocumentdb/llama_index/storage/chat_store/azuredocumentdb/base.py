@@ -11,7 +11,7 @@ from pymongo.collection import Collection
 
 logger = logging.getLogger(__name__)
 
-APP_NAME = "Llama-Index-CDBMongoVCore-ChatStore-Python"
+APP_NAME = "Llama-Index-AzureDocumentDB-ChatStore-Python"
 
 
 # Convert a ChatMessage to a JSON object
@@ -29,8 +29,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
     return ChatMessage.model_validate(d)
 
 
-class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
-    """Creates an Azure Cosmos DB NoSql Chat Store."""
+class AzureDocumentDBChatStore(BaseChatStore, ABC):
+    """Creates an Azure DocumentDB Chat Store."""
 
     _mongo_client = MongoClient
     _database = Database
@@ -67,7 +67,7 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
-        """Creates an instance of AzureCosmosMongoVCoreChatStore using a connection string."""
+        """Creates an instance of AzureDocumentDBChatStore using a connection string."""
         # Parse the MongoDB URI
         parsed_uri = urllib.parse.urlparse(connection_string)
         # Extract username and password, and perform url_encoding
@@ -90,8 +90,8 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         port: int,
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
-    ) -> "AzureCosmosMongoVCoreChatStore":
-        """Initializes AzureCosmosMongoVCoreChatStore from an endpoint url and key."""
+    ) -> "AzureDocumentDBChatStore":
+        """Initializes AzureDocumentDBChatStore from an endpoint url and key."""
         mongo_client = MongoClient(host=host, port=port, appname=APP_NAME)
 
         return cls(
@@ -162,4 +162,4 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "AzureCosmosMongoVCoreChatStore"
+        return "AzureDocumentDBChatStore"
