@@ -16,9 +16,9 @@ package = ["build[uv]~=1.0", "twine~=6.0", "uv-secure[faster-async]~=0.12.0"]
 test = [
     "numpy~=2.0",
     "pycobertura~=4.0",
-    "pytest~=8.0",
-    "pytest-asyncio~=1.0",
-    "pytest-cov~=6.0",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
     "scipy~=1.0",
     "tox~=4.0",
     "tox-uv~=1.0",
