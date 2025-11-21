@@ -112,6 +112,9 @@ class BedrockEmbedding(BaseEmbedding):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    application_inference_profile_arn: Optional[str] = Field(
+        description="The ARN of an application inference profile to use when calling Bedrock. If provided, make sure that the model_name argument refers to the same model of the application inference profile."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
@@ -134,6 +137,7 @@ class BedrockEmbedding(BaseEmbedding):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         timeout: float = 60.0,
+        application_inference_profile_arn: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         # base class
         system_prompt: Optional[str] = None,
@@ -158,6 +162,7 @@ class BedrockEmbedding(BaseEmbedding):
             model_name=model_name,
             max_retries=max_retries,
             timeout=timeout,
+            application_inference_profile_arn=application_inference_profile_arn,
             botocore_config=botocore_config,
             profile_name=profile_name,
             aws_access_key_id=aws_access_key_id,
@@ -219,7 +224,7 @@ class BedrockEmbedding(BaseEmbedding):
         return list_models
 
     @classmethod
-    def class_name(self) -> str:
+    def class_name(cls) -> str:
         return "BedrockEmbedding"
 
     @deprecated(
@@ -398,7 +403,7 @@ class BedrockEmbedding(BaseEmbedding):
 
         response = self._client.invoke_model(
             body=request_body,
-            modelId=self.model_name,
+            modelId=self.application_inference_profile_arn or self.model_name,
             accept="application/json",
             contentType="application/json",
         )
@@ -513,7 +518,7 @@ class BedrockEmbedding(BaseEmbedding):
         ) as client:
             response = await client.invoke_model(
                 body=request_body,
-                modelId=self.model_name,
+                modelId=self.application_inference_profile_arn or self.model_name,
                 accept="application/json",
                 contentType="application/json",
             )

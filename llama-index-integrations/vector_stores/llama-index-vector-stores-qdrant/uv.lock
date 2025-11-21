@@ -2183,7 +2183,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-qdrant"
-version = "0.8.7"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "grpcio" },
@@ -2221,7 +2221,7 @@ dev = [
 requires-dist = [
     { name = "grpcio", specifier = ">=1.60.0,<2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "qdrant-client", specifier = ">=1.7.1" },
+    { name = "qdrant-client", specifier = ">=1.16.0" },
 ]
 provides-extras = ["fastembed"]
 

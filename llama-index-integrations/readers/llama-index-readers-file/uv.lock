@@ -2259,7 +2259,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-file"
-version = "0.5.4"
+version = "0.5.5"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -2308,7 +2308,7 @@ requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas", specifier = "<2.3.0" },
     { name = "pymupdf", marker = "extra == 'pymupdf'", specifier = ">=1.23.21,<2" },
-    { name = "pypdf", specifier = ">=5.1.0,<7" },
+    { name = "pypdf", specifier = ">=6.1.3,<7" },
     { name = "striprtf", specifier = ">=0.0.26,<0.0.27" },
 ]
 provides-extras = ["pymupdf"]
