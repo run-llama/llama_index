@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Sequence
 
 import fsspec
@@ -10,7 +11,9 @@ from llama_index.core.storage.kvstore import (
 from llama_index.core.storage.kvstore.types import (
     BaseKVStore as BaseCache,
 )
+from llama_index.core.utils import concat_dirs
 
+DEFAULT_PERSIST_DIR = "./cache"
 DEFAULT_CACHE_NAME = "llama_cache"
 
 
@@ -62,13 +65,28 @@ class IngestionCache(BaseModel):
             print("Warning: skipping persist, only needed for SimpleCache.")
 
     @classmethod
-    def from_persist_path(
+    def from_persist_dir(
         cls,
-        persist_path: str,
-        collection: str = DEFAULT_CACHE_NAME,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        collection: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "IngestionCache":
         """Create a IngestionCache from a persist directory."""
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, DEFAULT_CACHE_NAME)
+        else:
+            persist_path = os.path.join(persist_dir, DEFAULT_CACHE_NAME)
+        return cls.from_persist_path(persist_path, collection=collection, fs=fs)
+
+    @classmethod
+    def from_persist_path(
+        cls,
+        persist_path: str,
+        collection: Optional[str] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> "IngestionCache":
+        """Create a IngestionCache from a persist path."""
+        collection = collection or DEFAULT_CACHE_NAME
         return cls(
             collection=collection,
             cache=SimpleCache.from_persist_path(persist_path, fs=fs),
