@@ -13,6 +13,9 @@ The WholeSiteReader is a sophisticated web scraping tool that employs a breadth-
 - **URL Prefix Focus:** Targets scraping efforts to specific subsections of a site based on URL prefixes.
 - **Selenium-Based:** Leverages Selenium for dynamic interaction with web pages, supporting JavaScript-rendered content.
 - **Add your own chromedriver with options:** Configurable
+- **Configurable Rate Limiting:** Adjust the delay between page requests (default: 1.0 second).
+- **robots.txt Support:** Respects website robots.txt policies for ethical scraping (default: enabled).
+- **Progress Tracking:** Optional callback to monitor scraping progress in real-time.
 
 ```python
 from llama_index.readers.web import WholeSiteReader
