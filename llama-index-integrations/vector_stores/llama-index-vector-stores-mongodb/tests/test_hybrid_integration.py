@@ -246,9 +246,9 @@ class TestHybridIntegration:
         result = _query_with_retry(vector_store, query, min_results=2)
         groups = [node.metadata.get("group") for node in result.nodes]
 
-        assert groups[0] == "A", (
-            f"Expected group A first with vector bias, got {groups}"
-        )
+        assert (
+            groups[0] == "A"
+        ), f"Expected group A first with vector bias, got {groups}"
 
     def test_hybrid_text_bias(
         self, vector_store: MongoDBAtlasVectorSearch, test_data: None
@@ -273,9 +273,9 @@ class TestHybridIntegration:
         result = _query_with_retry(vector_store, query, min_results=2)
         groups = [node.metadata.get("group") for node in result.nodes]
 
-        assert any(g == "A" for g in groups), (
-            f"Expected group A with text bias, got {groups}"
-        )
+        assert any(
+            g == "A" for g in groups
+        ), f"Expected group A with text bias, got {groups}"
 
     def test_hybrid_filter_or_combination(
         self, vector_store: MongoDBAtlasVectorSearch, test_data: None
@@ -308,9 +308,9 @@ class TestHybridIntegration:
         )
 
         result = vector_store.query(query)
-        assert result is not None, (
-            "Query with OR(IN, IS_EMPTY) should execute without error"
-        )
+        assert (
+            result is not None
+        ), "Query with OR(IN, IS_EMPTY) should execute without error"
 
     def test_hybrid_filter_and_contradiction(
         self, vector_store: MongoDBAtlasVectorSearch, test_data: None
@@ -344,6 +344,6 @@ class TestHybridIntegration:
 
         result = vector_store.query(query)
         assert result is not None, "Query should execute without error"
-        assert len(result.nodes) == 0, (
-            f"AND(IN, IS_EMPTY) should return 0 results, got {len(result.nodes)}"
-        )
+        assert (
+            len(result.nodes) == 0
+        ), f"AND(IN, IS_EMPTY) should return 0 results, got {len(result.nodes)}"

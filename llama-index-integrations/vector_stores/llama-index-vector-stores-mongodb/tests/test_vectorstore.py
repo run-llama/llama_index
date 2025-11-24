@@ -417,6 +417,8 @@ def test_vectorstore_mock() -> None:
     assert mock_collection.insert_many.called
 
     # Test query
-    query = VectorStoreQuery(query_embedding=[0.1] * 1536, mode=VectorStoreQueryMode.DEFAULT)
+    query = VectorStoreQuery(
+        query_embedding=[0.1] * 1536, mode=VectorStoreQueryMode.DEFAULT
+    )
     vector_store.query(query)
     assert mock_collection.aggregate.called

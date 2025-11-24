@@ -1,7 +1,13 @@
-
 from unittest.mock import MagicMock
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode, MetadataFilters, MetadataFilter, FilterOperator
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    MetadataFilters,
+    MetadataFilter,
+    FilterOperator,
+)
+
 
 def test_query_default_mode_with_filter() -> None:
     # Mock the MongoDB client and collection
@@ -19,16 +25,14 @@ def test_query_default_mode_with_filter() -> None:
             "embedding": [0.1, 0.2],
             "text": "test text",
             "metadata": {"year": 2021},
-            "score": 0.9
+            "score": 0.9,
         }
     ]
     mock_collection.aggregate.return_value = mock_cursor
 
     # Initialize the vector store
     store = MongoDBAtlasVectorSearch(
-        mongodb_client=mock_client,
-        db_name="test_db",
-        collection_name="test_collection"
+        mongodb_client=mock_client, db_name="test_db", collection_name="test_collection"
     )
 
     # Create a query with filters
@@ -36,10 +40,8 @@ def test_query_default_mode_with_filter() -> None:
         query_embedding=[0.1, 0.2],
         mode=VectorStoreQueryMode.DEFAULT,
         filters=MetadataFilters(
-            filters=[
-                MetadataFilter(key="year", value=2020, operator=FilterOperator.GT)
-            ]
-        )
+            filters=[MetadataFilter(key="year", value=2020, operator=FilterOperator.GT)]
+        ),
     )
 
     # Execute the query
@@ -57,6 +59,7 @@ def test_query_default_mode_with_filter() -> None:
     assert "filter" in vector_search_stage
     assert vector_search_stage["filter"] == {"metadata.year": {"$gt": 2020}}
 
+
 def test_query_text_search_mode() -> None:
     # Mock the MongoDB client and collection
     mock_client = MagicMock()
@@ -69,18 +72,14 @@ def test_query_text_search_mode() -> None:
     mock_cursor.__iter__.return_value = []
     mock_collection.aggregate.return_value = mock_cursor
 
-    store = MongoDBAtlasVectorSearch(
-        mongodb_client=mock_client
-    )
+    store = MongoDBAtlasVectorSearch(mongodb_client=mock_client)
 
     query = VectorStoreQuery(
         query_str="test query",
         mode=VectorStoreQueryMode.TEXT_SEARCH,
         filters=MetadataFilters(
-            filters=[
-                MetadataFilter(key="year", value=2020, operator=FilterOperator.EQ)
-            ]
-        )
+            filters=[MetadataFilter(key="year", value=2020, operator=FilterOperator.EQ)]
+        ),
     )
 
     store.query(query)
