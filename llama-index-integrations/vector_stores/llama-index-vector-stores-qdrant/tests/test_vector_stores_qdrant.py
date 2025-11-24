@@ -869,3 +869,67 @@ async def test_async_only_hybrid_legacy_collection() -> None:
 
     # Should now be corrected
     assert store.sparse_vector_name == "text-sparse"
+
+
+@pytest.mark.asyncio
+async def test_async_hybrid_vector_store_query(
+    hybrid_vector_store: QdrantVectorStore,
+) -> None:
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0],
+        query_str="test1",
+        similarity_top_k=1,
+        sparse_top_k=1,
+        hybrid_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+    results = await hybrid_vector_store.aquery(query)
+    assert len(results.nodes) == 2
+
+    # disable hybrid, and it should still work
+    hybrid_vector_store.enable_hybrid = False
+    query.mode = VectorStoreQueryMode.DEFAULT
+    results = await hybrid_vector_store.aquery(query)
+    assert len(results.nodes) == 1
+
+
+def test_vector_store_query(vector_store: QdrantVectorStore) -> None:
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+    results = vector_store.query(query)
+    assert len(results.nodes) == 1
+    assert results.nodes[0].node_id == "11111111-1111-1111-1111-111111111111"
+
+
+@requires_qdrant_server
+def test_vector_store_query_server(
+    payload_indexed_vector_store: QdrantVectorStore,
+) -> None:
+    """Integration test for sync query against a real server."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+    results = payload_indexed_vector_store.query(query)
+    assert len(results.nodes) == 1
+    assert results.nodes[0].node_id == "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.mark.asyncio
+@requires_qdrant_server
+async def test_async_vector_store_query_server(
+    payload_indexed_vector_store: QdrantVectorStore,
+) -> None:
+    """Integration test for async query against a real server."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+    results = await payload_indexed_vector_store.aquery(query)
+    assert len(results.nodes) == 1
+    assert results.nodes[0].node_id == "11111111-1111-1111-1111-111111111111"

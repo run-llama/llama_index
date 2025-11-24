@@ -1,6 +1,7 @@
 """Async utils."""
 
 import asyncio
+import contextvars
 import concurrent.futures
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
@@ -35,12 +36,14 @@ def asyncio_run(coro: Coroutine) -> Any:
         # Check if the loop is already running
         if loop.is_running():
             # If loop is already running, run in a separate thread
+            # Snapshot the current context so we can propagate contextvars
+            ctx = contextvars.copy_context()
 
             def run_coro_in_thread() -> Any:
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:
-                    return new_loop.run_until_complete(coro)
+                    return ctx.run(new_loop.run_until_complete, coro)
                 finally:
                     new_loop.close()
 
