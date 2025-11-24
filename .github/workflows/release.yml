@@ -21,7 +21,7 @@ jobs:
       version: ${{ steps.build-publish-core.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install uv and set python version
         uses: astral-sh/setup-uv@v7
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install uv and set python version
         uses: astral-sh/setup-uv@v7
