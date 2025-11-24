@@ -166,6 +166,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Collection = PrivateAttr()
+    _max_chunk_size: int = PrivateAttr()
 
     def __init__(
         self,
@@ -191,13 +192,22 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        self._max_chunk_size = MAX_CHUNK_SIZE
         if chroma_collection is None:
             client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
             self._collection = client.get_or_create_collection(
                 name=collection_name, **collection_kwargs
             )
+            self._max_chunk_size = client.get_max_batch_size()
         else:
             self._collection = cast(Collection, chroma_collection)
+            if hasattr(self._collection, "_client"):
+                self._max_chunk_size = self._collection._client.get_max_batch_size()
+
+    @property
+    def max_chunk_size(self) -> int:
+        """Return the max chunk size."""
+        return self._max_chunk_size
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -290,7 +300,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        max_chunk_size = MAX_CHUNK_SIZE
+        max_chunk_size = self._max_chunk_size
         node_chunks = chunk_list(nodes, max_chunk_size)
 
         all_ids = []
