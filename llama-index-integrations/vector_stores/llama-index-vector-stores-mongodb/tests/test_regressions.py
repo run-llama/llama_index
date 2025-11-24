@@ -25,6 +25,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterOperator,
     VectorStoreQuery,
+    VectorStoreQueryMode,
 )
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 
@@ -145,6 +146,62 @@ def test_no_empty_filter_key_in_vector_search_pipeline(
     assert "filter" not in vector_stage, (
         "Empty filter key unexpectedly present; regression of previous behavior"
     )
+
+
+def test_no_empty_filter_key_in_vector_search_pipeline_mock() -> None:
+    """
+    Mock version of test_no_empty_filter_key_in_vector_search_pipeline.
+    """
+    from unittest.mock import MagicMock
+
+    mock_client = MagicMock()
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_client.__getitem__.return_value = mock_db
+    mock_db.__getitem__.return_value = mock_collection
+
+    # Setup mock aggregate to return something so the query doesn't crash
+    mock_cursor = MagicMock()
+    mock_cursor.__iter__.return_value = []
+    mock_collection.aggregate.return_value = mock_cursor
+
+    vs = MongoDBAtlasVectorSearch(
+        mongodb_client=mock_client,
+        db_name="test_db",
+        collection_name="test_collection",
+        vector_index_name="vector_index",
+    )
+
+    # We don't need _ensure_indexes for the mock test as we are mocking the collection
+
+    # Capture the pipeline passed to aggregate
+    captured_pipeline = None
+    original_aggregate = mock_collection.aggregate
+
+    def capturing_aggregate(pipeline, *args, **kwargs):
+        nonlocal captured_pipeline
+        captured_pipeline = pipeline
+        return original_aggregate(pipeline, *args, **kwargs)
+
+    mock_collection.aggregate = capturing_aggregate
+
+    # Create a dummy query
+    query = VectorStoreQuery(
+        query_embedding=[0.1] * 1536,
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+
+    # Execute query
+    vs.query(query)
+
+    assert captured_pipeline is not None
+    vector_stage = next(
+        (stage["$vectorSearch"] for stage in captured_pipeline if "$vectorSearch" in stage),
+        None
+    )
+    assert vector_stage is not None
+    assert "filter" not in vector_stage
 
 
 @pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
@@ -390,7 +447,7 @@ def test_hybrid_query_uses_both_vector_and_text_stages(
 
     assert captured_pipeline is not None, "Hybrid pipeline was not captured"
 
-    def stage_contains_search(stages):
+    def stage_contains_search(stages) -> bool:
         for st in stages:
             if "$search" in st:
                 return True
@@ -402,7 +459,7 @@ def test_hybrid_query_uses_both_vector_and_text_stages(
                     return True
         return False
 
-    def stage_contains_vector(stages):
+    def stage_contains_vector(stages) -> bool:
         for st in stages:
             if "$vectorSearch" in st:
                 return True

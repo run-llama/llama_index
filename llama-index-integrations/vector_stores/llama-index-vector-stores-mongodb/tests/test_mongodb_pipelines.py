@@ -237,3 +237,97 @@ def test_filters_to_atlas_search_compound_is_empty() -> None:
             clause.get("equals") and clause["equals"]["value"] == []
             for clause in search_filter["should"]
         ), "Empty array literal should be omitted"
+
+
+def test_vector_search_stage_with_filter() -> None:
+    stage = vector_search_stage(
+        query_vector=[0.1, 0.2],
+        search_field="embedding",
+        index_name="vec_index",
+        limit=2,
+        filter={"metadata.year": {"$gt": 2020}},
+    )
+    assert "$vectorSearch" in stage
+    assert stage["$vectorSearch"]["filter"] == {"metadata.year": {"$gt": 2020}}
+
+
+def test_filters_to_atlas_search_compound_ne() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=2020, operator=FilterOperator.NE),
+        ]
+    )
+    result = filters_to_atlas_search_compound(filters)
+    assert "mustNot" in result
+    assert any(
+        clause.get("equals") and clause["equals"]["value"] == 2020
+        for clause in result["mustNot"]
+    )
+
+
+def test_filters_to_atlas_search_compound_nin() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=[2020, 2021], operator=FilterOperator.NIN),
+        ]
+    )
+    result = filters_to_atlas_search_compound(filters)
+    assert "mustNot" in result
+    assert any(
+        clause.get("in") and clause["in"]["value"] == [2020, 2021]
+        for clause in result["mustNot"]
+    )
+
+
+def test_filters_to_atlas_search_compound_is_empty_or_condition() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="tags", value=None, operator=FilterOperator.IS_EMPTY),
+            MetadataFilter(key="genre", value="Comedy", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.OR,
+    )
+    result = filters_to_atlas_search_compound(filters)
+    assert "should" in result
+    # Check for IS_EMPTY expansion in should
+    assert any(
+        clause.get("equals") and clause["equals"]["value"] is None
+        for clause in result["should"]
+    )
+    assert any(
+        clause.get("compound") and clause["compound"].get("mustNot")
+        for clause in result["should"]
+    )
+    # Check for EQ in should
+    assert any(
+        clause.get("equals") and clause["equals"]["value"] == "Comedy"
+        for clause in result["should"]
+    )
+
+
+def test_filters_to_atlas_search_compound_in() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=[2020, 2021], operator=FilterOperator.IN),
+        ]
+    )
+    result = filters_to_atlas_search_compound(filters)
+    assert "must" in result
+    assert any(
+        clause.get("in") and clause["in"]["value"] == [2020, 2021]
+        for clause in result["must"]
+    )
+
+
+def test_filters_to_atlas_search_compound_range() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=2020, operator=FilterOperator.LT),
+        ]
+    )
+    result = filters_to_atlas_search_compound(filters)
+    assert "must" in result
+    assert any(
+        clause.get("range") and clause["range"]["lt"] == 2020
+        for clause in result["must"]
+    )

@@ -1,5 +1,6 @@
 from time import sleep
 from typing import List
+from unittest.mock import MagicMock
 
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
@@ -390,3 +391,32 @@ def test_default_mode_filter_or_condition_applies_at_database_level(
         assert len(result.nodes) == 2
 
         vector_store._collection.delete_many({})
+
+
+def test_vectorstore_mock() -> None:
+    """Mock test for MongoDBAtlasVectorSearch."""
+    mock_client = MagicMock()
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_client.__getitem__.return_value = mock_db
+    mock_db.__getitem__.return_value = mock_collection
+
+    mock_cursor = MagicMock()
+    mock_cursor.__iter__.return_value = []
+    mock_collection.aggregate.return_value = mock_cursor
+
+    vector_store = MongoDBAtlasVectorSearch(
+        mongodb_client=mock_client,
+        db_name="test_db",
+        collection_name="test_collection",
+    )
+
+    # Test add
+    nodes = [TextNode(text="test", embedding=[0.1] * 1536)]
+    vector_store.add(nodes)
+    assert mock_collection.insert_many.called
+
+    # Test query
+    query = VectorStoreQuery(query_embedding=[0.1] * 1536, mode=VectorStoreQueryMode.DEFAULT)
+    vector_store.query(query)
+    assert mock_collection.aggregate.called
