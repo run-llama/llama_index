@@ -5,6 +5,7 @@ import uuid
 import hashlib
 
 from typing import List
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -354,6 +355,82 @@ class TestVertexAIVectorStore:
             metadata={"ref_doc_id": ref_id_to_delete},
         )
         assert len(result) == 0
+
+    def test_batch_update_index(self, node_embeddings: List[TextNode]) -> None:
+        """Test batch update path consistency and end-to-end functionality."""
+        if not GCS_BUCKET_NAME:
+            pytest.skip("GCS_BUCKET_NAME not set, skipping batch update test")
+
+        vector_store = self.vector_store()
+        staging_bucket = vector_store.staging_bucket
+
+        with patch.object(
+            staging_bucket, "blob", wraps=staging_bucket.blob
+        ) as mock_blob:
+            initial_nodes = node_embeddings[:5]
+            doc_ids = vector_store.add(initial_nodes)
+
+            assert len(doc_ids) == len(initial_nodes)
+
+            for call in mock_blob.call_args_list:
+                path = call[0][0]
+                assert path.startswith("index/")
+                assert path.endswith("documents.json")
+
+            embed_model = VertexTextEmbedding(project=PROJECT_ID, location=REGION)
+            query_embedding = embed_model.get_query_embedding("denim jeans")
+            q = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=1)
+            result = vector_store.query(q)
+
+            assert result.nodes is not None and len(result.nodes) == 1
+            assert result.nodes[0].id_ in doc_ids
+
+
+def test_batch_update_index_path_validation():
+    """Test that batch_update_index uses correct GCS path"""
+    mock_bucket = MagicMock(spec=storage.Bucket)
+    mock_bucket.name = "test-bucket"
+    mock_blob = MagicMock()
+    mock_bucket.blob.return_value = mock_blob
+
+    mock_index = MagicMock(spec=MatchingEngineIndex)
+    mock_index.update_embeddings = MagicMock()
+
+    # Create real data points using to_data_points
+    ids = ["id1", "id2", "id3"]
+    embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
+    metadatas = [
+        {"field1": "value1", "field2": 10},
+        {"field1": "value2", "field2": 20},
+        {"field1": "value3", "field2": 30},
+    ]
+
+    data_points = utils.to_data_points(ids, embeddings, metadatas)
+
+    utils.batch_update_index(
+        index=mock_index,
+        data_points=data_points,
+        staging_bucket=mock_bucket,
+        is_complete_overwrite=False,
+    )
+
+    assert mock_bucket.blob.called, "bucket.blob() should be called"
+    blob_path = mock_bucket.blob.call_args[0][0]
+
+    assert blob_path.startswith("index/"), (
+        f"Upload path must start with 'index/' to match contents_delta_uri. Got: {blob_path}"
+    )
+    assert blob_path.endswith("documents.json"), (
+        f"Upload path must end with 'documents.json'. Got: {blob_path}"
+    )
+
+    assert mock_index.update_embeddings.called, (
+        "index.update_embeddings() should be called"
+    )
+    contents_delta_uri = mock_index.update_embeddings.call_args[1]["contents_delta_uri"]
+    assert "index/" in contents_delta_uri, (
+        f"contents_delta_uri must contain 'index/'. Got: {contents_delta_uri}"
+    )
 
 
 def test_class():
