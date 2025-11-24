@@ -206,7 +206,19 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     @property
     def max_chunk_size(self) -> int:
-        """Return the max chunk size."""
+        """
+        Return the maximum chunk size for batch operations.
+
+        This value represents the maximum number of nodes that can be added to ChromaDB
+        in a single batch operation. It is dynamically determined from the ChromaDB client's
+        `get_max_batch_size()` method when available, ensuring compatibility with different
+        ChromaDB configurations. If the dynamic value cannot be retrieved, it falls back to
+        a static default value of 41665.
+
+        Returns:
+            int: Maximum number of nodes that can be added in a single batch.
+
+        """
         return self._max_chunk_size
 
     @classmethod

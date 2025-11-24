@@ -250,7 +250,7 @@ def test_clear(
 
 
 class SimpleCollection:
-    pass
+    """Minimal collection stub without _client attribute for testing fallback behavior."""
 
 
 @mock.patch("chromadb.HttpClient")
@@ -258,6 +258,7 @@ def test_max_chunk_size_new_client(mock_client_cls: mock.Mock) -> None:
     # Case 1: New client created (mocked)
     mock_client = mock.Mock()
     mock_client.get_max_batch_size.return_value = 100
+    mock_client.get_or_create_collection.return_value = mock.Mock()
     mock_client_cls.return_value = mock_client
 
     store = ChromaVectorStore(chroma_collection=None, host="localhost", port=8000)
