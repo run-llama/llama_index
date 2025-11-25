@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pytest>=8.4.0", "pytest-asyncio>=1.0.0", "pytest-cov>=6.1.1"]
+dev = ["pytest", "pytest-asyncio", "pytest-cov"]
 
 [project]
 name = "llama-index-instrumentation"
