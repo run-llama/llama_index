@@ -143,9 +143,9 @@ def test_no_empty_filter_key_in_vector_search_pipeline(
         None,
     )
     assert vector_stage is not None, "No $vectorSearch stage found in pipeline"
-    assert (
-        "filter" not in vector_stage
-    ), "Empty filter key unexpectedly present; regression of previous behavior"
+    assert "filter" not in vector_stage, (
+        "Empty filter key unexpectedly present; regression of previous behavior"
+    )
 
 
 def test_no_empty_filter_key_in_vector_search_pipeline_mock() -> None:
@@ -270,9 +270,9 @@ def test_first_vector_query_returns_top_k_without_retry(
         time.sleep(sleep_time)
         attempts -= 1
 
-    assert (
-        response is not None and len(response.source_nodes) == top_k
-    ), f"First query did not return expected top_k after stabilization attempts; logs={attempt_logs}"
+    assert response is not None and len(response.source_nodes) == top_k, (
+        f"First query did not return expected top_k after stabilization attempts; logs={attempt_logs}"
+    )
 
 
 @pytest.mark.skipif(MONGODB_URI is None, reason="Requires MONGODB_URI in environment")
@@ -341,9 +341,9 @@ def test_server_side_filter_preserves_top_k(atlas_client: MongoClient) -> None:
         time.sleep(2)
         retries -= 1
 
-    assert (
-        result is not None and len(result.ids) == top_k
-    ), "Filtered query returned fewer than top_k results after limited retries; implies filtering not pushed server-side or index delay."
+    assert result is not None and len(result.ids) == top_k, (
+        "Filtered query returned fewer than top_k results after limited retries; implies filtering not pushed server-side or index delay."
+    )
     assert all(excluded_value not in n.text for n in result.nodes)
 
 
@@ -476,9 +476,9 @@ def test_hybrid_query_uses_both_vector_and_text_stages(
 
     has_vector = stage_contains_vector(captured_pipeline)
     has_search = stage_contains_search(captured_pipeline)
-    assert (
-        has_vector and has_search
-    ), "Hybrid query did not include both vector and text stages"
+    assert has_vector and has_search, (
+        "Hybrid query did not include both vector and text stages"
+    )
 
     # Final result size
     assert len(result.ids) == top_k, "Hybrid result did not return requested top_k"
@@ -488,9 +488,9 @@ def test_hybrid_query_uses_both_vector_and_text_stages(
         "LlamaIndex" in n.text or "llamaindex" in n.text for n in result.nodes
     )
     contains_llm_term = any("LLM" in n.text for n in result.nodes)
-    assert (
-        contains_text_term
-    ), "No node contained the full-text query term; hybrid degenerated to vector-only"
-    assert (
-        contains_llm_term
-    ), "No node contained LLM term; hybrid degenerated to text-only"
+    assert contains_text_term, (
+        "No node contained the full-text query term; hybrid degenerated to vector-only"
+    )
+    assert contains_llm_term, (
+        "No node contained LLM term; hybrid degenerated to text-only"
+    )

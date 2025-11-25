@@ -148,11 +148,11 @@ Example (Vector search with MQL filter):
 ```python
 vector_filter = {"metadata.year": {"$gte": 2020}}
 stage = vector_search_stage(
-  query_vector=embedding,
-  search_field="embedding",
-  index_name="vector_index",
-  limit=5,
-  filter=vector_filter,  # MQL pre-filter
+    query_vector=embedding,
+    search_field="embedding",
+    index_name="vector_index",
+    limit=5,
+    filter=vector_filter,  # MQL pre-filter
 )
 ```
 
@@ -160,21 +160,19 @@ Example (Full-text search with compound filter):
 
 ```python
 search_filter = {
-  "must": [
-    {"equals": {"path": "metadata.genre", "value": "Comedy"}},
-    {"range": {"path": "metadata.year", "gte": 2020}},
-  ],
-  "should": [
-    {"equals": {"path": "metadata.language", "value": "en"}}
-  ],
-  "minimumShouldMatch": 1,
+    "must": [
+        {"equals": {"path": "metadata.genre", "value": "Comedy"}},
+        {"range": {"path": "metadata.year", "gte": 2020}},
+    ],
+    "should": [{"equals": {"path": "metadata.language", "value": "en"}}],
+    "minimumShouldMatch": 1,
 }
 pipeline = fulltext_search_stage(
-  query="funny scenes",
-  search_field="text",
-  index_name="search_index",
-  operator="text",
-  search_filter=search_filter,
+    query="funny scenes",
+    search_field="text",
+    index_name="search_index",
+    operator="text",
+    search_filter=search_filter,
 )
 ```
 
@@ -182,11 +180,11 @@ Legacy usage still works:
 
 ```python
 pipeline = fulltext_search_stage(
-  query="funny scenes",
-  search_field="text",
-  index_name="search_index",
-  operator="text",
-  filter=search_filter,  # legacy name, automatically mapped
+    query="funny scenes",
+    search_field="text",
+    index_name="search_index",
+    operator="text",
+    filter=search_filter,  # legacy name, automatically mapped
 )
 ```
 
@@ -229,13 +227,13 @@ Match documents where `metadata.country` is empty (missing/null/[]):
 
 ```python
 filters = MetadataFilters(
-  filters=[
-    MetadataFilter(
-      key="country",  # logical key under metadata
-      value=None,      # pydantic requires value field; ignored for IS_EMPTY
-      operator=FilterOperator.IS_EMPTY,
-    )
-  ]
+    filters=[
+        MetadataFilter(
+            key="country",  # logical key under metadata
+            value=None,  # pydantic requires value field; ignored for IS_EMPTY
+            operator=FilterOperator.IS_EMPTY,
+        )
+    ]
 )
 vector_filter = filters_to_mql(filters)
 # vector_filter example output:
@@ -250,19 +248,19 @@ Combine allowed list OR emptiness (value present in list OR field missing/null/e
 
 ```python
 filters = MetadataFilters(
-  filters=[
-    MetadataFilter(
-      key="country",
-      value=["FR", "CA"],
-      operator=FilterOperator.IN,
-    ),
-    MetadataFilter(
-      key="country",
-      value=None,  # ignored for IS_EMPTY
-      operator=FilterOperator.IS_EMPTY,
-    ),
-  ],
-  condition=FilterCondition.OR,
+    filters=[
+        MetadataFilter(
+            key="country",
+            value=["FR", "CA"],
+            operator=FilterOperator.IN,
+        ),
+        MetadataFilter(
+            key="country",
+            value=None,  # ignored for IS_EMPTY
+            operator=FilterOperator.IS_EMPTY,
+        ),
+    ],
+    condition=FilterCondition.OR,
 )
 ```
 
@@ -270,11 +268,13 @@ AND combination (e.g. empty country AND year >= 2024):
 
 ```python
 filters = MetadataFilters(
-  filters=[
-    MetadataFilter(key="country", value=None, operator=FilterOperator.IS_EMPTY),
-    MetadataFilter(key="year", value=2024, operator=FilterOperator.GTE),
-  ],
-  condition=FilterCondition.AND,
+    filters=[
+        MetadataFilter(
+            key="country", value=None, operator=FilterOperator.IS_EMPTY
+        ),
+        MetadataFilter(key="year", value=2024, operator=FilterOperator.GTE),
+    ],
+    condition=FilterCondition.AND,
 )
 ```
 
