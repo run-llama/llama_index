@@ -728,28 +728,41 @@ class Memory(BaseMemory):
                         else:
                             break
 
-                    # If we end up with an empty queue, keep at least one full conversation turn
-                    if not reversed_queue and messages_to_flush:
+                    # If we end up with an empty queue or only a non-user message,
+                    # keep at least one full conversation turn
+                    if (
+                        not reversed_queue
+                        or (
+                            len(reversed_queue) == 1
+                            and reversed_queue[0].role != "user"
+                        )
+                    ) and messages_to_flush:
+                        # If reversed_queue has a non-user message, move it to messages_to_flush
+                        if reversed_queue and reversed_queue[0].role != "user":
+                            messages_to_flush.append(reversed_queue.pop(0))
+
                         # Find the most recent complete conversation turn
                         # (user → assistant/tool sequence) in messages_to_flush
                         found_user = False
                         turn_messages: List[ChatMessage] = []
 
                         # Go through messages_to_flush in reverse (newest first)
+                        # First collect assistant/tool messages, then find the user message
                         for msg in reversed(messages_to_flush):
-                            if msg.role == "user" and not found_user:
+                            if msg.role == "user":
                                 found_user = True
                                 turn_messages.insert(0, msg)
-                            elif found_user:
-                                turn_messages.insert(0, msg)
+                                break  # Found the user message, complete turn found
                             else:
-                                break
+                                # Collect assistant/tool messages (they come first in reverse)
+                                turn_messages.insert(0, msg)
 
                         # If we found a complete turn, keep it
                         if found_user and turn_messages:
                             # Remove these messages from messages_to_flush
                             for msg in turn_messages:
-                                messages_to_flush.remove(msg)
+                                if msg in messages_to_flush:
+                                    messages_to_flush.remove(msg)
                             # Add them back to the queue
                             reversed_queue = turn_messages[::-1] + reversed_queue
 

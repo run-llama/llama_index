@@ -167,3 +167,83 @@ async def test_areset(memory):
     # Should delete messages from the store
     messages = await memory.aget()
     assert len(messages) == 0
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_first_message_must_be_user():
+    """
+    Test that after flushing, the first message in queue is always a user message.
+
+    This tests the edge case where token limits are set low enough that
+    flushing could leave only an assistant message, which would break
+    providers like Amazon Bedrock that require user message first.
+    """
+    # Create memory with very low limits to trigger the edge case
+    # token_limit * chat_history_token_ratio = 100 * 0.5 = 50 tokens for chat history
+    memory = Memory(
+        token_limit=100,
+        token_flush_size=50,
+        chat_history_token_ratio=0.5,
+        session_id="test_first_message_user",
+    )
+
+    # Create messages where user message is large and assistant message is small
+    # This simulates a tool call scenario where the tool returns a lot of content
+    # After flush, only the small assistant message might remain
+    chat_messages = [
+        ChatMessage(
+            role="user", content="x " * 100
+        ),  # Large user message (~100 tokens)
+        ChatMessage(
+            role="assistant", content="ok"
+        ),  # Small assistant message (~1 token)
+    ]
+
+    await memory.aput_messages(chat_messages)
+
+    cur_messages = await memory.aget()
+
+    # The queue should not be empty
+    assert len(cur_messages) > 0, "Queue should not be empty after flush"
+
+    # The first message MUST be a user message
+    assert cur_messages[0].role == "user", (
+        f"First message must be 'user', but got '{cur_messages[0].role}'. "
+        "This would break providers like Amazon Bedrock."
+    )
+
+
+@pytest.mark.asyncio
+async def test_manage_queue_preserves_conversation_turn():
+    """Test that flushing preserves at least one complete conversation turn."""
+    memory = Memory(
+        token_limit=200,
+        token_flush_size=100,
+        chat_history_token_ratio=0.5,
+        session_id="test_preserve_turn",
+    )
+
+    # Multiple conversation turns
+    chat_messages = [
+        ChatMessage(role="user", content="a " * 50),
+        ChatMessage(role="assistant", content="b " * 50),
+        ChatMessage(role="user", content="c " * 50),
+        ChatMessage(role="assistant", content="d " * 50),
+    ]
+
+    await memory.aput_messages(chat_messages)
+
+    cur_messages = await memory.aget()
+
+    # Should have at least one complete turn (user + assistant)
+    assert len(cur_messages) >= 2, (
+        "Should preserve at least one complete conversation turn"
+    )
+
+    # First message must be user
+    assert cur_messages[0].role == "user"
+
+    # Verify alternating pattern
+    for i in range(len(cur_messages) - 1):
+        if cur_messages[i].role == "user":
+            assert cur_messages[i + 1].role in ("assistant", "tool")
