@@ -1056,27 +1056,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-            sparse_response = self._client.search_batch(
+            sparse_response = self._client.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=self.dense_vector_name,
-                            vector=query_embedding,
-                        ),
+                    rest.QueryRequest(
+                        query=query_embedding,
+                        using=self.dense_vector_name,
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
                     ),
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            name=self.sparse_vector_name,
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
+                    rest.QueryRequest(
+                        query=rest.SparseVector(
+                            indices=sparse_indices[0],
+                            values=sparse_embedding[0],
                         ),
+                        using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1091,8 +1087,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             # flatten the response
             return self._hybrid_fusion_fn(
-                self.parse_to_query_result(sparse_response[0]),
-                self.parse_to_query_result(sparse_response[1]),
+                self.parse_to_query_result(sparse_response[0].points),
+                self.parse_to_query_result(sparse_response[1].points),
                 # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
                 alpha=query.alpha or 0.5,
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
@@ -1109,17 +1105,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-            sparse_response = self._client.search_batch(
+            sparse_response = self._client.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            name=self.sparse_vector_name,
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
+                    rest.QueryRequest(
+                        query=rest.SparseVector(
+                            indices=sparse_indices[0],
+                            values=sparse_embedding[0],
                         ),
+                        using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1128,17 +1122,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
 
-            return self.parse_to_query_result(sparse_response[0])
+            return self.parse_to_query_result(sparse_response[0].points)
         elif self.enable_hybrid:
             # search for dense vectors only
-            response = self._client.search_batch(
+            response = self._client.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=self.dense_vector_name,
-                            vector=query_embedding,
-                        ),
+                    rest.QueryRequest(
+                        query=query_embedding,
+                        using=self.dense_vector_name,
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1147,22 +1139,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
 
-            return self.parse_to_query_result(response[0])
+            return self.parse_to_query_result(response[0].points)
         else:
             # Regular non-hybrid search
-            response = self._client.search(
+            response = self._client.query_points(
                 collection_name=self.collection_name,
-                query_vector=(
-                    rest.NamedVector(
-                        name=self.dense_vector_name,
-                        vector=query_embedding,
-                    )
-                ),
+                query=query_embedding,
+                using=self.dense_vector_name,
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
                 shard_key_selector=shard_key,
             )
-            return self.parse_to_query_result(response)
+            return self.parse_to_query_result(response.points)
 
     async def aquery(
         self,
@@ -1216,27 +1204,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-            sparse_response = await self._aclient.search_batch(
+            sparse_response = await self._aclient.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=self.dense_vector_name,
-                            vector=query_embedding,
-                        ),
+                    rest.QueryRequest(
+                        query=query_embedding,
+                        using=self.dense_vector_name,
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
                     ),
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            name=self.sparse_vector_name,
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
+                    rest.QueryRequest(
+                        query=rest.SparseVector(
+                            indices=sparse_indices[0],
+                            values=sparse_embedding[0],
                         ),
+                        using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1251,8 +1235,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             # flatten the response
             return self._hybrid_fusion_fn(
-                self.parse_to_query_result(sparse_response[0]),
-                self.parse_to_query_result(sparse_response[1]),
+                self.parse_to_query_result(sparse_response[0].points),
+                self.parse_to_query_result(sparse_response[1].points),
                 alpha=query.alpha or 0.5,
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
@@ -1268,17 +1252,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-            sparse_response = await self._aclient.search_batch(
+            sparse_response = await self._aclient.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            name=self.sparse_vector_name,
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
+                    rest.QueryRequest(
+                        query=rest.SparseVector(
+                            indices=sparse_indices[0],
+                            values=sparse_embedding[0],
                         ),
+                        using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1286,17 +1268,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                 ],
             )
-            return self.parse_to_query_result(sparse_response[0])
+            return self.parse_to_query_result(sparse_response[0].points)
         elif self.enable_hybrid:
             # search for dense vectors only
-            response = await self._aclient.search_batch(
+            response = await self._aclient.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=self.dense_vector_name,
-                            vector=query_embedding,
-                        ),
+                    rest.QueryRequest(
+                        query=query_embedding,
+                        using=self.dense_vector_name,
                         limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
@@ -1305,22 +1285,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
 
-            return self.parse_to_query_result(response[0])
+            return self.parse_to_query_result(response[0].points)
         else:
-            response = await self._aclient.search(
+            response = await self._aclient.query_points(
                 collection_name=self.collection_name,
-                query_vector=(
-                    rest.NamedVector(
-                        name=self.dense_vector_name,
-                        vector=query_embedding,
-                    )
-                ),
+                query=query_embedding,
+                using=self.dense_vector_name,
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
                 shard_key_selector=shard_key,
             )
 
-            return self.parse_to_query_result(response)
+            return self.parse_to_query_result(response.points)
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
         """
