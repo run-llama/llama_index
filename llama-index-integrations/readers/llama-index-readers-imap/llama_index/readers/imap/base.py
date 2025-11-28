@@ -10,11 +10,18 @@ SearchCriteria = Union[A, O, N, H, U, AND, OR, NOT, Header, UidRange, None]
 class ImapReader(BaseReader):
     """
     IMAP reader. Reads email from an IMAP server.
+
+    Args:
+        host (str): IMAP server host
+        username (str): email address
+        password (str): email password
+
     """
 
     mailbox: MailBox
 
     def __init__(self, host: str, username: str, password: str):
+        """Initialize IMAP connection"""
         self.mailbox = MailBox(host)
         self.mailbox.login(username, password)
 
@@ -24,10 +31,21 @@ class ImapReader(BaseReader):
         metadata_names: Optional[List[str]] = None,
         search_criteria: Optional[SearchCriteria] = None,
     ) -> Iterable[Document]:
+        """
+        Fetch emails from the provided mailbox.
+
+        Args:
+            folder (str, optional): Folder where to look for emails. Defaults to "INBOX".
+            metadata_names (List[str], optional): Names of metadata fields. Defaults to None. Full list at https://pypi.org/project/imap-tools/#email-attributes
+            search_criteria (SearchCriteria, optional): Search criteria. Documentation at https://pypi.org/project/imap-tools/#search-criteria
+
+        """
         if metadata_names is None:
             metadata_names = []
+        # Always add "date" in metadata
         metadata_names.append("date")
 
+        # If no criteria are set, all emails are taken into account
         criteria = search_criteria if search_criteria is not None else A(all=True)
         self.mailbox.folder.set(folder)
 
