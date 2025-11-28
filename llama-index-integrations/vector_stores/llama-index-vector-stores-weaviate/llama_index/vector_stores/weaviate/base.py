@@ -161,6 +161,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     _collection_initialized: bool = PrivateAttr()
     _is_self_created_weaviate_client: bool = PrivateAttr()  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
     _custom_batch: Optional[BatchWrapper] = PrivateAttr()
+    _embed_on_weaviate: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -171,6 +172,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         auth_config: Optional[Any] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
+        embed_on_weaviate: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -225,6 +227,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
             )
 
+        self._embed_on_weaviate = embed_on_weaviate
+
         # create default schema if does not exist
         if self._client is not None:
             if not class_schema_exists(self._client, index_name):
@@ -274,12 +278,16 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             provided_batch = self.client.batch.dynamic()
         with provided_batch as batch:
             for node in nodes:
-                data_object = get_data_object(node=node, text_key=self.text_key)
+                data_object = get_data_object(
+                    node=node,
+                    text_key=self.text_key,
+                    use_vector=not self._embed_on_weaviate,
+                )
                 batch.add_object(
                     collection=self.index_name,
                     properties=data_object.properties,
                     uuid=data_object.uuid,
-                    vector=data_object.vector,
+                    vector=data_object.vector if not self._embed_on_weaviate else None,
                 )
         return ids
 
@@ -307,7 +315,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         collection = self.async_client.collections.get(self.index_name)
 
         response = await collection.data.insert_many(
-            [get_data_object(node=node, text_key=self.text_key) for node in nodes]
+            [
+                get_data_object(
+                    node=node,
+                    text_key=self.text_key,
+                    use_vector=not self._embed_on_weaviate,
+                )
+                for node in nodes
+            ]
         )
         return ids
 
@@ -468,7 +483,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
-        vector = query.query_embedding
+        vector = query.query_embedding if not self._embed_on_weaviate else None
         alpha = 1
         if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")

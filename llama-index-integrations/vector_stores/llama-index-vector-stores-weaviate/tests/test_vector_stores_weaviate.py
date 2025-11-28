@@ -16,6 +16,7 @@ import weaviate
 import weaviate.classes as wvc
 import weaviate
 import weaviate.embedded
+from unittest.mock import MagicMock, AsyncMock
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -179,7 +180,7 @@ class TestWeaviateAsync:
         assert len(results.nodes) == 1
         assert results.nodes[0].node_id == node_to_keep.node_id
 
-    def test_async_client_properties(self, async_vector_store):
+    async def test_async_client_properties(self, async_vector_store):
         assert isinstance(async_vector_store.async_client, weaviate.WeaviateAsyncClient)
         with pytest.raises(SyncClientNotProvidedError):
             async_vector_store.client
@@ -391,6 +392,7 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
         with pytest.raises(AsyncClientNotProvidedError):
@@ -416,3 +418,115 @@ class TestWeaviateSync:
         assert isinstance(vector_store.client, weaviate.WeaviateClient)
         with pytest.raises(AsyncClientNotProvidedError):
             vector_store.async_client
+
+
+class TestWeaviateEmbedding:
+    @pytest.fixture
+    def mock_client(self):
+        client = MagicMock()
+        # Mock isinstance check
+        client.__class__ = weaviate.WeaviateClient
+        # Mock batch context manager
+        batch_mock = MagicMock()
+        client.batch.dynamic.return_value.__enter__.return_value = batch_mock
+        # Ensure collections attribute exists
+        client.collections = MagicMock()
+        return client
+
+    @pytest.fixture
+    def mock_async_client(self):
+        client = MagicMock()
+        client.__class__ = weaviate.WeaviateAsyncClient
+        client.collections = MagicMock()
+        # Mock async methods
+        client.collections.get.return_value.data.insert_many = AsyncMock()
+        client.collections.get.return_value.query.hybrid = AsyncMock()
+        return client
+
+    def test_add_with_embed_on_weaviate(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", embed_on_weaviate=True
+        )
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        vector_store.add([node])
+
+        # Verify vector is None in add_object call
+        batch_mock = mock_client.batch.dynamic.return_value.__enter__.return_value
+        call_args = batch_mock.add_object.call_args
+        assert call_args.kwargs["vector"] is None
+
+    def test_add_without_embed_on_weaviate(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", embed_on_weaviate=False
+        )
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        vector_store.add([node])
+
+        # Verify vector is passed
+        batch_mock = mock_client.batch.dynamic.return_value.__enter__.return_value
+        call_args = batch_mock.add_object.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+
+    def test_query_with_embed_on_weaviate(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", embed_on_weaviate=True
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        vector_store.query(query)
+
+        # Verify vector is None in query
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+
+    def test_query_without_embed_on_weaviate(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", embed_on_weaviate=False
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        vector_store.query(query)
+
+        # Verify vector is passed
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+
+    @pytest.mark.asyncio
+    async def test_async_add_with_embed_on_weaviate(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client, index_name="Test", embed_on_weaviate=True
+        )
+
+        # Mock schema check to avoid actual calls
+        vector_store._collection_initialized = True
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        await vector_store.async_add([node])
+
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.data.insert_many.call_args
+        # Check the first object in the list passed to insert_many
+        inserted_objects = call_args.args[0]
+        assert inserted_objects[0].vector is None
+
+    @pytest.mark.asyncio
+    async def test_async_add_without_embed_on_weaviate(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client,
+            index_name="Test",
+            embed_on_weaviate=False,
+        )
+
+        vector_store._collection_initialized = True
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        await vector_store.async_add([node])
+
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.data.insert_many.call_args
+        inserted_objects = call_args.args[0]
+        assert inserted_objects[0].vector == [0.1, 0.2]
