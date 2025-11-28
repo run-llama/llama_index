@@ -193,16 +193,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
             collection_kwargs=collection_kwargs or {},
         )
         self._max_chunk_size = MAX_CHUNK_SIZE
-        if chroma_collection is None:
-            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-            self._collection = client.get_or_create_collection(
-                name=collection_name, **collection_kwargs
-            )
-            self._max_chunk_size = client.get_max_batch_size()
-        else:
-            self._collection = cast(Collection, chroma_collection)
-            if hasattr(self._collection, "_client"):
-                self._max_chunk_size = self._collection._client.get_max_batch_size()
+        try:
+            if chroma_collection is None:
+                client = chromadb.HttpClient(
+                    host=host, port=port, ssl=ssl, headers=headers
+                )
+                self._collection = client.get_or_create_collection(
+                    name=collection_name, **collection_kwargs
+                )
+                try:
+                    self._max_chunk_size = client.get_max_batch_size()
+                except Exception:
+                    logger.warning(
+                        "Failed to get max batch size from client, using default"
+                    )
+                    self._max_chunk_size = MAX_CHUNK_SIZE
+            else:
+                self._collection = cast(Collection, chroma_collection)
+                if hasattr(self._collection, "_client"):
+                    try:
+                        self._max_chunk_size = (
+                            self._collection._client.get_max_batch_size()
+                        )
+                    except Exception:
+                        logger.warning(
+                            "Could not access _client.get_max_batch_size; falling back to default MAX_CHUNK_SIZE."
+                        )
+                        self._max_chunk_size = MAX_CHUNK_SIZE
+        except Exception:
+            pass
 
     @property
     def max_chunk_size(self) -> int:

@@ -277,3 +277,11 @@ def test_max_chunk_size_collection_no_client() -> None:
     # Case 3: Collection passed, no _client (fallback)
     store = ChromaVectorStore(chroma_collection=SimpleCollection())
     assert store.max_chunk_size == MAX_CHUNK_SIZE
+
+
+def test_max_chunk_size_exception() -> None:
+    # Case 4: Exception during get_max_batch_size (fallback)
+    mock_collection_error = mock.Mock()
+    mock_collection_error._client.get_max_batch_size.side_effect = Exception("Error")
+    store = ChromaVectorStore(chroma_collection=mock_collection_error)
+    assert store.max_chunk_size == MAX_CHUNK_SIZE
