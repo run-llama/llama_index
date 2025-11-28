@@ -124,6 +124,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         weaviate_client (Optional[Any]): Either a WeaviateClient (synchronous) or WeaviateAsyncClient (asynchronous)
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
+        native_embedding (bool): If True, use Weaviate's native embedding capabilities.
+            If False, LlamaIndex will generate embeddings on the client side.
+            Defaults to False.
 
     Examples:
         `pip install llama-index-vector-stores-weaviate`
@@ -487,7 +490,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         alpha = 1
         if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            if vector is not None and query.query_str:
+            # If native_embedding is True, we assume Weaviate generates the vector, so we can use alpha.
+            # If native_embedding is False, we need a vector provided from client to use alpha with vector search.
+            if (self._native_embedding or vector is not None) and query.query_str:
                 alpha = query.alpha or 0.5
 
         if query.filters is not None:
