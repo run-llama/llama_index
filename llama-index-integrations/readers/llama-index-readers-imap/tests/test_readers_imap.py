@@ -1,6 +1,6 @@
 from imap_tools import EmailAddress
 from llama_index.core.schema import Document
-from llama_index.readers.imap.base import ImapReader
+from llama_index.readers.imap import ImapReader
 import unittest.mock as mock
 
 @mock.patch('llama_index.readers.imap.base.MailBox')
