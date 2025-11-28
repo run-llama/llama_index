@@ -125,7 +125,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
         native_embedding (bool): If True, use Weaviate's native embedding capabilities.
-            If False, LlamaIndex will generate embeddings on the client side.
+            **Important:** The Weaviate collection must be configured with a vectorizer module (e.g., `text2vec-openai`, `text2vec-cohere`)
+            for native embeddings to work. Without this configuration, setting `native_embedding=True` will likely fail silently or produce errors.
             Defaults to False.
 
     Examples:
@@ -487,6 +488,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
         vector = query.query_embedding if not self._native_embedding else None
+
+        if self._native_embedding and (
+            not query.query_str or not str(query.query_str).strip()
+        ):
+            raise ValueError(
+                "When native_embedding=True, a non-empty query_str must be provided for Weaviate to generate embeddings from text."
+            )
+
         alpha = 1
         if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")

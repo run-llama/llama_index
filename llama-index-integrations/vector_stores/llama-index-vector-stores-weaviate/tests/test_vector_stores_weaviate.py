@@ -599,3 +599,38 @@ class TestWeaviateEmbedding:
         call_args = collection_mock.query.hybrid.call_args
         assert call_args.kwargs["vector"] == [0.1, 0.2]
         assert call_args.kwargs["alpha"] == 0.75
+
+    def test_query_with_native_embedding_no_query_str(self, mock_client):
+        """Test that ValueError is raised when native_embedding=True but query_str is missing."""
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="")
+
+        with pytest.raises(ValueError) as exc:
+            vector_store.query(query)
+
+        assert (
+            "When native_embedding=True, a non-empty query_str must be provided"
+            in str(exc.value)
+        )
+
+    def test_query_default_with_native_embedding(self, mock_client):
+        """Test DEFAULT query mode with native_embedding=True."""
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(
+            query_str="test",
+            mode=VectorStoreQueryMode.DEFAULT,
+        )
+        vector_store.query(query)
+
+        # Verify vector is None
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+        # Verify query string is passed
+        assert call_args.kwargs["query"] == "test"
