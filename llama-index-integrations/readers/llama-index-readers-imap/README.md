@@ -29,3 +29,5 @@ emails = mailbox.lazy_load_data(
     search_criteria=None, # By default all emails are read, customize the query following https://pypi.org/project/imap-tools/#search-criteria
 )
 ```
+
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).
