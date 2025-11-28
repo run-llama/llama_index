@@ -3,12 +3,14 @@ from llama_index.core.schema import Document
 from llama_index.readers.imap import ImapReader
 import unittest.mock as mock
 
-@mock.patch('llama_index.readers.imap.base.MailBox')
+
+@mock.patch("llama_index.readers.imap.base.MailBox")
 def test_connection(MockMailBox):
     ImapReader(host="test", username="test", password="test")
 
     MockMailBox.assert_called_once_with("test")
     MockMailBox.return_value.login.assert_called_once_with("test", "test")
+
 
 def test_read():
     mock_msg1 = mock.MagicMock()
@@ -29,7 +31,7 @@ def test_read():
     mock_msg2.text = "Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet."
     mock_msg2.uid = 2
 
-    with mock.patch('llama_index.readers.imap.base.MailBox') as MockMailBox:
+    with mock.patch("llama_index.readers.imap.base.MailBox") as MockMailBox:
         MockMailBox.return_value.fetch.return_value = [mock_msg1, mock_msg2]
 
         reader = ImapReader(host="test", username="test", password="test")
