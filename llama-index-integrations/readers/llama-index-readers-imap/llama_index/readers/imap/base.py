@@ -1,6 +1,6 @@
-from imap_tools import MailBox
+from imap_tools import MailBox, MailAttachment
 from llama_index.core.readers.base import BaseReader
-from typing import Iterable, Optional, List, Dict, Any, Union
+from typing import Iterable, Optional, List, Dict, Any, Union, Callable
 from llama_index.core.schema import Document
 from imap_tools import A, O, N, H, U, AND, OR, NOT, Header, UidRange
 
@@ -30,6 +30,7 @@ class ImapReader(BaseReader):
         folder: str = "INBOX",
         metadata_names: Optional[List[str]] = None,
         search_criteria: Optional[SearchCriteria] = None,
+        save_attachment: Callable[[MailAttachment], str] = None,
     ) -> Iterable[Document]:
         """
         Fetch emails from the provided mailbox.
@@ -38,6 +39,7 @@ class ImapReader(BaseReader):
             folder (str, optional): Folder where to look for emails. Defaults to "INBOX".
             metadata_names (List[str], optional): Names of metadata fields. Defaults to None. Full list at https://pypi.org/project/imap-tools/#email-attributes
             search_criteria (SearchCriteria, optional): Search criteria. Documentation at https://pypi.org/project/imap-tools/#search-criteria
+            save_attachment (Callable[[MailAttachment], str], optional): Save attachments callback. Defaults to None. Must return the saved filename
 
         """
         if metadata_names is None:
@@ -55,5 +57,16 @@ class ImapReader(BaseReader):
                 metadata = {key: getattr(msg, key, None) for key in metadata_names}
 
             text = f"From: {msg.from_}, To: {msg.to[0]}, Subject: {msg.subject}, Message: {msg.text}"
+
+            if save_attachment:
+                metadata["attachments"] = []
+                for attachment in msg.attachments:
+                    filename = save_attachment(attachment)
+                    metadata["attachments"].append(
+                        {
+                            "filename": filename,
+                            "original_filename": attachment.filename,
+                        }
+                    )
 
             yield Document(text=text, metadata=metadata)
