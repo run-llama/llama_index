@@ -1,3 +1,4 @@
 ::: llama_index.retrievers.vectorize
-options:
-members: - VectorizeRetriever
+    options:
+      members:
+        - VectorizeRetriever

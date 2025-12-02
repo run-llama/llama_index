@@ -1,3 +1,5 @@
 ::: llama_index.embeddings.huggingface
-options:
-members: - HuggingFaceEmbedding - HuggingFaceInferenceAPIEmbedding
+    options:
+      members:
+        - HuggingFaceEmbedding
+        - HuggingFaceInferenceAPIEmbedding

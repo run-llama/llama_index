@@ -1,3 +1,5 @@
 ::: llama_index.graph_stores.falkordb
-options:
-members: - FalkorDBGraphStore - FalkorDBPropertyGraphStore
+    options:
+      members:
+        - FalkorDBGraphStore
+        - FalkorDBPropertyGraphStore
