@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore
+from sqlalchemy.schema import CreateSchema
 
 
 class TestSQLAlchemyChatStoreSchema:
@@ -47,7 +48,7 @@ class TestSQLAlchemyChatStoreSchema:
 
     @pytest.mark.asyncio
     async def test_postgresql_schema_creation(self):
-        """Test that CREATE SCHEMA SQL is called for PostgreSQL."""
+        """Test that CREATE SCHEMA SQL is called for PostgreSQL using CreateSchema."""
         store = SQLAlchemyChatStore(
             table_name="test_messages",
             async_database_uri="postgresql+asyncpg://user:pass@host/db",
@@ -69,10 +70,12 @@ class TestSQLAlchemyChatStoreSchema:
         # Call _setup_tables
         await store._setup_tables(async_engine)
 
-        # Verify schema creation was called
+        # Verify schema creation was called with CreateSchema
         mock_conn.execute.assert_called()
         call_args = mock_conn.execute.call_args_list[0][0][0]
-        assert 'CREATE SCHEMA IF NOT EXISTS "test_schema"' in str(call_args)
+        assert isinstance(call_args, CreateSchema)
+        assert call_args.element == "test_schema"
+        assert call_args.if_not_exists is True
 
         # Verify MetaData has schema
         assert store._metadata.schema == "test_schema"
@@ -120,3 +123,63 @@ class TestSQLAlchemyChatStoreSchema:
 
         # Verify schema is preserved
         assert store.db_schema == "test_schema"
+
+    def test_schema_name_validation_valid(self):
+        """Test that valid schema names are accepted."""
+        valid_names = [
+            "test_schema",
+            "TestSchema",
+            "_private_schema",
+            "schema123",
+            "a" * 63,
+        ]
+        for name in valid_names:
+            store = SQLAlchemyChatStore(
+                table_name="test_messages",
+                async_database_uri="postgresql+asyncpg://user:pass@host/db",
+                db_schema=name,
+            )
+            assert store.db_schema == name
+
+    def test_schema_name_validation_invalid(self):
+        """Test that invalid schema names are rejected to prevent SQL injection."""
+        invalid_names = [
+            "test-schema",
+            "test schema",
+            "test;DROP TABLE users;--",
+            "test' OR '1'='1",
+            '"; DROP SCHEMA public; --',
+            "123invalid",
+            "a" * 64,
+            "test\nschema",
+            "test\tschema",
+            "test'schema",
+            'test"schema',
+            "test;schema",
+            "test--schema",
+            "test/*schema",
+        ]
+        for name in invalid_names:
+            with pytest.raises(ValueError, match="Invalid schema name"):
+                SQLAlchemyChatStore(
+                    table_name="test_messages",
+                    async_database_uri="postgresql+asyncpg://user:pass@host/db",
+                    db_schema=name,
+                )
+
+    def test_schema_name_validation_sql_injection_attempts(self):
+        """Test that SQL injection attempts in schema names are blocked."""
+        injection_attempts = [
+            "test'; DROP TABLE messages; --",
+            'test"; DROP SCHEMA public CASCADE; --',
+            "test' UNION SELECT * FROM users --",
+            "test'; CREATE USER hacker WITH PASSWORD 'pass'; --",
+            'test\\"; GRANT ALL PRIVILEGES ON DATABASE db TO hacker; --',
+        ]
+        for attempt in injection_attempts:
+            with pytest.raises(ValueError, match="Invalid schema name"):
+                SQLAlchemyChatStore(
+                    table_name="test_messages",
+                    async_database_uri="postgresql+asyncpg://user:pass@host/db",
+                    db_schema=attempt,
+                )
