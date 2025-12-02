@@ -13,7 +13,6 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     TextBlock,
     ThinkingBlock,
-    LLMMetadata,
     ChatResponseAsyncGen,
     ChatResponse,
     MessageRole,
@@ -27,13 +26,9 @@ from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 class MockLLM(MockLLM):
     def __init__(self, responses: List[ChatMessage]):
-        super().__init__()
+        super().__init__(is_function_calling_model=True)
         self._responses = responses
         self._response_index = 0
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=True)
 
     async def astream_chat(
         self, messages: List[ChatMessage], **kwargs: Any
