@@ -1,4 +1,13 @@
-from typing import Any, Optional, Sequence, List, Literal, Generator, AsyncGenerator
+from typing import (
+    Any,
+    Optional,
+    Sequence,
+    List,
+    Literal,
+    Generator,
+    AsyncGenerator,
+    Callable,
+)
 from base64 import b64decode
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
@@ -27,6 +36,7 @@ from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
 import copy
+import json
 
 
 class MockLLM(CustomLLM):
@@ -164,6 +174,8 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
 
 class MockFunctionCallingLLM(MockLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
+    tools: dict[str, Callable] | None = Field(default=None)
+    tool_results: list[Any] = Field(default_factory=list)
 
     def __init__(
         self,
@@ -173,6 +185,7 @@ class MockFunctionCallingLLM(MockLLM):
         messages_to_prompt: Optional[MessagesToPromptType] = None,
         completion_to_prompt: Optional[CompletionToPromptType] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        tools: dict[str, Callable] | None = None,
     ) -> None:
         super().__init__(
             max_tokens=max_tokens,
@@ -182,7 +195,7 @@ class MockFunctionCallingLLM(MockLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
-        self.tool_calls: list[ToolCallBlock] = []
+        self.tools = tools or {}
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -264,6 +277,22 @@ class MockFunctionCallingLLM(MockLLM):
                     )
             elif isinstance(block, ToolCallBlock):
                 self.tool_calls.append(block)
+                if self.tools:
+                    for tool in self.tools:
+                        if tool == block.tool_name:
+                            try:
+                                if isinstance(block.tool_kwargs, dict):
+                                    result = self.tools[tool](**block.tool_kwargs)
+                                else:
+                                    try:
+                                        args = json.loads(block.tool_kwargs)
+                                        result = self.tools[tool](**args)
+                                    except Exception:
+                                        result = "error"
+                            except Exception:
+                                result = "error"
+                            self.tool_results.append(result)
+                            break
             else:
                 pass
         return "".join(content_parts)

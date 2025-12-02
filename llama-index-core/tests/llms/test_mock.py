@@ -1,5 +1,7 @@
 import pytest
+import json
 
+from typing import Callable
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.base.llms.types import (
@@ -7,7 +9,9 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     DocumentBlock,
     ImageBlock,
+    ToolCallBlock,
 )
+from llama_index.core.tools.function_tool import FunctionTool
 
 
 @pytest.fixture()
@@ -21,6 +25,34 @@ def messages() -> list[ChatMessage]:
                 ImageBlock(image=b"1px"),
             ],
         )
+    ]
+
+
+@pytest.fixture()
+def tools() -> dict[str, Callable]:
+    def divide(x: float, y: float) -> float:
+        """Returns the quotient of two numbers"""
+        return x / y
+
+    return {"divide": divide}
+
+
+@pytest.fixture()
+def tool_calls() -> list[ToolCallBlock]:
+    return [
+        ToolCallBlock(
+            tool_name="divide", tool_kwargs={"x": 6, "y": 2}, tool_call_id="1"
+        ),
+        ToolCallBlock(
+            tool_name="divide",
+            tool_kwargs=json.dumps({"x": 6, "y": 2}),
+            tool_call_id="2",
+        ),
+        ToolCallBlock(tool_name="divide", tool_kwargs="{", tool_call_id="3"),
+        ToolCallBlock(
+            tool_name="divide", tool_kwargs={"x": 1, "y": 0}, tool_call_id="4"
+        ),
+        ToolCallBlock(tool_name="hello", tool_kwargs={}, tool_call_id="5"),
     ]
 
 
@@ -77,3 +109,17 @@ async def test_mock_function_calling_llm_async_methods(
     async for s in stream:
         cont += s.message.content or ""
     assert cont == "hello world<document>hello world</document><image>1px</image>"
+
+
+@pytest.mark.asyncio
+async def test_mock_function_calling_llm_tool_calls(
+    tools: list[FunctionTool],
+    tool_calls: list[ToolCallBlock],
+) -> None:
+    llm = MockFunctionCallingLLM(max_tokens=200, tools=tools)
+    result = await llm.achat(messages=[ChatMessage(role="user", content=tool_calls)])
+    assert result.message.content == "<empty>"
+    assert llm.tool_calls == tool_calls
+    assert len(llm.tool_results) == 4
+    assert llm.tool_results.count("error") == 2
+    assert llm.tool_results.count(3) == 2
