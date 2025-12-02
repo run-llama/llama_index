@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, List, Literal
+from typing import Any, Optional, Sequence, List, Literal, Generator, AsyncGenerator
 from base64 import b64decode
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
@@ -276,7 +276,7 @@ class MockFunctionCallingLLM(MockLLM):
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
 
-        def _gen():
+        def _gen() -> Generator[ChatResponse, None, None]:
             yield ChatResponse(
                 message=response_msg,
                 delta=content,
@@ -293,7 +293,7 @@ class MockFunctionCallingLLM(MockLLM):
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
 
-        async def _gen():
+        async def _gen() -> AsyncGenerator[ChatResponse, None]:
             yield ChatResponse(
                 message=response_msg,
                 delta=content,
