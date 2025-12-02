@@ -190,7 +190,7 @@ class MockFunctionCallingLLM(MockLLM):
 
     def _data_from_binary(
         self, data: bytes, block_type: Literal["audio", "document", "image", "video"]
-    ):
+    ) -> str:
         try:
             b64data = b64decode(data).decode("utf-8")
         except Exception:
@@ -203,25 +203,29 @@ class MockFunctionCallingLLM(MockLLM):
             if isinstance(block, DocumentBlock):
                 content_parts.append(
                     self._data_from_binary(
-                        data=block.data or b"", block_type=block.block_type
+                        data=block.data if isinstance(block.data, bytes) else b"",
+                        block_type=block.block_type,
                     )
                 )
             elif isinstance(block, ImageBlock):
                 content_parts.append(
                     self._data_from_binary(
-                        data=block.image or b"", block_type=block.block_type
+                        data=block.image if isinstance(block.image, bytes) else b"",
+                        block_type=block.block_type,
                     )
                 )
             elif isinstance(block, VideoBlock):
                 content_parts.append(
                     self._data_from_binary(
-                        data=block.video or b"", block_type=block.block_type
+                        data=block.video if isinstance(block.video, bytes) else b"",
+                        block_type=block.block_type,
                     )
                 )
             elif isinstance(block, AudioBlock):
                 content_parts.append(
                     self._data_from_binary(
-                        data=block.audio or b"", block_type=block.block_type
+                        data=block.audio if isinstance(block.audio, bytes) else b"",
+                        block_type=block.block_type,
                     )
                 )
             elif isinstance(block, TextBlock):
@@ -235,13 +239,15 @@ class MockFunctionCallingLLM(MockLLM):
                     elif isinstance(c, ImageBlock):
                         content_parts.append(
                             self._data_from_binary(
-                                c.image or b"", block_type=c.block_type
+                                c.image if isinstance(c.image, bytes) else b"",
+                                block_type=c.block_type,
                             )
                         )
                     else:
                         content_parts.append(
                             self._data_from_binary(
-                                c.data or b"", block_type=c.block_type
+                                c.data if isinstance(c.data, bytes) else b"",
+                                block_type=c.block_type,
                             )
                         )
             elif isinstance(block, CitationBlock):
@@ -250,7 +256,9 @@ class MockFunctionCallingLLM(MockLLM):
                 else:
                     content_parts.append(
                         self._data_from_binary(
-                            data=block.cited_content.image or b"",
+                            data=block.cited_content.image
+                            if isinstance(block.cited_content.image, bytes)
+                            else b"",
                             block_type=block.cited_content.block_type,
                         )
                     )
