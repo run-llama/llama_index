@@ -19,7 +19,7 @@ from typing import (
     Callable,
 )
 
-
+from llama_index.core.async_utils import asyncio_run
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
@@ -307,7 +307,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = asyncio.run(
+        next_msg, chat_kwargs = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.use_file_api, self._client, **params
             )
@@ -318,7 +318,7 @@ class GoogleGenAI(FunctionCallingLLM):
         )
 
         if self.use_file_api:
-            asyncio.run(
+            asyncio_run(
                 delete_uploaded_files([*chat_kwargs["history"], next_msg], self._client)
             )
 
@@ -364,7 +364,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs = asyncio.run(
+        next_msg, chat_kwargs = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.use_file_api, self._client, **params
             )
@@ -405,7 +405,7 @@ class GoogleGenAI(FunctionCallingLLM):
                             yield llama_resp
 
             if self.use_file_api:
-                asyncio.run(
+                asyncio_run(
                     delete_uploaded_files(
                         [*chat_kwargs["history"], next_msg], self._client
                     )
@@ -591,7 +591,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
         messages = prompt.format_messages(**prompt_args)
         contents = [
-            asyncio.run(
+            asyncio_run(
                 chat_message_to_gemini(message, self.use_file_api, self._client)
             )
             for message in messages
@@ -611,7 +611,7 @@ class GoogleGenAI(FunctionCallingLLM):
         )
 
         if self.use_file_api:
-            asyncio.run(delete_uploaded_files(contents, self._client))
+            asyncio_run(delete_uploaded_files(contents, self._client))
 
         if isinstance(response.parsed, BaseModel):
             return response.parsed
@@ -641,7 +641,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.use_file_api, self._client)
                 )
                 for message in messages
@@ -653,7 +653,7 @@ class GoogleGenAI(FunctionCallingLLM):
             )
 
             if self.use_file_api:
-                asyncio.run(delete_uploaded_files(contents, self._client))
+                asyncio_run(delete_uploaded_files(contents, self._client))
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -737,7 +737,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.use_file_api, self._client)
                 )
                 for message in messages
@@ -766,7 +766,7 @@ class GoogleGenAI(FunctionCallingLLM):
                             yield streaming_model
 
                 if self.use_file_api:
-                    asyncio.run(delete_uploaded_files(contents, self._client))
+                    asyncio_run(delete_uploaded_files(contents, self._client))
 
             return gen()
         else:
