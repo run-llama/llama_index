@@ -16,7 +16,7 @@ def test_class_inheritance() -> None:
 @pytest.fixture()
 def mock_airweave_sdk():
     """Create a mock Airweave SDK."""
-    with patch("airweave.AirweaveSDK") as mock_sdk:
+    with patch("llama_index.tools.airweave.base.AirweaveSDK") as mock_sdk:
         yield mock_sdk
 
 
@@ -197,12 +197,17 @@ def test_search_and_generate_answer_no_completion(mock_airweave_sdk) -> None:
     mock_airweave_sdk.return_value = mock_client
 
     tool_spec = AirweaveToolSpec(api_key="test-key")
-    answer = tool_spec.search_and_generate_answer(
-        collection_id="test-collection",
-        query="What is the answer?",
-    )
 
-    assert answer == "No answer could be generated from the search results."
+    # Expect a UserWarning to be raised
+    with pytest.warns(
+        UserWarning, match="No answer could be generated from the search results"
+    ):
+        answer = tool_spec.search_and_generate_answer(
+            collection_id="test-collection",
+            query="What is the answer?",
+        )
+
+    assert answer is None
 
 
 def test_list_collections(mock_airweave_sdk) -> None:
