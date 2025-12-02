@@ -1,7 +1,9 @@
 """Airweave tool spec."""
 
+import warnings
 from typing import Any, Dict, List, Optional
 
+from airweave import AirweaveSDK, SearchRequest
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -45,8 +47,6 @@ class AirweaveToolSpec(BaseToolSpec):
             framework_version: Framework version for analytics
 
         """
-        from airweave import AirweaveSDK
-
         init_kwargs: Dict[str, Any] = {
             "api_key": api_key,
             "framework_name": framework_name,
@@ -82,8 +82,6 @@ class AirweaveToolSpec(BaseToolSpec):
             List of Document objects containing search results with metadata
 
         """
-        from airweave import SearchRequest
-
         response = self.client.collections.search(
             readable_id=collection_id,
             request=SearchRequest(query=query, limit=limit, offset=offset),
@@ -128,8 +126,6 @@ class AirweaveToolSpec(BaseToolSpec):
             Example: {"documents": [...], "answer": "Generated answer text"}
 
         """
-        from airweave import SearchRequest
-
         search_params: Dict[str, Any] = {
             "query": query,
             "limit": limit,
@@ -171,7 +167,7 @@ class AirweaveToolSpec(BaseToolSpec):
         query: str,
         limit: Optional[int] = 10,
         use_reranking: bool = True,
-    ) -> str:
+    ) -> Optional[str]:
         """
         Search collection and generate a natural language answer (RAG-style).
 
@@ -185,11 +181,10 @@ class AirweaveToolSpec(BaseToolSpec):
             use_reranking: Whether to use LLM reranking (default: True)
 
         Returns:
-            Natural language answer generated from the search results
+            Natural language answer generated from the search results,
+            or None if no answer could be generated (with a warning)
 
         """
-        from airweave import SearchRequest
-
         response = self.client.collections.search(
             readable_id=collection_id,
             request=SearchRequest(
@@ -204,7 +199,10 @@ class AirweaveToolSpec(BaseToolSpec):
             return response.completion
         else:
             # Fallback if no answer generated
-            return "No answer could be generated from the search results."
+            warnings.warn(
+                "No answer could be generated from the search results", UserWarning
+            )
+            return None
 
     def _parse_search_response(
         self, response: Any, collection_id: str
