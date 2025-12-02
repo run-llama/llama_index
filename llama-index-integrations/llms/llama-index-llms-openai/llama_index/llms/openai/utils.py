@@ -63,9 +63,11 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5-mini-2025-08-07": 400000,
     "gpt-5-nano": 400000,
     "gpt-5-nano-2025-08-07": 400000,
-    "gpt-5-chat-latest": 400000,
     "gpt-5-pro": 400000,
     "gpt-5-pro-2025-10-06": 400000,
+    "gpt-5.1": 400000,
+    "gpt-5.1-2025-11-13": 400000,
+    "gpt-5.1-chat-latest": 128000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -119,6 +121,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4.1-2025-04-14": 1047576,
     "gpt-4.1-mini-2025-04-14": 1047576,
     "gpt-4.1-nano-2025-04-14": 1047576,
+    # Latest GPT-5-chat supports setting temperature, so putting it here
+    "gpt-5-chat-latest": 128000,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
@@ -360,7 +364,7 @@ def to_openai_message_dict(
                 mimetype = block._guess_mimetype()
             content.append(
                 {
-                    "type": "input_file",
+                    "type": "file",
                     "filename": block.title,
                     "file_data": f"data:{mimetype};base64,{b64_string}",
                 }

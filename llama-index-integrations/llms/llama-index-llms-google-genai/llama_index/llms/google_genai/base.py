@@ -6,6 +6,7 @@ import os
 import typing
 from typing import (
     TYPE_CHECKING,
+    cast,
     Any,
     AsyncGenerator,
     Dict,
@@ -36,8 +37,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    ThinkingBlock,
-    TextBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -322,7 +322,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 delete_uploaded_files([*chat_kwargs["history"], next_msg], self._client)
             )
 
-        return chat_from_gemini_response(response)
+        return chat_from_gemini_response(response, [])
 
     @llm_retry_decorator
     async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any):
@@ -344,7 +344,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 [*chat_kwargs["history"], next_msg], self._client
             )
 
-        return chat_from_gemini_response(response)
+        return chat_from_gemini_response(response, [])
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -375,29 +375,34 @@ class GoogleGenAI(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = ""
-            existing_tool_calls = []
-            thoughts = ""
+            content = []
+            thought_signatures = []
             for r in response:
-                if not r.candidates:
-                    continue
+                if candidates := r.candidates:
+                    if not candidates:
+                        continue
 
-                top_candidate = r.candidates[0]
-                content_delta = top_candidate.content.parts[0].text
-                if content_delta:
-                    if top_candidate.content.parts[0].thought:
-                        thoughts += content_delta
-                    else:
-                        content += content_delta
-                llama_resp = chat_from_gemini_response(r)
-                existing_tool_calls.extend(
-                    llama_resp.message.additional_kwargs.get("tool_calls", [])
-                )
-                llama_resp.delta = content_delta
-                llama_resp.message.blocks = [TextBlock(text=content)]
-                llama_resp.message.blocks.append(ThinkingBlock(content=thoughts))
-                llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
-                yield llama_resp
+                    top_candidate = candidates[0]
+                    if response_content := top_candidate.content:
+                        if parts := response_content.parts:
+                            content_delta = parts[0].text
+
+                            llama_resp = chat_from_gemini_response(
+                                r, existing_content=content
+                            )
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
+
+                            # re-align thought signatures
+                            thought_signatures.extend(
+                                llama_resp.message.additional_kwargs.get(
+                                    "thought_signatures", []
+                                )
+                            )
+                            llama_resp.message.additional_kwargs[
+                                "thought_signatures"
+                            ] = thought_signatures
+
+                            yield llama_resp
 
             if self.use_file_api:
                 asyncio.run(
@@ -428,9 +433,8 @@ class GoogleGenAI(FunctionCallingLLM):
         chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            existing_tool_calls = []
-            thoughts = ""
+            content = []
+            thought_signatures = []
             async for r in await chat.send_message_stream(
                 next_msg.parts if isinstance(next_msg, types.Content) else next_msg
             ):
@@ -442,25 +446,22 @@ class GoogleGenAI(FunctionCallingLLM):
                     if response_content := top_candidate.content:
                         if parts := response_content.parts:
                             content_delta = parts[0].text
-                            if content_delta:
-                                if parts[0].thought:
-                                    thoughts += content_delta
-                                else:
-                                    content += content_delta
-                            llama_resp = chat_from_gemini_response(r)
-                            existing_tool_calls.extend(
+
+                            llama_resp = chat_from_gemini_response(
+                                r, existing_content=content
+                            )
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
+
+                            # re-align thought signatures
+                            thought_signatures.extend(
                                 llama_resp.message.additional_kwargs.get(
-                                    "tool_calls", []
+                                    "thought_signatures", []
                                 )
                             )
-                            llama_resp.delta = content_delta
-                            llama_resp.message.blocks = [TextBlock(text=content)]
-                            llama_resp.message.blocks.append(
-                                ThinkingBlock(content=thoughts)
-                            )
-                            llama_resp.message.additional_kwargs["tool_calls"] = (
-                                existing_tool_calls
-                            )
+                            llama_resp.message.additional_kwargs[
+                                "thought_signatures"
+                            ] = thought_signatures
+
                             yield llama_resp
 
             if self.use_file_api:
@@ -551,7 +552,11 @@ class GoogleGenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -565,9 +570,9 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["name"],
-                    tool_name=tool_call["name"],
-                    tool_kwargs=tool_call["args"],
+                    tool_id=tool_call.tool_name,
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
                 )
             )
 
@@ -653,7 +658,8 @@ class GoogleGenAI(FunctionCallingLLM):
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
             else:
-                raise ValueError("Response is not a BaseModel")
+                # Try to parse the response text as JSON into the output_cls
+                return output_cls.model_validate_json(response.text)
 
         else:
             return super().structured_predict(
@@ -700,7 +706,8 @@ class GoogleGenAI(FunctionCallingLLM):
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
             else:
-                raise ValueError("Response is not a BaseModel")
+                # Try to parse the response text as JSON into the output_cls
+                return output_cls.model_validate_json(response.text)
 
         else:
             return super().structured_predict(

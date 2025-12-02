@@ -4,7 +4,7 @@ import logging
 import os
 from io import BytesIO
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, Generator, List, Optional, Tuple, Union
 
 import voyageai
 from PIL import Image
@@ -17,13 +17,30 @@ from llama_index.core.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_VOYAGE_2_BATCH_SIZE = 72
-DEFAULT_VOYAGE_3_LITE_BATCH_SIZE = 30
-DEFAULT_VOYAGE_3_BATCH_SIZE = 10
-DEFAULT_BATCH_SIZE = 7
+MAX_BATCH_SIZE = 1000
+
 MULTIMODAL_MODELS = ["voyage-multimodal-3"]
+CONTEXT_MODELS = ["voyage-context-3"]
 
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
+
+VOYAGE_TOTAL_TOKEN_LIMITS = {
+    "voyage-context-3": 32_000,
+    "voyage-3.5-lite": 1_000_000,
+    "voyage-3.5": 320_000,  # voyage-3.5 supports up to 320k tokens per batch
+    "voyage-2": 320_000,
+    "voyage-3-large": 120_000,
+    "voyage-code-3": 120_000,
+    "voyage-large-2-instruct": 120_000,
+    "voyage-finance-2": 120_000,
+    "voyage-multilingual-2": 120_000,
+    "voyage-law-2": 120_000,
+    "voyage-large-2": 120_000,
+    "voyage-3": 120_000,
+    "voyage-3-lite": 120_000,
+    "voyage-code-2": 120_000,
+    "voyage-3-m-exp": 120_000,
+}
 
 
 class VoyageEmbedding(MultiModalEmbedding):
@@ -76,19 +93,7 @@ class VoyageEmbedding(MultiModalEmbedding):
             )
 
         if embed_batch_size is None:
-            embed_batch_size = (
-                DEFAULT_VOYAGE_2_BATCH_SIZE
-                if model_name in ["voyage-2", "voyage-02"]
-                else (
-                    DEFAULT_VOYAGE_3_LITE_BATCH_SIZE
-                    if model_name in ["voyage-3-lite", "voyage-3.5-lite"]
-                    else (
-                        DEFAULT_VOYAGE_3_BATCH_SIZE
-                        if model_name in ["voyage-3", "voyage-3.5", "voyage-context-3"]
-                        else DEFAULT_BATCH_SIZE
-                    )
-                )
-            )
+            embed_batch_size = MAX_BATCH_SIZE
 
         super().__init__(
             model_name=model_name,
@@ -115,6 +120,32 @@ class VoyageEmbedding(MultiModalEmbedding):
     @classmethod
     def _texts_to_content(cls, input_strs: List[str]) -> List[dict]:
         return [{"content": [{"type": "text", "text": x}]} for x in input_strs]
+
+    def _build_batches(
+        self, texts: List[str]
+    ) -> Generator[Tuple[List[str], int], None, None]:
+        """Generate batches of texts based on token limits."""
+        max_tokens_per_batch = VOYAGE_TOTAL_TOKEN_LIMITS.get(self.model_name, 120_000)
+        index = 0
+
+        while index < len(texts):
+            batch: List[str] = []
+            batch_tokens = 0
+            while (
+                index < len(texts)
+                and len(batch) < min(self.embed_batch_size, MAX_BATCH_SIZE)
+                and batch_tokens < max_tokens_per_batch
+            ):
+                n_tokens = len(
+                    self._client.tokenize([texts[index]], model=self.model_name)[0]
+                )
+                if batch_tokens + n_tokens > max_tokens_per_batch and len(batch) > 0:
+                    break
+                batch_tokens += n_tokens
+                batch.append(texts[index])
+                index += 1
+
+            yield batch, len(batch)
 
     def _image_to_content(self, image_input: Union[str, Path, BytesIO]) -> Image:
         """Convert an image to a base64 Data URL."""
@@ -177,41 +208,75 @@ class VoyageEmbedding(MultiModalEmbedding):
         return await self._aembed_image(img_file_path)
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
-        if self.model_name in MULTIMODAL_MODELS:
-            return self._client.multimodal_embed(
-                inputs=self._texts_to_content(texts),
-                model=self.model_name,
-                input_type=input_type,
-                truncation=self.truncation,
-            ).embeddings
-        else:
-            return self._client.embed(
-                texts,
-                model=self.model_name,
-                input_type=input_type,
-                truncation=self.truncation,
-                output_dtype=self.output_dtype,
-                output_dimension=self.output_dimension,
-            ).embeddings
+        """Embed texts with dynamic batching based on token limits."""
+        embeddings: List[List[float]] = []
+
+        for batch, _ in self._build_batches(texts):
+            if self.model_name in CONTEXT_MODELS:
+                r = self._client.contextualized_embed(
+                    inputs=[batch],
+                    model=self.model_name,
+                    input_type=input_type,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
+                ).results
+                embeddings.extend(r[0].embeddings)
+            elif self.model_name in MULTIMODAL_MODELS:
+                batch_embeddings = self._client.multimodal_embed(
+                    inputs=self._texts_to_content(batch),
+                    model=self.model_name,
+                    input_type=input_type,
+                    truncation=self.truncation,
+                ).embeddings
+                embeddings.extend(batch_embeddings)
+            else:
+                batch_embeddings = self._client.embed(
+                    batch,
+                    model=self.model_name,
+                    input_type=input_type,
+                    truncation=self.truncation,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
+                ).embeddings
+                embeddings.extend(batch_embeddings)
+
+        return embeddings
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
-        if self.model_name in MULTIMODAL_MODELS:
-            r = await self._aclient.multimodal_embed(
-                inputs=self._texts_to_content(texts),
-                model=self.model_name,
-                input_type=input_type,
-                truncation=self.truncation,
-            )
-        else:
-            r = await self._aclient.embed(
-                texts,
-                model=self.model_name,
-                input_type=input_type,
-                truncation=self.truncation,
-                output_dtype=self.output_dtype,
-                output_dimension=self.output_dimension,
-            )
-        return r.embeddings
+        """Asynchronously embed texts with dynamic batching based on token limits."""
+        embeddings: List[List[float]] = []
+
+        for batch, _ in self._build_batches(texts):
+            if self.model_name in CONTEXT_MODELS:
+                ar = await self._aclient.contextualized_embed(
+                    inputs=[batch],
+                    model=self.model_name,
+                    input_type=input_type,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
+                )
+                r = ar.results
+                embeddings.extend(r[0].embeddings)
+            elif self.model_name in MULTIMODAL_MODELS:
+                r = await self._aclient.multimodal_embed(
+                    inputs=self._texts_to_content(batch),
+                    model=self.model_name,
+                    input_type=input_type,
+                    truncation=self.truncation,
+                )
+                embeddings.extend(r.embeddings)
+            else:
+                r = await self._aclient.embed(
+                    batch,
+                    model=self.model_name,
+                    input_type=input_type,
+                    truncation=self.truncation,
+                    output_dtype=self.output_dtype,
+                    output_dimension=self.output_dimension,
+                )
+                embeddings.extend(r.embeddings)
+
+        return embeddings
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""

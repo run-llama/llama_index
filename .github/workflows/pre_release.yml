@@ -21,7 +21,7 @@ jobs:
     if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -48,6 +48,7 @@ jobs:
           uv run -- llama-dev --repo-root .. release changelog
           VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          uv run pre-commit run -a || true
 
       - name: Create Release PR
         id: rpr

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-couchbase"
-version = "0.5.1"
+version = "0.6.0"
 description = "llama-index vector_stores couchbase integration"
 authors = [{name = "Couchbase", email = "devadvocates@couchbase.com"}]
 requires-python = ">=3.9,<4.0"

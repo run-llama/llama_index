@@ -32,6 +32,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     CachePoint,
     ThinkingBlock,
+    ToolCallBlock,
 )
 
 
@@ -61,6 +62,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
+    "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
@@ -109,6 +111,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -141,6 +144,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -161,6 +165,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -174,6 +179,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -188,8 +194,8 @@ def is_reasoning(model_name: str) -> bool:
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
-    # Check for region prefixes (us, eu, apac, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "global."]
+    # Check for region prefixes (us, eu, apac, jp, global)
+    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
 
     # If no region prefix, return the original model name
     if not any(prefix in model_name for prefix in REGION_PREFIXES):
@@ -303,6 +309,23 @@ def _content_block_to_bedrock_format(
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
+    elif isinstance(block, ToolCallBlock):
+        if isinstance(block.tool_kwargs, str):
+            try:
+                tool_input = json.loads(block.tool_kwargs or "{}")
+            except json.JSONDecodeError:
+                tool_input = {}
+        else:
+            tool_input = block.tool_kwargs
+
+        return {
+            "toolUse": {
+                "input": tool_input,
+                "toolUseId": block.tool_call_id or "",
+                "name": block.tool_name,
+            }
+        }
+
     else:
         logger.warning(f"Unsupported block type: {type(block)}")
         return None
@@ -345,7 +368,9 @@ def messages_to_converse_messages(
     converse_messages = []
     system_prompt = []
     current_system_prompt = ""
+
     for message in messages:
+        unique_tool_calls = []
         if message.role == MessageRole.SYSTEM:
             # we iterate over blocks, if content was used, the blocks are added anyway
             for block in message.blocks:
@@ -402,6 +427,13 @@ def messages_to_converse_messages(
                 )
                 if bedrock_format_block:
                     content.append(bedrock_format_block)
+                    if "toolUse" in bedrock_format_block:
+                        unique_tool_calls.append(
+                            (
+                                bedrock_format_block["toolUse"]["toolUseId"],
+                                bedrock_format_block["toolUse"]["name"],
+                            )
+                        )
 
             if content:
                 converse_messages.append(
@@ -411,6 +443,7 @@ def messages_to_converse_messages(
                     }
                 )
 
+        # keep this code here for compatibility with older chat histories
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,
@@ -418,25 +451,28 @@ def messages_to_converse_messages(
         tool_calls = message.additional_kwargs.get("tool_calls", [])
         content = []
         for tool_call in tool_calls:
-            assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
-            assert "input" in tool_call, f"`input` not found in {tool_call}"
-            assert "name" in tool_call, f"`name` not found in {tool_call}"
-            tool_input = tool_call["input"] if tool_call["input"] else {}
-            if isinstance(tool_input, str):
-                try:
-                    tool_input = json.loads(tool_input or "{}")
-                except json.JSONDecodeError:
-                    tool_input = {}
-
-            content.append(
-                {
-                    "toolUse": {
-                        "input": tool_input,
-                        "toolUseId": tool_call["toolUseId"],
-                        "name": tool_call["name"],
-                    }
-                }
-            )
+            try:
+                assert "toolUseId" in tool_call
+                assert "input" in tool_call
+                assert "name" in tool_call
+                if (tool_call["toolUseId"], tool_call["name"]) not in unique_tool_calls:
+                    tool_input = tool_call["input"] if tool_call["input"] else {}
+                    if isinstance(tool_input, str):
+                        try:
+                            tool_input = json.loads(tool_input or "{}")
+                        except json.JSONDecodeError:
+                            tool_input = {}
+                    content.append(
+                        {
+                            "toolUse": {
+                                "input": tool_input,
+                                "toolUseId": tool_call["toolUseId"],
+                                "name": tool_call["name"],
+                            }
+                        }
+                    )
+            except AssertionError:
+                continue
         if len(content) > 0:
             converse_messages.append(
                 {
@@ -454,6 +490,7 @@ def tools_to_converse_tools(
     tool_choice: Optional[dict] = None,
     tool_required: bool = False,
     tool_caching: bool = False,
+    supports_forced_tool_calls: bool = True,
 ) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
@@ -482,18 +519,31 @@ def tools_to_converse_tools(
     if tool_caching:
         converse_tools.append({"cachePoint": {"type": "default"}})
 
+    if tool_choice:
+        tool_choice = tool_choice
+    elif supports_forced_tool_calls and tool_required:
+        tool_choice = {"any": {}}
+    else:
+        tool_choice = {"auto": {}}
+
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
         # e.g. { "auto": {} }
-        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+        "toolChoice": tool_choice,
     }
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], Any]:
@@ -555,6 +605,7 @@ def converse_with_retry(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
@@ -595,6 +646,10 @@ def converse_with_retry(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
 
     converse_kwargs = join_two_dicts(
         converse_kwargs,
@@ -636,6 +691,7 @@ async def converse_with_retry_async(
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
+    guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
@@ -682,6 +738,10 @@ async def converse_with_retry_async(
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+        if guardrail_stream_processing_mode and stream:
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
     converse_kwargs = join_two_dicts(
         converse_kwargs,
         {

@@ -156,7 +156,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.69.0"
+version = "0.75.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -168,9 +168,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c8/9d/9ad1778b95f15c5b04e7d328c1b5f558f1e893857b7c33cd288c19c0057a/anthropic-0.69.0.tar.gz", hash = "sha256:c604d287f4d73640f40bd2c0f3265a2eb6ce034217ead0608f6b07a8bc5ae5f2", size = 480622, upload-time = "2025-09-29T16:53:45.282Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/1f/08e95f4b7e2d35205ae5dcbb4ae97e7d477fc521c275c02609e2931ece2d/anthropic-0.75.0.tar.gz", hash = "sha256:e8607422f4ab616db2ea5baacc215dd5f028da99ce2f022e33c7c535b29f3dfb", size = 439565, upload-time = "2025-11-24T20:41:45.28Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/38/75129688de5637eb5b383e5f2b1570a5cc3aecafa4de422da8eea4b90a6c/anthropic-0.69.0-py3-none-any.whl", hash = "sha256:1f73193040f33f11e27c2cd6ec25f24fe7c3f193dc1c5cde6b7a08b18a16bcc5", size = 337265, upload-time = "2025-09-29T16:53:43.686Z" },
+    { url = "https://files.pythonhosted.org/packages/60/1c/1cd02b7ae64302a6e06724bf80a96401d5313708651d277b1458504a1730/anthropic-0.75.0-py3-none-any.whl", hash = "sha256:ea8317271b6c15d80225a9f3c670152746e88805a7a61e14d4a374577164965b", size = 388164, upload-time = "2025-11-24T20:41:43.587Z" },
 ]
 
 [package.optional-dependencies]
@@ -1865,7 +1865,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.3"
+version = "0.14.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1901,9 +1901,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/e4/6a4ab9465b66c9d31b74ed0221293aeebe9072ec9db3b3b229f96028af78/llama_index_core-0.14.3.tar.gz", hash = "sha256:ca8a473ac92fe54f2849175f6510655999852c83fa8b7d75fd3908a8863da05a", size = 11577791, upload-time = "2025-09-24T18:21:03.653Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/42/e1de7d6a390dcd67b0754fd24e0d0acb56c1d0838a68e30671dd79fd5521/llama_index_core-0.14.5.tar.gz", hash = "sha256:913ebc3ad895d381eaab0f10dc405101c5bec5a70c09909ef2493ddc115f8552", size = 11578206, upload-time = "2025-10-15T19:10:09.746Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/5a/de1002b10109a0dfa122ba84a3b640124cf2418a78e00ac0b382574f2b3f/llama_index_core-0.14.3-py3-none-any.whl", hash = "sha256:fc4291fbae8c6609e3367da39a85a453099476685d5a3e97b766d82d4bcce5a4", size = 11918952, upload-time = "2025-09-24T18:21:00.744Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/64/c02576991efcefd30a65971e87ece7494d6bbf3739b7bffeeb56c86b5a76/llama_index_core-0.14.5-py3-none-any.whl", hash = "sha256:5445aa322b83a9d48baa608c3b920df4f434ed5d461a61e6bccb36d99348bddf", size = 11919461, upload-time = "2025-10-15T19:10:06.92Z" },
 ]
 
 [[package]]
@@ -1921,7 +1921,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-anthropic"
-version = "0.9.4"
+version = "0.10.3"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic", extra = ["bedrock", "vertex"] },
@@ -1953,8 +1953,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", extras = ["bedrock", "vertex"], specifier = ">=0.69.0" },
-    { name = "llama-index-core", specifier = ">=0.14.3,<0.15" },
+    { name = "anthropic", extras = ["bedrock", "vertex"], specifier = ">=0.75.0" },
+    { name = "llama-index-core", specifier = ">=0.14.5,<0.15" },
 ]
 
 [package.metadata.requires-dev]

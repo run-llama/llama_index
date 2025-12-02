@@ -44,10 +44,9 @@ The following component guides are the central hubs for getting started in build
 
 LlamaIndex Workflows allow you to build very custom, agentic workflows through a core event-driven orchestration foundation.
 
-- [Workflows Tutorial Sequence](/python/framework/understanding/workflows)
-- [Workflows Component Guide](/python/framework/module_guides/workflow)
+- [Workflows Documentation](/python/llamaagents/workflows)
 - [Building a ReAct agent workflow](/python/examples/workflow/react_agent)
-- [Deploying Workflows](/python/framework/module_guides/workflow#deploying-a-workflow)
+- [Deploying Workflows](/python/llamaagents/llamactl/getting-started/)
 
 **Building with Agentic Ingredients**
 
