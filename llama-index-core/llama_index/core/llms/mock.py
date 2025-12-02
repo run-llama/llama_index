@@ -1,6 +1,6 @@
-from typing import Any, Optional, Sequence, List
+from typing import Any, Optional, Sequence, List, Literal
+from base64 import b64decode
 from llama_index.core.base.llms.types import (
-    ChatMessage,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
@@ -8,6 +8,16 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
+    TextBlock,
+    DocumentBlock,
+    ImageBlock,
+    AudioBlock,
+    ToolCallBlock,
+    ThinkingBlock,
+    CitableBlock,
+    CitationBlock,
+    VideoBlock,
+    ContentBlock,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
@@ -150,3 +160,152 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
     @classmethod
     def class_name(cls) -> str:
         return "MockLLMWithChatMemoryOfLastCall"
+
+
+class MockFunctionCallingLLM(MockLLM):
+    tool_calls: List[ToolCallBlock] = Field(default_factory=list)
+
+    def __init__(
+        self,
+        max_tokens: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[MessagesToPromptType] = None,
+        completion_to_prompt: Optional[CompletionToPromptType] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+    ) -> None:
+        super().__init__(
+            max_tokens=max_tokens,
+            callback_manager=callback_manager or CallbackManager([]),
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+        )
+        self.tool_calls: list[ToolCallBlock] = []
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_function_calling_model=True)
+
+    def _data_from_binary(
+        self, data: bytes, block_type: Literal["audio", "document", "image", "video"]
+    ):
+        try:
+            b64data = b64decode(data).decode("utf-8")
+        except Exception:
+            b64data = ""
+        return f"<{block_type}>{b64data}</{block_type}>"
+
+    def _content_from_content_blocks(self, blocks: list[ContentBlock]) -> str:
+        content_parts: list[str] = []
+        for block in blocks:
+            if isinstance(block, DocumentBlock):
+                content_parts.append(
+                    self._data_from_binary(
+                        data=block.data or b"", block_type=block.block_type
+                    )
+                )
+            elif isinstance(block, ImageBlock):
+                content_parts.append(
+                    self._data_from_binary(
+                        data=block.image or b"", block_type=block.block_type
+                    )
+                )
+            elif isinstance(block, VideoBlock):
+                content_parts.append(
+                    self._data_from_binary(
+                        data=block.video or b"", block_type=block.block_type
+                    )
+                )
+            elif isinstance(block, AudioBlock):
+                content_parts.append(
+                    self._data_from_binary(
+                        data=block.audio or b"", block_type=block.block_type
+                    )
+                )
+            elif isinstance(block, TextBlock):
+                content_parts.append(block.text)
+            elif isinstance(block, ThinkingBlock):
+                content_parts.append(block.content or "")
+            elif isinstance(block, CitableBlock):
+                for c in block.content:
+                    if isinstance(c, TextBlock):
+                        content_parts.append(c.text)
+                    elif isinstance(c, ImageBlock):
+                        content_parts.append(
+                            self._data_from_binary(
+                                c.image or b"", block_type=c.block_type
+                            )
+                        )
+                    else:
+                        content_parts.append(
+                            self._data_from_binary(
+                                c.data or b"", block_type=c.block_type
+                            )
+                        )
+            elif isinstance(block, CitationBlock):
+                if isinstance(block.cited_content, TextBlock):
+                    content_parts.append(block.cited_content.text)
+                else:
+                    content_parts.append(
+                        self._data_from_binary(
+                            data=block.cited_content.image or b"",
+                            block_type=block.cited_content.block_type,
+                        )
+                    )
+            elif isinstance(block, ToolCallBlock):
+                self.tool_calls.append(block)
+            else:
+                pass
+        return "".join(content_parts)
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        content = self._content_from_content_blocks(messages[-1].blocks)
+        if not content:
+            content = "<empty>"
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        def _gen():
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        content = self._content_from_content_blocks(messages[-1].blocks)
+        if not content:
+            content = "<empty>"
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        async def _gen():
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        content = self._content_from_content_blocks(messages[-1].blocks)
+        if not content:
+            content = "<empty>"
+        response_msg = ChatMessage(role="assistant", content=content)
+        return ChatResponse(
+            message=response_msg,
+            delta=content,
+            raw={"content": content},
+        )
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        return self.chat(messages=messages)
