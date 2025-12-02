@@ -1,4 +1,5 @@
 from typing import Any, Optional, Sequence, List
+import base64
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseGen,
@@ -8,11 +9,17 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
+    DocumentBlock,
+    TextBlock,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
+from llama_index.core.llms.llm import (
+    MessagesToPromptType,
+    CompletionToPromptType,
+    ToolSelection,
+)
 from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
@@ -25,6 +32,7 @@ class MockLLM(CustomLLM):
     def __init__(
         self,
         max_tokens: Optional[int] = None,
+        is_function_calling_model: Optional[bool] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[MessagesToPromptType] = None,
@@ -39,6 +47,7 @@ class MockLLM(CustomLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
+        self._is_function_calling_model = is_function_calling_model
 
     @classmethod
     def class_name(cls) -> str:
@@ -46,7 +55,10 @@ class MockLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(num_output=self.max_tokens or -1)
+        return LLMMetadata(
+            num_output=self.max_tokens or -1,
+            is_function_calling_model=self._is_function_calling_model or False,
+        )
 
     def _generate_text(self, length: int) -> str:
         return " ".join(["text" for _ in range(length)])
@@ -150,3 +162,124 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
     @classmethod
     def class_name(cls) -> str:
         return "MockLLMWithChatMemoryOfLastCall"
+
+
+class MockEchoLLM(CustomLLM):
+    def __init__(
+        self,
+        max_block_size: Optional[int] = None,
+    ) -> None:
+        super().__init__()
+        self._max_block_size = max_block_size or 1024
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_function_calling_model=True)
+
+    def get_tool_calls_from_response(
+        self, response: ChatResponse, **kwargs: Any
+    ) -> List[ToolSelection]:
+        return response.message.additional_kwargs.get("tool_calls", [])
+
+    def _extract_content_from_blocks(self, blocks) -> str:
+        """Helper: Extract content from message blocks for the echo."""
+        content_parts = []
+        for block in blocks:
+            if isinstance(block, TextBlock):
+                content_parts.append(
+                    f"<TextBlock>{block.text[: self._max_block_size]}</TextBlock>"
+                )
+
+            elif isinstance(block, DocumentBlock):
+                data_info = "<empty>"
+                if block.data:
+                    try:
+                        # Attempt to decode base64 for visibility
+                        decoded_data = base64.b64decode(block.data)
+                        try:
+                            text_content = decoded_data.decode("utf-8")
+                            if len(text_content) > self._max_block_size:
+                                truncated = text_content[: self._max_block_size]
+                                data_info = f"<truncatedData len={len(text_content)}>{truncated}</truncatedData>"
+                            else:
+                                data_info = text_content
+                        except UnicodeDecodeError:
+                            data_info = f"<binaryData len={len(decoded_data)}>"
+                    except Exception:
+                        data_info = f"<base64Data len={len(block.data)}>{block.data[: self._max_block_size]}...</base64Data>"
+
+                title = block.title or "no title"
+                mimetype = block.document_mimetype or "none"
+                content_parts.append(
+                    f"<DocumentBlock title='{title}' mimetype='{mimetype}'>{data_info}</DocumentBlock>"
+                )
+
+            else:
+                content_parts.append(
+                    f"<UnsupportedBlock type={block.__class__.__name__}></UnsupportedBlock>"
+                )
+
+        return "".join(content_parts) if content_parts else ""
+
+    @llm_completion_callback()
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        # Echo back the input prompt so tests can verify inputs
+        return CompletionResponse(
+            text=prompt,
+        )
+
+    @llm_completion_callback()
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        # Echo back the input prompt so tests can verify inputs
+        def gen_prompt() -> CompletionResponseGen:
+            if not prompt:
+                yield CompletionResponse(text="", delta="")
+                return
+
+            for ch in prompt:
+                yield CompletionResponse(
+                    text=prompt,
+                    delta=ch,
+                )
+
+        return gen_prompt()
+
+    async def astream_chat(
+        self, messages: List[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        # Echo back the last message content so tests can verify inputs
+        content = self._extract_content_from_blocks(messages[-1].blocks)
+        if not content:
+            content = "</empty>"
+
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        async def _gen():
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()
+
+    async def astream_chat_with_tools(
+        self,
+        chat_history: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        # Echo back the last message content so tests can verify inputs
+        content = self._extract_content_from_blocks(chat_history[-1].blocks)
+        if not content:
+            content = "</empty>"
+
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        async def _gen():
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()

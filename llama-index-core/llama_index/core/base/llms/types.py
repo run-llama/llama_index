@@ -553,6 +553,8 @@ class ChatMessage(BaseModel):
             if isinstance(content, str):
                 data["blocks"] = [TextBlock(text=content)]
             elif isinstance(content, list):
+                # Above, we convert `str` to a TextBlock.
+                # We should probably do that here for every entry of `content` that is a `str`, right?
                 data["blocks"] = content
 
         super().__init__(**data)
