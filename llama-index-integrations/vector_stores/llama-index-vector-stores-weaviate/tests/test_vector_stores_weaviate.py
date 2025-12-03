@@ -14,8 +14,9 @@ import pytest
 import pytest_asyncio
 import weaviate
 import weaviate.classes as wvc
-import weaviate
+
 import weaviate.embedded
+from unittest.mock import MagicMock, AsyncMock
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -179,7 +180,7 @@ class TestWeaviateAsync:
         assert len(results.nodes) == 1
         assert results.nodes[0].node_id == node_to_keep.node_id
 
-    def test_async_client_properties(self, async_vector_store):
+    async def test_async_client_properties(self, async_vector_store):
         assert isinstance(async_vector_store.async_client, weaviate.WeaviateAsyncClient)
         with pytest.raises(SyncClientNotProvidedError):
             async_vector_store.client
@@ -391,6 +392,7 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
         with pytest.raises(AsyncClientNotProvidedError):
@@ -416,3 +418,219 @@ class TestWeaviateSync:
         assert isinstance(vector_store.client, weaviate.WeaviateClient)
         with pytest.raises(AsyncClientNotProvidedError):
             vector_store.async_client
+
+
+class TestWeaviateEmbedding:
+    @pytest.fixture
+    def mock_client(self):
+        client = MagicMock()
+        # Mock isinstance check
+        client.__class__ = weaviate.WeaviateClient
+        # Mock batch context manager
+        batch_mock = MagicMock()
+        client.batch.dynamic.return_value.__enter__.return_value = batch_mock
+        # Ensure collections attribute exists
+        client.collections = MagicMock()
+        return client
+
+    @pytest.fixture
+    def mock_async_client(self):
+        client = MagicMock()
+        client.__class__ = weaviate.WeaviateAsyncClient
+        client.collections = MagicMock()
+        # Mock async methods
+        client.collections.get.return_value.data.insert_many = AsyncMock()
+        client.collections.get.return_value.query.hybrid = AsyncMock()
+        return client
+
+    def test_add_with_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        vector_store.add([node])
+
+        # Verify vector is None in add_object call
+        batch_mock = mock_client.batch.dynamic.return_value.__enter__.return_value
+        call_args = batch_mock.add_object.call_args
+        assert call_args.kwargs["vector"] is None
+
+    def test_add_without_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=False
+        )
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        vector_store.add([node])
+
+        # Verify vector is passed
+        batch_mock = mock_client.batch.dynamic.return_value.__enter__.return_value
+        call_args = batch_mock.add_object.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+
+    def test_query_with_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        vector_store.query(query)
+
+        # Verify vector is None in query
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+
+    def test_query_without_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=False
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        vector_store.query(query)
+
+        # Verify vector is passed
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+
+    @pytest.mark.asyncio
+    async def test_async_add_with_native_embedding(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client, index_name="Test", native_embedding=True
+        )
+
+        # Mock schema check to avoid actual calls
+        vector_store._collection_initialized = True
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        await vector_store.async_add([node])
+
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.data.insert_many.call_args
+        # Check the first object in the list passed to insert_many
+        inserted_objects = call_args.args[0]
+        assert inserted_objects[0].vector is None
+
+    @pytest.mark.asyncio
+    async def test_async_add_without_native_embedding(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client,
+            index_name="Test",
+            native_embedding=False,
+        )
+
+        vector_store._collection_initialized = True
+
+        node = TextNode(text="test", embedding=[0.1, 0.2])
+        await vector_store.async_add([node])
+
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.data.insert_many.call_args
+        inserted_objects = call_args.args[0]
+        assert inserted_objects[0].vector == [0.1, 0.2]
+
+    @pytest.mark.asyncio
+    async def test_async_query_with_native_embedding(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        await vector_store.aquery(query)
+
+        # Verify vector is None in query
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+
+    @pytest.mark.asyncio
+    async def test_async_query_without_native_embedding(self, mock_async_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_async_client,
+            index_name="Test",
+            native_embedding=False,
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="test")
+        await vector_store.aquery(query)
+
+        # Verify vector is passed
+        collection_mock = mock_async_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+
+    def test_query_hybrid_with_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(
+            query_embedding=[0.1, 0.2],
+            query_str="test",
+            mode=VectorStoreQueryMode.HYBRID,
+            alpha=0.75,
+        )
+        vector_store.query(query)
+
+        # Verify vector is None and alpha is passed
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+
+        assert call_args.kwargs["alpha"] == 0.75
+
+    def test_query_hybrid_without_native_embedding(self, mock_client):
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=False
+        )
+
+        query = VectorStoreQuery(
+            query_embedding=[0.1, 0.2],
+            query_str="test",
+            mode=VectorStoreQueryMode.HYBRID,
+            alpha=0.75,
+        )
+        vector_store.query(query)
+
+        # Verify vector is passed and alpha is passed
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] == [0.1, 0.2]
+        assert call_args.kwargs["alpha"] == 0.75
+
+    def test_query_with_native_embedding_no_query_str(self, mock_client):
+        """Test that ValueError is raised when native_embedding=True but query_str is missing."""
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], query_str="")
+
+        with pytest.raises(ValueError) as exc:
+            vector_store.query(query)
+
+        assert (
+            "When native_embedding=True, a non-empty query_str must be provided"
+            in str(exc.value)
+        )
+
+    def test_query_default_with_native_embedding(self, mock_client):
+        """Test DEFAULT query mode with native_embedding=True."""
+        vector_store = WeaviateVectorStore(
+            weaviate_client=mock_client, index_name="Test", native_embedding=True
+        )
+
+        query = VectorStoreQuery(
+            query_str="test",
+            mode=VectorStoreQueryMode.DEFAULT,
+        )
+        vector_store.query(query)
+
+        # Verify vector is None
+        collection_mock = mock_client.collections.get.return_value
+        call_args = collection_mock.query.hybrid.call_args
+        assert call_args.kwargs["vector"] is None
+        # Verify query string is passed
+        assert call_args.kwargs["query"] == "test"
