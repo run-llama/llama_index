@@ -8,8 +8,8 @@ from typing import (
     AsyncGenerator,
     Callable,
     Optional,
-    TypeAlias,
 )
+from typing_extensions import TypeAlias
 from base64 import b64decode
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
