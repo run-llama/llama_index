@@ -1,17 +1,17 @@
 import pytest
 import json
 
-from typing import Callable
+from typing import Optional
 from llama_index.core.llms import MockLLM
-from llama_index.core.llms.mock import MockFunctionCallingLLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM, BlockToContentCallback
 from llama_index.core.base.llms.types import (
     ChatMessage,
     TextBlock,
     DocumentBlock,
     ImageBlock,
     ToolCallBlock,
+    ContentBlock,
 )
-from llama_index.core.tools.function_tool import FunctionTool
 
 
 @pytest.fixture()
@@ -29,15 +29,6 @@ def messages() -> list[ChatMessage]:
 
 
 @pytest.fixture()
-def tools() -> dict[str, Callable]:
-    def divide(x: float, y: float) -> float:
-        """Returns the quotient of two numbers"""
-        return x / y
-
-    return {"divide": divide}
-
-
-@pytest.fixture()
 def tool_calls() -> list[ToolCallBlock]:
     return [
         ToolCallBlock(
@@ -49,11 +40,47 @@ def tool_calls() -> list[ToolCallBlock]:
             tool_call_id="2",
         ),
         ToolCallBlock(tool_name="divide", tool_kwargs="{", tool_call_id="3"),
+        ToolCallBlock(tool_name="hello", tool_kwargs={}, tool_call_id="4"),
         ToolCallBlock(
-            tool_name="divide", tool_kwargs={"x": 1, "y": 0}, tool_call_id="4"
+            tool_name="divide", tool_kwargs={"x": 1, "y": 0}, tool_call_id="5"
         ),
-        ToolCallBlock(tool_name="hello", tool_kwargs={}, tool_call_id="5"),
     ]
+
+
+@pytest.fixture()
+def blocks_to_content_callback() -> BlockToContentCallback:
+    def blocks_to_content(
+        blocks: list[ContentBlock], tool_calls: Optional[list[ToolCallBlock]] = None
+    ) -> str:
+        def divide(x: int, y: int) -> int:
+            return int(x / y)
+
+        content = ""
+        for block in blocks:
+            if isinstance(block, TextBlock):
+                content += block.text
+            elif isinstance(block, ToolCallBlock):
+                if block.tool_name == "divide":
+                    if isinstance(block.tool_kwargs, dict):
+                        try:
+                            content += f"<toolcall id={block.tool_call_id}>{divide(**block.tool_kwargs)}</toolcall>"
+                        except Exception:
+                            content += (
+                                f"<toolcall id={block.tool_call_id}>error</toolcall>"
+                            )
+                    else:
+                        try:
+                            args = json.loads(block.tool_kwargs)
+                            content += f"<toolcall id={block.tool_call_id}>{divide(**args)}</toolcall>"
+                        except Exception:
+                            content += (
+                                f"<toolcall id={block.tool_call_id}>error</toolcall>"
+                            )
+            else:
+                continue
+        return content
+
+    return blocks_to_content
 
 
 def test_mock_llm_stream_complete_empty_prompt_no_max_tokens() -> None:
@@ -111,15 +138,25 @@ async def test_mock_function_calling_llm_async_methods(
     assert cont == "hello world<document>hello world</document><image>1px</image>"
 
 
-@pytest.mark.asyncio
-async def test_mock_function_calling_llm_tool_calls(
-    tools: list[FunctionTool],
+def test_mock_function_calling_llm_tool_calls(
     tool_calls: list[ToolCallBlock],
 ) -> None:
-    llm = MockFunctionCallingLLM(max_tokens=200, tools=tools)
-    result = await llm.achat(messages=[ChatMessage(role="user", content=tool_calls)])
+    llm = MockFunctionCallingLLM(max_tokens=200)
+    result = llm.chat(messages=[ChatMessage(role="user", blocks=tool_calls)])
     assert result.message.content == "<empty>"
     assert llm.tool_calls == tool_calls
-    assert len(llm.tool_results) == 4
-    assert llm.tool_results.count("error") == 2
-    assert llm.tool_results.count(3) == 2
+
+
+def test_mock_function_calling_llm_custom_callback(
+    tool_calls: list[ToolCallBlock],
+    blocks_to_content_callback: BlockToContentCallback,
+) -> None:
+    llm = MockFunctionCallingLLM(
+        max_tokens=200, blocks_to_content_callback=blocks_to_content_callback
+    )
+    blocks = [TextBlock(text="hello world"), *tool_calls]
+    result = llm.chat(messages=[ChatMessage(role="user", blocks=blocks)])
+    assert (
+        result.message.content
+        == "hello world<toolcall id=1>3</toolcall><toolcall id=2>3</toolcall><toolcall id=3>error</toolcall><toolcall id=5>error</toolcall>"
+    )

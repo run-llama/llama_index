@@ -7,6 +7,8 @@ from typing import (
     Generator,
     AsyncGenerator,
     Callable,
+    Optional,
+    TypeAlias,
 )
 from base64 import b64decode
 from llama_index.core.base.llms.types import (
@@ -36,7 +38,6 @@ from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
 import copy
-import json
 
 
 class MockLLM(CustomLLM):
@@ -172,10 +173,101 @@ class MockLLMWithChatMemoryOfLastCall(MockLLM):
         return "MockLLMWithChatMemoryOfLastCall"
 
 
+def _data_from_binary(
+    data: bytes, block_type: Literal["audio", "document", "image", "video"]
+) -> str:
+    try:
+        b64data = b64decode(data).decode("utf-8")
+    except Exception:
+        b64data = ""
+    return f"<{block_type}>{b64data}</{block_type}>"
+
+
+def _default_blocks_to_content_callback(
+    blocks: list[ContentBlock], tool_calls: Optional[list[ToolCallBlock]] = None
+) -> str:
+    content_parts: list[str] = []
+    for block in blocks:
+        if isinstance(block, DocumentBlock):
+            content_parts.append(
+                _data_from_binary(
+                    data=block.data if isinstance(block.data, bytes) else b"",
+                    block_type=block.block_type,
+                )
+            )
+        elif isinstance(block, ImageBlock):
+            content_parts.append(
+                _data_from_binary(
+                    data=block.image if isinstance(block.image, bytes) else b"",
+                    block_type=block.block_type,
+                )
+            )
+        elif isinstance(block, VideoBlock):
+            content_parts.append(
+                _data_from_binary(
+                    data=block.video if isinstance(block.video, bytes) else b"",
+                    block_type=block.block_type,
+                )
+            )
+        elif isinstance(block, AudioBlock):
+            content_parts.append(
+                _data_from_binary(
+                    data=block.audio if isinstance(block.audio, bytes) else b"",
+                    block_type=block.block_type,
+                )
+            )
+        elif isinstance(block, TextBlock):
+            content_parts.append(block.text)
+        elif isinstance(block, ThinkingBlock):
+            content_parts.append(block.content or "")
+        elif isinstance(block, CitableBlock):
+            for c in block.content:
+                if isinstance(c, TextBlock):
+                    content_parts.append(c.text)
+                elif isinstance(c, ImageBlock):
+                    content_parts.append(
+                        _data_from_binary(
+                            c.image if isinstance(c.image, bytes) else b"",
+                            block_type=c.block_type,
+                        )
+                    )
+                else:
+                    content_parts.append(
+                        _data_from_binary(
+                            c.data if isinstance(c.data, bytes) else b"",
+                            block_type=c.block_type,
+                        )
+                    )
+        elif isinstance(block, CitationBlock):
+            if isinstance(block.cited_content, TextBlock):
+                content_parts.append(block.cited_content.text)
+            else:
+                content_parts.append(
+                    _data_from_binary(
+                        data=block.cited_content.image
+                        if isinstance(block.cited_content.image, bytes)
+                        else b"",
+                        block_type=block.cited_content.block_type,
+                    )
+                )
+        elif isinstance(block, ToolCallBlock):
+            if tool_calls is not None:
+                tool_calls.append(block)
+        else:
+            pass
+    return "".join(content_parts)
+
+
+BlockToContentCallback: TypeAlias = Callable[
+    [list[ContentBlock], Optional[list[ToolCallBlock]]], str
+]
+
+
 class MockFunctionCallingLLM(MockLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
-    tools: dict[str, Callable] | None = Field(default=None)
-    tool_results: list[Any] = Field(default_factory=list)
+    blocks_to_content_callback: BlockToContentCallback = Field(
+        default=_default_blocks_to_content_callback
+    )
 
     def __init__(
         self,
@@ -185,7 +277,7 @@ class MockFunctionCallingLLM(MockLLM):
         messages_to_prompt: Optional[MessagesToPromptType] = None,
         completion_to_prompt: Optional[CompletionToPromptType] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-        tools: dict[str, Callable] | None = None,
+        blocks_to_content_callback: Optional[BlockToContentCallback] = None,
     ) -> None:
         super().__init__(
             max_tokens=max_tokens,
@@ -195,112 +287,18 @@ class MockFunctionCallingLLM(MockLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
-        self.tools = tools or {}
+        self.blocks_to_content_callback = (
+            blocks_to_content_callback or self.blocks_to_content_callback
+        )
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_function_calling_model=True)
 
-    def _data_from_binary(
-        self, data: bytes, block_type: Literal["audio", "document", "image", "video"]
-    ) -> str:
-        try:
-            b64data = b64decode(data).decode("utf-8")
-        except Exception:
-            b64data = ""
-        return f"<{block_type}>{b64data}</{block_type}>"
-
-    def _content_from_content_blocks(self, blocks: list[ContentBlock]) -> str:
-        content_parts: list[str] = []
-        for block in blocks:
-            if isinstance(block, DocumentBlock):
-                content_parts.append(
-                    self._data_from_binary(
-                        data=block.data if isinstance(block.data, bytes) else b"",
-                        block_type=block.block_type,
-                    )
-                )
-            elif isinstance(block, ImageBlock):
-                content_parts.append(
-                    self._data_from_binary(
-                        data=block.image if isinstance(block.image, bytes) else b"",
-                        block_type=block.block_type,
-                    )
-                )
-            elif isinstance(block, VideoBlock):
-                content_parts.append(
-                    self._data_from_binary(
-                        data=block.video if isinstance(block.video, bytes) else b"",
-                        block_type=block.block_type,
-                    )
-                )
-            elif isinstance(block, AudioBlock):
-                content_parts.append(
-                    self._data_from_binary(
-                        data=block.audio if isinstance(block.audio, bytes) else b"",
-                        block_type=block.block_type,
-                    )
-                )
-            elif isinstance(block, TextBlock):
-                content_parts.append(block.text)
-            elif isinstance(block, ThinkingBlock):
-                content_parts.append(block.content or "")
-            elif isinstance(block, CitableBlock):
-                for c in block.content:
-                    if isinstance(c, TextBlock):
-                        content_parts.append(c.text)
-                    elif isinstance(c, ImageBlock):
-                        content_parts.append(
-                            self._data_from_binary(
-                                c.image if isinstance(c.image, bytes) else b"",
-                                block_type=c.block_type,
-                            )
-                        )
-                    else:
-                        content_parts.append(
-                            self._data_from_binary(
-                                c.data if isinstance(c.data, bytes) else b"",
-                                block_type=c.block_type,
-                            )
-                        )
-            elif isinstance(block, CitationBlock):
-                if isinstance(block.cited_content, TextBlock):
-                    content_parts.append(block.cited_content.text)
-                else:
-                    content_parts.append(
-                        self._data_from_binary(
-                            data=block.cited_content.image
-                            if isinstance(block.cited_content.image, bytes)
-                            else b"",
-                            block_type=block.cited_content.block_type,
-                        )
-                    )
-            elif isinstance(block, ToolCallBlock):
-                self.tool_calls.append(block)
-                if self.tools:
-                    for tool in self.tools:
-                        if tool == block.tool_name:
-                            try:
-                                if isinstance(block.tool_kwargs, dict):
-                                    result = self.tools[tool](**block.tool_kwargs)
-                                else:
-                                    try:
-                                        args = json.loads(block.tool_kwargs)
-                                        result = self.tools[tool](**args)
-                                    except Exception:
-                                        result = "error"
-                            except Exception:
-                                result = "error"
-                            self.tool_results.append(result)
-                            break
-            else:
-                pass
-        return "".join(content_parts)
-
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        content = self._content_from_content_blocks(messages[-1].blocks)
+        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
@@ -317,7 +315,7 @@ class MockFunctionCallingLLM(MockLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        content = self._content_from_content_blocks(messages[-1].blocks)
+        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
@@ -332,7 +330,7 @@ class MockFunctionCallingLLM(MockLLM):
         return _gen()
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        content = self._content_from_content_blocks(messages[-1].blocks)
+        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
