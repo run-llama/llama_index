@@ -4,6 +4,96 @@ title: ChangeLog
 
 <!--- generated changelog --->
 
+## [2025-11-10]
+
+### llama-index-core [0.14.8]
+
+- Fix ReActOutputParser getting stuck when "Answer:" contains "Action:" ([#20098](https://github.com/run-llama/llama_index/pull/20098))
+- Add buffer to image, audio, video and document blocks ([#20153](https://github.com/run-llama/llama_index/pull/20153))
+- fix(agent): Handle multi-block ChatMessage in ReActAgent ([#20196](https://github.com/run-llama/llama_index/pull/20196))
+- Fix/20209 ([#20214](https://github.com/run-llama/llama_index/pull/20214))
+- Preserve Exception in ToolOutput ([#20231](https://github.com/run-llama/llama_index/pull/20231))
+- fix weird pydantic warning ([#20235](https://github.com/run-llama/llama_index/pull/20235))
+
+### llama-index-embeddings-nvidia [0.4.2]
+
+- docs: Edit pass and update example model ([#20198](https://github.com/run-llama/llama_index/pull/20198))
+
+### llama-index-embeddings-ollama [0.8.4]
+
+- Added a test case (no code) to check the embedding through an actual connection to a Ollama server (after checking that the ollama server exists) ([#20230](https://github.com/run-llama/llama_index/pull/20230))
+
+### llama-index-llms-anthropic [0.10.2]
+
+- feat(llms/anthropic): Add support for RawMessageDeltaEvent in streaming ([#20206](https://github.com/run-llama/llama_index/pull/20206))
+- chore: remove unsupported models ([#20211](https://github.com/run-llama/llama_index/pull/20211))
+
+### llama-index-llms-bedrock-converse [0.11.1]
+
+- feat: integrate bedrock converse with tool call block ([#20099](https://github.com/run-llama/llama_index/pull/20099))
+- feat: Update model name extraction to include 'jp' region prefix and … ([#20233](https://github.com/run-llama/llama_index/pull/20233))
+
+### llama-index-llms-google-genai [0.7.3]
+
+- feat: google genai integration with tool block ([#20096](https://github.com/run-llama/llama_index/pull/20096))
+- fix: non-streaming gemini tool calling ([#20207](https://github.com/run-llama/llama_index/pull/20207))
+- Add token usage information in GoogleGenAI chat additional_kwargs ([#20219](https://github.com/run-llama/llama_index/pull/20219))
+- bug fix google genai stream_complete ([#20220](https://github.com/run-llama/llama_index/pull/20220))
+
+### llama-index-llms-nvidia [0.4.4]
+
+- docs: Edit pass and code example updates ([#20200](https://github.com/run-llama/llama_index/pull/20200))
+
+### llama-index-llms-openai [0.6.8]
+
+- FixV2: Correct DocumentBlock type for OpenAI from 'input_file' to 'file' ([#20203](https://github.com/run-llama/llama_index/pull/20203))
+- OpenAI v2 sdk support ([#20234](https://github.com/run-llama/llama_index/pull/20234))
+
+### llama-index-llms-upstage [0.6.5]
+
+- OpenAI v2 sdk support ([#20234](https://github.com/run-llama/llama_index/pull/20234))
+
+### llama-index-packs-streamlit-chatbot [0.5.2]
+
+- OpenAI v2 sdk support ([#20234](https://github.com/run-llama/llama_index/pull/20234))
+
+### llama-index-packs-voyage-query-engine [0.5.2]
+
+- OpenAI v2 sdk support ([#20234](https://github.com/run-llama/llama_index/pull/20234))
+
+### llama-index-postprocessor-nvidia-rerank [0.5.1]
+
+- docs: Edit pass ([#20199](https://github.com/run-llama/llama_index/pull/20199))
+
+### llama-index-readers-web [0.5.6]
+
+- feat: Add ScrapyWebReader Integration ([#20212](https://github.com/run-llama/llama_index/pull/20212))
+- Update Scrapy dependency to 2.13.3 ([#20228](https://github.com/run-llama/llama_index/pull/20228))
+
+### llama-index-readers-whisper [0.3.0]
+
+- OpenAI v2 sdk support ([#20234](https://github.com/run-llama/llama_index/pull/20234))
+
+### llama-index-storage-kvstore-postgres [0.4.3]
+
+- fix: Ensure schema creation only occurs if it doesn't already exist ([#20225](https://github.com/run-llama/llama_index/pull/20225))
+
+### llama-index-tools-brightdata [0.2.1]
+
+- docs: add api key claim instructions ([#20204](https://github.com/run-llama/llama_index/pull/20204))
+
+### llama-index-tools-mcp [0.4.3]
+
+- Added test case for issue 19211. No code change ([#20201](https://github.com/run-llama/llama_index/pull/20201))
+
+### llama-index-utils-oracleai [0.3.1]
+
+- Update llama-index-core dependency to 0.12.45 ([#20227](https://github.com/run-llama/llama_index/pull/20227))
+
+### llama-index-vector-stores-lancedb [0.4.2]
+
+- fix: FTS index recreation bug on every LanceDB query ([#20213](https://github.com/run-llama/llama_index/pull/20213))
+
 ## [2025-10-30]
 
 ### llama-index-core [0.14.7]
