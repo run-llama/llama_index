@@ -1,5 +1,6 @@
 """Azure AI Search vector store."""
 
+import asyncio
 import enum
 import json
 import logging
@@ -155,6 +156,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
     _semantic_configuration_name: str = PrivateAttr()
+    _owns_search_client: bool = PrivateAttr()
+    _owns_async_search_client: bool = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -678,6 +681,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._async_index_client = None
         self._search_client = None
         self._async_search_client = None
+        self._owns_search_client = False
+        self._owns_async_search_client = False
 
         if search_or_index_client and async_search_or_index_client is None:
             logger.warning(
@@ -715,6 +720,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client = self._index_client.get_search_client(
                     index_name=index_name
                 )
+                self._owns_search_client = True
                 add_user_agent(self._search_client)
 
             elif isinstance(search_or_index_client, SearchClient):
@@ -745,6 +751,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._async_search_client = self._async_index_client.get_search_client(
                     index_name=index_name
                 )
+                self._owns_async_search_client = True
                 add_user_agent(self._async_search_client)
 
             elif isinstance(async_search_or_index_client, AsyncSearchClient):
@@ -827,6 +834,54 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     def aclient(self) -> Any:
         """Get async client."""
         return self._async_search_client
+
+    def close(self) -> None:
+        """
+        Close the search clients.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_search_client and self._search_client is not None:
+            self._search_client.close()
+        if self._owns_async_search_client and self._async_search_client is not None:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # No running loop: create a temporary loop and close cleanly
+                asyncio.run(self._async_search_client.close())
+            else:
+                # Running loop: schedule async close (not awaited)
+                loop.create_task(self._async_search_client.close())
+
+    async def aclose(self) -> None:
+        """
+        Close the search clients asynchronously.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_search_client and self._search_client is not None:
+            self._search_client.close()
+        if self._owns_async_search_client and self._async_search_client is not None:
+            await self._async_search_client.close()
+
+    def __del__(self) -> None:
+        """
+        Clean up the search clients for shutdown.
+
+        This destructor attempts to close any internally-created search clients.
+        For deterministic cleanup, prefer calling close() or aclose() explicitly.
+        """
+        try:
+            self.close()
+        except Exception as exc:
+            logger.debug(
+                "Failed to close search clients during garbage collection, "
+                "type=%s err='%s'",
+                type(exc),
+                exc,
+            )
 
     def _default_index_mapping(
         self, enriched_doc: Dict[str, str], metadata: Dict[str, Any]

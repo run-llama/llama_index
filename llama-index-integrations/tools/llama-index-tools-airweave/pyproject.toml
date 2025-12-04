@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
-    "diff-cover>=9.2.4",
+    "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
@@ -25,43 +25,40 @@ dev = [
 ]
 
 [project]
-name = "llama-index-readers-docling"
-version = "0.4.2"
-description = "llama-index readers docling integration"
-authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
-requires-python = ">=3.10,<4.0"
+name = "llama-index-tools-airweave"
+version = "0.1.0"
+description = "LlamaIndex tools integration for Airweave - making any app searchable for agents"
+authors = [{name = "Airweave Team", email = "hello@airweave.ai"}]
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "docling-core>=2.2.0,<3",
-    "docling>=2.2.0,<3",
-    "numpy>=2.0",
+    "airweave-sdk>=0.1.0",
 ]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
+exclude = ["**/BUILD"]
 
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
+exclude = ["**/BUILD"]
 
 [tool.llamahub]
-contains_example = false
-import_path = "llama_index.readers.docling"
+contains_example = true
+import_path = "llama_index.tools.airweave"
 
 [tool.llamahub.class_authors]
-DoclingReader = "vagenas"
+AirweaveToolSpec = "airweave-ai"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.10"
+python_version = "3.9"
