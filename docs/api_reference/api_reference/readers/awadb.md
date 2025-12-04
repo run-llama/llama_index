@@ -1,3 +1,4 @@
 ::: llama_index.readers.awadb
-options:
-members: - AwadbReader
+    options:
+      members:
+        - AwadbReader

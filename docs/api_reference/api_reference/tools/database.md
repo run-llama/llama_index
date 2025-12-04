@@ -1,3 +1,4 @@
 ::: llama_index.tools.database
-options:
-members: - DatabaseToolSpec
+    options:
+      members:
+        - DatabaseToolSpec

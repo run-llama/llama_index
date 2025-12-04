@@ -1,3 +1,4 @@
 ::: llama_index.readers.rayyan
-options:
-members: - RayyanReader
+    options:
+      members:
+        - RayyanReader

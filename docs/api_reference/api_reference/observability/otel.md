@@ -1,3 +1,4 @@
 ::: llama_index.observability.otel
-options:
-members: - LlamaIndexOpenTelemetry
+    options:
+      members:
+        - LlamaIndexOpenTelemetry
