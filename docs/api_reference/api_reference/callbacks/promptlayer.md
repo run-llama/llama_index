@@ -1,4 +1,3 @@
 ::: llama_index.callbacks.promptlayer
-    options:
-      members:
-        - PromptLayerHandler
+options:
+members: - PromptLayerHandler

@@ -1,4 +1,3 @@
 ::: llama_index.llms.databricks
-    options:
-      members:
-        - Databricks
+options:
+members: - Databricks

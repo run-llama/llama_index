@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.weaviate
-    options:
-      members:
-        - WeaviateVectorStore
+options:
+members: - WeaviateVectorStore

@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.heroku
-    options:
-      members:
-        - HerokuEmbedding
+options:
+members: - HerokuEmbedding

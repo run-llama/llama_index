@@ -1,4 +1,3 @@
 ::: llama_index.postprocessor.longllmlingua
-    options:
-      members:
-        - LongLLMLinguaPostprocessor
+options:
+members: - LongLLMLinguaPostprocessor
