@@ -240,7 +240,6 @@ async def test_async_tool_spec() -> None:
 
 @pytest.mark.asyncio
 async def test_async_tool_spec_async() -> None:
-
     """Test async_fn of tool spec."""
     tool_spec = TestToolSpec()
     tools = await tool_spec.to_tool_list_async()
@@ -258,7 +257,7 @@ async def test_async_function_patching() -> None:
     # test sync patching of async function
     tool_spec = TestToolSpec()
     tool_spec.spec_functions = ["afoo", "async_only_fn"]
-    tools =await tool_spec.to_tool_list_async()
+    tools = await tool_spec.to_tool_list_async()
     assert len(tools) == 2
     assert tools[0].fn("hello", 1) == "foo hello 1"
 
