@@ -1,11 +1,9 @@
 import pytest
-from typing import List
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
     TextBlock,
-    ContentBlock,
 )
 from llama_index.core.memory.memory_blocks.static import StaticMemoryBlock
 

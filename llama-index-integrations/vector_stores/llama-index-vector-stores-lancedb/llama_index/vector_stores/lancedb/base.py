@@ -454,8 +454,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]
@@ -557,8 +557,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]
