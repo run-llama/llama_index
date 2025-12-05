@@ -167,8 +167,29 @@ class BaseElementNodeParser(NodeParser):
         # and other elements in the future?
         return [e for e in elements if e.type != "table"]
 
+    def _get_context_lines(
+        self, element_text: str, from_end: bool = False, num_lines: int = 3
+    ) -> Optional[str]:
+        """Extract N lines from element if any starts with 'table'."""
+        lines = element_text.strip().split("\n")
+        if from_end:
+            # Get last N lines (for previous element, we want lines near the table)
+            context_lines = lines[-num_lines:] if len(lines) >= num_lines else lines
+        else:
+            # Get first N lines (for next element)
+            context_lines = lines[:num_lines] if len(lines) >= num_lines else lines
+
+        # Check if any of the context lines starts with "table"
+        has_table_context = any(
+            line.lower().strip().startswith("table") for line in context_lines
+        )
+
+        if has_table_context:
+            return "\n".join(context_lines)
+        return None
+
     def extract_table_summaries(self, elements: List[Element]) -> None:
-        """Go through elements, extract out summaries that are tables."""
+        """Go through all elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
         from llama_index.core.settings import Settings
 
@@ -179,14 +200,22 @@ class BaseElementNodeParser(NodeParser):
             if element.type not in ("table", "table_text"):
                 continue
             table_context = str(element.element)
-            if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
-                "table"
-            ):
-                table_context = str(elements[idx - 1].element) + "\n" + table_context
-            if idx < len(elements) + 1 and str(
-                elements[idx - 1].element
-            ).lower().strip().startswith("table"):
-                table_context += "\n" + str(elements[idx + 1].element)
+
+            # Check previous element - get last 3 lines if any of them start with "table"
+            if idx > 0 and elements[idx - 1].type == "text":
+                prev_context = self._get_context_lines(
+                    str(elements[idx - 1].element), from_end=True, num_lines=3
+                )
+                if prev_context:
+                    table_context = prev_context + "\n" + table_context
+
+            # Check next element - get first 3 lines if any of them start with "table"
+            if idx < len(elements) - 1 and elements[idx + 1].type == "text":
+                next_context = self._get_context_lines(
+                    str(elements[idx + 1].element), from_end=False, num_lines=3
+                )
+                if next_context:
+                    table_context += "\n" + next_context
 
             table_context_list.append(table_context)
 
@@ -214,7 +243,9 @@ class BaseElementNodeParser(NodeParser):
         ]
         summary_co = run_jobs(summary_jobs, workers=self.num_workers)
         summary_outputs = asyncio_run(summary_co)
-        for element, summary_output in zip(elements, summary_outputs):
+        # Only assign table_output to table elements (not all elements)
+        table_elements = [e for e in elements if e.type in ("table", "table_text")]
+        for element, summary_output in zip(table_elements, summary_outputs):
             element.table_output = summary_output
 
     async def aextract_table_summaries(self, elements: List[Element]) -> None:
@@ -230,16 +261,22 @@ class BaseElementNodeParser(NodeParser):
                 if element.type not in ("table", "table_text"):
                     continue
                 table_context = str(element.element)
-                if idx > 0 and str(
-                    elements[idx - 1].element
-                ).lower().strip().startswith("table"):
-                    table_context = (
-                        str(elements[idx - 1].element) + "\n" + table_context
+
+                # Check previous element - get last 3 lines if any of them start with "table"
+                if idx > 0 and elements[idx - 1].type == "text":
+                    prev_context = self._get_context_lines(
+                        str(elements[idx - 1].element), from_end=True, num_lines=3
                     )
-                if idx < len(elements) + 1 and str(
-                    elements[idx - 1].element
-                ).lower().strip().startswith("table"):
-                    table_context += "\n" + str(elements[idx + 1].element)
+                    if prev_context:
+                        table_context = prev_context + "\n" + table_context
+
+                # Check next element - get first 3 lines if any of them start with "table"
+                if idx < len(elements) - 1 and elements[idx + 1].type == "text":
+                    next_context = self._get_context_lines(
+                        str(elements[idx + 1].element), from_end=False, num_lines=3
+                    )
+                    if next_context:
+                        table_context += "\n" + next_context
 
                 table_context_list.append(table_context)
 
@@ -263,7 +300,9 @@ class BaseElementNodeParser(NodeParser):
             for table_context in table_context_list
         ]
         summary_outputs = await run_jobs(summary_jobs, workers=self.num_workers)
-        for element, summary_output in zip(elements, summary_outputs):
+        # Only assign table_output to table elements (not all elements)
+        table_elements = [e for e in elements if e.type in ("table", "table_text")]
+        for element, summary_output in zip(table_elements, summary_outputs):
             element.table_output = summary_output
 
     def get_base_nodes_and_mappings(
