@@ -346,6 +346,105 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
 
+    async def _aquery_sql_other(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+        """Query SQL database + other query engine in sequence."""
+        # first query SQL database
+        sql_response = await self._sql_query_tool.query_engine.aquery(query_bundle)
+        if not self._use_sql_join_synthesis:
+            return sql_response
+
+        sql_query = (
+            sql_response.metadata["sql_query"] if sql_response.metadata else None
+        )
+        if self._verbose:
+            print_text(f"SQL query: {sql_query}\n", color="yellow")
+            print_text(f"SQL response: {sql_response}\n", color="yellow")
+
+        # given SQL db, transform query into new query
+        new_query = self._sql_augment_query_transform(
+            query_bundle.query_str,
+            metadata={
+                "sql_query": _format_sql_query(sql_query),
+                "sql_query_response": str(sql_response),
+            },
+        )
+
+        if self._verbose:
+            print_text(
+                f"Transformed query given SQL response: {new_query.query_str}\n",
+                color="blue",
+            )
+        logger.info(f"> Transformed query given SQL response: {new_query.query_str}")
+        if self._sql_augment_query_transform.check_stop(new_query):
+            return sql_response
+
+        other_response = await self._other_query_tool.query_engine.aquery(new_query)
+        if self._verbose:
+            print_text(f"query engine response: {other_response}\n", color="pink")
+        logger.info(f"> query engine response: {other_response}")
+
+        if self._streaming:
+            response_gen = await self._llm.astream(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return StreamingResponse(
+                response_gen,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
+        else:
+            response_str = await self._llm.apredict(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return Response(
+                response_str,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
+
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        # TODO: make async
-        return self._query(query_bundle)
+        """Query and get response."""
+        metadatas = [self._sql_query_tool.metadata, self._other_query_tool.metadata]
+        
+        if hasattr(self._selector, "aselect"):
+            result = await self._selector.aselect(metadatas, query_bundle)
+        else:
+            result = self._selector.select(metadatas, query_bundle)
+            
+        # pick sql query
+        if result.ind == 0:
+            if self._verbose:
+                print_text(f"Querying SQL database: {result.reason}\n", color="blue")
+            logger.info(f"> Querying SQL database: {result.reason}")
+            return await self._aquery_sql_other(query_bundle)
+        elif result.ind == 1:
+            if self._verbose:
+                print_text(
+                    f"Querying other query engine: {result.reason}\n", color="blue"
+                )
+            logger.info(f"> Querying other query engine: {result.reason}")
+            return await self._other_query_tool.query_engine.aquery(query_bundle)
+        else:
+            raise ValueError(f"Invalid result.ind: {result.ind}")
