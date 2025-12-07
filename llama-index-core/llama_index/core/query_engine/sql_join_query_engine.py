@@ -103,8 +103,7 @@ def _default_check_stop(query_bundle: QueryBundle) -> bool:
 
 def _format_sql_query(sql_query: str) -> str:
     """Format SQL query."""
-    return sql_query.replace("
-", " ").replace("	", " ")
+    return sql_query.replace("\n", " ").replace("\t", " ")
 
 
 class SQLAugmentQueryTransform(BaseQueryTransform):
