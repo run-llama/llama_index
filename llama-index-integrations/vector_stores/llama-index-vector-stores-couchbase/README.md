@@ -12,7 +12,7 @@ pip install llama-index-vector-stores-couchbase
 
 ### CouchbaseSearchVectorStore
 
-Implements [Search Vector Indexes](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html) using Couchbase Full-Text Search (FTS) with vector search capabilities. Ideal for hybrid searches combining vector, full-text, and geospatial searches.
+Implements [Search Vector Indexes](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html) using Couchbase Search Service with vector search capabilities. Ideal for hybrid searches combining vector, full-text, and geospatial searches.
 
 ### CouchbaseQueryVectorStore (Recommended)
 
@@ -112,7 +112,7 @@ You can also use lowercase strings: `"cosine"`, `"dot_product"`, `"euclidean"`, 
 - **Multiple Index Types**: Support for all three Couchbase vector index types:
   - Hyperscale Vector Indexes (Query Service-based, 8.0+)
   - Composite Vector Indexes (Query Service-based, 8.0+)
-  - Search Vector Indexes (FTS-based, 7.6+)
+  - Search Vector Indexes (Search Service-based, 7.6+)
 - **Flexible Similarity Metrics**: Multiple distance metrics including:
   - COSINE (Cosine similarity)
   - DOT (Dot product)
@@ -152,7 +152,7 @@ Purpose-built for pure vector searches at massive scale:
 
 #### Composite Vector Indexes
 
-Combine a Global Secondary Index (GSI) with vector search functions:
+Combine Query Service indexes with vector search functions:
 
 **When to Use:**
 
@@ -176,7 +176,7 @@ Combine a Global Secondary Index (GSI) with vector search functions:
 
 ### Search Vector Indexes (`CouchbaseSearchVectorStore`)
 
-Search Vector Indexes combine Full-Text Search (FTS) with vector search capabilities:
+Search Vector Indexes use Couchbase Search Service with vector search capabilities:
 
 **When to Use:**
 
