@@ -8,6 +8,7 @@ from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     Response,
     StreamingResponse,
+    AsyncStreamingResponse,
 )
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
@@ -398,8 +399,8 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                 **(other_response.metadata or {}),
             }
             source_nodes = other_response.source_nodes
-            return StreamingResponse(
-                response_gen,
+            return AsyncStreamingResponse(
+                response_gen=response_gen,
                 metadata=response_metadata,
                 source_nodes=source_nodes,
             )
