@@ -258,8 +258,8 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             sql_response.metadata["sql_query"] if sql_response.metadata else None
         )
         if self._verbose:
-            print_text(f"SQL query: {sql_query}", color="yellow")
-            print_text(f"SQL response: {sql_response}", color="yellow")
+            print_text(f"SQL query: {sql_query}\n", color="yellow")
+            print_text(f"SQL response: {sql_response}\n", color="yellow")
 
         # given SQL db, transform query into new query
         new_query = self._sql_augment_query_transform(
@@ -272,7 +272,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"Transformed query given SQL response: {new_query.query_str}",
+                f"Transformed query given SQL response: {new_query.query_str}\n",
                 color="blue",
             )
         logger.info(f"> Transformed query given SQL response: {new_query.query_str}")
@@ -281,7 +281,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         other_response = self._other_query_tool.query_engine.query(new_query)
         if self._verbose:
-            print_text(f"query engine response: {other_response}", color="pink")
+            print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
         if self._streaming:
@@ -333,13 +333,13 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         # pick sql query
         if result.ind == 0:
             if self._verbose:
-                print_text(f"Querying SQL database: {result.reason}", color="blue")
+                print_text(f"Querying SQL database: {result.reason}\n", color="blue")
             logger.info(f"> Querying SQL database: {result.reason}")
             return self._query_sql_other(query_bundle)
         elif result.ind == 1:
             if self._verbose:
                 print_text(
-                    f"Querying other query engine: {result.reason}", color="blue"
+                    f"Querying other query engine: {result.reason}\n", color="blue"
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
             return self._other_query_tool.query_engine.query(query_bundle)
@@ -357,8 +357,8 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             sql_response.metadata["sql_query"] if sql_response.metadata else None
         )
         if self._verbose:
-            print_text(f"SQL query: {sql_query}", color="yellow")
-            print_text(f"SQL response: {sql_response}", color="yellow")
+            print_text(f"SQL query: {sql_query}\n", color="yellow")
+            print_text(f"SQL response: {sql_response}\n", color="yellow")
 
         # given SQL db, transform query into new query
         new_query = self._sql_augment_query_transform(
@@ -371,7 +371,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"Transformed query given SQL response: {new_query.query_str}",
+                f"Transformed query given SQL response: {new_query.query_str}\n",
                 color="blue",
             )
         logger.info(f"> Transformed query given SQL response: {new_query.query_str}")
@@ -380,7 +380,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         other_response = await self._other_query_tool.query_engine.aquery(new_query)
         if self._verbose:
-            print_text(f"query engine response: {other_response}", color="pink")
+            print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
         if self._streaming:
@@ -436,13 +436,13 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         # pick sql query
         if result.ind == 0:
             if self._verbose:
-                print_text(f"Querying SQL database: {result.reason}", color="blue")
+                print_text(f"Querying SQL database: {result.reason}\n", color="blue")
             logger.info(f"> Querying SQL database: {result.reason}")
             return await self._aquery_sql_other(query_bundle)
         elif result.ind == 1:
             if self._verbose:
                 print_text(
-                    f"Querying other query engine: {result.reason}", color="blue"
+                    f"Querying other query engine: {result.reason}\n", color="blue"
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
             return await self._other_query_tool.query_engine.aquery(query_bundle)
