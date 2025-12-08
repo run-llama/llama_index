@@ -1809,7 +1809,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-qdrant"
-version = "0.8.5"
+version = "0.8.9"
 source = { editable = "." }
 dependencies = [
     { name = "grpcio" },
@@ -1846,7 +1846,7 @@ dev = [
 requires-dist = [
     { name = "grpcio", specifier = ">=1.60.0,<2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "qdrant-client", specifier = ">=1.7.1" },
+    { name = "qdrant-client", specifier = ">=1.16.0" },
 ]
 provides-extras = ["fastembed"]
 
@@ -3479,7 +3479,7 @@ wheels = [
 
 [[package]]
 name = "qdrant-client"
-version = "1.14.2"
+version = "1.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
@@ -3491,9 +3491,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/80/b84c4c52106b6da291829d8ec632f58a5692d2772e8d3c1d3be4f9a47a2e/qdrant_client-1.14.2.tar.gz", hash = "sha256:da5cab4d367d099d1330b6f30d45aefc8bd76f8b8f9d8fa5d4f813501b93af0d", size = 285531, upload-time = "2025-04-24T14:44:43.307Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/16/366541897d270ee3f9c3f87da145baa8a5c9cc5190e0e53e8bbec1267cff/qdrant_client-1.16.0.tar.gz", hash = "sha256:0716aa0b7cca39745829c2e8ea0beb275fe2990e743ad803eabd6218e4b35c1b", size = 284128, upload-time = "2025-11-17T13:19:52.726Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e4/52/f49b0aa96253010f57cf80315edecec4f469e7a39c1ed92bf727fa290e57/qdrant_client-1.14.2-py3-none-any.whl", hash = "sha256:7c283b1f0e71db9c21b85d898fb395791caca2a6d56ee751da96d797b001410c", size = 327691, upload-time = "2025-04-24T14:44:41.794Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/ff/3a69bb56835c4b2e9fa780655790937011ac389b0408b9a1147eaa2cee22/qdrant_client-1.16.0-py3-none-any.whl", hash = "sha256:6b932393e84e4c0233e5b2eb96b0918e968725855adae4d9c541761f4c50cf11", size = 328579, upload-time = "2025-11-17T13:19:51.092Z" },
 ]
 
 [[package]]

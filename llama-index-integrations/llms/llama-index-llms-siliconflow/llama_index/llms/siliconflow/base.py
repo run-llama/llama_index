@@ -475,8 +475,9 @@ class SiliconFlow(FunctionCallingLLM):
                             break
                         chunk_json = json.loads(line[5:])
                         delta: dict = chunk_json["choices"][0]["delta"]
+                        delta_txt = delta["content"] or ""
                         response_role = delta.get("role") or response_role
-                        response_txt += delta["content"]
+                        response_txt += delta_txt
                         tool_calls = delta.get("tool_calls")
                         yield ChatResponse(
                             message=ChatMessage(
@@ -484,7 +485,7 @@ class SiliconFlow(FunctionCallingLLM):
                                 role=response_role,
                                 additional_kwargs={"tool_calls": tool_calls},
                             ),
-                            delta=delta["content"],
+                            delta=delta_txt,
                             raw=chunk_json,
                         )
 
@@ -527,7 +528,8 @@ class SiliconFlow(FunctionCallingLLM):
                             chunk_json = json.loads(chunk)
                             delta: dict = chunk_json["choices"][0]["delta"]
                             response_role = delta.get("role") or response_role
-                            response_txt += delta["content"]
+                            delta_txt = delta["content"] or ""
+                            response_txt += delta_txt
                             tool_calls = delta.get("tool_calls")
                             yield ChatResponse(
                                 message=ChatMessage(
@@ -535,7 +537,7 @@ class SiliconFlow(FunctionCallingLLM):
                                     role=response_role,
                                     additional_kwargs={"tool_calls": tool_calls},
                                 ),
-                                delta=delta["content"],
+                                delta=delta_txt,
                                 raw=line,
                             )
 

@@ -1,5 +1,6 @@
 """Azure AI Search vector store."""
 
+import asyncio
 import enum
 import json
 import logging
@@ -155,6 +156,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
     _semantic_configuration_name: str = PrivateAttr()
+    _owns_search_client: bool = PrivateAttr()
+    _owns_async_search_client: bool = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -678,6 +681,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._async_index_client = None
         self._search_client = None
         self._async_search_client = None
+        self._owns_search_client = False
+        self._owns_async_search_client = False
 
         if search_or_index_client and async_search_or_index_client is None:
             logger.warning(
@@ -685,13 +690,27 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 "in, sync or async functions may not work."
             )
 
+        def add_user_agent(
+            client: Union[
+                SearchClient,
+                SearchIndexClient,
+                AsyncSearchIndexClient,
+                AsyncSearchClient,
+            ],
+        ):
+            from azure.core.pipeline.policies import UserAgentPolicy
+
+            user_agent_policy: UserAgentPolicy = (
+                client._client._config.user_agent_policy
+            )
+            if self._user_agent not in user_agent_policy.user_agent:
+                user_agent_policy.add_user_agent(self._user_agent)
+
         # Validate sync search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
                 self._index_client = search_or_index_client
-                self._index_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                add_user_agent(self._index_client)
                 if not index_name:
                     raise ValueError(
                         "index_name must be supplied if search_or_index_client is of "
@@ -701,15 +720,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client = self._index_client.get_search_client(
                     index_name=index_name
                 )
-                self._search_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                self._owns_search_client = True
+                add_user_agent(self._search_client)
 
             elif isinstance(search_or_index_client, SearchClient):
                 self._search_client = search_or_index_client
-                self._search_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                add_user_agent(self._search_client)
                 # Validate index_name
                 if index_name:
                     raise ValueError(
@@ -724,9 +740,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         if async_search_or_index_client is not None:
             if isinstance(async_search_or_index_client, AsyncSearchIndexClient):
                 self._async_index_client = async_search_or_index_client
-                self._async_index_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                add_user_agent(self._async_index_client)
 
                 if not index_name:
                     raise ValueError(
@@ -737,15 +751,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._async_search_client = self._async_index_client.get_search_client(
                     index_name=index_name
                 )
-                self._async_search_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                self._owns_async_search_client = True
+                add_user_agent(self._async_search_client)
 
             elif isinstance(async_search_or_index_client, AsyncSearchClient):
                 self._async_search_client = async_search_or_index_client
-                self._async_search_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
+                add_user_agent(self._async_search_client)
 
                 # Validate index_name
                 if index_name:
@@ -823,6 +834,54 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     def aclient(self) -> Any:
         """Get async client."""
         return self._async_search_client
+
+    def close(self) -> None:
+        """
+        Close the search clients.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_search_client and self._search_client is not None:
+            self._search_client.close()
+        if self._owns_async_search_client and self._async_search_client is not None:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # No running loop: create a temporary loop and close cleanly
+                asyncio.run(self._async_search_client.close())
+            else:
+                # Running loop: schedule async close (not awaited)
+                loop.create_task(self._async_search_client.close())
+
+    async def aclose(self) -> None:
+        """
+        Close the search clients asynchronously.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_search_client and self._search_client is not None:
+            self._search_client.close()
+        if self._owns_async_search_client and self._async_search_client is not None:
+            await self._async_search_client.close()
+
+    def __del__(self) -> None:
+        """
+        Clean up the search clients for shutdown.
+
+        This destructor attempts to close any internally-created search clients.
+        For deterministic cleanup, prefer calling close() or aclose() explicitly.
+        """
+        try:
+            self.close()
+        except Exception as exc:
+            logger.debug(
+                "Failed to close search clients during garbage collection, "
+                "type=%s err='%s'",
+                type(exc),
+                exc,
+            )
 
     def _default_index_mapping(
         self, enriched_doc: Dict[str, str], metadata: Dict[str, Any]

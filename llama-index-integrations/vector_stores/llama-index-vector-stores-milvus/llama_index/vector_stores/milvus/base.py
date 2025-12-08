@@ -383,6 +383,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 collection_name=self.collection_name,
                 schema=schema,
                 index_params=index_params,
+                consistency_level=self.consistency_level,
             )
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"

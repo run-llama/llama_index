@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -1048,7 +1048,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.3"
+version = "0.14.8"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1103,6 +1103,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-dotenv" },
     { name = "pytest-mock" },
+    { name = "pytest-timeout" },
     { name = "rake-nltk" },
     { name = "ruff" },
     { name = "tree-sitter", version = "0.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -1126,7 +1127,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=2,<3" },
+    { name = "llama-index-workflows", specifier = ">=2,!=2.9.0,<3" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "nltk", specifier = ">3.8.1" },
@@ -1164,6 +1165,7 @@ dev = [
     { name = "pytest-cov", specifier = "~=5.0" },
     { name = "pytest-dotenv", specifier = "==0.5.2" },
     { name = "pytest-mock", specifier = "==3.11.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "rake-nltk", specifier = "==1.0.6" },
     { name = "ruff", specifier = "==0.11.11" },
     { name = "tree-sitter" },
@@ -1188,7 +1190,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "2.0.0"
+version = "2.9.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
@@ -1196,9 +1198,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/91/1584aee9fa5433d876a1142284d380ca599ab6ecfb83f1c4522d84d596e3/llama_index_workflows-2.0.0.tar.gz", hash = "sha256:489b988e0eda07c1b57ccf5e0c971c37548936557e8ea51ee4a163acaf13ee82", size = 1228608, upload-time = "2025-08-29T16:07:27.31Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/f0/36d62c9d9924a5f1ad91f89b227178d602a8d77bf07f095d9f4a81f0865b/llama_index_workflows-2.9.1.tar.gz", hash = "sha256:86aed19c8cac244edc5fa27cc0fbea6bb3811f46f8a31eb8e121e379ca4c13e2", size = 5206687, upload-time = "2025-10-29T18:20:23.824Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/22/2fc9c52acf3a35414284730d234fc4082774510938044eb2e5a6cac487d6/llama_index_workflows-2.0.0-py3-none-any.whl", hash = "sha256:d2b0761e859f44bedbb1244488a866aa5561b11e9108280b1663934a8757414e", size = 42451, upload-time = "2025-08-29T16:07:25.681Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/8d/b03c4f21ef14ca6d62b9f9c63f61768ba4d5d181834e4c58e40a21cc5bdf/llama_index_workflows-2.9.1-py3-none-any.whl", hash = "sha256:10cb1f01626935bf09331016901e4a37e105af58d5d418d02c298e9701111898", size = 88481, upload-time = "2025-10-29T18:20:22.822Z" },
 ]
 
 [[package]]
@@ -2239,6 +2241,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d8/2d/b3a811ec4fa24190a9ec5013e23c89421a7916167c6240c31fdc445f850c/pytest-mock-3.11.1.tar.gz", hash = "sha256:7f6b125602ac6d743e523ae0bfa71e1a697a2f5534064528c6ff84c2f7c2fc7f", size = 31251, upload-time = "2023-06-15T23:58:07.082Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/da/85/80ae98e019a429445bfb74e153d4cb47c3695e3e908515e95e95c18237e5/pytest_mock-3.11.1-py3-none-any.whl", hash = "sha256:21c279fff83d70763b05f8874cc9cfb3fcacd6d354247a976f9529d19f9acf39", size = 9590, upload-time = "2023-06-15T23:58:05.502Z" },
+]
+
+[[package]]
+name = "pytest-timeout"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/82/4c9ecabab13363e72d880f2fb504c5f750433b2b6f16e99f4ec21ada284c/pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a", size = 17973, upload-time = "2025-05-05T19:44:34.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2", size = 14382, upload-time = "2025-05-05T19:44:33.502Z" },
 ]
 
 [[package]]

@@ -164,7 +164,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
-    _fts_index: Any = PrivateAttr()
+    _fts_index_ready: bool = PrivateAttr()
     _reranker: Any = PrivateAttr()
 
     def __init__(
@@ -205,7 +205,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         self._table_name = table_name
         self._metadata_keys = None
-        self._fts_index = None
+        self._fts_index_ready = False
 
         if isinstance(reranker, lancedb.rerankers.Reranker):
             self._reranker = reranker
@@ -380,7 +380,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             self._table.add(data)
 
-        self._fts_index = None  # reset fts index
+        # new data requires re-creating the fts index
+        self._fts_index_ready = False
 
         return ids
 
@@ -453,8 +454,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]
@@ -495,10 +496,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "creating FTS index is not supported for LanceDB Cloud yet. "
                     "Please use a local table for FTS/Hybrid search."
                 )
-            if self._fts_index is None:
-                self._fts_index = self.table.create_fts_index(
-                    self.text_key, replace=True
-                )
+            if not self._fts_index_ready:
+                self.table.create_fts_index(self.text_key, replace=True)
+                self._fts_index_ready = True
 
             if query_type == "hybrid":
                 _query = (query.query_embedding, query.query_str)
@@ -557,8 +557,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]
