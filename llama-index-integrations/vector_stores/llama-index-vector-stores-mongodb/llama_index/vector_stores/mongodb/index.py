@@ -241,7 +241,7 @@ def create_fulltext_search_index(
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 
     definition = {
-        "mappings": {"dynamic": False, "fields": {field: [{"type": field_type}]}}
+        "mappings": {"dynamic": False, "fields": {field: {"type": field_type}}}
     }
 
     result = collection.create_search_index(

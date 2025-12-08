@@ -26,6 +26,7 @@ from llama_index.core.vector_stores.utils import (
 from llama_index.vector_stores.mongodb.pipelines import (
     combine_pipelines,
     filters_to_mql,
+    filters_to_atlas_search_compound,
     final_hybrid_stage,
     fulltext_search_stage,
     reciprocal_rank_stage,
@@ -262,19 +263,23 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
         dense_top_k = query.similarity_top_k
 
+        vector_filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+        search_filter = filters_to_atlas_search_compound(
+            query.filters, metadata_key=self._metadata_key
+        )
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             if not query.query_embedding:
                 raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
             # Atlas Vector Search, potentially with filter
             logger.debug(f"Running {query.mode} mode query pipeline")
-            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = [
                 vector_search_stage(
                     query_vector=query.query_embedding,
                     search_field=self._embedding_key,
                     index_name=self._vector_index_name,
                     limit=dense_top_k,
-                    filter=filter,
+                    filter=vector_filter,
                     oversampling_factor=self._oversampling_factor,
                 ),
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
@@ -285,13 +290,12 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             if not query.query_str:
                 raise ValueError("query_str in VectorStoreQueryMode.TEXT_SEARCH ")
             logger.debug(f"Running {query.mode} mode query pipeline")
-            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = fulltext_search_stage(
                 query=query.query_str,
                 search_field=self._text_key,
                 index_name=self._fulltext_index_name,
                 operator="text",
-                filter=filter,
+                search_filter=search_filter,
                 limit=sparse_top_k,
             )
             pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
@@ -300,7 +304,6 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
-            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = []
             # Vector Search pipeline
             if query.query_embedding:
@@ -310,7 +313,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                         search_field=self._embedding_key,
                         index_name=self._vector_index_name,
                         limit=dense_top_k,
-                        filter=filter,
+                        filter=vector_filter,
                         oversampling_factor=self._oversampling_factor,
                     )
                 ]
@@ -324,7 +327,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     search_field=self._text_key,
                     index_name=self._fulltext_index_name,
                     operator="text",
-                    filter=filter,
+                    search_filter=search_filter,
                     limit=sparse_top_k,
                 )
                 text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
