@@ -898,7 +898,7 @@ def test_cached_content_in_response() -> None:
     mock_response.cached_content = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify cached_content is in raw response
     assert "cached_content" in chat_response.raw
@@ -930,7 +930,7 @@ def test_cached_content_without_cached_content() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
     assert "cached_content" not in chat_response.raw
@@ -965,7 +965,7 @@ def test_thoughts_in_response() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify thoughts in raw response
     assert (
@@ -1007,7 +1007,7 @@ def test_thoughts_without_thought_response() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
     assert (
@@ -1154,7 +1154,7 @@ def test_built_in_tool_in_response() -> None:
     }
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify response is processed correctly
     assert chat_response.message.role == MessageRole.ASSISTANT

@@ -33,6 +33,7 @@ from llama_index.core.base.llms.types import (
     VideoBlock,
     ThinkingBlock,
     ToolCallBlock,
+    ContentBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -139,7 +140,7 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
 
 
 def chat_from_gemini_response(
-    response: types.GenerateContentResponse,
+    response: types.GenerateContentResponse, existing_content: List[ContentBlock]
 ) -> ChatResponse:
     if not response.candidates:
         raise ValueError("Response has no candidates")
@@ -172,7 +173,7 @@ def chat_from_gemini_response(
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content
 
-    content_blocks = []
+    content_blocks = existing_content
     if (
         len(response.candidates) > 0
         and response.candidates[0].content
@@ -189,7 +190,12 @@ def chat_from_gemini_response(
                         )
                     )
                 else:
-                    content_blocks.append(TextBlock(text=part.text))
+                    if len(content_blocks) > 0 and isinstance(
+                        content_blocks[-1], TextBlock
+                    ):
+                        content_blocks[-1].text += part.text
+                    else:
+                        content_blocks.append(TextBlock(text=part.text))
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.inline_data:
                 content_blocks.append(
@@ -220,7 +226,9 @@ def chat_from_gemini_response(
                 role = ROLES_FROM_GEMINI[top_candidate.content.role]
                 return ChatResponse(
                     message=ChatMessage(
-                        role=role, content=json.dumps(part.function_response.response)
+                        role=role,
+                        content=json.dumps(part.function_response.response),
+                        additional_kwargs=additional_kwargs,
                     ),
                     raw=raw,
                     additional_kwargs=additional_kwargs,

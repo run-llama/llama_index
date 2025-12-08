@@ -38,8 +38,6 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    ThinkingBlock,
-    TextBlock,
     ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
@@ -324,7 +322,7 @@ class GoogleGenAI(FunctionCallingLLM):
         if self.file_mode in ("fileapi", "hybrid"):
             delete_uploaded_files(file_api_names, self._client)
 
-        return chat_from_gemini_response(response)
+        return chat_from_gemini_response(response, [])
 
     @llm_retry_decorator
     async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any):
@@ -344,7 +342,7 @@ class GoogleGenAI(FunctionCallingLLM):
         if self.file_mode in ("fileapi", "hybrid"):
             await adelete_uploaded_files(file_api_names, self._client)
 
-        return chat_from_gemini_response(response)
+        return chat_from_gemini_response(response, [])
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -375,32 +373,34 @@ class GoogleGenAI(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = ""
-            thoughts = ""
+            content = []
+            thought_signatures = []
             for r in response:
-                if not r.candidates:
-                    continue
+                if candidates := r.candidates:
+                    if not candidates:
+                        continue
 
-                top_candidate = r.candidates[0]
-                content_delta = top_candidate.content.parts[0].text
-                if content_delta:
-                    if top_candidate.content.parts[0].thought:
-                        thoughts += content_delta
-                    else:
-                        content += content_delta
-                llama_resp = chat_from_gemini_response(r)
-                llama_resp.delta = llama_resp.delta or content_delta or ""
+                    top_candidate = candidates[0]
+                    if response_content := top_candidate.content:
+                        if parts := response_content.parts:
+                            content_delta = parts[0].text
 
-                if content:
-                    llama_resp.message.blocks = [TextBlock(text=content)]
-                if thoughts:
-                    if llama_resp.message.blocks:
-                        llama_resp.message.blocks.append(
-                            ThinkingBlock(content=thoughts)
-                        )
-                    else:
-                        llama_resp.message.blocks = [ThinkingBlock(content=thoughts)]
-                yield llama_resp
+                            llama_resp = chat_from_gemini_response(
+                                r, existing_content=content
+                            )
+                            llama_resp.delta = llama_resp.delta or content_delta or ""
+
+                            # re-align thought signatures
+                            thought_signatures.extend(
+                                llama_resp.message.additional_kwargs.get(
+                                    "thought_signatures", []
+                                )
+                            )
+                            llama_resp.message.additional_kwargs[
+                                "thought_signatures"
+                            ] = thought_signatures
+
+                            yield llama_resp
 
             if self.file_mode in ("fileapi", "hybrid"):
                 delete_uploaded_files(file_api_names, self._client)
@@ -427,8 +427,8 @@ class GoogleGenAI(FunctionCallingLLM):
         chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            thoughts = ""
+            content = []
+            thought_signatures = []
             async for r in await chat.send_message_stream(
                 next_msg.parts if isinstance(next_msg, types.Content) else next_msg
             ):
@@ -440,25 +440,22 @@ class GoogleGenAI(FunctionCallingLLM):
                     if response_content := top_candidate.content:
                         if parts := response_content.parts:
                             content_delta = parts[0].text
-                            if content_delta:
-                                if parts[0].thought:
-                                    thoughts += content_delta
-                                else:
-                                    content += content_delta
-                            llama_resp = chat_from_gemini_response(r)
+
+                            llama_resp = chat_from_gemini_response(
+                                r, existing_content=content
+                            )
                             llama_resp.delta = llama_resp.delta or content_delta or ""
 
-                            if content:
-                                llama_resp.message.blocks = [TextBlock(text=content)]
-                            if thoughts:
-                                if llama_resp.message.blocks:
-                                    llama_resp.message.blocks.append(
-                                        ThinkingBlock(content=thoughts)
-                                    )
-                                else:
-                                    llama_resp.message.blocks = [
-                                        ThinkingBlock(content=thoughts)
-                                    ]
+                            # re-align thought signatures
+                            thought_signatures.extend(
+                                llama_resp.message.additional_kwargs.get(
+                                    "thought_signatures", []
+                                )
+                            )
+                            llama_resp.message.additional_kwargs[
+                                "thought_signatures"
+                            ] = thought_signatures
+
                             yield llama_resp
 
             if self.file_mode in ("fileapi", "hybrid"):
@@ -657,7 +654,8 @@ class GoogleGenAI(FunctionCallingLLM):
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
             else:
-                raise ValueError("Response is not a BaseModel")
+                # Try to parse the response text as JSON into the output_cls
+                return output_cls.model_validate_json(response.text)
 
         else:
             return super().structured_predict(
@@ -707,7 +705,8 @@ class GoogleGenAI(FunctionCallingLLM):
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
             else:
-                raise ValueError("Response is not a BaseModel")
+                # Try to parse the response text as JSON into the output_cls
+                return output_cls.model_validate_json(response.text)
 
         else:
             return super().structured_predict(
