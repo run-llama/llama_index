@@ -676,7 +676,7 @@ class TestCouchbaseQueryVectorStore:
         # Add nodes to the vector store
         self.vector_store.add(node_embeddings)
 
-        # Wait for GSI indexing
+        # Wait for indexing
         time.sleep(SLEEP_DURATION)
 
         # Test that we can perform vector search (this implicitly tests index usage)
