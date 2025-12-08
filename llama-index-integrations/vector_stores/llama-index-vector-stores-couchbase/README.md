@@ -152,7 +152,7 @@ Purpose-built for pure vector searches at massive scale:
 
 #### Composite Vector Indexes
 
-Combine a standard Global Secondary index (GSI) with a single vector column:
+Combines a standard Global Secondary index (GSI) with a single vector column:
 
 **When to Use:**
 
