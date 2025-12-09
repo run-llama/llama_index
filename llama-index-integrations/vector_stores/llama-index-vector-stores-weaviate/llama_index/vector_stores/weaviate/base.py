@@ -242,6 +242,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             #  need to do lazy init for async clients
             self._collection_initialized = False
 
+    @property
+    def is_embedding_provider(self) -> bool:
+        """Check if the vector store provides embeddings."""
+        return self._native_embedding
+
     def __del__(self) -> None:
         if self._is_self_created_weaviate_client:
             self.client.close()

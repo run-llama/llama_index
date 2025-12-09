@@ -79,11 +79,14 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager")
-        )
-        assert isinstance(image_embed_model, MultiModalEmbedding)
-        self._image_embed_model = image_embed_model
+        if not kwargs.get("skip_embedding", False):
+            image_embed_model = resolve_embed_model(
+                image_embed_model, callback_manager=kwargs.get("callback_manager")
+            )
+            assert isinstance(image_embed_model, MultiModalEmbedding)
+            self._image_embed_model = image_embed_model
+        else:
+            self._image_embed_model = None
         self._is_image_to_text = is_image_to_text
         self._is_image_vector_store_empty = is_image_vector_store_empty
         self._is_text_vector_store_empty = is_text_vector_store_empty
@@ -119,7 +122,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return self._image_vector_store
 
     @property
-    def image_embed_model(self) -> MultiModalEmbedding:
+    def image_embed_model(self) -> Optional[MultiModalEmbedding]:
         return self._image_embed_model
 
     @property
@@ -231,6 +234,17 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        if self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                if isinstance(result, ImageNode):
+                    result.text_embedding = None
+                results.append(result)
+            return results
+
         id_to_text_embed_map = None
 
         if is_image:
@@ -286,6 +300,17 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        if self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                if isinstance(result, ImageNode):
+                    result.text_embedding = None
+                results.append(result)
+            return results
+
         id_to_text_embed_map = None
 
         if is_image:
