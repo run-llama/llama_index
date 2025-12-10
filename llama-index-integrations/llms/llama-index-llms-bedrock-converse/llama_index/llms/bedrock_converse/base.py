@@ -363,6 +363,20 @@ class BedrockConverse(FunctionCallingLLM):
             **kwargs,
         }
 
+    def _get_system_prompt_and_messages(
+        self, messages: Sequence[ChatMessage]
+    ) -> Tuple[Sequence[Dict[str, Any]], Union[str, Sequence[Dict[str, Any]]]]:
+        converse_messages, system_prompt_from_messages = messages_to_converse_messages(
+            messages, self.model
+        )
+
+        if not system_prompt_from_messages and self.system_prompt:
+            system_prompt = self.system_prompt
+        else:
+            system_prompt = system_prompt_from_messages
+
+        return converse_messages, system_prompt
+
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
     ) -> Tuple[
@@ -419,16 +433,9 @@ class BedrockConverse(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt_from_messages = messages_to_converse_messages(
-            messages, self.model
+        converse_messages, system_prompt = self._get_system_prompt_and_messages(
+            messages
         )
-
-        if not system_prompt_from_messages and self.system_prompt:
-            system_prompt = self.system_prompt
-        else:
-            system_prompt = system_prompt_from_messages
-
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -474,15 +481,9 @@ class BedrockConverse(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        converse_messages, system_prompt_from_messages = messages_to_converse_messages(
-            messages, self.model
+        converse_messages, system_prompt = self._get_system_prompt_and_messages(
+            messages
         )
-
-        if not system_prompt_from_messages and self.system_prompt:
-            system_prompt = self.system_prompt
-        else:
-            system_prompt = system_prompt_from_messages
-
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -698,16 +699,9 @@ class BedrockConverse(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt_from_messages = messages_to_converse_messages(
-            messages, self.model
+        converse_messages, system_prompt = self._get_system_prompt_and_messages(
+            messages
         )
-
-        if not system_prompt_from_messages and self.system_prompt:
-            system_prompt = self.system_prompt
-        else:
-            system_prompt = system_prompt_from_messages
-
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -755,16 +749,9 @@ class BedrockConverse(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt_from_messages = messages_to_converse_messages(
-            messages, self.model
+        converse_messages, system_prompt = self._get_system_prompt_and_messages(
+            messages
         )
-
-        if not system_prompt_from_messages and self.system_prompt:
-            system_prompt = self.system_prompt
-        else:
-            system_prompt = system_prompt_from_messages
-
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
