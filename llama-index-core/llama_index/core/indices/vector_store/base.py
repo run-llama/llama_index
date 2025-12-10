@@ -183,6 +183,12 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 results.append(result)
             return results
 
+        if not self._embed_model:
+            raise ValueError(
+                "embed_model is required when skip_embedding=False and "
+                "vector_store.generates_embeddings=False"
+            )
+
         id_to_embed_map = embed_nodes(
             nodes, self._embed_model, show_progress=show_progress
         )
@@ -218,6 +224,12 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 result.embedding = None
                 results.append(result)
             return results
+
+        if not self._embed_model:
+            raise ValueError(
+                "embed_model is required when skip_embedding=False and "
+                "vector_store.generates_embeddings=False"
+            )
 
         id_to_embed_map = await async_embed_nodes(
             nodes=nodes,
