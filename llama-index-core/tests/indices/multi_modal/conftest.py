@@ -27,7 +27,6 @@ class MockVectorStoreWithSkipEmbedding(SimpleVectorStore):
         from llama_index.core.vector_stores.utils import node_to_metadata_dict
 
         for node in nodes:
-            # Handle None embeddings (when skip_embedding=True)
             embedding = node.embedding if node.embedding is not None else []
             self.data.embedding_dict[node.node_id] = embedding
             self.data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
@@ -64,7 +63,6 @@ def documents() -> List[Document]:
 @pytest.fixture()
 def image_documents() -> List[ImageDocument]:
     """Sample image documents for testing."""
-    # Base64 string for a 1×1 transparent PNG
     base64_str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
     return [
         ImageDocument(
