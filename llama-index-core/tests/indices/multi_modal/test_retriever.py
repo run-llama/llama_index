@@ -1,25 +1,9 @@
 """Tests for MultiModalVectorIndexRetriever with skip_embedding functionality."""
 
-import pytest
-
-from llama_index.core import MockEmbedding
-from llama_index.core.embeddings import MockMultiModalEmbedding
 from llama_index.core.indices import MultiModalVectorStoreIndex
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
-from tests.indices.multi_modal.test_base import MockVectorStoreWithSkipEmbedding
-
-
-@pytest.fixture
-def mock_text_embed_model():
-    """Create a mock text embedding model."""
-    return MockEmbedding(embed_dim=5)
-
-
-@pytest.fixture
-def mock_image_embed_model():
-    """Create a mock image embedding model."""
-    return MockMultiModalEmbedding(embed_dim=5)
+from tests.indices.multi_modal.conftest import MockVectorStoreWithSkipEmbedding
 
 
 def test_retriever_with_skip_embedding_true(
