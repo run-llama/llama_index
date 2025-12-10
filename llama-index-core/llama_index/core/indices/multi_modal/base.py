@@ -207,9 +207,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         kwargs.pop("storage_context", None)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        resolved_embed_model = (
+            resolve_embed_model(
+                embed_model, callback_manager=kwargs.get("callback_manager")
+            )
+            if embed_model is not None
+            else None
+        )
         return cls(
             nodes=[],
-            embed_model=embed_model,
+            embed_model=resolved_embed_model,
             skip_embedding=skip_embedding,
             storage_context=storage_context,
             image_vector_store=image_vector_store,
@@ -245,6 +252,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         if is_image:
             assert all(isinstance(node, ImageNode) for node in nodes)
+            if not self._image_embed_model:
+                raise ValueError(
+                    "image_embed_model is required when embedding image nodes"
+                )
             id_to_embed_map = embed_image_nodes(
                 nodes,  # type: ignore
                 embed_model=self._image_embed_model,
@@ -313,6 +324,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         if is_image:
             assert all(isinstance(node, ImageNode) for node in nodes)
+            if not self._image_embed_model:
+                raise ValueError(
+                    "image_embed_model is required when embedding image nodes"
+                )
             id_to_embed_map = await async_embed_image_nodes(
                 nodes,  # type: ignore
                 embed_model=self._image_embed_model,
