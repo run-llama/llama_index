@@ -194,8 +194,20 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
 
-        if collection_name not in self._mongodb_client[db_name].list_collection_names():
-            self._mongodb_client[db_name].create_collection(collection_name)
+        # Try to check if collection exists, but handle permission errors gracefully
+        try:
+            if (
+                collection_name
+                not in self._mongodb_client[db_name].list_collection_names()
+            ):
+                self._mongodb_client[db_name].create_collection(collection_name)
+        except Exception as e:
+            # If we can't list collections due to permissions (e.g., MongoDB Atlas restrictions),
+            # we'll skip the check and assume the collection exists or will be created on first write
+            logger.warning(
+                f"Unable to check if collection '{collection_name}' exists due to: {e}. "
+                "Assuming collection exists or will be created on first write operation."
+            )
 
     def add(
         self,
