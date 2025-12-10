@@ -91,7 +91,7 @@ class VectorIndexRetriever(BaseRetriever):
 
     def _needs_embedding(self) -> bool:
         """Check if the current query mode requires embeddings."""
-        if self._vector_store.is_embedding_provider:
+        if self._vector_store.generates_embeddings:
             return False
 
         return (

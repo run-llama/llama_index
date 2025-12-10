@@ -80,7 +80,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         is_embedding_provider = False
         if storage_context:
             is_embedding_provider = getattr(
-                storage_context.vector_store, "is_embedding_provider", False
+                storage_context.vector_store, "generates_embeddings", False
             )
 
         self._embed_model = None
@@ -171,7 +171,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        if self._vector_store.is_embedding_provider:
+        if self._vector_store.generates_embeddings:
             return list(nodes)
 
         if self._skip_embedding:
@@ -207,7 +207,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        if self._vector_store.is_embedding_provider:
+        if self._vector_store.generates_embeddings:
             return list(nodes)
 
         if self._skip_embedding:

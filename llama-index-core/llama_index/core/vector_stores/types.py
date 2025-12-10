@@ -273,7 +273,7 @@ class VectorStore(Protocol):
     is_embedding_query: bool = True
 
     @property
-    def is_embedding_provider(self) -> bool:
+    def generates_embeddings(self) -> bool:
         """
         Check if the vector store provides embeddings.
 
@@ -348,7 +348,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     is_embedding_query: bool = True
 
     @property
-    def is_embedding_provider(self) -> bool:
+    def generates_embeddings(self) -> bool:
         """
         Check if the vector store provides embeddings.
 

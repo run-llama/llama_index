@@ -243,7 +243,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._collection_initialized = False
 
     @property
-    def is_embedding_provider(self) -> bool:
+    def generates_embeddings(self) -> bool:
         """Check if the vector store provides embeddings."""
         return self._native_embedding
 
