@@ -1,5 +1,5 @@
 """
-Azure CosmosDB MongoDB vCore Vector store index.
+Azure DocumentDB Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -26,27 +26,27 @@ from llama_index.core.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
+class AzureDocumentDBVectorSearch(BasePydanticVectorStore):
     """
-    Azure CosmosDB MongoDB vCore Vector Store.
+    Azure DocumentDB Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
-    - a connection string associated with an Azure Cosmodb MongoDB vCore Cluster
+    - a connection string associated with an Azure DocumentDB
 
     Examples:
-        `pip install llama-index-vector-stores-azurecosmosmongo`
+        `pip install llama-index-vector-stores-azuredocumentdb`
 
         ```python
         import pymongo
-        from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
+        from llama_index.vector_stores.azuredocumentdb import AzureDocumentDBVectorSearch
 
-        # Set up the connection string with your Azure CosmosDB MongoDB URI
-        connection_string = "YOUR_AZURE_COSMOSDB_MONGODB_URI"
+        # Set up the connection string with your Azure DocumentDB URI
+        connection_string = "YOUR_AZURE_DOCUMENTDB_URI"
         mongodb_client = pymongo.MongoClient(connection_string)
 
-        # Create an instance of AzureCosmosDBMongoDBVectorSearch
-        vector_store = AzureCosmosDBMongoDBVectorSearch(
+        # Create an instance of AzureDocumentDBVectorSearch
+        vector_store = AzureDocumentDBVectorSearch(
             mongodb_client=mongodb_client,
             db_name="demo_vectordb",
             collection_name="paul_graham_essay",
@@ -88,17 +88,17 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         Initialize the vector store.
 
         Args:
-            mongodb_client: An Azure CosmoDB MongoDB client (type: MongoClient, shown any for lazy import).
-            db_name: An Azure CosmosDB MongoDB database name.
-            collection_name: An Azure CosmosDB collection name.
-            index_name: An Azure CosmosDB MongoDB vCore Vector Search index name.
+            mongodb_client: An Azure DocumentDB client (type: MongoClient, shown any for lazy import).
+            db_name: An Azure DocumentDB database name.
+            collection_name: An Azure DocumentDB collection name.
+            index_name: An Azure DocumentDB Vector Search index name.
             id_key: The data field to use as the id.
-            embedding_key: An Azure CosmosDB MongoDB field that will contain
+            embedding_key: An Azure DocumentDB field that will contain
             the embedding for each document.
-            text_key: An Azure CosmosDB MongoDB field that will contain the text for each document.
-            metadata_key: An Azure CosmosDB MongoDB field that will contain
+            text_key: An Azure DocumentDB field that will contain the text for each document.
+            metadata_key: An Azure DocumentDB field that will contain
             the metadata for each document.
-            cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will
+            cosmos_search_kwargs: An Azure DocumentDB field that will
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
 
@@ -108,13 +108,13 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         if mongodb_client is not None:
             self._mongodb_client = cast(pymongo.MongoClient, mongodb_client)
         else:
-            if "AZURE_COSMOSDB_MONGODB_URI" not in os.environ:
+            if "AZURE_DOCUMENTDB_URI" not in os.environ:
                 raise ValueError(
-                    "Must specify Azure cosmodb 'AZURE_COSMOSDB_MONGODB_URI' via env variable "
+                    "Must specify Azure DocumentDB 'AZURE_DOCUMENTDB_URI' via env variable "
                     "if not directly passing in client."
                 )
             self._mongodb_client = pymongo.MongoClient(
-                os.environ["AZURE_COSMOSDB_MONGODB_URI"],
+                os.environ["AZURE_DOCUMENTDB_URI"],
                 appname="LLAMAINDEX_PYTHON",
             )
 
