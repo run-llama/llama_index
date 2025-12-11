@@ -27,7 +27,9 @@ def bedrock_with_thinking(mock_bedrock_client):
     return llm
 
 
-def test_thinking_delta_populated_in_stream_chat(bedrock_with_thinking, mock_bedrock_client):
+def test_thinking_delta_populated_in_stream_chat(
+    bedrock_with_thinking, mock_bedrock_client
+):
     mock_bedrock_client.converse_stream.return_value = {
         "stream": [
             {
@@ -85,7 +87,9 @@ def test_thinking_delta_populated_in_stream_chat(bedrock_with_thinking, mock_bed
     assert text_responses[0].delta == "The answer is"
 
 
-def test_thinking_delta_none_for_non_thinking_content(bedrock_with_thinking, mock_bedrock_client):
+def test_thinking_delta_none_for_non_thinking_content(
+    bedrock_with_thinking, mock_bedrock_client
+):
     mock_bedrock_client.converse_stream.return_value = {
         "stream": [
             {
@@ -157,7 +161,9 @@ def test_thinking_block_in_message_blocks(bedrock_with_thinking, mock_bedrock_cl
     final_response = responses[-1]
     assert len(final_response.message.blocks) >= 2
 
-    thinking_blocks = [b for b in final_response.message.blocks if isinstance(b, ThinkingBlock)]
+    thinking_blocks = [
+        b for b in final_response.message.blocks if isinstance(b, ThinkingBlock)
+    ]
     assert len(thinking_blocks) == 1
     assert thinking_blocks[0].content == "Thinking content"
 
