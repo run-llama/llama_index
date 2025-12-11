@@ -13,18 +13,16 @@ from llama_index.llms.bedrock_converse import BedrockConverse
 
 @pytest.fixture
 def mock_bedrock_client():
-    client = MagicMock()
-    return client
+    return MagicMock()
 
 
 @pytest.fixture
 def bedrock_with_thinking(mock_bedrock_client):
-    llm = BedrockConverse(
+    return BedrockConverse(
         model="us.anthropic.claude-sonnet-4-20250514-v1:0",
         thinking={"type": "enabled", "budget_tokens": 1024},
         client=mock_bedrock_client,
     )
-    return llm
 
 
 def test_thinking_delta_populated_in_stream_chat(
