@@ -27,7 +27,7 @@ def resolve_llm(
         # if testing return mock llm
         if os.getenv("IS_TESTING"):
             from llama_index.core.llms.mock import MockLLM
-            
+
             llm = MockLLM()
             llm.callback_manager = callback_manager or Settings.callback_manager
             return llm
@@ -97,7 +97,7 @@ def resolve_llm(
             )
     elif llm is None:
         from llama_index.core.llms.mock import MockLLM
-        
+
         print("LLM is explicitly disabled. Using MockLLM.")
         llm = MockLLM()
 

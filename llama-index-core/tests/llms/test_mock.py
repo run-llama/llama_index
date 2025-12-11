@@ -169,30 +169,31 @@ async def test_mock_function_calling_llm_astream_chat_with_tools(
 ) -> None:
     """Test that astream_chat_with_tools works correctly."""
     llm = MockFunctionCallingLLM(max_tokens=200)
-    
+
     # Mock tools list (can be empty for this test)
     tools = []
-    
+
     cont = ""
     stream = await llm.astream_chat_with_tools(tools=tools, chat_history=messages)
     async for s in stream:
         cont += s.message.content or ""
-    
+
     assert cont == "hello world<document>hello world</document><image>1px</image>"
 
 
 def test_mock_function_calling_llm_get_tool_calls_from_response() -> None:
     """Test that get_tool_calls_from_response extracts tool calls correctly."""
     llm = MockFunctionCallingLLM(max_tokens=200)
-    
+
     # Create a response with tool calls in additional_kwargs
     tool_selection = ToolSelection(
         tool_id="test_id",
         tool_name="test_tool",
         tool_kwargs={"arg1": "value1"},
     )
-    
+
     from llama_index.core.base.llms.types import ChatResponse
+
     response = ChatResponse(
         message=ChatMessage(
             role="assistant",
@@ -200,7 +201,7 @@ def test_mock_function_calling_llm_get_tool_calls_from_response() -> None:
             additional_kwargs={"tool_calls": [tool_selection]},
         )
     )
-    
+
     tool_calls = llm.get_tool_calls_from_response(response)
     assert len(tool_calls) == 1
     assert tool_calls[0].tool_id == "test_id"
@@ -211,8 +212,9 @@ def test_mock_function_calling_llm_get_tool_calls_from_response() -> None:
 def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
     """Test that get_tool_calls_from_response returns empty list when no tool calls."""
     llm = MockFunctionCallingLLM(max_tokens=200)
-    
+
     from llama_index.core.base.llms.types import ChatResponse
+
     response = ChatResponse(
         message=ChatMessage(
             role="assistant",
@@ -220,7 +222,6 @@ def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
             additional_kwargs={},
         )
     )
-    
+
     tool_calls = llm.get_tool_calls_from_response(response)
     assert len(tool_calls) == 0
-

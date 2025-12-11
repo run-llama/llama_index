@@ -276,7 +276,9 @@ async def test_function_agent_with_context_and_chat_message():
     from llama_index.core.llms import TextBlock
     from llama_index.core.workflow import Context
 
-    AGENT_SYSTEM_PROMPT = "You are a mathematical assistant that helps with calculations."
+    AGENT_SYSTEM_PROMPT = (
+        "You are a mathematical assistant that helps with calculations."
+    )
 
     def noop() -> str:
         """A no-op function for testing."""
@@ -302,7 +304,7 @@ async def test_function_agent_with_context_and_chat_message():
         blocks=[
             TextBlock(text="Can you help me with a calculation?"),
             TextBlock(text="It's one plus one."),
-        ]
+        ],
     )
 
     # Step 4: Trigger agent run with ctx
@@ -324,4 +326,3 @@ async def test_function_agent_with_context_and_chat_message():
     response_str = str(response)
     assert "Can you help me with a calculation?" in response_str
     assert "It's one plus one." in response_str
-

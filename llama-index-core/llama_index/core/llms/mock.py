@@ -340,7 +340,9 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
     async def astream_chat_with_tools(
         self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        content = self.blocks_to_content_callback(chat_history[-1].blocks, self.tool_calls)
+        content = self.blocks_to_content_callback(
+            chat_history[-1].blocks, self.tool_calls
+        )
         if not content:
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
