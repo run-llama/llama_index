@@ -33,6 +33,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import (
     MessagesToPromptType,
     CompletionToPromptType,
@@ -267,7 +268,7 @@ BlockToContentCallback: TypeAlias = Callable[
 ]
 
 
-class MockFunctionCallingLLM(MockLLM):
+class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
     blocks_to_content_callback: BlockToContentCallback = Field(
         default=_default_blocks_to_content_callback
