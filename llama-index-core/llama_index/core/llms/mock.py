@@ -8,6 +8,7 @@ from typing import (
     AsyncGenerator,
     Callable,
     Optional,
+    Union,
 )
 from typing_extensions import TypeAlias
 from base64 import b64decode
@@ -368,6 +369,24 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         return self.chat(messages=messages)
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List[Any],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> dict:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        # For the mock implementation, we just return a simple dict
+        # The actual tools are not used since this is a mock
+        return {
+            "messages": chat_history or [],
+            "tools": tools,
+        }
 
     def get_tool_calls_from_response(
         self, response: ChatResponse, **kwargs: Any
