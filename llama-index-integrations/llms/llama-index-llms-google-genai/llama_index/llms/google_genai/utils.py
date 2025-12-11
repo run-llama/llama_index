@@ -224,7 +224,7 @@ def chat_from_gemini_response(
             if part.function_response:
                 # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
                 additional_kwargs["tool_call_id"] = part.function_response.id
-                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
                 return ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -248,7 +248,7 @@ def chat_from_gemini_response(
                 {"total_thinking_tokens": thought_tokens}
             )
 
-    role = ROLES_FROM_GEMINI[top_candidate.content.role]
+    role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
     return ChatResponse(
         message=ChatMessage(
             role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
