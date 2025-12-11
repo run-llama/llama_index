@@ -33,7 +33,11 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
+from llama_index.core.llms.llm import (
+    MessagesToPromptType,
+    CompletionToPromptType,
+    ToolSelection,
+)
 from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
@@ -329,6 +333,23 @@ class MockFunctionCallingLLM(MockLLM):
 
         return _gen()
 
+    async def astream_chat_with_tools(
+        self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        content = self.blocks_to_content_callback(chat_history[-1].blocks, self.tool_calls)
+        if not content:
+            content = "<empty>"
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        async def _gen() -> AsyncGenerator[ChatResponse, None]:
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()
+
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
@@ -344,3 +365,8 @@ class MockFunctionCallingLLM(MockLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         return self.chat(messages=messages)
+
+    def get_tool_calls_from_response(
+        self, response: ChatResponse, **kwargs: Any
+    ) -> List[ToolSelection]:
+        return response.message.additional_kwargs.get("tool_calls", [])
