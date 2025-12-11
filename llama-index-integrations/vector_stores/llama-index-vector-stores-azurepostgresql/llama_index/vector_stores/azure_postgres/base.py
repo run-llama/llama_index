@@ -1,7 +1,7 @@
 """VectorStore integration for Azure Database for PostgreSQL using LlamaIndex."""
 
 import sys
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 from pgvector.psycopg import register_vector  # type: ignore[import-untyped]
@@ -36,7 +36,7 @@ else:
     from typing import override
 
 
-def metadata_filters_to_sql(filters: Optional[MetadataFilters]) -> sql.SQL:
+def metadata_filters_to_sql(filters: MetadataFilters | None) -> sql.SQL:
     """Convert LlamaIndex MetadataFilters to a SQL WHERE clause.
 
     Args:
@@ -48,7 +48,7 @@ def metadata_filters_to_sql(filters: Optional[MetadataFilters]) -> sql.SQL:
     if not filters or not filters.filters:
         return sql.SQL("TRUE")
 
-    def _filter_to_sql(filter_item: Union[MetadataFilter, MetadataFilters]) -> sql.SQL:
+    def _filter_to_sql(filter_item: MetadataFilter | MetadataFilters) -> sql.SQL:
         """Recursively convert MetadataFilter or MetadataFilters to SQL."""
         if isinstance(filter_item, MetadataFilters):
             # Handle nested MetadataFilters
@@ -326,8 +326,8 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
     @override
     def delete_nodes(
         self,
-        node_ids: Optional[list[str]] = None,
-        filters: Optional[MetadataFilters] = None,
+        node_ids: list[str] | None = None,
+        filters: MetadataFilters | None = None,
         **delete_kwargs: Any,
     ) -> None:
         """Delete nodes from the vector store by node IDs or filters.
@@ -360,8 +360,8 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
     @override
     def get_nodes(
         self,
-        node_ids: Optional[list[str]] = None,
-        filters: Optional[MetadataFilters] = None,
+        node_ids: list[str] | None = None,
+        filters: MetadataFilters | None = None,
         **kwargs: Any,
     ) -> list[BaseNode]:
         """Retrieve nodes by IDs or filters.

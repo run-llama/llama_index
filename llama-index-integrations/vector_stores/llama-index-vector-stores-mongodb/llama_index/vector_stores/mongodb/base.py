@@ -194,8 +194,43 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
 
-        if collection_name not in self._mongodb_client[db_name].list_collection_names():
-            self._mongodb_client[db_name].create_collection(collection_name)
+        # Check if collection exists using a method that works with restricted permissions
+        self._ensure_collection_exists(db_name, collection_name)
+
+    def _ensure_collection_exists(self, db_name: str, collection_name: str) -> None:
+        """
+        Ensure collection exists using permission-friendly methods.
+
+        First tries listCollections, then falls back to a query-based check if that fails.
+
+        Args:
+            db_name: Database name
+            collection_name: Collection name
+
+        """
+        db = self._mongodb_client[db_name]
+
+        # Try the traditional listCollections method first
+        try:
+            if collection_name not in db.list_collection_names():
+                db.create_collection(collection_name)
+            return
+        except Exception as e:
+            logger.debug(f"listCollections failed: {e}. Using query-based approach.")
+
+        # Fallback: Use find_one to test if we can access the collection
+        # This works even with restricted permissions and doesn't require listCollections
+        try:
+            collection = db[collection_name]
+            # This will succeed whether the collection exists or not
+            # MongoDB creates collections lazily on first write operation
+            collection.find_one({}, {"_id": 1})
+            logger.debug(f"Collection '{collection_name}' accessible via query method")
+        except Exception as e:
+            logger.warning(
+                f"Unable to verify collection '{collection_name}' access: {e}. "
+                "Proceeding anyway - MongoDB will create collection on first write if needed."
+            )
 
     def add(
         self,
