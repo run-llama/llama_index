@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.llms import MockLLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool
@@ -233,3 +234,37 @@ async def test_max_iterations():
 
     # Set max iterations to 101 to avoid error
     _ = agent.run(user_msg="test", max_iterations=101)
+
+
+@pytest.mark.asyncio
+async def test_function_agent_with_mock_function_calling_llm():
+    """Test that FunctionAgent works with MockFunctionCallingLLM."""
+
+    def multiply(a: int, b: int) -> int:
+        """Multiply two numbers."""
+        return a * b
+
+    # Create a MockFunctionCallingLLM that will return a simple response
+    llm = MockFunctionCallingLLM(max_tokens=200)
+
+    agent = FunctionAgent(
+        name="test_agent",
+        description="A test agent",
+        system_prompt="You are a helpful assistant.",
+        tools=[FunctionTool.from_defaults(fn=multiply)],
+        llm=llm,
+    )
+
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = agent.run(user_msg="Hello, can you help me?", memory=memory)
+
+    events = []
+    async for event in handler.stream_events():
+        events.append(event)
+
+    response = await handler
+
+    # Verify the agent ran successfully with MockFunctionCallingLLM
+    assert response.response is not None
+    # Verify that we got some events during execution
+    assert len(events) > 0
