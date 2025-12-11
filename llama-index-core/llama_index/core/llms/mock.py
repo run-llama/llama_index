@@ -11,6 +11,7 @@ from typing import (
 )
 from typing_extensions import TypeAlias
 from base64 import b64decode
+from json import JSONDecodeError
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
@@ -39,6 +40,7 @@ from llama_index.core.llms.llm import (
     CompletionToPromptType,
     ToolSelection,
 )
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
@@ -370,4 +372,26 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
     def get_tool_calls_from_response(
         self, response: ChatResponse, **kwargs: Any
     ) -> List[ToolSelection]:
-        return response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        tool_selections = []
+        for tool_call in tool_calls:
+            # this should handle both complete and partial jsons
+            try:
+                if isinstance(tool_call.tool_kwargs, str):
+                    argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                else:
+                    argument_dict = tool_call.tool_kwargs
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+        return tool_selections
