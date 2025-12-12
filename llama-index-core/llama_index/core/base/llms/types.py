@@ -660,9 +660,6 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     raw: Optional[Any] = None
     delta: Optional[str] = None
-    thinking_delta: Optional[str] = Field(
-        default=None,
-    )
     logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
 

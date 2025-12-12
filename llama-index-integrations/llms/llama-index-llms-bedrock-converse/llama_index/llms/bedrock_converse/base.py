@@ -569,6 +569,14 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
                             )
 
+                    response_additional_kwargs = self._get_response_token_counts(
+                        dict(chunk)
+                    )
+                    if thinking_delta_value is not None:
+                        response_additional_kwargs["thinking_delta"] = (
+                            thinking_delta_value
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
@@ -581,9 +589,8 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        thinking_delta=thinking_delta_value,
                         raw=chunk,
-                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
+                        additional_kwargs=response_additional_kwargs,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
@@ -629,7 +636,6 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        thinking_delta=None,
                         raw=chunk,
                     )
                 elif message_stop := chunk.get("messageStop"):
@@ -847,6 +853,14 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
                             )
 
+                    response_additional_kwargs = self._get_response_token_counts(
+                        dict(chunk)
+                    )
+                    if thinking_delta_value is not None:
+                        response_additional_kwargs["thinking_delta"] = (
+                            thinking_delta_value
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
@@ -859,9 +873,8 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        thinking_delta=thinking_delta_value,
                         raw=chunk,
-                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
+                        additional_kwargs=response_additional_kwargs,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
@@ -907,7 +920,6 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        thinking_delta=None,
                         raw=chunk,
                     )
                 elif chunk.get("messageStop"):

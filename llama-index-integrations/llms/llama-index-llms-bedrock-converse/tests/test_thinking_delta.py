@@ -75,12 +75,18 @@ def test_thinking_delta_populated_in_stream_chat(
 
     assert len(responses) > 0
 
-    thinking_responses = [r for r in responses if r.thinking_delta is not None]
+    thinking_responses = [
+        r for r in responses if r.additional_kwargs.get("thinking_delta") is not None
+    ]
     assert len(thinking_responses) == 2
-    assert thinking_responses[0].thinking_delta == "Let me think"
-    assert thinking_responses[1].thinking_delta == " about this"
+    assert thinking_responses[0].additional_kwargs["thinking_delta"] == "Let me think"
+    assert thinking_responses[1].additional_kwargs["thinking_delta"] == " about this"
 
-    text_responses = [r for r in responses if r.delta and not r.thinking_delta]
+    text_responses = [
+        r
+        for r in responses
+        if r.delta and r.additional_kwargs.get("thinking_delta") is None
+    ]
     assert len(text_responses) >= 1
     assert text_responses[0].delta == "The answer is"
 
@@ -118,7 +124,9 @@ def test_thinking_delta_none_for_non_thinking_content(
     responses = list(bedrock_with_thinking.stream_chat(messages))
 
     text_responses = [r for r in responses if r.delta]
-    assert all(r.thinking_delta is None for r in text_responses)
+    assert all(
+        r.additional_kwargs.get("thinking_delta") is None for r in text_responses
+    )
 
 
 def test_thinking_block_in_message_blocks(bedrock_with_thinking, mock_bedrock_client):
