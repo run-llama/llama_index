@@ -39,6 +39,11 @@ dependencies = [
     "llama-index-core>=0.13.0,<0.15",
 ]
 
+[project.optional-dependencies]
+v2 = [
+    "google-cloud-vectorsearch>=0.1.0",
+]
+
 [tool.codespell]
 check-filenames = true
 check-hidden = true
