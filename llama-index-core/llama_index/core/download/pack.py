@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Tuple
 
 import requests
 
@@ -16,6 +16,12 @@ from llama_index.core.download.utils import (
     initialize_directory,
     get_source_files_recursive,
 )
+
+# Import will be available after marketplace.py is in the package
+try:
+    from llama_index.core.llama_pack.marketplace import MarketplaceManager
+except ImportError:
+    MarketplaceManager = None
 
 LLAMA_PACKS_CONTENTS_URL = (
     "https://raw.githubusercontent.com/run-llama/llama_index/main/llama-index-packs"
@@ -29,6 +35,23 @@ PATH_TYPE = Union[str, Path]
 LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/downloads"
 
 logger = logging.getLogger(__name__)
+
+
+def parse_pack_identifier(pack_identifier: str) -> Tuple[str, Optional[str]]:
+    """
+    Parse a pack identifier that may include a marketplace specifier.
+
+    Args:
+        pack_identifier: Pack identifier in format "PackName" or "PackName@marketplace-name"
+
+    Returns:
+        Tuple of (pack_name, marketplace_name)
+        If no marketplace is specified, marketplace_name will be None
+    """
+    if "@" in pack_identifier:
+        parts = pack_identifier.split("@", 1)
+        return parts[0], parts[1]
+    return pack_identifier, None
 
 
 def download_module_and_reqs(
@@ -105,7 +128,23 @@ def download_llama_pack_template(
     custom_dir: Optional[str] = None,
     custom_path: Optional[str] = None,
     base_file_name: str = "__init__.py",
+    marketplace_name: Optional[str] = None,
 ) -> Any:
+    # Resolve marketplace URLs if marketplace_name is provided
+    if marketplace_name and MarketplaceManager:
+        manager = MarketplaceManager()
+        marketplace_url = manager.get_marketplace_url(marketplace_name)
+        marketplace_source_url = manager.get_marketplace_source_url(marketplace_name)
+
+        if marketplace_url is None:
+            raise ValueError(
+                f"Marketplace '{marketplace_name}' not found. "
+                f"Register it first with: llamaindex-cli marketplace add"
+            )
+
+        llama_pack_url = marketplace_url
+        llama_pack_source_files_dir_path = marketplace_source_url
+
     # create directory / get path
     dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
 

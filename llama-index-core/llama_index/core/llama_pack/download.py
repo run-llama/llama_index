@@ -7,6 +7,7 @@ from llama_index.core.download.pack import (
     LLAMA_PACKS_CONTENTS_URL,
     download_llama_pack_template,
     track_download,
+    parse_pack_identifier,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
 
@@ -22,7 +23,8 @@ def download_llama_pack(
 
     Args:
         llama_pack_class: The name of the LlamaPack class you want to download,
-            such as `GmailOpenAIAgentPack`.
+            such as `GmailOpenAIAgentPack`. Can also include marketplace specifier
+            in format `PackName@marketplace-name` (e.g., `SkillPack@huggingface-skills`).
         refresh_cache: If true, the local cache will be skipped and the
             loader will be fetched directly from the remote repo.
         download_dir: Custom dirpath to download the pack into.
@@ -33,6 +35,9 @@ def download_llama_pack(
     """
     pack_cls = None
 
+    # Parse pack identifier to extract marketplace if specified
+    pack_name, marketplace_name = parse_pack_identifier(llama_pack_class)
+
     mappings_path = os.path.join(
         os.path.abspath(
             os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
@@ -42,27 +47,28 @@ def download_llama_pack(
     with open(mappings_path) as f:
         mappings = json.load(f)
 
-    if llama_pack_class in mappings:
-        new_import_parent = mappings[llama_pack_class]
+    if pack_name in mappings:
+        new_import_parent = mappings[pack_name]
         new_install_parent = new_import_parent.replace(".", "-").replace("_", "-")
     else:
-        raise ValueError(f"Failed to find python package for class {llama_pack_class}")
+        raise ValueError(f"Failed to find python package for class {pack_name}")
 
     if not download_dir:
         pack_cls = download_integration(
             module_str=new_install_parent,
             module_import_str=new_import_parent,
-            cls_name=llama_pack_class,
+            cls_name=pack_name,
         )
     else:
         pack_cls = download_llama_pack_template(
             new_install_parent=new_install_parent,
-            llama_pack_class=llama_pack_class,
+            llama_pack_class=pack_name,
             llama_pack_url=llama_pack_url,
             refresh_cache=refresh_cache,
             custom_path=download_dir,
+            marketplace_name=marketplace_name,
         )
-        track_download(llama_pack_class, "llamapack")
+        track_download(pack_name, "llamapack")
         if pack_cls is None:
             return None
 
