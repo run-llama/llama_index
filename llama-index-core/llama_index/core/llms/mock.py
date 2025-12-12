@@ -349,7 +349,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_required: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         contents = chat_history or [
             user_msg
