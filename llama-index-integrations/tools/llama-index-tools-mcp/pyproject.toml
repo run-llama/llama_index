@@ -41,7 +41,7 @@ keywords = [
     "tools",
 ]
 dependencies = [
-    "mcp>=1.9.1,<2",
+    "mcp>=1.24.0,<2",
     "llama-index-core>=0.13.0,<0.15",
     "pydantic>=2.0.0,<3",
 ]

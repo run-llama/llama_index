@@ -12,11 +12,11 @@ from typing import (
     Callable,
     AsyncIterator,
     Awaitable,
-    Dict,
     Any,
 )
 from urllib.parse import urlparse, parse_qs
-from mcp.client.session import ClientSession, ProgressFnT
+from mcp.client.session import ClientSession
+from mcp.shared.session import ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.streamable_http import streamablehttp_client
