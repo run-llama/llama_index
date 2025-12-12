@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Optional,
     Union,
+    TYPE_CHECKING,
 )
 from typing_extensions import TypeAlias
 from base64 import b64decode
@@ -46,6 +47,9 @@ from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
 import copy
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 
 class MockLLM(CustomLLM):
@@ -338,11 +342,21 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
         return _gen()
 
     async def astream_chat_with_tools(
-        self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs,
     ) -> ChatResponseAsyncGen:
-        content = self.blocks_to_content_callback(
-            chat_history[-1].blocks, self.tool_calls
-        )
+        contents = chat_history or [
+            user_msg
+            if isinstance(user_msg, ChatMessage)
+            else ChatMessage(content=user_msg or "", role="user")
+        ]
+        content = self.blocks_to_content_callback(contents[-1].blocks, self.tool_calls)
         if not content:
             content = "<empty>"
         response_msg = ChatMessage(role="assistant", content=content)
@@ -374,7 +388,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
 
     def _prepare_chat_with_tools(
         self,
-        tools: List[Any],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -391,7 +405,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
         }
 
     def get_tool_calls_from_response(
-        self, response: ChatResponse, **kwargs: Any
+        self, response: ChatResponse, error_on_no_tool_call: bool = False, **kwargs: Any
     ) -> List[ToolSelection]:
         tool_calls = [
             block

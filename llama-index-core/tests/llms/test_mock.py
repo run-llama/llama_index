@@ -197,16 +197,21 @@ def test_mock_function_calling_llm_get_tool_calls_from_response() -> None:
     response = ChatResponse(
         message=ChatMessage(
             role="assistant",
-            content="test",
-            additional_kwargs={"tool_calls": [tool_selection]},
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="test_id",
+                    tool_name="test_tool",
+                    tool_kwargs={"arg1": "value1"},
+                )
+            ],
         )
     )
 
     tool_calls = llm.get_tool_calls_from_response(response)
     assert len(tool_calls) == 1
-    assert tool_calls[0].tool_id == "test_id"
-    assert tool_calls[0].tool_name == "test_tool"
-    assert tool_calls[0].tool_kwargs == {"arg1": "value1"}
+    assert tool_calls[0].tool_id == tool_selection.tool_id
+    assert tool_calls[0].tool_name == tool_selection.tool_name
+    assert tool_calls[0].tool_kwargs == tool_selection.tool_kwargs
 
 
 def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
