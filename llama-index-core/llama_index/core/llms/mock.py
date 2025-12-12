@@ -8,9 +8,12 @@ from typing import (
     AsyncGenerator,
     Callable,
     Optional,
+    Union,
+    TYPE_CHECKING,
 )
 from typing_extensions import TypeAlias
 from base64 import b64decode
+from json import JSONDecodeError
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
@@ -33,11 +36,20 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import (
+    MessagesToPromptType,
+    CompletionToPromptType,
+    ToolSelection,
+)
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import PydanticProgramMode
 
 from pydantic import Field
 import copy
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 
 class MockLLM(CustomLLM):
@@ -263,7 +275,7 @@ BlockToContentCallback: TypeAlias = Callable[
 ]
 
 
-class MockFunctionCallingLLM(MockLLM):
+class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
     blocks_to_content_callback: BlockToContentCallback = Field(
         default=_default_blocks_to_content_callback
@@ -329,6 +341,35 @@ class MockFunctionCallingLLM(MockLLM):
 
         return _gen()
 
+    async def astream_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        contents = chat_history or [
+            user_msg
+            if isinstance(user_msg, ChatMessage)
+            else ChatMessage(content=user_msg or "", role="user")
+        ]
+        content = self.blocks_to_content_callback(contents[-1].blocks, self.tool_calls)
+        if not content:
+            content = "<empty>"
+        response_msg = ChatMessage(role="assistant", content=content)
+
+        async def _gen() -> AsyncGenerator[ChatResponse, None]:
+            yield ChatResponse(
+                message=response_msg,
+                delta=content,
+                raw={"content": content},
+            )
+
+        return _gen()
+
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
@@ -344,3 +385,48 @@ class MockFunctionCallingLLM(MockLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         return self.chat(messages=messages)
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> dict:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        # For the mock implementation, we just return a simple dict
+        # The actual tools are not used since this is a mock
+        return {
+            "messages": chat_history or [],
+            "tools": tools,
+        }
+
+    def get_tool_calls_from_response(
+        self, response: ChatResponse, error_on_no_tool_call: bool = False, **kwargs: Any
+    ) -> List[ToolSelection]:
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        tool_selections = []
+        for tool_call in tool_calls:
+            # this should handle both complete and partial jsons
+            try:
+                if isinstance(tool_call.tool_kwargs, str):
+                    argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                else:
+                    argument_dict = tool_call.tool_kwargs
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+        return tool_selections

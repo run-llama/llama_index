@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.llms import MockLLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool
@@ -233,3 +234,95 @@ async def test_max_iterations():
 
     # Set max iterations to 101 to avoid error
     _ = agent.run(user_msg="test", max_iterations=101)
+
+
+@pytest.mark.asyncio
+async def test_function_agent_with_mock_function_calling_llm():
+    """Test that FunctionAgent works with MockFunctionCallingLLM."""
+
+    def multiply(a: int, b: int) -> int:
+        """Multiply two numbers."""
+        return a * b
+
+    # Create a MockFunctionCallingLLM that will return a simple response
+    llm = MockFunctionCallingLLM(max_tokens=200)
+
+    agent = FunctionAgent(
+        name="test_agent",
+        description="A test agent",
+        system_prompt="You are a helpful assistant.",
+        tools=[FunctionTool.from_defaults(fn=multiply)],
+        llm=llm,
+    )
+
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = agent.run(user_msg="Hello, can you help me?", memory=memory)
+
+    events = []
+    async for event in handler.stream_events():
+        events.append(event)
+
+    response = await handler
+
+    # Verify the agent ran successfully with MockFunctionCallingLLM
+    assert response.response is not None
+    # Verify that we got some events during execution
+    assert len(events) > 0
+
+
+@pytest.mark.asyncio
+async def test_function_agent_with_context_and_chat_message():
+    """Test FunctionAgent with explicit Context and ChatMessage input following the full adoption pattern."""
+    from llama_index.core.llms import TextBlock
+    from llama_index.core.workflow import Context
+
+    AGENT_SYSTEM_PROMPT = (
+        "You are a mathematical assistant that helps with calculations."
+    )
+
+    def noop() -> str:
+        """A no-op function for testing."""
+        return "noop executed"
+
+    # Step 1: Construct FunctionAgent
+    llm = MockFunctionCallingLLM()
+    function_tools = [FunctionTool.from_defaults(fn=noop)]
+    constructor_kwargs = {
+        "llm": llm,
+        "tools": function_tools,
+        "system_prompt": AGENT_SYSTEM_PROMPT,
+    }
+    # Perhaps additional kwargs mutations would go here.
+    agent = FunctionAgent(**constructor_kwargs)
+
+    # Step 2: Construct context
+    ctx = Context(agent)
+
+    # Step 3: Construct user message as ChatMessage
+    user_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="Can you help me with a calculation?"),
+            TextBlock(text="It's one plus one."),
+        ],
+    )
+
+    # Step 4: Trigger agent run with ctx
+    handler = agent.run(
+        user_msg=user_message,
+        ctx=ctx,
+    )
+
+    # Step 5: Await response
+    response = await handler
+
+    # Verify the response contains meaningful content
+    assert response is not None
+    # The response should not just be the system prompt
+    assert response != AGENT_SYSTEM_PROMPT
+    # Verify we got a proper response from the LLM
+    assert len(str(response)) > 0
+    # Verify that both TextBlock contents from the user message are in the response
+    response_str = str(response)
+    assert "Can you help me with a calculation?" in response_str
+    assert "It's one plus one." in response_str
