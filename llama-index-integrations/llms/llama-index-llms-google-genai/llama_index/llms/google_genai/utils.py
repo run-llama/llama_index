@@ -159,6 +159,10 @@ def chat_from_gemini_response(
         **response_feedback,
     }
     thought_tokens: Optional[int] = None
+
+    if thought_signatures is None:
+        thought_signatures = []
+
     additional_kwargs: Dict[str, Any] = {"thought_signatures": thought_signatures}
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
