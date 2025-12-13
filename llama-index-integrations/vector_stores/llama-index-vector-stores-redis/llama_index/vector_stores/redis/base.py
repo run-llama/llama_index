@@ -594,13 +594,17 @@ class RedisVectorStore(BasePydanticVectorStore):
         print("Using filter string: ", joined_filter_strings)
         return f"({joined_filter_strings})"
 
+    def _build_filter_expression(
+        self, filters: Optional[MetadataFilters]
+    ) -> Optional[FilterExpression]:
+        """Return the filter expression respecting legacy flag."""
+        if self.legacy_filters:
+            return self._to_redis_filters(filters)
+        return self._create_redis_filter_expression(filters)
+
     def _to_redis_query(self, query: VectorStoreQuery) -> VectorQuery:
         """Creates a RedisQuery from a VectorStoreQuery."""
-        # TODO: Figure out why create_redis_filter_expression doesn't handle IN properly
-        if self.legacy_filters:
-            filter_expression = self._to_redis_filters(query.filters)
-        else:
-            filter_expression = self._create_redis_filter_expression(query.filters)
+        filter_expression = self._build_filter_expression(query.filters)
         return_fields = self._return_fields.copy()
         return VectorQuery(
             vector=query.query_embedding,
@@ -610,26 +614,37 @@ class RedisVectorStore(BasePydanticVectorStore):
             return_fields=return_fields,
         )
 
-    def _extract_node_and_score(self, doc, redis_query: VectorQuery):
-        """Extracts a node and its score from a document."""
+    def _to_filter_query(self, query: VectorStoreQuery) -> FilterQuery:
+        """Create a filter-only Redis query."""
+        filter_expression = self._build_filter_expression(query.filters)
+        return FilterQuery(
+            filter_expression=filter_expression,
+            return_fields=self._return_fields,
+            num_results=query.similarity_top_k,
+        )
+
+    def _extract_node_and_score(self, doc, redis_query: Any):
+        """Extract a node and (optional) score from a document."""
         try:
             node = metadata_dict_to_node(
                 {NODE_CONTENT_FIELD_NAME: doc[NODE_CONTENT_FIELD_NAME]}
             )
-            node.text = doc[TEXT_FIELD_NAME]
+            node.text = doc.get(TEXT_FIELD_NAME, node.get_content())
         except Exception:
             # Handle legacy metadata format
             node = TextNode(
-                text=doc[TEXT_FIELD_NAME],
-                id_=doc[NODE_ID_FIELD_NAME],
+                text=doc.get(TEXT_FIELD_NAME, ""),
+                id_=doc.get(NODE_ID_FIELD_NAME),
                 embedding=None,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(
-                        node_id=doc[DOC_ID_FIELD_NAME]
+                        node_id=doc.get(DOC_ID_FIELD_NAME)
                     )
                 },
             )
-        score = 1 - float(doc[redis_query.DISTANCE_ID])
+        score = None
+        if hasattr(redis_query, "DISTANCE_ID") and redis_query.DISTANCE_ID in doc:
+            score = 1 - float(doc[redis_query.DISTANCE_ID])
         return node, score
 
     def _process_query_results(
@@ -639,11 +654,13 @@ class RedisVectorStore(BasePydanticVectorStore):
         ids, nodes, scores = [], [], []
         for doc in results:
             node, score = self._extract_node_and_score(doc, redis_query)
-            ids.append(doc[NODE_ID_FIELD_NAME])
+            ids.append(doc.get(NODE_ID_FIELD_NAME))
             nodes.append(node)
-            scores.append(score)
+            if score is not None:
+                scores.append(score)
         logger.info(f"Found {len(nodes)} results for query with id {ids}")
-        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
+        similarities = scores if scores else None
+        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
@@ -661,10 +678,16 @@ class RedisVectorStore(BasePydanticVectorStore):
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
 
         """
-        if not query.query_embedding:
-            raise ValueError("Query embedding is required for querying.")
+        if query.query_embedding is None and not query.filters:
+            raise ValueError(
+                "Either query_embedding or metadata filters are required for querying."
+            )
 
-        redis_query = self._to_redis_query(query)
+        if query.query_embedding is None:
+            redis_query = self._to_filter_query(query)
+        else:
+            redis_query = self._to_redis_query(query)
+
         logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
 
         try:
@@ -697,10 +720,15 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         """
         await self.async_index_exists()
-        if not query.query_embedding:
-            raise ValueError("Query embedding is required for querying.")
+        if query.query_embedding is None and not query.filters:
+            raise ValueError(
+                "Either query_embedding or metadata filters are required for querying."
+            )
 
-        redis_query = self._to_redis_query(query)
+        if query.query_embedding is None:
+            redis_query = self._to_filter_query(query)
+        else:
+            redis_query = self._to_redis_query(query)
         logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
         try:
             results = await self._async_index.query(redis_query)

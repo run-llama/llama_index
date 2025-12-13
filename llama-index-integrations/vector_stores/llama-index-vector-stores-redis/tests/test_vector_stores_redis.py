@@ -2,8 +2,14 @@ import pytest
 
 from llama_index.core import MockEmbedding, StorageContext, VectorStoreIndex
 from llama_index.core.llms import MockLLM
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+)
 from llama_index.vector_stores.redis import RedisVectorStore
+from llama_index.vector_stores.redis.schema import RedisVectorStoreSchema
 
 
 def test_class():
@@ -37,6 +43,33 @@ def test_default_usage(documents, turtle_test, redis_client):
     assert len(res.docs) == 0
 
     # test delete index
+    vector_store.delete_index()
+
+
+def test_filter_only_query(documents, redis_client):
+    schema = RedisVectorStoreSchema()
+    schema.index.name = "llama_index_filter_only"
+    schema.index.prefix = "llama_index_filter_only"
+    schema.add_fields([{"name": "animal", "type": "tag"}])
+
+    vector_store = RedisVectorStore(redis_client=redis_client, schema=schema)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_documents(
+        documents,
+        embed_model=MockEmbedding(embed_dim=1536),
+        storage_context=storage_context,
+    )
+
+    filters = MetadataFilters(filters=[MetadataFilter(key="animal", value="turtle")])
+    query = VectorStoreQuery(filters=filters, similarity_top_k=5)
+    result = vector_store.query(query)
+
+    assert result.nodes is not None
+    assert len(result.nodes) == 1
+    assert result.nodes[0].metadata["animal"] == "turtle"
+    assert result.similarities is None or len(result.similarities) == 1
+
+    index = None  # release before dropping index
     vector_store.delete_index()
 
 
