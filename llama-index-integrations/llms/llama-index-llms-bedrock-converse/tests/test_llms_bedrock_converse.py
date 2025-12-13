@@ -909,6 +909,75 @@ async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
 
 @needs_aws_creds
 @pytest.mark.asyncio
+async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
+    bedrock_converse_integration_thinking,
+):
+    """
+    Test that thinking_delta is populated in additional_kwargs during streaming.
+
+    This test verifies that when using extended thinking mode:
+    1. Thinking content appears in additional_kwargs['thinking_delta'] during streaming
+    2. Text content appears in delta field separately from thinking content
+    3. Final message contains accumulated thinking in ThinkingBlock
+    """
+    messages = [
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What is 15 + 27? Think step by step before answering.",
+        )
+    ]
+
+    # Test stream_chat
+    responses = list(bedrock_converse_integration_thinking.stream_chat(messages))
+
+    # Verify we got responses
+    assert len(responses) > 0
+
+    # Check for thinking_delta in additional_kwargs
+    thinking_responses = [
+        r
+        for r in responses
+        if r.additional_kwargs.get("thinking_delta") is not None
+        and len(r.additional_kwargs.get("thinking_delta", "")) > 0
+    ]
+    assert len(thinking_responses) > 0, (
+        "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    )
+
+    # Check that text deltas are separate from thinking deltas
+    text_responses = [
+        r
+        for r in responses
+        if r.delta and r.additional_kwargs.get("thinking_delta") is None
+    ]
+    assert len(text_responses) > 0, "Should have text responses separate from thinking"
+
+    # Verify final message has ThinkingBlock with accumulated content
+    final_response = responses[-1]
+    thinking_blocks = [
+        b for b in final_response.message.blocks if isinstance(b, ThinkingBlock)
+    ]
+    assert len(thinking_blocks) > 0, "Final message should have ThinkingBlock"
+    assert len(thinking_blocks[0].content) > 10, "ThinkingBlock should have content"
+
+    # Test astream_chat
+    async_responses = []
+    async for r in await bedrock_converse_integration_thinking.astream_chat(messages):
+        async_responses.append(r)
+
+    # Verify async streaming also has thinking_delta
+    async_thinking_responses = [
+        r
+        for r in async_responses
+        if r.additional_kwargs.get("thinking_delta") is not None
+    ]
+    assert len(async_thinking_responses) > 0, (
+        "Async streaming should also have thinking_delta in additional_kwargs"
+    )
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_system_prompt_cache_points(
     bedrock_converse_integration_no_system_prompt_caching_param,
 ):
