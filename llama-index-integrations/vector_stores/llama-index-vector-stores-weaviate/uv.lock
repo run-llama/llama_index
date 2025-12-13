@@ -1796,7 +1796,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-weaviate"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

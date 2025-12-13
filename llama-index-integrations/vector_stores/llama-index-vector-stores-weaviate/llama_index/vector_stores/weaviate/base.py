@@ -124,6 +124,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         weaviate_client (Optional[Any]): Either a WeaviateClient (synchronous) or WeaviateAsyncClient (asynchronous)
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
+        native_embedding (bool): If True, use Weaviate's native embedding capabilities.
+            **Important:** The Weaviate collection must be configured with a vectorizer module (e.g., `text2vec-openai`, `text2vec-cohere`)
+            for native embeddings to work. Without this configuration, setting `native_embedding=True` will likely fail silently or produce errors.
+            Defaults to False.
 
     Examples:
         `pip install llama-index-vector-stores-weaviate`
@@ -161,6 +165,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     _collection_initialized: bool = PrivateAttr()
     _is_self_created_weaviate_client: bool = PrivateAttr()  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
     _custom_batch: Optional[BatchWrapper] = PrivateAttr()
+    _native_embedding: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -171,6 +176,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         auth_config: Optional[Any] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
+        native_embedding: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -225,6 +231,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
             )
 
+        self._native_embedding = native_embedding
+
         # create default schema if does not exist
         if self._client is not None:
             if not class_schema_exists(self._client, index_name):
@@ -233,6 +241,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         else:
             #  need to do lazy init for async clients
             self._collection_initialized = False
+
+    @property
+    def generates_embeddings(self) -> bool:
+        """Check if the vector store provides embeddings."""
+        return self._native_embedding
 
     def __del__(self) -> None:
         if self._is_self_created_weaviate_client:
@@ -274,7 +287,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             provided_batch = self.client.batch.dynamic()
         with provided_batch as batch:
             for node in nodes:
-                data_object = get_data_object(node=node, text_key=self.text_key)
+                data_object = get_data_object(
+                    node=node,
+                    text_key=self.text_key,
+                    use_vector=not self._native_embedding,
+                )
                 batch.add_object(
                     collection=self.index_name,
                     properties=data_object.properties,
@@ -307,7 +324,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         collection = self.async_client.collections.get(self.index_name)
 
         response = await collection.data.insert_many(
-            [get_data_object(node=node, text_key=self.text_key) for node in nodes]
+            [
+                get_data_object(
+                    node=node,
+                    text_key=self.text_key,
+                    use_vector=not self._native_embedding,
+                )
+                for node in nodes
+            ]
         )
         return ids
 
@@ -468,11 +492,21 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
-        vector = query.query_embedding
+        vector = query.query_embedding if not self._native_embedding else None
+
+        if self._native_embedding and (
+            not query.query_str or not str(query.query_str).strip()
+        ):
+            raise ValueError(
+                "When native_embedding=True, a non-empty query_str must be provided for Weaviate to generate embeddings from text."
+            )
+
         alpha = 1
         if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            if vector is not None and query.query_str:
+            # If native_embedding is True, we assume Weaviate generates the vector, so we can use alpha.
+            # If native_embedding is False, we need a vector provided from client to use alpha with vector search.
+            if (self._native_embedding or vector is not None) and query.query_str:
                 alpha = query.alpha or 0.5
 
         if query.filters is not None:
