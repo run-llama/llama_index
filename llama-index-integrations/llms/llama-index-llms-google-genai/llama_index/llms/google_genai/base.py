@@ -386,7 +386,9 @@ class GoogleGenAI(FunctionCallingLLM):
                             content_delta = parts[0].text
 
                             llama_resp = chat_from_gemini_response(
-                                r, existing_content=content, thought_signatures=thought_signatures
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
                             )
                             llama_resp.delta = llama_resp.delta or content_delta or ""
 
@@ -432,7 +434,9 @@ class GoogleGenAI(FunctionCallingLLM):
                             content_delta = parts[0].text
 
                             llama_resp = chat_from_gemini_response(
-                                r, existing_content=content, thought_signatures=thought_signatures
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
                             )
                             llama_resp.delta = llama_resp.delta or content_delta or ""
 
