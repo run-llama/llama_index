@@ -386,19 +386,11 @@ class GoogleGenAI(FunctionCallingLLM):
                             content_delta = parts[0].text
 
                             llama_resp = chat_from_gemini_response(
-                                r, existing_content=content
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
                             )
                             llama_resp.delta = llama_resp.delta or content_delta or ""
-
-                            # re-align thought signatures
-                            thought_signatures.extend(
-                                llama_resp.message.additional_kwargs.get(
-                                    "thought_signatures", []
-                                )
-                            )
-                            llama_resp.message.additional_kwargs[
-                                "thought_signatures"
-                            ] = thought_signatures
 
                             yield llama_resp
 
@@ -442,19 +434,11 @@ class GoogleGenAI(FunctionCallingLLM):
                             content_delta = parts[0].text
 
                             llama_resp = chat_from_gemini_response(
-                                r, existing_content=content
+                                r,
+                                existing_content=content,
+                                thought_signatures=thought_signatures,
                             )
                             llama_resp.delta = llama_resp.delta or content_delta or ""
-
-                            # re-align thought signatures
-                            thought_signatures.extend(
-                                llama_resp.message.additional_kwargs.get(
-                                    "thought_signatures", []
-                                )
-                            )
-                            llama_resp.message.additional_kwargs[
-                                "thought_signatures"
-                            ] = thought_signatures
 
                             yield llama_resp
 
