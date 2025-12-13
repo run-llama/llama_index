@@ -1,2 +1,5 @@
 label: Advanced Retrieval
 collapsed: true
+entries:
+  - advanced_retrieval
+  - query_transformations
