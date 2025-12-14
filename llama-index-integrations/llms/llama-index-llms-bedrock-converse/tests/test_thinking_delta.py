@@ -1,0 +1,177 @@
+from unittest.mock import MagicMock
+
+import pytest
+
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    ThinkingBlock,
+    TextBlock,
+)
+from llama_index.llms.bedrock_converse import BedrockConverse
+
+
+@pytest.fixture
+def mock_bedrock_client():
+    return MagicMock()
+
+
+@pytest.fixture
+def bedrock_with_thinking(mock_bedrock_client):
+    return BedrockConverse(
+        model="us.anthropic.claude-sonnet-4-20250514-v1:0",
+        thinking={"type": "enabled", "budget_tokens": 1024},
+        client=mock_bedrock_client,
+    )
+
+
+def test_thinking_delta_populated_in_stream_chat(
+    bedrock_with_thinking, mock_bedrock_client
+):
+    mock_bedrock_client.converse_stream.return_value = {
+        "stream": [
+            {
+                "contentBlockDelta": {
+                    "delta": {
+                        "reasoningContent": {
+                            "text": "Let me think",
+                            "signature": "sig1",
+                        }
+                    },
+                    "contentBlockIndex": 0,
+                }
+            },
+            {
+                "contentBlockDelta": {
+                    "delta": {
+                        "reasoningContent": {
+                            "text": " about this",
+                            "signature": "sig2",
+                        }
+                    },
+                    "contentBlockIndex": 0,
+                }
+            },
+            {
+                "contentBlockDelta": {
+                    "delta": {"text": "The answer is"},
+                    "contentBlockIndex": 1,
+                }
+            },
+            {
+                "metadata": {
+                    "usage": {
+                        "inputTokens": 10,
+                        "outputTokens": 20,
+                        "totalTokens": 30,
+                    }
+                }
+            },
+        ]
+    }
+
+    messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    responses = list(bedrock_with_thinking.stream_chat(messages))
+
+    assert len(responses) > 0
+
+    thinking_responses = [
+        r for r in responses if r.additional_kwargs.get("thinking_delta") is not None
+    ]
+    assert len(thinking_responses) == 2
+    assert thinking_responses[0].additional_kwargs["thinking_delta"] == "Let me think"
+    assert thinking_responses[1].additional_kwargs["thinking_delta"] == " about this"
+
+    text_responses = [
+        r
+        for r in responses
+        if r.delta and r.additional_kwargs.get("thinking_delta") is None
+    ]
+    assert len(text_responses) >= 1
+    assert text_responses[0].delta == "The answer is"
+
+
+def test_thinking_delta_none_for_non_thinking_content(
+    bedrock_with_thinking, mock_bedrock_client
+):
+    mock_bedrock_client.converse_stream.return_value = {
+        "stream": [
+            {
+                "contentBlockStart": {
+                    "start": {"text": ""},
+                    "contentBlockIndex": 0,
+                }
+            },
+            {
+                "contentBlockDelta": {
+                    "delta": {"text": "Regular text"},
+                    "contentBlockIndex": 0,
+                }
+            },
+            {
+                "metadata": {
+                    "usage": {
+                        "inputTokens": 10,
+                        "outputTokens": 20,
+                        "totalTokens": 30,
+                    }
+                }
+            },
+        ]
+    }
+
+    messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    responses = list(bedrock_with_thinking.stream_chat(messages))
+
+    text_responses = [r for r in responses if r.delta]
+    assert all(
+        r.additional_kwargs.get("thinking_delta") is None for r in text_responses
+    )
+
+
+def test_thinking_block_in_message_blocks(bedrock_with_thinking, mock_bedrock_client):
+    mock_bedrock_client.converse_stream.return_value = {
+        "stream": [
+            {
+                "contentBlockDelta": {
+                    "delta": {
+                        "reasoningContent": {
+                            "text": "Thinking content",
+                            "signature": "sig",
+                        }
+                    },
+                    "contentBlockIndex": 0,
+                }
+            },
+            {
+                "contentBlockDelta": {
+                    "delta": {"text": "Text content"},
+                    "contentBlockIndex": 1,
+                }
+            },
+            {
+                "metadata": {
+                    "usage": {
+                        "inputTokens": 10,
+                        "outputTokens": 20,
+                        "totalTokens": 30,
+                    }
+                }
+            },
+        ]
+    }
+
+    messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    responses = list(bedrock_with_thinking.stream_chat(messages))
+
+    final_response = responses[-1]
+    assert len(final_response.message.blocks) >= 2
+
+    thinking_blocks = [
+        b for b in final_response.message.blocks if isinstance(b, ThinkingBlock)
+    ]
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].content == "Thinking content"
+
+    text_blocks = [b for b in final_response.message.blocks if isinstance(b, TextBlock)]
+    assert len(text_blocks) >= 1
