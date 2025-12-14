@@ -32,7 +32,7 @@ class AIBadgr(OpenAILike):
 
     def __init__(
         self,
-        model: str = "premium",
+        model: str,
         api_key: Optional[str] = None,
         api_base: str = "https://aibadgr.com/api/v1",
         is_chat_model: bool = True,

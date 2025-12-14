@@ -10,8 +10,8 @@ def test_class_name():
 
 def test_initialization():
     """Test that AIBadgr can be initialized with default and custom parameters."""
-    # Test with default model
-    llm = AIBadgr(api_key="test_key")
+    # Test with premium model
+    llm = AIBadgr(model="premium", api_key="test_key")
     assert llm.model == "premium"
     assert llm.api_key == "test_key"
     assert llm.api_base == "https://aibadgr.com/api/v1"
@@ -21,5 +21,7 @@ def test_initialization():
     assert llm.model == "basic"
 
     # Test with custom base URL
-    llm = AIBadgr(api_key="test_key", api_base="https://custom.url/api/v1")
+    llm = AIBadgr(
+        model="premium", api_key="test_key", api_base="https://custom.url/api/v1"
+    )
     assert llm.api_base == "https://custom.url/api/v1"
