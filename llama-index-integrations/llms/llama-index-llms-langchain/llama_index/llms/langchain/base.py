@@ -20,8 +20,14 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
-from langchain.base_language import BaseLanguageModel
-from langchain.schema import AIMessage
+# LangChain 1.x compatibility
+try:
+    from langchain_core.language_models.base import BaseLanguageModel
+    from langchain_core.messages import AIMessage
+except ImportError:
+    # Fallback for LangChain < 1.0
+    from langchain.base_language import BaseLanguageModel
+    from langchain.schema import AIMessage
 
 
 class LangChainLLM(LLM):
