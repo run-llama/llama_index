@@ -415,7 +415,7 @@ class OpenAIResponses(FunctionCallingLLM):
             "previous_response_id": self._previous_response_id,
             "store": self.store,
             "temperature": self.temperature,
-            "tools": [*initial_tools, *kwargs.pop("tools", [])],
+            "tools": [*initial_tools, *(kwargs.pop("tools", []) or [])],
             "top_p": self.top_p,
             "truncation": self.truncation,
             "user": self.user,
