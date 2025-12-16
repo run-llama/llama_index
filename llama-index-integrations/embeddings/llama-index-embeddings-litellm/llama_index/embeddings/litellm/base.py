@@ -60,6 +60,7 @@ class LiteLLMEmbedding(BaseEmbedding):
 
         timeout (int): Timeout (in seconds) for embedding requests.
             Defaults to 60.
+
     """
 
     model_name: str = Field(description="The name of the embedding model.")
