@@ -44,12 +44,15 @@ class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
 
 
-def _to_lance_filter(standard_filters: MetadataFilters, metadata_keys: list) -> Any:
+def _to_lance_filter(
+    standard_filters: MetadataFilters,
+    metadata_keys: Optional[list],
+) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
     for filter in standard_filters.filters:
         key = filter.key
-        if filter.key in metadata_keys:
+        if metadata_keys is None or filter.key in metadata_keys:
             key = f"metadata.{filter.key}"
         if (
             filter.operator == FilterOperator.TEXT_MATCH
