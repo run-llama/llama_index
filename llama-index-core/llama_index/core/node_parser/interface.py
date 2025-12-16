@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Sequence
 from typing_extensions import Annotated
 
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import (
     Field,
     WithJsonSchema,
@@ -271,6 +272,79 @@ class MetadataAwareTextSplitter(TextSplitter):
                 metadata_str=metadata_str,
             )
             all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
+
+        return all_nodes
+
+
+class MessageSplitter(NodeParser):
+    @abstractmethod
+    def split_message(self, message: ChatMessage) -> list[ChatMessage]: ...
+
+    def split_messages(self, messages: list[ChatMessage]) -> list[ChatMessage]:
+        nested_messages = [self.split_message(message) for message in messages]
+        return [item for sublist in nested_messages for item in sublist]
+
+    def _parse_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> list[BaseNode]:
+        all_nodes: list[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
+        for node in nodes_with_progress:
+            splits = self.split_message(node.get_chat_content())
+            # TODO: Update this method to handle messages
+            all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
+
+        return all_nodes
+
+
+class MetadataAwareMessageSplitter(MessageSplitter):
+    @abstractmethod
+    def split_message_metadata_aware(
+        self, text: ChatMessage, metadata_str: str
+    ) -> list[ChatMessage]: ...
+
+    def split_messages_metadata_aware(
+        self, messages: list[ChatMessage], metadata_strs: list[str]
+    ) -> list[ChatMessage]:
+        if len(messages) != len(metadata_strs):
+            raise ValueError("Texts and metadata_strs must have the same length")
+        nested_texts = [
+            self.split_message_metadata_aware(message, metadata)
+            for message, metadata in zip(messages, metadata_strs)
+        ]
+        return [item for sublist in nested_texts for item in sublist]
+
+    def _get_metadata_str(self, node: BaseNode) -> str:
+        """Helper function to get the proper metadata str for splitting."""
+        embed_metadata_str = node.get_metadata_str(mode=MetadataMode.EMBED)
+        llm_metadata_str = node.get_metadata_str(mode=MetadataMode.LLM)
+
+        # use the longest metadata str for splitting
+        if len(embed_metadata_str) > len(llm_metadata_str):
+            metadata_str = embed_metadata_str
+        else:
+            metadata_str = llm_metadata_str
+
+        return metadata_str
+
+    def _parse_nodes(
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> list[BaseNode]:
+        all_nodes: list[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
+
+        for node in nodes_with_progress:
+            metadata_str = self._get_metadata_str(node)
+            splits = self.split_text_metadata_aware(
+                node.get_content(metadata_mode=MetadataMode.NONE),
+                metadata_str=metadata_str,
+            )
+            all_nodes.extend(
+                # TODO: Update this method to handle messages
                 build_nodes_from_splits(splits, node, id_func=self.id_func)
             )
 
