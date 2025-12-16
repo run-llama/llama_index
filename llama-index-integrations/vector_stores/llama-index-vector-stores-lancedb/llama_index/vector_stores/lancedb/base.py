@@ -54,25 +54,26 @@ def _to_lance_filter(
         key = filter.key
         if metadata_keys is None or filter.key in metadata_keys:
             key = f"metadata.{filter.key}"
+        operator = sql_operator_mapper[filter.operator]
         if (
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"'%{filter.value}%'"
-            )
-        if isinstance(filter.value, list):
-            val = ",".join(filter.value)
-            filters.append(key + sql_operator_mapper[filter.operator] + f"({val})")
-        elif isinstance(filter.value, int):
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"{filter.value}"
-            )
+            filters.append(f"{key}{operator}'%{filter.value}%'")
+        elif isinstance(filter.value, list):
+            processed_values = []
+            for v in filter.value:
+                if isinstance(v, str):
+                    safe_v = v.replace("'", "''")
+                    processed_values.append(f"'{safe_v}'")
+                else:
+                    processed_values.append(str(v))
+            val = ",".join(processed_values)
+            filters.append(f"{key}{operator}({val})")
+        elif isinstance(filter.value, (int, float)):
+            filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"'{filter.value!s}'"
-            )
-
+            filters.append(f"{key}{operator}'{filter.value!s}'")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
