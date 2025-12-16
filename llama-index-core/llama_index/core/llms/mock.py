@@ -18,6 +18,7 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
+    CompletionResponseAsyncGen,
     LLMMetadata,
     ChatMessage,
     ChatResponse,
@@ -275,7 +276,8 @@ BlockToContentCallback: TypeAlias = Callable[
 ]
 
 
-class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
+class MockFunctionCallingLLM(FunctionCallingLLM):
+    max_tokens: Optional[int] = Field(default=None)
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
     blocks_to_content_callback: BlockToContentCallback = Field(
         default=_default_blocks_to_content_callback
@@ -292,21 +294,56 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
         blocks_to_content_callback: Optional[BlockToContentCallback] = None,
     ) -> None:
         super().__init__(
-            max_tokens=max_tokens,
             callback_manager=callback_manager or CallbackManager([]),
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
+        self.max_tokens = max_tokens
         self.blocks_to_content_callback = (
             blocks_to_content_callback or self.blocks_to_content_callback
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockFunctionCallingLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_function_calling_model=True)
 
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return CompletionResponse(text=prompt)
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        def gen() -> CompletionResponseGen:
+            yield CompletionResponse(text=prompt, delta=prompt)
+
+        return gen()
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return CompletionResponse(text=prompt)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        async def gen() -> AsyncGenerator[CompletionResponse, None]:
+            yield CompletionResponse(text=prompt, delta=prompt)
+
+        return gen()
+
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -324,6 +361,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
 
         return _gen()
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -341,35 +379,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
 
         return _gen()
 
-    async def astream_chat_with_tools(
-        self,
-        tools: Sequence["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        tool_required: bool = False,
-        **kwargs: Any,
-    ) -> ChatResponseAsyncGen:
-        contents = chat_history or [
-            user_msg
-            if isinstance(user_msg, ChatMessage)
-            else ChatMessage(content=user_msg or "", role="user")
-        ]
-        content = self.blocks_to_content_callback(contents[-1].blocks, self.tool_calls)
-        if not content:
-            content = "<empty>"
-        response_msg = ChatMessage(role="assistant", content=content)
-
-        async def _gen() -> AsyncGenerator[ChatResponse, None]:
-            yield ChatResponse(
-                message=response_msg,
-                delta=content,
-                raw={"content": content},
-            )
-
-        return _gen()
-
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
         if not content:
@@ -381,6 +391,7 @@ class MockFunctionCallingLLM(MockLLM, FunctionCallingLLM):
             raw={"content": content},
         )
 
+    @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
