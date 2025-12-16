@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import base64
+from abc import ABC, abstractmethod
+
 from binascii import Error as BinasciiError
 from enum import Enum
-from io import IOBase
+from io import IOBase, BytesIO
 from pathlib import Path
 from typing import (
     Annotated,
@@ -19,8 +21,11 @@ from typing import (
 )
 
 import filetype
+from PIL import Image
+from tinytag import TinyTag
 from typing_extensions import Self
 
+from llama_index.core import get_tokenizer
 from llama_index.core.bridge.pydantic import (
     AnyUrl,
     BaseModel,
@@ -49,14 +54,25 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-class TextBlock(BaseModel):
+class BaseContentBlock(ABC, BaseModel):
+    @abstractmethod
+    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+        """Estimate the number of tokens in this content block."""
+        ...
+
+
+class TextBlock(BaseContentBlock):
     """A representation of text data to directly pass to/from the LLM."""
 
     block_type: Literal["text"] = "text"
     text: str
 
+    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+        tknizer = tokenizer or get_tokenizer()
+        return len(tknizer(self.text))
 
-class ImageBlock(BaseModel):
+
+class ImageBlock(BaseContentBlock):
     """A representation of image data to directly pass to/from the LLM."""
 
     block_type: Literal["image"] = "image"
@@ -154,8 +170,30 @@ class ImageBlock(BaseModel):
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
 
+    def estimate_tokens(self, *args) -> int:
+        """Use PIL to read image size and conservatively estimate tokens."""
+        with Image.open(cast(BytesIO, self.resolve_image())) as im:
+            width, height = im.size
 
-class AudioBlock(BaseModel):
+            # Calculates image tokens for OpenAI high res (maximum possible number of tokens)
+            w_quotient, w_remainder = divmod(width, 512)
+            h_quotient, h_remainder = divmod(height, 512)
+            w_512factor = w_quotient + (1 if w_remainder > 0 else 0)
+            h_512factor = h_quotient + (1 if h_remainder > 0 else 0)
+            openai_max_count = 85 + w_512factor * h_512factor * 170
+
+            # Calculates image tokens for Gemini (maximum possible number of tokens)
+            w_quotient, w_remainder = divmod(width, 768)
+            h_quotient, h_remainder = divmod(height, 768)
+            w_768factor = w_quotient + (1 if w_remainder > 0 else 0)
+            h_768factor = h_quotient + (1 if h_remainder > 0 else 0)
+            gemini_max_count = w_768factor * h_768factor * 258
+
+        # We take the larger of the two estimates to be safe
+        return max(openai_max_count, gemini_max_count)
+
+
+class AudioBlock(BaseContentBlock):
     """A representation of audio data to directly pass to/from the LLM."""
 
     block_type: Literal["audio"] = "audio"
@@ -240,8 +278,27 @@ class AudioBlock(BaseModel):
             raise ValueError("resolve_audio returned zero bytes")
         return data_buffer
 
+    def estimate_tokens(self, *args) -> int:
+        """
+        Use TinyTag to estimate the duration of the audio file and convert to tokens.
 
-class VideoBlock(BaseModel):
+        Note: FFMPEG is probably better as an all around lib for audio/video,
+        but I wasn't sure about adding a system dependency.
+        """
+        tag = TinyTag.get(file_obj=cast(BytesIO, self.resolve_audio()))
+        if duration := tag.duration:
+            # Gemini estimates 32 tokens per second of audio
+            # https://ai.google.dev/gemini-api/docs/tokens?lang=python
+            # OpenAI estimates 1 token per 0.1 second for user input and 1 token per 0.05 seconds for assistant output
+            # https://platform.openai.com/docs/guides/realtime-costs
+
+            # We conservatively return the max estimate
+            return max((int(duration) + 1) * 32, int(duration / 0.05) + 1)
+        else:
+            return 256  # fallback
+
+
+class VideoBlock(BaseContentBlock):
     """A representation of video data to directly pass to/from the LLM."""
 
     block_type: Literal["video"] = "video"
@@ -334,8 +391,27 @@ class VideoBlock(BaseModel):
             raise ValueError("resolve_video returned zero bytes")
         return data_buffer
 
+    def estimate_tokens(self, *args) -> int:
+        """
+        Use TinyTag to estimate the duration of the audio file and convert to tokens.
 
-class DocumentBlock(BaseModel):
+        Note: FFMPEG is probably better as an all around lib for audio/video,
+        but I wasn't sure about adding a system dependency.
+        """
+        tag = TinyTag.get(file_obj=cast(BytesIO, self.resolve_video()))
+        if duration := tag.duration:
+            # Gemini estimates 263 tokens per second of video
+            # https://ai.google.dev/gemini-api/docs/tokens?lang=python
+
+            # We conservatively return the max estimate
+            return (int(duration) + 1) * 263
+        else:
+            return (
+                256 * 8
+            )  # fallback of roughly 8 times the cost of audio (263 // 32; based on gemini pricing per sec)
+
+
+class DocumentBlock(BaseContentBlock):
     """A representation of a document to directly pass to the LLM."""
 
     block_type: Literal["document"] = "document"
@@ -431,20 +507,29 @@ class DocumentBlock(BaseModel):
         guess = filetype.get_type(ext=suffix)
         return str(guess.mime) if guess else None
 
+    def estimate_tokens(self, *args) -> int:
+        return 512  # fallback
 
-class CacheControl(BaseModel):
+
+class CacheControl(BaseContentBlock):
     type: str
     ttl: str = Field(default="5m")
 
+    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+        return 0  # Unsure here
 
-class CachePoint(BaseModel):
+
+class CachePoint(BaseContentBlock):
     """Used to set the point to cache up to, if the LLM supports caching."""
 
     block_type: Literal["cache"] = "cache"
     cache_control: CacheControl
 
+    def estimate_tokens(self, *args) -> int:
+        return 0  # Unsure here
 
-class CitableBlock(BaseModel):
+
+class CitableBlock(BaseContentBlock):
     """Supports providing citable content to LLMs that have built-in citation support."""
 
     block_type: Literal["citable"] = "citable"
@@ -467,8 +552,11 @@ class CitableBlock(BaseModel):
 
         return v
 
+    def estimate_tokens(self, *args) -> int:
+        return sum([block.estimate_tokens(*args) for block in self.content])
 
-class CitationBlock(BaseModel):
+
+class CitationBlock(BaseContentBlock):
     """A representation of cited content from past messages."""
 
     block_type: Literal["citation"] = "citation"
@@ -487,8 +575,11 @@ class CitationBlock(BaseModel):
 
         return v
 
+    def estimate_tokens(self, *args) -> int:
+        return sum([block.estimate_tokens(*args) for block in self.cited_content])
 
-class ThinkingBlock(BaseModel):
+
+class ThinkingBlock(BaseContentBlock):
     """A representation of the content streamed from reasoning/thinking processes by LLMs"""
 
     block_type: Literal["thinking"] = "thinking"
@@ -505,8 +596,13 @@ class ThinkingBlock(BaseModel):
         default_factory=dict,
     )
 
+    def estimate_tokens(self, *args) -> int:
+        return self.num_tokens or sum(
+            [block.estimate_tokens(*args) for block in self.content]
+        )
 
-class ToolCallBlock(BaseModel):
+
+class ToolCallBlock(BaseContentBlock):
     block_type: Literal["tool_call"] = "tool_call"
     tool_call_id: Optional[str] = Field(
         default=None, description="ID of the tool call, if provided"
@@ -516,6 +612,10 @@ class ToolCallBlock(BaseModel):
         default_factory=dict,  # type: ignore
         description="Arguments provided to the tool, if available",
     )
+
+    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+        tknizer = tokenizer or get_tokenizer()
+        return len(tknizer._tokenize(self.model_dump_json()))
 
 
 ContentBlock = Annotated[
@@ -643,6 +743,10 @@ class ChatMessage(BaseModel):
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
+
+    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+        tknizer = tokenizer or get_tokenizer()
+        return sum([block.estimate_tokens(tknizer) for block in self.blocks])
 
 
 class LogProb(BaseModel):
