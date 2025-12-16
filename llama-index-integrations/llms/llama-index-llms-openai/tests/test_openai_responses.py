@@ -99,6 +99,19 @@ def test_get_model_kwargs(default_responses_llm):
     assert custom_kwargs["max_output_tokens"] == 100
 
 
+def test_get_model_kwargs_with_tools_none(default_responses_llm):
+    """Test model kwargs generation when tools is explicitly None.
+
+    This can happen when _prepare_chat_with_tools is called with an empty
+    tools list, which sets tools to None. The _get_model_kwargs method
+    should handle this gracefully.
+    """
+    llm = default_responses_llm
+    kwargs = llm._get_model_kwargs(tools=None)
+
+    assert kwargs["tools"] == []
+
+
 def test_parse_response_output():
     """Test parsing response output into ChatResponse."""
     # Create mock output items
