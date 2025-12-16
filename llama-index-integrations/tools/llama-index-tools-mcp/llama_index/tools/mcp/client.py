@@ -12,14 +12,16 @@ from typing import (
     Callable,
     AsyncIterator,
     Awaitable,
-    Dict,
     Any,
 )
 from urllib.parse import urlparse, parse_qs
-from mcp.client.session import ClientSession, ProgressFnT
+from httpx import AsyncClient, Timeout
+from mcp.client.session import ClientSession
+from mcp.shared._httpx_utils import create_mcp_http_client
+from mcp.shared.session import ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformationFull
 from mcp import types
@@ -104,11 +106,13 @@ class BasicMCPClient(ClientSession):
         command_or_url: The command to run or the URL to connect to.
         args: The arguments to pass to StdioServerParameters.
         env: The environment variables to set for StdioServerParameters.
-        timeout: The timeout for the command in seconds.
+        timeout: The timeout for HTTP operations in seconds. Default is 30.
+        sse_read_timeout: The timeout for SSE read operations in seconds. Default is 300 (5 minutes).
         auth: Optional OAuth client provider for authentication.
         sampling_callback: Optional callback for handling sampling messages.
         headers: Optional headers to pass by sse client or streamable http client
         tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
+        http_client: Optional httpx AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
 
     """
 
@@ -118,6 +122,7 @@ class BasicMCPClient(ClientSession):
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
+        sse_read_timeout: int = 300,
         auth: Optional[OAuthClientProvider] = None,
         sampling_callback: Optional[
             Callable[
@@ -126,15 +131,27 @@ class BasicMCPClient(ClientSession):
         ] = None,
         headers: Optional[Dict[str, Any]] = None,
         tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
+        http_client: Optional[AsyncClient] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
         self.env = env or {}
         self.timeout = timeout
+        self.sse_read_timeout = sse_read_timeout
         self.auth = auth
         self.sampling_callback = sampling_callback
         self.headers = headers
         self.tool_call_logs_callback = tool_call_logs_callback
+        self.client_provided = http_client is not None
+        self.http_client = (
+            http_client
+            if self.client_provided
+            else create_mcp_http_client(
+                timeout=Timeout(timeout, read=sse_read_timeout), headers=headers
+            )
+        )
+        if auth is not None:
+            self.http_client.auth = auth
 
     @classmethod
     def with_oauth(
@@ -147,8 +164,10 @@ class BasicMCPClient(ClientSession):
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
+        sse_read_timeout: int = 300,
         token_storage: Optional[TokenStorage] = None,
         tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
+        http_client: Optional[AsyncClient] = None,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
@@ -163,8 +182,10 @@ class BasicMCPClient(ClientSession):
                            a default in-memory storage is used (tokens will be lost on restart).
             args: The arguments to pass to StdioServerParameters.
             env: The environment variables to set for StdioServerParameters.
-            timeout: The timeout for the command in seconds.
+            timeout: The timeout for HTTP operations in seconds. Default is 30.
+            sse_read_timeout: The timeout for SSE read operations in seconds. Default is 300.
             tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
+            http_client: Optional httpx AsyncClient to use for Streamable transport. Will ignore timeout and headers parameters if provided.
 
         Returns:
             An authenticated MCP client
@@ -197,7 +218,9 @@ class BasicMCPClient(ClientSession):
             args=args,
             env=env,
             timeout=timeout,
+            sse_read_timeout=sse_read_timeout,
             tool_call_logs_callback=tool_call_logs_callback,
+            http_client=http_client,
         )
 
     @asynccontextmanager
@@ -211,7 +234,11 @@ class BasicMCPClient(ClientSession):
             if enable_sse(self.command_or_url):
                 # SSE transport
                 async with sse_client(
-                    self.command_or_url, auth=self.auth, headers=self.headers
+                    self.command_or_url,
+                    auth=self.auth,
+                    headers=self.headers,
+                    timeout=self.timeout,
+                    sse_read_timeout=self.sse_read_timeout,
                 ) as streams:
                     async with ClientSession(
                         *streams,
@@ -222,8 +249,9 @@ class BasicMCPClient(ClientSession):
                         yield session
             else:
                 # Streamable HTTP transport (recommended)
-                async with streamablehttp_client(
-                    self.command_or_url, auth=self.auth, headers=self.headers
+                async with streamable_http_client(
+                    url=self.command_or_url,
+                    http_client=self.http_client,
                 ) as (read, write, _):
                     async with ClientSession(
                         read,
