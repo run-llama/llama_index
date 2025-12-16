@@ -1,4 +1,5 @@
 import os
+from httpx import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
@@ -151,6 +152,39 @@ async def test_default_in_memory_storage():
 
     # Just verify initialization works
     assert client.auth is not None
+
+
+@pytest.mark.asyncio
+async def test_use_provided_http_client():
+    """Test the use of a provided HTTP client."""
+    # Create client
+    provided_http_client = AsyncClient()
+    client = BasicMCPClient(
+        "python", args=[SERVER_SCRIPT], timeout=5, http_client=provided_http_client
+    )
+    # Just verify initialization works
+    assert client.client_provided is True
+    assert client.http_client is provided_http_client
+
+
+@pytest.mark.asyncio
+async def test_use_provided_http_client_with_oauth():
+    """Test the use of a provided HTTP client."""
+    # Create client with OAuth
+    provided_http_client = AsyncClient()
+    client = BasicMCPClient.with_oauth(
+        "python",
+        args=[SERVER_SCRIPT],
+        client_name="Test Client",
+        redirect_uris=["http://localhost:3000/callback"],
+        redirect_handler=lambda url: None,  # Do nothing in test
+        callback_handler=lambda: ("fake_code", None),  # Return fake code
+        http_client=provided_http_client,
+    )
+    # Just verify initialization works
+    assert client.client_provided is True
+    assert client.http_client is provided_http_client
+    assert provided_http_client.auth is not None
 
 
 @pytest.mark.asyncio

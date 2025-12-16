@@ -505,10 +505,13 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
+                    thinking_delta_value = None
                     if "reasoningContent" in content_delta:
-                        thinking += content_delta.get("reasoningContent", {}).get(
+                        reasoning_text = content_delta.get("reasoningContent", {}).get(
                             "text", ""
                         )
+                        thinking += reasoning_text
+                        thinking_delta_value = reasoning_text
                         thinking_signature += content_delta.get(
                             "reasoningContent", {}
                         ).get("signature", "")
@@ -566,6 +569,14 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
                             )
 
+                    response_additional_kwargs = self._get_response_token_counts(
+                        dict(chunk)
+                    )
+                    if thinking_delta_value is not None:
+                        response_additional_kwargs["thinking_delta"] = (
+                            thinking_delta_value
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
@@ -579,7 +590,7 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=chunk,
-                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
+                        additional_kwargs=response_additional_kwargs,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
@@ -670,6 +681,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
+                            thinking_delta=None,
                             raw=chunk,
                             additional_kwargs=self._get_response_token_counts(metadata),
                         )
@@ -777,10 +789,13 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
+                    thinking_delta_value = None
                     if "reasoningContent" in content_delta:
-                        thinking += content_delta.get("reasoningContent", {}).get(
+                        reasoning_text = content_delta.get("reasoningContent", {}).get(
                             "text", ""
                         )
+                        thinking += reasoning_text
+                        thinking_delta_value = reasoning_text
                         thinking_signature += content_delta.get(
                             "reasoningContent", {}
                         ).get("signature", "")
@@ -838,6 +853,14 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
                             )
 
+                    response_additional_kwargs = self._get_response_token_counts(
+                        dict(chunk)
+                    )
+                    if thinking_delta_value is not None:
+                        response_additional_kwargs["thinking_delta"] = (
+                            thinking_delta_value
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
@@ -851,7 +874,7 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=chunk,
-                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
+                        additional_kwargs=response_additional_kwargs,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     # New tool call starting
@@ -943,6 +966,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
+                            thinking_delta=None,
                             raw=chunk,
                             additional_kwargs=self._get_response_token_counts(metadata),
                         )
