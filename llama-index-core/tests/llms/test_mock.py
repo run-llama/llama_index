@@ -103,8 +103,7 @@ def test_mock_llm_stream_complete_empty_prompt_no_max_tokens() -> None:
 
 
 def test_mock_function_calling_llm_init() -> None:
-    llm = MockFunctionCallingLLM(max_tokens=200)
-    assert llm.max_tokens == 200
+    llm = MockFunctionCallingLLM()
     assert llm.metadata.is_function_calling_model
 
 

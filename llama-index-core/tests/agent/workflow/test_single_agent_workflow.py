@@ -1,16 +1,12 @@
-from typing import List, Any
+from typing import List
 
 import pytest
 
 from llama_index.core.agent.workflow import FunctionAgent, ReActAgent, AgentInput
 from llama_index.core.base.llms.types import (
     ChatMessage,
-    LLMMetadata,
-    ChatResponseAsyncGen,
-    ChatResponse,
     MessageRole,
 )
-from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
@@ -18,56 +14,19 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 
-class MockLLM(MockLLM):
-    def __init__(self, responses: List[ChatMessage]):
-        super().__init__()
-        self._responses = responses
-        self._response_index = 0
+def _response_generator_from_list(responses: List[ChatMessage]):
+    """Helper to create a response generator from a list of responses."""
+    index = 0
 
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=True)
+    def generator(messages: List[ChatMessage]) -> ChatMessage:
+        nonlocal index
+        if not responses:
+            return ChatMessage(role=MessageRole.ASSISTANT, content=None)
+        msg = responses[index]
+        index = (index + 1) % len(responses)
+        return msg
 
-    async def astream_chat(
-        self, messages: List[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        response_msg = None
-        if self._responses:
-            response_msg = self._responses[self._response_index]
-            self._response_index = (self._response_index + 1) % len(self._responses)
-
-        async def _gen():
-            if response_msg:
-                yield ChatResponse(
-                    message=response_msg,
-                    delta=response_msg.content,
-                    raw={"content": response_msg.content},
-                )
-
-        return _gen()
-
-    async def astream_chat_with_tools(
-        self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        response_msg = None
-        if self._responses:
-            response_msg = self._responses[self._response_index]
-            self._response_index = (self._response_index + 1) % len(self._responses)
-
-        async def _gen():
-            if response_msg:
-                yield ChatResponse(
-                    message=response_msg,
-                    delta=response_msg.content,
-                    raw={"content": response_msg.content},
-                )
-
-        return _gen()
-
-    def get_tool_calls_from_response(
-        self, response: ChatResponse, **kwargs: Any
-    ) -> List[ToolSelection]:
-        return response.message.additional_kwargs.get("tool_calls", [])
+    return generator
 
 
 @pytest.fixture()
@@ -76,12 +35,15 @@ def function_agent():
         name="retriever",
         description="Manages data retrieval",
         system_prompt="You are a retrieval assistant.",
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT, content="Success with the FunctionAgent"
-                )
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="Success with the FunctionAgent",
+                    )
+                ]
+            )
         ),
     )
 
@@ -106,17 +68,19 @@ def calculator_agent():
             FunctionTool.from_defaults(fn=add),
             FunctionTool.from_defaults(fn=subtract),
         ],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content=r"Thought: The result is 8\Answer: The sum is 8",
-                ),
-            ]
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=r"Thought: The result is 8\Answer: The sum is 8",
+                    ),
+                ]
+            )
         ),
     )
 
@@ -131,21 +95,23 @@ def retry_calculator_agent():
             FunctionTool.from_defaults(fn=add),
             FunctionTool.from_defaults(fn=subtract),
         ],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\n{"a": 5 "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content=r"Thought: The result is 8\nAnswer: The sum is 8",
-                ),
-            ]
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\n{"a": 5 "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=r"Thought: The result is 8\nAnswer: The sum is 8",
+                    ),
+                ]
+            )
         ),
     )
 
@@ -208,23 +174,25 @@ async def test_max_iterations():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handing off",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="random_tool",
-                                tool_kwargs={},
-                            )
-                        ]
-                    },
-                ),
-            ]
-            * 100
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="random_tool",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                ]
+                * 100
+            )
         ),
     )
 
