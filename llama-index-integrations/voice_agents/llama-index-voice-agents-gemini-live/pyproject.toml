@@ -10,6 +10,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest",
+    "pytest-asyncio",
     "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -29,7 +30,7 @@ name = "llama-index-voice-agents-gemini-live"
 version = "0.2.1"
 description = "LlamaIndex x Gemini Live integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]

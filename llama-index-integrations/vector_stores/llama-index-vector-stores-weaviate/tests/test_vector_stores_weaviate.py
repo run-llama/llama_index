@@ -53,12 +53,15 @@ def test_no_weaviate_client_instance_provided():
 
 @pytest.mark.asyncio
 class TestWeaviateAsync:
-    @pytest_asyncio.fixture(scope="class")
+    @pytest_asyncio.fixture()
     async def async_client(self):
         client = weaviate.use_async_with_embedded()
         await client.connect()
         yield client
-        await client.close()
+        try:
+            await client.close()
+        except Exception:
+            pass
 
     # This replaces the event loop which is deprecated (discussion: https://github.com/pytest-dev/pytest-asyncio/discussions/587)
     # It was necessary to implement it this way due to pytest 7 currently always being used in the pants test performed during CI.
@@ -79,6 +82,7 @@ class TestWeaviateAsync:
         yield vector_store
         await vector_store.aclear()
 
+    @pytest.mark.asyncio
     async def test_async_basic_flow(self, async_vector_store):
         nodes = [
             TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
@@ -102,6 +106,7 @@ class TestWeaviateAsync:
 
         assert results.similarities[0] > results.similarities[1]
 
+    @pytest.mark.asyncio
     async def test_async_old_data_gone(self, async_vector_store):
         """Makes sure that no data stays in the database in between tests (otherwise more than one node would be found in the assertion)."""
         nodes = [
@@ -121,6 +126,7 @@ class TestWeaviateAsync:
 
         assert len(results.nodes) == 1
 
+    @pytest.mark.asyncio
     async def test_async_delete_nodes(self, async_vector_store):
         node_to_be_deleted = TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])
         node_to_keep = TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0])
@@ -138,6 +144,7 @@ class TestWeaviateAsync:
         assert len(results.nodes) == 1
         assert results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_delete(self, async_vector_store):
         node_to_be_deleted = TextNode(
             text="Hello world.",
@@ -391,6 +398,7 @@ class TestWeaviateSync:
         assert len(results.nodes) == 1
         results.nodes[0].node_id == node_to_keep.node_id
 
+    @pytest.mark.asyncio
     async def test_async_methods_called_without_async_client(self, vector_store):
         """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
         with pytest.raises(AsyncClientNotProvidedError):
