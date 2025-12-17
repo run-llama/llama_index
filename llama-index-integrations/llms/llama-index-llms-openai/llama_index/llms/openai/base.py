@@ -78,6 +78,7 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
     is_json_schema_supported,
+    is_chatcomp_api_supported,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -298,6 +299,11 @@ class OpenAI(FunctionCallingLLM):
         # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
             temperature = 1.0
+
+        if not is_chatcomp_api_supported(model):
+            raise ValueError(
+                f"Cannot use model {model} as it is only supported by the Responses API. Use the OpenAIResponses class for it."
+            )
 
         super().__init__(
             model=model,
