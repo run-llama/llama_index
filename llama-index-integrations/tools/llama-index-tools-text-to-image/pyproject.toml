@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ajhofmann"}]
 dependencies = [
-    "pillow>=10.2.0,<11",
+    "pillow>=10.2.0",
     "matplotlib>=3.8.2,<4",
     "openai>=1.1.0",
     "llama-index-core>=0.13.0,<0.15",
