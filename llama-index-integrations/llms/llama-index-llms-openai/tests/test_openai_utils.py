@@ -38,6 +38,7 @@ from llama_index.llms.openai.utils import (
     is_function_calling_model,
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
+    is_chatcomp_api_supported,
 )
 
 
@@ -446,3 +447,8 @@ def test_gpt_5_chat_latest_model_support() -> None:
 
     # Test that model is in CHAT_MODELS
     assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"
+
+
+def test_is_chatcomp_api_supported() -> None:
+    assert is_chatcomp_api_supported("gpt-5.2")
+    assert not is_chatcomp_api_supported("gpt-5.2-pro")
