@@ -103,7 +103,7 @@ response = query_engine.query("What is LlamaIndex?")
 
 ## Documentation
 
-- **v1.0 Usage**: See the [v1 example notebook](../../../docs/examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
-- **v2.0 Usage**: See the [v2 example notebook](../../../docs/examples/vector_stores/VertexAIVectorSearchV2Demo.ipynb)
-- **v2.0 Migration**: See [V2_MIGRATION.md](./V2_MIGRATION.md) for detailed migration guide
+- **v1.0 Usage**: See the [v1 example notebook](https://github.com/run-llama/llama_index/blob/main/docs/examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
+- **v2.0 Usage**: See the [v2 example notebook](https://github.com/run-llama/llama_index/blob/main/docs/examples/vector_stores/VertexAIVectorSearchV2Demo.ipynb)
+- **v2.0 Migration**: See [V2_MIGRATION.md](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/vector_stores/llama-index-vector-stores-vertexaivectorsearch/V2_MIGRATION.md) for detailed migration guide
 - **API Reference**: See the [Google Cloud Documentation](https://cloud.google.com/vertex-ai/docs/vector-search/overview)
