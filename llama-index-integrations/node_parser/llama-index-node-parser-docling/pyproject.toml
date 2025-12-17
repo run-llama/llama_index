@@ -16,6 +16,8 @@ dev = [
     "pytest-cov",
     "pytest-mock",
     "ruff==0.11.11",
+    "tree-sitter",
+    "tree-sitter-language-pack",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",

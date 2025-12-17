@@ -31,6 +31,7 @@ def mock_unknown_urls(httpx_mock: HTTPXMock, base_url: str) -> None:
         method="GET",
         json=mock_response,
         status_code=200,
+        is_reusable=True,
     )
 
 
