@@ -17,6 +17,11 @@ dev = [
     "pytest-mock",
     "ruff==0.11.11",
     "tree-sitter",
+    "tree-sitter-c",
+    "tree-sitter-java",
+    "tree-sitter-javascript",
+    "tree-sitter-python",
+    "tree-sitter-typescript",
     "tree-sitter-language-pack",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -34,7 +39,7 @@ authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.13.0,<0.15", "docling-core>=2.18.0,<3"]
+dependencies = ["llama-index-core>=0.13.0,<0.15", "docling-core[chunking]>=2.18.0,<3"]
 
 [tool.codespell]
 check-filenames = true
