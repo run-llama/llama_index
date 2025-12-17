@@ -33,7 +33,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pillow>=10.2.0,<11",
+    "pillow>=10.2.0",
     "google-generativeai>=0.5.2",
     "llama-index-core>=0.13.0,<0.15",
 ]

@@ -2463,7 +2463,7 @@ dev = [
 requires-dist = [
     { name = "google-generativeai", specifier = ">=0.5.2" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "pillow", specifier = ">=10.2.0,<11" },
+    { name = "pillow", specifier = ">=10.2.0" },
 ]
 
 [package.metadata.requires-dev]
