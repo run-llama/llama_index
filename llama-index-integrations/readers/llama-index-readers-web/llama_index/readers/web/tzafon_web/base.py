@@ -9,7 +9,19 @@ logger = logging.getLogger(__name__)
 API_BASE_URL = "https://api.tzafon.ai"
 
 class TzafonWebReader(BaseReader):
+    """Tzafon Web Reader.
+
+    This reader uses the Tzafon platform to load web pages with stealth capabilities.
+    It uses Playwright over a CDP connection to a remote browser provided by Tzafon.
+    """
+
     def __init__(self, api_key: Optional[str] = None) -> None:
+        """Initialize the Tzafon Web Reader.
+
+        Args:
+            api_key (Optional[str]): The Tzafon API key. If not provided,
+                it will be read from the TZAFON_API_KEY environment variable.
+        """
         try:
             from tzafon import Computer
         except ImportError:
@@ -26,11 +38,29 @@ class TzafonWebReader(BaseReader):
         logger.info("TzafonWebReader initialized")
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
+        """Load data from the provided URLs.
+
+        Args:
+            urls (Sequence[str]): List of URLs to load.
+            text_content (bool): Whether to return only text content (True)
+                or full HTML content (False). Defaults to True.
+
+        Returns:
+            List[Document]: List of loaded documents.
+        """
         return [doc for doc in self.lazy_load_data(*args, **load_kwargs)]
 
     async def aload_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory."""
+        """Async load data from the provided URLs.
+
+        Args:
+            urls (Sequence[str]): List of URLs to load.
+            text_content (bool): Whether to return only text content (True)
+                or full HTML content (False). Defaults to True.
+
+        Returns:
+            List[Document]: List of loaded documents.
+        """
         return [doc async for doc in self.alazy_load_data(*args, **load_kwargs)]
 
     def lazy_load_data(
@@ -38,6 +68,16 @@ class TzafonWebReader(BaseReader):
         urls: Sequence[str],
         text_content: bool = True,
     ) -> Iterable[Document]:
+        """Lazy load data from the provided URLs.
+
+        Args:
+            urls (Sequence[str]): List of URLs to load.
+            text_content (bool): Whether to return only text content (True)
+                or full HTML content (False). Defaults to True.
+
+        Yields:
+            Document: The loaded document.
+        """
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -85,6 +125,16 @@ class TzafonWebReader(BaseReader):
         urls: Sequence[str],
         text_content: bool = True,
     ) -> AsyncIterable[Document]:
+        """Async lazy load data from the provided URLs.
+
+        Args:
+            urls (Sequence[str]): List of URLs to load.
+            text_content (bool): Whether to return only text content (True)
+                or full HTML content (False). Defaults to True.
+
+        Yields:
+            Document: The loaded document.
+        """
         try:
             from playwright.async_api import async_playwright
         except ImportError:
