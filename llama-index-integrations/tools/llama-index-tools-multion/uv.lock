@@ -2309,7 +2309,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "multion", specifier = ">=0.3.11,<0.4" },
-    { name = "pillow", specifier = ">=10.2.0,<11" },
+    { name = "pillow", specifier = ">=10.2.0" },
     { name = "pytesseract", specifier = ">=0.3.10,<0.4" },
 ]
 
