@@ -40,7 +40,7 @@ dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "sentencepiece",
     "ms-swift",
-    "transformers[torch]>=4.37.0,<5",
+    "transformers[torch]>=4.37.0,<4.56",
 ]
 
 [tool.codespell]
