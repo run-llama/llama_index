@@ -1125,7 +1125,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.8"
+version = "0.14.10"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
