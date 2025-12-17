@@ -35,7 +35,7 @@ license = "MIT"
 dependencies = [
     "llama-index-embeddings-huggingface>=0.6.0,<0.7",
     "llama-index-core>=0.13.0,<0.15",
-    "optimum[exporters]",
+    "optimum[onnxruntime]",
 ]
 
 [tool.codespell]
