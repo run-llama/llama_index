@@ -771,7 +771,7 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
         ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
     ]
 
-    next_msg, chat_kwargs = await prepare_chat_params(
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
         expected_model_name, test_messages
     )
 
@@ -831,7 +831,9 @@ async def test_prepare_chat_params_with_system_message():
     ]
 
     # Execute prepare_chat_params
-    next_msg, chat_kwargs = await prepare_chat_params(model_name, messages)
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
+        model_name, messages
+    )
 
     # Verify system_prompt is forwarded to system_instruction
     cfg = chat_kwargs["config"]
@@ -896,7 +898,7 @@ def test_cached_content_in_response() -> None:
     mock_response.cached_content = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify cached_content is in raw response
     assert "cached_content" in chat_response.raw
@@ -928,7 +930,7 @@ def test_cached_content_without_cached_content() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
     assert "cached_content" not in chat_response.raw
@@ -963,7 +965,7 @@ def test_thoughts_in_response() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify thoughts in raw response
     assert (
@@ -1005,7 +1007,7 @@ def test_thoughts_without_thought_response() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
     assert (
@@ -1061,7 +1063,7 @@ async def test_cached_content_in_chat_params() -> None:
     messages = [ChatMessage(content="Test message", role=MessageRole.USER)]
 
     # Prepare chat params with the LLM's generation config
-    next_msg, chat_kwargs = await prepare_chat_params(
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
         llm.model, messages, generation_config=llm._generation_config
     )
 
@@ -1152,7 +1154,7 @@ def test_built_in_tool_in_response() -> None:
     }
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify response is processed correctly
     assert chat_response.message.role == MessageRole.ASSISTANT
@@ -1231,7 +1233,7 @@ async def test_built_in_tool_in_chat_params() -> None:
         )
 
         # Prepare chat params
-        next_msg, chat_kwargs = await prepare_chat_params(
+        next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
             llm.model, messages, generation_config=llm._generation_config
         )
 

@@ -67,6 +67,14 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5-pro-2025-10-06": 400000,
     "gpt-5.1": 400000,
     "gpt-5.1-2025-11-13": 400000,
+    "gpt-5.1-chat-latest": 128000,
+    "gpt-5.2": 400000,
+    "gpt-5.2-2025-12-11": 400000,
+}
+
+RESPONSES_API_ONLY_MODELS = {
+    "gpt-5.2-pro": 400000,
+    "gpt-5.2-pro-2025-12-11": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -207,7 +215,12 @@ JSON_SCHEMA_MODELS = [
     "gpt-4o",
     "gpt-4.1",
     "gpt-5",
+    "gpt-5.2",
 ]
+
+
+def is_chatcomp_api_supported(model: str) -> bool:
+    return model not in RESPONSES_API_ONLY_MODELS
 
 
 def is_json_schema_supported(model: str) -> bool:
