@@ -30,7 +30,7 @@ name = "llama-index-readers-service-now"
 version = "0.2.2"
 description = "llama-index readers service-now integration"
 authors = [{name = "Ameetpal Singh", email = "ameetpal.singh@maersk.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 maintainers = [{name = "ameetpal.singh"}]
