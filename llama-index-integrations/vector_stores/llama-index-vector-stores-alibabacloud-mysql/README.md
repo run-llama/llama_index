@@ -14,7 +14,7 @@ pip install llama-index-vector-stores-alibabacloud-mysql
 from llama_index.vector_stores.alibabacloud_mysql import AlibabaCloudMySQLVectorStore
 
 vector_store = AlibabaCloudMySQLVectorStore(
-    collection_name="llama_index_vectorstore",
+    table_name="llama_index_vectorstore",
     host="your-instance-endpoint.mysql.rds.aliyuncs.com",
     port=3306,
     user="llamaindex",
@@ -30,7 +30,7 @@ Or using the from_params class method:
 from llama_index.vector_stores.alibabacloud_mysql import AlibabaCloudMySQLVectorStore
 
 vector_store = AlibabaCloudMySQLVectorStore.from_params(
-    collection_name="llama_index_vectorstore",
+    table_name="llama_index_vectorstore",
     host="your-instance-endpoint.mysql.rds.aliyuncs.com",
     port=3306,
     user="llamaindex",

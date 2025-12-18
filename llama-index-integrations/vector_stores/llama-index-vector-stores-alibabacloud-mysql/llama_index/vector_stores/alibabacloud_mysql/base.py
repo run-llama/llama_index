@@ -49,7 +49,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         # Create AlibabaCloudMySQLVectorStore instance
         vector_store = AlibabaCloudMySQLVectorStore(
-            collection_name="llama_index_vectorstore",
+            table_name="llama_index_vectorstore",
             host="localhost",
             port=3306,
             user="llamaindex",
@@ -66,7 +66,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    collection_name: str
+    table_name: str
     host: str
     port: int
     user: str
@@ -85,12 +85,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        collection_name: str,
         host: str,
         port: int,
         user: str,
         password: str,
         database: str,
+        table_name: str = "llama_index_table",
         embed_dim: int = 1536,
         default_m: int = 6,
         distance_method: str = "COSINE",
@@ -102,12 +102,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         Constructor.
 
         Args:
-            collection_name (str): Collection name for the vector store.
             host (str): Host of Alibaba Cloud MySQL connection.
             port (int): Port of Alibaba Cloud MySQL connection.
             user (str): Alibaba Cloud MySQL username.
             password (str): Alibaba Cloud MySQL password.
             database (str): Alibaba Cloud MySQL DB name.
+            table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
@@ -116,7 +116,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
         """
         super().__init__(
-            collection_name=collection_name,
+            table_name=table_name,
             host=host,
             port=port,
             user=user,
@@ -131,7 +131,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         )
 
         self._pool = self._create_connection_pool()
-        self._table_name = collection_name.lower()
         self._initialize()
 
     def close(self) -> None:
@@ -147,12 +146,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_params(
         cls,
-        collection_name: str,
         host: str,
         port: int,
         user: str,
         password: str,
         database: str,
+        table_name: str = "llama_index_table",
         embed_dim: int = 1536,
         default_m: int = 6,
         distance_method: str = "COSINE",
@@ -164,12 +163,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         Construct from params.
 
         Args:
-            collection_name (str): Collection name for the vector store.
             host (str): Host of Alibaba Cloud MySQL connection.
             port (int): Port of Alibaba Cloud MySQL connection.
             user (str): Alibaba Cloud MySQL username.
             password (str): Alibaba Cloud MySQL password.
             database (str): Alibaba Cloud MySQL DB name.
+            table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
@@ -181,12 +180,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             AlibabaCloudMySQLVectorStore: Instance of AlibabaCloudMySQLVectorStore constructed from params.
         """
         return cls(
-            collection_name=collection_name,
             host=host,
             port=port,
             user=user,
             password=password,
             database=database,
+            table_name=table_name,
             embed_dim=embed_dim,
             default_m=default_m,
             distance_method=distance_method,
@@ -205,7 +204,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             "database": self.database,
             "charset": self.charset,
             "autocommit": True,
-            "pool_name": f"pool_{self._table_name}",
+            "pool_name": f"pool_{self.table_name}",
             "pool_size": self.max_connection,
             "pool_reset_session": True,
         }
@@ -268,7 +267,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         with self._get_cursor() as cur:
             # Create table with VECTOR data type for Alibaba Cloud MySQL
             stmt = f"""
-            CREATE TABLE IF NOT EXISTS `{self._table_name}` (
+            CREATE TABLE IF NOT EXISTS `{self.table_name}` (
                 id VARCHAR(36) PRIMARY KEY,
                 node_id VARCHAR(255) NOT NULL,
                 text LONGTEXT,
@@ -303,7 +302,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
-        stmt = f"""SELECT text, metadata FROM `{self._table_name}` WHERE node_id IN ({placeholders})"""
+        stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
 
         nodes: List[BaseNode] = []
         with self._get_cursor() as cur:
@@ -343,7 +342,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                 item = self._node_to_table_row(node)
                 
                 stmt = f"""
-                INSERT INTO `{self._table_name}` (id, node_id, text, embedding, metadata)
+                INSERT INTO `{self.table_name}` (id, node_id, text, embedding, metadata)
                 VALUES (
                     UUID(),
                     %(node_id)s,
@@ -484,7 +483,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             embedding,
             metadata,
             {distance_func}(embedding, VEC_FromText(%s)) AS distance
-        FROM `{self._table_name}`
+        FROM `{self.table_name}`
         {where_clause}
         ORDER BY distance
         LIMIT %s
@@ -515,7 +514,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         with self._get_cursor() as cur:
             # Delete based on ref_doc_id in metadata
-            stmt = f"""DELETE FROM `{self._table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = %s"""
+            stmt = f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = %s"""
             cur.execute(stmt, (ref_doc_id,))
 
     def delete_nodes(
@@ -529,14 +528,14 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         with self._get_cursor() as cur:
             if node_ids:
                 placeholders = ",".join(["%s"] * len(node_ids))
-                stmt = f"""DELETE FROM `{self._table_name}` WHERE node_id IN ({placeholders})"""
+                stmt = f"""DELETE FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
                 cur.execute(stmt, node_ids)
 
     def count(self) -> int:
         self._initialize()
 
         with self._get_cursor() as cur:
-            stmt = f"""SELECT COUNT(*) as count FROM `{self._table_name}`"""
+            stmt = f"""SELECT COUNT(*) as count FROM `{self.table_name}`"""
             cur.execute(stmt)
             result = cur.fetchone()
             
@@ -546,7 +545,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._get_cursor() as cur:
-            stmt = f"""DROP TABLE IF EXISTS `{self._table_name}`"""
+            stmt = f"""DROP TABLE IF EXISTS `{self.table_name}`"""
             cur.execute(stmt)
 
         self.close()
@@ -555,5 +554,5 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._get_cursor() as cur:
-            stmt = f"""DELETE FROM `{self._table_name}`"""
+            stmt = f"""DELETE FROM `{self.table_name}`"""
             cur.execute(stmt)

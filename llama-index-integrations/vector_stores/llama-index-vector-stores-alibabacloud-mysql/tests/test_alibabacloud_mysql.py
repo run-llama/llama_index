@@ -51,7 +51,7 @@ TEST_NODES: List[TextNode] = [
 vector_store = None
 try:
     vector_store = AlibabaCloudMySQLVectorStore(
-        collection_name="vector_store_test",
+        table_name="vector_store_test",
         host="127.0.0.1",
         port=3306,
         user="root",
