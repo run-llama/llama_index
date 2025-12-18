@@ -13,13 +13,29 @@ pip install llama-index-vector-stores-alibabacloud-mysql
 ```python
 from llama_index.vector_stores.alibabacloud_mysql import AlibabaCloudMySQLVectorStore
 
-vector_store = AlibabaCloudMySQLVectorStore.from_params(
+vector_store = AlibabaCloudMySQLVectorStore(
+    collection_name="llama_index_vectorstore",
     host="your-instance-endpoint.mysql.rds.aliyuncs.com",
     port=3306,
     user="llamaindex",
     password="password",
     database="vectordb",
-    table_name="llama_index_vectorstore",
+    embed_dim=1536,  # OpenAI embedding dimension
+)
+```
+
+Or using the from_params class method:
+
+```python
+from llama_index.vector_stores.alibabacloud_mysql import AlibabaCloudMySQLVectorStore
+
+vector_store = AlibabaCloudMySQLVectorStore.from_params(
+    collection_name="llama_index_vectorstore",
+    host="your-instance-endpoint.mysql.rds.aliyuncs.com",
+    port=3306,
+    user="llamaindex",
+    password="password",
+    database="vectordb",
     embed_dim=1536,  # OpenAI embedding dimension
 )
 ```
@@ -30,6 +46,8 @@ vector_store = AlibabaCloudMySQLVectorStore.from_params(
 - Support for vector indexing and fast similarity search
 - Filtering support with metadata queries
 - Easy integration with LlamaIndex
+- Uses mysql.connector for direct database connections
+- Enhanced validation for vector function support
 
 ## Development
 

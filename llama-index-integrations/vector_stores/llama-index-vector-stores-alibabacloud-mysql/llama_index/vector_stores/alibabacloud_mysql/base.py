@@ -2,10 +2,15 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union
-from urllib.parse import quote_plus
+from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
+from contextlib import contextmanager
 
-import sqlalchemy
+import mysql.connector
+import mysql.connector.pooling
+from mysql.connector.connection import MySQLConnection
+from mysql.connector.cursor import MySQLCursor
+from mysql.connector.errors import Error as MySQLError
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -39,19 +44,17 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     Alibaba Cloud MySQL Vector Store.
 
     Examples:
-        `pip install llama-index-vector-stores-alibabacloud-mysql`
-
         ```python
         from llama_index.vector_stores.alibabacloud_mysql import AlibabaCloudMySQLVectorStore
 
         # Create AlibabaCloudMySQLVectorStore instance
-        vector_store = AlibabaCloudMySQLVectorStore.from_params(
+        vector_store = AlibabaCloudMySQLVectorStore(
+            collection_name="llama_index_vectorstore",
             host="localhost",
             port=3306,
             user="llamaindex",
             password="password",
             database="vectordb",
-            table_name="llama_index_vectorstore",
             embed_dim=1536,  # OpenAI embedding dimension
             default_m=6,
             distance_method="COSINE"
@@ -63,63 +66,78 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    connection_string: str
-    connection_args: Dict[str, Any]
-    table_name: str
-    schema_name: str
+    collection_name: str
+    host: str
+    port: int
+    user: str
+    password: str
+    database: str
+    charset: str
+    max_connection: int
     embed_dim: int
     default_m: int
     distance_method: str
     perform_setup: bool
-    debug: bool
 
-    _engine: Any = PrivateAttr()
+    _pool: mysql.connector.pooling.MySQLConnectionPool = PrivateAttr()
+    _table_name: str = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
-        connection_string: Union[str, sqlalchemy.engine.URL],
-        connection_args: Dict[str, Any],
-        table_name: str,
-        schema_name: str,
+        collection_name: str,
+        host: str,
+        port: int,
+        user: str,
+        password: str,
+        database: str,
         embed_dim: int = 1536,
         default_m: int = 6,
         distance_method: str = "COSINE",
         perform_setup: bool = True,
-        debug: bool = False,
+        charset: str = "utf8mb4",
+        max_connection: int = 10,
     ) -> None:
         """
         Constructor.
 
         Args:
-            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string for the Alibaba Cloud MySQL server.
-            connection_args (Dict[str, Any]): A dictionary of connection options.
-            table_name (str): Table name.
-            schema_name (str): Schema name.
+            collection_name (str): Collection name for the vector store.
+            host (str): Host of Alibaba Cloud MySQL connection.
+            port (int): Port of Alibaba Cloud MySQL connection.
+            user (str): Alibaba Cloud MySQL username.
+            password (str): Alibaba Cloud MySQL password.
+            database (str): Alibaba Cloud MySQL DB name.
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
-            debug (bool, optional): Debug mode. Defaults to False.
+            charset (str, optional): Character set for the connection. Defaults to utf8mb4.
+            max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
         """
         super().__init__(
-            connection_string=connection_string,
-            connection_args=connection_args,
-            table_name=table_name,
-            schema_name=schema_name,
+            collection_name=collection_name,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            charset=charset,
+            max_connection=max_connection,
             embed_dim=embed_dim,
             default_m=default_m,
             distance_method=distance_method,
             perform_setup=perform_setup,
-            debug=debug,
         )
+
+        self._pool = self._create_connection_pool()
+        self._table_name = collection_name.lower()
         self._initialize()
 
     def close(self) -> None:
         if not self._is_initialized:
             return
-
-        self._engine.dispose()
+        # Note: MySQLConnectionPool doesn't have explicit dispose/close method
         self._is_initialized = False
 
     @classmethod
@@ -129,110 +147,128 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_params(
         cls,
-        host: Optional[str] = None,
-        port: Optional[str] = None,
-        database: Optional[str] = None,
-        user: Optional[str] = None,
-        password: Optional[str] = None,
-        table_name: str = "llamaindex",
-        schema_name: str = "public",
-        connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
-        connection_args: Optional[Dict[str, Any]] = None,
+        collection_name: str,
+        host: str,
+        port: int,
+        user: str,
+        password: str,
+        database: str,
         embed_dim: int = 1536,
         default_m: int = 6,
         distance_method: str = "COSINE",
         perform_setup: bool = True,
-        debug: bool = False,
+        charset: str = "utf8mb4",
+        max_connection: int = 10,
     ) -> "AlibabaCloudMySQLVectorStore":
         """
         Construct from params.
 
         Args:
-            host (Optional[str], optional): Host of Alibaba Cloud MySQL connection. Defaults to None.
-            port (Optional[str], optional): Port of Alibaba Cloud MySQL connection. Defaults to None.
-            database (Optional[str], optional): Alibaba Cloud MySQL DB name. Defaults to None.
-            user (Optional[str], optional): Alibaba Cloud MySQL username. Defaults to None.
-            password (Optional[str], optional): Alibaba Cloud MySQL password. Defaults to None.
-            table_name (str): Table name. Defaults to "llamaindex".
-            schema_name (str): Schema name. Defaults to "public".
-            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to Alibaba Cloud MySQL DB.
-            connection_args (Dict[str, Any], optional): A dictionary of connection options.
+            collection_name (str): Collection name for the vector store.
+            host (str): Host of Alibaba Cloud MySQL connection.
+            port (int): Port of Alibaba Cloud MySQL connection.
+            user (str): Alibaba Cloud MySQL username.
+            password (str): Alibaba Cloud MySQL password.
+            database (str): Alibaba Cloud MySQL DB name.
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
-            debug (bool, optional): Debug mode. Defaults to False.
+            charset (str, optional): Character set for the connection. Defaults to utf8mb4.
+            max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
 
         Returns:
             AlibabaCloudMySQLVectorStore: Instance of AlibabaCloudMySQLVectorStore constructed from params.
-
         """
-        conn_str = (
-            connection_string
-            or f"mysql+pymysql://{user}:{quote_plus(password)}@{host}:{port}/{database}"
-        )
-        conn_args = connection_args or {
-            "ssl": {"ssl_mode": "PREFERRED"},
-            "read_timeout": 30,
-        }
-
         return cls(
-            connection_string=conn_str,
-            connection_args=conn_args,
-            table_name=table_name,
-            schema_name=schema_name,
+            collection_name=collection_name,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
             embed_dim=embed_dim,
             default_m=default_m,
             distance_method=distance_method,
             perform_setup=perform_setup,
-            debug=debug,
+            charset=charset,
+            max_connection=max_connection,
         )
 
-    @property
-    def client(self) -> Any:
-        if not self._is_initialized:
-            return None
-        return self._engine
+    def _create_connection_pool(self) -> mysql.connector.pooling.MySQLConnectionPool:
+        """Create connection pool using mysql-connector-python pooling."""
+        pool_config: dict[str, Any] = {
+            "host": self.host,
+            "port": self.port,
+            "user": self.user,
+            "password": self.password,
+            "database": self.database,
+            "charset": self.charset,
+            "autocommit": True,
+            "pool_name": f"pool_{self._table_name}",
+            "pool_size": self.max_connection,
+            "pool_reset_session": True,
+        }
+        return mysql.connector.pooling.MySQLConnectionPool(**pool_config)
 
-    def _connect(self) -> Any:
-        self._engine = sqlalchemy.create_engine(
-            self.connection_string, connect_args=self.connection_args, echo=self.debug
-        )
+    @contextmanager
+    def _get_cursor(self):
+        """Context manager to get a cursor from the connection pool."""
+        conn: Optional[MySQLConnection] = None
+        cursor: Optional[MySQLCursor] = None
+        try:
+            conn = self._pool.get_connection()
+            cursor = conn.cursor(dictionary=True)
+            yield cursor
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
-    def _validate_server_version(self) -> None:
-        """Validate that the Alibaba Cloud MySQL server version is supported."""
-        with self._engine.connect() as connection:
-            # Check MySQL version starts with 8.0
-            result = connection.execute(sqlalchemy.text("SELECT VERSION()"))
-            version = result.fetchone()[0]
-            
-            # Check if version starts with 8.0
-            if not version.startswith("8.0"):
+    def _check_vector_support(self) -> None:
+        """Check if the MySQL server supports vector operations."""
+        try:
+            with self._get_cursor() as cur:
+                # Check MySQL version
+                # Try to execute a simple vector function to verify support
+                cur.execute("SELECT VEC_FromText('[1,2,3]') IS NOT NULL as vector_support")
+                vector_result = cur.fetchone()
+                if not vector_result or not vector_result.get("vector_support"):
+                    raise ValueError(
+                        "RDS MySQL Vector functions are not available."
+                        " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
+                    )
+                
+                # Check rds_release_date >= 20251031
+                cur.execute("SHOW VARIABLES LIKE 'rds_release_date'")
+                rds_release_result = cur.fetchone()
+                
+                if not rds_release_result:
+                    raise ValueError(
+                        "Unable to retrieve rds_release_date variable. "
+                        "Your MySQL instance may not Alibaba Cloud RDS MySQL instance."
+                    )
+                
+                rds_release_date = rds_release_result["Value"]
+                if int(rds_release_date) < 20251031:
+                    raise ValueError(
+                        f"Alibaba Cloud MySQL rds_release_date must be 20251031 or later, found: {rds_release_date}."
+                    )
+
+        except MySQLError as e:
+            if "FUNCTION" in str(e) and "VEC_FromText" in str(e):
                 raise ValueError(
-                    f"Alibaba Cloud MySQL version must start with 8.0, found version: {version}."
-                )
-            
-            # Check rds_release_date >= 20251031
-            result = connection.execute(sqlalchemy.text("SHOW VARIABLES LIKE 'rds_release_date'"))
-            rds_release_date_row = result.fetchone()
-            
-            if not rds_release_date_row:
-                raise ValueError(
-                    "Unable to retrieve rds_release_date variable. "
-                    "Your Alibaba Cloud MySQL instance may not support vector operations."
-                )
-            
-            rds_release_date = rds_release_date_row[1]
-            if int(rds_release_date) < 20251031:
-                raise ValueError(
-                    f"Alibaba Cloud MySQL rds_release_date must be 20251031 or later, found: {rds_release_date}."
-                )
+                    "RDS MySQL Vector functions are not available."
+                    " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
+                ) from e
+            raise e
 
     def _create_table_if_not_exists(self) -> None:
-        with self._engine.connect() as connection:
+        with self._get_cursor() as cur:
             # Create table with VECTOR data type for Alibaba Cloud MySQL
             stmt = f"""
-            CREATE TABLE IF NOT EXISTS `{self.table_name}` (
+            CREATE TABLE IF NOT EXISTS `{self._table_name}` (
                 id VARCHAR(36) PRIMARY KEY,
                 node_id VARCHAR(255) NOT NULL,
                 text LONGTEXT,
@@ -242,8 +278,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                 VECTOR INDEX (embedding) M={self.default_m} DISTANCE={self.distance_method}
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             """
-            connection.execute(sqlalchemy.text(stmt))
-            connection.commit()
+            cur.execute(stmt)
 
     def _initialize(self) -> None:
         if not self._is_initialized:
@@ -253,8 +288,8 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                     f"Distance method '{self.distance_method}' is not supported. "
                     "Supported methods are: 'EUCLIDEAN', 'COSINE'."
                 )
-            self._connect()
-            self._validate_server_version()
+            
+            self._check_vector_support()
             if self.perform_setup:
                 self._create_table_if_not_exists()
             self._is_initialized = True
@@ -267,16 +302,18 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         """Get nodes from vector store."""
         self._initialize()
 
-        stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN :node_ids"""
-
-        with self._engine.connect() as connection:
-            result = connection.execute(sqlalchemy.text(stmt), {"node_ids": node_ids})
+        placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
+        stmt = f"""SELECT text, metadata FROM `{self._table_name}` WHERE node_id IN ({placeholders})"""
 
         nodes: List[BaseNode] = []
-        for item in result:
-            node = metadata_dict_to_node(json.loads(item.metadata))
-            node.set_content(str(item.text))
-            nodes.append(node)
+        with self._get_cursor() as cur:
+            cur.execute(stmt, node_ids)
+            results = cur.fetchall()
+            
+            for item in results:
+                node = metadata_dict_to_node(json.loads(item["metadata"]))
+                node.set_content(str(item["text"]))
+                nodes.append(node)
 
         return nodes
 
@@ -300,26 +337,27 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         ids = []
-        with self._engine.connect() as connection:
+        with self._get_cursor() as cur:
             for node in nodes:
                 ids.append(node.node_id)
                 item = self._node_to_table_row(node)
-                stmt = sqlalchemy.text(
-                    f"""
-                INSERT INTO `{self.table_name}` (node_id, text, embedding, metadata)
+                
+                stmt = f"""
+                INSERT INTO `{self._table_name}` (id, node_id, text, embedding, metadata)
                 VALUES (
-                    :node_id,
-                    :text,
-                    VEC_FromText(:embedding),
-                    :metadata
+                    UUID(),
+                    %(node_id)s,
+                    %(text)s,
+                    VEC_FromText(%(embedding)s),
+                    %(metadata)s
                 )
                 ON DUPLICATE KEY UPDATE
                     text = VALUES(text),
                     embedding = VALUES(embedding),
                     metadata = VALUES(metadata)
                 """
-                )
-                connection.execute(
+                
+                cur.execute(
                     stmt,
                     {
                         "node_id": item["node_id"],
@@ -328,8 +366,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                         "metadata": json.dumps(item["metadata"]),
                     },
                 )
-
-            connection.commit()
 
         return ids
 
@@ -354,23 +390,25 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             _logger.warning("Unsupported operator: %s, fallback to '='", operator)
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> str:
-        filter_value = filter_.value
+    def _build_filter_clause(self, filter_: MetadataFilter) -> tuple[str, list]:
+        values = []
+        
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            values = []
-            for v in filter_.value:
-                if isinstance(v, str):
-                    value = f"'{v}'"
+            placeholders = ",".join(["%s"] * len(filter_.value))
+            filter_value = f"({placeholders})"
+            values.extend(filter_.value)
+        elif isinstance(filter_.value, (list, tuple)):
+            placeholders = ",".join(["%s"] * len(filter_.value))
+            filter_value = f"({placeholders})"
+            values.extend(filter_.value)
+        else:
+            filter_value = "%s"
+            values.append(filter_.value)
 
-                values.append(value)
-            filter_value = ", ".join(values)
-            filter_value = f"({filter_value})"
-        elif isinstance(filter_.value, str):
-            filter_value = f"'{filter_.value}'"
+        clause = f"JSON_VALUE(metadata, '$.{filter_.key}') {self._to_mysql_operator(filter_.operator)} {filter_value}"
+        return clause, values
 
-        return f"JSON_VALUE(metadata, '$.{filter_.key}') {self._to_mysql_operator(filter_.operator)} {filter_value}"
-
-    def _filters_to_where_clause(self, filters: MetadataFilters) -> str:
+    def _filters_to_where_clause(self, filters: MetadataFilters) -> tuple[str, list]:
         conditions = {
             FilterCondition.OR: "OR",
             FilterCondition.AND: "AND",
@@ -382,21 +420,27 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             )
 
         clauses: List[str] = []
+        values: List[Any] = []
+        
         for filter_ in filters.filters:
             if isinstance(filter_, MetadataFilter):
-                clauses.append(self._build_filter_clause(filter_))
+                clause, filter_values = self._build_filter_clause(filter_)
+                clauses.append(clause)
+                values.extend(filter_values)
                 continue
 
             if isinstance(filter_, MetadataFilters):
-                subfilters = self._filters_to_where_clause(filter_)
-                if subfilters:
-                    clauses.append(f"({subfilters})")
+                subclause, subvalues = self._filters_to_where_clause(filter_)
+                if subclause:
+                    clauses.append(f"({subclause})")
+                    values.extend(subvalues)
                 continue
 
             raise ValueError(
                 f"Unsupported filter type: {type(filter_)}. Must be one of {MetadataFilter}, {MetadataFilters}"
             )
-        return f" {conditions[filters.condition]} ".join(clauses)
+            
+        return f" {conditions[filters.condition]} ".join(clauses), values
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -426,49 +470,53 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         # Using specified distance function for vector similarity search
         distance_func = "VEC_DISTANCE_COSINE" if self.distance_method == "COSINE" else "VEC_DISTANCE_EUCLIDEAN"
+        
+        where_clause = ""
+        values = []
+        if query.filters:
+            where_clause, values = self._filters_to_where_clause(query.filters)
+            where_clause = f"WHERE {where_clause}"
+
         stmt = f"""
         SELECT
             node_id,
             text,
             embedding,
             metadata,
-            {distance_func}(embedding, VEC_FromText('{json.dumps(query.query_embedding)}')) AS distance
-        FROM `{self.table_name}`"""
-
-        if query.filters:
-            stmt += f"""
-        WHERE {self._filters_to_where_clause(query.filters)}"""
-
-        stmt += f"""
+            {distance_func}(embedding, VEC_FromText(%s)) AS distance
+        FROM `{self._table_name}`
+        {where_clause}
         ORDER BY distance
-        LIMIT {query.similarity_top_k}
+        LIMIT %s
         """
 
-        with self._engine.connect() as connection:
-            result = connection.execute(sqlalchemy.text(stmt))
+        # Add query embedding and limit to values
+        values = [json.dumps(query.query_embedding)] + values + [query.similarity_top_k]
 
-        results = []
-        for item in result:
-            results.append(
+        with self._get_cursor() as cur:
+            cur.execute(stmt, values)
+            results = cur.fetchall()
+
+        rows = []
+        for item in results:
+            rows.append(
                 DBEmbeddingRow(
-                    node_id=item.node_id,
-                    text=item.text,
-                    metadata=json.loads(item.metadata),
-                    similarity=(1 - item.distance) if item.distance is not None else 0,
+                    node_id=item["node_id"],
+                    text=item["text"],
+                    metadata=json.loads(item["metadata"]),
+                    similarity=(1 - item["distance"]) if item["distance"] is not None else 0,
                 )
             )
 
-        return self._db_rows_to_query_result(results)
+        return self._db_rows_to_query_result(rows)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._initialize()
 
-        with self._engine.connect() as connection:
+        with self._get_cursor() as cur:
             # Delete based on ref_doc_id in metadata
-            stmt = f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id"""
-            connection.execute(sqlalchemy.text(stmt), {"doc_id": ref_doc_id})
-
-            connection.commit()
+            stmt = f"""DELETE FROM `{self._table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = %s"""
+            cur.execute(stmt, (ref_doc_id,))
 
     def delete_nodes(
         self,
@@ -478,37 +526,34 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     ) -> None:
         self._initialize()
 
-        with self._engine.connect() as connection:
-            stmt = f"""DELETE FROM `{self.table_name}` WHERE node_id IN :node_ids"""
-            connection.execute(sqlalchemy.text(stmt), {"node_ids": node_ids})
-
-            connection.commit()
+        with self._get_cursor() as cur:
+            if node_ids:
+                placeholders = ",".join(["%s"] * len(node_ids))
+                stmt = f"""DELETE FROM `{self._table_name}` WHERE node_id IN ({placeholders})"""
+                cur.execute(stmt, node_ids)
 
     def count(self) -> int:
         self._initialize()
 
-        with self._engine.connect() as connection:
-            stmt = f"""SELECT COUNT(*) FROM `{self.table_name}`"""
-            result = connection.execute(sqlalchemy.text(stmt))
-
-        return result.scalar() or 0
+        with self._get_cursor() as cur:
+            stmt = f"""SELECT COUNT(*) as count FROM `{self._table_name}`"""
+            cur.execute(stmt)
+            result = cur.fetchone()
+            
+        return result["count"] if result else 0
 
     def drop(self) -> None:
         self._initialize()
 
-        with self._engine.connect() as connection:
-            stmt = f"""DROP TABLE IF EXISTS `{self.table_name}`"""
-            connection.execute(sqlalchemy.text(stmt))
-
-            connection.commit()
+        with self._get_cursor() as cur:
+            stmt = f"""DROP TABLE IF EXISTS `{self._table_name}`"""
+            cur.execute(stmt)
 
         self.close()
 
     def clear(self) -> None:
         self._initialize()
 
-        with self._engine.connect() as connection:
-            stmt = f"""DELETE FROM `{self.table_name}`"""
-            connection.execute(sqlalchemy.text(stmt))
-
-            connection.commit()
+        with self._get_cursor() as cur:
+            stmt = f"""DELETE FROM `{self._table_name}`"""
+            cur.execute(stmt)

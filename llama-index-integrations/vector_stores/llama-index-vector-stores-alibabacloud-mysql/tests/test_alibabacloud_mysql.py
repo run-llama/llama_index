@@ -3,7 +3,6 @@
 from typing import Generator, List
 
 import pytest
-import sqlalchemy
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -51,28 +50,23 @@ TEST_NODES: List[TextNode] = [
 
 vector_store = None
 try:
-    vector_store = AlibabaCloudMySQLVectorStore.from_params(
-        database="test",
-        table_name="vector_store_test",
-        embed_dim=3,
-        default_m=16,
-        distance_method="COSINE",
+    vector_store = AlibabaCloudMySQLVectorStore(
+        collection_name="vector_store_test",
         host="127.0.0.1",
+        port=3306,
         user="root",
         password="test",
-        port="3306",
+        database="test",
+        embed_dim=3,
+        default_m=16,
+        distance_method="COSINE"
     )
 
     # If you want to run the integration tests you need to do:
     # Have an Alibaba Cloud MySQL instance with vector search support
 
     # Check if we are able to connect to the Alibaba Cloud MySQL instance
-    engine: sqlalchemy.Engine = sqlalchemy.create_engine(
-        vector_store.connection_string, connect_args=vector_store.connection_args
-    )
-    engine.connect()
-    engine.dispose()
-
+    vector_store._check_vector_support()
     run_integration_tests = True
 except Exception:
     run_integration_tests = False
