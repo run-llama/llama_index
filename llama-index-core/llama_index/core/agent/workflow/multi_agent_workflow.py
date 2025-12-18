@@ -1,7 +1,18 @@
 from abc import ABCMeta
 import inspect
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    Type,
+    cast,
+)
 from pydantic import BaseModel
 
 from llama_index.core.agent.utils import generate_structured_response
@@ -12,6 +23,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_MAX_ITERATIONS,
     _get_waiting_for_event_exception,
 )
+from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.prompts import (
     DEFAULT_HANDOFF_PROMPT,
@@ -96,9 +108,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         structured_output_fn: Optional[
             Callable[[List[ChatMessage]], Dict[str, Any]]
         ] = None,
+        early_stopping_method: Literal["force", "generate"] = "force",
         **workflow_kwargs: Any,
     ):
         super().__init__(timeout=timeout, **workflow_kwargs)
+        self.early_stopping_method = early_stopping_method
         if not agents:
             raise ValueError("At least one agent must be provided")
 
@@ -280,6 +294,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
             await ctx.store.set("max_iterations", max_iterations)
 
+        if not await ctx.store.get("early_stopping_method", default=None):
+            early_stopping_method = (
+                ev.get("early_stopping_method", default=None)
+                or self.early_stopping_method
+            )
+            await ctx.store.set("early_stopping_method", early_stopping_method)
+
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
@@ -422,6 +443,46 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         ctx.write_event_to_stream(agent_output)
         return agent_output
 
+    async def _generate_early_stopping_response(
+        self, ctx: Context, ev: AgentOutput, max_iterations: int
+    ) -> StopEvent:
+        """Generate a final response when max iterations is reached with early_stopping_method='generate'."""
+        memory: BaseMemory = await ctx.store.get("memory")
+        agent = self.agents[ev.current_agent_name]
+        messages = await memory.aget()
+
+        early_stopping_prompt = DEFAULT_EARLY_STOPPING_PROMPT.format(
+            max_iterations=max_iterations
+        )
+
+        llm_input = [*messages]
+        if agent.system_prompt:
+            llm_input = [
+                ChatMessage(role="system", content=agent.system_prompt),
+                *llm_input,
+            ]
+        llm_input.append(ChatMessage(role="system", content=early_stopping_prompt))
+
+        response = await agent.llm.achat(llm_input)
+
+        await memory.aput(response.message)
+
+        output = AgentOutput(
+            response=response.message,
+            tool_calls=[],
+            raw=response.raw,
+            current_agent_name=agent.name,
+        )
+
+        cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
+            "current_tool_calls", default=[]
+        )
+        output.tool_calls.extend(cur_tool_calls)
+        await ctx.store.set("current_tool_calls", [])
+
+        ctx.write_event_to_stream(output)
+        return StopEvent(result=output)
+
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
@@ -434,10 +495,19 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         await ctx.store.set("num_iterations", num_iterations)
 
         if num_iterations >= max_iterations:
-            raise WorkflowRuntimeError(
-                f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
-                "increase the max iterations with `.run(.., max_iterations=...)`"
+            early_stopping_method = await ctx.store.get(
+                "early_stopping_method", default="force"
             )
+            if early_stopping_method == "generate":
+                return await self._generate_early_stopping_response(
+                    ctx, ev, max_iterations
+                )
+            else:
+                raise WorkflowRuntimeError(
+                    f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
+                    "increase the max iterations with `.run(.., max_iterations=...)` "
+                    "or use `early_stopping_method='generate'` to generate a final response instead."
+                )
 
         memory: BaseMemory = await ctx.store.get("memory")
 
@@ -645,6 +715,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
         max_iterations: Optional[int] = None,
+        early_stopping_method: Optional[Literal["force", "generate"]] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
@@ -660,6 +731,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 chat_history=chat_history,
                 memory=memory,
                 max_iterations=max_iterations,
+                early_stopping_method=early_stopping_method,
                 **kwargs,
             )
             return super().run(
