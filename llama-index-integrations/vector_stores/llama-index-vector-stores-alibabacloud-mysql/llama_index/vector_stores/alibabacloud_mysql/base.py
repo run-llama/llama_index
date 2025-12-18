@@ -194,6 +194,13 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             max_connection=max_connection,
         )
 
+    @property
+    def client(self) -> Any:
+        """Return the MySQL connection pool."""
+        if not self._is_initialized:
+            return None
+        return self._pool
+
     def _create_connection_pool(self) -> mysql.connector.pooling.MySQLConnectionPool:
         """Create connection pool using mysql-connector-python pooling."""
         pool_config: dict[str, Any] = {
