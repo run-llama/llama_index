@@ -564,7 +564,8 @@ def test_get_nodes() -> None:
                 nodes = store.get_nodes()
                 assert len(nodes) == 2
                 query = mock_cursor.execute.call_args[0][0]
-                assert "SELECT text, metadata FROM `test_table` WHERE node_id IN ()" not in query
+                # When no node_ids provided, query should not have WHERE clause with empty IN
+                assert "WHERE node_id IN" not in query
 
 
 def test_add() -> None:
@@ -807,8 +808,8 @@ def test_drop() -> None:
                 store.drop()
                 
                 # Verify the query was executed
-                assert mock_cursor.execute.call_count == 2  # DROP TABLE and close()
-                sql_query = mock_cursor.execute.call_args_list[0][0][0]
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
                 assert "DROP TABLE IF EXISTS `test_table`" in sql_query
 
 
