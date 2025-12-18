@@ -522,3 +522,348 @@ def test_from_params() -> None:
             charset="latin1",
             max_connection=20,
         )
+
+
+def test_get_nodes() -> None:
+    """Test get_nodes method."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [
+        {
+            "text": "test text 1",
+            "metadata": json.dumps({"_node_content": "{\"id_\": \"test-id-1\", \"text\": \"test text 1\"}"})
+        },
+        {
+            "text": "test text 2",
+            "metadata": json.dumps({"_node_content": "{\"id_\": \"test-id-2\", \"text\": \"test text 2\"}"})
+        }
+    ]
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test get_nodes with node_ids
+                nodes = store.get_nodes(node_ids=["test-id-1", "test-id-2"])
+                assert len(nodes) == 2
+                mock_cursor.execute.assert_called_once()
+                query = mock_cursor.execute.call_args[0][0]
+                assert "SELECT text, metadata FROM `test_table` WHERE node_id IN (%s,%s)" in query
+
+                # Test get_nodes without node_ids
+                mock_cursor.reset_mock()
+                mock_cursor.execute.reset_mock()
+                nodes = store.get_nodes()
+                assert len(nodes) == 2
+                query = mock_cursor.execute.call_args[0][0]
+                assert "SELECT text, metadata FROM `test_table` WHERE node_id IN ()" not in query
+
+
+def test_add() -> None:
+    """Test add method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Create test nodes
+                nodes = [
+                    TextNode(
+                        text="test text 1",
+                        id_="test-id-1",
+                        metadata={"key": "value1"},
+                        embedding=[1.0, 2.0, 3.0]
+                    ),
+                    TextNode(
+                        text="test text 2",
+                        id_="test-id-2",
+                        metadata={"key": "value2"},
+                        embedding=[4.0, 5.0, 6.0]
+                    )
+                ]
+
+                # Test adding nodes
+                ids = store.add(nodes)
+                assert len(ids) == 2
+                assert "test-id-1" in ids
+                assert "test-id-2" in ids
+                assert mock_cursor.execute.call_count == 2
+
+
+def test_query() -> None:
+    """Test query method."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [
+        {
+            "node_id": "test-id-1",
+            "text": "test text 1",
+            "metadata": json.dumps({"_node_content": "{\"id_\": \"test-id-1\", \"text\": \"test text 1\"}"}),
+            "distance": 0.1
+        },
+        {
+            "node_id": "test-id-2",
+            "text": "test text 2",
+            "metadata": json.dumps({"_node_content": "{\"id_\": \"test-id-2\", \"text\": \"test text 2\"}"}),
+            "distance": 0.2
+        }
+    ]
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                    distance_method="COSINE"
+                )
+
+                # Test basic query
+                query = VectorStoreQuery(
+                    query_embedding=[1.0, 2.0, 3.0],
+                    similarity_top_k=2
+                )
+                
+                result = store.query(query)
+                assert len(result.nodes) == 2
+                assert len(result.similarities) == 2
+                assert len(result.ids) == 2
+                assert result.similarities[0] == 0.9  # 1 - 0.1
+                assert result.similarities[1] == 0.8  # 1 - 0.2
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "VEC_DISTANCE_COSINE" in sql_query
+
+
+def test_query_with_filters() -> None:
+    """Test query method with filters."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [
+        {
+            "node_id": "test-id-1",
+            "text": "test text 1",
+            "metadata": json.dumps({"_node_content": "{\"id_\": \"test-id-1\", \"text\": \"test text 1\"}"}),
+            "distance": 0.1
+        }
+    ]
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                    distance_method="EUCLIDEAN"
+                )
+
+                # Test query with filters
+                query = VectorStoreQuery(
+                    query_embedding=[1.0, 2.0, 3.0],
+                    similarity_top_k=1,
+                    filters=MetadataFilters(
+                        filters=[
+                            MetadataFilter(key="category", value="test", operator=FilterOperator.EQ)
+                        ]
+                    )
+                )
+                
+                result = store.query(query)
+                assert len(result.nodes) == 1
+                
+                # Verify the query was executed with filters
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "VEC_DISTANCE_EUCLIDEAN" in sql_query
+                assert "WHERE JSON_VALUE(metadata, '$.category') = %s" in sql_query
+
+
+def test_delete() -> None:
+    """Test delete method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test delete
+                store.delete("test-ref-doc-id")
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "DELETE FROM `test_table` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = %s" in sql_query
+
+
+def test_delete_nodes() -> None:
+    """Test delete_nodes method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test delete_nodes with node_ids
+                store.delete_nodes(node_ids=["test-id-1", "test-id-2"])
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "DELETE FROM `test_table` WHERE node_id IN (%s,%s)" in sql_query
+
+
+def test_count() -> None:
+    """Test count method."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = {"count": 5}
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test count
+                count = store.count()
+                assert count == 5
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "SELECT COUNT(*) as count FROM `test_table`" in sql_query
+
+
+def test_drop() -> None:
+    """Test drop method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test drop
+                store.drop()
+                
+                # Verify the query was executed
+                assert mock_cursor.execute.call_count == 2  # DROP TABLE and close()
+                sql_query = mock_cursor.execute.call_args_list[0][0][0]
+                assert "DROP TABLE IF EXISTS `test_table`" in sql_query
+
+
+def test_clear() -> None:
+    """Test clear method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                )
+
+                # Test clear
+                store.clear()
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "DELETE FROM `test_table`" in sql_query
+
+
+def test_create_table_if_not_exists() -> None:
+    """Test _create_table_if_not_exists method."""
+    mock_cursor = MagicMock()
+    
+    with patch.object(AlibabaCloudMySQLVectorStore, "_get_cursor") as mock_get_cursor:
+        mock_get_cursor.return_value.__enter__.return_value = mock_cursor
+        with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
+            with patch.object(AlibabaCloudMySQLVectorStore, "_initialize"):
+                store = AlibabaCloudMySQLVectorStore(
+                    table_name="test_table",
+                    host="localhost",
+                    port=3306,
+                    user="test_user",
+                    password="test_password",
+                    database="test_db",
+                    embed_dim=1536,
+                    default_m=6,
+                    distance_method="COSINE"
+                )
+
+                # Test _create_table_if_not_exists
+                store._create_table_if_not_exists()
+                
+                # Verify the query was executed
+                mock_cursor.execute.assert_called_once()
+                sql_query = mock_cursor.execute.call_args[0][0]
+                assert "CREATE TABLE IF NOT EXISTS `test_table`" in sql_query
+                assert "embedding VECTOR(1536)" in sql_query
+                assert "VECTOR INDEX (embedding) M=6 DISTANCE=COSINE" in sql_query
