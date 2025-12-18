@@ -564,7 +564,7 @@ def test_get_nodes() -> None:
                 nodes = store.get_nodes()
                 assert len(nodes) == 2
                 query = mock_cursor.execute.call_args[0][0]
-                # When no node_ids provided, query should not have WHERE clause with empty IN
+                # When no node_ids provided, query should not have WHERE clause
                 assert "WHERE node_id IN" not in query
 
 

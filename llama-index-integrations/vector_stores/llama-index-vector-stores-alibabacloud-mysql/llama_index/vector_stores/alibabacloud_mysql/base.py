@@ -308,12 +308,16 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         """Get nodes from vector store."""
         self._initialize()
 
-        placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
-        stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
-
         nodes: List[BaseNode] = []
         with self._get_cursor() as cur:
-            cur.execute(stmt, node_ids)
+            if node_ids:
+                placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
+                stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
+                cur.execute(stmt, node_ids)
+            else:
+                stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
+                cur.execute(stmt)
+            
             results = cur.fetchall()
             
             for item in results:
