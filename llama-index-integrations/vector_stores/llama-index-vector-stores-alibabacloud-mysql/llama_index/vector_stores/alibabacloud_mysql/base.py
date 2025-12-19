@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import Any, Dict, List, NamedTuple, Optional
 from contextlib import contextmanager
 
 import mysql.connector
@@ -114,6 +114,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             charset (str, optional): Character set for the connection. Defaults to utf8mb4.
             max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
+
         """
         super().__init__(
             table_name=table_name,
@@ -178,6 +179,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         Returns:
             AlibabaCloudMySQLVectorStore: Instance of AlibabaCloudMySQLVectorStore constructed from params.
+
         """
         return cls(
             host=host,
@@ -238,24 +240,26 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             with self._get_cursor() as cur:
                 # Check MySQL version
                 # Try to execute a simple vector function to verify support
-                cur.execute("SELECT VEC_FromText('[1,2,3]') IS NOT NULL as vector_support")
+                cur.execute(
+                    "SELECT VEC_FromText('[1,2,3]') IS NOT NULL as vector_support"
+                )
                 vector_result = cur.fetchone()
                 if not vector_result or not vector_result.get("vector_support"):
                     raise ValueError(
                         "RDS MySQL Vector functions are not available."
                         " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
                     )
-                
+
                 # Check rds_release_date >= 20251031
                 cur.execute("SHOW VARIABLES LIKE 'rds_release_date'")
                 rds_release_result = cur.fetchone()
-                
+
                 if not rds_release_result:
                     raise ValueError(
                         "Unable to retrieve rds_release_date variable. "
                         "Your MySQL instance may not Alibaba Cloud RDS MySQL instance."
                     )
-                
+
                 rds_release_date = rds_release_result["Value"]
                 if int(rds_release_date) < 20251031:
                     raise ValueError(
@@ -268,7 +272,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                     "RDS MySQL Vector functions are not available."
                     " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
                 ) from e
-            raise e
+            raise
 
     def _create_table_if_not_exists(self) -> None:
         with self._get_cursor() as cur:
@@ -294,7 +298,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                     f"Distance method '{self.distance_method}' is not supported. "
                     "Supported methods are: 'EUCLIDEAN', 'COSINE'."
                 )
-            
+
             self._check_vector_support()
             if self.perform_setup:
                 self._create_table_if_not_exists()
@@ -317,9 +321,9 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             else:
                 stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
                 cur.execute(stmt)
-            
+
             results = cur.fetchall()
-            
+
             for item in results:
                 node = metadata_dict_to_node(json.loads(item["metadata"]))
                 node.set_content(str(item["text"]))
@@ -351,7 +355,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             for node in nodes:
                 ids.append(node.node_id)
                 item = self._node_to_table_row(node)
-                
+
                 stmt = f"""
                 INSERT INTO `{self.table_name}` (id, node_id, text, embedding, metadata)
                 VALUES (
@@ -366,7 +370,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                     embedding = VALUES(embedding),
                     metadata = VALUES(metadata)
                 """
-                
+
                 cur.execute(
                     stmt,
                     {
@@ -402,7 +406,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> tuple[str, list]:
         values = []
-        
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             placeholders = ",".join(["%s"] * len(filter_.value))
             filter_value = f"({placeholders})"
@@ -431,7 +435,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         clauses: List[str] = []
         values: List[Any] = []
-        
+
         for filter_ in filters.filters:
             if isinstance(filter_, MetadataFilter):
                 clause, filter_values = self._build_filter_clause(filter_)
@@ -449,7 +453,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 f"Unsupported filter type: {type(filter_)}. Must be one of {MetadataFilter}, {MetadataFilters}"
             )
-            
+
         return f" {conditions[filters.condition]} ".join(clauses), values
 
     def _db_rows_to_query_result(
@@ -479,8 +483,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         # Using specified distance function for vector similarity search
-        distance_func = "VEC_DISTANCE_COSINE" if self.distance_method == "COSINE" else "VEC_DISTANCE_EUCLIDEAN"
-        
+        distance_func = (
+            "VEC_DISTANCE_COSINE"
+            if self.distance_method == "COSINE"
+            else "VEC_DISTANCE_EUCLIDEAN"
+        )
+
         where_clause = ""
         values = []
         if query.filters:
@@ -501,7 +509,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         """
 
         # Add query embedding and limit to values
-        values = [json.dumps(query.query_embedding)] + values + [query.similarity_top_k]
+        values = [json.dumps(query.query_embedding), *values, query.similarity_top_k]
 
         with self._get_cursor() as cur:
             cur.execute(stmt, values)
@@ -514,7 +522,9 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                     node_id=item["node_id"],
                     text=item["text"],
                     metadata=json.loads(item["metadata"]),
-                    similarity=(1 - item["distance"]) if item["distance"] is not None else 0,
+                    similarity=(1 - item["distance"])
+                    if item["distance"] is not None
+                    else 0,
                 )
             )
 
@@ -549,7 +559,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             stmt = f"""SELECT COUNT(*) as count FROM `{self.table_name}`"""
             cur.execute(stmt)
             result = cur.fetchone()
-            
+
         return result["count"] if result else 0
 
     def drop(self) -> None:
