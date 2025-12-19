@@ -14,6 +14,8 @@ from llama_index.llms.ollama import Ollama
 test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
 thinking_test_model = os.environ.get("OLLAMA_THINKING_TEST_MODEL", "qwen3:0.6b")
 thinking_level_model = os.environ.get("THINKING_LEVEL_MODEL", "gpt-oss:20b")
+client = None
+available_models = []
 
 try:
     client = Client()
