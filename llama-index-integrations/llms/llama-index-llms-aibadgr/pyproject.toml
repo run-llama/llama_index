@@ -25,17 +25,16 @@ dev = [
 ]
 
 [project]
-name = "llama-index-embeddings-ollama"
-version = "0.8.5"
-description = "llama-index embeddings ollama integration"
+name = "llama-index-llms-aibadgr"
+version = "0.1.0"
+description = "llama-index llms aibadgr integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "ollama>=0.3.1",
+    "llama-index-llms-openai-like>=0.5.0,<0.6",
     "llama-index-core>=0.13.0,<0.15",
-    "pytest-asyncio>=0.23.8",
 ]
 
 [tool.codespell]
@@ -53,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.ollama"
+import_path = "llama_index.llms.aibadgr"
 
 [tool.llamahub.class_authors]
-OllamaEmbedding = "llama-index"
+AIBadgr = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

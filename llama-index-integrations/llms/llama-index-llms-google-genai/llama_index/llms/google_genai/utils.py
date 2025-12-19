@@ -141,7 +141,9 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
 
 
 def chat_from_gemini_response(
-    response: types.GenerateContentResponse, existing_content: List[ContentBlock]
+    response: types.GenerateContentResponse,
+    existing_content: List[ContentBlock],
+    thought_signatures: Optional[List[Optional[str]]] = None,
 ) -> ChatResponse:
     if not response.candidates:
         raise ValueError("Response has no candidates")
@@ -157,7 +159,11 @@ def chat_from_gemini_response(
         **response_feedback,
     }
     thought_tokens: Optional[int] = None
-    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
+
+    if thought_signatures is None:
+        thought_signatures = []
+
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": thought_signatures}
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
@@ -195,9 +201,15 @@ def chat_from_gemini_response(
                         content_blocks[-1], TextBlock
                     ):
                         content_blocks[-1].text += part.text
+                        if part.thought_signature:
+                            additional_kwargs["thought_signatures"][-1] = (
+                                part.thought_signature
+                            )
                     else:
                         content_blocks.append(TextBlock(text=part.text))
-                additional_kwargs["thought_signatures"].append(part.thought_signature)
+                        additional_kwargs["thought_signatures"].append(
+                            part.thought_signature
+                        )
             if part.inline_data:
                 content_blocks.append(
                     ImageBlock(
@@ -224,7 +236,7 @@ def chat_from_gemini_response(
             if part.function_response:
                 # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
                 additional_kwargs["tool_call_id"] = part.function_response.id
-                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
                 return ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -248,7 +260,7 @@ def chat_from_gemini_response(
                 {"total_thinking_tokens": thought_tokens}
             )
 
-    role = ROLES_FROM_GEMINI[top_candidate.content.role]
+    role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
     return ChatResponse(
         message=ChatMessage(
             role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
