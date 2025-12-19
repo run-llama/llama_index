@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -29,6 +29,10 @@ class OllamaEmbedding(BaseEmbedding):
     text_instruction: Optional[str] = Field(
         default=None, description="Instruction to prepend to text."
     )
+    keep_alive: Optional[Union[float, str]] = Field(
+        default="5m",
+        description="controls how long the model will stay loaded into memory following the request(default: 5m)",
+    )
 
     _client: Client = PrivateAttr()
     _async_client: AsyncClient = PrivateAttr()
@@ -43,6 +47,7 @@ class OllamaEmbedding(BaseEmbedding):
         text_instruction: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
+        keep_alive: Optional[Union[float, str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -53,6 +58,7 @@ class OllamaEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
             callback_manager=callback_manager,
+            keep_alive=keep_alive,
             **kwargs,
         )
 
@@ -104,14 +110,20 @@ class OllamaEmbedding(BaseEmbedding):
     def get_general_text_embedding(self, texts: str) -> List[float]:
         """Get Ollama embedding."""
         result = self._client.embed(
-            model=self.model_name, input=texts, options=self.ollama_additional_kwargs
+            model=self.model_name,
+            input=texts,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
         )
         return result.embeddings[0]
 
     async def aget_general_text_embedding(self, prompt: str) -> List[float]:
         """Asynchronously get Ollama embedding."""
         result = await self._async_client.embed(
-            model=self.model_name, input=prompt, options=self.ollama_additional_kwargs
+            model=self.model_name,
+            input=prompt,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
         )
         return result.embeddings[0]
 
