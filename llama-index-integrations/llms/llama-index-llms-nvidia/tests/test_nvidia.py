@@ -153,6 +153,7 @@ def mock_local_models(httpx_mock: HTTPXMock):
         method="GET",
         json=mock_response,
         status_code=200,
+        is_reusable=True,
     )
 
 
