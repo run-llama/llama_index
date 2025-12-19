@@ -5,6 +5,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -131,9 +132,9 @@ class Ollama(FunctionCallingLLM):
         default="5m",
         description="controls how long the model will stay loaded into memory following the request(default: 5m)",
     )
-    thinking: Optional[bool] = Field(
+    thinking: Optional[Union[bool, Literal["low", "medium", "high"]]] = Field(
         default=None,
-        description="Whether to enable or disable thinking in the model.",
+        description="Whether to enable or disable thinking in the model. For some models, like gpt-oss, allow 'low', 'medium', or 'high' to tune the trace length.",
     )
 
     _client: Optional[Client] = PrivateAttr()
@@ -153,7 +154,7 @@ class Ollama(FunctionCallingLLM):
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
         keep_alive: Optional[Union[float, str]] = None,
-        thinking: Optional[bool] = None,
+        thinking: Optional[Union[bool, Literal["low", "medium", "high"]]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
