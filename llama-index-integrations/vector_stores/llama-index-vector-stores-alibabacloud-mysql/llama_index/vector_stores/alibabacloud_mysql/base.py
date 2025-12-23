@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Literal
 from contextlib import contextmanager
 
 import mysql.connector
@@ -66,18 +66,18 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    table_name: str
+    table_name: str = "llama_index_table"
     host: str
     port: int
     user: str
     password: str
     database: str
-    charset: str
-    max_connection: int
-    embed_dim: int
-    default_m: int
-    distance_method: str
-    perform_setup: bool
+    charset: str = "utf8mb4"
+    max_connection: int = 10
+    embed_dim: int = 1536
+    default_m: int = 6
+    distance_method: Literal["EUCLIDEAN", "COSINE"]
+    perform_setup: bool = True
 
     _pool: mysql.connector.pooling.MySQLConnectionPool = PrivateAttr()
     _table_name: str = PrivateAttr()
@@ -107,7 +107,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             user (str): Alibaba Cloud MySQL username.
             password (str): Alibaba Cloud MySQL password.
             database (str): Alibaba Cloud MySQL DB name.
-            table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
+            table_name (str, optional): Table name for the vector store. Must contain only letters, numbers, underscores, and hyphens. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
@@ -116,6 +116,12 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
 
         """
+        # Validate table_name to prevent SQL injection
+        import re
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_-]*$", table_name):
+            raise ValueError(f"Invalid table name: {table_name}")
+
         super().__init__(
             table_name=table_name,
             host=host,
@@ -169,7 +175,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             user (str): Alibaba Cloud MySQL username.
             password (str): Alibaba Cloud MySQL password.
             database (str): Alibaba Cloud MySQL DB name.
-            table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
+            table_name (str, optional): Table name for the vector store. Must contain only letters, numbers, underscores, and hyphens. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (str, optional): Vector distance type. Defaults to COSINE.
@@ -292,13 +298,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
     def _initialize(self) -> None:
         if not self._is_initialized:
-            # Validate distance method
-            if self.distance_method not in ["EUCLIDEAN", "COSINE"]:
-                raise ValueError(
-                    f"Distance method '{self.distance_method}' is not supported. "
-                    "Supported methods are: 'EUCLIDEAN', 'COSINE'."
-                )
-
             self._check_vector_support()
             if self.perform_setup:
                 self._create_table_if_not_exists()
@@ -314,12 +313,27 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         nodes: List[BaseNode] = []
         with self._get_cursor() as cur:
+            where_conditions = []
+            params = []
+
             if node_ids:
                 placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
-                stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
-                cur.execute(stmt, node_ids)
+                where_conditions.append(f"node_id IN ({placeholders})")
+                params.extend(node_ids)
+
+            if filters:
+                filter_clause, filter_params = self._filters_to_where_clause(filters)
+                where_conditions.append(f"({filter_clause})")
+                params.extend(filter_params)
+
+            where_clause = (
+                " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+            )
+            stmt = f"""SELECT text, metadata FROM `{self.table_name}`{where_clause}"""
+
+            if params:
+                cur.execute(stmt, params)
             else:
-                stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
                 cur.execute(stmt)
 
             results = cur.fetchall()
@@ -547,10 +561,28 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._get_cursor() as cur:
+            where_conditions = []
+            params = []
+
             if node_ids:
                 placeholders = ",".join(["%s"] * len(node_ids))
-                stmt = f"""DELETE FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
-                cur.execute(stmt, node_ids)
+                where_conditions.append(f"node_id IN ({placeholders})")
+                params.extend(node_ids)
+
+            if filters:
+                filter_clause, filter_params = self._filters_to_where_clause(filters)
+                where_conditions.append(f"({filter_clause})")
+                params.extend(filter_params)
+
+            if where_conditions:
+                where_clause = " WHERE " + " AND ".join(where_conditions)
+                stmt = f"""DELETE FROM `{self.table_name}`{where_clause}"""
+                cur.execute(stmt, params)
+            else:
+                # If no conditions are provided, don't delete all records
+                raise ValueError(
+                    "Either node_ids or filters must be provided for delete_nodes"
+                )
 
     def count(self) -> int:
         self._initialize()
