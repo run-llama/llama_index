@@ -498,7 +498,7 @@ def test_query_unsupported_mode() -> None:
 
             with pytest.raises(
                 NotImplementedError,
-                match="Query mode VectorStoreQueryMode.TEXT_SEARCH not available",
+                match=f"Query mode {VectorStoreQueryMode.TEXT_SEARCH} not available",
             ):
                 store.query(query)
 
