@@ -73,6 +73,8 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
 
 # Anthropic API/SDK identifiers
 ANTHROPIC_MODELS: Dict[str, int] = {
+    "claude-3-haiku-20240307": 200000,
+    "claude-3-haiku-latest": 200000,
     "claude-3-5-haiku-latest": 200000,
     "claude-3-5-haiku-20241022": 200000,
     "claude-3-7-sonnet-20250219": 200000,
