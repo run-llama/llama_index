@@ -600,35 +600,73 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             else "VEC_DISTANCE_EUCLIDEAN"
         )
 
-        # Build the base query
-        base_query = f"""
-        SELECT
-            node_id,
-            text,
-            embedding,
-            metadata,
-            {distance_func}(embedding, VEC_FromText(:embedding)) AS distance
-        FROM `{self.table_name}`
-        """
+        # Build the query using SQLAlchemy's select construct for proper parameter binding
+        from sqlalchemy import select
 
-        # Build the full query with proper parameter binding
+        # Create the base select statement
+        stmt = select(
+            self._table.c.node_id,
+            self._table.c.text,
+            self._table.c.embedding,
+            self._table.c.metadata,
+        ).add_columns(
+            sql_text(
+                f"{distance_func}(embedding, VEC_FromText(:embedding)) AS distance"
+            )
+        )
+
+        # Add parameters
         params = {
             "embedding": json.dumps(query.query_embedding),
-            "limit": query.similarity_top_k,
         }
 
-        # If filters exist, build the WHERE clause with proper named parameters
+        # Add WHERE clause if filters exist using SQLAlchemy's text conditions
         if query.filters:
-            where_clause, filter_params = self._build_where_clause_with_named_params(
-                query.filters, params
-            )
-            if where_clause:
-                base_query += f"WHERE {where_clause} ORDER BY distance LIMIT :limit"
-                params.update(filter_params)
+            # Use SQLAlchemy text conditions for proper parameter binding
+            filter_conditions = self._filters_to_sqlalchemy_conditions(query.filters)
+            if filter_conditions is not None:
+                # For vector distance calculation, we need to use raw SQL with proper parameter binding
+                # Build a complete SQL string with named parameters
+                base_query = f"""
+                SELECT
+                    node_id,
+                    text,
+                    embedding,
+                    metadata,
+                    {distance_func}(embedding, VEC_FromText(:embedding)) AS distance
+                FROM `{self.table_name}`
+                """
+
+                # Get filter conditions using SQLAlchemy expressions
+                sa_filter_conditions = self._filters_to_sqlalchemy_conditions(
+                    query.filters
+                )
+                if sa_filter_conditions is not None:
+                    # Convert the SQLAlchemy condition to string and ensure proper parameter binding
+                    # Build the filter part with named parameters
+                    where_clause, filter_params = (
+                        self._build_where_clause_with_named_params(
+                            query.filters, params
+                        )
+                    )
+                    if where_clause:
+                        base_query += (
+                            f"WHERE {where_clause} ORDER BY distance LIMIT :limit"
+                        )
+                        params.update(filter_params)
+                        params["limit"] = query.similarity_top_k
+                    else:
+                        base_query += "ORDER BY distance LIMIT :limit"
+                        params["limit"] = query.similarity_top_k
+                else:
+                    base_query += "ORDER BY distance LIMIT :limit"
+                    params["limit"] = query.similarity_top_k
             else:
                 base_query += "ORDER BY distance LIMIT :limit"
+                params["limit"] = query.similarity_top_k
         else:
             base_query += "ORDER BY distance LIMIT :limit"
+            params["limit"] = query.similarity_top_k
 
         stmt = sql_text(base_query)
 
@@ -664,14 +702,14 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         # Create new parameter names to avoid conflicts
         filter_params = {}
-        param_index = 0
+        param_index = len(existing_params)  # Start from current param count
 
         # Replace %s placeholders with named parameters
-        for value in values:
-            param_name = f"filter_param_{len(existing_params) + param_index}"
+        for i, value in enumerate(values):
+            param_name = f"filter_param_{param_index + i}"
             filter_params[param_name] = value
+            # Replace each %s occurrence one by one
             where_clause = where_clause.replace("%s", f":{param_name}", 1)
-            param_index += 1
 
         return where_clause, filter_params
 
@@ -700,18 +738,20 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             params = {}
 
             if node_ids:
-                # Using raw SQL for IN clause
+                # Using raw SQL for IN clause with named parameters
                 placeholders = ",".join([f":node_id_{i}" for i in range(len(node_ids))])
                 conditions.append(f"node_id IN ({placeholders})")
                 for i, node_id in enumerate(node_ids):
                     params[f"node_id_{i}"] = node_id
 
             if filters:
-                filter_clause, filter_params = self._filters_to_where_clause(filters)
-                conditions.append(f"({filter_clause})")
-                # Add filter params to main params dict
-                for i, param_val in enumerate(filter_params):
-                    params[f"filter_param_{i}"] = param_val
+                # Use the improved method for filter parameter binding
+                where_clause, filter_params = (
+                    self._build_where_clause_with_named_params(filters, params)
+                )
+                if where_clause:
+                    conditions.append(f"({where_clause})")
+                    params.update(filter_params)
 
             if conditions:
                 where_clause = " WHERE " + " AND ".join(conditions)
