@@ -231,19 +231,16 @@ def test_check_vector_support_function_error() -> None:
 def test_initialize_invalid_distance_method() -> None:
     """Test _initialize method with invalid distance method."""
     with patch.object(AlibabaCloudMySQLVectorStore, "_create_connection_pool"):
-        with patch.object(AlibabaCloudMySQLVectorStore, "_check_vector_support"):
-            with pytest.raises(
-                ValueError, match="Distance method 'INVALID' is not supported"
-            ):
-                AlibabaCloudMySQLVectorStore(
-                    table_name="test_table",
-                    host="localhost",
-                    port=3306,
-                    user="test_user",
-                    password="test_password",
-                    database="test_db",
-                    distance_method="INVALID",
-                )
+        with pytest.raises(ValueError, match="Input should be 'EUCLIDEAN' or 'COSINE'"):
+            AlibabaCloudMySQLVectorStore(
+                table_name="test_table",
+                host="localhost",
+                port=3306,
+                user="test_user",
+                password="test_password",
+                database="test_db",
+                distance_method="INVALID",
+            )
 
 
 def test_initialize_success() -> None:
