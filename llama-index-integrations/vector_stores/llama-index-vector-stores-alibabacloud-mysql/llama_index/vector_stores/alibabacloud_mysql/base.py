@@ -1,5 +1,6 @@
 """Alibaba Cloud MySQL Vector Store."""
 
+import re
 import json
 import logging
 from typing import Any, Dict, List, NamedTuple, Optional, Literal
@@ -117,8 +118,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
         """
         # Validate table_name to prevent SQL injection
-        import re
-
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_-]*$", table_name):
             raise ValueError(f"Invalid table name: {table_name}")
 
