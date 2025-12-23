@@ -27,15 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-llms-google-genai"
-version = "0.7.4"
+version = "0.8.2"
 description = "llama-index llms google genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "pillow>=10.2.0",
-    "google-genai>=1.24.0,<2",
+    "google-genai>=1.52.0,<2",
     "llama-index-core>=0.14.5,<0.15",
 ]
 

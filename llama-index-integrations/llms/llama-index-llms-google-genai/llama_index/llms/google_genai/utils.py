@@ -2,8 +2,19 @@ import asyncio
 import json
 import logging
 from collections.abc import Sequence
-from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Union, Optional, Type, Tuple, cast
+from io import IOBase
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Union,
+    Optional,
+    Type,
+    Tuple,
+    List,
+    Literal,
+    cast,
+)
 import typing
 
 import google.genai.types as types
@@ -130,7 +141,9 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
 
 
 def chat_from_gemini_response(
-    response: types.GenerateContentResponse, existing_content: List[ContentBlock]
+    response: types.GenerateContentResponse,
+    existing_content: List[ContentBlock],
+    thought_signatures: Optional[List[Optional[str]]] = None,
 ) -> ChatResponse:
     if not response.candidates:
         raise ValueError("Response has no candidates")
@@ -146,7 +159,11 @@ def chat_from_gemini_response(
         **response_feedback,
     }
     thought_tokens: Optional[int] = None
-    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
+
+    if thought_signatures is None:
+        thought_signatures = []
+
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": thought_signatures}
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
@@ -184,9 +201,15 @@ def chat_from_gemini_response(
                         content_blocks[-1], TextBlock
                     ):
                         content_blocks[-1].text += part.text
+                        if part.thought_signature:
+                            additional_kwargs["thought_signatures"][-1] = (
+                                part.thought_signature
+                            )
                     else:
                         content_blocks.append(TextBlock(text=part.text))
-                additional_kwargs["thought_signatures"].append(part.thought_signature)
+                        additional_kwargs["thought_signatures"].append(
+                            part.thought_signature
+                        )
             if part.inline_data:
                 content_blocks.append(
                     ImageBlock(
@@ -213,7 +236,7 @@ def chat_from_gemini_response(
             if part.function_response:
                 # follow the same pattern as for transforming a chatmessage into a gemini message: if it's a function response, package it alone and return it
                 additional_kwargs["tool_call_id"] = part.function_response.id
-                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
                 return ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -237,7 +260,7 @@ def chat_from_gemini_response(
                 {"total_thinking_tokens": thought_tokens}
             )
 
-    role = ROLES_FROM_GEMINI[top_candidate.content.role]
+    role = ROLES_FROM_GEMINI[top_candidate.content.role or "model"]
     return ChatResponse(
         message=ChatMessage(
             role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
@@ -248,25 +271,30 @@ def chat_from_gemini_response(
 
 
 async def create_file_part(
-    file_bytes: bytes, mime_type: str, use_file_api: bool, client: Optional[Client]
-) -> types.PartUnion:
+    file_buffer: IOBase,
+    mime_type: str,
+    file_mode: Literal["inline", "fileapi", "hybrid"],
+    client: Optional[Client],
+) -> tuple[types.Part, Optional[str]]:
     """Create a Part or File object for the given file depending on its size."""
-    if (
-        not use_file_api
-        or len(file_bytes)
-        < 20 * 1024 * 1024  # 20MB is the Gemini inline data size limit
-    ):
-        return types.Part.from_bytes(
-            data=file_bytes,
-            mime_type=mime_type,
-        )
+    if file_mode in ("inline", "hybrid"):
+        file_buffer.seek(0, 2)  # Seek to end
+        size = file_buffer.tell()  # Get file size
+        file_buffer.seek(0)  # Reset to beginning
+
+        if size < 20 * 1024 * 1024:  # 20MB is the Gemini inline data size limit
+            return types.Part.from_bytes(
+                data=file_buffer.read(),
+                mime_type=mime_type,
+            ), None
+        elif file_mode == "inline":
+            raise ValueError("Files in inline mode must be smaller than 20MB.")
 
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
 
-    buffer = BytesIO(file_bytes)
     file = await client.aio.files.upload(
-        file=buffer, config=types.UploadFileConfig(mime_type=mime_type)
+        file=file_buffer, config=types.UploadFileConfig(mime_type=mime_type)
     )
 
     # Wait for file processing
@@ -277,35 +305,43 @@ async def create_file_part(
     if file.state.name == "FAILED":
         raise ValueError("Failed to upload the file with FileAPI")
 
-    return file
+    return types.Part.from_uri(
+        file_uri=file.uri,
+        mime_type=mime_type,
+    ), file.name
 
 
-async def delete_uploaded_files(
-    contents: list[Union[types.Content, types.File]], client: Client
-) -> None:
+async def adelete_uploaded_files(file_api_names: list[str], client: Client) -> None:
     """Delete files uploaded with File API."""
     await asyncio.gather(
-        *[
-            client.aio.files.delete(name=content.name)
-            for content in contents
-            if isinstance(content, types.File)
-        ]
+        *[client.aio.files.delete(name=name) for name in file_api_names]
     )
 
 
+def delete_uploaded_files(file_api_names: list[str], client: Client) -> None:
+    """Delete files uploaded with File API."""
+    for name in file_api_names:
+        client.files.delete(name=name)
+
+
 async def chat_message_to_gemini(
-    message: ChatMessage, use_file_api: bool = False, client: Optional[Client] = None
-) -> Union[types.Content, types.File]:
+    message: ChatMessage,
+    file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
+    client: Optional[Client] = None,
+) -> tuple[types.Content, list[str]]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     unique_tool_calls = []
     parts = []
+    file_api_names = []
     part = None
     for index, block in enumerate(message.blocks):
+        file_api_name = None
+
         if isinstance(block, TextBlock):
             if block.text:
                 part = types.Part.from_text(text=block.text)
         elif isinstance(block, ImageBlock):
-            file_bytes = block.resolve_image(as_base64=False).read()
+            file_buffer = block.resolve_image(as_base64=False)
 
             mime_type = (
                 block.image_mimetype
@@ -313,13 +349,11 @@ async def chat_message_to_gemini(
                 else "image/jpeg"  # TODO: Fail?
             )
 
-            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
-
-            if isinstance(part, types.File):
-                return part  # Return the file as it is a message content and not a part
+            part, file_api_name = await create_file_part(
+                file_buffer, mime_type, file_mode, client
+            )
         elif isinstance(block, VideoBlock):
             file_buffer = block.resolve_video(as_base64=False)
-            file_bytes = file_buffer.read()
 
             mime_type = (
                 block.video_mimetype
@@ -327,25 +361,22 @@ async def chat_message_to_gemini(
                 else "video/mp4"  # TODO: Fail?
             )
 
-            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
-
-            if isinstance(part, types.File):
-                return part  # Return the file as it is a message content and not a part
-
+            part, file_api_name = await create_file_part(
+                file_buffer, mime_type, file_mode, client
+            )
             part.video_metadata = types.VideoMetadata(fps=block.fps)
-
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
-            file_bytes = file_buffer.read()
+
             mime_type = (
                 block.document_mimetype
                 if block.document_mimetype is not None
                 else "application/pdf"
             )
-            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
 
-            if isinstance(part, types.File):
-                return part  # Return the file as it is a message content and not a part
+            part, file_api_name = await create_file_part(
+                file_buffer, mime_type, file_mode, client
+            )
         elif isinstance(block, ThinkingBlock):
             if block.content:
                 part = types.Part.from_text(text=block.content)
@@ -361,6 +392,10 @@ async def chat_message_to_gemini(
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+
+        if file_api_name is not None:
+            file_api_names.append(file_api_name)
+
         if part is not None:
             if message.role == MessageRole.MODEL:
                 thought_signatures = message.additional_kwargs.get(
@@ -401,12 +436,12 @@ async def chat_message_to_gemini(
         )
         return types.Content(
             role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
-        )
+        ), file_api_names
 
     return types.Content(
         role=ROLES_TO_GEMINI[message.role],
         parts=parts,
-    )
+    ), file_api_names
 
 
 def convert_schema_to_function_declaration(
@@ -443,16 +478,16 @@ class ChatParams(typing.TypedDict):
 async def prepare_chat_params(
     model: str,
     messages: Sequence[ChatMessage],
-    use_file_api: bool = False,
+    file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
     client: Optional[Client] = None,
     **kwargs: Any,
-) -> tuple[Union[types.Content, types.File], ChatParams]:
+) -> tuple[types.Content, ChatParams, list[str]]:
     """
     Prepare common parameters for chat creation.
 
     Args:
         messages: Sequence of chat messages
-        use_file_api: Whether to use File API or not for large files.
+        file_mode: The mode for file uploading
         client: Google Genai client used for uploading large files.
         **kwargs: Additional keyword arguments
 
@@ -460,6 +495,7 @@ async def prepare_chat_params(
         tuple containing:
         - next_msg: the next message to send
         - chat_kwargs: processed keyword arguments for chat creation
+        - file_api_names: list of file api names to delete after chat call
 
     """
     # Extract system message if present
@@ -471,12 +507,14 @@ async def prepare_chat_params(
 
     # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
-    initial_history = await asyncio.gather(
+    initial_history_and_names = await asyncio.gather(
         *[
-            chat_message_to_gemini(message, use_file_api, client)
+            chat_message_to_gemini(message, file_mode, client)
             for message in merged_messages
         ]
     )
+    initial_history = [it[0] for it in initial_history_and_names]
+    file_api_names = [name for it in initial_history_and_names for name in it[1]]
 
     # merge tool messages into a single tool message
     # while maintaining the tool names
@@ -543,7 +581,7 @@ async def prepare_chat_params(
 
     chat_kwargs["config"] = types.GenerateContentConfig(**config)
 
-    return next_msg, chat_kwargs
+    return next_msg, chat_kwargs, file_api_names
 
 
 def handle_streaming_flexible_model(

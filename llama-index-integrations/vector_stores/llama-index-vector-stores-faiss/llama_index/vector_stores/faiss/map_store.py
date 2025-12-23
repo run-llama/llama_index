@@ -115,7 +115,9 @@ class FaissMapVectorStore(FaissVectorStore):
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             self._node_id_to_faiss_id_map[node.id_] = self._faiss_index.ntotal
             self._faiss_id_to_node_id_map[self._faiss_index.ntotal] = node.id_
-            self._faiss_index.add_with_ids(text_embedding_np, self._faiss_index.ntotal)
+            self._faiss_index.add_with_ids(
+                text_embedding_np, np.array([self._faiss_index.ntotal], dtype=np.int64)
+            )
             new_ids.append(node.id_)
         return new_ids
 
