@@ -589,7 +589,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.mode != VectorStoreQueryMode.DEFAULT:
-            raise NotImplementedError(f"Query mode {query.mode} not available.")
+            raise NotImplementedError(f"Query mode {query.mode!r} not available.")
 
         self._initialize()
 
@@ -600,7 +600,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             else "VEC_DISTANCE_EUCLIDEAN"
         )
 
-        # Build the query using SQLAlchemy text for vector operations
+        # Build the base query
         base_query = f"""
         SELECT
             node_id,
@@ -611,21 +611,24 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         FROM `{self.table_name}`
         """
 
-        # Add WHERE clause if filters exist
+        # Build the full query with proper parameter binding
         params = {
             "embedding": json.dumps(query.query_embedding),
             "limit": query.similarity_top_k,
         }
 
+        # If filters exist, build the WHERE clause with proper named parameters
         if query.filters:
-            # Use SQLAlchemy conditions for filtering
-            filter_conditions = self._filters_to_sqlalchemy_conditions(query.filters)
-            if filter_conditions is not None:
-                # For now, we'll use the legacy method to get the WHERE clause
-                where_clause, _ = self._filters_to_where_clause(query.filters)
-                base_query += f"WHERE {where_clause} "
-
-        base_query += "ORDER BY distance LIMIT :limit"
+            where_clause, filter_params = self._build_where_clause_with_named_params(
+                query.filters, params
+            )
+            if where_clause:
+                base_query += f"WHERE {where_clause} ORDER BY distance LIMIT :limit"
+                params.update(filter_params)
+            else:
+                base_query += "ORDER BY distance LIMIT :limit"
+        else:
+            base_query += "ORDER BY distance LIMIT :limit"
 
         stmt = sql_text(base_query)
 
@@ -645,6 +648,32 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             )
 
         return self._db_rows_to_query_result(rows)
+
+    def _build_where_clause_with_named_params(
+        self, filters: MetadataFilters, existing_params: dict
+    ) -> tuple[str, dict]:
+        """Build WHERE clause with named parameters to avoid mixing %s and :param formats."""
+        if not filters:
+            return "", {}
+
+        # Get the where clause and values using the existing method
+        where_clause, values = self._filters_to_where_clause(filters)
+
+        if not where_clause:
+            return "", {}
+
+        # Create new parameter names to avoid conflicts
+        filter_params = {}
+        param_index = 0
+
+        # Replace %s placeholders with named parameters
+        for value in values:
+            param_name = f"filter_param_{len(existing_params) + param_index}"
+            filter_params[param_name] = value
+            where_clause = where_clause.replace("%s", f":{param_name}", 1)
+            param_index += 1
+
+        return where_clause, filter_params
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._initialize()
