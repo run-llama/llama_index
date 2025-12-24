@@ -157,6 +157,12 @@ def test(
             for package_path in sorted(packages_to_test)
         }
 
+        # Track when futures were submitted/started for watchdog
+        future_start_times = {future: time.time() for future in future_to_package}
+        max_future_time = (
+            600  # 10 minutes max for any single future (includes queue time)
+        )
+
         # Detect if we're in a CI environment (GitHub Actions, etc.)
         is_ci = (
             os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
@@ -169,36 +175,39 @@ def test(
             )
             last_update_time = time.time()
             update_interval = 30  # Print status every 30 seconds
-            result_timeout = 300  # 5 minutes max per test package
-            as_completed_timeout = (
-                result_timeout + 10
-            )  # Slightly longer than result timeout
 
-            try:
-                for future in concurrent.futures.as_completed(
-                    future_to_package, timeout=as_completed_timeout
-                ):
+            pending_futures = set(future_to_package.keys())
+
+            while pending_futures:
+                # Wait for futures with a timeout so we can print periodic updates
+                done, pending_futures = concurrent.futures.wait(
+                    pending_futures,
+                    timeout=update_interval,
+                    return_when=concurrent.futures.FIRST_COMPLETED,
+                )
+
+                # Process completed futures
+                for future in done:
                     try:
-                        result = future.result(timeout=result_timeout)
+                        result = future.result(
+                            timeout=0.1
+                        )  # Should be immediate since future is done
                         results.append(result)
-                    except concurrent.futures.TimeoutError:
-                        # Test hung - create a failure result
-                        hung_package = future_to_package[future]
-                        console.print(
-                            f"\n⏱️  TIMEOUT: {hung_package.relative_to(repo_root)} exceeded {result_timeout}s",
-                            style="bold red",
-                        )
+                    except Exception as e:
+                        # Handle any errors
+                        pkg = future_to_package[future]
                         result = {
-                            "package": hung_package,
+                            "package": pkg,
                             "status": ResultStatus.TESTS_FAILED,
                             "stdout": "",
-                            "stderr": f"Test execution timed out after {result_timeout}s",
-                            "time": f"{result_timeout:.2f}s",
+                            "stderr": f"Test failed with exception: {e}",
+                            "time": "N/A",
                         }
                         results.append(result)
                         failed_count += 1
+                        continue
 
-                    # Update counts (runs for both success and timeout)
+                    # Update counts
                     if result["status"] == ResultStatus.TESTS_PASSED:
                         passed_count += 1
                     elif result["status"] in (
@@ -210,69 +219,59 @@ def test(
                     else:
                         skipped_count += 1
 
-                    # Get currently running packages
-                    running_packages = [
-                        str(future_to_package[f].relative_to(repo_root))
-                        for f in future_to_package
-                        if not f.done()
-                    ]
+                # Check for stuck futures (watchdog)
+                current_time = time.time()
+                stuck_futures = []
+                for f in list(
+                    pending_futures
+                ):  # Use list() to avoid modification during iteration
+                    if (current_time - future_start_times[f]) > max_future_time:
+                        stuck_futures.append(f)
 
-                    # Print status update periodically or on every 10th completion
-                    current_time = time.time()
-                    should_update = (
-                        current_time - last_update_time >= update_interval
-                        or len(results) % 10 == 0
-                        or len(results) == len(packages_to_test)
+                if stuck_futures:
+                    console.print(
+                        f"\n⚠️  Watchdog: Found {len(stuck_futures)} stuck futures (>10 min), marking as failed",
+                        style="bold red",
                     )
+                    for f in stuck_futures:
+                        pkg = future_to_package[f]
+                        console.print(f"   → {pkg.relative_to(repo_root)}", style="red")
+                        # Mark as failed
+                        result = {
+                            "package": pkg,
+                            "status": ResultStatus.TESTS_FAILED,
+                            "stdout": "",
+                            "stderr": f"Test watchdog timeout - exceeded {max_future_time}s (likely stuck in worker process)",
+                            "time": f"{max_future_time:.2f}s",
+                        }
+                        results.append(result)
+                        failed_count += 1
+                        # Remove from pending
+                        pending_futures.discard(f)
+                        del future_start_times[f]
 
-                    if should_update:
-                        console.print(
-                            f"\n📊 Progress: {len(results)}/{len(packages_to_test)} | ✅ {passed_count} | ❌ {failed_count} | ⏭️ {skipped_count}"
-                        )
-                        if running_packages:
-                            console.print(
-                                f"🔄 Currently running ({len(running_packages)}):"
-                            )
-                            for pkg in running_packages[:15]:  # Show up to 15 in CI
-                                console.print(f"   → {pkg}")
-                            if len(running_packages) > 15:
-                                console.print(
-                                    f"   ... and {len(running_packages) - 15} more"
-                                )
-                        console.print()
-                        last_update_time = current_time
-            except concurrent.futures.TimeoutError:
-                # as_completed() itself timed out - some futures never completed
-                console.print(
-                    f"\n⏱️  GLOBAL TIMEOUT: Not all tests completed within {as_completed_timeout}s",
-                    style="bold red",
-                )
-                # Get remaining futures that never completed
-                remaining = [
-                    future_to_package[f] for f in future_to_package if not f.done()
+                # Print status update
+                running_packages = [
+                    str(future_to_package[f].relative_to(repo_root))
+                    for f in pending_futures
                 ]
+
                 console.print(
-                    f"🔍 Remaining tests that never completed ({len(remaining)}):",
-                    style="bold yellow",
+                    f"\n📊 Progress: {len(results)}/{len(packages_to_test)} | ✅ {passed_count} | ❌ {failed_count} | ⏭️ {skipped_count}"
                 )
-                for pkg in remaining:
-                    console.print(f"   → {pkg.relative_to(repo_root)}", style="yellow")
-                    # Mark as failed
-                    result = {
-                        "package": pkg,
-                        "status": ResultStatus.TESTS_FAILED,
-                        "stdout": "",
-                        "stderr": f"Test never completed - worker process may be hung",
-                        "time": "N/A",
-                    }
-                    results.append(result)
-                    failed_count += 1
+                if running_packages:
+                    console.print(f"🔄 Currently running ({len(running_packages)}):")
+                    for pkg in running_packages[:15]:  # Show up to 15 in CI
+                        console.print(f"   → {pkg}")
+                    if len(running_packages) > 15:
+                        console.print(f"   ... and {len(running_packages) - 15} more")
+                console.print()
+                last_update_time = current_time
         else:
             # Local: Use Rich Live display to show progress
-            result_timeout = 300  # 5 minutes max per test package
-            as_completed_timeout = (
-                result_timeout + 10
-            )  # Slightly longer than result timeout
+            update_interval = 2  # Update display every 2 seconds
+
+            pending_futures = set(future_to_package.keys())
 
             with Live(
                 _generate_status_table(
@@ -289,27 +288,34 @@ def test(
                 console=console,
                 refresh_per_second=2,
             ) as live:
-                try:
-                    for future in concurrent.futures.as_completed(
-                        future_to_package, timeout=as_completed_timeout
-                    ):
+                while pending_futures:
+                    # Wait for futures with a short timeout for responsive display
+                    done, pending_futures = concurrent.futures.wait(
+                        pending_futures,
+                        timeout=update_interval,
+                        return_when=concurrent.futures.FIRST_COMPLETED,
+                    )
+
+                    # Process completed futures
+                    for future in done:
                         try:
-                            result = future.result(timeout=result_timeout)
+                            result = future.result(timeout=0.1)  # Should be immediate
                             results.append(result)
-                        except concurrent.futures.TimeoutError:
-                            # Test hung - create a failure result
-                            hung_package = future_to_package[future]
+                        except Exception as e:
+                            # Handle any errors
+                            pkg = future_to_package[future]
                             result = {
-                                "package": hung_package,
+                                "package": pkg,
                                 "status": ResultStatus.TESTS_FAILED,
                                 "stdout": "",
-                                "stderr": f"Test execution timed out after {result_timeout}s",
-                                "time": f"{result_timeout:.2f}s",
+                                "stderr": f"Test failed with exception: {e}",
+                                "time": "N/A",
                             }
                             results.append(result)
                             failed_count += 1
+                            continue
 
-                        # Update counts (runs for both success and timeout)
+                        # Update counts
                         if result["status"] == ResultStatus.TESTS_PASSED:
                             passed_count += 1
                         elif result["status"] in (
@@ -321,43 +327,36 @@ def test(
                         else:
                             skipped_count += 1
 
-                        # Get currently running packages
-                        running_packages = [
-                            str(future_to_package[f].relative_to(repo_root))
-                            for f in future_to_package
-                            if not f.done()
-                        ]
+                    # Check for stuck futures (watchdog)
+                    current_time = time.time()
+                    stuck_futures = []
+                    for f in list(pending_futures):
+                        if (current_time - future_start_times[f]) > max_future_time:
+                            stuck_futures.append(f)
 
-                        # Update the live display
-                        live.update(
-                            _generate_status_table(
-                                len(packages_to_test),
-                                len(results),
-                                passed_count,
-                                failed_count,
-                                skipped_count,
-                                running_packages,
-                            )
-                        )
-                except concurrent.futures.TimeoutError:
-                    # as_completed() itself timed out - some futures never completed
-                    # Get remaining futures that never completed
-                    remaining = [
-                        future_to_package[f] for f in future_to_package if not f.done()
+                    if stuck_futures:
+                        for f in stuck_futures:
+                            pkg = future_to_package[f]
+                            # Mark as failed
+                            result = {
+                                "package": pkg,
+                                "status": ResultStatus.TESTS_FAILED,
+                                "stdout": "",
+                                "stderr": f"Test watchdog timeout - exceeded {max_future_time}s",
+                                "time": f"{max_future_time:.2f}s",
+                            }
+                            results.append(result)
+                            failed_count += 1
+                            # Remove from pending
+                            pending_futures.discard(f)
+                            del future_start_times[f]
+
+                    # Get currently running packages and update display
+                    running_packages = [
+                        str(future_to_package[f].relative_to(repo_root))
+                        for f in pending_futures
                     ]
-                    for pkg in remaining:
-                        # Mark as failed
-                        result = {
-                            "package": pkg,
-                            "status": ResultStatus.TESTS_FAILED,
-                            "stdout": "",
-                            "stderr": f"Test never completed - worker process may be hung",
-                            "time": "N/A",
-                        }
-                        results.append(result)
-                        failed_count += 1
 
-                    # Update display one last time
                     live.update(
                         _generate_status_table(
                             len(packages_to_test),
@@ -365,7 +364,7 @@ def test(
                             passed_count,
                             failed_count,
                             skipped_count,
-                            [],  # No more running packages
+                            running_packages,
                         )
                     )
 
