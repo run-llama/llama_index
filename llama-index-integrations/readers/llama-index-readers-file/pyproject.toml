@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-file"
-version = "0.5.5"
+version = "0.5.6"
 description = "llama-index readers file integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
