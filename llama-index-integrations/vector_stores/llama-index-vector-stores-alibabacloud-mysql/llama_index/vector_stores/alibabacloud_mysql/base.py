@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Literal
 from contextlib import contextmanager
 
 import mysql.connector
@@ -66,18 +66,18 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    table_name: str
+    table_name: str = "llama_index_table"
     host: str
     port: int
     user: str
     password: str
     database: str
-    charset: str
-    max_connection: int
-    embed_dim: int
-    default_m: int
-    distance_method: str
-    perform_setup: bool
+    charset: str = "utf8mb4"
+    max_connection: int = 10
+    embed_dim: int = 1536
+    default_m: int = 6
+    distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE"
+    perform_setup: bool = True
 
     _pool: mysql.connector.pooling.MySQLConnectionPool = PrivateAttr()
     _table_name: str = PrivateAttr()
@@ -93,7 +93,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         table_name: str = "llama_index_table",
         embed_dim: int = 1536,
         default_m: int = 6,
-        distance_method: str = "COSINE",
+        distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE",
         perform_setup: bool = True,
         charset: str = "utf8mb4",
         max_connection: int = 10,
@@ -110,7 +110,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
-            distance_method (str, optional): Vector distance type. Defaults to COSINE.
+            distance_method (Literal["EUCLIDEAN", "COSINE"], optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             charset (str, optional): Character set for the connection. Defaults to utf8mb4.
             max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
@@ -155,7 +155,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         table_name: str = "llama_index_table",
         embed_dim: int = 1536,
         default_m: int = 6,
-        distance_method: str = "COSINE",
+        distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE",
         perform_setup: bool = True,
         charset: str = "utf8mb4",
         max_connection: int = 10,
@@ -172,7 +172,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             table_name (str, optional): Table name for the vector store. Defaults to "llama_index_table".
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
-            distance_method (str, optional): Vector distance type. Defaults to COSINE.
+            distance_method (Literal["EUCLIDEAN", "COSINE"], optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             charset (str, optional): Character set for the connection. Defaults to utf8mb4.
             max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
@@ -292,13 +292,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
 
     def _initialize(self) -> None:
         if not self._is_initialized:
-            # Validate distance method
-            if self.distance_method not in ["EUCLIDEAN", "COSINE"]:
-                raise ValueError(
-                    f"Distance method '{self.distance_method}' is not supported. "
-                    "Supported methods are: 'EUCLIDEAN', 'COSINE'."
-                )
-
             self._check_vector_support()
             if self.perform_setup:
                 self._create_table_if_not_exists()
