@@ -2,6 +2,7 @@ import concurrent.futures
 import os
 import subprocess
 import sys
+import threading
 import time
 from enum import Enum, auto
 from pathlib import Path
@@ -143,8 +144,10 @@ def test(
     passed_count = 0
     failed_count = 0
     skipped_count = 0
+    last_running_packages = []  # Track last known running packages for debugging hangs
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=int(workers)) as executor:
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=int(workers))
+    try:
         future_to_package = {
             executor.submit(
                 _run_tests,
@@ -192,6 +195,7 @@ def test(
                     for f in future_to_package
                     if not f.done()
                 ]
+                last_running_packages = running_packages  # Store for debugging
 
                 # Print status update periodically or on every 10th completion
                 current_time = time.time()
@@ -256,6 +260,7 @@ def test(
                         for f in future_to_package
                         if not f.done()
                     ]
+                    last_running_packages = running_packages  # Store for debugging
 
                     # Update the live display
                     live.update(
@@ -307,6 +312,54 @@ def test(
                 console.print(
                     _trim(debug, f"Output:\n{result['stdout']}"), style="info"
                 )
+    finally:
+        # Shutdown executor with explicit timeout and logging
+        console.print("\n🔄 Shutting down worker processes...", style="dim")
+        shutdown_start = time.time()
+
+        # Try to shutdown gracefully with a timeout
+        shutdown_timeout = 15  # seconds
+        shutdown_complete = threading.Event()
+
+        def shutdown_executor():
+            try:
+                executor.shutdown(wait=True)
+                shutdown_complete.set()
+            except Exception as e:
+                console.print(f"⚠️  Error during shutdown: {e}", style="warning")
+
+        shutdown_thread = threading.Thread(target=shutdown_executor, daemon=True)
+        shutdown_thread.start()
+
+        # Wait for shutdown to complete or timeout
+        if shutdown_complete.wait(timeout=shutdown_timeout):
+            elapsed = time.time() - shutdown_start
+            console.print(
+                f"✅ Worker processes shut down cleanly in {elapsed:.2f}s", style="dim"
+            )
+        else:
+            console.print(
+                f"⚠️  Worker processes did not shut down cleanly after {shutdown_timeout}s",
+                style="warning",
+            )
+            console.print(
+                "This likely means one or more test processes are hung.",
+                style="warning",
+            )
+            if last_running_packages:
+                console.print(
+                    f"\n🔍 Last known running packages before timeout ({len(last_running_packages)}):",
+                    style="bold yellow",
+                )
+                for pkg in last_running_packages[:20]:  # Show up to 20
+                    console.print(f"   → {pkg}", style="yellow")
+                if len(last_running_packages) > 20:
+                    console.print(
+                        f"   ... and {len(last_running_packages) - 20} more",
+                        style="dim yellow",
+                    )
+            # Note: We can't force kill the processes cleanly, but at least we don't hang forever
+            # The daemon thread will continue trying to shut down in the background
 
     # Print summary
     failed = [
