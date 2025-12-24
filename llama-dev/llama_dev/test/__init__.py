@@ -157,22 +157,19 @@ def test(
             for package_path in sorted(packages_to_test)
         }
 
-        # Use Rich Live display to show progress
-        with Live(
-            _generate_status_table(
-                len(packages_to_test),
-                0,
-                0,
-                0,
-                0,
-                [
-                    str(p.relative_to(repo_root))
-                    for p in sorted(packages_to_test)[: int(workers)]
-                ],
-            ),
-            console=console,
-            refresh_per_second=2,
-        ) as live:
+        # Detect if we're in a CI environment (GitHub Actions, etc.)
+        is_ci = (
+            os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
+        )
+
+        if is_ci:
+            # In CI: print periodic status updates instead of live display
+            console.print(
+                f"🚀 Starting tests for {len(packages_to_test)} packages with {workers} workers...\n"
+            )
+            last_update_time = time.time()
+            update_interval = 30  # Print status every 30 seconds
+
             for future in concurrent.futures.as_completed(future_to_package):
                 result = future.result()
                 results.append(result)
@@ -196,17 +193,81 @@ def test(
                     if not f.done()
                 ]
 
-                # Update the live display
-                live.update(
-                    _generate_status_table(
-                        len(packages_to_test),
-                        len(results),
-                        passed_count,
-                        failed_count,
-                        skipped_count,
-                        running_packages,
-                    )
+                # Print status update periodically or on every 10th completion
+                current_time = time.time()
+                should_update = (
+                    current_time - last_update_time >= update_interval
+                    or len(results) % 10 == 0
+                    or len(results) == len(packages_to_test)
                 )
+
+                if should_update:
+                    console.print(
+                        f"\n📊 Progress: {len(results)}/{len(packages_to_test)} | ✅ {passed_count} | ❌ {failed_count} | ⏭️ {skipped_count}"
+                    )
+                    if running_packages:
+                        console.print(
+                            f"🔄 Currently running ({len(running_packages)}):"
+                        )
+                        for pkg in running_packages[:15]:  # Show up to 15 in CI
+                            console.print(f"   → {pkg}")
+                        if len(running_packages) > 15:
+                            console.print(
+                                f"   ... and {len(running_packages) - 15} more"
+                            )
+                    console.print()
+                    last_update_time = current_time
+        else:
+            # Local: Use Rich Live display to show progress
+            with Live(
+                _generate_status_table(
+                    len(packages_to_test),
+                    0,
+                    0,
+                    0,
+                    0,
+                    [
+                        str(p.relative_to(repo_root))
+                        for p in sorted(packages_to_test)[: int(workers)]
+                    ],
+                ),
+                console=console,
+                refresh_per_second=2,
+            ) as live:
+                for future in concurrent.futures.as_completed(future_to_package):
+                    result = future.result()
+                    results.append(result)
+
+                    # Update counts
+                    if result["status"] == ResultStatus.TESTS_PASSED:
+                        passed_count += 1
+                    elif result["status"] in (
+                        ResultStatus.TESTS_FAILED,
+                        ResultStatus.COVERAGE_FAILED,
+                        ResultStatus.INSTALL_FAILED,
+                    ):
+                        failed_count += 1
+                    else:
+                        skipped_count += 1
+
+                    # Get currently running packages
+                    running_packages = [
+                        str(future_to_package[f].relative_to(repo_root))
+                        for f in future_to_package
+                        if not f.done()
+                    ]
+
+                    # Update the live display
+                    live.update(
+                        _generate_status_table(
+                            len(packages_to_test),
+                            len(results),
+                            passed_count,
+                            failed_count,
+                            skipped_count,
+                            running_packages,
+                        )
+                    )
 
         # Print detailed results after completion
         console.print("\n" + "=" * 60 + "\n")
