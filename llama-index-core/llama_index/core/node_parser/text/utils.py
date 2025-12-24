@@ -1,7 +1,8 @@
 import logging
 from typing import Any, Callable, List
 
-from llama_index.core.node_parser.interface import TextSplitter
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.node_parser.interface import TextSplitter, MessageSplitter
 from llama_index.core.utils import globals_helper
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,24 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 
     """
     chunks = text_splitter.split_text(text)
+    return chunks[0]
+
+
+def truncate_messages(
+    messages: list[ChatMessage], message_splitter: MessageSplitter
+) -> ChatMessage:
+    """
+    Truncate lists of ChatMessage objects to fit within the chunk size.
+
+    Args:
+        messages (list[ChatMessage]): The messages to truncate.
+        message_splitter (MessageSplitter): The splitter to use for chunking.
+
+    Returns:
+        ChatMessage: A chat message containing the first blocks that fit within the chunk size.
+
+    """
+    chunks = message_splitter.split_messages(messages)
     return chunks[0]
 
 
