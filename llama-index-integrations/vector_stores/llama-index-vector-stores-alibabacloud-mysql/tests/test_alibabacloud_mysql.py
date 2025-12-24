@@ -969,3 +969,212 @@ def test_create_table_if_not_exists() -> None:
             sql_query = str(mock_session.execute.call_args[0][0])
             assert "CREATE TABLE IF NOT EXISTS" in sql_query
             assert "VECTOR" in sql_query
+
+
+def test_validate_identifier() -> None:
+    """Test _validate_identifier method."""
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            perform_setup=False,  # Don't perform setup to avoid DB calls
+        )
+
+        # Test valid identifiers
+        assert store._validate_identifier("valid_table") == "valid_table"
+        assert store._validate_identifier("_table_name") == "_table_name"
+        assert store._validate_identifier("table123") == "table123"
+        assert store._validate_identifier("Table_Name_123") == "Table_Name_123"
+        assert store._validate_identifier("a") == "a"
+
+        # Test invalid identifiers - should raise ValueError
+        with pytest.raises(ValueError, match="Invalid identifier: 123invalid"):
+            store._validate_identifier("123invalid")
+
+        with pytest.raises(ValueError, match="Invalid identifier: invalid-table"):
+            store._validate_identifier("invalid-table")
+
+        with pytest.raises(ValueError, match="Invalid identifier: invalid.table"):
+            store._validate_identifier("invalid.table")
+
+        with pytest.raises(ValueError, match="Invalid identifier: "):
+            store._validate_identifier("")
+
+        with pytest.raises(ValueError, match="Invalid identifier: table name"):
+            store._validate_identifier("table name")
+
+
+def test_validate_positive_int() -> None:
+    """Test _validate_positive_int method."""
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            perform_setup=False,  # Don't perform setup to avoid DB calls
+        )
+
+        # Test valid positive integers
+        assert store._validate_positive_int(1, "test_param") == 1
+        assert store._validate_positive_int(100, "test_param") == 100
+        assert store._validate_positive_int(999999, "test_param") == 999999
+
+        # Test invalid values - should raise ValueError
+        with pytest.raises(
+            ValueError, match="Expected positive int for test_param, got 0"
+        ):
+            store._validate_positive_int(0, "test_param")
+
+        with pytest.raises(
+            ValueError, match="Expected positive int for test_param, got -1"
+        ):
+            store._validate_positive_int(-1, "test_param")
+
+        with pytest.raises(
+            ValueError, match="Expected positive int for test_param, got -100"
+        ):
+            store._validate_positive_int(-100, "test_param")
+
+        with pytest.raises(
+            ValueError, match="Expected positive int for test_param, got 0"
+        ):
+            store._validate_positive_int(0.0, "test_param")
+
+
+def test_validate_table_name() -> None:
+    """Test _validate_table_name method."""
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            perform_setup=False,  # Don't perform setup to avoid DB calls
+        )
+
+        # Test valid table names (should pass through _validate_identifier)
+        assert store._validate_table_name("valid_table") == "valid_table"
+        assert store._validate_table_name("_my_table") == "_my_table"
+        assert store._validate_table_name("Table123") == "Table123"
+
+        # Test invalid table names - should raise ValueError via _validate_identifier
+        with pytest.raises(ValueError, match="Invalid identifier: invalid-table"):
+            store._validate_table_name("invalid-table")
+
+
+def test_init_validation_table_name() -> None:
+    """Test that __init__ validates table_name parameter."""
+    # Test valid table names should work
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="valid_table_name",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            perform_setup=False,
+        )
+        assert store.table_name == "valid_table_name"
+
+    # Test invalid table names should raise ValueError
+    with pytest.raises(ValueError, match="Invalid identifier: invalid-table-name"):
+        AlibabaCloudMySQLVectorStore(
+            table_name="invalid-table-name",  # Contains hyphens, invalid for identifier
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+        )
+
+
+def test_init_validation_embed_dim() -> None:
+    """Test that __init__ validates embed_dim parameter."""
+    # Test valid embed_dim values should work
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            embed_dim=128,  # Valid positive integer
+            perform_setup=False,
+        )
+        assert store.embed_dim == 128
+
+    # Test invalid embed_dim values should raise ValueError
+    with pytest.raises(ValueError, match="Expected positive int for embed_dim, got 0"):
+        AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            embed_dim=0,  # Invalid: not positive
+        )
+
+    with pytest.raises(
+        ValueError, match="Expected positive int for embed_dim, got -128"
+    ):
+        AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            embed_dim=-128,  # Invalid: negative
+        )
+
+
+def test_init_validation_default_m() -> None:
+    """Test that __init__ validates default_m parameter."""
+    # Test valid default_m values should work
+    with patch.object(AlibabaCloudMySQLVectorStore, "_connect"):
+        store = AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            default_m=8,  # Valid positive integer
+            perform_setup=False,
+        )
+        assert store.default_m == 8
+
+    # Test invalid default_m values should raise ValueError
+    with pytest.raises(ValueError, match="Expected positive int for default_m, got 0"):
+        AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            default_m=0,  # Invalid: not positive
+        )
+
+    with pytest.raises(ValueError, match="Expected positive int for default_m, got -5"):
+        AlibabaCloudMySQLVectorStore(
+            table_name="test_table",
+            host="localhost",
+            port=3306,
+            user="test_user",
+            password="test_password",
+            database="test_db",
+            default_m=-5,  # Invalid: negative
+        )

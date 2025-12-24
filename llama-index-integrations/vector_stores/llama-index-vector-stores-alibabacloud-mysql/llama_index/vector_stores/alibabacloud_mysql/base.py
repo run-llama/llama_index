@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from typing import Any, Dict, List, NamedTuple, Optional, Literal, Sequence
 from urllib.parse import quote_plus
 
@@ -63,10 +64,10 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     connection_string: str
-    table_name: str
+    table_name: str = "llama_index_table"
     database: str
-    embed_dim: int
-    default_m: int
+    embed_dim: int = 1536
+    default_m: int = 6
     distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE"
     perform_setup: bool = True
     debug: bool = False
@@ -77,6 +78,20 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     _async_session: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
+
+    def _validate_identifier(self, name: str) -> str:
+        # 只允许字母、数字、下划线（符合 SQL 标识符规范）
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
+            raise ValueError(f"Invalid identifier: {name}")
+        return name
+
+    def _validate_positive_int(self, value: int, param_name: str) -> int:
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError(f"Expected positive int for {param_name}, got {value}")
+        return value
+
+    def _validate_table_name(self, table_name: str) -> str:
+        return self._validate_identifier(table_name)
 
     def __init__(
         self,
@@ -109,6 +124,11 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             debug (bool, optional): If debug logging should be enabled. Defaults to False.
 
         """
+        # Validate table_name, embed_dim, and default_m
+        self._validate_table_name(table_name)
+        self._validate_positive_int(embed_dim, "embed_dim")
+        self._validate_positive_int(default_m, "default_m")
+
         # Create connection string
         password_safe = quote_plus(password)
         connection_string = (
