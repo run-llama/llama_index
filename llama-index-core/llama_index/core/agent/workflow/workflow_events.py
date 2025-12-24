@@ -140,4 +140,5 @@ class AgentWorkflowStartEvent(StartEvent):
             "user_msg": self.user_msg,
             "chat_history": self.chat_history,
             "max_iterations": self.max_iterations,
+            "early_stopping_method": self.get("early_stopping_method"),
         }
