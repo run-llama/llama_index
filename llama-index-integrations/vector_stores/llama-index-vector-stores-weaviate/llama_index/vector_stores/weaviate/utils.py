@@ -159,6 +159,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
 def get_data_object(
     node: BaseNode,
     text_key: str = DEFAULT_TEXT_KEY,
+    use_vector: bool = True,
 ) -> dict:
     """Add node."""
     metadata = {}
@@ -169,7 +170,7 @@ def get_data_object(
     )
     metadata.update(additional_metadata)
 
-    vector = node.get_embedding()
+    vector = node.get_embedding() if use_vector else None
     id = node.node_id
 
     return wvc.data.DataObject(properties=metadata, uuid=id, vector=vector)
