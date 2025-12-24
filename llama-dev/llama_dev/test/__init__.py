@@ -157,11 +157,9 @@ def test(
             for package_path in sorted(packages_to_test)
         }
 
-        # Track when futures were submitted/started for watchdog
-        future_start_times = {future: time.time() for future in future_to_package}
-        max_future_time = (
-            600  # 10 minutes max for any single future (includes queue time)
-        )
+        # Track last progress time for watchdog (detects if NO futures complete for too long)
+        last_progress_time = time.time()
+        watchdog_timeout = 600  # 10 minutes of no progress = stuck
 
         # Detect if we're in a CI environment (GitHub Actions, etc.)
         is_ci = (
@@ -193,6 +191,7 @@ def test(
                             timeout=0.1
                         )  # Should be immediate since future is done
                         results.append(result)
+                        last_progress_time = time.time()  # Update progress time
                     except Exception as e:
                         # Handle any errors
                         pkg = future_to_package[future]
@@ -205,6 +204,7 @@ def test(
                         }
                         results.append(result)
                         failed_count += 1
+                        last_progress_time = time.time()  # Update progress time
                         continue
 
                     # Update counts
@@ -219,21 +219,17 @@ def test(
                     else:
                         skipped_count += 1
 
-                # Check for stuck futures (watchdog)
+                # Check for stuck system (watchdog) - no progress for too long
                 current_time = time.time()
-                stuck_futures = []
-                for f in list(
-                    pending_futures
-                ):  # Use list() to avoid modification during iteration
-                    if (current_time - future_start_times[f]) > max_future_time:
-                        stuck_futures.append(f)
+                time_since_progress = current_time - last_progress_time
 
-                if stuck_futures:
+                if time_since_progress > watchdog_timeout and pending_futures:
                     console.print(
-                        f"\n⚠️  Watchdog: Found {len(stuck_futures)} stuck futures (>10 min), marking as failed",
+                        f"\n⚠️  Watchdog: No progress for {time_since_progress:.0f}s (>{watchdog_timeout}s), marking remaining tests as failed",
                         style="bold red",
                     )
-                    for f in stuck_futures:
+                    # Mark all pending futures as failed
+                    for f in list(pending_futures):
                         pkg = future_to_package[f]
                         console.print(f"   → {pkg.relative_to(repo_root)}", style="red")
                         # Mark as failed
@@ -241,14 +237,14 @@ def test(
                             "package": pkg,
                             "status": ResultStatus.TESTS_FAILED,
                             "stdout": "",
-                            "stderr": f"Test watchdog timeout - exceeded {max_future_time}s (likely stuck in worker process)",
-                            "time": f"{max_future_time:.2f}s",
+                            "stderr": f"Test watchdog timeout - no progress for {time_since_progress:.0f}s",
+                            "time": "N/A",
                         }
                         results.append(result)
                         failed_count += 1
-                        # Remove from pending
-                        pending_futures.discard(f)
-                        del future_start_times[f]
+                    # Clear pending futures to exit loop
+                    pending_futures.clear()
+                    continue
 
                 # Print status update
                 running_packages = [
@@ -301,6 +297,7 @@ def test(
                         try:
                             result = future.result(timeout=0.1)  # Should be immediate
                             results.append(result)
+                            last_progress_time = time.time()  # Update progress time
                         except Exception as e:
                             # Handle any errors
                             pkg = future_to_package[future]
@@ -313,6 +310,7 @@ def test(
                             }
                             results.append(result)
                             failed_count += 1
+                            last_progress_time = time.time()  # Update progress time
                             continue
 
                         # Update counts
@@ -327,29 +325,27 @@ def test(
                         else:
                             skipped_count += 1
 
-                    # Check for stuck futures (watchdog)
+                    # Check for stuck system (watchdog) - no progress for too long
                     current_time = time.time()
-                    stuck_futures = []
-                    for f in list(pending_futures):
-                        if (current_time - future_start_times[f]) > max_future_time:
-                            stuck_futures.append(f)
+                    time_since_progress = current_time - last_progress_time
 
-                    if stuck_futures:
-                        for f in stuck_futures:
+                    if time_since_progress > watchdog_timeout and pending_futures:
+                        # Mark all pending futures as failed
+                        for f in list(pending_futures):
                             pkg = future_to_package[f]
                             # Mark as failed
                             result = {
                                 "package": pkg,
                                 "status": ResultStatus.TESTS_FAILED,
                                 "stdout": "",
-                                "stderr": f"Test watchdog timeout - exceeded {max_future_time}s",
-                                "time": f"{max_future_time:.2f}s",
+                                "stderr": f"Test watchdog timeout - no progress for {time_since_progress:.0f}s",
+                                "time": "N/A",
                             }
                             results.append(result)
                             failed_count += 1
-                            # Remove from pending
-                            pending_futures.discard(f)
-                            del future_start_times[f]
+                        # Clear pending futures to exit loop
+                        pending_futures.clear()
+                        continue
 
                     # Get currently running packages and update display
                     running_packages = [
