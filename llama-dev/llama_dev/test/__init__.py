@@ -144,7 +144,9 @@ def test(
     failed_count = 0
     skipped_count = 0
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=int(workers)) as executor:
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=int(workers))
+    watchdog_triggered = False
+    try:
         future_to_package = {
             executor.submit(
                 _run_tests,
@@ -244,7 +246,8 @@ def test(
                         failed_count += 1
                     # Clear pending futures to exit loop
                     pending_futures.clear()
-                    continue
+                    watchdog_triggered = True
+                    break
 
                 # Print status update
                 running_packages = [
@@ -345,7 +348,8 @@ def test(
                             failed_count += 1
                         # Clear pending futures to exit loop
                         pending_futures.clear()
-                        continue
+                        watchdog_triggered = True
+                        break
 
                     # Get currently running packages and update display
                     running_packages = [
@@ -402,6 +406,17 @@ def test(
                 console.print(
                     _trim(debug, f"Output:\n{result['stdout']}"), style="info"
                 )
+    finally:
+        # Shutdown executor
+        if watchdog_triggered:
+            # Don't wait for hung futures
+            console.print(
+                "\n⚠️  Skipping executor shutdown (watchdog triggered)", style="dim"
+            )
+            executor.shutdown(wait=False, cancel_futures=True)
+        else:
+            # Normal shutdown
+            executor.shutdown(wait=True)
 
     # Print summary
     failed = [
