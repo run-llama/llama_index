@@ -761,7 +761,34 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             await session.execute(stmt)
             await session.commit()
 
-    async def close(self) -> None:
+    def close(self) -> None:
+        if not self._is_initialized:
+            return
+        if self._engine:
+            self._engine.dispose()
+        if self._async_engine:
+            import asyncio
+
+            try:
+                # Try to run the async disposal
+                loop = asyncio.get_event_loop()
+                if not loop.is_running():
+                    asyncio.run(self._async_engine.dispose())
+                else:
+                    # If already in a running loop, create a new thread to run the disposal
+                    import concurrent.futures
+
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            asyncio.run, self._async_engine.dispose()
+                        )
+                        future.result()
+            except RuntimeError:
+                # If no event loop exists, create one
+                asyncio.run(self._async_engine.dispose())
+        self._is_initialized = False
+
+    async def aclose(self) -> None:
         if not self._is_initialized:
             return
         if self._engine:
