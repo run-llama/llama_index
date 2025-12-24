@@ -323,25 +323,42 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             _logger.warning("Unsupported operator: %s, fallback to '='", operator)
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> tuple[str, list]:
-        values = []
+    def _build_filter_clause(
+        self, filter_: MetadataFilter, global_param_counter: List[int]
+    ) -> tuple[str, dict]:
+        params = {}
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            placeholders = ",".join(["%s"] * len(filter_.value))
-            filter_value = f"({placeholders})"
-            values.extend(filter_.value)
+            # For IN/NIN operators, we need multiple placeholders
+            placeholders = []
+            for i in range(len(filter_.value)):
+                param_name = f"param_{global_param_counter[0]}"
+                global_param_counter[0] += 1
+                placeholders.append(f":{param_name}")
+                params[param_name] = filter_.value[i]
+            filter_value = f"({','.join(placeholders)})"
         elif isinstance(filter_.value, (list, tuple)):
-            placeholders = ",".join(["%s"] * len(filter_.value))
-            filter_value = f"({placeholders})"
-            values.extend(filter_.value)
+            # For list/tuple values, we also need multiple placeholders
+            placeholders = []
+            for i in range(len(filter_.value)):
+                param_name = f"param_{global_param_counter[0]}"
+                global_param_counter[0] += 1
+                placeholders.append(f":{param_name}")
+                params[param_name] = filter_.value[i]
+            filter_value = f"({','.join(placeholders)})"
         else:
-            filter_value = "%s"
-            values.append(filter_.value)
+            # For single value, create a single parameter
+            param_name = f"param_{global_param_counter[0]}"
+            global_param_counter[0] += 1
+            filter_value = f":{param_name}"
+            params[param_name] = filter_.value
 
         clause = f"JSON_VALUE(metadata, '$.{filter_.key}') {self._to_mysql_operator(filter_.operator)} {filter_value}"
-        return clause, values
+        return clause, params
 
-    def _filters_to_where_clause(self, filters: MetadataFilters) -> tuple[str, list]:
+    def _filters_to_where_clause(
+        self, filters: MetadataFilters, global_param_counter: List[int]
+    ) -> tuple[str, dict]:
         conditions = {
             FilterCondition.OR: "OR",
             FilterCondition.AND: "AND",
@@ -353,27 +370,31 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             )
 
         clauses: List[str] = []
-        values: List[Any] = []
+        all_params = {}
 
         for filter_ in filters.filters:
             if isinstance(filter_, MetadataFilter):
-                clause, filter_values = self._build_filter_clause(filter_)
+                clause, filter_params = self._build_filter_clause(
+                    filter_, global_param_counter
+                )
                 clauses.append(clause)
-                values.extend(filter_values)
+                all_params.update(filter_params)
                 continue
 
             if isinstance(filter_, MetadataFilters):
-                subclause, subvalues = self._filters_to_where_clause(filter_)
+                subclause, subparams = self._filters_to_where_clause(
+                    filter_, global_param_counter
+                )
                 if subclause:
                     clauses.append(f"({subclause})")
-                    values.extend(subvalues)
+                    all_params.update(subparams)
                 continue
 
             raise ValueError(
                 f"Unsupported filter type: {type(filter_)}. Must be one of {MetadataFilter}, {MetadataFilters}"
             )
 
-        return f" {conditions[filters.condition]} ".join(clauses), values
+        return f" {conditions[filters.condition]} ".join(clauses), all_params
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -530,10 +551,19 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         )
 
         where_clause = ""
-        values = []
+        params = {
+            "query_embedding": json.dumps(query.query_embedding),
+            "limit": query.similarity_top_k,
+        }
+
         if query.filters:
-            where_clause, values = self._filters_to_where_clause(query.filters)
+            # Use a global counter to ensure unique parameter names
+            global_param_counter = [0]  # Use a list to make it mutable
+            where_clause, filter_params = self._filters_to_where_clause(
+                query.filters, global_param_counter
+            )
             where_clause = f"WHERE {where_clause}"
+            params.update(filter_params)
 
         stmt = sqlalchemy.text(f"""
         SELECT
@@ -547,16 +577,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         ORDER BY distance
         LIMIT :limit
         """)
-
-        # Add query embedding and limit to values
-        params = {
-            "query_embedding": json.dumps(query.query_embedding),
-            "limit": query.similarity_top_k,
-        }
-
-        # Add filter values to params
-        for i, value in enumerate(values):
-            params[f"filter_value_{i}"] = value
 
         with self._session() as session:
             result = session.execute(stmt, params)
@@ -594,10 +614,19 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         )
 
         where_clause = ""
-        values = []
+        params = {
+            "query_embedding": json.dumps(query.query_embedding),
+            "limit": query.similarity_top_k,
+        }
+
         if query.filters:
-            where_clause, values = self._filters_to_where_clause(query.filters)
+            # Use a global counter to ensure unique parameter names
+            global_param_counter = [0]  # Use a list to make it mutable
+            where_clause, filter_params = self._filters_to_where_clause(
+                query.filters, global_param_counter
+            )
             where_clause = f"WHERE {where_clause}"
+            params.update(filter_params)
 
         stmt = sqlalchemy.text(f"""
         SELECT
@@ -611,16 +640,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         ORDER BY distance
         LIMIT :limit
         """)
-
-        # Add query embedding and limit to values
-        params = {
-            "query_embedding": json.dumps(query.query_embedding),
-            "limit": query.similarity_top_k,
-        }
-
-        # Add filter values to params
-        for i, value in enumerate(values):
-            params[f"filter_value_{i}"] = value
 
         async with self._async_session() as session:
             result = await session.execute(stmt, params)
