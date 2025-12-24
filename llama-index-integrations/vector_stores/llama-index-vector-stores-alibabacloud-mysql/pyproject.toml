@@ -36,7 +36,9 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "mysql-connector-python>=8.0.36,<9",
+    "sqlalchemy>=1.4.0,<3.0.0",
+    "aiomysql>=0.2.0",
+    "pymysql>=1.0.0",
 ]
 
 [tool.codespell]

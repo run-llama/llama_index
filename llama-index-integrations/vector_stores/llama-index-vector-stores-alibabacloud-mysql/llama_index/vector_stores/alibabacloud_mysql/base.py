@@ -2,15 +2,11 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Literal
-from contextlib import contextmanager
+from typing import Any, Dict, List, NamedTuple, Optional, Literal, Sequence
+from urllib.parse import quote_plus
 
-import mysql.connector
-import mysql.connector.pooling
-from mysql.connector.connection import MySQLConnection
-from mysql.connector.cursor import MySQLCursor
-from mysql.connector.errors import Error as MySQLError
-
+import sqlalchemy
+import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -66,21 +62,20 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    table_name: str = "llama_index_table"
-    host: str
-    port: int
-    user: str
-    password: str
+    connection_string: str
+    table_name: str
     database: str
-    charset: str = "utf8mb4"
-    max_connection: int = 10
-    embed_dim: int = 1536
-    default_m: int = 6
+    embed_dim: int
+    default_m: int
     distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE"
     perform_setup: bool = True
+    debug: bool = False
 
-    _pool: mysql.connector.pooling.MySQLConnectionPool = PrivateAttr()
-    _table_name: str = PrivateAttr()
+    _engine: Any = PrivateAttr()
+    _async_engine: Any = PrivateAttr()
+    _session: Any = PrivateAttr()
+    _async_session: Any = PrivateAttr()
+    _table_class: Any = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
@@ -95,8 +90,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         default_m: int = 6,
         distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE",
         perform_setup: bool = True,
-        charset: str = "utf8mb4",
-        max_connection: int = 10,
+        debug: bool = False,
     ) -> None:
         """
         Constructor.
@@ -112,33 +106,35 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (Literal["EUCLIDEAN", "COSINE"], optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
-            charset (str, optional): Character set for the connection. Defaults to utf8mb4.
-            max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
+            debug (bool, optional): If debug logging should be enabled. Defaults to False.
 
         """
+        # Create connection string
+        password_safe = quote_plus(password)
+        connection_string = (
+            f"mysql+pymysql://{user}:{password_safe}@{host}:{port}/{database}"
+        )
+
         super().__init__(
+            connection_string=connection_string,
             table_name=table_name,
-            host=host,
-            port=port,
-            user=user,
-            password=password,
             database=database,
-            charset=charset,
-            max_connection=max_connection,
             embed_dim=embed_dim,
             default_m=default_m,
             distance_method=distance_method,
             perform_setup=perform_setup,
+            debug=debug,
         )
 
-        self._pool = self._create_connection_pool()
-        self._initialize()
-
-    def close(self) -> None:
-        if not self._is_initialized:
-            return
-        # Note: MySQLConnectionPool doesn't have explicit dispose/close method
+        # Private attrs
+        self._engine = None
+        self._async_engine = None
+        self._session = None
+        self._async_session = None
+        self._table_class = None
         self._is_initialized = False
+
+        self._initialize()
 
     @classmethod
     def class_name(cls) -> str:
@@ -157,8 +153,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
         default_m: int = 6,
         distance_method: Literal["EUCLIDEAN", "COSINE"] = "COSINE",
         perform_setup: bool = True,
-        charset: str = "utf8mb4",
-        max_connection: int = 10,
+        debug: bool = False,
     ) -> "AlibabaCloudMySQLVectorStore":
         """
         Construct from params.
@@ -174,8 +169,7 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             default_m (int, optional): Default M value for the vector index. Defaults to 6.
             distance_method (Literal["EUCLIDEAN", "COSINE"], optional): Vector distance type. Defaults to COSINE.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
-            charset (str, optional): Character set for the connection. Defaults to utf8mb4.
-            max_connection (int, optional): Maximum number of connections in the pool. Defaults to 10.
+            debug (bool, optional): If debug logging should be enabled. Defaults to False.
 
         Returns:
             AlibabaCloudMySQLVectorStore: Instance of AlibabaCloudMySQLVectorStore constructed from params.
@@ -192,67 +186,62 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             default_m=default_m,
             distance_method=distance_method,
             perform_setup=perform_setup,
-            charset=charset,
-            max_connection=max_connection,
+            debug=debug,
         )
 
     @property
     def client(self) -> Any:
-        """Return the MySQL connection pool."""
+        """Return the SQLAlchemy engine."""
         if not self._is_initialized:
             return None
-        return self._pool
+        return self._engine
 
-    def _create_connection_pool(self) -> mysql.connector.pooling.MySQLConnectionPool:
-        """Create connection pool using mysql-connector-python pooling."""
-        pool_config: dict[str, Any] = {
-            "host": self.host,
-            "port": self.port,
-            "user": self.user,
-            "password": self.password,
-            "database": self.database,
-            "charset": self.charset,
-            "autocommit": True,
-            "pool_name": f"pool_{self.table_name}",
-            "pool_size": self.max_connection,
-            "pool_reset_session": True,
-        }
-        return mysql.connector.pooling.MySQLConnectionPool(**pool_config)
+    def _connect(self) -> None:
+        """Create SQLAlchemy engines and sessions."""
+        from sqlalchemy import create_engine
+        from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+        from sqlalchemy.orm import sessionmaker
 
-    @contextmanager
-    def _get_cursor(self):
-        """Context manager to get a cursor from the connection pool."""
-        conn: Optional[MySQLConnection] = None
-        cursor: Optional[MySQLCursor] = None
-        try:
-            conn = self._pool.get_connection()
-            cursor = conn.cursor(dictionary=True)
-            yield cursor
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
+        # Create sync engine
+        self._engine = create_engine(
+            self.connection_string,
+            echo=self.debug,
+        )
+
+        # Create async engine
+        async_connection_string = self.connection_string.replace(
+            "mysql+pymysql://", "mysql+aiomysql://"
+        )
+        self._async_engine = create_async_engine(
+            async_connection_string,
+            echo=self.debug,
+        )
+
+        # Create session makers
+        self._session = sessionmaker(self._engine)
+        self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _check_vector_support(self) -> None:
         """Check if the MySQL server supports vector operations."""
-        try:
-            with self._get_cursor() as cur:
+        from sqlalchemy import text
+
+        with self._session() as session:
+            try:
                 # Check MySQL version
                 # Try to execute a simple vector function to verify support
-                cur.execute(
-                    "SELECT VEC_FromText('[1,2,3]') IS NOT NULL as vector_support"
+                result = session.execute(
+                    text("SELECT VEC_FromText('[1,2,3]') IS NOT NULL as vector_support")
                 )
-                vector_result = cur.fetchone()
-                if not vector_result or not vector_result.get("vector_support"):
+                vector_result = result.fetchone()
+                if not vector_result or not vector_result[0]:
                     raise ValueError(
                         "RDS MySQL Vector functions are not available."
                         " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
                     )
 
                 # Check rds_release_date >= 20251031
-                cur.execute("SHOW VARIABLES LIKE 'rds_release_date'")
-                rds_release_result = cur.fetchone()
+                result = session.execute(text("SHOW VARIABLES LIKE 'rds_release_date'"))
+                rds_release_result = result.fetchone()
 
                 if not rds_release_result:
                     raise ValueError(
@@ -260,24 +249,26 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                         "Your MySQL instance may not Alibaba Cloud RDS MySQL instance."
                     )
 
-                rds_release_date = rds_release_result["Value"]
+                rds_release_date = rds_release_result[1]
                 if int(rds_release_date) < 20251031:
                     raise ValueError(
                         f"Alibaba Cloud MySQL rds_release_date must be 20251031 or later, found: {rds_release_date}."
                     )
 
-        except MySQLError as e:
-            if "FUNCTION" in str(e) and "VEC_FromText" in str(e):
-                raise ValueError(
-                    "RDS MySQL Vector functions are not available."
-                    " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
-                ) from e
-            raise
+            except Exception as e:
+                if "FUNCTION" in str(e) and "VEC_FromText" in str(e):
+                    raise ValueError(
+                        "RDS MySQL Vector functions are not available."
+                        " Please ensure you're using RDS MySQL 8.0.36+ with Vector support."
+                    ) from e
+                raise
 
     def _create_table_if_not_exists(self) -> None:
-        with self._get_cursor() as cur:
+        from sqlalchemy import text
+
+        with self._session() as session:
             # Create table with VECTOR data type for Alibaba Cloud MySQL
-            stmt = f"""
+            stmt = text(f"""
             CREATE TABLE IF NOT EXISTS `{self.table_name}` (
                 id VARCHAR(36) PRIMARY KEY,
                 node_id VARCHAR(255) NOT NULL,
@@ -287,42 +278,17 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                 INDEX `node_id_index` (node_id),
                 VECTOR INDEX (embedding) M={self.default_m} DISTANCE={self.distance_method}
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            """
-            cur.execute(stmt)
+            """)
+            session.execute(stmt)
+            session.commit()
 
     def _initialize(self) -> None:
         if not self._is_initialized:
-            self._check_vector_support()
+            self._connect()
             if self.perform_setup:
+                self._check_vector_support()
                 self._create_table_if_not_exists()
             self._is_initialized = True
-
-    def get_nodes(
-        self,
-        node_ids: Optional[List[str]] = None,
-        filters: Optional[MetadataFilters] = None,
-    ) -> List[BaseNode]:
-        """Get nodes from vector store."""
-        self._initialize()
-
-        nodes: List[BaseNode] = []
-        with self._get_cursor() as cur:
-            if node_ids:
-                placeholders = ",".join(["%s"] * len(node_ids)) if node_ids else ""
-                stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
-                cur.execute(stmt, node_ids)
-            else:
-                stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
-                cur.execute(stmt)
-
-            results = cur.fetchall()
-
-            for item in results:
-                node = metadata_dict_to_node(json.loads(item["metadata"]))
-                node.set_content(str(item["text"]))
-                nodes.append(node)
-
-        return nodes
 
     def _node_to_table_row(self, node: BaseNode) -> Dict[str, Any]:
         return {
@@ -335,46 +301,6 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
                 flat_metadata=self.flat_metadata,
             ),
         }
-
-    def add(
-        self,
-        nodes: List[BaseNode],
-        **add_kwargs: Any,
-    ) -> List[str]:
-        self._initialize()
-
-        ids = []
-        with self._get_cursor() as cur:
-            for node in nodes:
-                ids.append(node.node_id)
-                item = self._node_to_table_row(node)
-
-                stmt = f"""
-                INSERT INTO `{self.table_name}` (id, node_id, text, embedding, metadata)
-                VALUES (
-                    UUID(),
-                    %(node_id)s,
-                    %(text)s,
-                    VEC_FromText(%(embedding)s),
-                    %(metadata)s
-                )
-                ON DUPLICATE KEY UPDATE
-                    text = VALUES(text),
-                    embedding = VALUES(embedding),
-                    metadata = VALUES(metadata)
-                """
-
-                cur.execute(
-                    stmt,
-                    {
-                        "node_id": item["node_id"],
-                        "text": item["text"],
-                        "embedding": json.dumps(item["embedding"]),
-                        "metadata": json.dumps(item["metadata"]),
-                    },
-                )
-
-        return ids
 
     def _to_mysql_operator(self, operator: FilterOperator) -> str:
         if operator == FilterOperator.EQ:
@@ -469,6 +395,127 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             ids=ids,
         )
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        self._initialize()
+
+        nodes: List[BaseNode] = []
+        with self._session() as session:
+            if node_ids:
+                # Using parameterized query to prevent SQL injection
+                placeholders = ",".join([f":node_id_{i}" for i in range(len(node_ids))])
+                params = {f"node_id_{i}": node_id for i, node_id in enumerate(node_ids)}
+                stmt = sqlalchemy.text(
+                    f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
+                )
+                result = session.execute(stmt, params)
+            else:
+                stmt = sqlalchemy.text(
+                    f"""SELECT text, metadata FROM `{self.table_name}`"""
+                )
+                result = session.execute(stmt)
+
+            for item in result:
+                node = metadata_dict_to_node(
+                    json.loads(item[1]) if isinstance(item[1], str) else item[1]
+                )
+                node.set_content(str(item[0]))
+                nodes.append(node)
+
+        return nodes
+
+    def add(
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        self._initialize()
+
+        ids = []
+        with self._session() as session:
+            for node in nodes:
+                ids.append(node.node_id)
+                item = self._node_to_table_row(node)
+
+                stmt = sqlalchemy.text(f"""
+                INSERT INTO `{self.table_name}` (id, node_id, text, embedding, metadata)
+                VALUES (
+                    UUID(),
+                    :node_id,
+                    :text,
+                    VEC_FromText(:embedding),
+                    :metadata
+                )
+                ON DUPLICATE KEY UPDATE
+                    text = VALUES(text),
+                    embedding = VALUES(embedding),
+                    metadata = VALUES(metadata)
+                """)
+
+                session.execute(
+                    stmt,
+                    {
+                        "node_id": item["node_id"],
+                        "text": item["text"],
+                        "embedding": json.dumps(item["embedding"]),
+                        "metadata": json.dumps(item["metadata"]),
+                    },
+                )
+            session.commit()
+
+        return ids
+
+    async def async_add(
+        self,
+        nodes: Sequence[BaseNode],
+        **kwargs: Any,
+    ) -> List[str]:
+        """
+        Async wrapper around :meth:`add`.
+        """
+        self._initialize()
+
+        if not nodes:
+            return []
+
+        ids: List[str] = []
+        async with self._async_session() as session:
+            for node in nodes:
+                ids.append(node.node_id)
+                item = self._node_to_table_row(node)
+
+                stmt = sqlalchemy.text(f"""
+                INSERT INTO `{self.table_name}` (id, node_id, text, embedding, metadata)
+                VALUES (
+                    UUID(),
+                    :node_id,
+                    :text,
+                    VEC_FromText(:embedding),
+                    :metadata
+                )
+                ON DUPLICATE KEY UPDATE
+                    text = VALUES(text),
+                    embedding = VALUES(embedding),
+                    metadata = VALUES(metadata)
+                """)
+
+                await session.execute(
+                    stmt,
+                    {
+                        "node_id": item["node_id"],
+                        "text": item["text"],
+                        "embedding": json.dumps(item["embedding"]),
+                        "metadata": json.dumps(item["metadata"]),
+                    },
+                )
+            await session.commit()
+
+        return ids
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise NotImplementedError(f"Query mode {query.mode} not available.")
@@ -488,36 +535,107 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
             where_clause, values = self._filters_to_where_clause(query.filters)
             where_clause = f"WHERE {where_clause}"
 
-        stmt = f"""
+        stmt = sqlalchemy.text(f"""
         SELECT
             node_id,
             text,
             embedding,
             metadata,
-            {distance_func}(embedding, VEC_FromText(%s)) AS distance
+            {distance_func}(embedding, VEC_FromText(:query_embedding)) AS distance
         FROM `{self.table_name}`
         {where_clause}
         ORDER BY distance
-        LIMIT %s
-        """
+        LIMIT :limit
+        """)
 
         # Add query embedding and limit to values
-        values = [json.dumps(query.query_embedding), *values, query.similarity_top_k]
+        params = {
+            "query_embedding": json.dumps(query.query_embedding),
+            "limit": query.similarity_top_k,
+        }
 
-        with self._get_cursor() as cur:
-            cur.execute(stmt, values)
-            results = cur.fetchall()
+        # Add filter values to params
+        for i, value in enumerate(values):
+            params[f"filter_value_{i}"] = value
+
+        with self._session() as session:
+            result = session.execute(stmt, params)
+            results = result.fetchall()
 
         rows = []
         for item in results:
             rows.append(
                 DBEmbeddingRow(
-                    node_id=item["node_id"],
-                    text=item["text"],
-                    metadata=json.loads(item["metadata"]),
-                    similarity=(1 - item["distance"])
-                    if item["distance"] is not None
-                    else 0,
+                    node_id=item[0],
+                    text=item[1],
+                    metadata=json.loads(item[3])
+                    if isinstance(item[3], str)
+                    else item[3],
+                    similarity=(1 - item[4]) if item[4] is not None else 0,
+                )
+            )
+
+        return self._db_rows_to_query_result(rows)
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """Async wrapper around :meth:`query`."""
+        if query.mode != VectorStoreQueryMode.DEFAULT:
+            raise NotImplementedError(f"Query mode {query.mode} not available.")
+
+        self._initialize()
+
+        # Using specified distance function for vector similarity search
+        distance_func = (
+            "VEC_DISTANCE_COSINE"
+            if self.distance_method == "COSINE"
+            else "VEC_DISTANCE_EUCLIDEAN"
+        )
+
+        where_clause = ""
+        values = []
+        if query.filters:
+            where_clause, values = self._filters_to_where_clause(query.filters)
+            where_clause = f"WHERE {where_clause}"
+
+        stmt = sqlalchemy.text(f"""
+        SELECT
+            node_id,
+            text,
+            embedding,
+            metadata,
+            {distance_func}(embedding, VEC_FromText(:query_embedding)) AS distance
+        FROM `{self.table_name}`
+        {where_clause}
+        ORDER BY distance
+        LIMIT :limit
+        """)
+
+        # Add query embedding and limit to values
+        params = {
+            "query_embedding": json.dumps(query.query_embedding),
+            "limit": query.similarity_top_k,
+        }
+
+        # Add filter values to params
+        for i, value in enumerate(values):
+            params[f"filter_value_{i}"] = value
+
+        async with self._async_session() as session:
+            result = await session.execute(stmt, params)
+            results = result.fetchall()
+
+        rows = []
+        for item in results:
+            rows.append(
+                DBEmbeddingRow(
+                    node_id=item[0],
+                    text=item[1],
+                    metadata=json.loads(item[3])
+                    if isinstance(item[3], str)
+                    else item[3],
+                    similarity=(1 - item[4]) if item[4] is not None else 0,
                 )
             )
 
@@ -526,10 +644,25 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._initialize()
 
-        with self._get_cursor() as cur:
+        with self._session() as session:
             # Delete based on ref_doc_id in metadata
-            stmt = f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = %s"""
-            cur.execute(stmt, (ref_doc_id,))
+            stmt = sqlalchemy.text(
+                f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id"""
+            )
+            session.execute(stmt, {"doc_id": ref_doc_id})
+            session.commit()
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """Async wrapper around :meth:`delete`."""
+        self._initialize()
+
+        async with self._async_session() as session:
+            # Delete based on ref_doc_id in metadata
+            stmt = sqlalchemy.text(
+                f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id"""
+            )
+            await session.execute(stmt, {"doc_id": ref_doc_id})
+            await session.commit()
 
     def delete_nodes(
         self,
@@ -539,34 +672,81 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     ) -> None:
         self._initialize()
 
-        with self._get_cursor() as cur:
+        with self._session() as session:
             if node_ids:
-                placeholders = ",".join(["%s"] * len(node_ids))
-                stmt = f"""DELETE FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
-                cur.execute(stmt, node_ids)
+                # Using parameterized query to prevent SQL injection
+                placeholders = ",".join([f":node_id_{i}" for i in range(len(node_ids))])
+                params = {f"node_id_{i}": node_id for i, node_id in enumerate(node_ids)}
+                stmt = sqlalchemy.text(
+                    f"""DELETE FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
+                )
+                session.execute(stmt, params)
+                session.commit()
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Async wrapper around :meth:`delete_nodes`."""
+        self._initialize()
+
+        async with self._async_session() as session:
+            if node_ids:
+                # Using parameterized query to prevent SQL injection
+                placeholders = ",".join([f":node_id_{i}" for i in range(len(node_ids))])
+                params = {f"node_id_{i}": node_id for i, node_id in enumerate(node_ids)}
+                stmt = sqlalchemy.text(
+                    f"""DELETE FROM `{self.table_name}` WHERE node_id IN ({placeholders})"""
+                )
+                await session.execute(stmt, params)
+                await session.commit()
 
     def count(self) -> int:
         self._initialize()
 
-        with self._get_cursor() as cur:
-            stmt = f"""SELECT COUNT(*) as count FROM `{self.table_name}`"""
-            cur.execute(stmt)
-            result = cur.fetchone()
+        with self._session() as session:
+            stmt = sqlalchemy.text(
+                f"""SELECT COUNT(*) as count FROM `{self.table_name}`"""
+            )
+            result = session.execute(stmt)
+            row = result.fetchone()
 
-        return result["count"] if result else 0
+        return row[0] if row else 0
 
     def drop(self) -> None:
         self._initialize()
 
-        with self._get_cursor() as cur:
-            stmt = f"""DROP TABLE IF EXISTS `{self.table_name}`"""
-            cur.execute(stmt)
+        with self._session() as session:
+            stmt = sqlalchemy.text(f"""DROP TABLE IF EXISTS `{self.table_name}`""")
+            session.execute(stmt)
+            session.commit()
 
         self.close()
 
     def clear(self) -> None:
         self._initialize()
 
-        with self._get_cursor() as cur:
-            stmt = f"""DELETE FROM `{self.table_name}`"""
-            cur.execute(stmt)
+        with self._session() as session:
+            stmt = sqlalchemy.text(f"""DELETE FROM `{self.table_name}`""")
+            session.execute(stmt)
+            session.commit()
+
+    async def aclear(self) -> None:
+        """Async wrapper around :meth:`clear`."""
+        self._initialize()
+
+        async with self._async_session() as session:
+            stmt = sqlalchemy.text(f"""DELETE FROM `{self.table_name}`""")
+            await session.execute(stmt)
+            await session.commit()
+
+    async def close(self) -> None:
+        if not self._is_initialized:
+            return
+        if self._engine:
+            self._engine.dispose()
+        if self._async_engine:
+            await self._async_engine.dispose()
+        self._is_initialized = False
