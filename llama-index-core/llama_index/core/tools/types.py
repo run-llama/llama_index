@@ -60,7 +60,8 @@ class ToolMetadata:
         return self.name
 
     def _sanitize_name(self, name: Optional[str]) -> Optional[str]:
-        """Sanitize name to match OpenAI's function name requirements.
+        """
+        Sanitize name to match OpenAI's function name requirements.
 
         OpenAI requires function names to match ^[a-zA-Z0-9_-]+$.
         Generic Pydantic models like GenericModel[int] contain brackets
