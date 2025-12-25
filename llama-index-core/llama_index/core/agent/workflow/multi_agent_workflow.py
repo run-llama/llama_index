@@ -37,6 +37,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentSetup,
     AgentOutput,
+    AgentStream,
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
@@ -307,6 +308,41 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
 
+    async def _get_llm_response(
+        self,
+        ctx: Context,
+        llm_input: List[ChatMessage],
+        agent: BaseWorkflowAgent,
+    ) -> ChatMessage:
+        """Get LLM response, respecting agent's streaming settings."""
+        if agent.streaming:
+            response_stream = await agent.llm.astream_chat(llm_input)
+            last_response = None
+            async for last_response in response_stream:
+                raw = (
+                    last_response.raw.model_dump()
+                    if isinstance(last_response.raw, BaseModel)
+                    else last_response.raw
+                )
+                if ctx.is_running:
+                    ctx.write_event_to_stream(
+                        AgentStream(
+                            delta=last_response.delta or "",
+                            response=last_response.message.content or "",
+                            raw=raw,
+                            current_agent_name=agent.name,
+                            thinking_delta=last_response.additional_kwargs.get(
+                                "thinking_delta", None
+                            ),
+                        )
+                    )
+            if last_response is None:
+                raise ValueError("Got empty streaming response")
+            return last_response.message
+        else:
+            response = await agent.llm.achat(llm_input)
+            return response.message
+
     async def _call_tool(
         self,
         ctx: Context,
@@ -463,14 +499,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
         llm_input.append(ChatMessage(role="system", content=early_stopping_prompt))
 
-        response = await agent.llm.achat(llm_input)
-
-        await memory.aput(response.message)
+        response_message = await self._get_llm_response(ctx, llm_input, agent)
+        await memory.aput(response_message)
 
         output = AgentOutput(
-            response=response.message,
+            response=response_message,
             tool_calls=[],
-            raw=response.raw,
+            raw=None,
             current_agent_name=agent.name,
         )
 
