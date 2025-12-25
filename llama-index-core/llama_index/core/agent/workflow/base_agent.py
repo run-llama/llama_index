@@ -38,7 +38,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.agent.utils import generate_structured_response
-from llama_index.core.llms import ChatMessage, LLM, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -300,7 +300,7 @@ class BaseWorkflowAgent(
 
     async def _get_llm_response(
         self, ctx: Context, llm_input: List[ChatMessage], llm: Optional[LLM] = None
-    ) -> ChatMessage:
+    ) -> ChatResponse:
         """Get LLM response, respecting streaming settings."""
         target_llm = llm or self.llm
 
@@ -327,10 +327,9 @@ class BaseWorkflowAgent(
                     )
             if last_response is None:
                 raise ValueError("Got empty streaming response")
-            return last_response.message
+            return last_response
         else:
-            response = await target_llm.achat(llm_input)
-            return response.message
+            return await target_llm.achat(llm_input)
 
     async def _call_tool(
         self,
@@ -486,13 +485,13 @@ class BaseWorkflowAgent(
             ]
         llm_input.append(ChatMessage(role="system", content=early_stopping_prompt))
 
-        response_message = await self._get_llm_response(ctx, llm_input)
-        await memory.aput(response_message)
+        response = await self._get_llm_response(ctx, llm_input)
+        await memory.aput(response.message)
 
         output = AgentOutput(
-            response=response_message,
+            response=response.message,
             tool_calls=[],
-            raw=None,
+            raw=response.raw,
             current_agent_name=self.name,
         )
 

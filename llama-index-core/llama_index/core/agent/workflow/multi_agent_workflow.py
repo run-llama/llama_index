@@ -41,7 +41,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
-from llama_index.core.llms import ChatMessage, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -313,7 +313,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         ctx: Context,
         llm_input: List[ChatMessage],
         agent: BaseWorkflowAgent,
-    ) -> ChatMessage:
+    ) -> "ChatResponse":
         """Get LLM response, respecting agent's streaming settings."""
         if agent.streaming:
             response_stream = await agent.llm.astream_chat(llm_input)
@@ -338,10 +338,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     )
             if last_response is None:
                 raise ValueError("Got empty streaming response")
-            return last_response.message
+            return last_response
         else:
-            response = await agent.llm.achat(llm_input)
-            return response.message
+            return await agent.llm.achat(llm_input)
 
     async def _call_tool(
         self,
@@ -499,13 +498,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
         llm_input.append(ChatMessage(role="system", content=early_stopping_prompt))
 
-        response_message = await self._get_llm_response(ctx, llm_input, agent)
-        await memory.aput(response_message)
+        response = await self._get_llm_response(ctx, llm_input, agent)
+        await memory.aput(response.message)
 
         output = AgentOutput(
-            response=response_message,
+            response=response.message,
             tool_calls=[],
-            raw=None,
+            raw=response.raw,
             current_agent_name=agent.name,
         )
 
