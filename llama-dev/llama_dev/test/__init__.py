@@ -466,12 +466,25 @@ def test(
         console.print(f"\n{len(failed)} packages had test failures:")
         for p in failed:
             console.print(p)
-        exit(1)
+        # Use os._exit() if watchdog triggered to avoid hanging on cleanup
+        if watchdog_triggered:
+            console.print(
+                "\n⚠️  Using immediate exit due to watchdog timeout", style="dim"
+            )
+            os._exit(1)
+        else:
+            exit(1)
     else:
         console.print(
             f"\nTests passed for {len(results) - len(skipped_no_tests) - len(skipped_pyversion_incompatible)} packages.",
             style="green",
         )
+        # Use os._exit() if watchdog triggered to avoid hanging on cleanup
+        if watchdog_triggered:
+            console.print(
+                "\n⚠️  Using immediate exit due to watchdog timeout", style="dim"
+            )
+            os._exit(0)
 
 
 def _trim(debug: bool, msg: str):
