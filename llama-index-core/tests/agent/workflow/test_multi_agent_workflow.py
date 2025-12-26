@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import List
 
 import pytest
 from llama_index.core.agent.workflow import AgentInput
@@ -7,12 +7,9 @@ from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.llms import (
     ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    LLMMetadata,
     MessageRole,
-    MockLLM,
 )
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool, ToolSelection
 from workflows import Context
@@ -24,56 +21,19 @@ from workflows.context import PickleSerializer
 from workflows.errors import WorkflowRuntimeError
 
 
-class MockLLM(MockLLM):
-    def __init__(self, responses: List[ChatMessage]):
-        super().__init__()
-        self._responses = responses
-        self._response_index = 0
+def _response_generator_from_list(responses: List[ChatMessage]):
+    """Helper to create a response generator from a list of responses."""
+    index = 0
 
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=True)
+    def generator(messages: List[ChatMessage]) -> ChatMessage:
+        nonlocal index
+        if not responses:
+            return ChatMessage(role=MessageRole.ASSISTANT, content=None)
+        msg = responses[index]
+        index = (index + 1) % len(responses)
+        return msg
 
-    async def astream_chat(
-        self, messages: List[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        response_msg = None
-        if self._responses:
-            response_msg = self._responses[self._response_index]
-            self._response_index = (self._response_index + 1) % len(self._responses)
-
-        async def _gen():
-            if response_msg:
-                yield ChatResponse(
-                    message=response_msg,
-                    delta=response_msg.content,
-                    raw={"content": response_msg.content},
-                )
-
-        return _gen()
-
-    async def astream_chat_with_tools(
-        self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        response_msg = None
-        if self._responses:
-            response_msg = self._responses[self._response_index]
-            self._response_index = (self._response_index + 1) % len(self._responses)
-
-        async def _gen():
-            if response_msg:
-                yield ChatResponse(
-                    message=response_msg,
-                    delta=response_msg.content,
-                    raw={"content": response_msg.content},
-                )
-
-        return _gen()
-
-    def get_tool_calls_from_response(
-        self, response: ChatResponse, **kwargs: Any
-    ) -> List[ToolSelection]:
-        return response.message.additional_kwargs.get("tool_calls", [])
+    return generator
 
 
 def add(a: int, b: int) -> int:
@@ -96,17 +56,19 @@ def calculator_agent():
             FunctionTool.from_defaults(fn=add),
             FunctionTool.from_defaults(fn=subtract),
         ],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content=r"Thought: The result is 8\Answer: The sum is 8",
-                ),
-            ]
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=r"Thought: The result is 8\Answer: The sum is 8",
+                    ),
+                ]
+            )
         ),
     )
 
@@ -121,7 +83,9 @@ def empty_calculator_agent():
             FunctionTool.from_defaults(fn=add),
             FunctionTool.from_defaults(fn=subtract),
         ],
-        llm=MockLLM(responses=[]),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([])
+        ),
     )
 
 
@@ -131,25 +95,27 @@ def retriever_agent():
         name="retriever",
         description="Manages data retrieval",
         system_prompt="You are a retrieval assistant.",
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="Let me help you with that calculation. I'll hand this off to the calculator.",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="handoff",
-                                tool_kwargs={
-                                    "to_agent": "calculator",
-                                    "reason": "This requires arithmetic operations.",
-                                },
-                            )
-                        ]
-                    },
-                ),
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="Let me help you with that calculation. I'll hand this off to the calculator.",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="handoff",
+                                    tool_kwargs={
+                                        "to_agent": "calculator",
+                                        "reason": "This requires arithmetic operations.",
+                                    },
+                                )
+                            ]
+                        },
+                    ),
+                ]
+            )
         ),
     )
 
@@ -160,8 +126,8 @@ def empty_retriever_agent():
         name="retriever",
         description="Manages data retrieval",
         system_prompt="You are a retrieval assistant.",
-        llm=MockLLM(
-            responses=[],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([])
         ),
     )
 
@@ -189,19 +155,23 @@ async def test_workflow_requires_root_agent():
                 FunctionAgent(
                     name="agent1",
                     description="test",
-                    llm=MockLLM(
-                        responses=[
-                            ChatMessage(role=MessageRole.ASSISTANT, content="test"),
-                        ]
+                    llm=MockFunctionCallingLLM(
+                        response_generator=_response_generator_from_list(
+                            [
+                                ChatMessage(role=MessageRole.ASSISTANT, content="test"),
+                            ]
+                        )
                     ),
                 ),
                 ReActAgent(
                     name="agent2",
                     description="test",
-                    llm=MockLLM(
-                        responses=[
-                            ChatMessage(role=MessageRole.ASSISTANT, content="test"),
-                        ]
+                    llm=MockFunctionCallingLLM(
+                        response_generator=_response_generator_from_list(
+                            [
+                                ChatMessage(role=MessageRole.ASSISTANT, content="test"),
+                            ]
+                        )
                     ),
                 ),
             ]
@@ -285,31 +255,38 @@ async def test_invalid_handoff():
     agent1 = FunctionAgent(
         name="agent1",
         description="test",
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handoff invalid_agent Because reasons",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="handoff",
-                                tool_kwargs={
-                                    "to_agent": "invalid_agent",
-                                    "reason": "Because reasons",
-                                },
-                            )
-                        ]
-                    },
-                ),
-                ChatMessage(role=MessageRole.ASSISTANT, content="guess im stuck here"),
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handoff invalid_agent Because reasons",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="handoff",
+                                    tool_kwargs={
+                                        "to_agent": "invalid_agent",
+                                        "reason": "Because reasons",
+                                    },
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="guess im stuck here"
+                    ),
+                ]
+            )
         ),
     )
 
     agent2 = FunctionAgent(
-        **agent1.model_dump(exclude={"llm"}), llm=MockLLM(responses=[])
+        **agent1.model_dump(exclude={"llm"}),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list([])
+        ),
     )
     agent2.name = "agent2"
 
@@ -341,25 +318,27 @@ async def test_workflow_with_state():
         name="agent",
         description="test",
         tools=[modify_state],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handing off",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="modify_state",
-                                tool_kwargs={"random_arg": "hello"},
-                            )
-                        ]
-                    },
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT, content="Current state processed"
-                ),
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="modify_state",
+                                    tool_kwargs={"random_arg": "hello"},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="Current state processed"
+                    ),
+                ]
+            )
         ),
     )
 
@@ -399,23 +378,25 @@ async def test_agent_with_hitl():
         name="agent",
         description="test",
         tools=[hitl],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handing off",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="hitl",
-                                tool_kwargs={},
-                            )
-                        ]
-                    },
-                ),
-                ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="hitl",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
+                ]
+            )
         ),
     )
 
@@ -453,23 +434,25 @@ async def test_max_iterations():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handing off",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="random_tool",
-                                tool_kwargs={},
-                            )
-                        ]
-                    },
-                ),
-            ]
-            * 100
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="random_tool",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                ]
+                * 100
+            )
         ),
     )
 
@@ -500,23 +483,25 @@ async def test_workflow_pickle_serialize_and_resume():
         name="agent",
         description="test",
         tools=[hitl],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handing off",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="hitl",
-                                tool_kwargs={},
-                            )
-                        ]
-                    },
-                ),
-                ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
-            ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="handing off",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="hitl",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
+                ]
+            )
         ),
     )
 
@@ -563,21 +548,23 @@ async def test_retry():
         name="agent",
         description="test",
         tools=[add_tool],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\n{"a": 5 "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content=r"Thought: The result is 8\Answer: The sum is 8",
-                ),
-            ]
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\n{"a": 5 "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=r"Thought: The result is 8\Answer: The sum is 8",
+                    ),
+                ]
+            )
         ),
     )
 
