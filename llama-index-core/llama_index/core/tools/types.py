@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
@@ -58,6 +59,18 @@ class ToolMetadata:
             raise ValueError("name is None.")
         return self.name
 
+    def _sanitize_name(self, name: Optional[str]) -> Optional[str]:
+        """
+        Sanitize name to match OpenAI's function name requirements.
+
+        OpenAI requires function names to match ^[a-zA-Z0-9_-]+$.
+        Generic Pydantic models like GenericModel[int] contain brackets
+        which are not allowed.
+        """
+        if name is None:
+            return None
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", name)
+
     @deprecated(
         "Deprecated in favor of `to_openai_tool`, which should be used instead."
     )
@@ -68,7 +81,7 @@ class ToolMetadata:
         model.
         """
         return {
-            "name": self.name,
+            "name": self._sanitize_name(self.name),
             "description": self.description,
             "parameters": self.get_parameters_dict(),
         }
@@ -83,7 +96,7 @@ class ToolMetadata:
         return {
             "type": "function",
             "function": {
-                "name": self.name,
+                "name": self._sanitize_name(self.name),
                 "description": self.description,
                 "parameters": self.get_parameters_dict(),
             },
