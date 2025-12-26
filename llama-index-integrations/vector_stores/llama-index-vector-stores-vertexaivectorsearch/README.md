@@ -5,6 +5,7 @@
 ## Overview
 
 This integration supports both Vertex AI Vector Search architectures:
+
 - **v1.0** (default): Index + Endpoint architecture
 - **v2.0** (opt-in): Collection-based architecture (simpler setup, more features)
 
@@ -13,11 +14,13 @@ The v2.0 support is opt-in and maintains 100% backward compatibility with existi
 ## Installation
 
 ### Basic Installation (v1 only)
+
 ```bash
 pip install llama-index-vector-stores-vertexaivectorsearch
 ```
 
 ### With v2 Support
+
 ```bash
 pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'
 ```
@@ -25,6 +28,7 @@ pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'
 ## Quick Start
 
 ### v1.0 (Default)
+
 ```python
 from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
 
@@ -38,6 +42,7 @@ vector_store = VertexAIVectorStore(
 ```
 
 ### v2.0 (New - Simpler Setup)
+
 ```python
 from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
 
@@ -79,16 +84,17 @@ response = query_engine.query("What is LlamaIndex?")
 
 ## v1 vs v2 Comparison
 
-| Feature | v1 | v2 |
-|---------|----|----|
-| Required Resources | Index + Endpoint | Collection only |
-| GCS Bucket | Required for batch | Not needed |
-| `clear()` method | Not supported | Supported |
-| Setup Complexity | Higher | Lower |
+| Feature            | v1                 | v2              |
+| ------------------ | ------------------ | --------------- |
+| Required Resources | Index + Endpoint   | Collection only |
+| GCS Bucket         | Required for batch | Not needed      |
+| `clear()` method   | Not supported      | Supported       |
+| Setup Complexity   | Higher             | Lower           |
 
 ## Parameters
 
 ### v1 Parameters
+
 - `project_id`: Google Cloud project ID
 - `region`: Google Cloud region
 - `index_id`: Vertex AI index resource name
@@ -96,6 +102,7 @@ response = query_engine.query("What is LlamaIndex?")
 - `gcs_bucket_name`: GCS bucket for batch updates
 
 ### v2 Parameters
+
 - `api_version`: Set to `"v2"`
 - `project_id`: Google Cloud project ID
 - `region`: Google Cloud region

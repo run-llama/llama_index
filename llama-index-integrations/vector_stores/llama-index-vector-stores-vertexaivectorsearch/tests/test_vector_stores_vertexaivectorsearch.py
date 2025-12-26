@@ -443,6 +443,7 @@ def test_class():
 # V2 Unit Tests
 # =============================================================================
 
+
 class TestV2ParameterValidation:
     """Test parameter validation for v1 vs v2 API versions."""
 
@@ -468,7 +469,9 @@ class TestV2ParameterValidation:
 
     def test_v1_rejects_collection_id(self):
         """Test that v1 raises error when collection_id is provided."""
-        with pytest.raises(ValueError, match="collection_id.*only valid for api_version='v2'"):
+        with pytest.raises(
+            ValueError, match="collection_id.*only valid for api_version='v2'"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -489,7 +492,9 @@ class TestV2ParameterValidation:
 
     def test_v2_rejects_index_id(self):
         """Test that v2 raises error when index_id is provided."""
-        with pytest.raises(ValueError, match="index_id.*only valid for api_version='v1'"):
+        with pytest.raises(
+            ValueError, match="index_id.*only valid for api_version='v1'"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -500,7 +505,9 @@ class TestV2ParameterValidation:
 
     def test_v2_rejects_endpoint_id(self):
         """Test that v2 raises error when endpoint_id is provided."""
-        with pytest.raises(ValueError, match="endpoint_id.*only valid for api_version='v1'"):
+        with pytest.raises(
+            ValueError, match="endpoint_id.*only valid for api_version='v1'"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -511,7 +518,9 @@ class TestV2ParameterValidation:
 
     def test_v2_rejects_gcs_bucket_name(self):
         """Test that v2 raises error when gcs_bucket_name is provided."""
-        with pytest.raises(ValueError, match="gcs_bucket_name.*only valid for api_version='v1'"):
+        with pytest.raises(
+            ValueError, match="gcs_bucket_name.*only valid for api_version='v1'"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -553,8 +562,12 @@ class TestV2Routing:
         """Test that query() routes to _query_v2 when api_version='v2'."""
         mock_result = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
-        with patch.object(mock_v2_store, "_query_v2", return_value=mock_result) as mock_query:
-            query = VectorStoreQuery(query_embedding=[0.1, 0.2, 0.3], similarity_top_k=5)
+        with patch.object(
+            mock_v2_store, "_query_v2", return_value=mock_result
+        ) as mock_query:
+            query = VectorStoreQuery(
+                query_embedding=[0.1, 0.2, 0.3], similarity_top_k=5
+            )
 
             result = mock_v2_store.query(query)
 
@@ -563,14 +576,18 @@ class TestV2Routing:
 
     def test_delete_routes_to_v2(self, mock_v2_store):
         """Test that delete() routes to _delete_v2 when api_version='v2'."""
-        with patch.object(mock_v2_store, "_delete_v2", return_value=None) as mock_delete:
+        with patch.object(
+            mock_v2_store, "_delete_v2", return_value=None
+        ) as mock_delete:
             mock_v2_store.delete(ref_doc_id="doc123")
 
             mock_delete.assert_called_once_with("doc123")
 
     def test_delete_nodes_routes_to_v2(self, mock_v2_store):
         """Test that delete_nodes() routes to _delete_nodes_v2 when api_version='v2'."""
-        with patch.object(mock_v2_store, "_delete_nodes_v2", return_value=None) as mock_delete:
+        with patch.object(
+            mock_v2_store, "_delete_nodes_v2", return_value=None
+        ) as mock_delete:
             mock_v2_store.delete_nodes(node_ids=["node1", "node2"])
 
             mock_delete.assert_called_once()

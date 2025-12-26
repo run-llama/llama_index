@@ -39,6 +39,7 @@ collection = client.create_collection(
 ### Step 1: Update Your Initialization Code
 
 #### Before (v1)
+
 ```python
 from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
 
@@ -52,6 +53,7 @@ vector_store = VertexAIVectorStore(
 ```
 
 #### After (v2)
+
 ```python
 from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
 
@@ -96,25 +98,28 @@ vector_store.clear()
 ## Parameter Reference
 
 ### v1-Only Parameters (Remove for v2)
-| Parameter | Description |
-|-----------|-------------|
-| `index_id` | Vertex AI index resource name |
-| `endpoint_id` | Vertex AI index endpoint resource name |
-| `gcs_bucket_name` | GCS bucket for batch updates |
+
+| Parameter         | Description                            |
+| ----------------- | -------------------------------------- |
+| `index_id`        | Vertex AI index resource name          |
+| `endpoint_id`     | Vertex AI index endpoint resource name |
+| `gcs_bucket_name` | GCS bucket for batch updates           |
 
 ### v2-Only Parameters (Add for v2)
-| Parameter | Description |
-|-----------|-------------|
-| `api_version` | Must be `"v2"` |
+
+| Parameter       | Description             |
+| --------------- | ----------------------- |
+| `api_version`   | Must be `"v2"`          |
 | `collection_id` | Your v2 collection name |
 
 ### Shared Parameters (Work in Both)
-| Parameter | Description |
-|-----------|-------------|
-| `project_id` | Google Cloud project ID |
-| `region` | Google Cloud region |
-| `credentials_path` | Path to service account JSON (optional) |
-| `batch_size` | Batch size for operations (default: 100) |
+
+| Parameter          | Description                              |
+| ------------------ | ---------------------------------------- |
+| `project_id`       | Google Cloud project ID                  |
+| `region`           | Google Cloud region                      |
+| `credentials_path` | Path to service account JSON (optional)  |
+| `batch_size`       | Batch size for operations (default: 100) |
 
 ---
 
@@ -206,7 +211,9 @@ for node, score in zip(results.nodes, results.similarities):
 ## Troubleshooting
 
 ### Error: "collection_id is required for v2"
+
 You're using `api_version="v2"` but didn't provide `collection_id`:
+
 ```python
 # Wrong
 VertexAIVectorStore(api_version="v2", project_id="...", region="...")
@@ -221,7 +228,9 @@ VertexAIVectorStore(
 ```
 
 ### Error: "index_id is only valid for api_version='v1'"
+
 You're mixing v1 and v2 parameters:
+
 ```python
 # Wrong - can't use index_id with v2
 VertexAIVectorStore(api_version="v2", collection_id="...", index_id="...")
@@ -231,13 +240,17 @@ VertexAIVectorStore(api_version="v2", collection_id="...")
 ```
 
 ### Error: "v2 operations require google-cloud-vectorsearch"
+
 Install the v2 dependencies:
+
 ```bash
 pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'
 ```
 
 ### Want to Force v1 Behavior?
+
 Set the environment variable:
+
 ```bash
 export VERTEX_AI_ENABLE_V2=false
 ```
@@ -246,14 +259,14 @@ export VERTEX_AI_ENABLE_V2=false
 
 ## Key Differences Summary
 
-| Feature | v1 | v2 |
-|---------|----|----|
-| **Architecture** | Index + Endpoint | Collection |
-| **Setup Complexity** | Higher (create index, deploy to endpoint) | Lower (just create collection) |
-| **GCS Bucket** | Required for batch updates | Not needed |
-| **clear() method** | Not supported | Supported |
-| **Automatic Indexing** | Manual deployment | Automatic |
-| **SDK** | google-cloud-aiplatform | google-cloud-vectorsearch |
+| Feature                | v1                                        | v2                             |
+| ---------------------- | ----------------------------------------- | ------------------------------ |
+| **Architecture**       | Index + Endpoint                          | Collection                     |
+| **Setup Complexity**   | Higher (create index, deploy to endpoint) | Lower (just create collection) |
+| **GCS Bucket**         | Required for batch updates                | Not needed                     |
+| **clear() method**     | Not supported                             | Supported                      |
+| **Automatic Indexing** | Manual deployment                         | Automatic                      |
+| **SDK**                | google-cloud-aiplatform                   | google-cloud-vectorsearch      |
 
 ---
 

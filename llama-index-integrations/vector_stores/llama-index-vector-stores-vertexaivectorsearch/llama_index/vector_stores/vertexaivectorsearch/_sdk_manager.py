@@ -186,6 +186,6 @@ class VectorSearchSDKManager:
                 ),
                 "data_object_search_service_client": vectorsearch_v1beta.DataObjectSearchServiceClient(
                     credentials=self._credentials
-                )
+                ),
             }
         return self._v2_client

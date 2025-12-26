@@ -290,9 +290,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
-            return self._add_v2(nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs)
+            return self._add_v2(
+                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
+            )
         else:
-            return self._add_v1(nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs)
+            return self._add_v1(
+                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
+            )
 
     def _add_v1(
         self,
@@ -352,7 +356,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         # Import v2 operations module lazily
         from llama_index.vector_stores.vertexaivectorsearch import _v2_operations
-        return _v2_operations.add_v2(self, nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs)
+
+        return _v2_operations.add_v2(
+            self, nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
+        )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -392,6 +399,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         # Import v2 operations module lazily
         from llama_index.vector_stores.vertexaivectorsearch import _v2_operations
+
         return _v2_operations.delete_v2(self, ref_doc_id, **delete_kwargs)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -402,7 +410,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             return self._query_v1(query, **kwargs)
 
-    def _query_v1(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def _query_v1(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes (v1 API)."""
         query_embedding = None
         if query.mode == VectorStoreQueryMode.DEFAULT:
@@ -443,10 +453,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
 
-    def _query_v2(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def _query_v2(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes (v2 API)."""
         # Import v2 operations module lazily
         from llama_index.vector_stores.vertexaivectorsearch import _v2_operations
+
         return _v2_operations.query_v2(self, query, **kwargs)
 
     def delete_nodes(
@@ -496,6 +509,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """Delete nodes by IDs or filters (v2 API)."""
         # Import v2 operations module lazily
         from llama_index.vector_stores.vertexaivectorsearch import _v2_operations
+
         return _v2_operations.delete_nodes_v2(self, node_ids, filters, **kwargs)
 
     def clear(self) -> None:
@@ -517,4 +531,5 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """Clear all nodes from the vector store (v2 API)."""
         # Import v2 operations module lazily
         from llama_index.vector_stores.vertexaivectorsearch import _v2_operations
+
         return _v2_operations.clear_v2(self)

@@ -36,6 +36,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
         Decorator function
 
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
@@ -47,7 +48,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
                         # Last attempt, raise the exception
                         raise
                     # Exponential backoff
-                    sleep_time = delay * (2 ** attempt)
+                    sleep_time = delay * (2**attempt)
                     _logger.warning(
                         f"Attempt {attempt + 1}/{max_attempts} failed: {e}. "
                         f"Retrying in {sleep_time}s..."
@@ -55,7 +56,9 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
                     time.sleep(sleep_time)
             # This should never be reached, but satisfies type checker
             raise RuntimeError("Retry logic error")
+
         return wrapper
+
     return decorator
 
 
@@ -72,6 +75,7 @@ def _import_v2_sdk():
     """
     try:
         from google.cloud import vectorsearch_v1beta
+
         return vectorsearch_v1beta
     except ImportError as e:
         raise ImportError(
@@ -107,6 +111,7 @@ def add_v2(
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
+
     sdk_manager = VectorSearchSDKManager(
         project_id=store.project_id,
         region=store.region,
@@ -134,30 +139,22 @@ def add_v2(
             "data": metadata,  # Metadata becomes the data field
             "vectors": {
                 # Assuming default embedding field name
-                "embedding": {
-                    "dense": {
-                        "values": embedding
-                    }
-                }
-            }
+                "embedding": {"dense": {"values": embedding}}
+            },
         }
 
         # Create batch request item
-        batch_requests.append({
-            "data_object_id": node_id,
-            "data_object": data_object
-        })
+        batch_requests.append({"data_object_id": node_id, "data_object": data_object})
         ids.append(node_id)
 
     # Batch create data objects
     batch_size = store.batch_size
     for i in range(0, len(batch_requests), batch_size):
-        batch = batch_requests[i:i + batch_size]
+        batch = batch_requests[i : i + batch_size]
         _logger.info(f"Creating batch {i // batch_size + 1} ({len(batch)} objects)")
 
         request = vectorsearch.BatchCreateDataObjectsRequest(
-            parent=parent,
-            requests=batch
+            parent=parent, requests=batch
         )
 
         try:
@@ -192,6 +189,7 @@ def delete_v2(
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
+
     sdk_manager = VectorSearchSDKManager(
         project_id=store.project_id,
         region=store.region,
@@ -209,9 +207,8 @@ def delete_v2(
         parent=parent,
         filter={"ref_doc_id": {"$eq": ref_doc_id}},
         output_fields=vectorsearch.OutputFields(
-            data_fields=["ref_doc_id"],
-            metadata_fields=["*"]
-        )
+            data_fields=["ref_doc_id"], metadata_fields=["*"]
+        ),
     )
 
     try:
@@ -222,19 +219,20 @@ def delete_v2(
         delete_requests = []
         for data_object in results:
             delete_requests.append(
-                vectorsearch.DeleteDataObjectRequest(
-                    name=data_object.name
-                )
+                vectorsearch.DeleteDataObjectRequest(name=data_object.name)
             )
 
         # Batch delete
         if delete_requests:
             batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                parent=parent,
-                requests=delete_requests
+                parent=parent, requests=delete_requests
             )
-            response = data_object_client.batch_delete_data_objects(batch_delete_request)
-            _logger.info(f"Deleted {len(delete_requests)} data objects with ref_doc_id: {ref_doc_id}")
+            response = data_object_client.batch_delete_data_objects(
+                batch_delete_request
+            )
+            _logger.info(
+                f"Deleted {len(delete_requests)} data objects with ref_doc_id: {ref_doc_id}"
+            )
         else:
             _logger.info(f"No data objects found with ref_doc_id: {ref_doc_id}")
     except Exception as e:
@@ -267,6 +265,7 @@ def query_v2(
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
+
     sdk_manager = VectorSearchSDKManager(
         project_id=store.project_id,
         region=store.region,
@@ -285,11 +284,7 @@ def query_v2(
 
     if query_embedding is None:
         _logger.warning("No query embedding provided, returning empty result")
-        return VectorStoreQueryResult(
-            nodes=[],
-            similarities=[],
-            ids=[]
-        )
+        return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
     # Build search request following notebook pattern
     search_request = vectorsearch.SearchDataObjectsRequest(
@@ -299,11 +294,9 @@ def query_v2(
             vector=vectorsearch.DenseVector(values=query_embedding),
             top_k=query.similarity_top_k,
             output_fields=vectorsearch.OutputFields(
-                data_fields=["*"],
-                vector_fields=["*"],
-                metadata_fields=["*"]
-            )
-        )
+                data_fields=["*"], vector_fields=["*"], metadata_fields=["*"]
+            ),
+        ),
     )
 
     # Add filters if provided
@@ -340,16 +333,14 @@ def query_v2(
                 text=metadata.get(store.text_key, ""),
                 id_=data_obj.name.split("/")[-1],  # Extract ID from resource name
                 metadata=metadata,
-                embedding=embedding
+                embedding=embedding,
             )
             top_k_nodes.append(node)
             top_k_ids.append(data_obj.name.split("/")[-1])
             top_k_scores.append(result.score if hasattr(result, "score") else 1.0)
 
         return VectorStoreQueryResult(
-            nodes=top_k_nodes,
-            similarities=top_k_scores,
-            ids=top_k_ids
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
     except Exception as e:
         _logger.error(f"Failed to search data objects: {e}")
@@ -380,6 +371,7 @@ def delete_nodes_v2(
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
+
     sdk_manager = VectorSearchSDKManager(
         project_id=store.project_id,
         region=store.region,
@@ -409,10 +401,11 @@ def delete_nodes_v2(
         try:
             if delete_requests:
                 batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                    parent=parent,
-                    requests=delete_requests
+                    parent=parent, requests=delete_requests
                 )
-                response = data_object_client.batch_delete_data_objects(batch_delete_request)
+                response = data_object_client.batch_delete_data_objects(
+                    batch_delete_request
+                )
                 _logger.info(f"Deleted {len(delete_requests)} data objects by ID")
             else:
                 _logger.info("No data objects to delete")
@@ -450,6 +443,7 @@ def clear_v2(store: Any) -> None:
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
+
     sdk_manager = VectorSearchSDKManager(
         project_id=store.project_id,
         region=store.region,
@@ -468,7 +462,7 @@ def clear_v2(store: Any) -> None:
         query_request = vectorsearch.QueryDataObjectsRequest(
             parent=parent,
             page_size=100,  # Process in batches
-            output_fields=vectorsearch.OutputFields(metadata_fields=["*"])
+            output_fields=vectorsearch.OutputFields(metadata_fields=["*"]),
         )
 
         # Iterate through pages and delete all
@@ -484,8 +478,7 @@ def clear_v2(store: Any) -> None:
             # Batch delete this page
             if delete_requests:
                 batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                    parent=parent,
-                    requests=delete_requests
+                    parent=parent, requests=delete_requests
                 )
                 data_object_client.batch_delete_data_objects(batch_delete_request)
                 total_deleted += len(delete_requests)
