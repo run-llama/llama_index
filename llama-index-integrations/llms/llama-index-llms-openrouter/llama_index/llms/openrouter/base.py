@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.bridge.pydantic import Field
@@ -65,9 +65,23 @@ class OpenRouter(OpenAILike):
         max_retries: int = 5,
         api_base: Optional[str] = DEFAULT_API_BASE,
         api_key: Optional[str] = None,
+        order: Optional[List[str]] = None,
+        allow_fallbacks: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+
+        if order is not None or allow_fallbacks is not None:
+            provider_settings = {}
+            if order is not None:
+                provider_settings["order"] = order
+            if allow_fallbacks is not None:
+                provider_settings["allow_fallbacks"] = allow_fallbacks
+
+            if "extra_body" not in additional_kwargs:
+                additional_kwargs["extra_body"] = {}
+
+            additional_kwargs["extra_body"]["provider"] = provider_settings
 
         api_base = get_from_param_or_env("api_base", api_base, "OPENROUTER_API_BASE")
         api_key = get_from_param_or_env("api_key", api_key, "OPENROUTER_API_KEY")
