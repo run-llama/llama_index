@@ -115,14 +115,14 @@ The `OllamaEmbedding` class supports several configuration options:
 
 ```python
 embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text",           # Required: Ollama model name
-    base_url="http://localhost:11434",        # Optional: Ollama server URL (default: http://localhost:11434)
-    embed_batch_size=10,                      # Optional: Batch size for embeddings (default: 10)
-    keep_alive="5m",                          # Optional: How long to keep model in memory (default: "5m")
-    query_instruction=None,                   # Optional: Instruction to prepend to queries
-    text_instruction=None,                   # Optional: Instruction to prepend to text
-    ollama_additional_kwargs={},             # Optional: Additional kwargs for Ollama API
-    client_kwargs={},                         # Optional: Additional kwargs for Ollama client
+    model_name="nomic-embed-text",  # Required: Ollama model name
+    base_url="http://localhost:11434",  # Optional: Ollama server URL (default: http://localhost:11434)
+    embed_batch_size=10,  # Optional: Batch size for embeddings (default: 10)
+    keep_alive="5m",  # Optional: How long to keep model in memory (default: "5m")
+    query_instruction=None,  # Optional: Instruction to prepend to queries
+    text_instruction=None,  # Optional: Instruction to prepend to text
+    ollama_additional_kwargs={},  # Optional: Additional kwargs for Ollama API
+    client_kwargs={},  # Optional: Additional kwargs for Ollama client
 )
 ```
 
@@ -152,7 +152,9 @@ embed_model = OllamaEmbedding(
 query_embedding = embed_model.get_query_embedding("What is machine learning?")
 # Internally processes: "Represent the question for retrieving supporting documents: What is machine learning?"
 
-text_embedding = embed_model.get_text_embedding("Machine learning is a method of data analysis.")
+text_embedding = embed_model.get_text_embedding(
+    "Machine learning is a method of data analysis."
+)
 # Internally processes: "Represent the document for retrieval: Machine learning is a method of data analysis."
 ```
 
@@ -166,19 +168,23 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 
 embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
+
 async def main():
     # Async single embedding
     embedding = await embed_model.aget_text_embedding("Hello, world!")
-    
+
     # Async batch embeddings
-    embeddings = await embed_model.aget_text_embeddings([
-        "Text 1",
-        "Text 2",
-        "Text 3",
-    ])
-    
+    embeddings = await embed_model.aget_text_embeddings(
+        [
+            "Text 1",
+            "Text 2",
+            "Text 3",
+        ]
+    )
+
     # Async query embedding
     query_embedding = await embed_model.aget_query_embedding("What is AI?")
+
 
 asyncio.run(main())
 ```
@@ -203,6 +209,7 @@ Popular embedding models available in Ollama include:
 - **`mxbai-embed-large`**: Large embedding model for better quality
 
 Pull a model using:
+
 ```bash
 ollama pull nomic-embed-text
 ```
@@ -216,6 +223,7 @@ For more detailed examples, see the [Ollama Embeddings notebook](https://github.
 ### Connection Errors
 
 If you encounter connection errors, ensure:
+
 1. Ollama is running: `ollama serve` or check the service status
 2. The `base_url` matches your Ollama server address
 3. The model is pulled: `ollama pull <model-name>`
@@ -223,6 +231,7 @@ If you encounter connection errors, ensure:
 ### Model Not Found
 
 If you get a "model not found" error:
+
 1. List available models: `ollama list`
 2. Pull the required model: `ollama pull <model-name>`
 3. Verify the model name matches exactly in your code
