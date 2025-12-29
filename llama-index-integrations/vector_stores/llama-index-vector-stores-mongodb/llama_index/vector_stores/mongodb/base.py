@@ -8,7 +8,7 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from importlib.metadata import version
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -33,12 +33,17 @@ from llama_index.vector_stores.mongodb.pipelines import (
 )
 from .index import (
     create_vector_search_index,
+    acreate_vector_search_index,
     drop_vector_search_index,
+    adrop_vector_search_index,
     update_vector_search_index,
+    aupdate_vector_search_index,
     create_fulltext_search_index,
+    acreate_fulltext_search_index,
 )
-from pymongo import MongoClient
+from pymongo import MongoClient, AsyncMongoClient
 from pymongo.collection import Collection
+from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.driver_info import DriverInfo
 
 logger = logging.getLogger(__name__)
@@ -92,9 +97,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         # Ensure you have the MongoDB URI with appropriate credentials
         mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
         mongodb_client = pymongo.MongoClient(mongo_uri)
+        async_mongodb_client = pymongo.AsyncMongoClient(mongo_uri)
 
         # Create an instance of MongoDBAtlasVectorSearch
-        vector_store = MongoDBAtlasVectorSearch(mongodb_client)
+        vector_store = MongoDBAtlasVectorSearch(
+            mongodb_client=mongodb_client,
+            async_mongodb_client=async_mongodb_client,
+        )
         ```
 
         ```python
@@ -102,7 +111,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         vector_store.create_vector_search_index(path="embedding", dimensions=1536, similarity="cosine")
 
         # Create a text search index programmatically
-        vector_store.create_fulltext_search_index("foo)
+        vector_store.create_fulltext_search_index("foo")
         ```
 
     """
@@ -110,8 +119,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    _mongodb_client: Any = PrivateAttr()
-    _collection: Any = PrivateAttr()
+    _mongodb_client: MongoClient = PrivateAttr(default=None)
+    _async_mongodb_client: AsyncMongoClient = PrivateAttr(default=None)
+    _collection: Collection = PrivateAttr(default=None)
+    _async_collection: AsyncCollection = PrivateAttr(default=None)
+    _db_name: str = PrivateAttr()
     _vector_index_name: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
     _id_key: str = PrivateAttr()
@@ -126,7 +138,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[Any] = None,
+        mongodb_client: Optional[MongoClient] = None,
+        async_mongodb_client: Optional[AsyncMongoClient] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         vector_index_name: str = "vector_index",
@@ -147,6 +160,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         Args:
             mongodb_client: A MongoDB client.
+            async_mongodb_client: An Async MongoDB client.
             db_name: A MongoDB database name.
             collection_name: A MongoDB collection name.
             vector_index_name: A MongoDB Atlas *Vector* Search index name. ($vectorSearch)
@@ -174,9 +188,22 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             if "MONGODB_URI" not in os.environ:
                 raise ValueError(
                     "Must specify MONGODB_URI via env variable "
-                    "if not directly passing in client."
+                    "if not directly passing in mongodb_client."
                 )
             self._mongodb_client = MongoClient(
+                os.environ["MONGODB_URI"],
+                driver=DriverInfo(name="llama-index", version=version("llama-index")),
+            )
+
+        if async_mongodb_client is not None:
+            self._async_mongodb_client = cast(AsyncMongoClient, async_mongodb_client)
+        else:
+            if "MONGODB_URI" not in os.environ:
+                raise ValueError(
+                    "Must specify MONGODB_URI via env variable "
+                    "if not directly passing in async_mongodb_client."
+                )
+            self._async_mongodb_client = AsyncMongoClient(
                 os.environ["MONGODB_URI"],
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
@@ -190,7 +217,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     "vector_index_name and index_name both specified. Will use vector_index_name"
                 )
 
+        self._db_name = db_name
+
         self._collection: Collection = self._mongodb_client[db_name][collection_name]
+        self._async_collection: AsyncCollection = self._async_mongodb_client[db_name][
+            collection_name
+        ]
+
         self._vector_index_name = vector_index_name
         self._embedding_key = embedding_key
         self._id_key = id_key
@@ -248,6 +281,27 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 "Proceeding anyway - MongoDB will create collection on first write if needed."
             )
 
+    def _create_data_to_insert(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[str], List[dict]]:
+        data_to_insert = []
+        ids = []
+        for node in nodes:
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
+            )
+
+            entry = {
+                self._id_key: node.node_id,
+                self._embedding_key: node.get_embedding(),
+                self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                self._metadata_key: metadata,
+            }
+            data_to_insert.append(entry)
+            ids.append(node.node_id)
+
+        return ids, data_to_insert
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -263,25 +317,34 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             A List of ids for successfully added nodes.
 
         """
-        ids = []
-        data_to_insert = []
-        for node in nodes:
-            metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
-            )
+        ids, data_to_insert = self._create_data_to_insert(nodes)
 
-            entry = {
-                self._id_key: node.node_id,
-                self._embedding_key: node.get_embedding(),
-                self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                self._metadata_key: metadata,
-            }
-            data_to_insert.append(entry)
-            ids.append(node.node_id)
         logger.debug("Inserting data into MongoDB: %s", data_to_insert)
         insert_result = self._collection.insert_many(
             data_to_insert, **self._insert_kwargs
         )
+
+        logger.debug("Result of insert: %s", insert_result)
+        return ids
+
+    async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """
+        Asynchronously add nodes to index.
+
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings
+
+        Returns:
+            A List of ids for successfully added nodes.
+
+        """
+        ids, data_to_insert = self._create_data_to_insert(nodes)
+
+        logger.debug("Inserting data into MongoDB: %s", data_to_insert)
+        insert_result = await self._async_collection.insert_many(
+            data_to_insert, **self._insert_kwargs
+        )
+
         logger.debug("Result of insert: %s", insert_result)
         return ids
 
@@ -307,17 +370,49 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
 
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Asynchronously delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        # Ensure filter has an appropriate index for performance
+        # Create index on metadata.ref_doc_id if it doesn't exist
+        if not self._metadata_index_created:
+            await self._async_collection.create_index(
+                [(f"{self._metadata_key}.ref_doc_id", 1)],
+                name=self._metadata_delete_index_name,
+            )
+            self._metadata_index_created = True
+
+        # delete by filtering on the doc_id metadata
+        await self._async_collection.delete_many(
+            filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
+        )
+
     @property
-    def client(self) -> Any:
+    def client(self) -> MongoClient:
         """Return MongoDB client."""
         return self._mongodb_client
 
     @property
-    def collection(self) -> Any:
+    def async_client(self) -> AsyncMongoClient:
+        """Return Async MongoDB client."""
+        return self._async_mongodb_client
+
+    @property
+    def collection(self) -> Collection:
         """Return pymongo Collection."""
         return self._collection
 
-    def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    @property
+    def async_collection(self) -> AsyncCollection:
+        """Return pymongo AsyncCollection."""
+        return self._async_collection
+
+    def _create_query_pipeline(self, query: VectorStoreQuery) -> List[Dict]:
         hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
         dense_top_k = query.similarity_top_k
@@ -412,6 +507,43 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 f"are available. {query.mode} is not."
             )
 
+        return pipeline
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        r"""
+        Query index for top k most similar nodes.
+
+        The type of search to be performed is based on the VectorStoreQuery.mode.
+        Choose from DEFAULT (vector), HYBRID (hybrid), or TEXT_SEARCH (full-text).
+        When the mode is one of HYBRID or TEXT_SEARCH,
+        VectorStoreQuery.query_str is used for the full-text search.
+        See MongoDB Atlas documentation for full details on these.
+
+        For details on VectorStoreQueryMode.DEFAULT == 'default',
+        which does vector search, see:
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
+
+        For details on VectorStoreQueryMode.TEXT_SEARCH == "text_search",
+        which performs full-text search, see:
+            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
+
+        For details on VectorStoreQueryMode.HYBRID == "hybrid",
+        which combines the two with Reciprocal Rank Fusion, see the following.
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
+
+        In the scoring algorithm used, Reciprocal Rank Fusion,
+            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
+
+        Args:
+            query: a VectorStoreQuery object.
+
+        Returns:
+            A VectorStoreQueryResult containing the results of the query.
+
+        """
+        # Build aggregation pipeline
+        pipeline = self._create_query_pipeline(query)
+
         # Execution
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
@@ -447,13 +579,16 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             top_k_ids.append(id)
             top_k_nodes.append(node)
             top_k_scores.append(score)
+
         result = VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
         logger.debug("Result of query: %s", result)
         return result
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         r"""
         Query index for top k most similar nodes.
 
@@ -485,7 +620,49 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             A VectorStoreQueryResult containing the results of the query.
 
         """
-        return self._query(query)
+        # Build aggregation pipeline
+        pipeline = self._create_query_pipeline(query)
+
+        # Execution
+        logger.debug("Running query pipeline: %s", pipeline)
+        cursor = await self._async_collection.aggregate(pipeline)  # type: ignore
+
+        # Post-processing
+        top_k_nodes = []
+        top_k_ids = []
+        top_k_scores = []
+        async for res in cursor:
+            text = res.pop(self._text_key)
+            score = res.pop("score")
+            id = res.pop(self._id_key)
+            metadata_dict = res.pop(self._metadata_key)
+
+            try:
+                node = metadata_dict_to_node(metadata_dict)
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata_dict
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            top_k_ids.append(id)
+            top_k_nodes.append(node)
+            top_k_scores.append(score)
+        result = VectorStoreQueryResult(
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+        )
+        logger.debug("Result of query: %s", result)
+        return result
 
     def create_vector_search_index(
         self,
@@ -596,6 +773,122 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         """
         return create_fulltext_search_index(
             self.collection,
+            self._fulltext_index_name,
+            field,
+            field_type,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    async def acreate_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Experimental Utility function to create the vector search index for this store.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return await acreate_vector_search_index(
+            self.async_collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    async def adrop_vector_search_index(
+        self,
+        *,
+        wait_until_complete: Optional[float] = None,
+    ) -> None:
+        """
+        Drop the created vector search index for this store.
+
+        Args:
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+
+        """
+        return await adrop_vector_search_index(
+            self.async_collection,
+            self._vector_index_name,
+            wait_until_complete=wait_until_complete,
+        )
+
+    async def aupdate_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Update the vector search index for this store.
+
+        Replace the existing index definition with the provided definition.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index.
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return await aupdate_vector_search_index(
+            self.async_collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    async def acreate_fulltext_search_index(
+        self,
+        field: str,
+        field_type: str = "string",
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Experimental Utility function to create the Atlas Search index for this store.
+
+        Args:
+            field (str): Field to index
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return await acreate_fulltext_search_index(
+            self.async_collection,
             self._fulltext_index_name,
             field,
             field_type,
