@@ -68,9 +68,7 @@ class BaseAgentCoreMemory(BaseMemory):
             )
             event_id = response["event"]["eventId"]
             if not event_id:
-                raise RuntimeError(
-                    "Bedrock AgentCore did not return an event ID"
-                )
+                raise RuntimeError("Bedrock AgentCore did not return an event ID")
 
     def list_events(
         self, memory_id: str, session_id: str, actor_id: str
@@ -97,9 +95,7 @@ class BaseAgentCoreMemory(BaseMemory):
                 maxResults=max_results,
                 **({"nextToken": next_token} if next_token else {}),
             )
-            messages = convert_events_to_messages(
-                list(reversed(response["events"]))
-            )
+            messages = convert_events_to_messages(list(reversed(response["events"])))
             return messages, response.get("nextToken")
 
         def has_user_message(messages) -> bool:
@@ -127,9 +123,7 @@ class BaseAgentCoreMemory(BaseMemory):
 
         # Keep fetching until we find a user message
         while not found_user and next_token:
-            messages, next_token = fetch_messages(
-                iterative_max_results, next_token
-            )
+            messages, next_token = fetch_messages(iterative_max_results, next_token)
             if has_user_message(messages):
                 found_user = True
             all_messages[:0] = messages
@@ -156,9 +150,7 @@ class BaseAgentCoreMemory(BaseMemory):
 
         """
 
-        def fetch_raw_events(
-            max_results: int, next_token: str = None
-        ) -> tuple:
+        def fetch_raw_events(max_results: int, next_token: str = None) -> tuple:
             response = self._client.list_events(
                 memoryId=memory_id,
                 sessionId=session_id,
@@ -175,9 +167,7 @@ class BaseAgentCoreMemory(BaseMemory):
 
         all_events, next_token = fetch_raw_events(initial_max_results)
         while next_token:
-            events, next_token = fetch_raw_events(
-                iterative_max_results, next_token
-            )
+            events, next_token = fetch_raw_events(iterative_max_results, next_token)
             all_events.extend(events)
         return all_events
 
@@ -204,9 +194,7 @@ class BaseAgentCoreMemory(BaseMemory):
         if self._client is None:
             raise ValueError("Client is not initialized.")
 
-        def fetch_memory_records(
-            max_results: int, next_token: str = None
-        ) -> tuple:
+        def fetch_memory_records(max_results: int, next_token: str = None) -> tuple:
             response = self._client.list_memory_records(
                 memoryId=memory_id,
                 namespace=namespace,
@@ -222,9 +210,7 @@ class BaseAgentCoreMemory(BaseMemory):
         initial_max_results = max_results
         iterative_max_results = 3
 
-        initial_messages, next_token = fetch_memory_records(
-            initial_max_results
-        )
+        initial_messages, next_token = fetch_memory_records(initial_max_results)
         all_memory_records.extend(initial_messages)
 
         while next_token:
@@ -299,9 +285,7 @@ class BaseAgentCoreMemory(BaseMemory):
                 **{"nextToken": next_token} if next_token else {},
             )
             session_summaries = response["sessionSummaries"]
-            session_ids = [
-                session["sessionId"] for session in session_summaries
-            ]
+            session_ids = [session["sessionId"] for session in session_summaries]
             return session_ids, response.get("nextToken")
 
         all_session_ids = []
@@ -491,8 +475,8 @@ class BaseAgentCoreMemory(BaseMemory):
             deleted_memory["successfulDeletedMemoryRecords"] = (
                 deleted_memory_records.get("successfulRecords", [])
             )
-            deleted_memory["failedDeletedMemoryRecords"] = (
-                deleted_memory_records.get("failedRecords", [])
+            deleted_memory["failedDeletedMemoryRecords"] = deleted_memory_records.get(
+                "failedRecords", []
             )
 
         return deleted_memory
@@ -506,11 +490,7 @@ class AgentCoreMemoryContext(BaseModel):
     memory_strategy_id: Optional[str] = None
 
     def get_context(self) -> Dict[str, Optional[str]]:
-        return {
-            key: value
-            for key, value in self.__dict__.items()
-            if value is not None
-        }
+        return {key: value for key, value in self.__dict__.items() if value is not None}
 
 
 class AgentCoreMemory(BaseAgentCoreMemory):
@@ -622,9 +602,7 @@ class AgentCoreMemory(BaseAgentCoreMemory):
     def from_defaults(cls, **kwargs: Any) -> "AgentCoreMemory":
         raise NotImplementedError("Use either from_client or from_config")
 
-    def _serialize_timestamp_with_microseconds(
-        self, serialized, value, shape, name
-    ):
+    def _serialize_timestamp_with_microseconds(self, serialized, value, shape, name):
         original_serialize_timestamp = (
             self._client._serializer._serializer._serialize_type_timestamp
         )
@@ -653,9 +631,7 @@ class AgentCoreMemory(BaseAgentCoreMemory):
 
         search_criteria = {"searchQuery": input[:10000]}
         if self._context.memory_strategy_id is not None:
-            search_criteria["memoryStrategyId"] = (
-                self._context.memory_strategy_id
-            )
+            search_criteria["memoryStrategyId"] = self._context.memory_strategy_id
 
         memory_records = self.retrieve_memories(
             memory_id=self._context.memory_id,

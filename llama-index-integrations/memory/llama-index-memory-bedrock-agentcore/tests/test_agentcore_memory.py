@@ -127,9 +127,7 @@ class TestBaseAgentCoreMemoryMethods:
 
     def test_create_event_empty_messages(self, memory):
         """Test create_event raises error when messages is empty."""
-        with pytest.raises(
-            ValueError, match="The messages field cannot be empty"
-        ):
+        with pytest.raises(ValueError, match="The messages field cannot be empty"):
             memory.create_event(
                 memory_id="test-memory",
                 actor_id="test-actor",
@@ -279,7 +277,7 @@ class TestBaseAgentCoreMemoryMethods:
 
         records = memory.list_memory_records(
             memory_id="mid",
-            memory_strategy_id="strat",
+            memory_strategy_id="strategy",
             namespace="/",
             max_results=20,
         )
@@ -287,12 +285,10 @@ class TestBaseAgentCoreMemoryMethods:
         assert [r["memoryRecordId"] for r in records] == ["m1", "m2"]
         assert memory._client.list_memory_records.call_count == 2
 
-        first_call = memory._client.list_memory_records.call_args_list[
-            0
-        ].kwargs
+        first_call = memory._client.list_memory_records.call_args_list[0].kwargs
         assert first_call["memoryId"] == "mid"
         assert first_call["namespace"] == "/"
-        assert first_call["memoryStrategyId"] == "strat"
+        assert first_call["memoryStrategyId"] == "strategy"
         assert first_call["maxResults"] == 20
 
     def test_list_sessions_pagination(self, memory):
@@ -301,9 +297,7 @@ class TestBaseAgentCoreMemoryMethods:
             {"sessionSummaries": [{"sessionId": "s2"}], "nextToken": None},
         ]
 
-        sessions = memory.list_sessions(
-            memory_id="mid", actor_id="aid", max_results=20
-        )
+        sessions = memory.list_sessions(memory_id="mid", actor_id="aid", max_results=20)
 
         assert sessions == ["s1", "s2"]
         assert memory._client.list_sessions.call_count == 2
@@ -327,7 +321,7 @@ class TestBaseAgentCoreMemoryMethods:
         ):
             out = memory.delete_memory_records(
                 memory_id="mid",
-                memory_strategy_id="strat",
+                memory_strategy_id="strategy",
                 namespace="/",
             )
 
@@ -363,7 +357,7 @@ class TestBaseAgentCoreMemoryMethods:
 
             out = memory.batch_delete_memory_records(
                 memory_id="mid",
-                memory_strategy_id="strat",
+                memory_strategy_id="strategy",
                 namespace="/",
                 batch_size=2,
             )
@@ -384,7 +378,6 @@ class TestBaseAgentCoreMemoryMethods:
                 "batch_delete_memory_records",
             ) as p_batch,
         ):
-
             out = memory.delete_all_memory_for_session(
                 memory_id="mid",
                 actor_id="aid",
@@ -413,19 +406,16 @@ class TestBaseAgentCoreMemoryMethods:
                 },
             ) as p_batch,
         ):
-
             out = memory.delete_all_memory_for_session(
                 memory_id="mid",
                 actor_id="aid",
                 session_id="sid",
                 namespace="/",
-                memory_strategy_id="strat",
+                memory_strategy_id="strategy",
             )
 
         assert out["deletedEvents"] == ["e1"]
-        assert out["successfulDeletedMemoryRecords"] == [
-            {"memoryRecordId": "r1"}
-        ]
+        assert out["successfulDeletedMemoryRecords"] == [{"memoryRecordId": "r1"}]
         assert out["failedDeletedMemoryRecords"] == [{"memoryRecordId": "r2"}]
         p_del_events.assert_called_once()
         p_batch.assert_called_once()
@@ -447,9 +437,7 @@ class TestAgentCoreMemory:
             assert memory.search_msg_limit == 5
             assert memory.insert_method == InsertMethod.SYSTEM
 
-    def test_initialization_with_custom_client(
-        self, memory_context, mock_client
-    ):
+    def test_initialization_with_custom_client(self, memory_context, mock_client):
         """Test initialization with custom client."""
         memory = AgentCoreMemory(context=memory_context, client=mock_client)
         assert memory._client == mock_client
@@ -588,9 +576,7 @@ class TestAgentCoreMemory:
         message = ChatMessage(role=MessageRole.USER, content="Hello")
 
         # Mock the _add_msgs_to_client_memory method
-        with patch.object(
-            memory, "_add_msgs_to_client_memory"
-        ) as mock_add_msgs:
+        with patch.object(memory, "_add_msgs_to_client_memory") as mock_add_msgs:
             memory.put(message)
 
             mock_add_msgs.assert_called_once_with([message])
@@ -600,9 +586,7 @@ class TestAgentCoreMemory:
         """Test async put method."""
         message = ChatMessage(role=MessageRole.USER, content="Hello")
 
-        with patch.object(
-            memory, "_add_msgs_to_client_memory"
-        ) as mock_add_msgs:
+        with patch.object(memory, "_add_msgs_to_client_memory") as mock_add_msgs:
             await memory.aput(message)
             mock_add_msgs.assert_called_once_with([message])
 
@@ -614,9 +598,7 @@ class TestAgentCoreMemory:
             ChatMessage(role=MessageRole.ASSISTANT, content="Hi"),
         ]
 
-        with patch.object(
-            memory, "_add_msgs_to_client_memory"
-        ) as mock_add_msgs:
+        with patch.object(memory, "_add_msgs_to_client_memory") as mock_add_msgs:
             await memory.aput_messages(messages)
             mock_add_msgs.assert_called_once_with(messages)
 
@@ -647,9 +629,7 @@ class TestAgentCoreMemory:
         }
 
         # Mock the _add_msgs_to_client_memory method
-        with patch.object(
-            memory, "_add_msgs_to_client_memory"
-        ) as mock_add_msgs:
+        with patch.object(memory, "_add_msgs_to_client_memory") as mock_add_msgs:
             memory.set(new_messages)
 
             # Should only add the new message (since existing has 1 message, new has 2)
@@ -697,9 +677,7 @@ class TestIntegration:
             "nextToken": None,
         }
         mock_client.retrieve_memory_records.return_value = {
-            "memoryRecordSummaries": [
-                {"content": {"text": "User likes greetings"}}
-            ]
+            "memoryRecordSummaries": [{"content": {"text": "User likes greetings"}}]
         }
 
         # Create memory instance
@@ -726,9 +704,7 @@ class TestErrorHandling:
 
     def test_boto3_import_error(self, memory_context):
         """Test handling of boto3 import error."""
-        with patch(
-            "boto3.Session", side_effect=ImportError("boto3 not found")
-        ):
+        with patch("boto3.Session", side_effect=ImportError("boto3 not found")):
             with pytest.raises(ImportError, match="boto3  package not found"):
                 AgentCoreMemory(context=memory_context)
 
