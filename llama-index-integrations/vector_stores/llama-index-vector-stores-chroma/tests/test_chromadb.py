@@ -212,7 +212,7 @@ async def test_add_to_chromadb_and_query_by_nested_metadata_filters(
                     ),
                     MetadataFilter(
                         key="theme", value="Friendship", operator=FilterOperator.EQ
-                    )
+                    ),
                 ],
                 condition=FilterCondition.OR,
             ),
@@ -229,10 +229,7 @@ async def test_add_to_chromadb_and_query_by_nested_metadata_filters(
         vector_store.add(node_embeddings)
         res = vector_store.query(VectorStoreQuery(filters=filters, similarity_top_k=1))
 
-    assert (
-        res.nodes[0].get_content()
-        == "lorem ipsum"
-    )
+    assert res.nodes[0].get_content() == "lorem ipsum"
 
 
 def test_get_nodes(
