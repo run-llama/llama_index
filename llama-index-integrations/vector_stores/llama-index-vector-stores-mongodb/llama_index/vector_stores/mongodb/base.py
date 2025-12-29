@@ -121,6 +121,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     _insert_kwargs: Dict = PrivateAttr()
     _index_name: str = PrivateAttr()  # DEPRECATED
     _oversampling_factor: int = PrivateAttr()
+    _metadata_delete_index_name: str = PrivateAttr()
+    _metadata_index_created: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -133,6 +135,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         text_key: str = "text",
         metadata_key: str = "metadata",
         fulltext_index_name: str = "fulltext_index",
+        metadata_delete_index_name: str = "metadata_delete_index",
+        configure_at_start: bool = False,
         index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
         oversampling_factor: int = 10,
@@ -154,6 +158,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             the metadata for each document.
             insert_kwargs: The kwargs used during `insert`.
             fulltext_index_name: A MongoDB Atlas *full-text* Search index name. ($search)
+            metadata_delete_index_name: A MongoDB Atlas *metadata delete* index name.
+            configure_at_start: If True, will attempt to create non-search indexes at initialization.
             oversampling_factor: This times n_results is 'ef' in the HNSW algorithm.
                 'ef' determines the number of nearest neighbor candidates to consider during the search phase.
                 A higher value leads to more accuracy, but is slower. Default = 10
@@ -193,9 +199,19 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._fulltext_index_name = fulltext_index_name
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
+        self._metadata_delete_index_name = metadata_delete_index_name
+        self._metadata_index_created = False
 
         # Check if collection exists using a method that works with restricted permissions
         self._ensure_collection_exists(db_name, collection_name)
+
+        if configure_at_start:
+            # Create index for metadata deletion if it doesn't exist
+            self._collection.create_index(
+                [(f"{self._metadata_key}.ref_doc_id", 1)],
+                name=self._metadata_delete_index_name,
+            )
+            self._metadata_index_created = True
 
     def _ensure_collection_exists(self, db_name: str, collection_name: str) -> None:
         """
@@ -277,6 +293,15 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
+        # Ensure filter has an appropriate index for performance
+        # Create index on metadata.ref_doc_id if it doesn't exist
+        if not self._metadata_index_created:
+            self._collection.create_index(
+                [(f"{self._metadata_key}.ref_doc_id", 1)],
+                name=self._metadata_delete_index_name,
+            )
+            self._metadata_index_created = True
+
         # delete by filtering on the doc_id metadata
         self._collection.delete_many(
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
