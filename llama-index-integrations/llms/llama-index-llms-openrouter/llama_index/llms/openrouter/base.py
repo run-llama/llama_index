@@ -72,16 +72,26 @@ class OpenRouter(OpenAILike):
         additional_kwargs = additional_kwargs or {}
 
         if order is not None or allow_fallbacks is not None:
-            provider_settings = {}
+            provider_settings: Dict[str, Any] = {}
             if order is not None:
                 provider_settings["order"] = order
             if allow_fallbacks is not None:
                 provider_settings["allow_fallbacks"] = allow_fallbacks
 
-            if "extra_body" not in additional_kwargs:
-                additional_kwargs["extra_body"] = {}
+            extra_body = additional_kwargs.get("extra_body")
+            if extra_body is None:
+                extra_body = {}
+                additional_kwargs["extra_body"] = extra_body
 
-            additional_kwargs["extra_body"]["provider"] = provider_settings
+            existing_provider = extra_body.get("provider")
+            if existing_provider is None:
+                existing_provider = {}
+            elif not isinstance(existing_provider, dict):
+                raise ValueError(
+                    "additional_kwargs['extra_body']['provider'] must be a dict if provided."
+                )
+
+            extra_body["provider"] = {**existing_provider, **provider_settings}
 
         api_base = get_from_param_or_env("api_base", api_base, "OPENROUTER_API_BASE")
         api_key = get_from_param_or_env("api_key", api_key, "OPENROUTER_API_KEY")
