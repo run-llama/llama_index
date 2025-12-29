@@ -8,7 +8,7 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from importlib.metadata import version
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -112,6 +112,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
     _mongodb_client: Any = PrivateAttr()
     _collection: Any = PrivateAttr()
+    _async_mongodb_client: Any = PrivateAttr(default=None)
+    _async_collection: Any = PrivateAttr(default=None)
     _vector_index_name: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
     _id_key: str = PrivateAttr()
@@ -123,6 +125,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     _oversampling_factor: int = PrivateAttr()
     _metadata_delete_index_name: str = PrivateAttr()
     _metadata_index_created: bool = PrivateAttr(default=False)
+    _async_metadata_index_created: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -140,13 +143,14 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
         oversampling_factor: int = 10,
+        async_mongodb_client: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         """
         Initialize the vector store.
 
         Args:
-            mongodb_client: A MongoDB client.
+            mongodb_client: A MongoDB client (pymongo.MongoClient).
             db_name: A MongoDB database name.
             collection_name: A MongoDB collection name.
             vector_index_name: A MongoDB Atlas *Vector* Search index name. ($vectorSearch)
@@ -164,6 +168,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 'ef' determines the number of nearest neighbor candidates to consider during the search phase.
                 A higher value leads to more accuracy, but is slower. Default = 10
             index_name: DEPRECATED: Please use vector_index_name.
+            async_mongodb_client: An async MongoDB client (motor.motor_asyncio.AsyncIOMotorClient).
+                If provided, async methods (async_add, adelete, aquery) will use this client
+                for true async operations. If not provided, async methods will fall back to
+                running sync methods.
 
         """
         super().__init__()
@@ -201,6 +209,14 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._oversampling_factor = oversampling_factor
         self._metadata_delete_index_name = metadata_delete_index_name
         self._metadata_index_created = False
+        self._async_metadata_index_created = False
+
+        # Set up async client and collection if provided
+        self._async_mongodb_client = async_mongodb_client
+        if async_mongodb_client is not None:
+            self._async_collection = async_mongodb_client[db_name][collection_name]
+        else:
+            self._async_collection = None
 
         # Check if collection exists using a method that works with restricted permissions
         self._ensure_collection_exists(db_name, collection_name)
@@ -307,6 +323,234 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
 
+    async def async_add(
+        self,
+        nodes: Sequence[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """
+        Asynchronously add nodes to index.
+
+        Args:
+            nodes: Sequence[BaseNode]: list of nodes with embeddings
+
+        Returns:
+            A List of ids for successfully added nodes.
+
+        """
+        if self._async_collection is None:
+            return await super().async_add(nodes, **add_kwargs)
+
+        ids = []
+        data_to_insert = []
+        for node in nodes:
+            metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
+            )
+
+            entry = {
+                self._id_key: node.node_id,
+                self._embedding_key: node.get_embedding(),
+                self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                self._metadata_key: metadata,
+            }
+            data_to_insert.append(entry)
+            ids.append(node.node_id)
+        logger.debug("Inserting data into MongoDB: %s", data_to_insert)
+        insert_result = await self._async_collection.insert_many(
+            data_to_insert, **self._insert_kwargs
+        )
+        logger.debug("Result of insert: %s", insert_result)
+        return ids
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Asynchronously delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        if self._async_collection is None:
+            return await super().adelete(ref_doc_id, **delete_kwargs)
+
+        # Ensure filter has an appropriate index for performance
+        # Create index on metadata.ref_doc_id if it doesn't exist
+        if not self._async_metadata_index_created:
+            await self._async_collection.create_index(
+                [(f"{self._metadata_key}.ref_doc_id", 1)],
+                name=self._metadata_delete_index_name,
+            )
+            self._async_metadata_index_created = True
+
+        # delete by filtering on the doc_id metadata
+        await self._async_collection.delete_many(
+            filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
+        )
+        return None
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """
+        Asynchronously query index for top k most similar nodes.
+
+        The type of search to be performed is based on the VectorStoreQuery.mode.
+        Choose from DEFAULT (vector), HYBRID (hybrid), or TEXT_SEARCH (full-text).
+        When the mode is one of HYBRID or TEXT_SEARCH,
+        VectorStoreQuery.query_str is used for the full-text search.
+
+        Args:
+            query: a VectorStoreQuery object.
+
+        Returns:
+            A VectorStoreQueryResult containing the results of the query.
+
+        """
+        if self._async_collection is None:
+            return await super().aquery(query, **kwargs)
+
+        return await self._aquery(query)
+
+    async def _aquery(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        """Async implementation of query logic."""
+        hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
+        dense_top_k = query.similarity_top_k
+
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            if not query.query_embedding:
+                raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
+            # Atlas Vector Search, potentially with filter
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = [
+                vector_search_stage(
+                    query_vector=query.query_embedding,
+                    search_field=self._embedding_key,
+                    index_name=self._vector_index_name,
+                    limit=dense_top_k,
+                    filter=filter,
+                    oversampling_factor=self._oversampling_factor,
+                ),
+                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+            ]
+
+        elif query.mode == VectorStoreQueryMode.TEXT_SEARCH:
+            # Atlas Full-Text Search, potentially with filter
+            if not query.query_str:
+                raise ValueError("query_str in VectorStoreQueryMode.TEXT_SEARCH ")
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = fulltext_search_stage(
+                query=query.query_str,
+                search_field=self._text_key,
+                index_name=self._fulltext_index_name,
+                operator="text",
+                filter=filter,
+                limit=sparse_top_k,
+            )
+            pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
+
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            scores_fields = ["vector_score", "fulltext_score"]
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = []
+            # Vector Search pipeline
+            if query.query_embedding:
+                vector_pipeline = [
+                    vector_search_stage(
+                        query_vector=query.query_embedding,
+                        search_field=self._embedding_key,
+                        index_name=self._vector_index_name,
+                        limit=dense_top_k,
+                        filter=filter,
+                        oversampling_factor=self._oversampling_factor,
+                    )
+                ]
+                vector_pipeline.extend(reciprocal_rank_stage("vector_score"))
+                combine_pipelines(
+                    pipeline, vector_pipeline, self._async_collection.name
+                )
+
+            # Full-Text Search pipeline
+            if query.query_str:
+                text_pipeline = fulltext_search_stage(
+                    query=query.query_str,
+                    search_field=self._text_key,
+                    index_name=self._fulltext_index_name,
+                    operator="text",
+                    filter=filter,
+                    limit=sparse_top_k,
+                )
+                text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
+                combine_pipelines(pipeline, text_pipeline, self._async_collection.name)
+
+            # Compute weighted sum and sort pipeline
+            alpha = (
+                query.alpha or 0.5
+            )  # If no alpha is given, equal weighting is applied
+            pipeline += final_hybrid_stage(
+                scores_fields=scores_fields, limit=hybrid_top_k, alpha=alpha
+            )
+
+            # Remove embeddings unless requested.
+            if (
+                query.output_fields is None
+                or self._embedding_key not in query.output_fields
+            ):
+                pipeline.append({"$project": {self._embedding_key: 0}})
+
+        else:
+            raise NotImplementedError(
+                f"{VectorStoreQueryMode.DEFAULT} (vector), "
+                f"{VectorStoreQueryMode.HYBRID} and {VectorStoreQueryMode.TEXT_SEARCH} "
+                f"are available. {query.mode} is not."
+            )
+
+        # Execution
+        logger.debug("Running query pipeline: %s", pipeline)
+        cursor = self._async_collection.aggregate(pipeline)
+
+        # Post-processing
+        top_k_nodes = []
+        top_k_ids = []
+        top_k_scores = []
+        async for res in cursor:
+            text = res.pop(self._text_key)
+            score = res.pop("score")
+            id = res.pop(self._id_key)
+            metadata_dict = res.pop(self._metadata_key)
+
+            try:
+                node = metadata_dict_to_node(metadata_dict)
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata_dict
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            top_k_ids.append(id)
+            top_k_nodes.append(node)
+            top_k_scores.append(score)
+        result = VectorStoreQueryResult(
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+        )
+        logger.debug("Result of query: %s", result)
+        return result
+
     @property
     def client(self) -> Any:
         """Return MongoDB client."""
@@ -316,6 +560,16 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     def collection(self) -> Any:
         """Return pymongo Collection."""
         return self._collection
+
+    @property
+    def async_client(self) -> Any:
+        """Return async MongoDB client (Motor)."""
+        return self._async_mongodb_client
+
+    @property
+    def async_collection(self) -> Any:
+        """Return async pymongo Collection (Motor)."""
+        return self._async_collection
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
