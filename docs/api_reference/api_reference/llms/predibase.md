@@ -1,3 +1,4 @@
 ::: llama_index.llms.predibase
-options:
-members: - PredibaseLLM
+    options:
+      members:
+        - PredibaseLLM

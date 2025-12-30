@@ -1,8 +1,25 @@
 ---
 title: ChangeLog
 ---
-
 <!--- generated changelog --->
+
+## [2025-12-04]
+
+### llama-index-core [0.14.10]
+
+- feat: add mock function calling llm ([#20331](https://github.com/run-llama/llama_index/pull/20331))
+
+### llama-index-llms-qianfan [0.4.1]
+
+- test: fix typo 'reponse' to 'response' in variable names ([#20329](https://github.com/run-llama/llama_index/pull/20329))
+
+### llama-index-tools-airweave [0.1.0]
+
+- feat: add Airweave tool integration with advanced search features ([#20111](https://github.com/run-llama/llama_index/pull/20111))
+
+### llama-index-utils-qianfan [0.4.1]
+
+- test: fix typo 'reponse' to 'response' in variable names ([#20329](https://github.com/run-llama/llama_index/pull/20329))
 
 ## [2025-12-02]
 

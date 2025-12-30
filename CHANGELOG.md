@@ -2,6 +2,100 @@
 
 <!--- generated changelog --->
 
+## [2025-12-30]
+
+### llama-index-callbacks-agentops [0.4.1]
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+
+### llama-index-core [0.14.12]
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+- Improve `MockFunctionCallingLLM` ([#20356](https://github.com/run-llama/llama_index/pull/20356))
+- fix(openai): sanitize generic Pydantic model schema names ([#20371](https://github.com/run-llama/llama_index/pull/20371))
+- Element node parser ([#20399](https://github.com/run-llama/llama_index/pull/20399))
+- improve llama dev logging ([#20411](https://github.com/run-llama/llama_index/pull/20411))
+- test(node_parser): add unit tests for Java CodeSplitter ([#20423](https://github.com/run-llama/llama_index/pull/20423))
+- fix: crash in log_vector_store_query_result when result.ids is None ([#20427](https://github.com/run-llama/llama_index/pull/20427))
+
+### llama-index-embeddings-litellm [0.4.1]
+- Add docstring to LiteLLM embedding class ([#20336](https://github.com/run-llama/llama_index/pull/20336))
+
+### llama-index-embeddings-ollama [0.8.5]
+- feat(llama-index-embeddings-ollama): Add keep_alive parameter ([#20395](https://github.com/run-llama/llama_index/pull/20395))
+- docs: improve Ollama embeddings README with comprehensive documentation ([#20414](https://github.com/run-llama/llama_index/pull/20414))
+
+### llama-index-embeddings-voyageai [0.5.2]
+- Voyage multimodal 35 ([#20398](https://github.com/run-llama/llama_index/pull/20398))
+
+### llama-index-graph-stores-nebula [0.5.1]
+- feat(nebula): add MENTIONS edge to property graph store ([#20401](https://github.com/run-llama/llama_index/pull/20401))
+
+### llama-index-llms-aibadgr [0.1.0]
+- feat(llama-index-llms-aibadgr): Add AI Badgr OpenAI‑compatible LLM integration ([#20365](https://github.com/run-llama/llama_index/pull/20365))
+
+### llama-index-llms-anthropic [0.10.4]
+- add back haiku-3 support ([#20408](https://github.com/run-llama/llama_index/pull/20408))
+
+### llama-index-llms-bedrock-converse [0.12.3]
+- fix: bedrock converse thinking block issue ([#20355](https://github.com/run-llama/llama_index/pull/20355))
+
+### llama-index-llms-google-genai [0.8.3]
+- Switch use_file_api to Flexible file_mode; Improve File Upload Handling & Bump google-genai to v1.52.0 ([#20347](https://github.com/run-llama/llama_index/pull/20347))
+- Fix missing role from Google-GenAI ([#20357](https://github.com/run-llama/llama_index/pull/20357))
+- Add signature index fix ([#20362](https://github.com/run-llama/llama_index/pull/20362))
+- Add positional thought signature for thoughts ([#20418](https://github.com/run-llama/llama_index/pull/20418))
+
+### llama-index-llms-ollama [0.9.1]
+- feature: pydantic no longer complains if you pass 'low', 'medium', 'h… ([#20394](https://github.com/run-llama/llama_index/pull/20394))
+
+### llama-index-llms-openai [0.6.12]
+- fix: Handle tools=None in OpenAIResponses._get_model_kwargs ([#20358](https://github.com/run-llama/llama_index/pull/20358))
+- feat: add support for gpt-5.2 and 5.2 pro ([#20361](https://github.com/run-llama/llama_index/pull/20361))
+
+### llama-index-readers-confluence [0.6.1]
+- fix(confluence): support Python 3.14 ([#20370](https://github.com/run-llama/llama_index/pull/20370))
+
+### llama-index-readers-file [0.5.6]
+- Loosen constraint on `pandas` version ([#20387](https://github.com/run-llama/llama_index/pull/20387))
+
+### llama-index-readers-service-now [0.2.2]
+- chore(deps): bump urllib3 from 2.5.0 to 2.6.0 in /llama-index-integrations/readers/llama-index-readers-service-now in the pip group across 1 directory ([#20341](https://github.com/run-llama/llama_index/pull/20341))
+
+### llama-index-tools-mcp [0.4.5]
+- fix: pass timeout parameters to transport clients in BasicMCPClient ([#20340](https://github.com/run-llama/llama_index/pull/20340))
+- feature: Permit to pass a custom httpx.AsyncClient when creating a BasicMcpClient ([#20368](https://github.com/run-llama/llama_index/pull/20368))
+
+### llama-index-tools-typecast [0.1.0]
+- feat: add Typecast tool integration with text to speech features ([#20343](https://github.com/run-llama/llama_index/pull/20343))
+
+### llama-index-vector-stores-azurepostgresql [0.2.0]
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+
+### llama-index-vector-stores-chroma [0.5.5]
+- Fix chroma nested metadata filters ([#20424](https://github.com/run-llama/llama_index/pull/20424))
+- fix(chroma): support multimodal results ([#20426](https://github.com/run-llama/llama_index/pull/20426))
+
+### llama-index-vector-stores-couchbase [0.6.0]
+- Update FTS & GSI reference docs for Couchbase vector-store ([#20346](https://github.com/run-llama/llama_index/pull/20346))
+
+### llama-index-vector-stores-faiss [0.5.2]
+- fix(faiss): pass numpy array instead of int to add_with_ids ([#20384](https://github.com/run-llama/llama_index/pull/20384))
+
+### llama-index-vector-stores-lancedb [0.4.4]
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+- fix(vector_stores/lancedb): add missing '<' filter operator ([#20364](https://github.com/run-llama/llama_index/pull/20364))
+- fix(lancedb): fix metadata filtering logic and list value SQL generation ([#20374](https://github.com/run-llama/llama_index/pull/20374))
+
+### llama-index-vector-stores-mongodb [0.9.0]
+- Update mongo vector store to initialize without list permissions ([#20354](https://github.com/run-llama/llama_index/pull/20354))
+- add mongodb delete index ([#20429](https://github.com/run-llama/llama_index/pull/20429))
+- async mongodb atlas support ([#20430](https://github.com/run-llama/llama_index/pull/20430))
+
+### llama-index-vector-stores-redis [0.6.2]
+- Redis metadata filter fix ([#20359](https://github.com/run-llama/llama_index/pull/20359))
+
+### llama-index-vector-stores-vertexaivectorsearch [0.3.3]
+- feat(vertex-vector-search): Add Google Vertex AI Vector Search v2.0 support ([#20351](https://github.com/run-llama/llama_index/pull/20351))
+
 ## [2025-12-04]
 
 ### llama-index-core [0.14.10]
