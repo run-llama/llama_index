@@ -40,7 +40,7 @@ from llama_index.readers.massive import MassiveWebReader
 reader = MassiveWebReader(
     username="your_massive_username",
     password="your_massive_password",
-    country="US"
+    country="US",
 )
 
 # Load documents from URLs
@@ -55,7 +55,7 @@ reader = MassiveWebReader(
     password="your_massive_password",
     country="US",
     city="New York",
-    device_type="mobile"
+    device_type="mobile",
 )
 ```
 
@@ -67,7 +67,7 @@ reader = MassiveWebReader(
     password="your_massive_password",
     country="GB",
     session="my-session-123",
-    ttl=30  # 30 minutes
+    ttl=30,  # 30 minutes
 )
 ```
 
@@ -78,7 +78,7 @@ reader = MassiveWebReader(
     username="your_massive_username",
     password="your_massive_password",
     country="DE",
-    raw_html=True
+    raw_html=True,
 )
 ```
 
@@ -88,35 +88,37 @@ reader = MassiveWebReader(
 import asyncio
 from llama_index.readers.massive import MassiveWebReader
 
+
 async def main():
     reader = MassiveWebReader(
         username="your_massive_username",
         password="your_massive_password",
-        country="US"
+        country="US",
     )
     documents = await reader.aload_data(["https://example.com"])
     return documents
+
 
 documents = asyncio.run(main())
 ```
 
 ## Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `username` | str | None | Massive proxy username |
-| `password` | str | None | Massive proxy password |
-| `country` | str | None | ISO 3166-1 alpha-2 country code (e.g., 'US', 'DE', 'GB') |
-| `city` | str | None | City name for geotargeting (e.g., 'New York', 'London') |
-| `zipcode` | str | None | ZIP/postal code (e.g., '10001', 'SW1') |
-| `asn` | str | None | ASN identifier for network targeting |
-| `device_type` | str | None | Device type: 'mobile', 'common', or 'tv' |
-| `session` | str | None | Session identifier for sticky sessions |
-| `ttl` | int | 15 | Session TTL in minutes |
-| `headless` | bool | True | Run browser in headless mode |
-| `page_load_timeout` | int | 30000 | Maximum time in ms to wait for page load |
-| `additional_wait_ms` | int | None | Extra wait time after networkidle for lazy-loaded content |
-| `raw_html` | bool | False | Return raw HTML without BeautifulSoup processing |
+| Parameter            | Type | Default | Description                                               |
+| -------------------- | ---- | ------- | --------------------------------------------------------- |
+| `username`           | str  | None    | Massive proxy username                                    |
+| `password`           | str  | None    | Massive proxy password                                    |
+| `country`            | str  | None    | ISO 3166-1 alpha-2 country code (e.g., 'US', 'DE', 'GB')  |
+| `city`               | str  | None    | City name for geotargeting (e.g., 'New York', 'London')   |
+| `zipcode`            | str  | None    | ZIP/postal code (e.g., '10001', 'SW1')                    |
+| `asn`                | str  | None    | ASN identifier for network targeting                      |
+| `device_type`        | str  | None    | Device type: 'mobile', 'common', or 'tv'                  |
+| `session`            | str  | None    | Session identifier for sticky sessions                    |
+| `ttl`                | int  | 15      | Session TTL in minutes                                    |
+| `headless`           | bool | True    | Run browser in headless mode                              |
+| `page_load_timeout`  | int  | 30000   | Maximum time in ms to wait for page load                  |
+| `additional_wait_ms` | int  | None    | Extra wait time after networkidle for lazy-loaded content |
+| `raw_html`           | bool | False   | Return raw HTML without BeautifulSoup processing          |
 
 ## Requirements
 
