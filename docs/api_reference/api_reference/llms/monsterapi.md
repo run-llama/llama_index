@@ -1,4 +1,3 @@
 ::: llama_index.llms.monsterapi
-    options:
-      members:
-        - MonsterLLM
+options:
+members: - MonsterLLM
