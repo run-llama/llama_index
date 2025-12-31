@@ -59,32 +59,28 @@ def test_get_provider_invalid_format():
         embedding._get_provider()
 
 
-def test_get_provider_with_foundation_arn():
-    """Test _get_provider with Foundation Model ARNs."""
+@pytest.mark.parametrize(
+    ("model_name", "expected_provider"),
+    [
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1",
+            "amazon",
+        ),
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/us.amazon.titan-embed-text-v1",
+            "amazon",
+        ),
+        (
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.amazon.titan-embed-text-v2:0",
+            "amazon",
+        ),
+    ],
+)
+def test_get_provider_with_arn(model_name, expected_provider):
+    """Test _get_provider with various ARN formats."""
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
-
-    # Standard ARN
     embedding = BedrockEmbedding(
-        model_name="arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1",
+        model_name=model_name,
         client=bedrock_client,
     )
-    assert embedding._get_provider() == "amazon"
-
-    # ARN with region prefix in model ID
-    embedding = BedrockEmbedding(
-        model_name="arn:aws:bedrock:us-east-1::foundation-model/us.amazon.titan-embed-text-v1",
-        client=bedrock_client,
-    )
-    assert embedding._get_provider() == "amazon"
-
-
-def test_get_provider_with_inference_profile_arn():
-    """Test _get_provider with Inference Profile ARNs."""
-    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
-
-    # Inference Profile ARN (often region prefixed)
-    embedding = BedrockEmbedding(
-        model_name="arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.amazon.titan-embed-text-v2:0",
-        client=bedrock_client,
-    )
-    assert embedding._get_provider() == "amazon"
+    assert embedding._get_provider() == expected_provider
