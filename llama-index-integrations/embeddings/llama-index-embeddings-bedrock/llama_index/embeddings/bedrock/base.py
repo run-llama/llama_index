@@ -391,13 +391,14 @@ class BedrockEmbedding(BaseEmbedding):
             ValueError: If the model_name format is unexpected (not 2 or 3 parts)
 
         """
-        model_parts = self.model_name.split(".")
+        model_name = self.model_name.split("/")[-1]
+        model_parts = model_name.split(".")
         if len(model_parts) == 2:
             return model_parts[0]
         if len(model_parts) == 3:
             return model_parts[1]
 
-        raise ValueError("Unexpected number of parts in model_name")
+        raise ValueError(f"Unexpected number of parts in model_name: {model_name}")
 
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
