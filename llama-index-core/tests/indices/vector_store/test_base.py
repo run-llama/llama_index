@@ -650,7 +650,7 @@ def test_skip_embedding_vector_store_receives_none_embeddings(
     vector_store = MockVectorStoreWithSkipEmbedding()
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    index = VectorStoreIndex.from_documents(
+    _ = VectorStoreIndex.from_documents(
         documents=documents,
         embed_model=mock_embed_model,
         storage_context=storage_context,

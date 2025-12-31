@@ -103,19 +103,16 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         if skip_embedding:
             # Warn if vector store doesn't support native embedding
-            if not hasattr(self._vector_store, "_native_embedding"):
+            if not getattr(self._vector_store, "generates_embeddings", False):
                 logger.warning(
-                    "skip_embedding=True but vector store doesn't have "
-                    "_native_embedding attribute. Ensure your vector store "
-                    "supports native embedding generation."
+                    "skip_embedding=True but vector store does not support native embedding generation. "
+                    "Ensure your vector store supports native embedding generation."
                 )
-        elif hasattr(self._vector_store, "_native_embedding"):
-            if self._vector_store._native_embedding:
-                logger.info(
-                    "VectorStoreIndex is generating embeddings, but vector store has "
-                    "native_embedding=True. Consider setting skip_embedding=True to "
-                    "let the vector store handle embedding generation and reduce costs."
-                )
+        elif getattr(self._vector_store, "generates_embeddings", False):
+            logger.info(
+                "VectorStoreIndex is generating embeddings, but vector store has generates_embeddings=True. "
+                "Consider setting skip_embedding=True to let the vector store handle embedding generation and reduce costs."
+            )
 
     @classmethod
     def from_vector_store(
@@ -171,11 +168,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        if self._vector_store.generates_embeddings:
-            return list(nodes)
-
-        if self._skip_embedding:
+        if self._vector_store.generates_embeddings or self._skip_embedding:
             # Clear any existing embeddings and return nodes
+            # This ensures the vector store generates its own embeddings
             results = []
             for node in nodes:
                 result = node.model_copy()
@@ -213,11 +208,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
-        if self._vector_store.generates_embeddings:
-            return list(nodes)
-
-        if self._skip_embedding:
+        if self._vector_store.generates_embeddings or self._skip_embedding:
             # Clear any existing embeddings and return nodes
+            # This ensures the vector store generates its own embeddings
             results = []
             for node in nodes:
                 result = node.model_copy()

@@ -3,7 +3,6 @@ from llama_index.core.schema import (
     NodeRelationship,
     RelatedNodeInfo,
 )
-from llama_index.core.schema import TextNode
 from llama_index.vector_stores.weaviate import (
     WeaviateVectorStore,
     SyncClientNotProvidedError,
@@ -245,10 +244,6 @@ def vector_store_with_sample_nodes(vector_store):
 
 
 def test_vector_store_with_custom_batch(client):
-    nodes = [
-        TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
-        TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0]),
-    ]
     # default, dynamic batch
     vector_store_default_dynamic = WeaviateVectorStore(
         weaviate_client=client, index_name=TEST_COLLECTION_NAME
@@ -282,9 +277,9 @@ def test_vector_store_with_custom_batch(client):
             index_name=TEST_COLLECTION_NAME,
             client_kwargs={"custom_batch": "wrong_value"},
         )
-        AssertionError()
+        pytest.fail("ValueError not raised for invalid custom_batch value")
     except ValueError:
-        assert True
+        pass
 
 
 def test_sync_basic_flow(vector_store_with_sample_nodes):
@@ -471,7 +466,7 @@ async def test_async_methods_called_without_async_client(vector_store):
             query_str="test",
             mode=VectorStoreQueryMode.DEFAULT,
         )
-        results = await vector_store.aquery(query)
+        await vector_store.aquery(query)
 
 
 def test_sync_client_properties(vector_store):
@@ -493,6 +488,8 @@ def mock_client():
     client.batch.dynamic.return_value.__enter__.return_value = batch_mock
     # Ensure collections attribute exists
     client.collections = MagicMock()
+    # Mock schema existence check
+    client.collections.exists.return_value = True
     return client
 
 
@@ -501,6 +498,8 @@ def mock_async_client():
     client = MagicMock()
     client.__class__ = weaviate.WeaviateAsyncClient
     client.collections = MagicMock()
+    # Mock schema existence check
+    client.collections.exists.return_value = True
     # Mock async methods
     client.collections.get.return_value.data.insert_many = AsyncMock()
     client.collections.get.return_value.query.hybrid = AsyncMock()

@@ -27,6 +27,7 @@ from llama_index.vector_stores.weaviate.utils import (
     acreate_default_schema,
     get_node_similarity,
     to_node,
+    get_collection_vectorizer_config,
 )
 from llama_index.vector_stores.weaviate._exceptions import (
     AsyncClientNotProvidedError,
@@ -125,13 +126,20 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
         native_embedding (bool): If True, use Weaviate's native embedding capabilities.
-            **Important:** The Weaviate collection must be configured with a vectorizer module (e.g., `text2vec-openai`, `text2vec-cohere`)
-            for native embeddings to work. Without this configuration, setting `native_embedding=True` will likely fail silently or produce errors.
+            When enabled, Weaviate will generate embeddings server-side using the configured vectorizer.
+            This requires the Weaviate collection to be configured with a vectorizer module
+            (e.g., 'text2vec-openai', 'text2vec-cohere', 'text2vec-huggingface', etc.).
+            See the Examples section below for configuration details.
             Defaults to False.
+
+    Raises:
+        ValueError: If native_embedding=True but the collection has no vectorizer configured.
+        ValueError: If native_embedding=True but collection was auto-created without vectorizer.
 
     Examples:
         `pip install llama-index-vector-stores-weaviate`
 
+        Basic usage without native embeddings:
         ```python
         import weaviate
 
@@ -148,6 +156,38 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             weaviate_client=client, index_name="LlamaIndex"
         )
         ```
+
+        Using native embeddings with OpenAI vectorizer:
+        ```python
+        import weaviate
+        from weaviate.classes.config import Configure
+
+        client = weaviate.connect_to_local()  # or your Weaviate instance
+
+        # Create a collection with OpenAI vectorizer
+        client.collections.create(
+            name="LlamaIndex",
+            vectorizer_config=[
+                Configure.NamedVectors.text2vec_openai(
+                    name="default",
+                    source_properties=["text"],
+                )
+            ],
+        )
+
+        # Now use WeaviateVectorStore with native_embedding=True
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client,
+            index_name="LlamaIndex",
+            native_embedding=True,  # Enable server-side embedding generation
+        )
+        ```
+
+        Important: When native_embedding=True:
+        - Queries must include a non-empty query_str for Weaviate to generate embeddings
+        - The collection MUST have a vectorizer configured before use
+        - Embeddings provided in nodes are automatically cleared during ingestion
+        - Set OPENAI_API_KEY or relevant vectorizer credentials in your environment
 
     """
 
@@ -232,6 +272,33 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             )
 
         self._native_embedding = native_embedding
+
+        # Validate native_embedding configuration if enabled
+        if self._native_embedding and self._client is not None:
+            # Only validate if we have a sync client available
+            if class_schema_exists(self._client, index_name):
+                # Collection exists, check if it has a vectorizer configured
+                vectorizer_config = get_collection_vectorizer_config(
+                    self._client, index_name
+                )
+                if vectorizer_config is None:
+                    raise ValueError(
+                        f"native_embedding=True requires the Weaviate collection '{index_name}' "
+                        "to be configured with a vectorizer module (e.g., 'text2vec-openai', "
+                        "'text2vec-cohere', 'text2vec-huggingface'). "
+                        "The collection exists but has no vectorizer configured. "
+                        "Please reconfigure the collection with a vectorizer before enabling native embeddings. "
+                        "See https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules for options."
+                    )
+            else:
+                # Collection will be auto-created without vectorizer
+                _logger.warning(
+                    f"native_embedding=True is enabled for collection '{index_name}', "
+                    "but the collection will be auto-created without a vectorizer. "
+                    "This will likely cause errors during ingestion or querying. "
+                    "Please pre-create the collection with an appropriate vectorizer module. "
+                    "See https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules for options."
+                )
 
         # create default schema if does not exist
         if self._client is not None:
