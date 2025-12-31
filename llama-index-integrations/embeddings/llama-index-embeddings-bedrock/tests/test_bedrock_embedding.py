@@ -81,8 +81,8 @@ def test_get_provider_invalid_format():
         ("anthropic.claude-v2", "anthropic"),
     ],
 )
-def test_get_provider_with_arn(model_name, expected_provider):
-    """Test _get_provider with various ARN formats."""
+def test_get_provider(model_name, expected_provider):
+    """Test _get_provider with various model name formats."""
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
     embedding = BedrockEmbedding(
         model_name=model_name,
