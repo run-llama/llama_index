@@ -74,6 +74,11 @@ def test_get_provider_invalid_format():
             "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.amazon.titan-embed-text-v2:0",
             "amazon",
         ),
+        (
+            "arn:aws:bedrock:us-west-2::foundation-model/cohere.embed-english-v3",
+            "cohere",
+        ),
+        ("anthropic.claude-v2", "anthropic"),
     ],
 )
 def test_get_provider_with_arn(model_name, expected_provider):
