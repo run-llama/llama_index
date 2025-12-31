@@ -8,10 +8,12 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.node_parser.node_utils import default_id_func
 from llama_index.core.schema import Document
+from llama_index.core.utils import get_tokenizer
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
 DEFAULT_MAX_CHARS = 1500
+DEFAULT_MAX_TOKENS = 512
 
 
 class CodeSplitter(TextSplitter):
@@ -20,6 +22,9 @@ class CodeSplitter(TextSplitter):
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
     https://docs.sweep.dev/blogs/chunking-2m-files
+    
+    Supports both character-based and token-based chunking modes for more precise
+    control over chunk sizes when working with language models.
     """
 
     language: str = Field(
@@ -40,7 +45,17 @@ class CodeSplitter(TextSplitter):
         description="Maximum number of characters per chunk.",
         gt=0,
     )
+    count_mode: str = Field(
+        default="char",
+        description="Mode for counting chunk size: 'char' for characters, 'token' for tokens.",
+    )
+    max_tokens: int = Field(
+        default=DEFAULT_MAX_TOKENS,
+        description="Maximum number of tokens per chunk (used when count_mode='token').",
+        gt=0,
+    )
     _parser: Any = PrivateAttr()
+    _tokenizer: Callable = PrivateAttr()
 
     def __init__(
         self,
@@ -48,14 +63,36 @@ class CodeSplitter(TextSplitter):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
+        count_mode: str = "char",
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        tokenizer: Optional[Callable] = None,
         parser: Any = None,
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable[[int, Document], str]] = None,
     ) -> None:
-        """Initialize a CodeSplitter."""
+        """Initialize a CodeSplitter.
+        
+        Args:
+            language: The programming language of the code being split.
+            chunk_lines: The number of lines to include in each chunk.
+            chunk_lines_overlap: How many lines of code each chunk overlaps with.
+            max_chars: Maximum number of characters per chunk.
+            count_mode: Mode for counting chunk size: 'char' for characters, 'token' for tokens.
+            max_tokens: Maximum number of tokens per chunk (used when count_mode='token').
+            tokenizer: Optional tokenizer function for token-based counting.
+            parser: Optional tree-sitter Parser object.
+            callback_manager: Optional callback manager.
+            include_metadata: Whether to include metadata in chunks.
+            include_prev_next_rel: Whether to include previous/next relationships.
+            id_func: Optional function to generate chunk IDs.
+        """
         from tree_sitter import Parser  # pants: no-infer-dep
+
+        # Validate count_mode
+        if count_mode not in ["char", "token"]:
+            raise ValueError("count_mode must be either 'char' or 'token'")
 
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
@@ -65,11 +102,16 @@ class CodeSplitter(TextSplitter):
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            count_mode=count_mode,
+            max_tokens=max_tokens,
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+
+        # Initialize tokenizer if using token mode
+        self._tokenizer = tokenizer or get_tokenizer()
 
         if parser is None:
             try:
@@ -100,6 +142,9 @@ class CodeSplitter(TextSplitter):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
+        count_mode: str = "char",
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        tokenizer: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         parser: Any = None,
     ) -> "CodeSplitter":
@@ -109,6 +154,9 @@ class CodeSplitter(TextSplitter):
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            count_mode=count_mode,
+            max_tokens=max_tokens,
+            tokenizer=tokenizer,
             callback_manager=callback_manager,
             parser=parser,
         )
@@ -117,9 +165,27 @@ class CodeSplitter(TextSplitter):
     def class_name(cls) -> str:
         return "CodeSplitter"
 
+    def _get_chunk_size(self, text: str) -> int:
+        """Get the size of text according to the current count_mode."""
+        if self.count_mode == "char":
+            return len(text)
+        elif self.count_mode == "token":
+            return len(self._tokenizer(text))
+        else:
+            raise ValueError(f"Unsupported count_mode: {self.count_mode}")
+
+    def _get_max_chunk_size(self) -> int:
+        """Get the maximum chunk size according to the current count_mode."""
+        if self.count_mode == "char":
+            return self.max_chars
+        elif self.count_mode == "token":
+            return self.max_tokens
+        else:
+            raise ValueError(f"Unsupported count_mode: {self.count_mode}")
+
     def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
-        Recursively chunk a node into smaller pieces based on character limits.
+        Recursively chunk a node into smaller pieces based on character or token limits.
 
         Args:
             node (Any): The AST node to chunk.
@@ -127,27 +193,37 @@ class CodeSplitter(TextSplitter):
             last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
 
         Returns:
-            List[str]: A list of code chunks that respect the max_chars limit.
+            List[str]: A list of code chunks that respect the size limits.
 
         """
         new_chunks = []
         current_chunk = ""
+        max_size = self._get_max_chunk_size()
+        
         for child in node.children:
-            if child.end_byte - child.start_byte > self.max_chars:
+            child_text = text_bytes[child.start_byte : child.end_byte].decode("utf-8")
+            child_size = self._get_chunk_size(child_text)
+            
+            if child_size > max_size:
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
                 current_chunk = ""
                 new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
-            elif (
-                len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
-            ):
-                # Child would make the current chunk too big, so start a new chunk
-                new_chunks.append(current_chunk)
-                current_chunk = text_bytes[last_end : child.end_byte].decode("utf-8")
             else:
-                current_chunk += text_bytes[last_end : child.end_byte].decode("utf-8")
+                # Calculate what adding this child would do to current chunk size
+                new_chunk_text = current_chunk + text_bytes[last_end : child.end_byte].decode("utf-8")
+                new_chunk_size = self._get_chunk_size(new_chunk_text)
+                
+                if new_chunk_size > max_size:
+                    # Child would make the current chunk too big, so start a new chunk
+                    if len(current_chunk) > 0:
+                        new_chunks.append(current_chunk)
+                    current_chunk = text_bytes[last_end : child.end_byte].decode("utf-8")
+                else:
+                    current_chunk += text_bytes[last_end : child.end_byte].decode("utf-8")
             last_end = child.end_byte
+            
         if len(current_chunk) > 0:
             new_chunks.append(current_chunk)
         return new_chunks
@@ -157,19 +233,19 @@ class CodeSplitter(TextSplitter):
         Split incoming code into chunks using the AST parser.
 
         This method parses the input code into an AST and then chunks it while preserving
-        syntactic structure. It handles error cases and ensures the code can be properly parsed.
+        syntactic structure. Supports both character-based and token-based chunking modes
+        for more precise control over chunk sizes.
 
         Args:
             text (str): The source code text to split.
 
         Returns:
-            List[str]: A list of code chunks.
+            List[str]: A list of code chunks that respect size limits based on count_mode.
 
         Raises:
             ValueError: If the code cannot be parsed for the specified language.
 
         """
-        """Split incoming code and return chunks using the AST."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
