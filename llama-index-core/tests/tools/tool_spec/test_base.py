@@ -170,3 +170,112 @@ def test_tool_spec_subset() -> None:
         tools[0].metadata.fn_schema.model_json_schema()["properties"]
         == AbcSchema.model_json_schema()["properties"]
     )
+
+
+@pytest.mark.asyncio
+async def test_async_tool_spec() -> None:
+    """Test tool spec."""
+    tool_spec = TestToolSpec()
+    # first is foo, second is bar
+    tools = await tool_spec.to_tool_list_async()
+    assert len(tools) == 5
+    assert tools[0].metadata.name == "foo"
+    assert tools[0].metadata.description == "foo(arg1: str, arg2: int) -> str\nFoo."
+    assert tools[0].fn("hello", 1) == "foo hello 1"
+    assert tools[0].ctx_param_name is None
+    assert not tools[0].requires_context
+
+    assert tools[1].metadata.name == "bar"
+    assert (
+        tools[1].metadata.description
+        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+    )
+    assert str(tools[1](True)) == "bar True"
+    assert tools[1].ctx_param_name is None
+    assert not tools[1].requires_context
+
+    assert tools[2].metadata.name == "abc"
+    assert tools[2].metadata.description == "abc(arg1: str) -> str"
+    assert (
+        tools[2].metadata.fn_schema.model_json_schema()["properties"]
+        == AbcSchema.model_json_schema()["properties"]
+    )
+    assert tools[2].ctx_param_name is None
+    assert not tools[2].requires_context
+
+    assert tools[3].metadata.name == "abc_with_ctx"
+    assert tools[3].metadata.description == "abc_with_ctx(arg1: str) -> str"
+    assert (
+        tools[3].metadata.fn_schema.model_json_schema()["properties"]
+        == AbcSchema.model_json_schema()["properties"]
+    )
+    assert tools[3].ctx_param_name == "ctx"
+    assert tools[3].requires_context
+
+    # test metadata mapping
+    tools = tool_spec.to_tool_list(
+        func_to_metadata_mapping={
+            "foo": ToolMetadata(
+                "foo_description", name="foo_name", fn_schema=FooSchema
+            ),
+        }
+    )
+    assert len(tools) == 5
+    assert tools[0].metadata.name == "foo_name"
+    assert tools[0].metadata.description == "foo_description"
+    assert tools[0].metadata.fn_schema is not None
+    fn_schema = tools[0].metadata.fn_schema.model_json_schema()
+    print(fn_schema)
+    assert fn_schema["properties"]["arg1"]["type"] == "string"
+    assert fn_schema["properties"]["arg2"]["type"] == "integer"
+    assert tools[1].metadata.name == "bar"
+    assert (
+        tools[1].metadata.description
+        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+    )
+    assert tools[1].metadata.fn_schema is not None
+    fn_schema = tools[1].metadata.fn_schema.model_json_schema()
+    assert fn_schema["properties"]["arg1"]["type"] == "boolean"
+
+
+@pytest.mark.asyncio
+async def test_async_tool_spec_async() -> None:
+    """Test async_fn of tool spec."""
+    tool_spec = TestToolSpec()
+    tools = await tool_spec.to_tool_list_async()
+    assert len(tools) == 5
+
+    assert await tools[0].async_fn("hello", 1) == "foo hello 1"
+    assert str(await tools[1].acall(True)) == "bar True"
+
+    assert tools[0].fn("hello", 1) == "foo hello 1"
+    assert str(tools[1](True)) == "bar True"
+
+
+@pytest.mark.asyncio
+async def test_async_function_patching() -> None:
+    # test sync patching of async function
+    tool_spec = TestToolSpec()
+    tool_spec.spec_functions = ["afoo", "async_only_fn"]
+    tools = await tool_spec.to_tool_list_async()
+    assert len(tools) == 2
+    assert tools[0].fn("hello", 1) == "foo hello 1"
+
+    assert tools[0].metadata.name == "afoo"
+    assert tools[0].metadata.description == "afoo(arg1: str, arg2: int) -> str\nAfoo."
+    assert tools[1].metadata.name == "async_only_fn"
+    assert tools[1].metadata.description == "async_only_fn() -> str\nAsync only fn."
+
+
+@pytest.mark.asyncio
+async def test_async_tool_subset() -> None:
+    """Test tool spec subset."""
+    tool_spec = TestToolSpec()
+    tools = await tool_spec.to_tool_list_async(spec_functions=["abc"])
+    assert len(tools) == 1
+    assert tools[0].metadata.name == "abc"
+    assert tools[0].metadata.description == "abc(arg1: str) -> str"
+    assert (
+        tools[0].metadata.fn_schema.model_json_schema()["properties"]
+        == AbcSchema.model_json_schema()["properties"]
+    )

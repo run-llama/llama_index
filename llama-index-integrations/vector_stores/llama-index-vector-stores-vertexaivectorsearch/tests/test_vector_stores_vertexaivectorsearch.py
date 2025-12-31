@@ -14,6 +14,7 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.core import StorageContext, Settings, VectorStoreIndex
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
+    VectorStoreQueryResult,
     MetadataFilters,
     MetadataFilter,
 )
@@ -436,3 +437,333 @@ def test_batch_update_index_path_validation():
 def test_class():
     names_of_base_classes = [b.__name__ for b in VertexAIVectorStore.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
+
+
+# =============================================================================
+# V2 Unit Tests
+# =============================================================================
+
+
+class TestV2ParameterValidation:
+    """Test parameter validation for v1 vs v2 API versions."""
+
+    def test_v1_requires_index_id(self):
+        """Test that v1 raises error when index_id is missing."""
+        with pytest.raises(ValueError, match="index_id is required for v1"):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v1",
+                endpoint_id="projects/test/locations/us-central1/indexEndpoints/123",
+            )
+
+    def test_v1_requires_endpoint_id(self):
+        """Test that v1 raises error when endpoint_id is missing."""
+        with pytest.raises(ValueError, match="endpoint_id is required for v1"):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v1",
+                index_id="projects/test/locations/us-central1/indexes/123",
+            )
+
+    def test_v1_rejects_collection_id(self):
+        """Test that v1 raises error when collection_id is provided."""
+        with pytest.raises(
+            ValueError, match="collection_id.*only valid for api_version='v2'"
+        ):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v1",
+                index_id="projects/test/locations/us-central1/indexes/123",
+                endpoint_id="projects/test/locations/us-central1/indexEndpoints/123",
+                collection_id="my-collection",
+            )
+
+    def test_v2_requires_collection_id(self):
+        """Test that v2 raises error when collection_id is missing."""
+        with pytest.raises(ValueError, match="collection_id is required for v2"):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+            )
+
+    def test_v2_rejects_index_id(self):
+        """Test that v2 raises error when index_id is provided."""
+        with pytest.raises(
+            ValueError, match="index_id.*only valid for api_version='v1'"
+        ):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                index_id="projects/test/locations/us-central1/indexes/123",
+            )
+
+    def test_v2_rejects_endpoint_id(self):
+        """Test that v2 raises error when endpoint_id is provided."""
+        with pytest.raises(
+            ValueError, match="endpoint_id.*only valid for api_version='v1'"
+        ):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                endpoint_id="projects/test/locations/us-central1/indexEndpoints/123",
+            )
+
+    def test_v2_rejects_gcs_bucket_name(self):
+        """Test that v2 raises error when gcs_bucket_name is provided."""
+        with pytest.raises(
+            ValueError, match="gcs_bucket_name.*only valid for api_version='v1'"
+        ):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                gcs_bucket_name="my-bucket",
+            )
+
+
+class TestV2Routing:
+    """Test that operations route correctly to v1 or v2 implementations."""
+
+    @pytest.fixture
+    def mock_v2_store(self):
+        """Create a v2 store with mocked SDK."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VertexAIVectorStore._validate_parameters"
+        ):
+            return VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+            )
+
+    def test_add_routes_to_v2(self, mock_v2_store):
+        """Test that add() routes to _add_v2 when api_version='v2'."""
+        with patch.object(mock_v2_store, "_add_v2", return_value=["id1"]) as mock_add:
+            mock_node = MagicMock()
+            mock_node.node_id = "id1"
+            mock_node.get_embedding.return_value = [0.1, 0.2, 0.3]
+
+            result = mock_v2_store.add([mock_node])
+
+            mock_add.assert_called_once()
+            assert result == ["id1"]
+
+    def test_query_routes_to_v2(self, mock_v2_store):
+        """Test that query() routes to _query_v2 when api_version='v2'."""
+        mock_result = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+
+        with patch.object(
+            mock_v2_store, "_query_v2", return_value=mock_result
+        ) as mock_query:
+            query = VectorStoreQuery(
+                query_embedding=[0.1, 0.2, 0.3], similarity_top_k=5
+            )
+
+            result = mock_v2_store.query(query)
+
+            mock_query.assert_called_once()
+            assert result == mock_result
+
+    def test_delete_routes_to_v2(self, mock_v2_store):
+        """Test that delete() routes to _delete_v2 when api_version='v2'."""
+        with patch.object(
+            mock_v2_store, "_delete_v2", return_value=None
+        ) as mock_delete:
+            mock_v2_store.delete(ref_doc_id="doc123")
+
+            mock_delete.assert_called_once_with("doc123")
+
+    def test_delete_nodes_routes_to_v2(self, mock_v2_store):
+        """Test that delete_nodes() routes to _delete_nodes_v2 when api_version='v2'."""
+        with patch.object(
+            mock_v2_store, "_delete_nodes_v2", return_value=None
+        ) as mock_delete:
+            mock_v2_store.delete_nodes(node_ids=["node1", "node2"])
+
+            mock_delete.assert_called_once()
+
+    def test_clear_routes_to_v2(self, mock_v2_store):
+        """Test that clear() routes to _clear_v2 when api_version='v2'."""
+        with patch.object(mock_v2_store, "_clear_v2", return_value=None) as mock_clear:
+            mock_v2_store.clear()
+
+            mock_clear.assert_called_once()
+
+
+class TestV2SDKImport:
+    """Test v2 SDK import error handling."""
+
+    def test_import_v2_sdk_success(self):
+        """Test that _import_v2_sdk returns the module when available."""
+        # This test will pass if google-cloud-vectorsearch is installed
+        try:
+            from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+                _import_v2_sdk,
+            )
+
+            result = _import_v2_sdk()
+            assert result is not None
+            assert hasattr(result, "BatchCreateDataObjectsRequest")
+        except ImportError:
+            pytest.skip("google-cloud-vectorsearch not installed")
+
+    def test_import_v2_sdk_error_message_format(self):
+        """Test that ImportError message mentions the required package."""
+        # This test verifies the error message format without mocking imports
+        # The actual import behavior is tested by test_import_v2_sdk_success
+        expected_message = "v2 operations require google-cloud-vectorsearch"
+
+        # Verify the error message is properly formatted in the code
+        import inspect
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _import_v2_sdk,
+        )
+
+        source = inspect.getsource(_import_v2_sdk)
+        assert expected_message in source, (
+            f"Expected error message '{expected_message}' not found in _import_v2_sdk"
+        )
+
+
+class TestV2FeatureFlags:
+    """Test feature flag behavior for v2."""
+
+    def test_should_use_v2_with_v2_enabled(self):
+        """Test that should_use_v2 returns True when api_version='v2' and flag enabled."""
+        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
+
+        with patch.object(FeatureFlags, "ENABLE_V2", True):
+            assert FeatureFlags.should_use_v2("v2") is True
+
+    def test_should_use_v2_with_v2_disabled(self):
+        """Test that should_use_v2 returns False when flag is disabled."""
+        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
+
+        with patch.object(FeatureFlags, "ENABLE_V2", False):
+            assert FeatureFlags.should_use_v2("v2") is False
+
+    def test_should_use_v2_with_v1_version(self):
+        """Test that should_use_v2 returns False when api_version='v1'."""
+        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
+
+        with patch.object(FeatureFlags, "ENABLE_V2", True):
+            assert FeatureFlags.should_use_v2("v1") is False
+
+
+class TestV2SDKManager:
+    """Test SDK manager v2 client functionality."""
+
+    def test_is_v2_available_when_installed(self):
+        """Test is_v2_available returns True when SDK is installed."""
+        try:
+            import google.cloud.vectorsearch_v1beta  # noqa: F401
+
+            sdk_manager = VectorSearchSDKManager(
+                project_id="test-project",
+                region="us-central1",
+            )
+            assert sdk_manager.is_v2_available() is True
+        except ImportError:
+            pytest.skip("google-cloud-vectorsearch not installed")
+
+    def test_is_v2_available_caches_result(self):
+        """Test that is_v2_available caches the result."""
+        sdk_manager = VectorSearchSDKManager(
+            project_id="test-project",
+            region="us-central1",
+        )
+
+        # First call
+        result1 = sdk_manager.is_v2_available()
+        # Second call should use cached value
+        result2 = sdk_manager.is_v2_available()
+
+        assert result1 == result2
+        # Check that _v2_available is set (not None)
+        assert sdk_manager._v2_available is not None
+
+    def test_get_v2_client_returns_three_clients(self):
+        """Test that get_v2_client returns dict with three client types."""
+        try:
+            import google.cloud.vectorsearch_v1beta  # noqa: F401
+
+            sdk_manager = VectorSearchSDKManager(
+                project_id="test-project",
+                region="us-central1",
+            )
+
+            clients = sdk_manager.get_v2_client()
+
+            assert isinstance(clients, dict)
+            assert "vector_search_service_client" in clients
+            assert "data_object_service_client" in clients
+            assert "data_object_search_service_client" in clients
+        except ImportError:
+            pytest.skip("google-cloud-vectorsearch not installed")
+
+
+class TestV2RetryDecorator:
+    """Test the retry decorator for v2 operations."""
+
+    def test_retry_succeeds_on_first_attempt(self):
+        """Test that function returns immediately on success."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+
+        call_count = 0
+
+        @retry(max_attempts=3, delay=0.01)
+        def succeeding_function():
+            nonlocal call_count
+            call_count += 1
+            return "success"
+
+        result = succeeding_function()
+
+        assert result == "success"
+        assert call_count == 1
+
+    def test_retry_retries_on_failure(self):
+        """Test that function retries on failure."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+
+        call_count = 0
+
+        @retry(max_attempts=3, delay=0.01)
+        def failing_then_succeeding():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise Exception("Temporary failure")
+            return "success"
+
+        result = failing_then_succeeding()
+
+        assert result == "success"
+        assert call_count == 3
+
+    def test_retry_raises_after_max_attempts(self):
+        """Test that function raises exception after max attempts."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+
+        call_count = 0
+
+        @retry(max_attempts=3, delay=0.01)
+        def always_failing():
+            nonlocal call_count
+            call_count += 1
+            raise Exception("Permanent failure")
+
+        with pytest.raises(Exception, match="Permanent failure"):
+            always_failing()
+
+        assert call_count == 3

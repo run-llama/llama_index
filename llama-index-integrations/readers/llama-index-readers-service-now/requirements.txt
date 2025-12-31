@@ -572,7 +572,7 @@ typing-inspection==0.4.1
     # via pydantic
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.5.0
+urllib3==2.6.0
     # via
     #   pysnc
     #   requests

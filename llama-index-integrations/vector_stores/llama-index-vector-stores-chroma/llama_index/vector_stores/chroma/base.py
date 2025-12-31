@@ -71,7 +71,9 @@ def _to_chroma_filter(
     condition = _transform_chroma_filter_condition(condition)
     if standard_filters.filters:
         for filter in standard_filters.filters:
-            if filter.operator:
+            if isinstance(filter, MetadataFilters):
+                filters_list.append(_to_chroma_filter(filter))
+            elif filter.operator:
                 filters_list.append(
                     {
                         filter.key: {
@@ -492,8 +494,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["distances"][0],
         ):
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(text)
+                node = metadata_dict_to_node(metadata, text=text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
@@ -501,7 +502,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
 
                 node = TextNode(
-                    text=text,
+                    text=text or "",
                     id_=node_id,
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
@@ -669,8 +670,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
                     # Create node (reusing logic from _query method)
                     try:
-                        node = metadata_dict_to_node(metadata)
-                        node.set_content(text)
+                        node = metadata_dict_to_node(metadata, text=text)
                     except Exception:
                         # NOTE: deprecated legacy logic for backward compatibility
                         metadata, node_info, relationships = (
@@ -678,7 +678,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                         )
 
                         node = TextNode(
-                            text=text,
+                            text=text or "",
                             id_=node_id,
                             metadata=metadata,
                             start_char_idx=node_info.get("start", None),
@@ -724,8 +724,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["ids"], results["documents"], results["metadatas"]
         ):
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(text)
+                node = metadata_dict_to_node(metadata, text=text)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
@@ -733,7 +732,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
 
                 node = TextNode(
-                    text=text,
+                    text=text or "",
                     id_=node_id,
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
