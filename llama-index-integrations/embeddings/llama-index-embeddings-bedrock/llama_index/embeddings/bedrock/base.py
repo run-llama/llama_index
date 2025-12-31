@@ -395,12 +395,12 @@ class BedrockEmbedding(BaseEmbedding):
         model_parts = model_identifier.split(".")
         if len(model_parts) == 2:
             return model_parts[0]
-        if len(model_parts) == 3:
+        elif len(model_parts) == 3:
             return model_parts[1]
-
-        raise ValueError(
-            f"Unexpected number of parts in model_name: {model_identifier}"
-        )
+        else:
+            raise ValueError(
+                f"Unexpected number of parts in model_name: {model_identifier}"
+            )
 
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
