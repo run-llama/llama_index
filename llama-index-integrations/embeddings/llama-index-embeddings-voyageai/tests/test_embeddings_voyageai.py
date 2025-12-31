@@ -1,10 +1,16 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.voyageai import VoyageEmbedding
-from llama_index.embeddings.voyageai.base import CONTEXT_MODELS
+from llama_index.embeddings.voyageai.base import (
+    CONTEXT_MODELS,
+    MULTIMODAL_MODELS,
+    VIDEO_MODELS,
+    SUPPORTED_VIDEO_FORMATS,
+    VIDEO_SUPPORT,
+)
 
 
 def test_embedding_class():
@@ -387,3 +393,201 @@ def test_automatic_batching_due_to_token_limits():
     assert mock_embed.call_count >= 2, (
         f"Expected at least 2 API calls, got {mock_embed.call_count}"
     )
+
+
+# Unit tests for multimodal and video models
+
+
+def test_multimodal_models_list():
+    """Test that multimodal models list includes expected models."""
+    assert "voyage-multimodal-3" in MULTIMODAL_MODELS
+    assert "voyage-multimodal-3.5" in MULTIMODAL_MODELS
+
+
+def test_video_models_list():
+    """Test that video models list includes only models that support video."""
+    assert "voyage-multimodal-3.5" in VIDEO_MODELS
+    # voyage-multimodal-3 does not support video
+    assert "voyage-multimodal-3" not in VIDEO_MODELS
+
+
+def test_supported_video_formats():
+    """Test that common video formats are supported."""
+    expected_formats = {"mp4", "mpeg", "mov", "avi", "webm"}
+    for fmt in expected_formats:
+        assert fmt in SUPPORTED_VIDEO_FORMATS
+
+
+def test_multimodal_model_detection():
+    """Test detection of multimodal models."""
+    mm_emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    regular_emb = VoyageEmbedding(
+        model_name="voyage-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    assert mm_emb.model_name in MULTIMODAL_MODELS
+    assert regular_emb.model_name not in MULTIMODAL_MODELS
+
+
+def test_video_model_detection():
+    """Test detection of video-capable models."""
+    video_emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    no_video_emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    assert video_emb.model_name in VIDEO_MODELS
+    assert no_video_emb.model_name not in VIDEO_MODELS
+
+
+def test_validate_video_format_valid():
+    """Test video format validation with valid formats."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    assert emb._validate_video_format("mp4") is True
+    assert emb._validate_video_format("MP4") is True
+    assert emb._validate_video_format("mov") is True
+    assert emb._validate_video_format("webm") is True
+
+
+def test_validate_video_format_invalid():
+    """Test video format validation with invalid formats."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    assert emb._validate_video_format("txt") is False
+    assert emb._validate_video_format("pdf") is False
+    assert emb._validate_video_format("png") is False
+
+
+def test_video_embedding_unsupported_model():
+    """Test that video embedding raises error for unsupported models."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        emb.get_video_embedding("/path/to/video.mp4")
+
+    assert "does not support video embeddings" in str(excinfo.value)
+
+
+@pytest.mark.skipif(
+    VIDEO_SUPPORT, reason="Test only runs when video support is unavailable"
+)
+def test_video_embedding_no_video_support():
+    """Test that video embedding raises ImportError when voyageai<0.3.6."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    with pytest.raises(ImportError) as excinfo:
+        emb.get_video_embedding("/path/to/video.mp4")
+
+    assert "Video support requires voyageai>=0.3.6" in str(excinfo.value)
+
+
+@pytest.mark.skipif(not VIDEO_SUPPORT, reason="Video support requires voyageai>=0.3.6")
+def test_video_embedding_with_mocked_client():
+    """Test video embedding with mocked client."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    # Mock the Video.from_path and multimodal_embed
+    mock_video = Mock()
+    mock_embed_result = Mock()
+    mock_embed_result.embeddings = [[0.1, 0.2, 0.3]]
+
+    with patch(
+        "llama_index.embeddings.voyageai.base.Video.from_path", return_value=mock_video
+    ):
+        emb._client.multimodal_embed = Mock(return_value=mock_embed_result)
+
+        result = emb.get_video_embedding("/path/to/video.mp4")
+
+        assert result == [0.1, 0.2, 0.3]
+        emb._client.multimodal_embed.assert_called_once()
+
+
+@pytest.mark.skipif(not VIDEO_SUPPORT, reason="Video support requires voyageai>=0.3.6")
+def test_video_embeddings_multiple_with_mocked_client():
+    """Test multiple video embeddings with mocked client."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    mock_video = Mock()
+    mock_embed_result = Mock()
+    mock_embed_result.embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+
+    with patch(
+        "llama_index.embeddings.voyageai.base.Video.from_path", return_value=mock_video
+    ):
+        emb._client.multimodal_embed = Mock(return_value=mock_embed_result)
+
+        result = emb.get_video_embeddings(
+            ["/path/to/video1.mp4", "/path/to/video2.mp4"]
+        )
+
+        assert len(result) == 2
+        assert result[0] == [0.1, 0.2, 0.3]
+        assert result[1] == [0.4, 0.5, 0.6]
+
+
+@pytest.mark.skipif(not VIDEO_SUPPORT, reason="Video support requires voyageai>=0.3.6")
+@pytest.mark.asyncio
+async def test_async_video_embedding_with_mocked_client():
+    """Test async video embedding with mocked client."""
+    from unittest.mock import AsyncMock
+
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5", voyage_api_key="NOT_A_VALID_KEY"
+    )
+
+    mock_video = Mock()
+    mock_embed_result = Mock()
+    mock_embed_result.embeddings = [[0.1, 0.2, 0.3]]
+
+    with patch(
+        "llama_index.embeddings.voyageai.base.Video.from_path", return_value=mock_video
+    ):
+        emb._aclient.multimodal_embed = AsyncMock(return_value=mock_embed_result)
+
+        result = await emb.aget_video_embedding("/path/to/video.mp4")
+
+        assert result == [0.1, 0.2, 0.3]
+        emb._aclient.multimodal_embed.assert_called_once()
+
+
+def test_multimodal_embed_text_with_batching():
+    """Test multimodal model text embedding uses batching correctly."""
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3.5",
+        voyage_api_key="NOT_A_VALID_KEY",
+        embed_batch_size=2,
+    )
+
+    # Mock tokenize and multimodal_embed
+    mock_tokenize = Mock(return_value=[[1, 2, 3]])
+    emb._client.tokenize = mock_tokenize  # type: ignore[method-assign]
+
+    mock_embed_result = Mock()
+    mock_embed_result.embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+    mock_multimodal_embed = Mock(return_value=mock_embed_result)
+    emb._client.multimodal_embed = mock_multimodal_embed  # type: ignore[method-assign]
+
+    texts = ["text1", "text2", "text3", "text4"]
+    result = emb._embed(texts, "document")
+
+    # Should call multimodal_embed twice (2 batches of 2 texts each)
+    assert mock_multimodal_embed.call_count == 2
+    # Should return all 4 embeddings
+    assert len(result) == 4
