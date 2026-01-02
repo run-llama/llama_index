@@ -487,6 +487,7 @@ class IngestionPipeline(BaseModel):
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
+            store_doc_text (bool, optional): Whether to store the document texts. Defaults to True.
             num_workers (Optional[int], optional): The number of parallel processes to use.
                 If set to None, then sequential compute is used. Defaults to None.
 
@@ -675,6 +676,7 @@ class IngestionPipeline(BaseModel):
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
+            store_doc_text (bool, optional): Whether to store the document texts. Defaults to True.
             num_workers (Optional[int], optional): The number of parallel processes to use.
                 If set to None, then sequential compute is used. Defaults to None.
 
