@@ -1,6 +1,6 @@
 import os
 import pytest
-from typing import List, Optional
+from typing import Optional
 from pydantic import BaseModel, Field
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 from unittest.mock import MagicMock
@@ -18,57 +18,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.prompts import PromptTemplate, ChatPromptTemplate
 from llama_index.llms.google_genai import GoogleGenAI
 from google.genai import types
-
-# Conditions for running live tests
-SKIP_GEMINI = (
-    os.environ.get("GOOGLE_API_KEY") is None
-    or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
-)
-
-
-GEMINI_MODELS_TO_TEST = (
-    [
-        {"model": "gemini-2.5-flash-lite", "config": {}},
-        {
-            "model": "gemini-2.5-flash-lite",
-            "config": {
-                "generation_config": GenerateContentConfig(
-                    thinking_config=ThinkingConfig(thinking_budget=512)
-                )
-            },
-        },
-    ]
-    if not SKIP_GEMINI
-    else []
-)
-
-
-class Poem(BaseModel):
-    content: str
-
-
-class Column(BaseModel):
-    name: str = Field(description="Column field")
-    data_type: str = Field(description="Data type field")
-
-
-class Table(BaseModel):
-    name: str = Field(description="Table name field")
-    columns: List[Column] = Field(description="List of random Column objects")
-
-
-class Schema(BaseModel):
-    schema_name: str = Field(description="Schema name")
-    tables: List[Table] = Field(description="List of random Table objects")
-
-
-@pytest.fixture(params=GEMINI_MODELS_TO_TEST)
-def llm(request) -> GoogleGenAI:
-    return GoogleGenAI(
-        model=request.param["model"],
-        api_key=os.environ["GOOGLE_API_KEY"],
-        **request.param.get("config", {}),
-    )
+from tests.conftest import SKIP_GEMINI, Poem, Schema, BlogPost
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -152,7 +102,7 @@ def test_structured_predict(llm: GoogleGenAI) -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 @pytest.mark.asyncio
 async def test_astructured_predict(llm: GoogleGenAI) -> None:
-    """Parity with old `test_astructured_predict`."""
+    """Integration test for async structured prediction."""
     response = await llm.astructured_predict(
         output_cls=Poem,
         prompt=PromptTemplate("Write a poem about a magic backpack"),
@@ -509,7 +459,7 @@ async def test_built_in_tool_async_compatibility() -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_thoughts_with_streaming() -> None:
     llm = GoogleGenAI(
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -539,8 +489,9 @@ def test_thoughts_with_streaming() -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 @pytest.mark.asyncio
 async def test_thoughts_with_async_streaming() -> None:
+    # flash lite doesn't bring thought blocks
     llm = GoogleGenAI(
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -559,7 +510,7 @@ async def test_thoughts_with_async_streaming() -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_thoughts_with_chat() -> None:
     llm = GoogleGenAI(
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -575,7 +526,7 @@ def test_thoughts_with_chat() -> None:
 @pytest.mark.asyncio
 async def test_thoughts_with_async_chat() -> None:
     llm = GoogleGenAI(
-        model="gemini-2.5-flash-lite",
+        model="gemini-2.5-flash",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -589,7 +540,7 @@ async def test_thoughts_with_async_chat() -> None:
 
 def test_built_in_tool_in_response() -> None:
     """
-    Parity with old built_in_tool grounding_metadata extraction test.
+    Validate grounding_metadata extraction from response conversion.
 
     This only checks response conversion and does not require API access.
     """
@@ -700,48 +651,7 @@ def test_tool_required_integration(llm: GoogleGenAI) -> None:
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
-    """Parity with old `test_optional_lists_nested_gemini` (includes live generation)."""
-
-    class TextContent(BaseModel):
-        """A piece of text content."""
-
-        text: str
-        language: str
-
-    class ImageContent(BaseModel):
-        """A piece of image content."""
-
-        url: str
-        alt_text: Optional[str]
-        width: Optional[int]
-        height: Optional[int]
-
-    class VideoContent(BaseModel):
-        """A piece of video content."""
-
-        url: str
-        duration_seconds: int
-        thumbnail: Optional[str]
-
-    class Content(BaseModel):
-        """Content of a blog post."""
-
-        title: str
-        created_at: str
-        text: Optional[TextContent] = None
-        image: Optional[ImageContent]
-        video: Optional[VideoContent]
-        tags: List[str]
-
-    class BlogPost(BaseModel):
-        """A blog post."""
-
-        id: str
-        author: str
-        published: bool
-        contents: List[Content]
-        category: Optional[str]
-
+    """Integration test for nested optional list structured generation."""
     blogpost = (
         llm.as_structured_llm(output_cls=BlogPost)
         .complete(prompt="Write a blog post with at least 3 contents")

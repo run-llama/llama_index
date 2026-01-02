@@ -18,15 +18,10 @@ from google.genai import types
 @pytest.mark.asyncio
 async def test_message_converter_text_only(mock_file_manager) -> None:
     """Test converting a simple text message without file operations."""
-    # Arrange
     converter = MessageConverter(file_manager=mock_file_manager)
-
     msg = ChatMessage(role=MessageRole.USER, content="Hello")
-
-    # Act
     content, file_names = await converter.to_gemini_content(msg)
 
-    # Assert
     assert isinstance(content, types.Content)
     assert content.role == "user"
     assert len(content.parts) == 1
@@ -37,10 +32,8 @@ async def test_message_converter_text_only(mock_file_manager) -> None:
 @pytest.mark.asyncio
 async def test_message_converter_with_image(mock_file_manager) -> None:
     """Test converting a message with an image block, verifying file manager interaction."""
-    # Arrange
     converter = MessageConverter(file_manager=mock_file_manager)
 
-    # Arrange a block and mock FileManager behavior.
     mock_file_manager.create_part.return_value = (
         types.Part.from_text(text="img"),
         None,
@@ -88,9 +81,50 @@ def test_response_converter_thinking() -> None:
     assert blocks[1].text == "Final Answer"
 
 
+def test_thoughts_in_response_converter() -> None:
+    """Real test: thought parts are converted EXACTLY into blocks + signatures alignment."""
+    converter = ResponseConverter()
+    state = GeminiResponseParseState()
+
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_candidate.finish_reason = types.FinishReason.STOP
+    mock_candidate.content.role = "model"
+
+    thought_part = types.Part(
+        text="This is a thought.",
+        thought=True,
+        thought_signature=b"sig-1",
+    )
+    text_part = types.Part(text="This is not a thought.")
+
+    mock_candidate.content.parts = [thought_part, text_part]
+    mock_response.candidates = [mock_candidate]
+    mock_response.usage_metadata = None
+    mock_response.prompt_feedback = None
+
+    chat_response = converter.to_chat_response(mock_response, state=state)
+
+    blocks = chat_response.message.blocks
+    assert len(blocks) == 2
+
+    assert isinstance(blocks[0], ThinkingBlock)
+    assert blocks[0].content == "This is a thought."
+    assert blocks[0].additional_information.get("thought_signature") == b"sig-1"
+    assert blocks[0].additional_information.get("thought") is True
+
+    assert isinstance(blocks[1], TextBlock)
+    assert blocks[1].text == "This is not a thought."
+
+    assert chat_response.message.additional_kwargs.get("thought_signatures") == [
+        b"sig-1",
+        None,
+    ]
+
+
 def test_response_converter_code_execution() -> None:
     """
-    Parity with old `test_code_execution_response_parts` (conversion depth).
+    Validate raw extraction preserves code execution parts.
 
     ResponseConverter does not map executable_code / code_execution_result into
     dedicated LlamaIndex blocks today, but raw extraction must preserve them.
@@ -179,8 +213,119 @@ def test_response_converter_code_execution() -> None:
     assert any("code_execution_result" in p for p in parts)
 
 
+def test_code_execution_response_parts() -> None:
+    """
+    Test that code execution response contains executable_code, code_execution_result, and text parts.
+
+    This is a unit-level test that validates ResponseConverter raw extraction and
+    that the user-visible message content includes the final answer.
+    """
+    converter = ResponseConverter()
+    state = GeminiResponseParseState()
+
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_candidate.finish_reason = types.FinishReason.STOP
+    mock_candidate.content.role = "model"
+    mock_response.candidates = [mock_candidate]
+
+    mock_candidate.content.parts = [
+        types.Part(
+            text="I'll calculate the sum of the first 50 prime numbers for you."
+        ),
+        MagicMock(
+            text=None,
+            inline_data=None,
+            thought=None,
+            function_call=None,
+            function_response=None,
+            executable_code={
+                "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
+                "language": types.Language.PYTHON,
+            },
+        ),
+        MagicMock(
+            text=None,
+            inline_data=None,
+            thought=None,
+            function_call=None,
+            function_response=None,
+            code_execution_result={
+                "outcome": types.Outcome.OUTCOME_OK,
+                "output": "Sum of first 50 primes: 5117",
+            },
+        ),
+        types.Part(text="The sum of the first 50 prime numbers is 5117."),
+    ]
+
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+
+    mock_candidate.model_dump.return_value = {
+        "finish_reason": types.FinishReason.STOP,
+        "content": {
+            "role": "model",
+            "parts": [
+                {
+                    "text": "I'll calculate the sum of the first 50 prime numbers for you."
+                },
+                {
+                    "executable_code": {
+                        "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
+                        "language": types.Language.PYTHON,
+                    }
+                },
+                {
+                    "code_execution_result": {
+                        "outcome": types.Outcome.OUTCOME_OK,
+                        "output": "Sum of first 50 primes: 5117",
+                    }
+                },
+                {"text": "The sum of the first 50 prime numbers is 5117."},
+            ],
+        },
+    }
+
+    response = converter.to_chat_response(mock_response, state=state)
+
+    assert response is not None
+    assert response.message is not None
+    assert "5117" in response.message.content
+
+    raw = response.raw
+    assert isinstance(raw, dict)
+    content = raw.get("content")
+    assert isinstance(content, dict)
+    parts = content.get("parts")
+    assert isinstance(parts, list)
+    assert parts
+
+    # Validate each part's shape.
+    for part in parts:
+        assert isinstance(part, dict)
+
+        if part.get("text") is not None:
+            assert isinstance(part["text"], str)
+            assert part["text"].strip()
+
+        if part.get("executable_code") is not None:
+            executable_code = part["executable_code"]
+            assert isinstance(executable_code, dict)
+            assert isinstance(executable_code.get("code"), str)
+            assert executable_code["code"].strip()
+            assert executable_code.get("language") == types.Language.PYTHON
+
+        if part.get("code_execution_result") is not None:
+            code_execution_result = part["code_execution_result"]
+            assert isinstance(code_execution_result, dict)
+            assert code_execution_result.get("outcome") == types.Outcome.OUTCOME_OK
+            output = code_execution_result.get("output")
+            assert isinstance(output, str)
+            assert output.strip()
+
+
 def test_response_converter_streaming_thoughts_accumulate() -> None:
-    """Parity with old streaming thoughts tests: state must accumulate blocks."""
+    """Ensure streaming state accumulates thought and text blocks across chunks."""
     converter = ResponseConverter()
     state = GeminiResponseParseState()
 

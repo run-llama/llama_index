@@ -1,13 +1,8 @@
 import pytest
-from unittest.mock import MagicMock, patch
 from llama_index.core.tools import FunctionTool
 from llama_index.core.base.llms.types import ChatMessage, MessageRole, ToolCallBlock
 from llama_index.llms.google_genai import GoogleGenAI
 from google.genai import types
-from llama_index.llms.google_genai.conversion.responses import (
-    ResponseConverter,
-    GeminiResponseParseState,
-)
 
 
 def search(query: str) -> str:
@@ -18,27 +13,6 @@ def search(query: str) -> str:
 search_tool = FunctionTool.from_defaults(
     fn=search, name="search_tool", description="A tool for searching information"
 )
-
-
-@pytest.fixture
-def mock_genai_client_factory(mock_genai_client):
-    """Patches the GenAIClientFactory to return our strict mock client."""
-    with patch(
-        "llama_index.llms.google_genai.client.GenAIClientFactory.create"
-    ) as mock_create:
-        # The factory returns (client, model_meta)
-        mock_model_meta = MagicMock()
-        mock_model_meta.output_token_limit = 8192
-        mock_model_meta.input_token_limit = 200000
-
-        mock_create.return_value = (mock_genai_client, mock_model_meta)
-        yield mock_create
-
-
-@pytest.fixture
-def mocked_llm(mock_genai_client_factory):
-    """Returns a GoogleGenAI instance using the mocked client."""
-    return GoogleGenAI(model="gemini-2.5-flash-lite", api_key="dummy")
 
 
 def test_prepare_chat_with_tools_tool_required(mocked_llm):
@@ -173,7 +147,7 @@ def test_built_in_tool_merge_error(mock_genai_client_factory):
 
 
 def test_built_in_tool_with_invalid_tool(mock_genai_client_factory):
-    """Parity with old test: built_in_tool=None should not break tools config."""
+    """built_in_tool=None should not break tools config."""
     llm = GoogleGenAI(
         model="gemini-2.5-flash-lite",
         built_in_tool=None,
@@ -188,7 +162,7 @@ def test_built_in_tool_with_invalid_tool(mock_genai_client_factory):
 
 
 def test_built_in_tool_config_merge_edge_cases(mock_genai_client_factory):
-    """Parity with old edge case tests for tool merging."""
+    """Edge case tests for tool merging."""
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     # generation_config already has empty tools list
@@ -223,7 +197,7 @@ def test_built_in_tool_config_merge_edge_cases(mock_genai_client_factory):
 @pytest.mark.asyncio
 async def test_built_in_tool_in_chat_params(mock_genai_client_factory):
     """
-    Parity with old test_built_in_tool_in_chat_params.
+    Verify built-in tool makes it into the config used for chats.
 
     Verifies the built-in tool makes it into the config used for chats.
     """
@@ -249,7 +223,7 @@ async def test_built_in_tool_in_chat_params(mock_genai_client_factory):
 
 @pytest.mark.asyncio
 async def test_cached_content_in_chat_params(mock_genai_client_factory):
-    """Parity with old test_cached_content_in_chat_params."""
+    """Verify cached_content makes it into the config used for chats."""
     cached_content_value = (
         "projects/test-project/locations/us-central1/cachedContents/test-cache"
     )
@@ -268,100 +242,9 @@ async def test_cached_content_in_chat_params(mock_genai_client_factory):
     assert prepared.chat_kwargs["config"].cached_content == cached_content_value
 
 
-def test_thoughts_in_response_converter_parity() -> None:
-    """
-    Parity with old `test_thoughts_in_response` and `test_thoughts_without_thought_response`.
-
-    Old tests exercised `chat_from_gemini_response`; new architecture uses ResponseConverter.
-    """
-    converter = ResponseConverter()
-    state = GeminiResponseParseState()
-
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_candidate.finish_reason = types.FinishReason.STOP
-    mock_candidate.content.role = "model"
-    mock_candidate.content.parts = [
-        types.Part(text="This is a thought.", thought=True),
-        types.Part(text="This is not a thought."),
-    ]
-    mock_response.candidates = [mock_candidate]
-    mock_response.usage_metadata = None
-    mock_response.prompt_feedback = None
-
-    chat_response = converter.to_chat_response(mock_response, state=state)
-
-    # Thought block should exist.
-    assert any(
-        isinstance(b, type(chat_response.message.blocks[0]))
-        for b in chat_response.message.blocks
-    )
-    assert any(
-        getattr(b, "content", None) == "This is a thought."
-        for b in chat_response.message.blocks
-    )
-
-    # Non-thought text should exist.
-    assert any(
-        getattr(b, "text", None) == "This is not a thought."
-        for b in chat_response.message.blocks
-    )
-
-
-def test_code_execution_response_parts_raw_parity() -> None:
-    """
-    Parity with old `test_code_execution_response_parts` focusing on raw structure.
-
-    We validate ResponseConverter raw extraction preserves executable_code and
-    code_execution_result parts.
-    """
-    converter = ResponseConverter()
-    state = GeminiResponseParseState()
-
-    mock_response = MagicMock()
-    mock_candidate = MagicMock()
-    mock_candidate.finish_reason = types.FinishReason.STOP
-    mock_candidate.content.role = "model"
-    mock_candidate.content.parts = [types.Part(text="Intro"), types.Part(text="Final")]
-    mock_response.candidates = [mock_candidate]
-    mock_response.prompt_feedback = None
-    mock_response.usage_metadata = None
-
-    mock_candidate.model_dump.return_value = {
-        "finish_reason": types.FinishReason.STOP,
-        "content": {
-            "role": "model",
-            "parts": [
-                {"text": "Intro"},
-                {
-                    "executable_code": {
-                        "code": "print('x')",
-                        "language": types.Language.PYTHON,
-                    }
-                },
-                {
-                    "code_execution_result": {
-                        "outcome": types.Outcome.OUTCOME_OK,
-                        "output": "x",
-                    }
-                },
-                {"text": "Final"},
-            ],
-        },
-    }
-
-    resp = converter.to_chat_response(mock_response, state=state)
-
-    raw = resp.raw
-    assert isinstance(raw, dict)
-    parts = raw.get("content", {}).get("parts", [])
-    assert any("executable_code" in p for p in parts)
-    assert any("code_execution_result" in p for p in parts)
-
-
 def test_built_in_tool_with_generation_config(mock_genai_client_factory):
     """
-    Parity with old `test_built_in_tool_with_generation_config`.
+    Ensure generation_config values are preserved and built_in_tool is appended.
 
     Ensures custom generation_config values are preserved and built_in_tool is
     appended when generation_config has no tools.

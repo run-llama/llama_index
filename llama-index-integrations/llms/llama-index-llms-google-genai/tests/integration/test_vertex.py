@@ -91,8 +91,6 @@ def test_cached_content_initialization_vertexai() -> None:
 
 def test_cached_content_in_response_vertexai() -> None:
     """
-    Parity with old vertex cached_content extraction test.
-
     This is pure response conversion behavior and doesn't require Vertex credentials.
     """
     from llama_index.llms.google_genai.conversion.responses import (

@@ -20,9 +20,6 @@ async def test_chat_runner_prepare(
     Test that ChatSessionRunner.prepare correctly coordinates converters
     and separates the last message for the API call.
     """
-    # Arrange
-    # Setup return values for the converter: to_gemini_content returns (Content, List[file_names])
-    # We simulate a history of 3 messages.
     mock_message_converter.to_gemini_content.side_effect = [
         (types.Content(role="user", parts=[types.Part(text="Hello")]), []),
         (types.Content(role="model", parts=[types.Part(text="Hi")]), []),
@@ -184,7 +181,7 @@ async def test_prepare_more_than_2_tool_calls(
     mock_response_converter,
 ) -> None:
     """
-    Parity with old `test_prepare_chat_params_more_than_2_tool_calls`.
+    Ensure assistant tool_calls are normalized and tool responses are merged.
 
     Ensures that:
     - assistant additional_kwargs tool_calls are normalized into ToolCallBlocks

@@ -238,11 +238,10 @@ class GoogleGenAI(FunctionCallingLLM):
         self, kwargs: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
-        Legacy generation_config merge.
+        Merge per-call generation_config overrides.
 
-        Matches the old implementation exactly:
-        - Mutates kwargs by popping `generation_config`.
-        - Merges per-call overrides into the instance base dict.
+        This method mutates ``kwargs`` by popping ``generation_config`` and merges
+        it into the instance-level base generation config.
         """
         kwargs = kwargs or {}
         generation_config = {
