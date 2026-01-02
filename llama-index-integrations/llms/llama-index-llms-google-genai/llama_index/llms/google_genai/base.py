@@ -1,32 +1,30 @@
-"""Google's hosted Gemini API."""
+from __future__ import annotations
 
 import asyncio
-import functools
 import os
 import typing
 from typing import (
     TYPE_CHECKING,
-    cast,
     Any,
-    AsyncGenerator,
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
     Union,
-    Callable,
-    Literal,
 )
 
-
+import google.auth
+import google.genai
+import google.genai.types as types
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
     achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
     astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -40,61 +38,33 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     ToolCallBlock,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.llms.llm import Model, ToolSelection
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.program.utils import FlexibleModel, create_flexible_model
 from llama_index.core.types import PydanticProgramMode
-from llama_index.llms.google_genai.utils import (
-    chat_from_gemini_response,
-    chat_message_to_gemini,
-    convert_schema_to_function_declaration,
-    prepare_chat_params,
-    handle_streaming_flexible_model,
-    create_retry_decorator,
-    adelete_uploaded_files,
-    delete_uploaded_files,
-)
 
-import google.genai
-import google.auth
-import google.genai.types as types
+from llama_index.llms.google_genai.client import GenAIClientFactory
+from llama_index.llms.google_genai.conversion.messages import MessageConverter
+from llama_index.llms.google_genai.conversion.responses import ResponseConverter
+from llama_index.llms.google_genai.conversion.tools import ToolSchemaConverter
+from llama_index.llms.google_genai.files import FileManager
+from llama_index.llms.google_genai.orchestration.chat_session import ChatSessionRunner
+from llama_index.llms.google_genai.orchestration.structured import StructuredRunner
+from llama_index.llms.google_genai.retry import llm_retry_decorator
+from llama_index.llms.google_genai.types import VertexAIConfig
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-2.0-flash"
+
+DEFAULT_MODEL = "gemini-2.5-flash"
+
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-
-
-class VertexAIConfig(typing.TypedDict):
-    credentials: Optional[google.auth.credentials.Credentials] = None
-    project: Optional[str] = None
-    location: Optional[str] = None
-
-
-def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(f)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-        max_retries = getattr(self, "max_retries", 0)
-        if max_retries <= 0:
-            return f(self, *args, **kwargs)
-
-        retry = create_retry_decorator(
-            max_retries=max_retries,
-            random_exponential=True,
-            stop_after_delay_seconds=60,
-            min_seconds=1,
-            max_seconds=20,
-        )
-        return retry(f)(self, *args, **kwargs)
-
-    return wrapper
 
 
 class GoogleGenAI(FunctionCallingLLM):
@@ -123,7 +93,9 @@ class GoogleGenAI(FunctionCallingLLM):
     )
     context_window: Optional[int] = Field(
         default=None,
-        description="The context window of the model. If not provided, the default context window 200000 will be used.",
+        description=(
+            "The context window of the model. If not provided, the default context window 200000 will be used."
+        ),
     )
     max_retries: int = Field(
         default=3,
@@ -148,8 +120,16 @@ class GoogleGenAI(FunctionCallingLLM):
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
-    _generation_config: types.GenerateContentConfigDict = PrivateAttr()
+    _generation_config: Dict[str, Any] = PrivateAttr()
     _model_meta: types.Model = PrivateAttr()
+
+    _client_factory: GenAIClientFactory = PrivateAttr()
+    _file_manager: FileManager = PrivateAttr()
+    _message_converter: MessageConverter = PrivateAttr()
+    _response_converter: ResponseConverter = PrivateAttr()
+    _tool_schema_converter: ToolSchemaConverter = PrivateAttr()
+    _chat_runner: ChatSessionRunner = PrivateAttr()
+    _structured_runner: StructuredRunner = PrivateAttr()
 
     def __init__(
         self,
@@ -170,42 +150,16 @@ class GoogleGenAI(FunctionCallingLLM):
         file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
         **kwargs: Any,
     ):
-        # API keys are optional. The API can be authorised via OAuth (detected
-        # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
-        vertexai = (
-            vertexai_config is not None
-            or os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "false") != "false"
+        self._client_factory = GenAIClientFactory()
+
+        client, model_meta = self._client_factory.create(
+            model=model,
+            api_key=api_key,
+            vertexai_config=vertexai_config,
+            http_options=http_options,
+            debug_config=debug_config,
         )
-        project = (vertexai_config or {}).get("project") or os.getenv(
-            "GOOGLE_CLOUD_PROJECT", None
-        )
-        location = (vertexai_config or {}).get("location") or os.getenv(
-            "GOOGLE_CLOUD_LOCATION", None
-        )
-
-        config_params: Dict[str, Any] = {
-            "api_key": api_key,
-        }
-
-        if vertexai_config is not None:
-            config_params.update(vertexai_config)
-            config_params["api_key"] = None
-            config_params["vertexai"] = True
-        elif vertexai:
-            config_params["project"] = project
-            config_params["location"] = location
-            config_params["api_key"] = None
-            config_params["vertexai"] = True
-
-        if http_options:
-            config_params["http_options"] = http_options
-
-        if debug_config:
-            config_params["debug_config"] = debug_config
-
-        client = google.genai.Client(**config_params)
-        model_meta = client.models.get(model=model)
 
         super().__init__(
             model=model,
@@ -223,8 +177,8 @@ class GoogleGenAI(FunctionCallingLLM):
         self.model = model
         self._client = client
         self._model_meta = model_meta
-        # store this as a dict and not as a pydantic model so we can more easily
-        # merge it later
+
+        # store this as a dict (not a pydantic model) so we can merge it later,
         if generation_config:
             self._generation_config = generation_config.model_dump()
             if cached_content:
@@ -239,7 +193,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                 self._generation_config["tools"].append(built_in_tool)
         else:
-            config_kwargs = {
+            config_kwargs: Dict[str, Any] = {
                 "temperature": temperature,
                 "max_output_tokens": max_tokens,
                 "cached_content": cached_content,
@@ -250,9 +204,52 @@ class GoogleGenAI(FunctionCallingLLM):
             self._generation_config = types.GenerateContentConfig(
                 **config_kwargs
             ).model_dump()
+
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
         )
+
+        self._file_manager = FileManager(
+            file_mode=file_mode,
+            client=self._client,
+        )
+        self._message_converter = MessageConverter(
+            file_manager=self._file_manager,
+        )
+        self._response_converter = ResponseConverter()
+        self._tool_schema_converter = ToolSchemaConverter(
+            client=self._client,
+        )
+        self._chat_runner = ChatSessionRunner(
+            client=self._client,
+            model=self.model,
+            file_manager=self._file_manager,
+            message_converter=self._message_converter,
+            response_converter=self._response_converter,
+        )
+        self._structured_runner = StructuredRunner(
+            client=self._client,
+            model=self.model,
+            file_manager=self._file_manager,
+            message_converter=self._message_converter,
+        )
+
+    def _merge_generation_config_kwargs(
+        self, kwargs: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Legacy generation_config merge.
+
+        Matches the old implementation exactly:
+        - Mutates kwargs by popping `generation_config`.
+        - Merges per-call overrides into the instance base dict.
+        """
+        kwargs = kwargs or {}
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+        return {**kwargs, "generation_config": generation_config}
 
     @classmethod
     def class_name(cls) -> str:
@@ -260,6 +257,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
+        """LLM metadata."""
         if self.context_window is None:
             base = self._model_meta.input_token_limit or 200000
             total_tokens = base + self._max_tokens
@@ -278,179 +276,101 @@ class GoogleGenAI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        """Synchronous completion."""
         chat_fn = chat_to_completion_decorator(self._chat)
         return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+        self,
+        prompt: str,
+        formatted: bool = False,
+        **kwargs: Any,
     ) -> CompletionResponse:
+        """Asynchronous completion."""
         chat_fn = achat_to_completion_decorator(self._achat)
         return await chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+        self,
+        prompt: str,
+        formatted: bool = False,
+        **kwargs: Any,
     ) -> CompletionResponseGen:
+        """Streaming synchronous completion."""
         chat_fn = stream_chat_to_completion_decorator(self._stream_chat)
         return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+        self,
+        prompt: str,
+        formatted: bool = False,
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
+        """Streaming asynchronous completion."""
         chat_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await chat_fn(prompt, **kwargs)
 
     @llm_retry_decorator
-    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any):
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
-            prepare_chat_params(
-                self.model, messages, self.file_mode, self._client, **params
-            )
-        )
-        chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message(
-            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-        )
-
-        if self.file_mode in ("fileapi", "hybrid"):
-            delete_uploaded_files(file_api_names, self._client)
-
-        return chat_from_gemini_response(response, [])
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Internal sync chat implementation."""
+        params = self._merge_generation_config_kwargs(kwargs)
+        prepared = asyncio.run(self._chat_runner.prepare(messages=messages, **params))
+        return self._chat_runner.run(prepared)
 
     @llm_retry_decorator
-    async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any):
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
-            self.model, messages, self.file_mode, self._client, **params
-        )
-        chat = self._client.aio.chats.create(**chat_kwargs)
-        response = await chat.send_message(
-            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-        )
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        """Internal async chat implementation."""
+        params = self._merge_generation_config_kwargs(kwargs)
+        prepared = await self._chat_runner.prepare(messages=messages, **params)
+        return await self._chat_runner.arun(prepared)
 
-        if self.file_mode in ("fileapi", "hybrid"):
-            await adelete_uploaded_files(file_api_names, self._client)
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        """Internal sync streaming chat implementation."""
+        params = self._merge_generation_config_kwargs(kwargs)
+        prepared = asyncio.run(self._chat_runner.prepare(messages=messages, **params))
+        return self._chat_runner.stream(prepared)
 
-        return chat_from_gemini_response(response, [])
+    async def _astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        """Internal async streaming chat implementation."""
+        params = self._merge_generation_config_kwargs(kwargs)
+        prepared = await self._chat_runner.prepare(messages=messages, **params)
+        return await self._chat_runner.astream(prepared)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Public synchronous chat."""
         return self._chat(messages, **kwargs)
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        """Public asynchronous chat."""
         return await self._achat(messages, **kwargs)
-
-    def _stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
-            prepare_chat_params(
-                self.model, messages, self.file_mode, self._client, **params
-            )
-        )
-        chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message_stream(
-            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-        )
-
-        def gen() -> ChatResponseGen:
-            content = []
-            thought_signatures = []
-            for r in response:
-                if candidates := r.candidates:
-                    if not candidates:
-                        continue
-
-                    top_candidate = candidates[0]
-                    if response_content := top_candidate.content:
-                        if parts := response_content.parts:
-                            content_delta = parts[0].text
-
-                            llama_resp = chat_from_gemini_response(
-                                r,
-                                existing_content=content,
-                                thought_signatures=thought_signatures,
-                            )
-                            llama_resp.delta = llama_resp.delta or content_delta or ""
-
-                            yield llama_resp
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                delete_uploaded_files(file_api_names, self._client)
-
-        return gen()
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        """Public synchronous streaming chat."""
         return self._stream_chat(messages, **kwargs)
-
-    async def _astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
-            self.model, messages, self.file_mode, self._client, **params
-        )
-        chat = self._client.aio.chats.create(**chat_kwargs)
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = []
-            thought_signatures = []
-            async for r in await chat.send_message_stream(
-                next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-            ):
-                if candidates := r.candidates:
-                    if not candidates:
-                        continue
-
-                    top_candidate = candidates[0]
-                    if response_content := top_candidate.content:
-                        if parts := response_content.parts:
-                            content_delta = parts[0].text
-
-                            llama_resp = chat_from_gemini_response(
-                                r,
-                                existing_content=content,
-                                thought_signatures=thought_signatures,
-                            )
-                            llama_resp.delta = llama_resp.delta or content_delta or ""
-
-                            yield llama_resp
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                await adelete_uploaded_files(file_api_names, self._client)
-
-        return gen()
 
     @llm_chat_callback()
     async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
     ) -> ChatResponseAsyncGen:
+        """Public async streaming chat."""
         return await self._astream_chat(messages, **kwargs)
 
     def _prepare_chat_with_tools(
@@ -465,9 +385,12 @@ class GoogleGenAI(FunctionCallingLLM):
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Predict and call the tool."""
+        """Prepare params for tool calling."""
         if tool_choice is None:
             tool_choice = "any" if tool_required else "auto"
+
+        if isinstance(tool_choice, dict):
+            raise ValueError("Gemini does not support tool_choice as a dict")
 
         if tool_choice == "auto":
             tool_mode = types.FunctionCallingConfigMode.AUTO
@@ -478,13 +401,8 @@ class GoogleGenAI(FunctionCallingLLM):
 
         function_calling_config = types.FunctionCallingConfig(mode=tool_mode)
 
-        if tool_choice not in ["auto", "none"]:
-            if isinstance(tool_choice, dict):
-                raise ValueError("Gemini does not support tool_choice as a dict")
-
-            # assume that the user wants a tool call to be made
-            # if the tool choice is not in the list of tools, then we will make a tool call to all tools
-            # otherwise, we will make a tool call to the tool choice
+        # If tool_choice is a specific tool name, restrict allowed functions.
+        if tool_choice not in {"auto", "none", "any"}:
             tool_names = [tool.metadata.name for tool in tools if tool.metadata.name]
             if tool_choice not in tool_names:
                 function_calling_config.allowed_function_names = tool_names
@@ -495,19 +413,17 @@ class GoogleGenAI(FunctionCallingLLM):
             function_calling_config=function_calling_config,
         )
 
-        tool_declarations = []
+        tool_declarations: List[types.FunctionDeclaration] = []
         for tool in tools:
-            if tool.metadata.fn_schema:
-                function_declaration = convert_schema_to_function_declaration(
-                    self._client, tool
-                )
-                tool_declarations.append(function_declaration)
+            tool_declarations.append(
+                self._tool_schema_converter.to_function_declaration(tool)
+            )
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
 
-        messages = chat_history or []
-        if user_msg:
+        messages = list(chat_history or [])
+        if user_msg is not None:
             messages.append(user_msg)
 
         return {
@@ -527,7 +443,7 @@ class GoogleGenAI(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:
-        """Predict and call the tool."""
+        """Extract tool calls from a response."""
         tool_calls = [
             block
             for block in response.message.blocks
@@ -539,20 +455,16 @@ class GoogleGenAI(FunctionCallingLLM):
                 raise ValueError(
                     f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
                 )
-            else:
-                return []
+            return []
 
-        tool_selections = []
-        for tool_call in tool_calls:
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.tool_name,
-                    tool_name=tool_call.tool_name,
-                    tool_kwargs=cast(Dict[str, Any], tool_call.tool_kwargs),
-                )
+        return [
+            ToolSelection(
+                tool_id=block.tool_name,
+                tool_name=block.tool_name,
+                tool_kwargs=typing.cast(Dict[str, Any], block.tool_kwargs),
             )
-
-        return tool_selections
+            for block in tool_calls
+        ]
 
     @dispatcher.span
     def structured_predict_without_function_calling(
@@ -562,38 +474,18 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
-
+        """Structured predict without function calling."""
+        params = self._merge_generation_config_kwargs(llm_kwargs)
         messages = prompt.format_messages(**prompt_args)
-        contents_and_names = [
-            asyncio.run(chat_message_to_gemini(message, self.file_mode, self._client))
-            for message in messages
-        ]
-        contents = [it[0] for it in contents_and_names]
-        file_api_names = [name for it in contents_and_names for name in it[1]]
 
-        response = self._client.models.generate_content(
-            model=self.model,
-            contents=contents,
-            **{
-                **llm_kwargs,
-                **{
-                    "config": {
-                        "response_mime_type": "application/json",
-                        "response_schema": output_cls,
-                    }
-                },
-            },
+        prepared = asyncio.run(
+            self._structured_runner.prepare(
+                messages=messages,
+                output_cls=output_cls,
+                **params,
+            )
         )
-
-        if self.file_mode in ("fileapi", "hybrid"):
-            delete_uploaded_files(file_api_names, self._client)
-
-        if isinstance(response.parsed, BaseModel):
-            return response.parsed
-        else:
-            raise ValueError("Response is not a BaseModel")
+        return self._structured_runner.run_parsed(prepared)
 
     @dispatcher.span
     def structured_predict(
@@ -604,47 +496,22 @@ class GoogleGenAI(FunctionCallingLLM):
         **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
-
-        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            generation_config = {
-                **(self._generation_config or {}),
-                **llm_kwargs.pop("generation_config", {}),
-            }
-
-            # set the specific types needed for the response
-            generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
-
-            messages = prompt.format_messages(**prompt_args)
-            contents_and_names = [
-                asyncio.run(
-                    chat_message_to_gemini(message, self.file_mode, self._client)
-                )
-                for message in messages
-            ]
-            contents = [it[0] for it in contents_and_names]
-            file_api_names = [name for it in contents_and_names for name in it[1]]
-
-            response = self._client.models.generate_content(
-                model=self.model,
-                contents=contents,
-                config=generation_config,
-            )
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                delete_uploaded_files(file_api_names, self._client)
-
-            if isinstance(response.parsed, BaseModel):
-                return response.parsed
-            else:
-                # Try to parse the response text as JSON into the output_cls
-                return output_cls.model_validate_json(response.text)
-
-        else:
+        if self.pydantic_program_mode != PydanticProgramMode.DEFAULT:
             return super().structured_predict(
                 output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
+
+        params = self._merge_generation_config_kwargs(llm_kwargs)
+        messages = prompt.format_messages(**prompt_args)
+
+        prepared = asyncio.run(
+            self._structured_runner.prepare(
+                messages=messages,
+                output_cls=output_cls,
+                **params,
+            )
+        )
+        return self._structured_runner.run(prepared)
 
     @dispatcher.span
     async def astructured_predict(
@@ -654,48 +521,21 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
-
-        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            generation_config = {
-                **(self._generation_config or {}),
-                **llm_kwargs.pop("generation_config", {}),
-            }
-
-            # set the specific types needed for the response
-            generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
-
-            messages = prompt.format_messages(**prompt_args)
-            contents_and_names = await asyncio.gather(
-                *[
-                    chat_message_to_gemini(message, self.file_mode, self._client)
-                    for message in messages
-                ]
-            )
-            contents = [it[0] for it in contents_and_names]
-            file_api_names = [name for it in contents_and_names for name in it[1]]
-
-            response = await self._client.aio.models.generate_content(
-                model=self.model,
-                contents=contents,
-                config=generation_config,
-            )
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                await adelete_uploaded_files(file_api_names, self._client)
-
-            if isinstance(response.parsed, BaseModel):
-                return response.parsed
-            else:
-                # Try to parse the response text as JSON into the output_cls
-                return output_cls.model_validate_json(response.text)
-
-        else:
-            return super().structured_predict(
+        """Async structured predict."""
+        if self.pydantic_program_mode != PydanticProgramMode.DEFAULT:
+            return await super().astructured_predict(
                 output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
+
+        params = self._merge_generation_config_kwargs(llm_kwargs)
+        messages = prompt.format_messages(**prompt_args)
+
+        prepared = await self._structured_runner.prepare(
+            messages=messages,
+            output_cls=output_cls,
+            **params,
+        )
+        return await self._structured_runner.arun(prepared)
 
     @dispatcher.span
     def stream_structured_predict(
@@ -704,60 +544,19 @@ class GoogleGenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[Model, FlexibleModel], None, None]:
-        """Stream structured predict."""
-        llm_kwargs = llm_kwargs or {}
+    ) -> Generator[Union[Model, Any], None, None]:
+        """Streaming structured predict."""
+        params = self._merge_generation_config_kwargs(llm_kwargs)
+        messages = prompt.format_messages(**prompt_args)
 
-        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            generation_config = {
-                **(self._generation_config or {}),
-                **llm_kwargs.pop("generation_config", {}),
-            }
-
-            # set the specific types needed for the response
-            generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
-
-            messages = prompt.format_messages(**prompt_args)
-            contents_and_names = [
-                asyncio.run(
-                    chat_message_to_gemini(message, self.file_mode, self._client)
-                )
-                for message in messages
-            ]
-            contents = [it[0] for it in contents_and_names]
-            file_api_names = [name for it in contents_and_names for name in it[1]]
-
-            def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
-                flexible_model = create_flexible_model(output_cls)
-                response_gen = self._client.models.generate_content_stream(
-                    model=self.model,
-                    contents=contents,
-                    config=generation_config,
-                )
-
-                current_json = ""
-                for chunk in response_gen:
-                    if chunk.parsed:
-                        yield chunk.parsed
-                    elif chunk.candidates:
-                        streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json,
-                            chunk.candidates[0],
-                            output_cls,
-                            flexible_model,
-                        )
-                        if streaming_model:
-                            yield streaming_model
-
-                if self.file_mode in ("fileapi", "hybrid"):
-                    delete_uploaded_files(file_api_names, self._client)
-
-            return gen()
-        else:
-            return super().stream_structured_predict(
-                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        prepared = asyncio.run(
+            self._structured_runner.prepare(
+                messages=messages,
+                output_cls=output_cls,
+                **params,
             )
+        )
+        return self._structured_runner.stream(prepared)
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -766,57 +565,14 @@ class GoogleGenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
-        """Stream structured predict."""
-        llm_kwargs = llm_kwargs or {}
+    ) -> typing.AsyncGenerator[Union[Model, Any], None]:
+        """Async streaming structured predict."""
+        params = self._merge_generation_config_kwargs(llm_kwargs)
+        messages = prompt.format_messages(**prompt_args)
 
-        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            generation_config = {
-                **(self._generation_config or {}),
-                **llm_kwargs.pop("generation_config", {}),
-            }
-
-            # set the specific types needed for the response
-            generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
-
-            messages = prompt.format_messages(**prompt_args)
-            contents_and_names = await asyncio.gather(
-                *[
-                    chat_message_to_gemini(message, self.file_mode, self._client)
-                    for message in messages
-                ]
-            )
-            contents = [it[0] for it in contents_and_names]
-            file_api_names = [name for it in contents_and_names for name in it[1]]
-
-            async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
-                flexible_model = create_flexible_model(output_cls)
-                response_gen = await self._client.aio.models.generate_content_stream(
-                    model=self.model,
-                    contents=contents,
-                    config=generation_config,
-                )
-
-                current_json = ""
-                async for chunk in response_gen:
-                    if chunk.parsed:
-                        yield chunk.parsed
-                    elif chunk.candidates:
-                        streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json,
-                            chunk.candidates[0],
-                            output_cls,
-                            flexible_model,
-                        )
-                        if streaming_model:
-                            yield streaming_model
-
-                if self.file_mode in ("fileapi", "hybrid"):
-                    await adelete_uploaded_files(file_api_names, self._client)
-
-            return gen()
-        else:
-            return await super().astream_structured_predict(
-                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
-            )
+        prepared = await self._structured_runner.prepare(
+            messages=messages,
+            output_cls=output_cls,
+            **params,
+        )
+        return await self._structured_runner.astream(prepared)
