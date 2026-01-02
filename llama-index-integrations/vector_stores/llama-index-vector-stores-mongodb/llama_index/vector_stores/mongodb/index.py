@@ -348,7 +348,10 @@ async def adrop_vector_search_index(
     if wait_until_complete:
 
         async def _predicate() -> bool:
-            return index_name not in await (await collection.list_search_indexes()).to_list()
+            return (
+                index_name
+                not in await (await collection.list_search_indexes()).to_list()
+            )
 
         await _await_for_predicate(
             predicate=_predicate,
