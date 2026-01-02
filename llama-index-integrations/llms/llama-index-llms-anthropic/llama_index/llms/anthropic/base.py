@@ -1,8 +1,10 @@
 import json
 import logging
+import llama_index.core.instrumentation as instrument
 from typing import (
     TYPE_CHECKING,
     Any,
+    Type,
     AsyncGenerator,
     Callable,
     Dict,
@@ -37,7 +39,8 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
@@ -46,6 +49,7 @@ from llama_index.llms.anthropic.utils import (
     is_function_calling_model,
     messages_to_anthropic_messages,
     update_tool_calls,
+    messages_to_anthropic_beta_messages,
 )
 
 import anthropic
@@ -73,9 +77,11 @@ from anthropic.types import (
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+    from llama_index.core.program.utils import FlexibleModel
 
 
 logger = logging.getLogger(__name__)
+dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
@@ -1018,3 +1024,137 @@ class Anthropic(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    @dispatcher.span
+    def structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
+        messages = prompt.format_messages(**prompt_args)
+        ant_messages, system = messages_to_anthropic_beta_messages(messages)
+        if isinstance(
+            self._client, (anthropic.AnthropicVertex, anthropic.AnthropicBedrock)
+        ):
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+        response = self._client.beta.messages.parse(
+            messages=ant_messages,
+            model=self.model,
+            max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
+            output_format=output_cls,
+            system=system,
+            **(llm_kwargs or {}),
+        )
+        parsed = response.parsed_output
+        if parsed is not None:
+            return parsed
+        raise ValueError("It was not possible to produce a structured response")
+
+    @dispatcher.span
+    async def astructured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
+        messages = prompt.format_messages(**prompt_args)
+        ant_messages, system = messages_to_anthropic_beta_messages(messages)
+        if isinstance(
+            self._aclient,
+            (anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock),
+        ):
+            return await super().astructured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+        response = await self._aclient.beta.messages.parse(
+            messages=ant_messages,
+            model=self.model,
+            max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
+            output_format=output_cls,
+            system=system,
+            **(llm_kwargs or {}),
+        )
+        parsed = response.parsed_output
+        if parsed is not None:
+            return parsed
+        raise ValueError("It was not possible to produce a structured response")
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, "FlexibleModel"], Any, Any]:
+        logger.warning(
+            "Streaming not fully supported for Anthropic structured outputs."
+        )
+        messages = prompt.format_messages(**prompt_args)
+        ant_messages, system = messages_to_anthropic_beta_messages(messages)
+        if isinstance(
+            self._client, (anthropic.AnthropicVertex, anthropic.AnthropicBedrock)
+        ):
+            return super().stream_structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+        response = self._client.beta.messages.parse(
+            messages=ant_messages,
+            model=self.model,
+            max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
+            output_format=output_cls,
+            system=system,
+            stream=True,
+            **(llm_kwargs or {}),
+        )
+        parsed = response.parsed_output
+        if parsed is not None:
+
+            def gen() -> Generator[Model, Any]:
+                yield parsed
+
+            return gen()
+        raise ValueError("It was not possible to produce a structured response")
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], Any]:
+        logger.warning(
+            "Streaming not fully supported for Anthropic structured outputs."
+        )
+        messages = prompt.format_messages(**prompt_args)
+        ant_messages, system = messages_to_anthropic_beta_messages(messages)
+        if isinstance(
+            self._aclient,
+            (anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock),
+        ):
+            return await super().astream_structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+        response = await self._aclient.beta.messages.parse(
+            messages=ant_messages,
+            model=self.model,
+            max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
+            output_format=output_cls,
+            system=system,
+            stream=True,
+            **(llm_kwargs or {}),
+        )
+        parsed = response.parsed_output
+        if parsed is not None:
+
+            async def gen() -> AsyncGenerator[Model, Any]:
+                yield parsed
+
+            return gen()
+        raise ValueError("It was not possible to produce a structured response")
