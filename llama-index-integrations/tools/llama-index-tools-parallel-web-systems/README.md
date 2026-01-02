@@ -46,6 +46,7 @@ print(response)
 Search the web using Parallel AI's Search API. Returns structured excerpts optimized for LLM consumption.
 
 **Parameters:**
+
 - `objective` (str, optional): Natural-language description of what to search for
 - `search_queries` (list[str], optional): Traditional keyword search queries (max 5)
 - `max_results` (int): Maximum results to return, 1-40 (default: 10)
@@ -89,6 +90,7 @@ results = parallel_tool.search(
 Extract clean, structured content from web pages using Parallel AI's Extract API.
 
 **Parameters:**
+
 - `urls` (list[str]): List of URLs to extract content from
 - `objective` (str, optional): Natural language objective to focus extraction
 - `search_queries` (list[str], optional): Specific keyword queries to focus extraction
