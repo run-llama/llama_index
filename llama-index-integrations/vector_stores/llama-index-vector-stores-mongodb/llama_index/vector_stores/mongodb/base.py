@@ -192,7 +192,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 )
             self._mongodb_client = MongoClient(
                 os.environ["MONGODB_URI"],
-                driver=DriverInfo(name="llama-index", version=version("llama-index")),
+                driver=DriverInfo(
+                    name="llama-index", version=version("llama-index-core")
+                ),
             )
 
         if async_mongodb_client is not None:
@@ -205,7 +207,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 )
             self._async_mongodb_client = AsyncMongoClient(
                 os.environ["MONGODB_URI"],
-                driver=DriverInfo(name="llama-index", version=version("llama-index")),
+                driver=DriverInfo(
+                    name="llama-index", version=version("llama-index-core")
+                ),
             )
 
         if index_name is not None:
