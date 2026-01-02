@@ -18,9 +18,7 @@ def test_anyof_supported_vertexai() -> None:
     class Content(BaseModel):
         content: Union[int, str]
 
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-    )
+    llm = GoogleGenAI(model="gemini-2.5-flash-lite")
 
     content = (
         llm.as_structured_llm(output_cls=Content)
@@ -62,9 +60,7 @@ def test_optional_lists_nested_vertexai() -> None:
         employees: List[Employee]
         headquarters: Address
 
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-    )
+    llm = GoogleGenAI(model="gemini-2.5-flash-lite")
 
     # call the model and check the output
     company = (
@@ -85,7 +81,9 @@ def test_optional_lists_nested_vertexai() -> None:
 def test_cached_content_initialization_vertexai() -> None:
     cached_content_value = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
 
-    llm = GoogleGenAI(model="gemini-2.0-flash-001", cached_content=cached_content_value)
+    llm = GoogleGenAI(
+        model="gemini-2.5-flash-lite", cached_content=cached_content_value
+    )
 
     assert llm.cached_content == cached_content_value
     assert llm._generation_config["cached_content"] == cached_content_value
@@ -149,7 +147,7 @@ def test_cached_content_with_generation_config_vertexai() -> None:
     cached_content_value = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-456"
 
     llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
+        model="gemini-2.5-flash-lite",
         cached_content=cached_content_value,
         generation_config=types.GenerateContentConfig(
             temperature=0.5,

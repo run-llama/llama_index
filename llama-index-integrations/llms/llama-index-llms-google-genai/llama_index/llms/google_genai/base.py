@@ -60,7 +60,7 @@ from llama_index.llms.google_genai.types import VertexAIConfig
 dispatcher = instrument.get_dispatcher(__name__)
 
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class GoogleGenAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = GoogleGenAI(model="gemini-2.0-flash", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="gemini-2.5-flash-lite", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```

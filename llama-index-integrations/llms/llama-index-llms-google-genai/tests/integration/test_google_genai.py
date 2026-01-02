@@ -28,9 +28,9 @@ SKIP_GEMINI = (
 
 GEMINI_MODELS_TO_TEST = (
     [
-        {"model": "models/gemini-2.5-flash-lite", "config": {}},
+        {"model": "gemini-2.5-flash-lite", "config": {}},
         {
-            "model": "models/gemini-2.5-flash",
+            "model": "gemini-2.5-flash-lite",
             "config": {
                 "generation_config": GenerateContentConfig(
                     thinking_config=ThinkingConfig(thinking_budget=512)
@@ -367,10 +367,8 @@ def test_predict_with_large_video(llm: GoogleGenAI) -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_built_in_tool_google_search(llm: GoogleGenAI) -> None:
     # We need to re-init LLM with the tool
-    from google.genai import types
-
     search_llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=types.Tool(google_search=types.GoogleSearch()),
     )
 
@@ -427,10 +425,8 @@ def test_google_search_grounding_metadata(llm: GoogleGenAI) -> None:
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_built_in_tool_code_execution() -> None:
-    from google.genai import types
-
     llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=types.Tool(code_execution=types.ToolCodeExecution()),
         api_key=os.environ.get("GOOGLE_API_KEY"),
     )
@@ -446,7 +442,7 @@ def test_built_in_tool_with_streaming() -> None:
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
     )
 
@@ -475,7 +471,7 @@ def test_built_in_tool_error_recovery() -> None:
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
     )
 
@@ -492,7 +488,7 @@ async def test_built_in_tool_async_compatibility() -> None:
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
     )
 
@@ -513,7 +509,7 @@ async def test_built_in_tool_async_compatibility() -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_thoughts_with_streaming() -> None:
     llm = GoogleGenAI(
-        model="models/gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -544,7 +540,7 @@ def test_thoughts_with_streaming() -> None:
 @pytest.mark.asyncio
 async def test_thoughts_with_async_streaming() -> None:
     llm = GoogleGenAI(
-        model="models/gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -563,7 +559,7 @@ async def test_thoughts_with_async_streaming() -> None:
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_thoughts_with_chat() -> None:
     llm = GoogleGenAI(
-        model="models/gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),
@@ -579,7 +575,7 @@ def test_thoughts_with_chat() -> None:
 @pytest.mark.asyncio
 async def test_thoughts_with_async_chat() -> None:
     llm = GoogleGenAI(
-        model="models/gemini-2.5-flash",
+        model="gemini-2.5-flash-lite",
         generation_config=GenerateContentConfig(
             thinking_config=ThinkingConfig(include_thoughts=True),
         ),

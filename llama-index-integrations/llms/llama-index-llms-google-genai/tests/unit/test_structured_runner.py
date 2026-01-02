@@ -18,7 +18,7 @@ class MyModel(BaseModel):
 def structured_runner(mock_genai_client, mock_file_manager, mock_message_converter):
     return StructuredRunner(
         client=mock_genai_client,
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         file_manager=mock_file_manager,
         message_converter=mock_message_converter,
     )
@@ -89,7 +89,7 @@ async def test_arun_parsed_response(structured_runner, mock_genai_client):
     structured_runner._file_manager.file_mode = "hybrid"
 
     prepared = MagicMock()
-    prepared.model = "gemini-2.0-flash"
+    prepared.model = "gemini-2.5-flash-lite"
     prepared.contents = [types.Content(parts=[types.Part(text="Hello")])]
     prepared.config = types.GenerateContentConfig(response_mime_type="application/json")
     prepared.uploaded_file_names = ["file-1"]

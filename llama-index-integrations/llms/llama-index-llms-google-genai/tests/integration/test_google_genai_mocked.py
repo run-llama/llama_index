@@ -38,7 +38,7 @@ def mock_genai_client_factory(mock_genai_client):
 @pytest.fixture
 def mocked_llm(mock_genai_client_factory):
     """Returns a GoogleGenAI instance using the mocked client."""
-    return GoogleGenAI(model="models/gemini-2.0-flash", api_key="dummy")
+    return GoogleGenAI(model="gemini-2.5-flash-lite", api_key="dummy")
 
 
 def test_prepare_chat_with_tools_tool_required(mocked_llm):
@@ -129,7 +129,7 @@ def test_cached_content_initialization(mock_genai_client_factory):
     cached_content_value = "projects/p/locations/l/cachedContents/c123"
 
     llm = GoogleGenAI(
-        model="models/gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         cached_content=cached_content_value,
         api_key="dummy",
     )
@@ -142,7 +142,7 @@ def test_built_in_tool_initialization(mock_genai_client_factory):
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="gemini-2.0-flash", built_in_tool=grounding_tool, api_key="dummy"
+        model="gemini-2.5-flash-lite", built_in_tool=grounding_tool, api_key="dummy"
     )
 
     assert llm.built_in_tool == grounding_tool
@@ -165,7 +165,7 @@ def test_built_in_tool_merge_error(mock_genai_client_factory):
 
     with pytest.raises(ValueError, match="Providing multiple Google GenAI tools"):
         GoogleGenAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-lite",
             built_in_tool=grounding_tool,
             generation_config=existing_config,
             api_key="dummy",
@@ -175,7 +175,7 @@ def test_built_in_tool_merge_error(mock_genai_client_factory):
 def test_built_in_tool_with_invalid_tool(mock_genai_client_factory):
     """Parity with old test: built_in_tool=None should not break tools config."""
     llm = GoogleGenAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=None,
         api_key="dummy",
     )
@@ -194,7 +194,7 @@ def test_built_in_tool_config_merge_edge_cases(mock_genai_client_factory):
     # generation_config already has empty tools list
     empty_tools_config = types.GenerateContentConfig(temperature=0.7, tools=[])
     llm = GoogleGenAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
         generation_config=empty_tools_config,
         api_key="dummy",
@@ -213,7 +213,7 @@ def test_built_in_tool_config_merge_edge_cases(mock_genai_client_factory):
 
     with pytest.raises(ValueError, match="Providing multiple Google GenAI tools"):
         GoogleGenAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-lite",
             built_in_tool=grounding_tool,
             generation_config=existing_tools_config,
             api_key="dummy",
@@ -230,7 +230,7 @@ async def test_built_in_tool_in_chat_params(mock_genai_client_factory):
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
         api_key="dummy",
     )
@@ -255,7 +255,7 @@ async def test_cached_content_in_chat_params(mock_genai_client_factory):
     )
 
     llm = GoogleGenAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         cached_content=cached_content_value,
         api_key="dummy",
     )
@@ -369,7 +369,7 @@ def test_built_in_tool_with_generation_config(mock_genai_client_factory):
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
     llm = GoogleGenAI(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash-lite",
         built_in_tool=grounding_tool,
         generation_config=types.GenerateContentConfig(
             temperature=0.5,
