@@ -8,6 +8,7 @@ import os
 from typing import AsyncGenerator, Generator, List, Optional
 
 import pytest
+import pytest_asyncio
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 from pymongo import MongoClient, AsyncMongoClient
 from pymongo.collection import Collection
@@ -33,7 +34,7 @@ def collection(vector_store) -> Generator:
     clxn.drop()
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def async_collection(vector_store) -> AsyncGenerator:
     """Depending on uri, this could point to any type of cluster."""
     clxn = vector_store.async_collection
@@ -150,7 +151,7 @@ def test_search_index_commands_standalone(collection: Collection) -> None:
     os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
 )
 @pytest.mark.asyncio
-async def test_search_index_commands_async(collection: AsyncCollection) -> None:
+async def test_search_index_commands_async(async_collection: AsyncCollection) -> None:
     """Tests create, update, and drop index utility functions."""
     index_name = VECTOR_INDEX_NAME
     dimensions = DIMENSIONS
@@ -159,11 +160,12 @@ async def test_search_index_commands_async(collection: AsyncCollection) -> None:
     filters: Optional[List[str]] = None
     wait_until_complete = TIMEOUT
 
-    for index_info in await collection.list_search_indexes():
-        await index.drop_vector_search_index(
+    collection = async_collection
+    async for index_info in await collection.list_search_indexes():
+        await index.adrop_vector_search_index(
             collection, index_info["name"], wait_until_complete=wait_until_complete
         )
-    assert len(list(await collection.list_search_indexes())) == 0
+    assert len(await (await collection.list_search_indexes()).to_list()) == 0
 
     # Create a Vector Search Index on index_name
     await index.acreate_vector_search_index(
@@ -176,7 +178,7 @@ async def test_search_index_commands_async(collection: AsyncCollection) -> None:
         wait_until_complete=wait_until_complete,
     )
 
-    indexes = list(await collection.list_search_indexes())
+    indexes = await (await collection.list_search_indexes()).to_list()
     assert len(indexes) == 1
     assert indexes[0]["name"] == index_name
 
@@ -217,7 +219,7 @@ async def test_search_index_commands_async(collection: AsyncCollection) -> None:
         wait_until_complete=TIMEOUT,
     )
 
-    indexes = list(await collection.list_search_indexes())
+    indexes = await (await collection.list_search_indexes()).to_list()
     assert len(indexes) == 2
     assert any(idx["name"] == FULLTEXT_INDEX_NAME for idx in indexes)
     idx_fulltext = (
@@ -233,6 +235,6 @@ async def test_search_index_commands_async(collection: AsyncCollection) -> None:
             collection, name, wait_until_complete=wait_until_complete
         )
 
-    indexes = list(await collection.list_search_indexes())
+    indexes = await (await collection.list_search_indexes()).to_list()
     for idx in indexes:
         assert idx["status"] == "DELETING"

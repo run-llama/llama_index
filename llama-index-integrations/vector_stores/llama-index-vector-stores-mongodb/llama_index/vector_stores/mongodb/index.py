@@ -348,7 +348,7 @@ async def adrop_vector_search_index(
     if wait_until_complete:
 
         async def _predicate() -> bool:
-            return index_name not in await collection.list_search_indexes()
+            return index_name not in await (await collection.list_search_indexes()).to_list()
 
         await _await_for_predicate(
             predicate=_predicate,
@@ -429,7 +429,7 @@ async def _ais_index_ready(collection: AsyncCollection, index_name: str) -> bool
     """
     search_indexes = await collection.list_search_indexes(index_name)
 
-    for index in search_indexes:
+    async for index in search_indexes:
         if index["status"] == "READY":
             return True
     return False
