@@ -591,6 +591,17 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-opus-latest",
 )
 
+STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-opus-4-1-20250805",
+    "claude-opus-4-1",
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
+)
+
 
 def update_tool_calls(blocks: list[ContentBlock], tool_call: ToolCallBlock) -> None:
     if len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0:
@@ -633,3 +644,19 @@ def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
 
     """
     return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
+
+
+def is_anthropic_structured_output_supported(model: str) -> bool:
+    """
+    Check if the given Anthropic model supports structured output.
+
+    Args:
+        model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
+
+    Returns:
+        True if the model supports structured output, False otherwise.
+
+    See: https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+
+    """
+    return model in STRUCTURED_OUTPUT_SUPPORT

@@ -50,6 +50,7 @@ from llama_index.llms.anthropic.utils import (
     messages_to_anthropic_messages,
     update_tool_calls,
     messages_to_anthropic_beta_messages,
+    is_anthropic_structured_output_supported,
 )
 
 import anthropic
@@ -1037,7 +1038,7 @@ class Anthropic(FunctionCallingLLM):
         ant_messages, system = messages_to_anthropic_beta_messages(messages)
         if isinstance(
             self._client, (anthropic.AnthropicVertex, anthropic.AnthropicBedrock)
-        ):
+        ) or not is_anthropic_structured_output_supported(self.model):
             return super().structured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1047,12 +1048,16 @@ class Anthropic(FunctionCallingLLM):
             max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
             output_format=output_cls,
             system=system,
+            betas=["structured-outputs-2025-11-13"],
             **(llm_kwargs or {}),
         )
         parsed = response.parsed_output
+        stop_reason = response.stop_reason
         if parsed is not None:
             return parsed
-        raise ValueError("It was not possible to produce a structured response")
+        raise ValueError(
+            f"It was not possible to produce a structured response{' because of ' + stop_reason if stop_reason is not None else ''}"
+        )
 
     @dispatcher.span
     async def astructured_predict(
@@ -1067,7 +1072,7 @@ class Anthropic(FunctionCallingLLM):
         if isinstance(
             self._aclient,
             (anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock),
-        ):
+        ) or not is_anthropic_structured_output_supported(self.model):
             return await super().astructured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1077,12 +1082,16 @@ class Anthropic(FunctionCallingLLM):
             max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
             output_format=output_cls,
             system=system,
+            betas=["structured-outputs-2025-11-13"],
             **(llm_kwargs or {}),
         )
         parsed = response.parsed_output
+        stop_reason = response.stop_reason
         if parsed is not None:
             return parsed
-        raise ValueError("It was not possible to produce a structured response")
+        raise ValueError(
+            f"It was not possible to produce a structured response{' because of ' + stop_reason if stop_reason is not None else ''}"
+        )
 
     @dispatcher.span
     def stream_structured_predict(
@@ -1099,7 +1108,7 @@ class Anthropic(FunctionCallingLLM):
         ant_messages, system = messages_to_anthropic_beta_messages(messages)
         if isinstance(
             self._client, (anthropic.AnthropicVertex, anthropic.AnthropicBedrock)
-        ):
+        ) or not is_anthropic_structured_output_supported(self.model):
             return super().stream_structured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1109,17 +1118,20 @@ class Anthropic(FunctionCallingLLM):
             max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
             output_format=output_cls,
             system=system,
-            stream=True,
+            betas=["structured-outputs-2025-11-13"],
             **(llm_kwargs or {}),
         )
         parsed = response.parsed_output
+        stop_reason = response.stop_reason
         if parsed is not None:
 
-            def gen() -> Generator[Model, Any]:
+            def gen() -> Generator[Model, Any, None]:
                 yield parsed
 
             return gen()
-        raise ValueError("It was not possible to produce a structured response")
+        raise ValueError(
+            f"It was not possible to produce a structured response{' because of ' + stop_reason if stop_reason is not None else ''}"
+        )
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -1137,7 +1149,7 @@ class Anthropic(FunctionCallingLLM):
         if isinstance(
             self._aclient,
             (anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock),
-        ):
+        ) or not is_anthropic_structured_output_supported(self.model):
             return await super().astream_structured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
@@ -1147,14 +1159,17 @@ class Anthropic(FunctionCallingLLM):
             max_tokens=(llm_kwargs or {}).get("max_tokens", 8192),
             output_format=output_cls,
             system=system,
-            stream=True,
+            betas=["structured-outputs-2025-11-13"],
             **(llm_kwargs or {}),
         )
         parsed = response.parsed_output
+        stop_reason = response.stop_reason
         if parsed is not None:
 
             async def gen() -> AsyncGenerator[Model, Any]:
                 yield parsed
 
             return gen()
-        raise ValueError("It was not possible to produce a structured response")
+        raise ValueError(
+            f"It was not possible to produce a structured response{' because of ' + stop_reason if stop_reason is not None else ''}"
+        )
