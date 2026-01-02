@@ -2,7 +2,7 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Optional, Literal, cast
+from typing import Any, Dict, List, Sequence, Tuple, Optional, Literal, cast, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -141,10 +141,10 @@ def anthropic_modelname_to_contextsize(modelname: str) -> int:
 
 
 def __merge_common_role_msgs(
-    messages: Sequence[MessageParam | BetaMessageParam],
-) -> Sequence[MessageParam | BetaMessageParam]:
+    messages: Sequence[Union[MessageParam, BetaMessageParam]],
+) -> Sequence[Union[MessageParam, BetaMessageParam]]:
     """Merge consecutive messages with the same role."""
-    postprocessed_messages: Sequence[MessageParam | BetaMessageParam] = []
+    postprocessed_messages: Sequence[Union[MessageParam, BetaMessageParam]] = []
     for message in messages:
         if (
             postprocessed_messages
