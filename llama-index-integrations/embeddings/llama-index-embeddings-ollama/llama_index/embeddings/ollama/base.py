@@ -92,20 +92,25 @@ class OllamaEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        embeddings_list: List[List[float]] = []
-        for text in texts:
-            formatted_text = self._format_text(text)
-            embeddings = self.get_general_text_embedding(formatted_text)
-            embeddings_list.append(embeddings)
-
-        return embeddings_list
+        formatted_texts = [self._format_text(text) for text in texts]
+        result = self._client.embed(
+            model=self.model_name,
+            input=formatted_texts,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
+        )
+        return result.embeddings
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         formatted_texts = [self._format_text(text) for text in texts]
-        return await asyncio.gather(
-            *[self.aget_general_text_embedding(text) for text in formatted_texts]
+        result = await self._async_client.embed(
+            model=self.model_name,
+            input=formatted_texts,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
         )
+        return result.embeddings
 
     def get_general_text_embedding(self, texts: str) -> List[float]:
         """Get Ollama embedding."""
@@ -117,11 +122,11 @@ class OllamaEmbedding(BaseEmbedding):
         )
         return result.embeddings[0]
 
-    async def aget_general_text_embedding(self, prompt: str) -> List[float]:
+    async def aget_general_text_embedding(self, texts: str) -> List[float]:
         """Asynchronously get Ollama embedding."""
         result = await self._async_client.embed(
             model=self.model_name,
-            input=prompt,
+            input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
         )
