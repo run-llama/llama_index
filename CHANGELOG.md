@@ -26,6 +26,7 @@
 
 - feat(llama-index-embeddings-ollama): Add keep_alive parameter ([#20395](https://github.com/run-llama/llama_index/pull/20395))
 - docs: improve Ollama embeddings README with comprehensive documentation ([#20414](https://github.com/run-llama/llama_index/pull/20414))
+- improve Ollama batch embedding([#20447](https://github.com/run-llama/llama_index/pull/20447))
 
 ### llama-index-embeddings-voyageai [0.5.2]
 
