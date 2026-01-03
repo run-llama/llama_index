@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
