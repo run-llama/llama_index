@@ -73,7 +73,7 @@ def atlas_client() -> MongoClient:
     return client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def async_client() -> AsyncMongoClient:
     if MONGODB_URI is None:
         raise pytest.skip("Requires MONGODB_URI in os.environ")
