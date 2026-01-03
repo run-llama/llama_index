@@ -92,20 +92,28 @@ class OllamaEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         formatted_texts = [self._format_text(text) for text in texts]
+        return self.get_general_text_embeddings(formatted_texts)
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get text embeddings."""
+        formatted_texts = [self._format_text(text) for text in texts]
+        return await self.aget_general_text_embeddings(formatted_texts)
+
+    def get_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get Ollama embeddings."""
         result = self._client.embed(
             model=self.model_name,
-            input=formatted_texts,
+            input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
         )
         return result.embeddings
 
-    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronously get text embeddings."""
-        formatted_texts = [self._format_text(text) for text in texts]
+    async def aget_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get Ollama embeddings."""
         result = await self._async_client.embed(
             model=self.model_name,
-            input=formatted_texts,
+            input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
         )
