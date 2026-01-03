@@ -95,15 +95,6 @@ class ChatSessionRunner:
             return False
         return any(part.function_response is not None for part in content.parts)
 
-    @staticmethod
-    def _is_empty_user_text_content(content: types.Content) -> bool:
-        if content.role != "user" or not content.parts:
-            return False
-        if len(content.parts) != 1:
-            return False
-        part = content.parts[0]
-        return part.text is not None and part.text == ""
-
     def __init__(
         self,
         *,
@@ -131,11 +122,7 @@ class ChatSessionRunner:
         msgs = list(messages)
         system_message = self._extract_system_message(msgs)
         history_contents, uploaded_file_names = await self._build_history_contents(msgs)
-        history = self._merge_tool_contents(history_contents)
-        history = self._merge_adjacent_same_role_if_safe(history)
-
-        # Prevent empty USER turns from breaking FC -> FR adjacency in Gemini 3.
-        history = [c for c in history if not self._is_empty_user_text_content(c)]
+        history = self._normalize_history(history_contents)
 
         self._validate_function_calling_history(history)
 
@@ -182,6 +169,56 @@ class ChatSessionRunner:
             uploaded_file_names=uploaded_file_names,
         )
 
+    def _normalize_history(self, contents: List[types.Content]) -> List[types.Content]:
+        """
+        Normalize Gemini history for chat.
+        - Never modify/move parts that carry thought signatures (positional requirement).
+        - Avoid consecutive same-role contents where safe (Gemini may reject).
+        - Merge consecutive tool-response contents into a single user content with multiple
+          functionResponse parts (helps avoid FC/FR interleaving).
+        """
+        if not contents:
+            return []
+
+        normalized: List[types.Content] = []
+        for msg in contents:
+            if not normalized:
+                normalized.append(msg)
+                continue
+
+            last = normalized[-1]
+            if not self._can_merge_contents(previous=last, current=msg):
+                normalized.append(msg)
+                continue
+
+            last.parts = (last.parts or []) + (msg.parts or [])
+
+        return normalized
+
+    def _can_merge_contents(
+        self, *, previous: types.Content, current: types.Content
+    ) -> bool:
+        if previous.role != current.role:
+            return False
+
+        previous_is_tool = self._is_tool_content(previous)
+        current_is_tool = self._is_tool_content(current)
+
+        # Only merge tool contents with tool contents.
+        if previous_is_tool or current_is_tool:
+            return previous_is_tool and current_is_tool
+
+        # Never merge across any function calling parts or signatures. Gemini 3 validates
+        # part ordering/position (thought_signature is positional).
+        return not (
+            self._has_thought_signature(previous)
+            or self._has_thought_signature(current)
+            or self._has_function_call(previous)
+            or self._has_function_call(current)
+            or self._has_function_response(previous)
+            or self._has_function_response(current)
+        )
+
     @staticmethod
     def _extract_system_message(messages: List[ChatMessage]) -> Optional[str]:
         if messages and messages[0].role == MessageRole.SYSTEM:
@@ -199,101 +236,6 @@ class ChatSessionRunner:
         contents = [it[0] for it in contents_and_names if it[0] is not None]
         uploaded_file_names = [name for it in contents_and_names for name in it[1]]
         return contents, uploaded_file_names
-
-    def _merge_tool_contents(
-        self, contents: List[types.Content]
-    ) -> List[types.Content]:
-        """
-        Merge adjacent Gemini tool-response contents.
-
-        Gemini tool outputs are represented as ``function_response`` parts.
-
-        LlamaIndex tool execution often produces multiple TOOL-role ChatMessages
-        back-to-back (one per tool result). After conversion to Gemini
-        ``types.Content``, that becomes consecutive Contents like:
-
-            user: [FR(file1)]
-            user: [FR(file2)]
-
-        For Gemini function calling validation, it is safer to send a single
-        Content containing all functionResponse parts in order:
-
-            user: [FR(file1), FR(file2)]
-
-        This function performs that merge by concatenating ``parts``.
-        """
-        history: List[types.Content] = []
-        for idx, msg in enumerate(contents):
-            if idx < 1:
-                history.append(msg)
-                continue
-
-            if not self._is_tool_content(msg):
-                history.append(msg)
-                continue
-
-            last = history[-1]
-            if not self._is_tool_content(last):
-                history.append(msg)
-                continue
-
-            if last.role != msg.role:
-                history.append(msg)
-                continue
-
-            last.parts = (last.parts or []) + (msg.parts or [])
-
-        return history
-
-    def _merge_adjacent_same_role_if_safe(
-        self, contents: List[types.Content]
-    ) -> List[types.Content]:
-        """
-        Gemini chat may reject consecutive contents with same role.
-
-        We merge only when it is safe: no thought signatures and no tool/function parts.
-
-        Example (safe to merge):
-
-            user:  ["Hello"]
-            user:  ["Please do X"]
-            -> user: ["Hello", "Please do X"]
-
-        Example (NOT safe):
-
-            model: [FunctionCall(...)]
-            model: ["..."]
-
-        We avoid merging any content that contains thought signatures, function calls,
-        or function responses because Gemini 3 validates part ordering/position.
-        """
-        merged: List[types.Content] = []
-        for msg in contents:
-            if not merged:
-                merged.append(msg)
-                continue
-
-            last = merged[-1]
-            if last.role != msg.role:
-                merged.append(msg)
-                continue
-
-            if (
-                self._has_thought_signature(last)
-                or self._has_thought_signature(msg)
-                or self._has_function_call(last)
-                or self._has_function_call(msg)
-                or self._has_function_response(last)
-                or self._has_function_response(msg)
-                or self._is_tool_content(last)
-                or self._is_tool_content(msg)
-            ):
-                merged.append(msg)
-                continue
-
-            last.parts = (last.parts or []) + (msg.parts or [])
-
-        return merged
 
     @staticmethod
     def _validate_function_calling_history(history: List[types.Content]) -> None:

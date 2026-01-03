@@ -360,3 +360,128 @@ def test_response_converter_streaming_thoughts_accumulate() -> None:
     assert len(resp2.message.blocks) == 2
     assert isinstance(resp2.message.blocks[0], ThinkingBlock)
     assert isinstance(resp2.message.blocks[1], TextBlock)
+
+
+def test_response_converter_preserves_signature_alignment_for_text_parts() -> None:
+    """1 Gemini Part == 1 LlamaIndex block; thought_signatures aligned by index."""
+    converter = ResponseConverter()
+    state = GeminiResponseParseState()
+
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_candidate.finish_reason = types.FinishReason.STOP
+    mock_candidate.content.role = "model"
+
+    p1 = types.Part.from_text(text="Hello")
+    p1.thought_signature = "sigA"
+    p2 = types.Part.from_text(text="World")
+
+    mock_candidate.content.parts = [p1, p2]
+    mock_response.candidates = [mock_candidate]
+    mock_response.usage_metadata = None
+    mock_response.prompt_feedback = None
+    mock_candidate.model_dump.return_value = {
+        "content": {"role": "model"},
+        "finish_reason": "STOP",
+    }
+
+    chat_response = converter.to_chat_response(mock_response, state=state)
+
+    assert [type(b).__name__ for b in chat_response.message.blocks] == [
+        "TextBlock",
+        "TextBlock",
+    ]
+    assert [
+        b.text for b in chat_response.message.blocks if isinstance(b, TextBlock)
+    ] == [
+        "Hello",
+        "World",
+    ]
+    assert chat_response.message.additional_kwargs["thought_signatures"] == [
+        "sigA",
+        None,
+    ]
+
+
+def test_response_converter_function_call_signature_alignment() -> None:
+    """FunctionCall parts become ToolCallBlocks and signatures are aligned by index."""
+    from llama_index.core.base.llms.types import ToolCallBlock
+
+    converter = ResponseConverter()
+    state = GeminiResponseParseState()
+
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_candidate.finish_reason = types.FinishReason.STOP
+    mock_candidate.content.role = "model"
+
+    fc1 = types.Part.from_function_call(name="tool_a", args={"x": 1})
+    fc1.thought_signature = "sigA"
+    fc2 = types.Part.from_function_call(name="tool_b", args={"y": 2})
+    # parallel call second has no signature
+
+    mock_candidate.content.parts = [fc1, fc2]
+    mock_response.candidates = [mock_candidate]
+    mock_response.usage_metadata = None
+    mock_response.prompt_feedback = None
+    mock_candidate.model_dump.return_value = {
+        "content": {"role": "model"},
+        "finish_reason": "STOP",
+    }
+
+    chat_response = converter.to_chat_response(mock_response, state=state)
+    blocks = chat_response.message.blocks
+
+    assert isinstance(blocks[0], ToolCallBlock)
+    assert isinstance(blocks[1], ToolCallBlock)
+    assert blocks[0].tool_name == "tool_a"
+    assert blocks[1].tool_name == "tool_b"
+    assert chat_response.message.additional_kwargs["thought_signatures"] == [
+        "sigA",
+        None,
+    ]
+
+
+@pytest.mark.asyncio
+async def test_message_converter_replays_thought_signatures_by_index_for_model_role(
+    mock_file_manager,
+) -> None:
+    """Model role must replay thought signatures by part position."""
+    converter = MessageConverter(file_manager=mock_file_manager)
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="A"), TextBlock(text="B")],
+        additional_kwargs={"thought_signatures": ["sigA", None]},
+    )
+
+    content, _ = await converter.to_gemini_content(msg)
+    assert content is not None
+    assert content.role == "model"
+    assert len(content.parts) == 2
+    assert getattr(content.parts[0], "thought_signature", None) == "sigA"
+    assert getattr(content.parts[1], "thought_signature", None) is None
+
+
+@pytest.mark.asyncio
+async def test_message_converter_keeps_empty_model_text_part_if_it_has_thought_signature(
+    mock_file_manager,
+) -> None:
+    """
+    Gemini 3 streaming may put thought_signature on an empty text part.
+
+    Our MessageConverter must not drop empty model text parts when they carry a
+    thought_signature, otherwise positional alignment breaks.
+    """
+    converter = MessageConverter(file_manager=mock_file_manager)
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="")],
+        additional_kwargs={"thought_signatures": ["sig-empty"]},
+    )
+
+    content, _ = await converter.to_gemini_content(msg)
+    assert content is not None
+    assert content.role == "model"
+    assert len(content.parts) == 1
+    assert content.parts[0].text == ""
+    assert getattr(content.parts[0], "thought_signature", None) == "sig-empty"
