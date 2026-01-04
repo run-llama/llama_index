@@ -106,6 +106,23 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # v2-exclusive parameters
     collection_id: Optional[str] = None
 
+    # V2 Hybrid Search parameters
+    enable_hybrid: bool = Field(default=False)
+    text_search_fields: Optional[List[str]] = Field(default=None)
+    embedding_field: str = Field(default="embedding")
+
+    # Ranker configuration
+    hybrid_ranker: Literal["rrf", "vertex"] = Field(default="rrf")
+    default_hybrid_alpha: float = Field(default=0.5)
+
+    # SemanticSearch configuration
+    semantic_task_type: str = Field(default="RETRIEVAL_QUERY")
+
+    # VertexRanker-specific parameters
+    vertex_ranker_model: str = Field(default="semantic-ranker-default@latest")
+    vertex_ranker_title_field: Optional[str] = Field(default=None)
+    vertex_ranker_content_field: Optional[str] = Field(default=None)
+
     # Shared parameters
     batch_size: int = 100
     credentials_path: Optional[str] = None
@@ -130,6 +147,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         api_version: str = "v1",
         collection_id: Optional[str] = None,
         batch_size: int = 100,
+        # V2 Hybrid Search parameters
+        enable_hybrid: bool = False,
+        text_search_fields: Optional[List[str]] = None,
+        embedding_field: str = "embedding",
+        hybrid_ranker: Literal["rrf", "vertex"] = "rrf",
+        default_hybrid_alpha: float = 0.5,
+        semantic_task_type: str = "RETRIEVAL_QUERY",
+        vertex_ranker_model: str = "semantic-ranker-default@latest",
+        vertex_ranker_title_field: Optional[str] = None,
+        vertex_ranker_content_field: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -144,6 +171,15 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             api_version=api_version,
             collection_id=collection_id,
             batch_size=batch_size,
+            enable_hybrid=enable_hybrid,
+            text_search_fields=text_search_fields,
+            embedding_field=embedding_field,
+            hybrid_ranker=hybrid_ranker,
+            default_hybrid_alpha=default_hybrid_alpha,
+            semantic_task_type=semantic_task_type,
+            vertex_ranker_model=vertex_ranker_model,
+            vertex_ranker_title_field=vertex_ranker_title_field,
+            vertex_ranker_content_field=vertex_ranker_content_field,
         )
 
         """Initialize params."""
@@ -224,6 +260,33 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 raise ValueError(
                     "Parameter 'gcs_bucket_name' is only valid for api_version='v1'. "
                     "v2 does not require a staging bucket."
+                )
+
+        # Hybrid search validation (applies to both v1 and v2, but some features are v2-only)
+        if self.enable_hybrid and self.api_version != "v2":
+            raise ValueError(
+                "enable_hybrid=True is only supported for api_version='v2'. "
+                "V1 hybrid search uses HybridQuery with find_neighbors() directly."
+            )
+
+        if not 0.0 <= self.default_hybrid_alpha <= 1.0:
+            raise ValueError(
+                f"default_hybrid_alpha must be between 0 and 1, got {self.default_hybrid_alpha}"
+            )
+
+        if self.hybrid_ranker not in ("rrf", "vertex"):
+            raise ValueError(
+                f"hybrid_ranker must be 'rrf' or 'vertex', got {self.hybrid_ranker}"
+            )
+
+        if self.hybrid_ranker == "vertex":
+            if (
+                self.vertex_ranker_title_field is None
+                and self.vertex_ranker_content_field is None
+            ):
+                _logger.warning(
+                    "VertexRanker works best with title_field and/or content_field configured. "
+                    "Consider setting vertex_ranker_title_field or vertex_ranker_content_field."
                 )
 
     @classmethod
