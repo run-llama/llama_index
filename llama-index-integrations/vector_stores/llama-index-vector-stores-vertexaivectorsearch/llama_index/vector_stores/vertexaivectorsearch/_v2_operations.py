@@ -84,6 +84,130 @@ def _import_v2_sdk():
         ) from e
 
 
+# =============================================================================
+# Helper Functions for Hybrid Search
+# =============================================================================
+
+
+def _calculate_rrf_weights(alpha: float, num_searches: int = 2) -> List[float]:
+    """
+    Calculate RRF weights from alpha value.
+
+    Args:
+        alpha: Weight for vector search (0 = text only, 1 = vector only)
+        num_searches: Number of searches being combined
+
+    Returns:
+        List of weights [vector_weight, text_weight]
+
+    """
+    if num_searches == 2:
+        return [alpha, 1.0 - alpha]
+    return [1.0 / num_searches] * num_searches
+
+
+def _convert_filters_to_v2(filters: Optional[MetadataFilters]) -> Optional[dict]:
+    """
+    Convert LlamaIndex MetadataFilters to V2 filter format.
+
+    V2 filter format:
+    - Simple: {"field": {"$eq": "value"}}
+    - AND: {"$and": [{...}, {...}]}
+    - OR: {"$or": [{...}, {...}]}
+
+    Args:
+        filters: LlamaIndex MetadataFilters object
+
+    Returns:
+        V2 filter dict or None
+
+    """
+    if filters is None or len(filters.filters) == 0:
+        return None
+
+    from llama_index.core.vector_stores.types import (
+        FilterOperator,
+        FilterCondition,
+        MetadataFilter,
+    )
+
+    op_map = {
+        FilterOperator.EQ: "$eq",
+        FilterOperator.NE: "$ne",
+        FilterOperator.GT: "$gt",
+        FilterOperator.GTE: "$gte",
+        FilterOperator.LT: "$lt",
+        FilterOperator.LTE: "$lte",
+        FilterOperator.IN: "$in",
+        FilterOperator.NIN: "$nin",
+        FilterOperator.CONTAINS: "$contains",
+    }
+
+    def convert_single(f: MetadataFilter) -> dict:
+        v2_op = op_map.get(f.operator, "$eq")
+        return {f.key: {v2_op: f.value}}
+
+    if len(filters.filters) == 1:
+        f = filters.filters[0]
+        if isinstance(f, MetadataFilters):
+            return _convert_filters_to_v2(f)
+        return convert_single(f)
+
+    converted = []
+    for f in filters.filters:
+        if isinstance(f, MetadataFilters):
+            converted.append(_convert_filters_to_v2(f))
+        else:
+            converted.append(convert_single(f))
+
+    condition = "$and" if filters.condition == FilterCondition.AND else "$or"
+    return {condition: converted}
+
+
+def _build_ranker(
+    store: Any,
+    query: VectorStoreQuery,
+    num_searches: int,
+) -> Any:
+    """
+    Build the appropriate ranker based on store configuration.
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The query being executed
+        num_searches: Number of searches being combined
+
+    Returns:
+        Ranker object (RRF or VertexRanker)
+
+    """
+    vectorsearch = _import_v2_sdk()
+
+    if store.hybrid_ranker == "vertex":
+        title_template = None
+        content_template = None
+        if store.vertex_ranker_title_field:
+            title_template = f"{{{{ {store.vertex_ranker_title_field} }}}}"
+        if store.vertex_ranker_content_field:
+            content_template = f"{{{{ {store.vertex_ranker_content_field} }}}}"
+
+        return vectorsearch.Ranker(
+            vertex=vectorsearch.VertexRanker(
+                query=query.query_str or "",
+                model=store.vertex_ranker_model,
+                title_template=title_template,
+                content_template=content_template,
+            )
+        )
+    else:
+        # RRF ranker (default)
+        alpha = query.alpha if query.alpha is not None else store.default_hybrid_alpha
+        weights = _calculate_rrf_weights(alpha, num_searches)
+        return vectorsearch.Ranker(
+            rrf=vectorsearch.ReciprocalRankFusion(weights=weights)
+        )
+
+
 def add_v2(
     store: Any,
     nodes: List[BaseNode],
@@ -240,28 +364,580 @@ def delete_v2(
         raise
 
 
+# =============================================================================
+# Result Processing Helpers
+# =============================================================================
+
+
+def _process_search_results(
+    store: Any,
+    results: Any,
+) -> VectorStoreQueryResult:
+    """
+    Process single search results into VectorStoreQueryResult.
+
+    Args:
+        store: VertexAIVectorStore instance
+        results: Search results from the API
+
+    Returns:
+        VectorStoreQueryResult with nodes, similarities, and IDs
+
+    """
+    top_k_nodes = []
+    top_k_ids = []
+    top_k_scores = []
+
+    for result in results:
+        data_obj = result.data_object
+
+        # Extract embedding
+        embedding = None
+        if hasattr(data_obj, "vectors") and data_obj.vectors:
+            if store.embedding_field in data_obj.vectors:
+                vector_data = data_obj.vectors[store.embedding_field]
+                if hasattr(vector_data, "dense") and vector_data.dense:
+                    if hasattr(vector_data.dense, "values"):
+                        embedding = list(vector_data.dense.values)
+
+        # Extract metadata
+        metadata = dict(data_obj.data) if data_obj.data else {}
+
+        # Extract ID from resource name or data_object_id
+        node_id = data_obj.name.split("/")[-1]
+        if hasattr(data_obj, "data_object_id") and data_obj.data_object_id:
+            node_id = data_obj.data_object_id
+
+        node = TextNode(
+            text=metadata.get(store.text_key, ""),
+            id_=node_id,
+            metadata=metadata,
+            embedding=embedding,
+        )
+
+        top_k_nodes.append(node)
+        top_k_ids.append(node_id)
+        # Use distance or score depending on what's available
+        score = 1.0
+        if hasattr(result, "distance"):
+            score = result.distance
+        elif hasattr(result, "score"):
+            score = result.score
+        top_k_scores.append(score)
+
+    return VectorStoreQueryResult(
+        nodes=top_k_nodes,
+        similarities=top_k_scores,
+        ids=top_k_ids,
+    )
+
+
+def _process_batch_search_results(
+    store: Any,
+    batch_results: Any,
+    top_k: int,
+) -> VectorStoreQueryResult:
+    """
+    Process batch search (RRF/VertexRanker combined) results.
+
+    Args:
+        store: VertexAIVectorStore instance
+        batch_results: Batch search results from the API
+        top_k: Maximum number of results to return
+
+    Returns:
+        VectorStoreQueryResult with nodes, similarities, and IDs
+
+    """
+    top_k_nodes = []
+    top_k_ids = []
+    top_k_scores = []
+
+    # Batch results contain combined ranked results
+    # The structure may vary based on API response format
+    if hasattr(batch_results, "combined_results") and batch_results.combined_results:
+        # Process combined results from RRF/ranker
+        for result in batch_results.combined_results:
+            if len(top_k_nodes) >= top_k:
+                break
+
+            data_obj = result.data_object
+
+            # Extract embedding
+            embedding = None
+            if hasattr(data_obj, "vectors") and data_obj.vectors:
+                if store.embedding_field in data_obj.vectors:
+                    vector_data = data_obj.vectors[store.embedding_field]
+                    if hasattr(vector_data, "dense") and vector_data.dense:
+                        if hasattr(vector_data.dense, "values"):
+                            embedding = list(vector_data.dense.values)
+
+            # Extract metadata
+            metadata = dict(data_obj.data) if data_obj.data else {}
+
+            # Extract ID
+            node_id = data_obj.name.split("/")[-1]
+            if hasattr(data_obj, "data_object_id") and data_obj.data_object_id:
+                node_id = data_obj.data_object_id
+
+            node = TextNode(
+                text=metadata.get(store.text_key, ""),
+                id_=node_id,
+                metadata=metadata,
+                embedding=embedding,
+            )
+
+            top_k_nodes.append(node)
+            top_k_ids.append(node_id)
+            score = 1.0
+            if hasattr(result, "distance"):
+                score = result.distance
+            elif hasattr(result, "score"):
+                score = result.score
+            elif hasattr(result, "rank_score"):
+                score = result.rank_score
+            top_k_scores.append(score)
+    elif hasattr(batch_results, "results"):
+        # Alternative response structure
+        for response in batch_results.results:
+            if hasattr(response, "results"):
+                for result in response.results:
+                    if len(top_k_nodes) >= top_k:
+                        break
+
+                    data_obj = result.data_object
+
+                    # Extract embedding
+                    embedding = None
+                    if hasattr(data_obj, "vectors") and data_obj.vectors:
+                        if store.embedding_field in data_obj.vectors:
+                            vector_data = data_obj.vectors[store.embedding_field]
+                            if hasattr(vector_data, "dense") and vector_data.dense:
+                                if hasattr(vector_data.dense, "values"):
+                                    embedding = list(vector_data.dense.values)
+
+                    # Extract metadata
+                    metadata = dict(data_obj.data) if data_obj.data else {}
+
+                    # Extract ID
+                    node_id = data_obj.name.split("/")[-1]
+                    if hasattr(data_obj, "data_object_id") and data_obj.data_object_id:
+                        node_id = data_obj.data_object_id
+
+                    node = TextNode(
+                        text=metadata.get(store.text_key, ""),
+                        id_=node_id,
+                        metadata=metadata,
+                        embedding=embedding,
+                    )
+
+                    top_k_nodes.append(node)
+                    top_k_ids.append(node_id)
+                    score = 1.0
+                    if hasattr(result, "distance"):
+                        score = result.distance
+                    elif hasattr(result, "score"):
+                        score = result.score
+                    top_k_scores.append(score)
+
+    return VectorStoreQueryResult(
+        nodes=top_k_nodes,
+        similarities=top_k_scores,
+        ids=top_k_ids,
+    )
+
+
+# =============================================================================
+# Query Mode Implementations
+# =============================================================================
+
+
+def _query_v2_default(
+    store: Any,
+    query: VectorStoreQuery,
+    clients: dict,
+    parent: str,
+    **kwargs: Any,
+) -> VectorStoreQueryResult:
+    """
+    Execute default dense vector search.
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The vector store query
+        clients: V2 client dictionary
+        parent: Parent resource path
+        **kwargs: Additional arguments
+
+    Returns:
+        VectorStoreQueryResult
+
+    """
+    vectorsearch = _import_v2_sdk()
+    search_client = clients["data_object_search_service_client"]
+
+    if query.query_embedding is None:
+        _logger.warning("No query embedding provided, returning empty result")
+        return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+
+    # Build filter
+    v2_filter = _convert_filters_to_v2(query.filters)
+
+    # Build search request
+    search_kwargs = {
+        "parent": parent,
+        "vector_search": vectorsearch.VectorSearch(
+            search_field=store.embedding_field,
+            vector=vectorsearch.DenseVector(values=query.query_embedding),
+            top_k=query.similarity_top_k,
+            output_fields=vectorsearch.OutputFields(
+                data_fields=["*"],
+                vector_fields=["*"],
+                metadata_fields=["*"],
+            ),
+        ),
+    }
+
+    if v2_filter:
+        search_kwargs["vector_search"].filter = v2_filter
+
+    search_request = vectorsearch.SearchDataObjectsRequest(**search_kwargs)
+
+    try:
+        results = search_client.search_data_objects(search_request)
+        return _process_search_results(store, results)
+    except Exception as e:
+        _logger.error(f"Failed to execute DEFAULT search: {e}")
+        raise
+
+
+def _query_v2_text_search(
+    store: Any,
+    query: VectorStoreQuery,
+    clients: dict,
+    parent: str,
+    **kwargs: Any,
+) -> VectorStoreQueryResult:
+    """
+    Execute full-text keyword search only.
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The vector store query
+        clients: V2 client dictionary
+        parent: Parent resource path
+        **kwargs: Additional arguments
+
+    Returns:
+        VectorStoreQueryResult
+
+    """
+    vectorsearch = _import_v2_sdk()
+    search_client = clients["data_object_search_service_client"]
+
+    if query.query_str is None:
+        raise ValueError("TEXT_SEARCH mode requires query_str.")
+
+    if store.text_search_fields is None:
+        raise ValueError(
+            "TEXT_SEARCH mode requires text_search_fields to be configured "
+            "in the constructor."
+        )
+
+    top_k = query.sparse_top_k or query.similarity_top_k
+
+    # Build search request
+    search_request = vectorsearch.SearchDataObjectsRequest(
+        parent=parent,
+        text_search=vectorsearch.TextSearch(
+            search_text=query.query_str,
+            data_field_names=store.text_search_fields,
+            top_k=top_k,
+            output_fields=vectorsearch.OutputFields(
+                data_fields=["*"],
+                vector_fields=["*"],
+                metadata_fields=["*"],
+            ),
+        ),
+    )
+
+    try:
+        results = search_client.search_data_objects(search_request)
+        return _process_search_results(store, results)
+    except Exception as e:
+        _logger.error(f"Failed to execute TEXT_SEARCH: {e}")
+        raise
+
+
+def _query_v2_hybrid(
+    store: Any,
+    query: VectorStoreQuery,
+    clients: dict,
+    parent: str,
+    **kwargs: Any,
+) -> VectorStoreQueryResult:
+    """
+    Execute hybrid search: VectorSearch + TextSearch with ranker.
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The vector store query
+        clients: V2 client dictionary
+        parent: Parent resource path
+        **kwargs: Additional arguments
+
+    Returns:
+        VectorStoreQueryResult
+
+    """
+    vectorsearch = _import_v2_sdk()
+    search_client = clients["data_object_search_service_client"]
+
+    # Validate requirements
+    if not store.enable_hybrid:
+        raise ValueError(
+            "HYBRID mode requires enable_hybrid=True in the VertexAIVectorStore "
+            "constructor."
+        )
+
+    if query.query_embedding is None:
+        raise ValueError("HYBRID mode requires query_embedding (dense vector).")
+
+    if query.query_str is None:
+        _logger.warning(
+            "HYBRID mode without query_str - falling back to vector-only search"
+        )
+        return _query_v2_default(store, query, clients, parent, **kwargs)
+
+    if store.text_search_fields is None:
+        _logger.warning(
+            "No text_search_fields configured - falling back to vector-only search"
+        )
+        return _query_v2_default(store, query, clients, parent, **kwargs)
+
+    # Build filter
+    v2_filter = _convert_filters_to_v2(query.filters)
+
+    # Calculate top_k values
+    top_k = query.similarity_top_k
+    sparse_top_k = query.sparse_top_k or top_k
+    hybrid_top_k = query.hybrid_top_k or top_k
+
+    # Build output fields
+    output_fields = vectorsearch.OutputFields(
+        data_fields=["*"],
+        vector_fields=["*"],
+        metadata_fields=["*"],
+    )
+
+    # Build searches list
+    vector_search_kwargs = {
+        "search_field": store.embedding_field,
+        "vector": vectorsearch.DenseVector(values=query.query_embedding),
+        "top_k": top_k,
+        "output_fields": output_fields,
+    }
+    if v2_filter:
+        vector_search_kwargs["filter"] = v2_filter
+
+    searches = [
+        vectorsearch.Search(
+            vector_search=vectorsearch.VectorSearch(**vector_search_kwargs)
+        ),
+        vectorsearch.Search(
+            text_search=vectorsearch.TextSearch(
+                search_text=query.query_str,
+                data_field_names=store.text_search_fields,
+                top_k=sparse_top_k,
+                output_fields=output_fields,
+            )
+        ),
+    ]
+
+    # Build ranker
+    ranker = _build_ranker(store, query, num_searches=2)
+
+    # Execute batch search
+    batch_request = vectorsearch.BatchSearchDataObjectsRequest(
+        parent=parent,
+        searches=searches,
+        combine=vectorsearch.BatchSearchDataObjectsRequest.CombineResultsOptions(
+            ranker=ranker,
+            top_k=hybrid_top_k,
+            output_fields=output_fields,
+        ),
+    )
+
+    try:
+        results = search_client.batch_search_data_objects(batch_request)
+        return _process_batch_search_results(store, results, hybrid_top_k)
+    except Exception as e:
+        _logger.error(f"Failed to execute HYBRID search: {e}")
+        raise
+
+
+def _query_v2_semantic_hybrid(
+    store: Any,
+    query: VectorStoreQuery,
+    clients: dict,
+    parent: str,
+    **kwargs: Any,
+) -> VectorStoreQueryResult:
+    """
+    Execute semantic hybrid: VectorSearch + SemanticSearch with ranker.
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The vector store query
+        clients: V2 client dictionary
+        parent: Parent resource path
+        **kwargs: Additional arguments
+
+    Returns:
+        VectorStoreQueryResult
+
+    """
+    vectorsearch = _import_v2_sdk()
+    search_client = clients["data_object_search_service_client"]
+
+    if not store.enable_hybrid:
+        raise ValueError(
+            "SEMANTIC_HYBRID mode requires enable_hybrid=True in the constructor."
+        )
+
+    if query.query_str is None:
+        raise ValueError("SEMANTIC_HYBRID mode requires query_str.")
+
+    # Calculate top_k values
+    top_k = query.similarity_top_k
+    hybrid_top_k = query.hybrid_top_k or top_k
+
+    # Build filter
+    v2_filter = _convert_filters_to_v2(query.filters)
+
+    # Build output fields
+    output_fields = vectorsearch.OutputFields(
+        data_fields=["*"],
+        vector_fields=["*"],
+        metadata_fields=["*"],
+    )
+
+    searches = []
+
+    # Add vector search if embedding provided
+    if query.query_embedding is not None:
+        vector_search_kwargs = {
+            "search_field": store.embedding_field,
+            "vector": vectorsearch.DenseVector(values=query.query_embedding),
+            "top_k": top_k,
+            "output_fields": output_fields,
+        }
+        if v2_filter:
+            vector_search_kwargs["filter"] = v2_filter
+
+        searches.append(
+            vectorsearch.Search(
+                vector_search=vectorsearch.VectorSearch(**vector_search_kwargs)
+            )
+        )
+
+    # Add semantic search
+    searches.append(
+        vectorsearch.Search(
+            semantic_search=vectorsearch.SemanticSearch(
+                search_text=query.query_str,
+                search_field=store.embedding_field,
+                task_type=store.semantic_task_type,
+                top_k=top_k,
+                output_fields=output_fields,
+            )
+        )
+    )
+
+    # Build ranker
+    ranker = _build_ranker(store, query, num_searches=len(searches))
+
+    # Execute batch search
+    batch_request = vectorsearch.BatchSearchDataObjectsRequest(
+        parent=parent,
+        searches=searches,
+        combine=vectorsearch.BatchSearchDataObjectsRequest.CombineResultsOptions(
+            ranker=ranker,
+            top_k=hybrid_top_k,
+            output_fields=output_fields,
+        ),
+    )
+
+    try:
+        results = search_client.batch_search_data_objects(batch_request)
+        return _process_batch_search_results(store, results, hybrid_top_k)
+    except Exception as e:
+        _logger.error(f"Failed to execute SEMANTIC_HYBRID search: {e}")
+        raise
+
+
+def _query_v2_sparse(
+    store: Any,
+    query: VectorStoreQuery,
+    clients: dict,
+    parent: str,
+    **kwargs: Any,
+) -> VectorStoreQueryResult:
+    """
+    Execute sparse vector search (Phase 2 - Not yet implemented).
+
+    Args:
+        store: VertexAIVectorStore instance
+        query: The vector store query
+        clients: V2 client dictionary
+        parent: Parent resource path
+        **kwargs: Additional arguments
+
+    Raises:
+        NotImplementedError: SPARSE mode is planned for Phase 2
+
+    """
+    raise NotImplementedError(
+        "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
+        "configured in the collection schema. Consider using TEXT_SEARCH mode "
+        "for keyword search or HYBRID mode for combined vector + keyword search."
+    )
+
+
+# =============================================================================
+# Main Query Function with Mode Routing
+# =============================================================================
+
+
 def query_v2(
     store: Any,
     query: VectorStoreQuery,
     **kwargs: Any,
 ) -> VectorStoreQueryResult:
     """
-    Query collection for top k most similar nodes using v2 API.
+    Query collection using v2 API with support for multiple query modes.
 
     Args:
         store: The VertexAIVectorStore instance
-        query: The vector store query
+        query: The vector store query with mode specification
         **kwargs: Additional keyword arguments
 
     Returns:
         Vector store query result
 
+    Supported modes:
+        - DEFAULT: Dense vector similarity search
+        - TEXT_SEARCH: Full-text keyword search
+        - HYBRID: Dense vector + text search with RRF/VertexRanker
+        - SEMANTIC_HYBRID: Dense vector + semantic search with ranker
+        - SPARSE: (Phase 2) Sparse vector search
+
     """
-    vectorsearch = _import_v2_sdk()
+    _logger.info(
+        f"Querying v2 collection: {store.collection_id} with mode: {query.mode}"
+    )
 
-    _logger.info(f"Querying v2 collection: {store.collection_id}")
-
-    # Get v2 client
+    # Get v2 clients
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
         VectorSearchSDKManager,
     )
@@ -272,79 +948,25 @@ def query_v2(
         credentials_path=store.credentials_path,
     )
     clients = sdk_manager.get_v2_client()
-    search_client = clients["data_object_search_service_client"]
-
-    # Build parent path
     parent = f"projects/{store.project_id}/locations/{store.region}/collections/{store.collection_id}"
 
-    # Extract query embedding
-    query_embedding = None
+    # Route based on query mode
     if query.mode == VectorStoreQueryMode.DEFAULT:
-        query_embedding = query.query_embedding
-
-    if query_embedding is None:
-        _logger.warning("No query embedding provided, returning empty result")
-        return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-    # Build search request following notebook pattern
-    search_request = vectorsearch.SearchDataObjectsRequest(
-        parent=parent,
-        vector_search=vectorsearch.VectorSearch(
-            search_field="embedding",  # Default field name
-            vector=vectorsearch.DenseVector(values=query_embedding),
-            top_k=query.similarity_top_k,
-            output_fields=vectorsearch.OutputFields(
-                data_fields=["*"], vector_fields=["*"], metadata_fields=["*"]
-            ),
-        ),
-    )
-
-    # Add filters if provided
-    if query.filters is not None:
-        # TODO: Convert LlamaIndex filters to v2 filter format
-        pass
-
-    try:
-        # Execute search
-        results = search_client.search_data_objects(search_request)
-
-        # Process response and convert to TextNodes
-        top_k_nodes = []
-        top_k_ids = []
-        top_k_scores = []
-
-        for result in results:
-            data_obj = result.data_object
-
-            # Extract embedding vector if available
-            embedding = None
-            if hasattr(data_obj, "vectors") and data_obj.vectors:
-                # Access the embedding field from the vectors map
-                if "embedding" in data_obj.vectors:
-                    vector_data = data_obj.vectors["embedding"]
-                    if hasattr(vector_data, "dense") and vector_data.dense:
-                        if hasattr(vector_data.dense, "values"):
-                            embedding = list(vector_data.dense.values)
-
-            # Convert data to dict if it's a protobuf message
-            metadata = dict(data_obj.data) if data_obj.data else {}
-
-            node = TextNode(
-                text=metadata.get(store.text_key, ""),
-                id_=data_obj.name.split("/")[-1],  # Extract ID from resource name
-                metadata=metadata,
-                embedding=embedding,
-            )
-            top_k_nodes.append(node)
-            top_k_ids.append(data_obj.name.split("/")[-1])
-            top_k_scores.append(result.score if hasattr(result, "score") else 1.0)
-
-        return VectorStoreQueryResult(
-            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+        return _query_v2_default(store, query, clients, parent, **kwargs)
+    elif query.mode == VectorStoreQueryMode.HYBRID:
+        return _query_v2_hybrid(store, query, clients, parent, **kwargs)
+    elif query.mode == VectorStoreQueryMode.TEXT_SEARCH:
+        return _query_v2_text_search(store, query, clients, parent, **kwargs)
+    elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+        return _query_v2_semantic_hybrid(store, query, clients, parent, **kwargs)
+    elif query.mode == VectorStoreQueryMode.SPARSE:
+        return _query_v2_sparse(store, query, clients, parent, **kwargs)
+    else:
+        # Fall back to default for unsupported modes
+        _logger.warning(
+            f"Query mode {query.mode} not explicitly supported, falling back to DEFAULT"
         )
-    except Exception as e:
-        _logger.error(f"Failed to search data objects: {e}")
-        raise
+        return _query_v2_default(store, query, clients, parent, **kwargs)
 
 
 def delete_nodes_v2(
