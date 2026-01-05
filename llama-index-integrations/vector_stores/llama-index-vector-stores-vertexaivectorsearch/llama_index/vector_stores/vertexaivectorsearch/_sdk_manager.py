@@ -52,6 +52,10 @@ class VectorSearchSDKManager:
         else:
             self._credentials = None
 
+        # v2 client is initialized lazily
+        self._v2_client = None
+        self._v2_available = None
+
         self.initialize_aiplatform()
 
     def initialize_aiplatform(self) -> None:
@@ -131,3 +135,57 @@ class VectorSearchSDKManager:
                 location=self._region,
                 credentials=self._credentials,
             )
+
+    def is_v2_available(self) -> bool:
+        """
+        Check if v2 SDK is installed.
+
+        Returns:
+            bool: True if google-cloud-vectorsearch is available
+
+        """
+        if self._v2_available is None:
+            import importlib.util
+
+            self._v2_available = (
+                importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
+            )
+        return self._v2_available
+
+    def get_v2_client(self):
+        """
+        Get v2 clients only when needed - lazy import.
+
+        Returns:
+            dict: Dictionary containing the three v2 clients:
+                - vector_search_service_client: For collection and index operations
+                - data_object_service_client: For CRUD operations on data objects
+                - data_object_search_service_client: For search/query operations
+
+        Raises:
+            ImportError: If google-cloud-vectorsearch is not installed
+
+        """
+        if self._v2_client is None:
+            if not self.is_v2_available():
+                raise ImportError(
+                    "v2 requires 'google-cloud-vectorsearch'. "
+                    "Install with: pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'"
+                )
+
+            # Import only when needed, not at module level
+            from google.cloud import vectorsearch_v1beta
+
+            # Initialize all three clients needed for v2
+            self._v2_client = {
+                "vector_search_service_client": vectorsearch_v1beta.VectorSearchServiceClient(
+                    credentials=self._credentials
+                ),
+                "data_object_service_client": vectorsearch_v1beta.DataObjectServiceClient(
+                    credentials=self._credentials
+                ),
+                "data_object_search_service_client": vectorsearch_v1beta.DataObjectSearchServiceClient(
+                    credentials=self._credentials
+                ),
+            }
+        return self._v2_client
