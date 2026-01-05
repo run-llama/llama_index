@@ -384,9 +384,11 @@ class MistralAI(FunctionCallingLLM):
                         if isinstance(chunk, TextBlock):
                             response_txt_think_show += chunk.text + "\n"
                         if isinstance(chunk, ThinkChunk):
+                            response_txt_think_show += "<think>\n"
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     response_txt_think_show += c.text + "\n"
+                            response_txt_think_show += "</think>\n"
 
             response_txt = (
                 response_txt if not self.show_thinking else response_txt_think_show
@@ -544,9 +546,11 @@ class MistralAI(FunctionCallingLLM):
                         if isinstance(chunk, TextBlock):
                             response_txt_think_show += chunk.text + "\n"
                         if isinstance(chunk, ThinkChunk):
+                            response_txt_think_show += "<think>\n"
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     response_txt_think_show += c.text + "\n"
+                            response_txt_think_show += "</think>\n"
 
             response_txt = (
                 response_txt if not self.show_thinking else response_txt_think_show
