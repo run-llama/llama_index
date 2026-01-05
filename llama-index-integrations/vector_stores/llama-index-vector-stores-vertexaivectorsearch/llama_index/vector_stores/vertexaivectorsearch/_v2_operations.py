@@ -164,6 +164,93 @@ def _convert_filters_to_v2(filters: Optional[MetadataFilters]) -> Optional[dict]
     return {condition: converted}
 
 
+def _merge_results_rrf(
+    store: Any,
+    vector_results: List[Any],
+    text_results: List[Any],
+    alpha: float,
+    top_k: int,
+    k: int = 60,
+) -> VectorStoreQueryResult:
+    """
+    Merge vector and text search results using Reciprocal Rank Fusion.
+
+    RRF formula: score = sum(1 / (k + rank_i)) for each result list
+    With alpha weighting: final_score = alpha * vector_rrf + (1-alpha) * text_rrf
+
+    Args:
+        store: VertexAIVectorStore instance
+        vector_results: Results from vector search
+        text_results: Results from text search
+        alpha: Weight for vector results (0=text only, 1=vector only)
+        top_k: Number of results to return
+        k: RRF constant (default 60)
+
+    Returns:
+        Merged VectorStoreQueryResult
+
+    """
+    # Build score maps: id -> (rrf_score, result_object)
+    vector_scores = {}
+    for rank, result in enumerate(vector_results):
+        node_id = result.data_object.name.split("/")[-1]
+        rrf_score = 1.0 / (k + rank + 1)
+        vector_scores[node_id] = (rrf_score * alpha, result)
+
+    text_scores = {}
+    for rank, result in enumerate(text_results):
+        node_id = result.data_object.name.split("/")[-1]
+        rrf_score = 1.0 / (k + rank + 1)
+        text_scores[node_id] = (rrf_score * (1 - alpha), result)
+
+    # Merge scores
+    all_ids = set(vector_scores.keys()) | set(text_scores.keys())
+    merged_scores = []
+    for node_id in all_ids:
+        v_score, v_result = vector_scores.get(node_id, (0, None))
+        t_score, t_result = text_scores.get(node_id, (0, None))
+        total_score = v_score + t_score
+        result = v_result or t_result
+        merged_scores.append((total_score, node_id, result))
+
+    # Sort by score descending and take top_k
+    merged_scores.sort(key=lambda x: x[0], reverse=True)
+    merged_scores = merged_scores[:top_k]
+
+    # Build result
+    nodes = []
+    ids = []
+    similarities = []
+
+    for score, node_id, result in merged_scores:
+        data_obj = result.data_object
+
+        # Extract embedding
+        embedding = None
+        if hasattr(data_obj, "vectors") and data_obj.vectors:
+            if store.embedding_field in data_obj.vectors:
+                vector_data = data_obj.vectors[store.embedding_field]
+                if hasattr(vector_data, "dense") and vector_data.dense:
+                    if hasattr(vector_data.dense, "values"):
+                        embedding = list(vector_data.dense.values)
+
+        # Extract metadata
+        metadata = dict(data_obj.data) if data_obj.data else {}
+
+        node = TextNode(
+            text=metadata.get(store.text_key, ""),
+            id_=node_id,
+            metadata=metadata,
+            embedding=embedding,
+        )
+
+        nodes.append(node)
+        ids.append(node_id)
+        similarities.append(score)
+
+    return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+
 def _build_ranker(
     store: Any,
     query: VectorStoreQuery,
@@ -730,7 +817,7 @@ def _query_v2_hybrid(
         metadata_fields=["*"],
     )
 
-    # Build searches list
+    # Build vector search request
     vector_search_kwargs = {
         "search_field": store.embedding_field,
         "vector": vectorsearch.DenseVector(values=query.query_embedding),
@@ -740,37 +827,34 @@ def _query_v2_hybrid(
     if v2_filter:
         vector_search_kwargs["filter"] = v2_filter
 
-    searches = [
-        vectorsearch.Search(
-            vector_search=vectorsearch.VectorSearch(**vector_search_kwargs)
-        ),
-        vectorsearch.Search(
+    # Note: BatchSearchDataObjectsRequest.Search only supports vector_search,
+    # not text_search. For true hybrid, we run separate searches and merge.
+    try:
+        # Run vector search
+        vector_request = vectorsearch.SearchDataObjectsRequest(
+            parent=parent,
+            vector_search=vectorsearch.VectorSearch(**vector_search_kwargs),
+        )
+        vector_results = list(search_client.search_data_objects(vector_request))
+
+        # Run text search
+        text_request = vectorsearch.SearchDataObjectsRequest(
+            parent=parent,
             text_search=vectorsearch.TextSearch(
                 search_text=query.query_str,
                 data_field_names=store.text_search_fields,
                 top_k=sparse_top_k,
                 output_fields=output_fields,
-            )
-        ),
-    ]
+            ),
+        )
+        text_results = list(search_client.search_data_objects(text_request))
 
-    # Build ranker
-    ranker = _build_ranker(store, query, num_searches=2)
-
-    # Execute batch search
-    batch_request = vectorsearch.BatchSearchDataObjectsRequest(
-        parent=parent,
-        searches=searches,
-        combine=vectorsearch.BatchSearchDataObjectsRequest.CombineResultsOptions(
-            ranker=ranker,
-            top_k=hybrid_top_k,
-            output_fields=output_fields,
-        ),
-    )
-
-    try:
-        results = search_client.batch_search_data_objects(batch_request)
-        return _process_batch_search_results(store, results, hybrid_top_k)
+        # Merge results using RRF
+        alpha = query.alpha if query.alpha is not None else store.default_hybrid_alpha
+        merged = _merge_results_rrf(
+            store, vector_results, text_results, alpha, hybrid_top_k
+        )
+        return merged
     except Exception as e:
         _logger.error(f"Failed to execute HYBRID search: {e}")
         raise
