@@ -588,11 +588,14 @@ class MediaResource(BaseModel):
         Generate a hash to uniquely identify the media resource.
 
         The hash is generated based on the available content (data, path, text or url).
-        Returns an empty string if no content is available.
+        Returns an empty string if no content is available (all fields are None).
+        Note: An empty string for text (text="") is treated as valid content and
+        will produce a different hash than text=None.
         """
         bits: list[str] = []
         if self.text is not None:
-            bits.append(self.text)
+            # Hash the text to ensure empty string produces a different hash than None
+            bits.append(str(sha256(self.text.encode("utf-8")).hexdigest()))
         if self.data is not None:
             # Hash the binary data if available
             bits.append(str(sha256(self.data).hexdigest()))
@@ -603,9 +606,9 @@ class MediaResource(BaseModel):
             # Use the URL string as basis for hash
             bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
 
-        doc_identity = "".join(bits)
-        if not doc_identity:
+        if not bits:
             return ""
+        doc_identity = "".join(bits)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
