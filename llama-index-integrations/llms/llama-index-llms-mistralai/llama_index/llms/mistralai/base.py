@@ -436,6 +436,7 @@ class MistralAI(FunctionCallingLLM):
         def gen() -> ChatResponseGen:
             content = ""
             blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
+            is_thinking = False
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -454,13 +455,25 @@ class MistralAI(FunctionCallingLLM):
 
                 content_delta = delta.content or ""
                 content_delta_str = ""
+
                 if isinstance(content_delta, str):
-                    content_delta_str = content_delta
+                    content_delta_str = ""
+                    if is_thinking:
+                        is_thinking = False
+                        content_delta_str += "</think>\n"
+                    content_delta_str += content_delta
                 else:
                     for chunk in content_delta:
                         if isinstance(chunk, TextChunk):
+                            if is_thinking:
+                                is_thinking = False
+                                content_delta_str += "</think>\n"
                             content_delta_str += chunk.text + "\n"
                         elif isinstance(chunk, ThinkChunk):
+                            if not is_thinking:
+                                is_thinking = True
+                                content_delta_str += "<think>\n"
+
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     content_delta_str += c.text + "\n"
@@ -595,9 +608,11 @@ class MistralAI(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+            is_thinking = False
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
+
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
                 if delta.tool_calls:
                     for tool_call in delta.tool_calls:
@@ -612,13 +627,24 @@ class MistralAI(FunctionCallingLLM):
 
                 content_delta = delta.content or ""
                 content_delta_str = ""
+
                 if isinstance(content_delta, str):
+                    if is_thinking:
+                        is_thinking = False
+                        content_delta_str += "</think>\n"
                     content_delta_str = content_delta
                 else:
                     for chunk in content_delta:
                         if isinstance(chunk, TextChunk):
+                            if is_thinking:
+                                is_thinking = False
+                                content_delta_str += "</think>\n"
                             content_delta_str += chunk.text + "\n"
                         elif isinstance(chunk, ThinkChunk):
+                            if not is_thinking:
+                                is_thinking = True
+                                content_delta_str += "<think>\n"
+
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     content_delta_str += c.text + "\n"
