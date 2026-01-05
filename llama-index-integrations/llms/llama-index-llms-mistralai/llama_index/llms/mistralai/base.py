@@ -341,9 +341,13 @@ class MistralAI(FunctionCallingLLM):
         else:
             for chunk in response:
                 if isinstance(chunk, ThinkChunk):
+                    content += "<think>\n"
                     for c in chunk.thinking:
                         if isinstance(c, TextChunk):
                             content += c.text + "\n"
+                    content += "</think>\n"
+                elif isinstance(chunk, TextChunk):
+                    content += chunk.text + "\n"
 
         match = THINKING_REGEX.search(content)
         if match:

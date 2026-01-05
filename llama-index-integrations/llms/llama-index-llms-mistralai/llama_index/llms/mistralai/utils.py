@@ -70,7 +70,7 @@ MISTRAL_AI_REASONING_MODELS = (
 
 MISTRALAI_CODE_MODELS = "codestral-latest"
 
-THINKING_REGEX = re.compile(r"^<think>\n(.*?)\n</think>\n")
+THINKING_REGEX = re.compile(r"^<think>\n(.*?)\n</think>\n", flags=re.DOTALL)
 THINKING_START_REGEX = re.compile(r"^<think>\n")
 
 
