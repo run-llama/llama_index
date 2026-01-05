@@ -595,7 +595,7 @@ class MediaResource(BaseModel):
         bits: list[str] = []
         if self.text is not None:
             # Hash the text to ensure empty string produces a different hash than None
-            bits.append(str(sha256(self.text.encode("utf-8")).hexdigest()))
+            bits.append(str(sha256(self.text.encode("utf-8", "surrogatepass")).hexdigest()))
         if self.data is not None:
             # Hash the binary data if available
             bits.append(str(sha256(self.data).hexdigest()))

@@ -361,3 +361,9 @@ def test_media_resource_hash_with_various_content() -> None:
     # Same content should produce same hash
     resource_text2 = MediaResource(text="hello")
     assert resource_text.hash == resource_text2.hash
+
+
+def test_media_resource_hash_allows_surrogate_text() -> None:
+    resource_surrogate = MediaResource(text="\ud800")
+    assert resource_surrogate.hash != ""
+    assert len(resource_surrogate.hash) == 64
