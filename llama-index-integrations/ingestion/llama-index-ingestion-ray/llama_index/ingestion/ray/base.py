@@ -1,3 +1,5 @@
+import logging
+
 import ray
 import asyncio
 from llama_index.core.ingestion import IngestionPipeline, DocstoreStrategy
@@ -26,6 +28,7 @@ from llama_index.core.storage.docstore import (
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
+logger = logging.getLogger(__name__)
 
 
 def run_transformations(
@@ -207,13 +210,13 @@ class RayIngestionPipeline(IngestionPipeline):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
@@ -284,13 +287,13 @@ class RayIngestionPipeline(IngestionPipeline):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )

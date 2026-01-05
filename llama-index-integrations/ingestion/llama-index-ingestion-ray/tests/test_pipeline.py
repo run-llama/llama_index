@@ -1,5 +1,5 @@
 from typing import Sequence, Any
-
+from pathlib import Path
 import pytest
 import ray.exceptions
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
@@ -10,13 +10,6 @@ from llama_index.core.readers import ReaderConfig, StringIterableReader
 from llama_index.core.schema import Document, BaseNode, TransformComponent
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.ingestion.ray import RayIngestionPipeline, RayTransformComponent
-
-
-# clean up folders after tests
-def teardown_function() -> None:
-    import shutil
-
-    shutil.rmtree("./test_pipeline", ignore_errors=True)
 
 
 def test_build_pipeline() -> None:
@@ -78,7 +71,9 @@ def test_run_pipeline_with_ref_doc_id():
     assert nodes[0].ref_doc_id == "1"
 
 
-def test_save_load_pipeline() -> None:
+def test_save_load_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+
     documents = [
         Document(text="one", doc_id="1"),
         Document(text="two", doc_id="2"),

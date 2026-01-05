@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import multiprocessing
 import os
 import re
@@ -38,6 +39,7 @@ from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
+logger = logging.getLogger(__name__)
 
 
 def remove_unstable_values(s: str) -> str:
@@ -510,13 +512,13 @@ class IngestionPipeline(BaseModel):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
@@ -703,13 +705,13 @@ class IngestionPipeline(BaseModel):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
