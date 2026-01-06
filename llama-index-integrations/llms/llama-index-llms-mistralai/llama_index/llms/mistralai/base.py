@@ -49,6 +49,8 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_code_model,
     mistralai_modelname_to_contextsize,
     MISTRAL_AI_REASONING_MODELS,
+    THINKING_START_TAG,
+    THINKING_END_TAG,
     THINKING_REGEX,
     THINKING_START_REGEX,
 )
@@ -341,11 +343,11 @@ class MistralAI(FunctionCallingLLM):
         else:
             for chunk in response:
                 if isinstance(chunk, ThinkChunk):
-                    content += "<think>\n"
+                    content += THINKING_START_TAG + "\n"
                     for c in chunk.thinking:
                         if isinstance(c, TextChunk):
                             content += c.text + "\n"
-                    content += "</think>\n"
+                    content += THINKING_END_TAG + "\n"
                 elif isinstance(chunk, TextChunk):
                     content += chunk.text + "\n"
 
@@ -384,11 +386,11 @@ class MistralAI(FunctionCallingLLM):
                         if isinstance(chunk, TextBlock):
                             response_txt_think_show += chunk.text + "\n"
                         if isinstance(chunk, ThinkChunk):
-                            response_txt_think_show += "<think>\n"
+                            response_txt_think_show += THINKING_START_TAG + "\n"
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     response_txt_think_show += c.text + "\n"
-                            response_txt_think_show += "</think>\n"
+                            response_txt_think_show += THINKING_END_TAG + "\n"
 
             response_txt = (
                 response_txt if not self.show_thinking else response_txt_think_show
@@ -462,19 +464,19 @@ class MistralAI(FunctionCallingLLM):
                     content_delta_str = ""
                     if is_thinking:
                         is_thinking = False
-                        content_delta_str += "</think>\n"
+                        content_delta_str += THINKING_END_TAG + "\n"
                     content_delta_str += content_delta
                 else:
                     for chunk in content_delta:
                         if isinstance(chunk, TextChunk):
                             if is_thinking:
                                 is_thinking = False
-                                content_delta_str += "</think>\n"
+                                content_delta_str += THINKING_END_TAG + "\n"
                             content_delta_str += chunk.text + "\n"
                         elif isinstance(chunk, ThinkChunk):
                             if not is_thinking:
                                 is_thinking = True
-                                content_delta_str += "<think>\n"
+                                content_delta_str += THINKING_START_TAG + "\n"
 
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
@@ -546,11 +548,11 @@ class MistralAI(FunctionCallingLLM):
                         if isinstance(chunk, TextBlock):
                             response_txt_think_show += chunk.text + "\n"
                         if isinstance(chunk, ThinkChunk):
-                            response_txt_think_show += "<think>\n"
+                            response_txt_think_show += THINKING_START_TAG + "\n"
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     response_txt_think_show += c.text + "\n"
-                            response_txt_think_show += "</think>\n"
+                            response_txt_think_show += THINKING_END_TAG + "\n"
 
             response_txt = (
                 response_txt if not self.show_thinking else response_txt_think_show
@@ -635,19 +637,19 @@ class MistralAI(FunctionCallingLLM):
                 if isinstance(content_delta, str):
                     if is_thinking:
                         is_thinking = False
-                        content_delta_str += "</think>\n"
+                        content_delta_str += THINKING_END_TAG + "\n"
                     content_delta_str = content_delta
                 else:
                     for chunk in content_delta:
                         if isinstance(chunk, TextChunk):
                             if is_thinking:
                                 is_thinking = False
-                                content_delta_str += "</think>\n"
+                                content_delta_str += THINKING_END_TAG + "\n"
                             content_delta_str += chunk.text + "\n"
                         elif isinstance(chunk, ThinkChunk):
                             if not is_thinking:
                                 is_thinking = True
-                                content_delta_str += "<think>\n"
+                                content_delta_str += THINKING_START_TAG + "\n"
 
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
