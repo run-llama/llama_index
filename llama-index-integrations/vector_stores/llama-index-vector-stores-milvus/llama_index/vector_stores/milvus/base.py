@@ -425,6 +425,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
+            **add_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
 
         Raises:
             MilvusException: Failed to insert data.
@@ -546,6 +548,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+            **delete_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
 
         Raises:
             MilvusException: Failed to delete the doc.
@@ -609,6 +613,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+            **delete_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
 
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
@@ -626,6 +632,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.client.delete(
             collection_name=self.collection_name,
             filter=filter,
+            partition_names=delete_kwargs.get("milvus_partition_names"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
@@ -652,6 +659,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         await self.aclient.delete(
             collection_name=self.collection_name,
             filter=filter,
+            partition_names=delete_kwargs.get("milvus_partition_names"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
@@ -676,6 +684,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+            **kwargs: Additional keyword arguments.
+                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
 
         Raises:
             ValueError: Neither or both of node_ids and filters are provided.
@@ -782,6 +792,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]]): list of node_ids to filter by
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
+            milvus_partition_names (Optional[List[str]]): specific Milvus partitions.
 
         """
         if query.mode == VectorStoreQueryMode.DEFAULT:
