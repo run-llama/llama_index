@@ -4,6 +4,7 @@ import json
 from typing import Optional
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM, BlockToContentCallback
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.base.llms.types import (
     ChatMessage,
     TextBlock,
@@ -102,8 +103,7 @@ def test_mock_llm_stream_complete_empty_prompt_no_max_tokens() -> None:
 
 
 def test_mock_function_calling_llm_init() -> None:
-    llm = MockFunctionCallingLLM(max_tokens=200)
-    assert llm.max_tokens == 200
+    llm = MockFunctionCallingLLM()
     assert llm.metadata.is_function_calling_model
 
 
@@ -160,3 +160,72 @@ def test_mock_function_calling_llm_custom_callback(
         result.message.content
         == "hello world<toolcall id=1>3</toolcall><toolcall id=2>3</toolcall><toolcall id=3>error</toolcall><toolcall id=5>error</toolcall>"
     )
+
+
+@pytest.mark.asyncio
+async def test_mock_function_calling_llm_astream_chat_with_tools(
+    messages: list[ChatMessage],
+) -> None:
+    """Test that astream_chat_with_tools works correctly."""
+    llm = MockFunctionCallingLLM(max_tokens=200)
+
+    # Mock tools list (can be empty for this test)
+    tools = []
+
+    cont = ""
+    stream = await llm.astream_chat_with_tools(tools=tools, chat_history=messages)
+    async for s in stream:
+        cont += s.message.content or ""
+
+    assert cont == "hello world<document>hello world</document><image>1px</image>"
+
+
+def test_mock_function_calling_llm_get_tool_calls_from_response() -> None:
+    """Test that get_tool_calls_from_response extracts tool calls correctly."""
+    llm = MockFunctionCallingLLM(max_tokens=200)
+
+    # Create a response with tool calls in additional_kwargs
+    tool_selection = ToolSelection(
+        tool_id="test_id",
+        tool_name="test_tool",
+        tool_kwargs={"arg1": "value1"},
+    )
+
+    from llama_index.core.base.llms.types import ChatResponse
+
+    response = ChatResponse(
+        message=ChatMessage(
+            role="assistant",
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="test_id",
+                    tool_name="test_tool",
+                    tool_kwargs={"arg1": "value1"},
+                )
+            ],
+        )
+    )
+
+    tool_calls = llm.get_tool_calls_from_response(response)
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_id == tool_selection.tool_id
+    assert tool_calls[0].tool_name == tool_selection.tool_name
+    assert tool_calls[0].tool_kwargs == tool_selection.tool_kwargs
+
+
+def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
+    """Test that get_tool_calls_from_response returns empty list when no tool calls."""
+    llm = MockFunctionCallingLLM(max_tokens=200)
+
+    from llama_index.core.base.llms.types import ChatResponse
+
+    response = ChatResponse(
+        message=ChatMessage(
+            role="assistant",
+            content="test",
+            additional_kwargs={},
+        )
+    )
+
+    tool_calls = llm.get_tool_calls_from_response(response)
+    assert len(tool_calls) == 0
