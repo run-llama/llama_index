@@ -12,11 +12,11 @@ pip install llama-index-llms-apertis
 
 Apertis supports multiple API formats:
 
-| Endpoint | Format | Description |
-|----------|--------|-------------|
+| Endpoint               | Format                  | Description                             |
+| ---------------------- | ----------------------- | --------------------------------------- |
 | `/v1/chat/completions` | OpenAI Chat Completions | Default format used by this integration |
-| `/v1/responses` | OpenAI Responses | OpenAI Responses format compatible |
-| `/v1/messages` | Anthropic | Anthropic format compatible |
+| `/v1/responses`        | OpenAI Responses        | OpenAI Responses format compatible      |
+| `/v1/messages`         | Anthropic               | Anthropic format compatible             |
 
 ## Setup
 
@@ -96,11 +96,11 @@ for r in resp:
 
 Apertis supports models from multiple providers:
 
-| Provider | Example Models |
-|----------|---------------|
-| OpenAI | `gpt-5.2`, `gpt-5-mini-2025-08-07` |
-| Anthropic | `claude-sonnet-4.5` |
-| Google | `gemini-3-flash-preview` |
+| Provider  | Example Models                     |
+| --------- | ---------------------------------- |
+| OpenAI    | `gpt-5.2`, `gpt-5-mini-2025-08-07` |
+| Anthropic | `claude-sonnet-4.5`                |
+| Google    | `gemini-3-flash-preview`           |
 
 ### Using Different Models
 
@@ -120,14 +120,14 @@ llm = Apertis(
 
 ## Configuration Options
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `api_key` | Your Apertis API key | `APERTIS_API_KEY` env var |
-| `api_base` | API base URL | `https://api.apertis.ai/v1` |
-| `model` | Model to use | `gpt-5.2` |
-| `temperature` | Sampling temperature | `0.1` |
-| `max_tokens` | Maximum tokens to generate | `256` |
-| `max_retries` | Maximum retry attempts | `5` |
+| Parameter     | Description                | Default                     |
+| ------------- | -------------------------- | --------------------------- |
+| `api_key`     | Your Apertis API key       | `APERTIS_API_KEY` env var   |
+| `api_base`    | API base URL               | `https://api.apertis.ai/v1` |
+| `model`       | Model to use               | `gpt-5.2`                   |
+| `temperature` | Sampling temperature       | `0.1`                       |
+| `max_tokens`  | Maximum tokens to generate | `256`                       |
+| `max_retries` | Maximum retry attempts     | `5`                         |
 
 ## Documentation
 
