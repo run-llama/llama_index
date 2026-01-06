@@ -6,15 +6,10 @@ build-backend = "hatchling.build"
 dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
-    "llama-index-embeddings-openai>=0.5.0,<0.6",
-    "llama-index-embeddings-azure_openai>=0.4.0,<0.5",
-    "llama-index-llms-openai>=0.6.0,<0.7",
-    "llama-index-readers-file>=0.5.0,<0.6",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
-    "pytest-asyncio",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -30,16 +25,16 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-mongodb"
-version = "0.9.1"
-description = "llama-index vector_stores mongodb integration"
-authors = [{name = "The MongoDB Python Team"}]
+name = "llama-index-ingestion-ray"
+version = "0.1.0"
+description = "llama-index Ray ingestion pipeline"
+authors = [{name = "Florian Bacho", email = "f.bacho@outlook.fr"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.13.0,<0.15.0",
-    "pymongo>=4.9.0,<5",
+    "llama-index-core>=0.13.0,<0.15",
+    "ray[data]>=2.53.0",
 ]
 
 [tool.codespell]
@@ -57,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.mongodb"
+import_path = "llama_index.ingestion.ray"
 
 [tool.llamahub.class_authors]
-MongoDBAtlasVectorSearch = "llama-index"
+RayIngestionPipeline = "Florian-BACHO"
 
 [tool.mypy]
 disallow_untyped_defs = true
