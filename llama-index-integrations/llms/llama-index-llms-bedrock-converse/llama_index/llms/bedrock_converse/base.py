@@ -1,5 +1,6 @@
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -9,16 +10,21 @@ from typing import (
     Sequence,
     Tuple,
     Union,
-    TYPE_CHECKING,
 )
 
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     ChatResponseAsyncGen,
-    CompletionResponseAsyncGen,
+    ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
@@ -33,26 +39,20 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
+    ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
     force_single_tool_call,
     is_bedrock_function_calling_model,
+    is_reasoning,
     join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
-    is_reasoning,
-    ThinkingDict,
 )
 
 if TYPE_CHECKING:
@@ -364,7 +364,9 @@ class BedrockConverse(FunctionCallingLLM):
         }
 
     def _get_content_and_tool_calls(
-        self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
+        self,
+        response: Optional[Dict[str, Any]] = None,
+        content: Optional[Dict[str, Any]] = None,
     ) -> Tuple[
         List[Union[TextBlock, ThinkingBlock, ToolCallBlock]], List[str], List[str]
     ]:
@@ -681,7 +683,6 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
-                            thinking_delta=None,
                             raw=chunk,
                             additional_kwargs=self._get_response_token_counts(metadata),
                         )
@@ -966,7 +967,6 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
-                            thinking_delta=None,
                             raw=chunk,
                             additional_kwargs=self._get_response_token_counts(metadata),
                         )
