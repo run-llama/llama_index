@@ -49,7 +49,9 @@ class SimpleChatEngine(BaseChatEngine):
         llm = llm or Settings.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         if system_prompt is not None:
             if prefix_messages is not None:
