@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-datasets"
-version = "0.4.1"
+version = "0.1.0"
 description = "llama-index readers HuggingFace Datasets integration"
 authors = [{name = "Florian Bacho", email = "f.bacho@outlook.fr"}]
 requires-python = ">=3.9,<4.0"
