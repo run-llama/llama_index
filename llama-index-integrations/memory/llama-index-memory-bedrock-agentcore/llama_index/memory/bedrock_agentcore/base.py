@@ -436,7 +436,7 @@ class BaseAgentCoreMemory(BaseMemory):
         actor_id: str,
         session_id: str,
         namespace: str,
-        memory_strategy_id: str | None = None,
+        memory_strategy_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Delete all memory (events and memory records) for a given session.
@@ -446,7 +446,7 @@ class BaseAgentCoreMemory(BaseMemory):
             actor_id (str): The actor ID.
             session_id (str): The session ID.
             namespace (str): The namespace for memory records.
-            memory_strategy_id (str | None): The memory strategy ID for memory records. Use if long-term memory strategy is used.
+            memory_strategy_id (Optional[str]): The memory strategy ID for memory records. Use if long-term memory strategy is used.
 
         Returns:
             Dict[str, Any]: A dictionary containing details of deleted events and memory records.
