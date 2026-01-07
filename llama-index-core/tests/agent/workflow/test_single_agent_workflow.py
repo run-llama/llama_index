@@ -234,7 +234,11 @@ async def test_early_stopping_method_generate():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(responses=[tool_call_response] * 10 + [final_response]),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
         early_stopping_method="generate",
     )
 
@@ -262,23 +266,25 @@ async def test_early_stopping_method_force():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(
-            responses=[
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="calling tool",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="random_tool",
-                                tool_kwargs={},
-                            )
-                        ]
-                    },
-                ),
-            ]
-            * 100
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="calling tool",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="random_tool",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                ]
+                * 100
+            )
         ),
         early_stopping_method="force",  # Default, but explicit for clarity
     )
@@ -318,7 +324,11 @@ async def test_early_stopping_method_override_in_run():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(responses=[tool_call_response] * 10 + [final_response]),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
         early_stopping_method="force",
     )
 
