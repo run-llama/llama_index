@@ -497,7 +497,11 @@ async def test_early_stopping_method_generate_multi_agent():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(responses=[tool_call_response] * 10 + [final_response]),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
     )
 
     workflow = AgentWorkflow(
@@ -543,7 +547,11 @@ async def test_early_stopping_method_override_in_run_multi_agent():
         name="agent",
         description="test",
         tools=[random_tool],
-        llm=MockLLM(responses=[tool_call_response] * 10 + [final_response]),
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
     )
 
     # Workflow defaults to "force"
