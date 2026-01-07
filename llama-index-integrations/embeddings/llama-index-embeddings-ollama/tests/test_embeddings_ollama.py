@@ -33,7 +33,7 @@ except Exception:  # pragma: no cover
 )
 def test_ollama_embedding() -> None:  # pragma: no cover
     """Test ollama connection and embedding."""
-    emb = OllamaEmbedding(model_name=test_model)
+    emb = OllamaEmbedding(model_name=test_model, keep_alive="3m")
 
     # To get an embedding for a query:
     query_embedding = emb.get_query_embedding("What is the capital of France?")

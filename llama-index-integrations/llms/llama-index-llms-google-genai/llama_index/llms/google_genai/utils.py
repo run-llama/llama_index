@@ -196,6 +196,9 @@ def chat_from_gemini_response(
                             additional_information=part.model_dump(exclude={"text"}),
                         )
                     )
+                    additional_kwargs["thought_signatures"].append(
+                        part.thought_signature
+                    )
                 else:
                     if len(content_blocks) > 0 and isinstance(
                         content_blocks[-1], TextBlock

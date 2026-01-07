@@ -181,6 +181,30 @@ int main() {
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_java_code_splitter() -> None:
+    """Test case for code splitting using java."""
+    if "CI" in os.environ:
+        return
+
+    code_splitter = CodeSplitter(
+        language="java", chunk_lines=4, chunk_lines_overlap=1, max_chars=50
+    )
+
+    text = """\
+public static void foo() {
+    System.out.println("bar");
+}
+
+public static void baz() {
+    System.out.println("bbq");
+}"""
+
+    chunks = code_splitter.split_text(text)
+    assert chunks[0].startswith("public static void foo()")
+    assert chunks[2].startswith("public static void baz()")
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test__py_custom_parser_code_splitter() -> None:
     """Test case for code splitting using custom parser generated from tree_sitter_language_pack."""
     if "CI" in os.environ:
