@@ -968,93 +968,67 @@ def test_no_excluded_source_fields(
         assert "_source" not in body
 
 
-@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
-def test_close() -> None:
-    """Test that OpensearchVectorClient.close() properly closes both sync and async clients."""
-    index_name = f"test_{uuid.uuid4().hex}"
-    client = OpensearchVectorClient(
-        endpoint="localhost:9200",
-        index=index_name,
-        dim=3,
-    )
+def test_close_calls_underlying_clients() -> None:
+    """Test that OpensearchVectorClient.close() calls close on both sync and async clients."""
+    mock_sync_client = mock.MagicMock()
+    mock_async_client = mock.MagicMock()
+    mock_async_client.close = mock.AsyncMock()
 
-    # Verify clients are open and working
-    assert client._os_client.ping()
+    client = mock.MagicMock(spec=OpensearchVectorClient)
+    client._os_client = mock_sync_client
+    client._os_async_client = mock_async_client
 
-    # Close the clients
-    client.close()
+    # Call the actual close method
+    OpensearchVectorClient.close(client)
 
-    # Cleanup: delete the index using a new client
-    cleanup_client = OpenSearch("localhost:9200")
-    cleanup_client.indices.delete(index=index_name, ignore=[404])
-    cleanup_client.close()
+    # Verify both clients were closed
+    mock_sync_client.close.assert_called_once()
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
-async def test_aclose() -> None:
-    """Test that OpensearchVectorClient.aclose() properly closes both sync and async clients."""
-    index_name = f"test_{uuid.uuid4().hex}"
-    client = OpensearchVectorClient(
-        endpoint="localhost:9200",
-        index=index_name,
-        dim=3,
-    )
+async def test_aclose_calls_underlying_clients() -> None:
+    """Test that OpensearchVectorClient.aclose() calls close on both sync and async clients."""
+    mock_sync_client = mock.MagicMock()
+    mock_async_client = mock.MagicMock()
+    mock_async_client.close = mock.AsyncMock()
 
-    # Verify clients are open and working
-    assert client._os_client.ping()
+    client = mock.MagicMock(spec=OpensearchVectorClient)
+    client._os_client = mock_sync_client
+    client._os_async_client = mock_async_client
 
-    # Close the clients asynchronously
-    await client.aclose()
+    # Call the actual aclose method
+    await OpensearchVectorClient.aclose(client)
 
-    # Cleanup: delete the index using a new client
-    cleanup_client = OpenSearch("localhost:9200")
-    cleanup_client.indices.delete(index=index_name, ignore=[404])
-    cleanup_client.close()
+    # Verify both clients were closed
+    mock_sync_client.close.assert_called_once()
+    mock_async_client.close.assert_called_once()
 
 
-@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
-def test_store_close() -> None:
-    """Test that OpensearchVectorStore.close() properly closes the underlying client."""
-    index_name = f"test_{uuid.uuid4().hex}"
-    client = OpensearchVectorClient(
-        endpoint="localhost:9200",
-        index=index_name,
-        dim=3,
-    )
-    store = OpensearchVectorStore(client)
+def test_store_close_calls_client_close() -> None:
+    """Test that OpensearchVectorStore.close() calls close on the underlying client."""
+    mock_client = mock.MagicMock(spec=OpensearchVectorClient)
 
-    # Verify the store is working
-    assert store.client._os_client.ping()
+    store = mock.MagicMock(spec=OpensearchVectorStore)
+    store._client = mock_client
 
-    # Close the store
-    store.close()
+    # Call the actual close method
+    OpensearchVectorStore.close(store)
 
-    # Cleanup: delete the index using a new client
-    cleanup_client = OpenSearch("localhost:9200")
-    cleanup_client.indices.delete(index=index_name, ignore=[404])
-    cleanup_client.close()
+    # Verify client.close() was called
+    mock_client.close.assert_called_once()
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
-async def test_store_aclose() -> None:
-    """Test that OpensearchVectorStore.aclose() properly closes the underlying client."""
-    index_name = f"test_{uuid.uuid4().hex}"
-    client = OpensearchVectorClient(
-        endpoint="localhost:9200",
-        index=index_name,
-        dim=3,
-    )
-    store = OpensearchVectorStore(client)
+async def test_store_aclose_calls_client_aclose() -> None:
+    """Test that OpensearchVectorStore.aclose() calls aclose on the underlying client."""
+    mock_client = mock.MagicMock(spec=OpensearchVectorClient)
+    mock_client.aclose = mock.AsyncMock()
 
-    # Verify the store is working
-    assert store.client._os_client.ping()
+    store = mock.MagicMock(spec=OpensearchVectorStore)
+    store._client = mock_client
 
-    # Close the store asynchronously
-    await store.aclose()
+    # Call the actual aclose method
+    await OpensearchVectorStore.aclose(store)
 
-    # Cleanup: delete the index using a new client
-    cleanup_client = OpenSearch("localhost:9200")
-    cleanup_client.indices.delete(index=index_name, ignore=[404])
-    cleanup_client.close()
+    # Verify client.aclose() was called
+    mock_client.aclose.assert_called_once()

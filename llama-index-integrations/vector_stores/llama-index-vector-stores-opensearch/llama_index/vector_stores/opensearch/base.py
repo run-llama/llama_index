@@ -1,5 +1,6 @@
 """Elasticsearch/Opensearch vector store."""
 
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
@@ -826,7 +827,14 @@ class OpensearchVectorClient:
     def close(self) -> None:
         """Close the OpenSearch clients and release resources."""
         self._os_client.close()
-        asyncio_run(self._os_async_client.close())
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop: run async close directly
+            asyncio.run(self._os_async_client.close())
+        else:
+            # Running loop: schedule async close
+            loop.create_task(self._os_async_client.close())
 
     async def aclose(self) -> None:
         """Asynchronously close the OpenSearch clients and release resources."""
