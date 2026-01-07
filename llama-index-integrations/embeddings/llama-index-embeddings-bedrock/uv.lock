@@ -1722,7 +1722,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-bedrock"
-version = "0.7.2"
+version = "0.7.3"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
