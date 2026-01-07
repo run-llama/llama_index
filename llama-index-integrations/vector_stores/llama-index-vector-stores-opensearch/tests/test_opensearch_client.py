@@ -974,15 +974,18 @@ def test_close_calls_underlying_clients() -> None:
     mock_async_client = mock.MagicMock()
     mock_async_client.close = mock.AsyncMock()
 
-    client = mock.MagicMock(spec=OpensearchVectorClient)
-    client._os_client = mock_sync_client
-    client._os_async_client = mock_async_client
+    with mock.patch.object(
+        OpensearchVectorClient, "__init__", lambda self, *args, **kwargs: None
+    ):
+        client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+        client._os_client = mock_sync_client
+        client._os_async_client = mock_async_client
 
-    # Call the actual close method
-    OpensearchVectorClient.close(client)
+        # Call the close method
+        client.close()
 
-    # Verify both clients were closed
-    mock_sync_client.close.assert_called_once()
+        # Verify sync client was closed
+        mock_sync_client.close.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -992,27 +995,30 @@ async def test_aclose_calls_underlying_clients() -> None:
     mock_async_client = mock.MagicMock()
     mock_async_client.close = mock.AsyncMock()
 
-    client = mock.MagicMock(spec=OpensearchVectorClient)
-    client._os_client = mock_sync_client
-    client._os_async_client = mock_async_client
+    with mock.patch.object(
+        OpensearchVectorClient, "__init__", lambda self, *args, **kwargs: None
+    ):
+        client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+        client._os_client = mock_sync_client
+        client._os_async_client = mock_async_client
 
-    # Call the actual aclose method
-    await OpensearchVectorClient.aclose(client)
+        # Call the aclose method
+        await client.aclose()
 
-    # Verify both clients were closed
-    mock_sync_client.close.assert_called_once()
-    mock_async_client.close.assert_called_once()
+        # Verify both clients were closed
+        mock_sync_client.close.assert_called_once()
+        mock_async_client.close.assert_called_once()
 
 
 def test_store_close_calls_client_close() -> None:
     """Test that OpensearchVectorStore.close() calls close on the underlying client."""
     mock_client = mock.MagicMock(spec=OpensearchVectorClient)
 
-    store = mock.MagicMock(spec=OpensearchVectorStore)
+    store = OpensearchVectorStore.__new__(OpensearchVectorStore)
     store._client = mock_client
 
-    # Call the actual close method
-    OpensearchVectorStore.close(store)
+    # Call the close method
+    store.close()
 
     # Verify client.close() was called
     mock_client.close.assert_called_once()
@@ -1024,11 +1030,11 @@ async def test_store_aclose_calls_client_aclose() -> None:
     mock_client = mock.MagicMock(spec=OpensearchVectorClient)
     mock_client.aclose = mock.AsyncMock()
 
-    store = mock.MagicMock(spec=OpensearchVectorStore)
+    store = OpensearchVectorStore.__new__(OpensearchVectorStore)
     store._client = mock_client
 
-    # Call the actual aclose method
-    await OpensearchVectorStore.aclose(store)
+    # Call the aclose method
+    await store.aclose()
 
     # Verify client.aclose() was called
     mock_client.aclose.assert_called_once()
