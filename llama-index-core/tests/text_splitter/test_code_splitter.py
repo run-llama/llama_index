@@ -3,6 +3,7 @@
 import os
 import pytest
 from typing import List
+from pydantic import ValidationError
 
 try:
     import tree_sitter_language_pack  # noqa
@@ -260,7 +261,7 @@ def another_function():
     return x"""
 
     chunks = code_splitter.split_text(text)
-    
+
     # Should create multiple chunks due to token limit
     assert len(chunks) > 1
     assert chunks[0].startswith("def foo():")
@@ -283,18 +284,10 @@ def process_data():
     return data"""
 
     # Character-based splitter
-    char_splitter = CodeSplitter(
-        language="python",
-        count_mode="char",
-        max_chars=50
-    )
+    char_splitter = CodeSplitter(language="python", count_mode="char", max_chars=50)
 
     # Token-based splitter
-    token_splitter = CodeSplitter(
-        language="python",
-        count_mode="token",
-        max_tokens=15
-    )
+    token_splitter = CodeSplitter(language="python", count_mode="token", max_tokens=15)
 
     char_chunks = char_splitter.split_text(text)
     token_chunks = token_splitter.split_text(text)
@@ -302,7 +295,7 @@ def process_data():
     # Both should split the text, but potentially differently
     assert len(char_chunks) >= 1
     assert len(token_chunks) >= 1
-    
+
     # Verify chunks are not empty
     assert all(len(chunk.strip()) > 0 for chunk in char_chunks)
     assert all(len(chunk.strip()) > 0 for chunk in token_chunks)
@@ -316,10 +309,7 @@ def test_backwards_compatibility() -> None:
 
     # Test with old parameters (should default to character mode)
     code_splitter = CodeSplitter(
-        language="python",
-        chunk_lines=4,
-        chunk_lines_overlap=1,
-        max_chars=30
+        language="python", chunk_lines=4, chunk_lines_overlap=1, max_chars=30
     )
 
     text = """\
@@ -332,7 +322,7 @@ def baz():
     chunks = code_splitter.split_text(text)
     assert chunks[0].startswith("def foo():")
     assert chunks[1].startswith("def baz():")
-    
+
     # Verify it's using character mode by default
     assert code_splitter.count_mode == "char"
 
@@ -351,7 +341,7 @@ def test_custom_tokenizer() -> None:
         language="python",
         count_mode="token",
         max_tokens=5,  # Very small limit for testing
-        tokenizer=simple_tokenizer
+        tokenizer=simple_tokenizer,
     )
 
     text = """\
@@ -365,15 +355,12 @@ def foo():
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_invalid_count_mode() -> None:
-    """Test that invalid count_mode raises ValueError."""
+    """Test that invalid count_mode raises ValidationError."""
     if "CI" in os.environ:
         return
 
-    with pytest.raises(ValueError, match="count_mode must be either 'char' or 'token'"):
-        CodeSplitter(
-            language="python",
-            count_mode="invalid_mode"
-        )
+    with pytest.raises(ValidationError):
+        CodeSplitter(language="python", count_mode="invalid_mode")
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
@@ -383,9 +370,7 @@ def test_from_defaults_with_token_mode() -> None:
         return
 
     code_splitter = CodeSplitter.from_defaults(
-        language="python",
-        count_mode="token",
-        max_tokens=25
+        language="python", count_mode="token", max_tokens=25
     )
 
     text = """\
@@ -414,14 +399,10 @@ def complex_function():
     return another_variable"""
 
     document = Document(text=text)
-    code_splitter = CodeSplitter(
-        language="python",
-        count_mode="token",
-        max_tokens=20
-    )
+    code_splitter = CodeSplitter(language="python", count_mode="token", max_tokens=20)
 
     nodes = code_splitter.get_nodes_from_documents([document])
-    
+
     assert len(nodes) >= 1
     assert isinstance(nodes[0], TextNode)
     assert "def complex_function():" in nodes[0].text

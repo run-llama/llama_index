@@ -1,6 +1,6 @@
 """Code splitter."""
 
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Literal, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -22,7 +22,7 @@ class CodeSplitter(TextSplitter):
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
     https://docs.sweep.dev/blogs/chunking-2m-files
-    
+
     Supports both character-based and token-based chunking modes for more precise
     control over chunk sizes when working with language models.
     """
@@ -45,7 +45,7 @@ class CodeSplitter(TextSplitter):
         description="Maximum number of characters per chunk.",
         gt=0,
     )
-    count_mode: str = Field(
+    count_mode: Literal["token", "char"] = Field(
         default="char",
         description="Mode for counting chunk size: 'char' for characters, 'token' for tokens.",
     )
@@ -63,7 +63,7 @@ class CodeSplitter(TextSplitter):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
-        count_mode: str = "char",
+        count_mode: Literal["token", "char"] = "char",
         max_tokens: int = DEFAULT_MAX_TOKENS,
         tokenizer: Optional[Callable] = None,
         parser: Any = None,
@@ -72,8 +72,9 @@ class CodeSplitter(TextSplitter):
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable[[int, Document], str]] = None,
     ) -> None:
-        """Initialize a CodeSplitter.
-        
+        """
+        Initialize a CodeSplitter.
+
         Args:
             language: The programming language of the code being split.
             chunk_lines: The number of lines to include in each chunk.
@@ -87,12 +88,9 @@ class CodeSplitter(TextSplitter):
             include_metadata: Whether to include metadata in chunks.
             include_prev_next_rel: Whether to include previous/next relationships.
             id_func: Optional function to generate chunk IDs.
+
         """
         from tree_sitter import Parser  # pants: no-infer-dep
-
-        # Validate count_mode
-        if count_mode not in ["char", "token"]:
-            raise ValueError("count_mode must be either 'char' or 'token'")
 
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
@@ -142,7 +140,7 @@ class CodeSplitter(TextSplitter):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
-        count_mode: str = "char",
+        count_mode: Literal["token", "char"] = "char",
         max_tokens: int = DEFAULT_MAX_TOKENS,
         tokenizer: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -165,24 +163,6 @@ class CodeSplitter(TextSplitter):
     def class_name(cls) -> str:
         return "CodeSplitter"
 
-    def _get_chunk_size(self, text: str) -> int:
-        """Get the size of text according to the current count_mode."""
-        if self.count_mode == "char":
-            return len(text)
-        elif self.count_mode == "token":
-            return len(self._tokenizer(text))
-        else:
-            raise ValueError(f"Unsupported count_mode: {self.count_mode}")
-
-    def _get_max_chunk_size(self) -> int:
-        """Get the maximum chunk size according to the current count_mode."""
-        if self.count_mode == "char":
-            return self.max_chars
-        elif self.count_mode == "token":
-            return self.max_tokens
-        else:
-            raise ValueError(f"Unsupported count_mode: {self.count_mode}")
-
     def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
         Recursively chunk a node into smaller pieces based on character or token limits.
@@ -198,12 +178,16 @@ class CodeSplitter(TextSplitter):
         """
         new_chunks = []
         current_chunk = ""
-        max_size = self._get_max_chunk_size()
-        
+        max_size = self.max_chars if self.count_mode == "char" else self.max_tokens
+
         for child in node.children:
             child_text = text_bytes[child.start_byte : child.end_byte].decode("utf-8")
-            child_size = self._get_chunk_size(child_text)
-            
+            child_size = (
+                len(child_text)
+                if self.count_mode == "char"
+                else len(self._tokenizer(child_text))
+            )
+
             if child_size > max_size:
                 # Child is too big, recursively chunk the child
                 if len(current_chunk) > 0:
@@ -212,18 +196,28 @@ class CodeSplitter(TextSplitter):
                 new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
             else:
                 # Calculate what adding this child would do to current chunk size
-                new_chunk_text = current_chunk + text_bytes[last_end : child.end_byte].decode("utf-8")
-                new_chunk_size = self._get_chunk_size(new_chunk_text)
-                
+                new_chunk_text = current_chunk + text_bytes[
+                    last_end : child.end_byte
+                ].decode("utf-8")
+                new_chunk_size = (
+                    len(new_chunk_text)
+                    if self.count_mode == "char"
+                    else len(self._tokenizer(new_chunk_text))
+                )
+
                 if new_chunk_size > max_size:
                     # Child would make the current chunk too big, so start a new chunk
                     if len(current_chunk) > 0:
                         new_chunks.append(current_chunk)
-                    current_chunk = text_bytes[last_end : child.end_byte].decode("utf-8")
+                    current_chunk = text_bytes[last_end : child.end_byte].decode(
+                        "utf-8"
+                    )
                 else:
-                    current_chunk += text_bytes[last_end : child.end_byte].decode("utf-8")
+                    current_chunk += text_bytes[last_end : child.end_byte].decode(
+                        "utf-8"
+                    )
             last_end = child.end_byte
-            
+
         if len(current_chunk) > 0:
             new_chunks.append(current_chunk)
         return new_chunks
