@@ -10,7 +10,6 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
-    "pytest-asyncio>=0.23.6,<0.24",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,16 +25,16 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-milvus"
-version = "0.9.5"
-description = "llama-index vector_stores milvus integration"
-authors = []
+name = "llama-index-ingestion-ray"
+version = "0.1.0"
+description = "llama-index Ray ingestion pipeline"
+authors = [{name = "Florian Bacho", email = "f.bacho@outlook.fr"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pymilvus>=2.5.10,<3",
     "llama-index-core>=0.13.0,<0.15",
+    "ray[data]>=2.53.0",
 ]
 
 [tool.codespell]
@@ -53,10 +52,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.milvus"
+import_path = "llama_index.ingestion.ray"
 
 [tool.llamahub.class_authors]
-MilvusVectorStore = "llama-index"
+RayIngestionPipeline = "Florian-BACHO"
 
 [tool.mypy]
 disallow_untyped_defs = true

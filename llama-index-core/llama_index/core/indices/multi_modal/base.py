@@ -183,7 +183,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 **kwargs,
             )
 
-        # TODO: handle CONDENSE_PLUS_CONTEXT
+        if chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.core.chat_engine.multi_modal_condense_plus_context import (
+                MultiModalCondensePlusContextChatEngine,
+            )
+
+            return MultiModalCondensePlusContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                multi_modal_llm=llm,
+                **kwargs,
+            )
 
         return super().as_chat_engine(chat_mode, llm, **kwargs)
 

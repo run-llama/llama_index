@@ -57,3 +57,35 @@ def test_get_provider_invalid_format():
     )
     with pytest.raises(ValueError, match="Unexpected number of parts in model_name"):
         embedding._get_provider()
+
+
+@pytest.mark.parametrize(
+    ("model_name", "expected_provider"),
+    [
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1",
+            "amazon",
+        ),
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/us.amazon.titan-embed-text-v1",
+            "amazon",
+        ),
+        (
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.amazon.titan-embed-text-v2:0",
+            "amazon",
+        ),
+        (
+            "arn:aws:bedrock:us-west-2::foundation-model/cohere.embed-english-v3",
+            "cohere",
+        ),
+        ("anthropic.claude-v2", "anthropic"),
+    ],
+)
+def test_get_provider(model_name, expected_provider):
+    """Test _get_provider with various model name formats."""
+    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    embedding = BedrockEmbedding(
+        model_name=model_name,
+        client=bedrock_client,
+    )
+    assert embedding._get_provider() == expected_provider

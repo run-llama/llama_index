@@ -1693,7 +1693,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-milvus"
-version = "0.9.4"
+version = "0.9.5"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

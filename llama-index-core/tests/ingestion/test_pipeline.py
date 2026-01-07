@@ -1,4 +1,5 @@
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Sequence, Any
 
 import pytest
@@ -10,13 +11,6 @@ from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodePa
 from llama_index.core.readers import ReaderConfig, StringIterableReader
 from llama_index.core.schema import Document, TransformComponent, BaseNode
 from llama_index.core.storage.docstore import SimpleDocumentStore
-
-
-# clean up folders after tests
-def teardown_function() -> None:
-    import shutil
-
-    shutil.rmtree("./test_pipeline", ignore_errors=True)
 
 
 def test_build_pipeline() -> None:
@@ -78,7 +72,9 @@ def test_run_pipeline_with_ref_doc_id():
     assert nodes[0].ref_doc_id == "1"
 
 
-def test_save_load_pipeline() -> None:
+def test_save_load_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+
     documents = [
         Document(text="one", doc_id="1"),
         Document(text="two", doc_id="2"),
@@ -121,7 +117,11 @@ def test_save_load_pipeline() -> None:
     assert len(pipeline.docstore.docs) == 2
 
 
-def test_save_load_pipeline_without_docstore() -> None:
+def test_save_load_pipeline_without_docstore(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
     documents = [
         Document(text="one", doc_id="1"),
         Document(text="two", doc_id="2"),

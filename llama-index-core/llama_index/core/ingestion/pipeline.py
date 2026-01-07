@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import multiprocessing
 import os
 import re
@@ -38,6 +39,7 @@ from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
+logger = logging.getLogger(__name__)
 
 
 def remove_unstable_values(s: str) -> str:
@@ -487,6 +489,7 @@ class IngestionPipeline(BaseModel):
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
+            store_doc_text (bool, optional): Whether to store the document texts. Defaults to True.
             num_workers (Optional[int], optional): The number of parallel processes to use.
                 If set to None, then sequential compute is used. Defaults to None.
 
@@ -509,13 +512,13 @@ class IngestionPipeline(BaseModel):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
@@ -675,6 +678,7 @@ class IngestionPipeline(BaseModel):
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
+            store_doc_text (bool, optional): Whether to store the document texts. Defaults to True.
             num_workers (Optional[int], optional): The number of parallel processes to use.
                 If set to None, then sequential compute is used. Defaults to None.
 
@@ -701,13 +705,13 @@ class IngestionPipeline(BaseModel):
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
             if self.docstore_strategy == DocstoreStrategy.UPSERTS:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                print(
+                logger.info(
                     "Docstore strategy set to upserts and delete, but no vector store. "
                     "Switching to duplicates_only strategy."
                 )
