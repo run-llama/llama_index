@@ -85,8 +85,7 @@ def os_store(index_name: str) -> Generator[OpensearchVectorStore, None, None]:
     # delete index
     client._os_client.indices.delete(index=index_name)
     # close client
-    client._os_client.close()
-    client._os_async_client.close()
+    client.close()
 
 
 @pytest.fixture()
@@ -111,8 +110,7 @@ def os_stores() -> Generator[List[OpensearchVectorStore], None, None]:
         # delete index
         client._os_client.indices.delete(index=client._index)
         # close client
-        client._os_client.close()
-        client._os_async_client.close()
+        client.close()
 
 
 @pytest.fixture(scope="session")
@@ -968,3 +966,95 @@ def test_no_excluded_source_fields(
 
         body = patched_search.call_args.kwargs["body"]
         assert "_source" not in body
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_close() -> None:
+    """Test that OpensearchVectorClient.close() properly closes both sync and async clients."""
+    index_name = f"test_{uuid.uuid4().hex}"
+    client = OpensearchVectorClient(
+        endpoint="localhost:9200",
+        index=index_name,
+        dim=3,
+    )
+
+    # Verify clients are open and working
+    assert client._os_client.ping()
+
+    # Close the clients
+    client.close()
+
+    # Cleanup: delete the index using a new client
+    cleanup_client = OpenSearch("localhost:9200")
+    cleanup_client.indices.delete(index=index_name, ignore=[404])
+    cleanup_client.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+async def test_aclose() -> None:
+    """Test that OpensearchVectorClient.aclose() properly closes both sync and async clients."""
+    index_name = f"test_{uuid.uuid4().hex}"
+    client = OpensearchVectorClient(
+        endpoint="localhost:9200",
+        index=index_name,
+        dim=3,
+    )
+
+    # Verify clients are open and working
+    assert client._os_client.ping()
+
+    # Close the clients asynchronously
+    await client.aclose()
+
+    # Cleanup: delete the index using a new client
+    cleanup_client = OpenSearch("localhost:9200")
+    cleanup_client.indices.delete(index=index_name, ignore=[404])
+    cleanup_client.close()
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_store_close() -> None:
+    """Test that OpensearchVectorStore.close() properly closes the underlying client."""
+    index_name = f"test_{uuid.uuid4().hex}"
+    client = OpensearchVectorClient(
+        endpoint="localhost:9200",
+        index=index_name,
+        dim=3,
+    )
+    store = OpensearchVectorStore(client)
+
+    # Verify the store is working
+    assert store.client._os_client.ping()
+
+    # Close the store
+    store.close()
+
+    # Cleanup: delete the index using a new client
+    cleanup_client = OpenSearch("localhost:9200")
+    cleanup_client.indices.delete(index=index_name, ignore=[404])
+    cleanup_client.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+async def test_store_aclose() -> None:
+    """Test that OpensearchVectorStore.aclose() properly closes the underlying client."""
+    index_name = f"test_{uuid.uuid4().hex}"
+    client = OpensearchVectorClient(
+        endpoint="localhost:9200",
+        index=index_name,
+        dim=3,
+    )
+    store = OpensearchVectorStore(client)
+
+    # Verify the store is working
+    assert store.client._os_client.ping()
+
+    # Close the store asynchronously
+    await store.aclose()
+
+    # Cleanup: delete the index using a new client
+    cleanup_client = OpenSearch("localhost:9200")
+    cleanup_client.indices.delete(index=index_name, ignore=[404])
+    cleanup_client.close()

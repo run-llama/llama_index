@@ -823,6 +823,16 @@ class OpensearchVectorClient:
             index=self._index, body=query, refresh=True
         )
 
+    def close(self) -> None:
+        """Close the OpenSearch clients and release resources."""
+        self._os_client.close()
+        asyncio_run(self._os_async_client.close())
+
+    async def aclose(self) -> None:
+        """Asynchronously close the OpenSearch clients and release resources."""
+        self._os_client.close()
+        await self._os_async_client.close()
+
     def query(
         self,
         query_mode: VectorStoreQueryMode,
@@ -1101,6 +1111,14 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     async def aclear(self) -> None:
         """Async clears index."""
         await self._client.aclear()
+
+    def close(self) -> None:
+        """Close the vector store and release resources."""
+        self._client.close()
+
+    async def aclose(self) -> None:
+        """Asynchronously close the vector store and release resources."""
+        await self._client.aclose()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
