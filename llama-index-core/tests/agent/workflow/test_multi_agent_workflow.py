@@ -469,6 +469,111 @@ async def test_max_iterations():
 
 
 @pytest.mark.asyncio
+async def test_early_stopping_method_generate_multi_agent():
+    """Test early_stopping_method='generate' in AgentWorkflow produces a final response."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="one",
+                    tool_name="random_tool",
+                    tool_kwargs={},
+                )
+            ]
+        },
+    )
+    final_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="Here is my final summary based on the information gathered.",
+    )
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        early_stopping_method="generate",
+    )
+
+    # With early_stopping_method="generate", should NOT raise error
+    handler = workflow.run(user_msg="test", max_iterations=5)
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert response is not None
+
+
+@pytest.mark.asyncio
+async def test_early_stopping_method_override_in_run_multi_agent():
+    """Test early_stopping_method can be overridden in run() for AgentWorkflow."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="one",
+                    tool_name="random_tool",
+                    tool_kwargs={},
+                )
+            ]
+        },
+    )
+    final_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="Final response after early stopping.",
+    )
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
+    )
+
+    # Workflow defaults to "force"
+    workflow = AgentWorkflow(
+        agents=[agent],
+        early_stopping_method="force",
+    )
+
+    # Override to "generate" in run()
+    handler = workflow.run(
+        user_msg="test",
+        max_iterations=5,
+        early_stopping_method="generate",
+    )
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert response is not None
+
+
+@pytest.mark.asyncio
 async def test_workflow_pickle_serialize_and_resume():
     """Pause workflow, pickle-serialize context, and resume from serialized context."""
 

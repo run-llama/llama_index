@@ -26,7 +26,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
-from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.core.memory import BaseMemory, Memory
 
 # from llama_index.core.query_engine.multi_modal import _get_image_and_text_nodes
 from llama_index.core.llms.llm import (
@@ -120,7 +120,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         multi_modal_llm = multi_modal_llm or Settings.llm
 
         chat_history = chat_history or []
-        memory = memory or ChatMemoryBuffer.from_defaults(
+        memory = memory or Memory.from_defaults(
             chat_history=chat_history,
             token_limit=multi_modal_llm.metadata.context_window - 256,
         )

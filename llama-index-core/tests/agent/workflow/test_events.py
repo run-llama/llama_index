@@ -84,11 +84,14 @@ def test_agent_workflow_start_event_to_dict():
 
     # Memory is not included in the dump
     dump = event.model_dump()
-    assert len(dump) == 3
+    assert (
+        len(dump) == 4
+    )  # user_msg, chat_history, max_iterations, early_stopping_method
     assert dump["user_msg"] == "Hello, world!"
     assert dump["chat_history"][0]["role"] == "user"
     assert dump["chat_history"][0]["blocks"][0]["text"] == "Hello, world!"
     assert dump["max_iterations"] == 10
+    assert dump["early_stopping_method"] is None  # Not set, so None
 
 
 def test_agent_output_with_structured_response(example_agent_output: dict) -> None:

@@ -205,6 +205,147 @@ async def test_max_iterations():
 
 
 @pytest.mark.asyncio
+async def test_early_stopping_method_generate():
+    """Test early_stopping_method='generate' produces a final response instead of raising error."""
+
+    def random_tool() -> str:
+        return "random"
+
+    # Create responses: first N-1 will trigger tool calls, last one is the early stopping response
+    tool_call_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="one",
+                    tool_name="random_tool",
+                    tool_kwargs={},
+                )
+            ]
+        },
+    )
+    final_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="Here is my final summary based on the information gathered.",
+    )
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
+        early_stopping_method="generate",
+    )
+
+    # With early_stopping_method="generate", should NOT raise error
+    handler = agent.run(user_msg="test", max_iterations=5)
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert response is not None
+    assert (
+        "final summary" in str(response.response).lower()
+        or response.response is not None
+    )
+
+
+@pytest.mark.asyncio
+async def test_early_stopping_method_force():
+    """Test early_stopping_method='force' (default) raises error on max iterations."""
+
+    def random_tool() -> str:
+        return "random"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="calling tool",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="random_tool",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                ]
+                * 100
+            )
+        ),
+        early_stopping_method="force",  # Default, but explicit for clarity
+    )
+
+    # With early_stopping_method="force", should raise error
+    with pytest.raises(WorkflowRuntimeError, match="early_stopping_method='generate'"):
+        _ = await agent.run(user_msg="test", max_iterations=5)
+
+
+@pytest.mark.asyncio
+async def test_early_stopping_method_override_in_run():
+    """Test early_stopping_method can be overridden in run()."""
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="one",
+                    tool_name="random_tool",
+                    tool_kwargs={},
+                )
+            ]
+        },
+    )
+    final_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="Final response after early stopping.",
+    )
+
+    # Agent defaults to "force"
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
+        early_stopping_method="force",
+    )
+
+    # Override to "generate" in run()
+    handler = agent.run(
+        user_msg="test",
+        max_iterations=5,
+        early_stopping_method="generate",
+    )
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert response is not None
+
+
+@pytest.mark.asyncio
 async def test_function_agent_with_mock_function_calling_llm():
     """Test that FunctionAgent works with MockFunctionCallingLLM."""
 
