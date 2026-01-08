@@ -10,6 +10,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -34,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "requests>=2.31.0",
+    "httpx>=0.24.0",
 ]
 
 [tool.codespell]
@@ -62,3 +63,5 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

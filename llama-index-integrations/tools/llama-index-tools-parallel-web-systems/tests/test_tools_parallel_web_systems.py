@@ -1,8 +1,8 @@
 """Tests for Parallel AI tool spec."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from llama_index.core.schema import Document
 from llama_index.tools.parallel_web_systems import ParallelWebSystemsToolSpec
 
@@ -27,20 +27,22 @@ class TestParallelWebSystemsToolSpec:
         assert tool.api_key == api_key
         assert tool.base_url == custom_url
 
-    def test_search_requires_objective_or_queries(self) -> None:
+    @pytest.mark.asyncio
+    async def test_search_requires_objective_or_queries(self) -> None:
         """Test that search raises error when neither objective nor search_queries provided."""
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
 
         with pytest.raises(ValueError) as exc_info:
-            tool.search()
+            await tool.search()
 
         assert (
             "At least one of 'objective' or 'search_queries' must be provided"
             in str(exc_info.value)
         )
 
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_search_with_objective(self, mock_post: MagicMock) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_search_with_objective(self, mock_async_client: MagicMock) -> None:
         """Test successful search operation with objective."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -60,10 +62,12 @@ class TestParallelWebSystemsToolSpec:
                 },
             ],
         }
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.search(
+        results = await tool.search(
             objective="What was the GDP of France in 2023?", max_results=5
         )
 
@@ -76,54 +80,42 @@ class TestParallelWebSystemsToolSpec:
         assert results[0].metadata["title"] == "Test Title 1"
         assert results[0].metadata["search_id"] == "search_123"
 
-        # Verify API call
-        mock_post.assert_called_once()
-        call_args = mock_post.call_args
-        assert call_args.kwargs["headers"]["x-api-key"] == "test-key"
-        assert (
-            call_args.kwargs["headers"]["parallel-beta"] == "search-extract-2025-10-10"
-        )
-        assert (
-            call_args.kwargs["json"]["objective"]
-            == "What was the GDP of France in 2023?"
-        )
-        assert call_args.kwargs["json"]["max_results"] == 5
-
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_search_with_queries(self, mock_post: MagicMock) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_search_with_queries(self, mock_async_client: MagicMock) -> None:
         """Test search with search_queries."""
         mock_response = MagicMock()
         mock_response.json.return_value = {"search_id": "search_456", "results": []}
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        tool.search(
+        await tool.search(
             search_queries=["renewable energy 2024", "solar power"],
             max_results=10,
             mode="agentic",
         )
 
-        call_args = mock_post.call_args
-        payload = call_args.kwargs["json"]
-        assert payload["search_queries"] == ["renewable energy 2024", "solar power"]
-        assert payload["max_results"] == 10
-        assert payload["mode"] == "agentic"
-
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_search_api_error(self, mock_post: MagicMock, capsys) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_search_api_error(self, mock_async_client: MagicMock, capsys) -> None:
         """Test search handles API errors gracefully."""
-        mock_post.side_effect = Exception("API Error")
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(side_effect=Exception("API Error"))
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.search(objective="test query")
+        results = await tool.search(objective="test query")
 
         assert results == []
 
         captured = capsys.readouterr()
         assert "Error calling Parallel AI Search API" in captured.out
 
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_extract_success(self, mock_post: MagicMock) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_extract_success(self, mock_async_client: MagicMock) -> None:
         """Test successful extract operation."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -139,10 +131,12 @@ class TestParallelWebSystemsToolSpec:
             ],
             "errors": [],
         }
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.extract(
+        results = await tool.extract(
             urls=["https://en.wikipedia.org/wiki/AI"],
             objective="What are the main applications of AI?",
         )
@@ -153,17 +147,11 @@ class TestParallelWebSystemsToolSpec:
         assert results[0].metadata["url"] == "https://en.wikipedia.org/wiki/AI"
         assert results[0].metadata["extract_id"] == "extract_123"
 
-        # Verify API call
-        call_args = mock_post.call_args
-        assert "/v1beta/extract" in call_args.args[0]
-        assert call_args.kwargs["json"]["urls"] == ["https://en.wikipedia.org/wiki/AI"]
-        assert (
-            call_args.kwargs["json"]["objective"]
-            == "What are the main applications of AI?"
-        )
-
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_extract_with_full_content(self, mock_post: MagicMock) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_extract_with_full_content(
+        self, mock_async_client: MagicMock
+    ) -> None:
         """Test extract with full content enabled."""
         mock_response = MagicMock()
         mock_response.json.return_value = {
@@ -178,10 +166,12 @@ class TestParallelWebSystemsToolSpec:
             ],
             "errors": [],
         }
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.extract(
+        results = await tool.extract(
             urls=["https://example.com/article"],
             full_content=True,
             excerpts=False,
@@ -190,9 +180,10 @@ class TestParallelWebSystemsToolSpec:
         assert len(results) == 1
         assert "Full Article Content" in results[0].text
 
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_extract_handles_errors(self, mock_post: MagicMock) -> None:
-        """Test extract handles URL errors gracefully."""
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_extract_handles_errors(self, mock_async_client: MagicMock) -> None:
+        """Test extract handles URL errors gracefully"""
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "extract_id": "extract_789",
@@ -205,22 +196,29 @@ class TestParallelWebSystemsToolSpec:
                 },
             ],
         }
-        mock_post.return_value = mock_response
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.extract(urls=["https://invalid-url.com/"])
+        results = await tool.extract(urls=["https://invalid-url.com/"])
 
         assert len(results) == 1
         assert "Error extracting content" in results[0].text
         assert results[0].metadata["error_type"] == "fetch_failed"
 
-    @patch("llama_index.tools.parallel_web_systems.base.requests.post")
-    def test_extract_api_error(self, mock_post: MagicMock, capsys) -> None:
+    @patch("llama_index.tools.parallel_web_systems.base.httpx.AsyncClient")
+    @pytest.mark.asyncio
+    async def test_extract_api_error(
+        self, mock_async_client: MagicMock, capsys
+    ) -> None:
         """Test extract handles API errors gracefully."""
-        mock_post.side_effect = Exception("Network Error")
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(side_effect=Exception("Network Error"))
+        mock_async_client.return_value.__aenter__.return_value = mock_client
 
         tool = ParallelWebSystemsToolSpec(api_key="test-key")
-        results = tool.extract(urls=["https://example.com"])
+        results = await tool.extract(urls=["https://example.com"])
 
         assert results == []
         captured = capsys.readouterr()

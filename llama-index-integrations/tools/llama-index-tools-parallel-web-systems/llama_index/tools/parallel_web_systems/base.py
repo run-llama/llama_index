@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Union
 
-import requests
+import httpx
 
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -39,7 +39,7 @@ class ParallelWebSystemsToolSpec(BaseToolSpec):
         self.api_key = api_key
         self.base_url = base_url or "https://api.parallel.ai"
 
-    def search(
+    async def search(
         self,
         objective: Optional[str] = None,
         search_queries: Optional[List[str]] = None,
@@ -108,14 +108,15 @@ class ParallelWebSystemsToolSpec(BaseToolSpec):
             payload["fetch_policy"] = fetch_policy
 
         try:
-            response = requests.post(
-                f"{self.base_url}/v1beta/search",
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            response.raise_for_status()
-            data = response.json()
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.base_url}/v1beta/search",
+                    headers=headers,
+                    json=payload,
+                    timeout=60,
+                )
+                response.raise_for_status()
+                data = response.json()
 
             documents = []
             for result in data.get("results", []):
@@ -140,7 +141,7 @@ class ParallelWebSystemsToolSpec(BaseToolSpec):
             print(f"Error calling Parallel AI Search API: {e}")
             return []
 
-    def extract(
+    async def extract(
         self,
         urls: List[str],
         objective: Optional[str] = None,
@@ -194,14 +195,15 @@ class ParallelWebSystemsToolSpec(BaseToolSpec):
             payload["fetch_policy"] = fetch_policy
 
         try:
-            response = requests.post(
-                f"{self.base_url}/v1beta/extract",
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            response.raise_for_status()
-            data = response.json()
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{self.base_url}/v1beta/extract",
+                    headers=headers,
+                    json=payload,
+                    timeout=60,
+                )
+                response.raise_for_status()
+                data = response.json()
 
             documents = []
             for result in data.get("results", []):
