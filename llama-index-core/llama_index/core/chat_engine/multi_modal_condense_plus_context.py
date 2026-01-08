@@ -1,6 +1,15 @@
 import logging
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
+from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.callbacks import trace_method
+from llama_index.core.chat_engine.types import (
+    AgentChatResponse,
+    BaseChatEngine,
+    StreamingAgentChatResponse,
+    ToolOutput,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -9,78 +18,37 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.base.response.schema import (
-    AsyncStreamingResponse,
     StreamingResponse,
+    AsyncStreamingResponse,
 )
-from llama_index.core.callbacks import CallbackManager, trace_method
-from llama_index.core.chat_engine.types import (
-    AgentChatResponse,
-    BaseChatEngine,
-    StreamingAgentChatResponse,
-    ToolOutput,
-)
-from llama_index.core.indices.base_retriever import BaseRetriever
-from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
-from llama_index.core.llms.llm import LLM
-from llama_index.core.memory import BaseMemory, Memory
+from llama_index.core.indices.query.schema import QueryBundle
+from llama_index.core.llms import LLM, TextBlock, ChatMessage, ImageBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import NodeWithScore
-from llama_index.core.settings import Settings
-from llama_index.core.utilities.token_counting import TokenCounter
-from llama_index.core.chat_engine.utils import (
-    get_prefix_messages_with_context,
-    get_response_synthesizer,
+from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
+from llama_index.core.memory import BaseMemory, Memory
+
+from llama_index.core.chat_engine.multi_modal_context import _get_image_and_text_nodes
+from llama_index.core.llms.llm import (
+    astream_chat_response_to_tokens,
+    stream_chat_response_to_tokens,
 )
+from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.core.chat_engine.condense_plus_context import (
+    DEFAULT_CONDENSE_PROMPT_TEMPLATE,
+)
+from llama_index.core.settings import Settings
+from llama_index.core.base.base_retriever import BaseRetriever
+
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CONTEXT_PROMPT_TEMPLATE = """
-  The following is a friendly conversation between a user and an AI assistant.
-  The assistant is talkative and provides lots of specific details from its context.
-  If the assistant does not know the answer to a question, it truthfully says it
-  does not know.
 
-  Here are the relevant documents for the context:
-
-  {context_str}
-
-  Instruction: Based on the above documents, provide a detailed answer for the user question below.
-  Answer "don't know" if not present in the document.
-  """
-
-DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE = """
-  The following is a friendly conversation between a user and an AI assistant.
-  The assistant is talkative and provides lots of specific details from its context.
-  If the assistant does not know the answer to a question, it truthfully says it
-  does not know.
-
-  Here are the relevant documents for the context:
-
-  {context_msg}
-
-  Existing Answer:
-  {existing_answer}
-
-  Instruction: Refine the existing answer using the provided context to assist the user.
-  If the context isn't helpful, just repeat the existing answer and nothing more.
-  """
-
-DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
-  Given the following conversation between a user and an AI assistant and a follow up question from user,
-  rephrase the follow up question to be a standalone question.
-
-  Chat History:
-  {chat_history}
-  Follow Up Input: {question}
-  Standalone question:"""
-
-
-class CondensePlusContextChatEngine(BaseChatEngine):
+class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
     """
-    Condensed Conversation & Context Chat Engine.
+    Multi-Modal Condensed Conversation & Context Chat Engine.
 
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
@@ -90,10 +58,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        llm: LLM,
+        multi_modal_llm: LLM,
         memory: BaseMemory,
         context_prompt: Optional[Union[str, PromptTemplate]] = None,
-        context_refine_prompt: Optional[Union[str, PromptTemplate]] = None,
         condense_prompt: Optional[Union[str, PromptTemplate]] = None,
         system_prompt: Optional[str] = None,
         skip_condense: bool = False,
@@ -102,20 +69,13 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         verbose: bool = False,
     ):
         self._retriever = retriever
-        self._llm = llm
+        self._multi_modal_llm = multi_modal_llm
         self._memory = memory
 
-        context_prompt = context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
+        context_prompt = context_prompt or DEFAULT_TEXT_QA_PROMPT
         if isinstance(context_prompt, str):
             context_prompt = PromptTemplate(context_prompt)
         self._context_prompt_template = context_prompt
-
-        context_refine_prompt = (
-            context_refine_prompt or DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE
-        )
-        if isinstance(context_refine_prompt, str):
-            context_refine_prompt = PromptTemplate(context_refine_prompt)
-        self._context_refine_prompt_template = context_refine_prompt
 
         condense_prompt = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
         if isinstance(condense_prompt, str):
@@ -129,39 +89,37 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = self.callback_manager
 
-        self._token_counter = TokenCounter()
         self._verbose = verbose
 
     @classmethod
     def from_defaults(
         cls,
         retriever: BaseRetriever,
-        llm: Optional[LLM] = None,
+        multi_modal_llm: Optional[LLM] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         system_prompt: Optional[str] = None,
         context_prompt: Optional[Union[str, PromptTemplate]] = None,
-        context_refine_prompt: Optional[Union[str, PromptTemplate]] = None,
         condense_prompt: Optional[Union[str, PromptTemplate]] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "CondensePlusContextChatEngine":
-        """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm = llm or Settings.llm
+    ) -> "MultiModalCondensePlusContextChatEngine":
+        """Initialize a MultiModalCondensePlusContextChatEngine from default parameters."""
+        multi_modal_llm = multi_modal_llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or Memory.from_defaults(
-            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+            chat_history=chat_history,
+            token_limit=multi_modal_llm.metadata.context_window - 256,
         )
 
         return cls(
             retriever=retriever,
-            llm=llm,
+            multi_modal_llm=multi_modal_llm,
             memory=memory,
             context_prompt=context_prompt,
-            context_refine_prompt=context_refine_prompt,
             condense_prompt=condense_prompt,
             skip_condense=skip_condense,
             callback_manager=Settings.callback_manager,
@@ -184,7 +142,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history=chat_history_str, question=latest_message
         )
 
-        return str(self._llm.complete(llm_input))
+        return str(self._multi_modal_llm.complete(llm_input))
 
     async def _acondense_question(
         self, chat_history: List[ChatMessage], latest_message: str
@@ -200,7 +158,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history=chat_history_str, question=latest_message
         )
 
-        return str(await self._llm.acomplete(llm_input))
+        return str(await self._multi_modal_llm.acomplete(llm_input))
 
     def _get_nodes(self, message: str) -> List[NodeWithScore]:
         """Generate context information from a message."""
@@ -222,41 +180,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         return nodes
 
-    def _get_response_synthesizer(
-        self, chat_history: List[ChatMessage], streaming: bool = False
-    ) -> CompactAndRefine:
-        system_prompt = self._system_prompt or ""
-        qa_messages = get_prefix_messages_with_context(
-            self._context_prompt_template,
-            system_prompt,
-            [],
-            chat_history,
-            self._llm.metadata.system_role,
-        )
-        refine_messages = get_prefix_messages_with_context(
-            self._context_refine_prompt_template,
-            system_prompt,
-            [],
-            chat_history,
-            self._llm.metadata.system_role,
-        )
-
-        return get_response_synthesizer(
-            self._llm,
-            self.callback_manager,
-            qa_messages,
-            refine_messages,
-            streaming,
-            qa_function_mappings=self._context_prompt_template.function_mappings,
-            refine_function_mappings=self._context_refine_prompt_template.function_mappings,
-        )
-
-    def _run_c3(
+    def _run_c2(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -277,19 +205,13 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             raw_output=context_nodes,
         )
 
-        # build the response synthesizer
-        response_synthesizer = self._get_response_synthesizer(
-            chat_history, streaming=streaming
-        )
+        return context_source, context_nodes
 
-        return response_synthesizer, context_source, context_nodes
-
-    async def _arun_c3(
+    async def _arun_c2(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
             await self._memory.aset(chat_history)
 
@@ -310,27 +232,138 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             raw_output=context_nodes,
         )
 
-        # build the response synthesizer
-        response_synthesizer = self._get_response_synthesizer(
-            chat_history, streaming=streaming
+        return context_source, context_nodes
+
+    def synthesize(
+        self,
+        query_str: str,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        streaming: bool = False,
+    ) -> RESPONSE_TYPE:
+        image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
+        fmt_prompt = self._context_prompt_template.format(
+            context_str=context_str, query_str=query_str
         )
 
-        return response_synthesizer, context_source, context_nodes
+        blocks: List[Union[ImageBlock, TextBlock]] = [
+            image_node_to_image_block(image_node.node)
+            for image_node in image_nodes
+            if isinstance(image_node.node, ImageNode)
+        ]
+
+        blocks.append(TextBlock(text=fmt_prompt))
+
+        chat_history = self._memory.get(
+            input=query_str,
+        )
+
+        if streaming:
+            llm_stream = self._multi_modal_llm.stream_chat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            stream_tokens = stream_chat_response_to_tokens(llm_stream)
+            return StreamingResponse(
+                response_gen=stream_tokens,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
+        else:
+            llm_response = self._multi_modal_llm.chat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            output = llm_response.message.content or ""
+            return Response(
+                response=output,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
+
+    async def asynthesize(
+        self,
+        query_str: str,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        streaming: bool = False,
+    ) -> RESPONSE_TYPE:
+        image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
+        fmt_prompt = self._context_prompt_template.format(
+            context_str=context_str, query_str=query_str
+        )
+
+        blocks: List[Union[ImageBlock, TextBlock]] = [
+            image_node_to_image_block(image_node.node)
+            for image_node in image_nodes
+            if isinstance(image_node.node, ImageNode)
+        ]
+
+        blocks.append(TextBlock(text=fmt_prompt))
+
+        chat_history = await self._memory.aget(
+            input=query_str,
+        )
+
+        if streaming:
+            llm_stream = await self._multi_modal_llm.astream_chat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            stream_tokens = await astream_chat_response_to_tokens(llm_stream)
+            return AsyncStreamingResponse(
+                response_gen=stream_tokens,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
+        else:
+            llm_response = await self._multi_modal_llm.achat(
+                [
+                    ChatMessage(role="system", content=self._system_prompt),
+                    *chat_history,
+                    ChatMessage(role="user", blocks=blocks),
+                ]
+            )
+            output = llm_response.message.content or ""
+            return Response(
+                response=output,
+                source_nodes=nodes,
+                metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
+            )
 
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
+        context_source, context_nodes = self._run_c2(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self.synthesize(message, nodes=context_nodes, streaming=False)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         assistant_message = ChatMessage(
             content=str(response), role=MessageRole.ASSISTANT
         )
         self._memory.put(user_message)
         self._memory.put(assistant_message)
+
+        assert context_source.tool_name == "retriever"
+        # re-package raw_outputs here to provide image nodes and text nodes separately
+        context_source.raw_output = response.metadata
 
         return AgentChatResponse(
             response=str(response),
@@ -342,11 +375,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(
-            message, chat_history, streaming=True
-        )
+        context_source, context_nodes = self._run_c2(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self.synthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
@@ -360,12 +391,16 @@ class CondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
             self._memory.put(user_message)
             self._memory.put(assistant_message)
+
+        assert context_source.tool_name == "retriever"
+        # re-package raw_outputs here to provide image nodes and text nodes separately
+        context_source.raw_output = response.metadata
 
         return StreamingAgentChatResponse(
             chat_stream=wrapped_gen(response),
@@ -378,18 +413,20 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
-            message, chat_history
-        )
+        context_source, context_nodes = await self._arun_c2(message, chat_history)
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self.asynthesize(message, nodes=context_nodes, streaming=False)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         assistant_message = ChatMessage(
             content=str(response), role=MessageRole.ASSISTANT
         )
         await self._memory.aput(user_message)
         await self._memory.aput(assistant_message)
+
+        assert context_source.tool_name == "retriever"
+        # re-package raw_outputs here to provide image nodes and text nodes separately
+        context_source.raw_output = response.metadata
 
         return AgentChatResponse(
             response=str(response),
@@ -401,11 +438,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
-            message, chat_history, streaming=True
-        )
+        context_source, context_nodes = await self._arun_c2(message, chat_history)
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self.asynthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
@@ -425,6 +460,10 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             )
             await self._memory.aput(user_message)
             await self._memory.aput(assistant_message)
+
+        assert context_source.tool_name == "retriever"
+        # re-package raw_outputs here to provide image nodes and text nodes separately
+        context_source.raw_output = response.metadata
 
         return StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),
