@@ -17,6 +17,12 @@ def mock_client():
     client.create_event.return_value = {"event": {"eventId": "test-event-id"}}
     client.list_events.return_value = {"events": [], "nextToken": None}
     client.retrieve_memory_records.return_value = {"memoryRecordSummaries": []}
+
+    client.delete_event.return_value = {}
+    client.list_memory_records.return_value = {
+        "memoryRecordSummaries": [],
+        "nextToken": None,
+    }
     return client
 
 
@@ -43,7 +49,9 @@ class TestAgentCoreMemoryContext:
     def test_context_creation(self):
         """Test creating a memory context."""
         context = AgentCoreMemoryContext(
-            actor_id="test-actor", memory_id="test-memory", session_id="test-session"
+            actor_id="test-actor",
+            memory_id="test-memory",
+            session_id="test-session",
         )
         assert context.actor_id == "test-actor"
         assert context.memory_id == "test-memory"
@@ -149,7 +157,12 @@ class TestBaseAgentCoreMemoryMethods:
             {
                 "payload": [
                     {"blob": json.dumps({})},
-                    {"conversational": {"role": "USER", "content": {"text": "Hello"}}},
+                    {
+                        "conversational": {
+                            "role": "USER",
+                            "content": {"text": "Hello"},
+                        }
+                    },
                 ]
             }
         ]
@@ -159,7 +172,9 @@ class TestBaseAgentCoreMemoryMethods:
         }
 
         messages = memory.list_events(
-            memory_id="test-memory", session_id="test-session", actor_id="test-actor"
+            memory_id="test-memory",
+            session_id="test-session",
+            actor_id="test-actor",
         )
 
         assert len(messages) == 1
@@ -188,7 +203,12 @@ class TestBaseAgentCoreMemoryMethods:
             {
                 "payload": [
                     {"blob": json.dumps({})},
-                    {"conversational": {"role": "USER", "content": {"text": "Hello"}}},
+                    {
+                        "conversational": {
+                            "role": "USER",
+                            "content": {"text": "Hello"},
+                        }
+                    },
                 ]
             }
         ]
@@ -199,7 +219,9 @@ class TestBaseAgentCoreMemoryMethods:
         ]
 
         messages = memory.list_events(
-            memory_id="test-memory", session_id="test-session", actor_id="test-actor"
+            memory_id="test-memory",
+            session_id="test-session",
+            actor_id="test-actor",
         )
 
         assert len(messages) == 2
@@ -211,11 +233,15 @@ class TestBaseAgentCoreMemoryMethods:
     def test_retrieve_memories(self, memory):
         """Test retrieving memory records."""
         memory._client.retrieve_memory_records.return_value = {
-            "memoryRecordSummaries": [{"content": "Memory 1"}, {"content": "Memory 2"}]
+            "memoryRecordSummaries": [
+                {"content": "Memory 1"},
+                {"content": "Memory 2"},
+            ]
         }
 
         memories = memory.retrieve_memories(
-            memory_id="test-memory", search_criteria={"searchQuery": "test query"}
+            memory_id="test-memory",
+            search_criteria={"searchQuery": "test query"},
         )
 
         assert memories == ["Memory 1", "Memory 2"]
@@ -225,6 +251,174 @@ class TestBaseAgentCoreMemoryMethods:
             searchCriteria={"searchQuery": "test query"},
             maxResults=20,
         )
+
+    def test_list_raw_events_pagination(self, memory):
+        memory._client.list_events.side_effect = [
+            {"events": [{"eventId": "e1"}], "nextToken": "t1"},
+            {"events": [{"eventId": "e2"}], "nextToken": None},
+        ]
+
+        events = memory.list_raw_events("mid", "sid", "aid")
+
+        assert [e["eventId"] for e in events] == ["e1", "e2"]
+        assert memory._client.list_events.call_count == 2
+
+    def test_list_memory_records_pagination(self, memory):
+        memory._client.list_memory_records.side_effect = [
+            {
+                "memoryRecordSummaries": [{"memoryRecordId": "m1"}],
+                "nextToken": "t1",
+            },
+            {
+                "memoryRecordSummaries": [{"memoryRecordId": "m2"}],
+                "nextToken": None,
+            },
+        ]
+
+        records = memory.list_memory_records(
+            memory_id="mid",
+            memory_strategy_id="strategy",
+            namespace="/",
+            max_results=20,
+        )
+
+        assert [r["memoryRecordId"] for r in records] == ["m1", "m2"]
+        assert memory._client.list_memory_records.call_count == 2
+
+        first_call = memory._client.list_memory_records.call_args_list[0].kwargs
+        assert first_call["memoryId"] == "mid"
+        assert first_call["namespace"] == "/"
+        assert first_call["memoryStrategyId"] == "strategy"
+        assert first_call["maxResults"] == 20
+
+    def test_list_sessions_pagination(self, memory):
+        memory._client.list_sessions.side_effect = [
+            {"sessionSummaries": [{"sessionId": "s1"}], "nextToken": "t1"},
+            {"sessionSummaries": [{"sessionId": "s2"}], "nextToken": None},
+        ]
+
+        sessions = memory.list_sessions(memory_id="mid", actor_id="aid", max_results=20)
+
+        assert sessions == ["s1", "s2"]
+        assert memory._client.list_sessions.call_count == 2
+
+    def test_delete_events_skips_missing_event_id(self, memory):
+        with patch.object(
+            AgentCoreMemory,
+            "list_raw_events",
+            return_value=[{"eventId": "e1"}, {"nope": "x"}, {"eventId": "e2"}],
+        ):
+            out = memory.delete_events("mid", "sid", "aid")
+
+        assert out["deletedEventIds"] == ["e1", "e2"]
+        assert memory._client.delete_event.call_count == 2
+
+    def test_delete_memory_records(self, memory):
+        with patch.object(
+            AgentCoreMemory,
+            "list_memory_records",
+            return_value=[{"memoryRecordId": "r1"}, {"memoryRecordId": "r2"}],
+        ):
+            out = memory.delete_memory_records(
+                memory_id="mid",
+                memory_strategy_id="strategy",
+                namespace="/",
+            )
+
+        assert out["deletedMemoryRecordIds"] == ["r1", "r2"]
+        assert memory._client.delete_memory_record.call_count == 2
+
+    def test_batch_delete_memory_records_chunks(self, memory):
+        with patch.object(
+            AgentCoreMemory,
+            "list_memory_records",
+            return_value=[{"memoryRecordId": f"r{i}"} for i in range(1, 6)],
+        ):
+            memory._client.batch_delete_memory_records.side_effect = [
+                {
+                    "successfulRecords": [
+                        {"memoryRecordId": "r1"},
+                        {"memoryRecordId": "r2"},
+                    ],
+                    "failedRecords": [],
+                },
+                {
+                    "successfulRecords": [
+                        {"memoryRecordId": "r3"},
+                        {"memoryRecordId": "r4"},
+                    ],
+                    "failedRecords": [],
+                },
+                {
+                    "successfulRecords": [{"memoryRecordId": "r5"}],
+                    "failedRecords": [{"memoryRecordId": "rX"}],
+                },
+            ]
+
+            out = memory.batch_delete_memory_records(
+                memory_id="mid",
+                memory_strategy_id="strategy",
+                namespace="/",
+                batch_size=2,
+            )
+
+        assert len(out["successfulRecords"]) == 5
+        assert len(out["failedRecords"]) == 1
+        assert memory._client.batch_delete_memory_records.call_count == 3
+
+    def test_delete_all_memory_for_session_events_only(self, memory):
+        with (
+            patch.object(
+                AgentCoreMemory,
+                "delete_events",
+                return_value={"deletedEventIds": ["e1"]},
+            ) as p_del_events,
+            patch.object(
+                AgentCoreMemory,
+                "batch_delete_memory_records",
+            ) as p_batch,
+        ):
+            out = memory.delete_all_memory_for_session(
+                memory_id="mid",
+                actor_id="aid",
+                session_id="sid",
+                namespace="/",
+                memory_strategy_id=None,
+            )
+
+        assert out["deletedEvents"] == ["e1"]
+        p_del_events.assert_called_once()
+        p_batch.assert_not_called()
+
+    def test_delete_all_memory_for_session_events_and_records(self, memory):
+        with (
+            patch.object(
+                AgentCoreMemory,
+                "delete_events",
+                return_value={"deletedEventIds": ["e1"]},
+            ) as p_del_events,
+            patch.object(
+                AgentCoreMemory,
+                "batch_delete_memory_records",
+                return_value={
+                    "successfulRecords": [{"memoryRecordId": "r1"}],
+                    "failedRecords": [{"memoryRecordId": "r2"}],
+                },
+            ) as p_batch,
+        ):
+            out = memory.delete_all_memory_for_session(
+                memory_id="mid",
+                actor_id="aid",
+                session_id="sid",
+                namespace="/",
+                memory_strategy_id="strategy",
+            )
+
+        assert out["deletedEvents"] == ["e1"]
+        assert out["successfulDeletedMemoryRecords"] == [{"memoryRecordId": "r1"}]
+        assert out["failedDeletedMemoryRecords"] == [{"memoryRecordId": "r2"}]
+        p_del_events.assert_called_once()
+        p_batch.assert_called_once()
 
 
 class TestAgentCoreMemory:
