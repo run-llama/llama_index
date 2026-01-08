@@ -1,4 +1,5 @@
 import functools
+import re
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
@@ -1070,7 +1071,14 @@ class OpenAI(FunctionCallingLLM):
         )
 
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["response_format"] = _type_to_response_format(output_cls)
+        response_format = _type_to_response_format(output_cls)
+        if isinstance(response_format, dict):
+            json_schema = response_format.get("json_schema")
+            if isinstance(json_schema, dict) and "name" in json_schema:
+                json_schema["name"] = re.sub(
+                    r"[^a-zA-Z0-9_-]", "_", str(json_schema["name"])
+                )
+        llm_kwargs["response_format"] = response_format
         if "tool_choice" in llm_kwargs:
             del llm_kwargs["tool_choice"]
         return llm_kwargs
