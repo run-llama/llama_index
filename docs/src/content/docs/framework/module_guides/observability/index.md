@@ -192,23 +192,22 @@ OTEL_PYTHON_LOG_CORRELATION=true \
 OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
 opentelemetry-instrument <your_run_command>
 ```
+
 - `<service_name>` is the name of your service
 - Set the `<region>` to match your SigNoz Cloud [region](https://signoz.io/docs/ingestion/signoz-cloud/overview/#endpoint)
 - Replace `<your_ingestion_key>` with your SigNoz [ingestion key](https://signoz.io/docs/ingestion/signoz-cloud/keys/)
 - Replace `<your_run_command>` with the actual command you would use to run your application. For example: `python main.py`
 
-
 > 📌 Note: Using self-hosted SigNoz? Most steps are identical. To adapt this guide, update the endpoint and remove the ingestion key header as shown in [Cloud → Self-Hosted](https://signoz.io/docs/ingestion/cloud-vs-self-hosted/#cloud-to-self-hosted).
 
-You will now be able to see any traces, logs, and metrics that are automatically or manually exported by your LlamaIndex application usage. 
+You will now be able to see any traces, logs, and metrics that are automatically or manually exported by your LlamaIndex application usage.
 
 ![LlamaIndex Trace View](https://signoz.io/img/docs/llm/llamaindex/llamaindex-detailed-trace-view.webp)
 
-#### Example Guides 
+#### Example Guides
 
 - [SigNoz LlamaIndex Integration Docs](https://signoz.io/docs/llamaindex-observability/)
 - [SigNoz LLamaIndex Q&A RAG Demo](https://github.com/SigNoz/llamaindex-rag-opentelemetry-demo)
-
 
 ### Weights and Biases (W&B) Weave
 
@@ -342,7 +341,6 @@ llama_index.core.set_global_handler("arize_phoenix")
 
 - [Auto-Retrieval Guide with Pinecone and Arize Phoenix](https://docs.llamaindex.ai/en/latest/examples/vector_stores/pinecone_auto_retriever/?h=phoenix)
 - [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
-
 
 ### Langfuse 🪢
 
