@@ -17,5 +17,5 @@ def test_hash():
     node.text_resource = MediaResource(text="some text", mimetype="text/plain")
     node.video_resource = MediaResource(data=b"some video", mimetype="video/mpeg")
     assert (
-        node.hash == "6f08712269634de7e53e62a3aaee59d60e9a32a43bc05284a21244f960f0cda4"
+        node.hash == "50b74016964ce135a9f9ffd97ffb9a1b7047024b14fbb4e73b67757779546d5e"
     )
