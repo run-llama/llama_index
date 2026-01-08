@@ -377,6 +377,7 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-hwp
             - ../../llama-index-integrations/readers/llama-index-readers-metal
             - ../../llama-index-integrations/readers/llama-index-readers-boarddocs
+            - ../../llama-index-integrations/readers/llama-index-readers-massive
             - ../../llama-index-integrations/question_gen/llama-index-question-gen-guidance
             - ../../llama-index-integrations/llms/llama-index-llms-palm
             - ../../llama-index-integrations/llms/llama-index-llms-cohere
