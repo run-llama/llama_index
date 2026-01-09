@@ -98,17 +98,17 @@ def test_prepare_chat_with_tools_tool_not_required(mock_mistral_client):
 def test_thinking():
     llm = MistralAI(model="magistral-small-latest", show_thinking=True)
 
-    # It will sometimes not think, so we need to guard
     result = llm.chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
     )
-    if any(isinstance(block, ThinkingBlock) for block in result.message.blocks):
-        for block in result.message.blocks:
-            if isinstance(block, ThinkingBlock):
-                assert block.content is not None
-                assert block.content != ""
-                assert result.message.content is not None
-                assert "<think>" in result.message.content
+    assert any(isinstance(block, ThinkingBlock) for block in result.message.blocks)
+
+    for block in result.message.blocks:
+        if isinstance(block, ThinkingBlock):
+            assert block.content is not None
+            assert block.content != ""
+            assert result.message.content is not None
+            assert "<think>" in result.message.content
 
     result = llm.stream_chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
@@ -118,13 +118,14 @@ def test_thinking():
         pass
 
     assert resp is not None
-    if any(isinstance(block, ThinkingBlock) for block in resp.message.blocks):
-        for block in resp.message.blocks:
-            if isinstance(block, ThinkingBlock):
-                assert block.content is not None
-                assert block.content != ""
-                assert resp.message.content is not None
-                assert "<think>" in resp.message.content
+    assert any(isinstance(block, ThinkingBlock) for block in resp.message.blocks)
+
+    for block in resp.message.blocks:
+        if isinstance(block, ThinkingBlock):
+            assert block.content is not None
+            assert block.content != ""
+            assert resp.message.content is not None
+            assert "<think>" in resp.message.content
 
 
 @pytest.mark.skipif(
