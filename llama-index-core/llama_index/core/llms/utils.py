@@ -2,7 +2,12 @@ from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
 
 if TYPE_CHECKING:
-    from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+    try:
+        # For langchain v1.x.x
+        from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
+    except ImportError:
+        # For langchain v0.x.x
+        from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
 
 import os
 
@@ -19,9 +24,14 @@ def resolve_llm(
     from llama_index.core.settings import Settings
 
     try:
-        from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+        # For langchain v1.x.x
+        from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
     except ImportError:
-        BaseLanguageModel = None  # type: ignore
+        try:
+            # For langchain v0.x.x
+            from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+        except ImportError:
+            BaseLanguageModel = None  # type: ignore
 
     if llm == "default":
         # if testing return mock llm
