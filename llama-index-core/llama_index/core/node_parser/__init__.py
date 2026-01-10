@@ -1,10 +1,13 @@
 """Node parsers."""
 
+from llama_index.core.node_parser.chat.token import TokenMessageSplitter
 from llama_index.core.node_parser.file.html import HTMLNodeParser
 from llama_index.core.node_parser.file.json import JSONNodeParser
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.node_parser.file.simple_file import SimpleFileNodeParser
 from llama_index.core.node_parser.interface import (
+    MessageSplitter,
+    MetadataAwareMessageSplitter,
     MetadataAwareTextSplitter,
     NodeParser,
     TextSplitter,
@@ -57,8 +60,11 @@ __all__ = [
     "LanguageConfig",
     "NodeParser",
     "HierarchicalNodeParser",
+    "TokenMessageSplitter",
     "TextSplitter",
+    "MessageSplitter",
     "MarkdownElementNodeParser",
+    "MetadataAwareMessageSplitter",
     "MetadataAwareTextSplitter",
     "LangchainNodeParser",
     "UnstructuredElementNodeParser",
