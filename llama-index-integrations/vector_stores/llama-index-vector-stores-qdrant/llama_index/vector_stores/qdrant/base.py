@@ -1040,7 +1040,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else None
         )
 
-        search_params = kwargs.get("search_params", None)
+        search_params = kwargs.get("search_params")
         if search_params is not None and isinstance(search_params, dict):
             search_params = rest.SearchParams(**search_params)
         search_params = cast(Optional[rest.SearchParams], search_params)
@@ -1198,7 +1198,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else None
         )
 
-        search_params = kwargs.get("search_params", None)
+        search_params = kwargs.get("search_params")
         if search_params is not None and isinstance(search_params, dict):
             search_params = rest.SearchParams(**search_params)
         search_params = cast(Optional[rest.SearchParams], search_params)
