@@ -594,8 +594,11 @@ class MediaResource(BaseModel):
         """
         bits: list[str] = []
         if self.text is not None:
-            # Hash the text to ensure empty string produces a different hash than None
-            bits.append(str(sha256(self.text.encode("utf-8", "surrogatepass")).hexdigest()))
+            # Use marker for empty string to distinguish from None
+            if self.text == "":
+                bits.append("<empty_string>")
+            else:
+                bits.append(self.text)
         if self.data is not None:
             # Hash the binary data if available
             bits.append(str(sha256(self.data).hexdigest()))
@@ -609,7 +612,7 @@ class MediaResource(BaseModel):
         if not bits:
             return ""
         doc_identity = "".join(bits)
-        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+        return str(sha256(doc_identity.encode("utf-8")).hexdigest())
 
 
 class Node(BaseNode):
