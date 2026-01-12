@@ -1,3 +1,0 @@
-::: llama_index.vector_stores.s3
-options:
-members: - S3VectorStore

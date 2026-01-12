@@ -1,1 +1,0 @@
-trafilatura~=1.4

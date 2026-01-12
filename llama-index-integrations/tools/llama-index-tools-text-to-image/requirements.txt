@@ -1,2 +1,0 @@
-Pillow
-matplotlib
