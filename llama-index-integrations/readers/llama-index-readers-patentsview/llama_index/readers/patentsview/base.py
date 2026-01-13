@@ -2,11 +2,14 @@
 
 from typing import List
 
+import os
+import logging
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from typing import Optional
 
+logger = logging.getLogger(__name__)
 BASE_URL = "https://search.patentsview.org/api/v1/patent"
 
 
@@ -32,8 +35,6 @@ class PatentsviewReader(BaseReader):
         if api_key is not None:
             self.api_key = api_key
         else:
-            import os
-
             self.api_key = os.getenv("PATENTSVIEW_API_KEY", None)
             if self.api_key is None:
                 raise ValueError("The API key [PATENTSVIEW_API_KEY] is required.")
@@ -65,6 +66,7 @@ class PatentsviewReader(BaseReader):
         if response.status_code == 429:
             wait = int(response.headers.get("Retry-After", 60))
             print(f"Throttled. Retrying in {wait}s...")
+            logging.info(f"Throttled. Retrying in {wait}s...")
             time.sleep(wait)
             response = requests.post(BASE_URL, json=self.json, headers=self.headers)
 

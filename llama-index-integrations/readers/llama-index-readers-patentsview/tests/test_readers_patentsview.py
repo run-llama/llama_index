@@ -48,7 +48,7 @@ class TestPatentsviewReader:
         with pytest.raises(ValueError, match="List patent number size is too large"):
             abstracts = loader.load_data(too_many_patents)
 
-    @patch("requests.post")
+    @patch("llama_index.readers.patentsview.base.requests.post")
     def test_load_data(self, mock_post, api_key, mock_json_response):
         """Test reading patent abstracts"""
         mock_post.return_value.json.return_value = mock_json_response
