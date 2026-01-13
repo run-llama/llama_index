@@ -1,10 +1,10 @@
 """Datasets reader."""
 
-from typing import List, Optional, Any, Iterable, Dict
+from typing import List, Optional, Any, Iterable, Dict, Union
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from datasets import Dataset, IterableDataset, load_dataset
+from datasets import Dataset, IterableDataset, load_dataset, Split
 
 
 class DatasetsReader(BaseReader):
@@ -41,7 +41,7 @@ class DatasetsReader(BaseReader):
         self,
         *args: Any,
         dataset: Optional[Dataset] = None,
-        split: str = "train",
+        split: Union[Split, str] = Split.TRAIN,
         doc_id_key: Optional[str] = None,
         text_key: Optional[str] = None,
         **load_kwargs: Any,
@@ -52,7 +52,7 @@ class DatasetsReader(BaseReader):
         Args:
             *args: Positional arguments to pass to load_dataset.
             dataset (Optional[Dataset]): The dataset to load. load_dataset is skipped if provided. Optional.
-            split (str): The split to load. Options: 'train', 'val', 'test'.
+            split (Union[Split, str]): The split to load. Default: Split.TRAIN.
             doc_id_key (Optional[str]): The key of the doc_id in samples. Optional.
             text_key (Optional[str]): The key of the text in samples. Optional.
             **load_kwargs: Keyword arguments to pass to load_dataset.
@@ -73,7 +73,7 @@ class DatasetsReader(BaseReader):
         self,
         *args: Any,
         dataset: Optional[IterableDataset] = None,
-        split: str = "train",
+        split: Union[Split, str] = Split.TRAIN,
         doc_id_key: Optional[str] = None,
         text_key: Optional[str] = None,
         **load_kwargs: Any,
@@ -84,7 +84,7 @@ class DatasetsReader(BaseReader):
         Args:
             *args: Positional arguments to pass to load_dataset.
             dataset (Optional[IterableDataset]): The dataset to load. load_dataset is skipped if provided. Optional.
-            split (str): The split to load. Options: 'train', 'val', 'test'.
+            split (Union[Split, str]): The split to load. Default: Split.TRAIN.
             doc_id_key (Optional[str]): The key of the doc_id in samples. Optional.
             text_key (Optional[str]): The key of the text in samples. Optional.
             **load_kwargs: Keyword arguments to pass to load_dataset.

@@ -1722,7 +1722,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-datasets"
-version = "0.4.1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "datasets" },
