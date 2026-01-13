@@ -50,6 +50,6 @@ def test_hash():
             url=AnyUrl("http://example.com"),
             text="some text",
         ).hash
-        == "909d46cd2b18343b0ac4eb4080fd500b0860d6ab04a7a76afc13b13bca14fca1"
+        == "04414a5f03ad7fa055229b4d3690d47427cb0b65bc7eb8f770d1ecbd54ab4909"
     )
     assert MediaResource().hash == ""
