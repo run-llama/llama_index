@@ -24,8 +24,14 @@ def mock_json_response() -> dict:
         "count": 2,
         "total_hits": 2,
         "patents": [
-            {"patent_abstract": "Four score and seven years ago..."},
-            {"patent_abstract": "When in the course of human events..."},
+            {
+                "patent_id": "8848839",
+                "patent_abstract": "Four score and seven years ago...",
+            },
+            {
+                "patent_id": "10452978",
+                "patent_abstract": "When in the course of human events...",
+            },
         ],
     }
 
