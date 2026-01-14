@@ -46,6 +46,9 @@ class SimilarityMode(str, Enum):
 
 def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
+    if not embeddings:
+        raise ValueError("No embeddings to aggregate")
+
     return np.array(embeddings).mean(axis=0).tolist()
 
 

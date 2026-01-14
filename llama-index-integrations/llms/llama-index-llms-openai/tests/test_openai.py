@@ -510,6 +510,29 @@ def test_structured_chat_simple(MockSyncOpenAI: MagicMock):
     assert isinstance(result.raw, Person)
 
 
+def test_prepare_schema_sanitizes_json_schema_name() -> None:
+    from pydantic import BaseModel
+
+    class DummyModel(BaseModel):
+        answer: int
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {"name": "GenericDataModel[int]", "schema": {}},
+    }
+
+    with patch(
+        "openai.resources.chat.completions.completions._type_to_response_format",
+        return_value=response_format,
+    ):
+        llm_kwargs = llm._prepare_schema({}, DummyModel)
+
+    assert (
+        llm_kwargs["response_format"]["json_schema"]["name"] == "GenericDataModel_int_"
+    )
+
+
 @pytest.mark.asyncio()
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):

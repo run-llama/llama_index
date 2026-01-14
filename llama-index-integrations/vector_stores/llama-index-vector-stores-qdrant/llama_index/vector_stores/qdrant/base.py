@@ -1040,6 +1040,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else None
         )
 
+        search_params = kwargs.get("search_params")
+        if search_params is not None and isinstance(search_params, dict):
+            search_params = rest.SearchParams(**search_params)
+        search_params = cast(Optional[rest.SearchParams], search_params)
+
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
@@ -1066,6 +1071,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                     rest.QueryRequest(
                         query=rest.SparseVector(
@@ -1077,6 +1083,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1118,6 +1125,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1135,6 +1143,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1149,6 +1158,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
                 shard_key_selector=shard_key,
+                search_params=search_params,
             )
             return self.parse_to_query_result(response.points)
 
@@ -1188,6 +1198,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else None
         )
 
+        search_params = kwargs.get("search_params")
+        if search_params is not None and isinstance(search_params, dict):
+            search_params = rest.SearchParams(**search_params)
+        search_params = cast(Optional[rest.SearchParams], search_params)
+
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
@@ -1214,6 +1229,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                     rest.QueryRequest(
                         query=rest.SparseVector(
@@ -1225,6 +1241,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1265,6 +1282,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1281,6 +1299,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         filter=query_filter,
                         with_payload=True,
                         shard_key=shard_key,
+                        params=search_params,
                     ),
                 ],
             )
@@ -1294,6 +1313,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
                 shard_key_selector=shard_key,
+                search_params=search_params,
             )
 
             return self.parse_to_query_result(response.points)
