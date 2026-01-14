@@ -50,7 +50,7 @@ vector_store = VertexAIVectorStore(
     api_version="v2",  # Opt-in to v2
     project_id="my-project",
     region="us-central1",
-    collection_id="my-collection"
+    collection_id="my-collection",
     # No GCS bucket needed!
 )
 ```
@@ -130,7 +130,10 @@ vector_store = VertexAIVectorStore(
 ### Query Modes
 
 ```python
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 
 # DEFAULT: Vector similarity search only
 query = VectorStoreQuery(
@@ -184,17 +187,19 @@ vector_store = VertexAIVectorStore(
 
 ### Hybrid Search Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `enable_hybrid` | `bool` | `False` | Enable hybrid search modes |
-| `text_search_fields` | `List[str]` | `None` | Data fields for TextSearch |
-| `embedding_field` | `str` | `"embedding"` | Vector field name in collection |
-| `default_hybrid_alpha` | `float` | `0.5` | Default RRF weight (0=text, 1=vector) |
-| `hybrid_ranker` | `str` | `"rrf"` | Ranker type: "rrf" or "vertex" |
-| `semantic_task_type` | `str` | `"RETRIEVAL_QUERY"` | Task type for SemanticSearch |
-| `vertex_ranker_model` | `str` | `"semantic-ranker-default@latest"` | VertexRanker model ID |
-| `vertex_ranker_title_field` | `str` | `None` | Field for VertexRanker title |
-| `vertex_ranker_content_field` | `str` | `None` | Field for VertexRanker content |
+| Parameter                     | Type        | Default                            | Description                           |
+| ----------------------------- | ----------- | ---------------------------------- | ------------------------------------- |
+| `enable_hybrid`               | `bool`      | `False`                            | Enable hybrid search modes            |
+| `text_search_fields`          | `List[str]` | `None`                             | Data fields for TextSearch            |
+| `embedding_field`             | `str`       | `"embedding"`                      | Vector field name in collection       |
+| `default_hybrid_alpha`        | `float`     | `0.5`                              | Default RRF weight (0=text, 1=vector) |
+| `hybrid_ranker`               | `str`       | `"rrf"`                            | Ranker type: "rrf" or "vertex"        |
+| `semantic_task_type`          | `str`       | `"RETRIEVAL_QUERY"`                | Task type for SemanticSearch          |
+| `vertex_ranker_model`         | `str`       | `"semantic-ranker-default@latest"` | VertexRanker model ID                 |
+| `vertex_ranker_title_field`   | `str`       | `None`                             | Field for VertexRanker title          |
+| `vertex_ranker_content_field` | `str`       | `None`                             | Field for VertexRanker content        |
+
+> For a complete working example with hybrid search, see the [v2 example notebook](https://github.com/run-llama/llama_index/blob/main/docs/examples/vector_stores/VertexAIVectorSearchV2Demo.ipynb).
 
 ## Documentation
 

@@ -779,7 +779,10 @@ class TestV2HybridSearchParameters:
 
     def test_enable_hybrid_requires_v2(self):
         """Test that enable_hybrid=True raises error for v1."""
-        with pytest.raises(ValueError, match="enable_hybrid=True is only supported for api_version='v2'"):
+        with pytest.raises(
+            ValueError,
+            match="enable_hybrid=True is only supported for api_version='v2'",
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -791,7 +794,9 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_must_be_between_0_and_1(self):
         """Test that default_hybrid_alpha must be in [0, 1] range."""
-        with pytest.raises(ValueError, match="default_hybrid_alpha must be between 0 and 1"):
+        with pytest.raises(
+            ValueError, match="default_hybrid_alpha must be between 0 and 1"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -802,7 +807,9 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_negative_raises_error(self):
         """Test that negative alpha raises error."""
-        with pytest.raises(ValueError, match="default_hybrid_alpha must be between 0 and 1"):
+        with pytest.raises(
+            ValueError, match="default_hybrid_alpha must be between 0 and 1"
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -815,6 +822,7 @@ class TestV2HybridSearchParameters:
         """Test that hybrid_ranker must be 'rrf' or 'vertex'."""
         # Pydantic validates the Literal type before our custom validation
         from pydantic import ValidationError
+
         with pytest.raises((ValueError, ValidationError)):
             VertexAIVectorStore(
                 project_id="test-project",
@@ -860,7 +868,9 @@ class TestV2HybridSearchParameters:
         with patch(
             "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
         ):
-            with patch("llama_index.vector_stores.vertexaivectorsearch.base._logger") as mock_logger:
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch.base._logger"
+            ) as mock_logger:
                 VertexAIVectorStore(
                     project_id="test-project",
                     region="us-central1",
@@ -939,7 +949,9 @@ class TestV2FilterConversion:
         )
 
         filters = MetadataFilters(
-            filters=[MetadataFilter(key="category", value="tech", operator=FilterOperator.EQ)]
+            filters=[
+                MetadataFilter(key="category", value="tech", operator=FilterOperator.EQ)
+            ]
         )
 
         result = _convert_filters_to_v2(filters)
@@ -979,7 +991,9 @@ class TestV2FilterConversion:
 
         filters = MetadataFilters(
             filters=[
-                MetadataFilter(key="category", value="tech", operator=FilterOperator.EQ),
+                MetadataFilter(
+                    key="category", value="tech", operator=FilterOperator.EQ
+                ),
                 MetadataFilter(key="price", value=50, operator=FilterOperator.LT),
             ],
             condition=FilterCondition.AND,
@@ -1035,7 +1049,11 @@ class TestV2FilterConversion:
         )
 
         filters = MetadataFilters(
-            filters=[MetadataFilter(key="tags", value=["ml", "ai"], operator=FilterOperator.IN)]
+            filters=[
+                MetadataFilter(
+                    key="tags", value=["ml", "ai"], operator=FilterOperator.IN
+                )
+            ]
         )
 
         result = _convert_filters_to_v2(filters)
@@ -1202,7 +1220,9 @@ class TestV2HybridQueryModes:
                     mode=VectorStoreQueryMode.SPARSE,
                 )
 
-                with pytest.raises(NotImplementedError, match="SPARSE mode is planned for Phase 2"):
+                with pytest.raises(
+                    NotImplementedError, match="SPARSE mode is planned for Phase 2"
+                ):
                     mock_v2_store.query(query)
 
 
@@ -1270,7 +1290,9 @@ class TestV2RankerConfiguration:
 
             result = _build_ranker(mock_store, query, num_searches=2)
 
-            mock_vectorsearch.ReciprocalRankFusion.assert_called_once_with(weights=[0.5, 0.5])
+            mock_vectorsearch.ReciprocalRankFusion.assert_called_once_with(
+                weights=[0.5, 0.5]
+            )
             mock_vectorsearch.Ranker.assert_called_once()
             assert result == mock_ranker
 

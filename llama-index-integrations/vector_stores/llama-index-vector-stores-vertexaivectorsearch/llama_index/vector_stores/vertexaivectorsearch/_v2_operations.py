@@ -851,10 +851,9 @@ def _query_v2_hybrid(
 
         # Merge results using RRF
         alpha = query.alpha if query.alpha is not None else store.default_hybrid_alpha
-        merged = _merge_results_rrf(
+        return _merge_results_rrf(
             store, vector_results, text_results, alpha, hybrid_top_k
         )
-        return merged
     except Exception as e:
         _logger.error(f"Failed to execute HYBRID search: {e}")
         raise
