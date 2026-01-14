@@ -65,7 +65,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
+                    "hash": "647140a1fb50d9aa5916bad16d11406a6682182c2e2a70354f233fd88e10dc47",
                     "class_name": "RelatedNodeInfo",
                 },
                 "3": {
@@ -143,7 +143,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
+                    "hash": "647140a1fb50d9aa5916bad16d11406a6682182c2e2a70354f233fd88e10dc47",
                     "class_name": "RelatedNodeInfo",
                 },
                 "2": {
@@ -227,7 +227,7 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
+                    "hash": "647140a1fb50d9aa5916bad16d11406a6682182c2e2a70354f233fd88e10dc47",
                     "class_name": "RelatedNodeInfo",
                 }
             },
@@ -280,7 +280,7 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
+                    "hash": "647140a1fb50d9aa5916bad16d11406a6682182c2e2a70354f233fd88e10dc47",
                     "class_name": "RelatedNodeInfo",
                 }
             },
