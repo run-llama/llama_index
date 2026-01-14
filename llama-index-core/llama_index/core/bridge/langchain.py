@@ -10,7 +10,7 @@ from langchain.agents import (
 try:
     # # For langchain v1.x.x
     from langchain_core.tools.base import BaseToolkit  # pants: no-infer-dep
-    from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep    
+    from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
 except ImportError:
     # For langchain v0.x.x
     from langchain.agents.agent_toolkits.base import BaseToolkit  # pants: no-infer-dep
@@ -30,7 +30,7 @@ try:
     from langchain.chat_models.base import BaseChatModel  # pants: no-infer-dep
     from langchain_core.documents.base import Document  # pants: no-infer-dep
     from langchain_classic.memory import ConversationBufferMemory  # pants: no-infer-dep
-    
+
 except ImportError:
     # For langchain v0.x.x
     from langchain.callbacks.base import (
@@ -48,8 +48,10 @@ except ImportError:
 # chat and memory
 try:
     # # For langchain v1.x.x
-    from langchain_classic.memory.chat_memory import BaseChatMemory  # pants: no-infer-dep
-    from langchain_core.output_parsers import ResponseSchema  # pants: no-infer-dep    
+    from langchain_classic.memory.chat_memory import (
+        BaseChatMemory,
+    )  # pants: no-infer-dep
+    from langchain_core.output_parsers import ResponseSchema  # pants: no-infer-dep
 except ImportError:
     # For langchain v0.x.x
     from langchain.memory.chat_memory import BaseChatMemory  # pants: no-infer-dep
@@ -91,7 +93,7 @@ try:
         HumanMessage,  # pants: no-infer-dep
         LLMResult,  # pants: no-infer-dep
         SystemMessage,  # pants: no-infer-dep
-    )  # pants: no-infer-dep    
+    )  # pants: no-infer-dep
 except ImportError:
     # For langchain v0.x.x
     from langchain.schema import (  # pants: no-infer-dep
@@ -111,11 +113,13 @@ except ImportError:
 try:
     # # For langchain v1.x.x
     from langchain_core.embeddings import Embeddings  # pants: no-infer-dep
-    from langchain_core.prompts import BasePromptTemplate  # pants: no-infer-dep    
+    from langchain_core.prompts import BasePromptTemplate  # pants: no-infer-dep
 except ImportError:
     # For langchain v0.x.x
     from langchain.schema.embeddings import Embeddings  # pants: no-infer-dep
-    from langchain.schema.prompt_template import BasePromptTemplate  # pants: no-infer-dep
+    from langchain.schema.prompt_template import (
+        BasePromptTemplate,
+    )  # pants: no-infer-dep
 
 # input & output
 try:
@@ -123,7 +127,7 @@ try:
     from langchain_text_splitters import (
         RecursiveCharacterTextSplitter,
         TextSplitter,
-    )  # pants: no-infer-dep    
+    )  # pants: no-infer-dep
 except ImportError:
     # For langchain v0.x.x
     from langchain.text_splitter import (

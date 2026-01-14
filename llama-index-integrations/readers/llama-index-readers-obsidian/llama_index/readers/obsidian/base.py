@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any, List, Tuple
 if TYPE_CHECKING:
     try:
         # For langchain v1.x.x
-        from langchain_core.documents.base import Document as LCDocument        
+        from langchain_core.documents.base import Document as LCDocument
     except ImportError:
         # For langchain v0.x.x
         from langchain.docstore.document import Document as LCDocument

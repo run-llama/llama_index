@@ -4,7 +4,9 @@ import json
 if TYPE_CHECKING:
     try:
         # For langchain v1.x.x
-        from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
+        from langchain_core.language_models import (
+            BaseLanguageModel,
+        )  # pants: no-infer-dep
     except ImportError:
         # For langchain v0.x.x
         from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
@@ -25,7 +27,9 @@ def resolve_llm(
 
     try:
         # For langchain v1.x.x
-        from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
+        from langchain_core.language_models import (
+            BaseLanguageModel,
+        )  # pants: no-infer-dep
     except ImportError:
         try:
             # For langchain v0.x.x

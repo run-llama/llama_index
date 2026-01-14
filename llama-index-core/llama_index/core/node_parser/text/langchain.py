@@ -16,6 +16,7 @@ if TYPE_CHECKING:
             TextSplitter as LC_TextSplitter,
         )  # pants: no-infer-dep
 
+
 class LangchainNodeParser(TextSplitter):
     """
     Basic wrapper around langchain's text splitter.
