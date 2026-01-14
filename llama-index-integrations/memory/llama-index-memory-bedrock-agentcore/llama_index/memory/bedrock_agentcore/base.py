@@ -38,6 +38,19 @@ class BaseAgentCoreMemory(BaseMemory):
         messages: List[ChatMessage],
         session_id: str,
     ) -> None:
+        """
+        Create an event in Bedrock Agent Core memory.
+
+        Args:
+            memory_id (str): The memory ID.
+            actor_id (str): The actor ID.
+            messages (List[ChatMessage]): The list of chat messages to add as an event.
+            session_id (str): The session ID.
+
+        Returns:
+            None
+
+        """
         if self._client is None:
             raise ValueError("Client is not initialized")
         if len(messages) == 0:
@@ -60,6 +73,19 @@ class BaseAgentCoreMemory(BaseMemory):
     def list_events(
         self, memory_id: str, session_id: str, actor_id: str
     ) -> List[ChatMessage]:
+        """
+        List events for a given memory ID, session ID, and actor ID.
+
+        Args:
+            memory_id (str): The memory ID.
+            session_id (str): The session ID.
+            actor_id (str): The actor ID.
+
+        Returns:
+            List[ChatMessage]: A list of chat messages representing the events.
+
+        """
+
         def fetch_messages(max_results: int, next_token: str = None) -> tuple:
             response = self._client.list_events(
                 memoryId=memory_id,
@@ -108,6 +134,93 @@ class BaseAgentCoreMemory(BaseMemory):
 
         return all_messages
 
+    def list_raw_events(
+        self, memory_id: str, session_id: str, actor_id: str
+    ) -> List[Dict[str, Any]]:
+        """
+        List raw events for a given memory ID, session ID, and actor ID.
+
+        Args:
+            memory_id (str): The memory ID.
+            session_id (str): The session ID.
+            actor_id (str): The actor ID.
+
+        Returns:
+            List[Dict[str, Any]]: A list of raw event dictionaries.
+
+        """
+
+        def fetch_raw_events(max_results: int, next_token: str = None) -> tuple:
+            response = self._client.list_events(
+                memoryId=memory_id,
+                sessionId=session_id,
+                actorId=actor_id,
+                includePayloads=True,
+                maxResults=max_results,
+                **({"nextToken": next_token} if next_token else {}),
+            )
+            events = response.get("events", [])
+            return events, response.get("nextToken")
+
+        initial_max_results = 20
+        iterative_max_results = 3
+
+        all_events, next_token = fetch_raw_events(initial_max_results)
+        while next_token:
+            events, next_token = fetch_raw_events(iterative_max_results, next_token)
+            all_events.extend(events)
+        return all_events
+
+    def list_memory_records(
+        self,
+        memory_id: str,
+        memory_strategy_id: str,
+        namespace: str = "/",
+        max_results: int = 20,
+    ) -> List[Dict[str, Any]]:
+        """
+        List memory records for a given memory ID and namespace.
+
+        Args:
+            memory_id (str): The memory ID.
+            memory_strategy_id (str): The memory strategy ID. Used for long-term memory strategies.
+            namespace (str): The namespace for memory records.
+            max_results (int): Maximum number of memory records to retrieve in each batch.
+
+        Returns:
+            List[Dict[str, Any]]: A list of memory record summaries.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        def fetch_memory_records(max_results: int, next_token: str = None) -> tuple:
+            response = self._client.list_memory_records(
+                memoryId=memory_id,
+                namespace=namespace,
+                memoryStrategyId=memory_strategy_id,
+                maxResults=max_results,
+                **{"nextToken": next_token} if next_token else {},
+            )
+
+            messages = response["memoryRecordSummaries"]
+            return messages, response.get("nextToken")
+
+        all_memory_records = []
+        initial_max_results = max_results
+        iterative_max_results = 3
+
+        initial_messages, next_token = fetch_memory_records(initial_max_results)
+        all_memory_records.extend(initial_messages)
+
+        while next_token:
+            messages, next_token = fetch_memory_records(
+                iterative_max_results, next_token
+            )
+            all_memory_records.extend(messages)
+
+        return all_memory_records
+
     def retrieve_memories(
         self,
         memory_id: str,
@@ -115,6 +228,19 @@ class BaseAgentCoreMemory(BaseMemory):
         max_results: int = 20,
         namespace: Optional[str] = "/",
     ) -> List[Dict[str, Any]]:
+        """
+        Retrieve memory records based on search criteria.
+
+        Args:
+            memory_id (str): The memory ID.
+            search_criteria (Dict[str, Any]): The search criteria for retrieving memories.
+            max_results (int): Maximum number of memory records to retrieve.
+            namespace (Optional[str]): The namespace for memory records.
+
+        Returns:
+            List[Dict[str, Any]]: A list of memory record contents.
+
+        """
         response = self._client.retrieve_memory_records(
             memoryId=memory_id,
             namespace=namespace,
@@ -129,6 +255,231 @@ class BaseAgentCoreMemory(BaseMemory):
             memory_content.append(summary["content"])
 
         return memory_content
+
+    def list_sessions(
+        self,
+        memory_id: str,
+        actor_id: str,
+        max_results: int = 20,
+    ) -> List[str]:
+        """
+        List session IDs for a given memory ID and actor ID.
+
+        Args:
+            memory_id (str): The memory ID.
+            actor_id (str): The actor ID.
+            max_results (int): Maximum number of sessions to retrieve in each batch.
+
+        Returns:
+            List[str]: A list of session IDs.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        def fetch_sessions(max_results: int, next_token: str = None) -> Dict:
+            response = self._client.list_sessions(
+                memoryId=memory_id,
+                actorId=actor_id,
+                maxResults=max_results,
+                **{"nextToken": next_token} if next_token else {},
+            )
+            session_summaries = response["sessionSummaries"]
+            session_ids = [session["sessionId"] for session in session_summaries]
+            return session_ids, response.get("nextToken")
+
+        all_session_ids = []
+        initial_max_results = max_results
+        iterative_max_results = 3
+
+        session_ids, next_token = fetch_sessions(initial_max_results)
+        all_session_ids.extend(session_ids)
+        while next_token:
+            ids, next_token = fetch_sessions(iterative_max_results, next_token)
+            all_session_ids.extend(ids)
+
+        return all_session_ids
+
+    def delete_events(
+        self,
+        memory_id: str,
+        session_id: str,
+        actor_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Delete all events for a given memory ID, session ID, and actor ID.
+
+        Args:
+            memory_id (str): The memory ID.
+            session_id (str): The session ID.
+            actor_id (str): The actor ID.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the IDs of deleted events.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        response = self.list_raw_events(
+            memory_id=memory_id,
+            session_id=session_id,
+            actor_id=actor_id,
+        )
+
+        deleted_events = []
+        for event in response:
+            event_id = event.get("eventId")
+            if not event_id:
+                continue
+            self._client.delete_event(
+                memoryId=memory_id,
+                sessionId=session_id,
+                actorId=actor_id,
+                eventId=event_id,
+            )
+            deleted_events.append(event_id)
+
+        return {"deletedEventIds": deleted_events}
+
+    def delete_memory_records(
+        self,
+        memory_id: str,
+        memory_strategy_id: str,
+        namespace: str,
+    ) -> Dict[str, Any]:
+        """
+        Delete all memory records for a given memory ID and namespace.
+
+        Args:
+            memory_id (str): The memory ID.
+            memory_strategy_id (str): The memory strategy ID. Used for long-term memory strategies.
+            namespace (str): The namespace for memory records.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the IDs of deleted memory records.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        response = self.list_memory_records(
+            memory_id=memory_id,
+            namespace=namespace,
+            memory_strategy_id=memory_strategy_id,
+        )
+
+        deleted_memory_records = []
+        for record in response:
+            self._client.delete_memory_record(
+                memoryId=memory_id,
+                memoryRecordId=record["memoryRecordId"],
+            )
+            deleted_memory_records.append(record["memoryRecordId"])
+
+        return {"deletedMemoryRecordIds": deleted_memory_records}
+
+    def batch_delete_memory_records(
+        self,
+        memory_id: str,
+        memory_strategy_id: str,
+        namespace: str,
+        batch_size: int = 25,
+    ) -> Dict[str, Any]:
+        """
+        Batch delete memory records for a given memory ID and namespace.
+
+        Args:
+            memory_id (str): The memory ID.
+            memory_strategy_id (str): The memory strategy ID. Used for long-term memory strategies.
+            namespace (str): The namespace for memory records.
+            batch_size (int): The batch size for deletion.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing details of successful and failed deletions.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        response = self.list_memory_records(
+            memory_id=memory_id,
+            namespace=namespace,
+            memory_strategy_id=memory_strategy_id,
+        )
+
+        memory_record_ids = [
+            {"memoryRecordId": record["memoryRecordId"]} for record in response
+        ]
+
+        successful_records = []
+        failed_records = []
+
+        # Batch delete in chunks of provided batch size
+        for i in range(0, len(memory_record_ids), batch_size):
+            batch_ids = memory_record_ids[i : i + batch_size]
+            response = self._client.batch_delete_memory_records(
+                memoryId=memory_id,
+                records=batch_ids,
+            )
+            successful_records.extend(response.get("successfulRecords", []))
+            failed_records.extend(response.get("failedRecords", []))
+
+        return {
+            "successfulRecords": successful_records,
+            "failedRecords": failed_records,
+        }
+
+    def delete_all_memory_for_session(
+        self,
+        memory_id: str,
+        actor_id: str,
+        session_id: str,
+        namespace: str,
+        memory_strategy_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Delete all memory (events and memory records) for a given session.
+
+        Args:
+            memory_id (str): The memory ID.
+            actor_id (str): The actor ID.
+            session_id (str): The session ID.
+            namespace (str): The namespace for memory records.
+            memory_strategy_id (Optional[str]): The memory strategy ID for memory records. Use if long-term memory strategy is used.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing details of deleted events and memory records.
+
+        """
+        if self._client is None:
+            raise ValueError("Client is not initialized.")
+
+        # Delete all events for the session
+        deleted_events = self.delete_events(
+            memory_id=memory_id,
+            session_id=session_id,
+            actor_id=actor_id,
+        )
+        deleted_memory = {
+            "deletedEvents": deleted_events.get("deletedEventIds", []),
+        }
+
+        # Delete all memory records for the session
+        if memory_strategy_id:
+            deleted_memory_records = self.batch_delete_memory_records(
+                memory_id=memory_id,
+                memory_strategy_id=memory_strategy_id,
+                namespace=namespace,
+            )
+            deleted_memory["successfulDeletedMemoryRecords"] = (
+                deleted_memory_records.get("successfulRecords", [])
+            )
+            deleted_memory["failedDeletedMemoryRecords"] = deleted_memory_records.get(
+                "failedRecords", []
+            )
+
+        return deleted_memory
 
 
 class AgentCoreMemoryContext(BaseModel):
@@ -294,7 +645,8 @@ class AgentCoreMemory(BaseAgentCoreMemory):
             if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
                 assert messages[0].content is not None
                 system_message = convert_memory_to_system_message(
-                    response=memory_records, existing_system_message=messages[0]
+                    response=memory_records,
+                    existing_system_message=messages[0],
                 )
             messages.insert(0, system_message)
         elif self.insert_method == InsertMethod.USER:
