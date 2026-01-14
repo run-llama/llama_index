@@ -426,7 +426,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
             **add_kwargs (Any): Additional keyword arguments.
-                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         Raises:
             MilvusException: Failed to insert data.
@@ -475,7 +475,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             executor_wrapper(
                 self.collection_name,
                 insert_batch,
-                partition_names=add_kwargs.get("milvus_partition_names"),
+                partition_name=add_kwargs.get("milvus_partition_name"),
             )
         if add_kwargs.get("force_flush", False):
             self.client.flush(self.collection_name)
@@ -531,7 +531,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             await executor_wrapper(
                 self.collection_name,
                 insert_batch,
-                partition_names=add_kwargs.get("milvus_partition_names"),
+                partition_name=add_kwargs.get("milvus_partition_name"),
             )
         if add_kwargs.get("force_flush", False):
             raise NotImplementedError("force_flush is not supported in async mode.")
@@ -549,7 +549,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
             **delete_kwargs (Any): Additional keyword arguments.
-                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         Raises:
             MilvusException: Failed to delete the doc.
@@ -573,7 +573,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             self.client.delete(
                 collection_name=self.collection_name,
                 pks=ids,
-                partition_names=delete_kwargs.get("milvus_partition_names"),
+                partition_name=delete_kwargs.get("milvus_partition_name"),
             )
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
@@ -597,7 +597,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             await self.aclient.delete(
                 collection_name=self.collection_name,
                 pks=ids,
-                partition_names=delete_kwargs.get("milvus_partition_names"),
+                partition_name=delete_kwargs.get("milvus_partition_name"),
             )
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
@@ -614,7 +614,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
             **delete_kwargs (Any): Additional keyword arguments.
-                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
@@ -632,7 +632,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.client.delete(
             collection_name=self.collection_name,
             filter=filter,
-            partition_names=delete_kwargs.get("milvus_partition_names"),
+            partition_name=delete_kwargs.get("milvus_partition_name"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
@@ -659,7 +659,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         await self.aclient.delete(
             collection_name=self.collection_name,
             filter=filter,
-            partition_names=delete_kwargs.get("milvus_partition_names"),
+            partition_name=delete_kwargs.get("milvus_partition_name"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")

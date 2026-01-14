@@ -382,6 +382,7 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-cohere
             - ../../llama-index-integrations/llms/llama-index-llms-nvidia-triton
             - ../../llama-index-integrations/llms/llama-index-llms-ai21
+            - ../../llama-index-integrations/llms/llama-index-llms-apertis
             - ../../llama-index-integrations/llms/llama-index-llms-bedrock
             - ../../llama-index-integrations/llms/llama-index-llms-huggingface
             - ../../llama-index-integrations/llms/llama-index-llms-azure-openai
