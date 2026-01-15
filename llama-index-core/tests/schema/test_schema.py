@@ -318,3 +318,46 @@ def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     img = doc.resolve_image(as_base64=True)
     assert isinstance(img, BytesIO)
     assert img.read() == png_1px_b64
+
+
+def test_media_resource_hash_distinguishes_empty_string_from_none() -> None:
+    """Test that MediaResource.hash distinguishes between text='' and text=None."""
+    resource_empty_text = MediaResource(text="")
+    resource_none_text = MediaResource(text=None)
+
+    # Both should have different hashes
+    assert resource_empty_text.hash != resource_none_text.hash
+
+    # None should return empty string (no content)
+    assert resource_none_text.hash == ""
+
+    # Empty string should return a valid hash (empty string is valid content)
+    assert resource_empty_text.hash != ""
+    assert len(resource_empty_text.hash) == 64  # SHA256 hex digest length
+
+
+def test_media_resource_hash_with_various_content() -> None:
+    """Test MediaResource.hash with different content types."""
+    # Test with text content
+    resource_text = MediaResource(text="hello")
+    assert resource_text.hash != ""
+    assert len(resource_text.hash) == 64
+
+    # Test with path
+    resource_path = MediaResource(path=Path("/tmp/test.txt"))
+    assert resource_path.hash != ""
+    assert len(resource_path.hash) == 64
+
+    # Test with url
+    resource_url = MediaResource(url="https://example.com")
+    assert resource_url.hash != ""
+    assert len(resource_url.hash) == 64
+
+    # All different content should produce different hashes
+    assert resource_text.hash != resource_path.hash
+    assert resource_text.hash != resource_url.hash
+    assert resource_path.hash != resource_url.hash
+
+    # Same content should produce same hash
+    resource_text2 = MediaResource(text="hello")
+    assert resource_text.hash == resource_text2.hash
