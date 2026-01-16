@@ -1574,7 +1574,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.14.10"
+version = "0.14.12"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-cli", marker = "python_full_version >= '3.10'" },
@@ -1613,7 +1613,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-cli", marker = "python_full_version >= '3.10'", specifier = ">=0.5.0,<0.6" },
-    { name = "llama-index-core", specifier = ">=0.14.10,<0.15.0" },
+    { name = "llama-index-core", specifier = ">=0.14.12,<0.15.0" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-indices-managed-llama-cloud", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai", specifier = ">=0.6.0,<0.7" },
@@ -1661,7 +1661,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.10"
+version = "0.14.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1699,9 +1699,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/77/a1aa39cca5b32e3801f28e877add27c9c0daf4b3dc087ac9f31df53337b5/llama_index_core-0.14.10.tar.gz", hash = "sha256:b930aac3161a5e145f4003e81ba94cbef062228a0d3ef39752e03471b0cb386b", size = 11582499, upload-time = "2025-12-04T19:45:24.093Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/d3/9d65f3c631a41fbb0dac47c52adad0fdbbaee3456518a97d558d8c754788/llama_index_core-0.14.12.tar.gz", hash = "sha256:6917e5865c6c789046dca001ebeea5a7f80e1ba83ac646dc793aaa041e8feb12", size = 11584083, upload-time = "2025-12-30T01:06:24.875Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/fa/98618331a22f8fedd050af0a0096916fdcec39bbff82bdd8ae7693536866/llama_index_core-0.14.10-py3-none-any.whl", hash = "sha256:ea0d563c777a7209664594588e3f0885a4784a1ae39dddaa28526867c79a3d65", size = 11925643, upload-time = "2025-12-04T19:45:21.585Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/c7/a39d65aeb7b1df234719e918a27b9122eeee81744e2e39f60b12a57a3e09/llama_index_core-0.14.12-py3-none-any.whl", hash = "sha256:a3a7e3a084b01700458874dd635ba40d00af2680daa47f072e357e8f0d172872", size = 11927498, upload-time = "2025-12-30T01:06:27.459Z" },
 ]
 
 [[package]]
