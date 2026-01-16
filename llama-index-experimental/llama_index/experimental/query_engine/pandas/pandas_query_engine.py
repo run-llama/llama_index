@@ -9,7 +9,8 @@ require heavy sandboxing or virtual machines
 """
 
 import logging
-from typing import Any, Dict, Optional
+import re
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -106,6 +107,34 @@ class PandasQueryEngine(BaseQueryEngine):
 
     """
 
+    # Patterns that may indicate prompt injection attempts
+    SUSPICIOUS_QUERY_PATTERNS: Tuple[str, ...] = (
+        r"ignore\s+(previous|prior|above|all)\s+(instructions?|rules?|prompts?)",
+        r"disregard\s+(previous|prior|above|all)\s+(instructions?|rules?)",
+        r"forget\s+(previous|prior|above|all)\s+(instructions?|context)",
+        r"new\s+instructions?:",
+        r"system\s*prompt:",
+        r"you\s+are\s+now",
+        r"act\s+as\s+if",
+        r"pretend\s+(to\s+be|you\s+are)",
+        r"override\s+(previous|system)",
+    )
+
+    def _detect_prompt_injection(self, query: str) -> List[str]:
+        """Detect potential prompt injection patterns in a query.
+
+        Args:
+            query: The user query to check.
+
+        Returns:
+            List of detected suspicious patterns, empty if none found.
+        """
+        detected = []
+        for pattern in self.SUSPICIOUS_QUERY_PATTERNS:
+            if re.search(pattern, query, re.IGNORECASE):
+                detected.append(pattern)
+        return detected
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -176,6 +205,16 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
+        # Check for potential prompt injection attempts
+        suspicious_patterns = self._detect_prompt_injection(query_bundle.query_str)
+        if suspicious_patterns:
+            logger.warning(
+                "Potential prompt injection detected in query. "
+                "Patterns matched: %s. Query: %s",
+                suspicious_patterns,
+                query_bundle.query_str[:200],  # Truncate for logging
+            )
+
         context = self._get_table_context()
 
         pandas_response_str = self._llm.predict(
@@ -211,6 +250,16 @@ class PandasQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         """Answer a query asynchronously."""
+        # Check for potential prompt injection attempts
+        suspicious_patterns = self._detect_prompt_injection(query_bundle.query_str)
+        if suspicious_patterns:
+            logger.warning(
+                "Potential prompt injection detected in query. "
+                "Patterns matched: %s. Query: %s",
+                suspicious_patterns,
+                query_bundle.query_str[:200],  # Truncate for logging
+            )
+
         context = self._get_table_context()
 
         pandas_response_str = await self._llm.apredict(
