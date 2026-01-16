@@ -65,7 +65,6 @@ class PatentsviewReader(BaseReader):
         response = requests.post(BASE_URL, json=self.json, headers=self.headers)
         if response.status_code == 429:
             wait = int(response.headers.get("Retry-After", 60))
-            print(f"Throttled. Retrying in {wait}s...")
             logging.info(f"Throttled. Retrying in {wait}s...")
             time.sleep(wait)
             response = requests.post(BASE_URL, json=self.json, headers=self.headers)
