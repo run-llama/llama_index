@@ -1638,7 +1638,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-retrievers-you"
-version = "0.4.1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
