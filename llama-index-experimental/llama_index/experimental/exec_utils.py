@@ -145,13 +145,17 @@ class DunderVisitor(ast.NodeVisitor):
         if isinstance(node.func, ast.Name) and node.func.id in DANGEROUS_BUILTINS:
             self.has_dangerous_builtin_call = True
         # Check attribute calls that might access dangerous functions
-        if isinstance(node.func, ast.Attribute) and node.func.attr in DANGEROUS_BUILTINS:
+        if (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr in DANGEROUS_BUILTINS
+        ):
             self.has_dangerous_builtin_call = True
         self.generic_visit(node)
 
 
 def _contains_protected_access(code: str) -> bool:
-    """Check if code contains protected/dangerous access patterns.
+    """
+    Check if code contains protected/dangerous access patterns.
 
     This function detects:
     - Import statements
