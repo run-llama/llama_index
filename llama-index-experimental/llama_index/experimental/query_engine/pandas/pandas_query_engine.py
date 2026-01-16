@@ -121,13 +121,15 @@ class PandasQueryEngine(BaseQueryEngine):
     )
 
     def _detect_prompt_injection(self, query: str) -> List[str]:
-        """Detect potential prompt injection patterns in a query.
+        """
+        Detect potential prompt injection patterns in a query.
 
         Args:
             query: The user query to check.
 
         Returns:
             List of detected suspicious patterns, empty if none found.
+
         """
         detected = []
         for pattern in self.SUSPICIOUS_QUERY_PATTERNS:
