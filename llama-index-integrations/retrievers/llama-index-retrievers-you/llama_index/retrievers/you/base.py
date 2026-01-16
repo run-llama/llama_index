@@ -91,9 +91,7 @@ class YouRetriever(BaseRetriever):
         # Remove `None` values
         return {k: v for k, v in params.items() if v is not None}
 
-    def _process_result(
-        self, result: Dict[str, Any], source_type: str
-    ) -> TextNode:
+    def _process_result(self, result: Dict[str, Any], source_type: str) -> TextNode:
         """Process a single search result into a TextNode."""
         # Use snippets if available, fall back to description
         snippets = result.get("snippets", [])
