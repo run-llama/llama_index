@@ -1,7 +1,31 @@
 import ast
 import copy
 from types import CodeType, ModuleType
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Sequence, Set, Union
+
+# Builtins that can be used to bypass sandbox restrictions
+DANGEROUS_BUILTINS: Set[str] = {
+    "getattr",
+    "setattr",
+    "delattr",
+    "vars",
+    "dir",
+    "globals",
+    "locals",
+    "compile",
+    "exec",
+    "eval",
+    "open",
+    "input",
+    "breakpoint",
+    "memoryview",
+    "object",
+    "property",
+    "classmethod",
+    "staticmethod",
+    "super",
+    "type",  # Can be used for metaclass manipulation
+}
 
 ALLOWED_IMPORTS = {
     "math",
@@ -88,9 +112,12 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
 
 
 class DunderVisitor(ast.NodeVisitor):
+    """AST visitor to detect potentially dangerous code patterns."""
+
     def __init__(self) -> None:
         self.has_access_to_private_entity = False
         self.has_access_to_disallowed_builtin = False
+        self.has_dangerous_builtin_call = False
 
         builtins = globals()["__builtins__"].keys()
         self._builtins = builtins
@@ -100,6 +127,9 @@ class DunderVisitor(ast.NodeVisitor):
             self.has_access_to_private_entity = True
         if node.id not in ALLOWED_BUILTINS and node.id in self._builtins:
             self.has_access_to_disallowed_builtin = True
+        # Check for dangerous builtins used as names (e.g., assigned to variables)
+        if node.id in DANGEROUS_BUILTINS:
+            self.has_dangerous_builtin_call = True
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
@@ -109,8 +139,26 @@ class DunderVisitor(ast.NodeVisitor):
             self.has_access_to_disallowed_builtin = True
         self.generic_visit(node)
 
+    def visit_Call(self, node: ast.Call) -> None:
+        """Check for calls to dangerous builtins like getattr, setattr, etc."""
+        # Check direct calls: getattr(obj, 'attr')
+        if isinstance(node.func, ast.Name) and node.func.id in DANGEROUS_BUILTINS:
+            self.has_dangerous_builtin_call = True
+        # Check attribute calls that might access dangerous functions
+        if isinstance(node.func, ast.Attribute) and node.func.attr in DANGEROUS_BUILTINS:
+            self.has_dangerous_builtin_call = True
+        self.generic_visit(node)
+
 
 def _contains_protected_access(code: str) -> bool:
+    """Check if code contains protected/dangerous access patterns.
+
+    This function detects:
+    - Import statements
+    - Access to private/dunder attributes
+    - Use of disallowed builtins
+    - Calls to dangerous builtins (getattr, setattr, etc.) that could bypass sandbox
+    """
     # do not allow imports
     imports_modules = False
     tree = ast.parse(code)
@@ -128,14 +176,21 @@ def _contains_protected_access(code: str) -> bool:
     return (
         dunder_visitor.has_access_to_private_entity
         or dunder_visitor.has_access_to_disallowed_builtin
+        or dunder_visitor.has_dangerous_builtin_call
         or imports_modules
     )
 
 
 def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
     """
-    Verify that the source is safe to execute. For now, this means that it
-    does not contain any references to private or dunder methods.
+    Verify that the source is safe to execute.
+
+    This checks for:
+    - Direct execution of CodeType objects
+    - References to private or dunder methods
+    - Disallowed builtin functions
+    - Import statements
+    - Dangerous builtins (getattr, setattr, etc.) that could bypass sandbox
     """
     if isinstance(__source, CodeType):
         raise RuntimeError("Direct execution of CodeType is forbidden!")
@@ -144,7 +199,8 @@ def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
     if _contains_protected_access(__source):
         raise RuntimeError(
             "Execution of code containing references to private or dunder methods, "
-            "disallowed builtins, or any imports, is forbidden!"
+            "disallowed builtins, dangerous functions (getattr, setattr, etc.), "
+            "or any imports, is forbidden!"
         )
 
 
