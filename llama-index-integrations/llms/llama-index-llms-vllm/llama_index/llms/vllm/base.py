@@ -434,11 +434,11 @@ class VllmServer(Vllm):
             api_url=api_url,
             callback_manager=callback_manager,
             output_parser=output_parser,
-            openai_like=openai_like,
-            api_headers=api_headers or {},
-            timeout=timeout,
         )
         self._client = None
+        self.openai_like = openai_like
+        self.api_headers = api_headers or {}
+        self.timeout = timeout
 
     @classmethod
     def class_name(cls) -> str:
