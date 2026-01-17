@@ -13,16 +13,16 @@ from llama_index.llms.ollama import Ollama
 
 test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
 thinking_test_model = os.environ.get("OLLAMA_THINKING_TEST_MODEL", "qwen3:0.6b")
+thinking_level_model = os.environ.get("THINKING_LEVEL_MODEL", "gpt-oss:20b")
+client = None
+available_models = []
 
 try:
     client = Client()
     models = client.list()
+    available_models = [model.model for model in models["models"]]
 
-    model_found = False
-    for model in models["models"]:
-        if model.model == test_model:
-            model_found = True
-            break
+    model_found = test_model in available_models
 
     if not model_found:
         client = None  # type: ignore
@@ -201,7 +201,8 @@ async def test_async_chat_with_tools() -> None:
 
 
 @pytest.mark.skipif(
-    client is None, reason="Ollama client is not available or test model is missing"
+    thinking_test_model not in available_models,
+    reason="Thinking test model is not available",
 )
 def test_chat_with_think() -> None:
     llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
@@ -233,7 +234,61 @@ def test_chat_with_think() -> None:
 
 
 @pytest.mark.skipif(
-    client is None, reason="Ollama client is not available or test model is missing"
+    thinking_level_model not in available_models,
+    reason="Thinking model that supports levels like 'low', 'medium', 'high' not available",
+)
+def test_chat_with_thinking_level() -> None:
+    """
+    Mainly to test that chat models that allow thinking levels like low, medium, and high does not error out from
+    pydantic.  Also checks the length of the thinking blocks
+    """
+    llm = Ollama(model=thinking_level_model, thinking="low", request_timeout=360)
+    response_low = llm.chat(
+        [
+            ChatMessage(
+                role="user",
+                content="What would you say if I said 1 + 1 = 3?  Respond in one sentence.",
+            )
+        ]
+    )
+
+    llm = Ollama(model=thinking_level_model, thinking="high", request_timeout=360)
+    response_high = llm.chat(
+        [
+            ChatMessage(
+                role="user",
+                content="What would you say if I said 1 + 1 = 3?  Respond in one sentence.",
+            )
+        ]
+    )
+    assert response_low is not None
+    assert response_high is not None
+
+    thinking_block_low = next(
+        (
+            block
+            for block in response_low.message.blocks
+            if isinstance(block, ThinkingBlock)
+        ),
+        None,
+    )
+    thinking_block_high = next(
+        (
+            block
+            for block in response_high.message.blocks
+            if isinstance(block, ThinkingBlock)
+        ),
+        None,
+    )
+    assert thinking_block_low is not None
+    assert thinking_block_high is not None
+
+    assert len(thinking_block_high.content) > len(thinking_block_low.content)
+
+
+@pytest.mark.skipif(
+    thinking_test_model not in available_models,
+    reason="Thinking test model is not available",
 )
 def test_chat_with_thinking_input() -> None:
     llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
@@ -281,7 +336,8 @@ def test_chat_with_thinking_input() -> None:
 
 
 @pytest.mark.skipif(
-    client is None, reason="Ollama client is not available or test model is missing"
+    thinking_test_model not in available_models,
+    reason="Thinking test model is not available",
 )
 @pytest.mark.asyncio
 async def test_async_chat_with_think() -> None:
@@ -371,7 +427,8 @@ async def test_async_chat_with_tools_returns_empty_array_if_no_tools_were_called
 
 
 @pytest.mark.skipif(
-    client is None, reason="Ollama client is not available or test model is missing"
+    thinking_test_model not in available_models,
+    reason="Thinking test model is not available",
 )
 @pytest.mark.asyncio
 async def test_chat_methods_with_tool_input() -> None:

@@ -698,9 +698,12 @@ mongo_uri = (
     "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
 )
 mongodb_client = pymongo.MongoClient(mongo_uri)
+async_mongodb_client = pymongo.AsyncMongoClient(mongo_uri)
 
 # construct store
-store = MongoDBAtlasVectorSearch(mongodb_client)
+store = MongoDBAtlasVectorSearch(
+    mongodb_client=mongodb_client, async_mongodb_client=async_mongodb_client
+)
 storage_context = StorageContext.from_defaults(vector_store=store)
 uber_docs = SimpleDirectoryReader(
     input_files=["../data/10k/uber_2021.pdf"]

@@ -8,13 +8,17 @@ from typing import (
     AsyncGenerator,
     Callable,
     Optional,
+    Union,
+    TYPE_CHECKING,
 )
 from typing_extensions import TypeAlias
 from base64 import b64decode
+from json import JSONDecodeError
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
+    CompletionResponseAsyncGen,
     LLMMetadata,
     ChatMessage,
     ChatResponse,
@@ -29,15 +33,25 @@ from llama_index.core.base.llms.types import (
     CitationBlock,
     VideoBlock,
     ContentBlock,
+    MessageRole,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import (
+    MessagesToPromptType,
+    CompletionToPromptType,
+    ToolSelection,
+)
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import PydanticProgramMode
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 import copy
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 
 class MockLLM(CustomLLM):
@@ -262,46 +276,130 @@ BlockToContentCallback: TypeAlias = Callable[
     [list[ContentBlock], Optional[list[ToolCallBlock]]], str
 ]
 
+ResponseGenerator: TypeAlias = Callable[[Sequence[ChatMessage]], ChatMessage]
 
-class MockFunctionCallingLLM(MockLLM):
+
+def _default_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+    """Default response generator that echoes the last message's content."""
+    if not messages:
+        return ChatMessage(role="assistant", content="<empty>")
+
+    tool_calls: List[ToolCallBlock] = []
+    content = _default_blocks_to_content_callback(messages[-1].blocks, tool_calls)
+    if not content:
+        content = "<empty>"
+    return ChatMessage(role="assistant", content=content)
+
+
+class MockFunctionCallingLLM(FunctionCallingLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
     blocks_to_content_callback: BlockToContentCallback = Field(
         default=_default_blocks_to_content_callback
     )
 
+    _response_generator: Optional[ResponseGenerator] = PrivateAttr(default=None)
+
     def __init__(
         self,
-        max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[MessagesToPromptType] = None,
         completion_to_prompt: Optional[CompletionToPromptType] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         blocks_to_content_callback: Optional[BlockToContentCallback] = None,
+        response_generator: Optional[ResponseGenerator] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            max_tokens=max_tokens,
             callback_manager=callback_manager or CallbackManager([]),
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            **kwargs,
         )
-        self.blocks_to_content_callback = (
-            blocks_to_content_callback or self.blocks_to_content_callback
-        )
+
+        if blocks_to_content_callback is not None:
+            self.blocks_to_content_callback = blocks_to_content_callback
+
+        if response_generator is not None:
+            self._response_generator = response_generator
+        # else: leave as None, will use _get_response_generator() method
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockFunctionCallingLLM"
+
+    def _get_response_generator(self) -> ResponseGenerator:
+        """Get the active response generator, using default if none set."""
+        if self._response_generator is not None:
+            return self._response_generator
+
+        # Return a default generator that uses instance's blocks_to_content_callback
+        def default_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+            if not messages:
+                return ChatMessage(role="assistant", content="<empty>")
+
+            # Pass self.tool_calls to accumulate tool call blocks
+            content = self.blocks_to_content_callback(
+                messages[-1].blocks, self.tool_calls
+            )
+            if not content:
+                content = "<empty>"
+            return ChatMessage(role="assistant", content=content)
+
+        return default_generator
+
+    @property
+    def response_generator(self) -> ResponseGenerator:
+        """Get the response generator function."""
+        return self._get_response_generator()
+
+    @response_generator.setter
+    def response_generator(self, value: ResponseGenerator) -> None:
+        """Set the response generator function."""
+        self._response_generator = value
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_function_calling_model=True)
 
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return CompletionResponse(text=prompt)
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        def gen() -> CompletionResponseGen:
+            yield CompletionResponse(text=prompt, delta=prompt)
+
+        return gen()
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return CompletionResponse(text=prompt)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        async def gen() -> AsyncGenerator[CompletionResponse, None]:
+            yield CompletionResponse(text=prompt, delta=prompt)
+
+        return gen()
+
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
-        if not content:
-            content = "<empty>"
-        response_msg = ChatMessage(role="assistant", content=content)
+        response_msg = self._get_response_generator()(messages)
+        content = response_msg.content or ""
 
         def _gen() -> Generator[ChatResponse, None, None]:
             yield ChatResponse(
@@ -312,13 +410,12 @@ class MockFunctionCallingLLM(MockLLM):
 
         return _gen()
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
-        if not content:
-            content = "<empty>"
-        response_msg = ChatMessage(role="assistant", content=content)
+        response_msg = self._get_response_generator()(messages)
+        content = response_msg.content or ""
 
         async def _gen() -> AsyncGenerator[ChatResponse, None]:
             yield ChatResponse(
@@ -329,18 +426,78 @@ class MockFunctionCallingLLM(MockLLM):
 
         return _gen()
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        content = self.blocks_to_content_callback(messages[-1].blocks, self.tool_calls)
-        if not content:
-            content = "<empty>"
-        response_msg = ChatMessage(role="assistant", content=content)
+        response_msg = self._get_response_generator()(messages)
+        content = response_msg.content or ""
         return ChatResponse(
             message=response_msg,
             delta=content,
             raw={"content": content},
         )
 
+    @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         return self.chat(messages=messages)
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> dict:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        # Build the complete message list
+        messages = list(chat_history or [])
+
+        # Add user message if provided
+        if user_msg:
+            if isinstance(user_msg, str):
+                messages.append(ChatMessage(role=MessageRole.USER, content=user_msg))
+            else:
+                messages.append(user_msg)
+
+        # For the mock implementation, we return the messages and tools
+        # The actual tools are not used since this is a mock
+        return {
+            "messages": messages,
+            "tools": tools,
+        }
+
+    def get_tool_calls_from_response(
+        self, response: ChatResponse, error_on_no_tool_call: bool = False, **kwargs: Any
+    ) -> List[ToolSelection]:
+        # First, check if tool calls are in additional_kwargs (for compatibility with test mocks)
+        if "tool_calls" in response.message.additional_kwargs:
+            return response.message.additional_kwargs.get("tool_calls", [])
+
+        # Otherwise, extract from blocks
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        tool_selections = []
+        for tool_call in tool_calls:
+            # this should handle both complete and partial jsons
+            try:
+                if isinstance(tool_call.tool_kwargs, str):
+                    argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                else:
+                    argument_dict = tool_call.tool_kwargs
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+        return tool_selections

@@ -6,10 +6,12 @@ Run with: pytest tests/test_embeddings_voyageai_integration.py -v
 """
 
 import os
+import tempfile
 
 import pytest
 
 from llama_index.embeddings.voyageai import VoyageEmbedding
+from llama_index.embeddings.voyageai.base import VIDEO_SUPPORT
 
 # Skip all tests if VOYAGE_API_KEY is not set
 pytestmark = pytest.mark.skipif(
@@ -19,6 +21,7 @@ pytestmark = pytest.mark.skipif(
 MODEL = "voyage-3.5"
 CONTEXT_MODEL = "voyage-context-3"
 VOYAGE_4_MODELS = ["voyage-4", "voyage-4-lite", "voyage-4-large"]
+MULTIMODAL_MODEL = "voyage-multimodal-3.5"
 
 
 @pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
@@ -224,12 +227,18 @@ def test_automatic_batching_with_long_texts(model: str):
     """
     emb = VoyageEmbedding(model_name=model)
 
-    # Create moderate-length text (not too long per text)
-    # At roughly 4 chars per token, this is ~500 tokens per text
-    text = "This is a document with some content for testing. " * 40
-
-    # Create enough texts so combined tokens exceed the limit
-    num_texts = 100
+    # Create longer text to ensure we exceed token limits
+    # voyage-3.5 has 320k token limit, voyage-context-3 has 32k
+    # We'll use different configurations for each model
+    if model == CONTEXT_MODEL:
+        # ~500 tokens per text × 100 texts = ~50k tokens > 32k limit
+        text = "This is a document with some content for testing. " * 40
+        num_texts = 100
+    else:
+        # For voyage-3.5 with 320k limit, we need much more tokens
+        # Use longer text (~2000 tokens each) × 200 texts = ~400k tokens
+        text = "This is a document with some content for testing purposes. " * 160
+        num_texts = 200
 
     texts = [f"{text} Document {i}." for i in range(num_texts)]
 
@@ -249,3 +258,70 @@ def test_automatic_batching_with_long_texts(model: str):
 
     assert len(result) == num_texts
     assert all(isinstance(emb, list) for emb in result)
+
+
+# Integration tests for voyage-multimodal-3.5
+
+
+def test_multimodal_text_embedding():
+    """Test text embedding with multimodal model."""
+    emb = VoyageEmbedding(model_name=MULTIMODAL_MODEL)
+    text = "This is a test document for multimodal embedding."
+    result = emb._get_text_embedding(text)
+
+    assert isinstance(result, list)
+    assert len(result) > 0
+    assert isinstance(result[0], float)
+
+
+def test_multimodal_multiple_text_embeddings():
+    """Test multiple text embeddings with multimodal model."""
+    emb = VoyageEmbedding(model_name=MULTIMODAL_MODEL, embed_batch_size=2)
+    texts = ["Document 1", "Document 2", "Document 3"]
+    result = emb._get_text_embeddings(texts)
+
+    assert len(result) == 3
+    assert all(isinstance(e, list) for e in result)
+    # Verify embeddings are different
+    assert result[0] != result[1]
+
+
+def test_multimodal_query_vs_document_embeddings():
+    """Test that query and document embeddings are different for multimodal model."""
+    emb = VoyageEmbedding(model_name=MULTIMODAL_MODEL)
+    text = "test text for multimodal"
+
+    query_emb = emb._get_query_embedding(text)
+    doc_emb = emb._get_text_embedding(text)
+
+    # Query and document embeddings should be different
+    assert query_emb != doc_emb
+    assert len(query_emb) == len(doc_emb)
+
+
+@pytest.mark.skipif(not VIDEO_SUPPORT, reason="Video support requires voyageai>=0.3.6")
+def test_video_embedding():
+    """
+    Test video embedding with voyage-multimodal-3.5.
+
+    This test downloads a small sample video for testing.
+    """
+    import urllib.request
+
+    # Download a small sample video (Big Buck Bunny - first few seconds, ~1MB)
+    sample_video_url = "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"
+
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
+        try:
+            urllib.request.urlretrieve(sample_video_url, tmp_file.name)
+
+            emb = VoyageEmbedding(model_name=MULTIMODAL_MODEL)
+            result = emb.get_video_embedding(tmp_file.name)
+
+            assert isinstance(result, list)
+            assert len(result) > 0
+            assert isinstance(result[0], float)
+        finally:
+            # Clean up
+            if os.path.exists(tmp_file.name):
+                os.unlink(tmp_file.name)

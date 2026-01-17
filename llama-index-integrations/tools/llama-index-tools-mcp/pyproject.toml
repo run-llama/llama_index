@@ -29,7 +29,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-mcp"
-version = "0.4.4"
+version = "0.4.5"
 description = "llama-index tools mcp integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}, {name = "Sebastian Kalisz"}]
 requires-python = ">=3.10,<4.0"
@@ -41,7 +41,7 @@ keywords = [
     "tools",
 ]
 dependencies = [
-    "mcp>=1.9.1,<2",
+    "mcp>=1.24.0,<2",
     "llama-index-core>=0.13.0,<0.15",
     "pydantic>=2.0.0,<3",
 ]
