@@ -3,6 +3,7 @@
 This tool connects LlamaIndex agents to a [PraisonAI](https://github.com/MervinPraison/PraisonAI) server for running multi-agent workflows.
 
 **Documentation**: [https://docs.praison.ai/docs/](https://docs.praison.ai/docs/index)
+https://github.com/MervinPraison/llama-index-tools-praisonai
 
 ## Installation
 
