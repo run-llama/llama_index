@@ -2101,7 +2101,16 @@ def test_image_block_format(png_1px: bytes, png_1px_b64: bytes):
 @pytest.mark.asyncio
 async def test_audio_block_aestimate_tokens(mp3_bytes: bytes):
     ab = AudioBlock(audio=mp3_bytes)
-    assert await ab.aestimate_tokens() == 32  # based on 1 token per 4 bytes:
+    assert await ab.aestimate_tokens() == 32  # based on 1 token per 4 bytes
+
+
+@pytest.mark.asyncio
+async def test_audio_block_aestimate_tokens_no_ffmpeg(
+    mp3_base64: bytes, mock_no_ffmpeg
+):
+    """TinyTag is able to read mp3 metadata without ffmpeg installed."""
+    ab = AudioBlock(audio=mp3_base64)
+    assert await ab.aestimate_tokens() == 32  # based on 1 token per 4 bytes
 
 
 @pytest.mark.asyncio
@@ -2533,6 +2542,15 @@ async def test_video_block_aestimate_tokens(mp4_base64: bytes):
     assert (
         await vb.aestimate_tokens() == 3 * 263
     )  # 263 tokens per second (rounded up to 3 seconds)
+
+
+@pytest.mark.asyncio
+async def test_video_block_aestimate_tokens_no_ffmpeg(
+    mp4_base64: bytes, mock_no_ffmpeg
+):
+    """TinyTag fails for most video types, including this mp4 type."""
+    vb = VideoBlock(video=mp4_base64)
+    assert await vb.aestimate_tokens() == 256 * 8  # Fallback
 
 
 @pytest.mark.asyncio
