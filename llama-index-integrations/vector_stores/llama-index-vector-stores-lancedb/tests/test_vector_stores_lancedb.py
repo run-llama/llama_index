@@ -8,9 +8,15 @@ import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding, BaseEmbedding
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.settings import Settings
 from pathlib import Path
+from llama_index.core.vector_stores.types import (
+    MetadataFilters,
+    MetadataFilter,
+    FilterOperator,
+)
 
 try:
     from lancedb.pydantic import Vector, LanceModel
@@ -413,3 +419,64 @@ def test_fts_index_ready_flag(
 
     # then - flag should be True again after FTS index is recreated
     assert vector_store._fts_index_ready is True
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+def test_filter_fixes(tmp_path: Path, embed_model) -> None:
+    """
+    Test specifically for the bug fixes:
+    1. Metadata filtering on existing table (where metadata_keys might be None initially).
+    2. List values in filters (checking correct quoting).
+    """
+    uri = str(tmp_path / "test_lancedb_filters_fixed")
+    vector_store = LanceDBVectorStore(uri=uri, mode="overwrite")
+
+    nodes = [
+        TextNode(
+            text="node1",
+            metadata={"category": "book", "year": 2000},
+            embedding=embed_model.get_text_embedding("node1"),
+        ),
+        TextNode(
+            text="node2",
+            metadata={"category": "article", "year": 2010},
+            embedding=embed_model.get_text_embedding("node2"),
+        ),
+        TextNode(
+            text="node3",
+            metadata={"category": "paper", "year": 2020},
+            embedding=embed_model.get_text_embedding("node3"),
+        ),
+    ]
+    vector_store.add(nodes)
+
+    vector_store_existing = LanceDBVectorStore(uri=uri)
+
+    filters_str = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="category",
+                value=["book", "paper"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+
+    res_str = vector_store_existing.get_nodes(filters=filters_str)
+    assert len(res_str) == 2
+    ids_str = sorted([n.text for n in res_str])
+    assert ids_str == ["node1", "node3"]
+
+    filters_int = MetadataFilters(
+        filters=[
+            MetadataFilter(key="year", value=[2000, 2020], operator=FilterOperator.IN)
+        ]
+    )
+
+    res_int = vector_store_existing.get_nodes(filters=filters_int)
+    assert len(res_int) == 2
+    ids_int = sorted([n.text for n in res_int])
+    assert ids_int == ["node1", "node3"]
