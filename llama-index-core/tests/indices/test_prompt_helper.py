@@ -302,6 +302,7 @@ def test_prompt_helper_json_in_prompt() -> None:
     assert len(texts) == 1
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("prompt", "chunk_size_limit", "num_chunks", "padding", "expected"),
     [
@@ -322,7 +323,7 @@ def test_prompt_helper_json_in_prompt() -> None:
         ),
     ],
 )
-def test_chat_prompt_helper_get_chunk_size_text_prompts(
+async def test_chat_prompt_helper_aget_available_chunk_size_text_prompts(
     prompt: str,
     chunk_size_limit: Optional[int],
     num_chunks: int,
@@ -338,7 +339,7 @@ def test_chat_prompt_helper_get_chunk_size_text_prompts(
         chunk_size_limit=chunk_size_limit,
     )
     if isinstance(expected, int):
-        chunk_size = prompt_helper._get_available_chunk_size(
+        chunk_size = await prompt_helper._aget_available_chunk_size(
             ChatPromptTemplate(message_templates=[ChatMessage(content=prompt)]),
             num_chunks,
             padding=padding,
@@ -346,7 +347,7 @@ def test_chat_prompt_helper_get_chunk_size_text_prompts(
         assert chunk_size == expected
     else:
         with pytest.raises(expected):
-            prompt_helper._get_available_chunk_size(
+            await prompt_helper._aget_available_chunk_size(
                 ChatPromptTemplate(
                     message_templates=[ChatMessage(blocks=[TextBlock(text=prompt)])]
                 ),
@@ -355,6 +356,7 @@ def test_chat_prompt_helper_get_chunk_size_text_prompts(
             )
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "non_text_block",
     [
@@ -368,7 +370,7 @@ def test_chat_prompt_helper_get_chunk_size_text_prompts(
 @pytest.mark.parametrize("context_window", [4096, 8192])
 @pytest.mark.parametrize("num_output", [256, 512])
 @pytest.mark.parametrize("padding", [0, 5])
-def test_chat_prompt_helper_counts_non_text_blocks(
+async def test_chat_prompt_helper_aget_available_chunk_size_counts_non_text_blocks(
     png_1px,
     mock_no_ffmpeg,
     non_text_block,
@@ -431,18 +433,18 @@ def test_chat_prompt_helper_counts_non_text_blocks(
     )
 
     # Actual
-    chunk_size_w_non_text = prompt_helper._get_available_chunk_size(
+    chunk_size_w_non_text = await prompt_helper._aget_available_chunk_size(
         prompt_w_non_text, num_chunks=num_chunks, padding=padding
     )
 
     # Expected
     num_prompt_tokens_wo_non_text = (
-        prompt_helper._token_counter.estimate_tokens_in_messages(
+        await prompt_helper._token_counter.aestimate_tokens_in_messages(
             get_empty_prompt_messages(prompt_wo_non_text)
         )
     )
     expected_num_prompt_tokens_w_non_text = (
-        num_prompt_tokens_wo_non_text + nt_block.estimate_tokens()
+        num_prompt_tokens_wo_non_text + await nt_block.aestimate_tokens()
     )
     available_context_size_w_non_text = prompt_helper._get_available_context_size(
         expected_num_prompt_tokens_w_non_text
@@ -452,12 +454,13 @@ def test_chat_prompt_helper_counts_non_text_blocks(
     )
 
     # Sanity checks
-    assert nt_block.estimate_tokens() > 0
+    assert await nt_block.aestimate_tokens() > 0
 
     #
     assert chunk_size_w_non_text == expected_chunk_size_w_non_text
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "non_text_block",
     [
@@ -467,7 +470,7 @@ def test_chat_prompt_helper_counts_non_text_blocks(
         DocumentBlock(data=b"{pdf_bytes}"),
     ],
 )
-def test_chat_prompt_helper_does_not_count_unformatted_non_text_blocks(
+async def test_chat_prompt_helper_aget_available_chunk_size_does_not_count_unformatted_non_text_blocks(
     mock_no_ffmpeg, non_text_block
 ) -> None:
     """
@@ -511,10 +514,10 @@ def test_chat_prompt_helper_does_not_count_unformatted_non_text_blocks(
         chunk_size_limit=4096,
     )
 
-    chunk_size_wo_non_text = prompt_helper._get_available_chunk_size(
+    chunk_size_wo_non_text = await prompt_helper._aget_available_chunk_size(
         prompt_wo_non_text, num_chunks=5, padding=0
     )
-    chunk_size_w_non_text = prompt_helper._get_available_chunk_size(
+    chunk_size_w_non_text = await prompt_helper._aget_available_chunk_size(
         prompt_w_non_text, num_chunks=5, padding=0
     )
 
@@ -522,6 +525,7 @@ def test_chat_prompt_helper_does_not_count_unformatted_non_text_blocks(
     assert chunk_size_w_non_text == chunk_size_wo_non_text
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "test_prompt",
     [
@@ -531,7 +535,7 @@ def test_chat_prompt_helper_does_not_count_unformatted_non_text_blocks(
         ),
     ],
 )
-def test_chat_prompt_helper_chat_prompt_template_truncate_text(test_prompt):
+async def test_chat_prompt_helper_atruncate_text(test_prompt):
     """Test truncate for ChatPromptTemplate and RichPromptTemplate objects only containing text."""
     # set context_window=23
     # For each message, there's 4 tokens for content + 5 for the padding + 1 for role + 3 per message
@@ -543,7 +547,7 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_text(test_prompt):
         ChatMessage(content="Hello world bar foo"),
     ]
 
-    truncated_messages = prompt_helper.truncate(
+    truncated_messages = await prompt_helper.atruncate(
         prompt=test_prompt, messages=text_messages
     )
     assert truncated_messages == [
@@ -552,6 +556,7 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_text(test_prompt):
     ]
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mm_prompt",
     [
@@ -597,7 +602,7 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_text(test_prompt):
         ),
     ],
 )
-def test_chat_prompt_helper_chat_prompt_template_truncate_multimodal(
+async def test_chat_prompt_helper_atruncate_multimodal(
     mm_prompt, png_1px, mock_pdf_bytes, mock_no_ffmpeg
 ):
     """
@@ -631,45 +636,46 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_multimodal(
 
     prompt_helper1 = ChatPromptHelper(
         # Both chunks are allotted enough space for the text block only
-        context_window=20 + tb.estimate_tokens() * len(messages),
+        context_window=20 + await tb.aestimate_tokens() * len(messages),
         num_output=0,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
-    truncated_messages1 = prompt_helper1.truncate(
+    truncated_messages1 = await prompt_helper1.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages1_strict = prompt_helper1.truncate(
+    truncated_messages1_strict = await prompt_helper1.atruncate(
         prompt=mm_prompt, messages=messages, padding=0, strict=True
     )
 
     prompt_helper2 = ChatPromptHelper(
         # Both chunks are allotted enough space for the text and audio blocks
         context_window=20
-        + (tb.estimate_tokens() + ab.estimate_tokens()) * len(messages),
+        + (await tb.aestimate_tokens() + await ab.aestimate_tokens()) * len(messages),
         num_output=0,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
-    truncated_messages2 = prompt_helper2.truncate(
+    truncated_messages2 = await prompt_helper2.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages2_strict = prompt_helper2.truncate(
+    truncated_messages2_strict = await prompt_helper2.atruncate(
         prompt=mm_prompt, messages=messages, padding=0, strict=True
     )
 
     prompt_helper3 = ChatPromptHelper(
         # Both chunks are allotted enough space for text all tokens
         context_window=20
-        + sum([b.estimate_tokens() for b in [tb, ab, ib, db, vb]]) * len(messages),
+        + sum([await b.aestimate_tokens() for b in [tb, ab, ib, db, vb]])
+        * len(messages),
         num_output=0,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
-    truncated_messages3 = prompt_helper3.truncate(
+    truncated_messages3 = await prompt_helper3.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages3_strict = prompt_helper3.truncate(
+    truncated_messages3_strict = await prompt_helper3.atruncate(
         prompt=mm_prompt, messages=messages, padding=0, strict=True
     )
 
@@ -734,6 +740,7 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_multimodal(
     assert truncated_messages3_strict == messages
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "test_prompt",
     [
@@ -745,7 +752,7 @@ def test_chat_prompt_helper_chat_prompt_template_truncate_multimodal(
         ),
     ],
 )
-def test_chat_prompt_helper_repack_text(test_prompt):
+async def test_chat_prompt_helper_arepack_text(test_prompt):
     """Test repack for ChatPromptTemplate and RichPromptTemplate with text only messages."""
     prompt_helper = ChatPromptHelper(
         context_window=17,
@@ -757,13 +764,14 @@ def test_chat_prompt_helper_repack_text(test_prompt):
     )
     text_chunks = ["Hello", "world", "foo", "Hello", "world", "bar"]
     text_messages = [ChatMessage(content=content) for content in text_chunks]
-    compacted_chunks = prompt_helper.repack(test_prompt, text_messages)
+    compacted_chunks = await prompt_helper.arepack(test_prompt, text_messages)
     assert compacted_chunks == [
         ChatMessage(content="Hello world foo"),
         ChatMessage(content="Hello world bar"),
     ]
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "mm_prompt_template",
     [
@@ -788,7 +796,7 @@ def test_chat_prompt_helper_repack_text(test_prompt):
         ),
     ],
 )
-def test_chat_prompt_helper_repack_multimodal(mm_prompt_template, png_1px_b64):
+async def test_chat_prompt_helper_arepack_multimodal(mm_prompt_template, png_1px_b64):
     """Test repack for ChatPromptTemplate and RichPromptTemplate with multimodal messages."""
     # Hack for working around banks dependency issues
     if isinstance(mm_prompt_template, ChatPromptTemplate):
@@ -809,7 +817,7 @@ def test_chat_prompt_helper_repack_multimodal(mm_prompt_template, png_1px_b64):
     )
 
     prompt_helper2 = ChatPromptHelper(
-        context_window=17 + ib.estimate_tokens(),  # Adjusted for image block
+        context_window=17 + await ib.aestimate_tokens(),  # Adjusted for image block
         num_output=1,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
@@ -823,9 +831,9 @@ def test_chat_prompt_helper_repack_multimodal(mm_prompt_template, png_1px_b64):
     ]
     with pytest.raises(ValueError):
         # Not enough space for text when accounting for image block
-        prompt_helper1.repack(mm_prompt, text_messages)
+        await prompt_helper1.arepack(mm_prompt, text_messages)
 
-    compacted_chunks = prompt_helper2.repack(mm_prompt, text_messages)
+    compacted_chunks = await prompt_helper2.arepack(mm_prompt, text_messages)
     assert compacted_chunks == [
         ChatMessage(blocks=[TextBlock(text="Hello world foo")]),
         ChatMessage(blocks=[TextBlock(text="Hello world bar")]),
@@ -833,7 +841,8 @@ def test_chat_prompt_helper_repack_multimodal(mm_prompt_template, png_1px_b64):
 
 
 @pytest.mark.skip(reason="Currently not working due to issues with banks dependency")
-def test_chat_prompt_helper_chat_prompt_template_repack_arbitrary(
+@pytest.mark.asyncio
+async def test_chat_prompt_helper_chat_prompt_template_repack_arbitrary(
     png_1px, mock_pdf_bytes, mock_no_ffmpeg
 ):
     """
@@ -893,8 +902,8 @@ def test_chat_prompt_helper_chat_prompt_template_repack_arbitrary(
         # separator="\n\n",
     )
 
-    compacted_chunks1 = prompt_helper1.repack(mm_prompt, messages)
-    compacted_chunks2 = prompt_helper2.repack(mm_prompt, messages)
+    compacted_chunks1 = await prompt_helper1.arepack(mm_prompt, messages)
+    compacted_chunks2 = await prompt_helper2.arepack(mm_prompt, messages)
 
     # Combines all messages into one since enough space
     assert compacted_chunks1 == [ChatMessage(blocks=[tb, ib, ab, vb, db])]

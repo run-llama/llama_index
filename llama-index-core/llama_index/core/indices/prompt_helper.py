@@ -13,6 +13,8 @@ import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
 
+from llama_index.core.async_utils import asyncio_run
+
 if TYPE_CHECKING:
     from llama_index.core.tools import BaseTool
 
@@ -442,7 +444,7 @@ class ChatPromptHelper(BaseComponent):
 
         return tools
 
-    def _get_available_chunk_size(
+    async def _aget_available_chunk_size(
         self,
         prompt: BasePromptTemplate,
         num_chunks: int = 1,
@@ -451,7 +453,7 @@ class ChatPromptHelper(BaseComponent):
         tools: Optional[List["BaseTool"]] = None,
     ) -> int:
         """
-        Get available chunk size.
+        Async get available chunk size.
 
         This is calculated as:
             available chunk size = available context window  // number_chunks
@@ -468,7 +470,7 @@ class ChatPromptHelper(BaseComponent):
             prompt = prompt.select(llm=llm)
 
         prompt_messages = get_empty_prompt_messages(prompt)
-        num_prompt_tokens = self._token_counter.estimate_tokens_in_messages(
+        num_prompt_tokens = await self._token_counter.aestimate_tokens_in_messages(
             prompt_messages
         )
 
@@ -493,7 +495,37 @@ class ChatPromptHelper(BaseComponent):
             result = min(result, self.chunk_size_limit)
         return result
 
-    def truncate(
+    def _get_available_chunk_size(
+        self,
+        prompt: BasePromptTemplate,
+        num_chunks: int = 1,
+        padding: int = 5,
+        llm: Optional[LLM] = None,
+        tools: Optional[List["BaseTool"]] = None,
+    ) -> int:
+        """
+        Get available chunk size.
+
+        This is calculated as:
+            available chunk size = available context window  // number_chunks
+                - padding
+
+        Notes:
+        - By default, we use padding of 5 (to save space for formatting needs).
+        - Available chunk size is further clamped to chunk_size_limit if specified.
+
+        """
+        return asyncio_run(
+            self._aget_available_chunk_size(
+                prompt=prompt,
+                num_chunks=num_chunks,
+                padding=padding,
+                llm=llm,
+                tools=tools,
+            )
+        )
+
+    async def atruncate(
         self,
         prompt: BasePromptTemplate,
         messages: Sequence[ChatMessage],
@@ -503,7 +535,7 @@ class ChatPromptHelper(BaseComponent):
         strict=False,
     ) -> list[ChatMessage]:
         """
-        Truncate text chunks to fit available context window.
+        Async truncate text chunks to fit available context window.
 
         When working with diverse ContentBlock types, setting strict=True ensures that truncation token estimates
         do not exceed the available chunk size by removing entire blocks as needed. However, this may lead to more
@@ -511,16 +543,84 @@ class ChatPromptHelper(BaseComponent):
         when Ffmpeg is not present.
         """
         num_chunks = len(messages)
-        message_size = self._get_available_chunk_size(
+        message_size = await self._aget_available_chunk_size(
             prompt, num_chunks=num_chunks, padding=padding, llm=llm, tools=tools
         )
-        messages = [message.truncate(max_tokens=message_size) for message in messages]
+        messages = [
+            await message.atruncate(max_tokens=message_size) for message in messages
+        ]
         if strict:
             for message in messages:
-                while message.blocks and message.estimate_tokens() > message_size:
+                while (
+                    message.blocks and await message.aestimate_tokens() > message_size
+                ):
                     message.blocks.pop(-1)
             messages = [message for message in messages if message.blocks]
         return messages
+
+    def truncate(
+        self,
+        prompt: BasePromptTemplate,
+        messages: Sequence[ChatMessage],
+        padding: int = DEFAULT_PADDING,
+        llm: LLM | None = None,
+        tools: list["BaseTool"] | None = None,
+        strict: bool = False,
+    ) -> list[ChatMessage]:
+        """
+        Truncate text chunks to fit available context window.
+
+        When working with diverse ContentBlock types, setting strict=True ensures that truncation token estimates
+        do not exceed the available chunk size by removing entire blocks as needed. However, this may lead to more
+        aggressive content removal for types that do not support truncation like Images and Documents or Audio/Video
+        when Ffmpeg is not present.
+        """
+        return asyncio_run(
+            self.atruncate(
+                prompt=prompt,
+                messages=messages,
+                padding=padding,
+                llm=llm,
+                tools=tools,
+                strict=strict,
+            )
+        )
+
+    async def arepack(
+        self,
+        prompt: BasePromptTemplate,
+        messages: Sequence[ChatMessage],
+        padding: int = DEFAULT_PADDING,
+        llm: LLM | None = None,
+        tools: list["BaseTool"] | None = None,
+    ) -> list[ChatMessage]:
+        """
+        Async repack text chunks to fit available context window.
+
+        This will combine text chunks into consolidated chunks
+        that more fully "pack" the prompt template given the context_window.
+        """
+        # Combine messages into largest possible messages
+        # Will not combine messages which have different roles/metadata
+        max_chunk_size = sum([await message.aestimate_tokens() for message in messages])
+        combined_messages = await ChatMessage.amerge(
+            list(messages), chunk_size=max_chunk_size
+        )
+        chunk_size = await self._aget_available_chunk_size(
+            prompt,
+            num_chunks=len(combined_messages),
+            padding=padding,
+            llm=llm,
+            tools=tools,
+        )
+        return await ChatMessage.amerge(
+            [
+                split_message
+                for message in combined_messages
+                for split_message in await message.asplit(max_tokens=chunk_size)
+            ],
+            chunk_size=chunk_size,
+        )
 
     def repack(
         self,
@@ -536,22 +636,12 @@ class ChatPromptHelper(BaseComponent):
         This will combine text chunks into consolidated chunks
         that more fully "pack" the prompt template given the context_window.
         """
-        # Combine messages into largest possible messages
-        # Will not combine messages which have different roles/metadata
-        max_chunk_size = sum(message.estimate_tokens() for message in messages)
-        combined_messages = ChatMessage.merge(list(messages), chunk_size=max_chunk_size)
-        chunk_size = self._get_available_chunk_size(
-            prompt,
-            num_chunks=len(combined_messages),
-            padding=padding,
-            llm=llm,
-            tools=tools,
-        )
-        return ChatMessage.merge(
-            [
-                split_message
-                for message in combined_messages
-                for split_message in message.split(max_tokens=chunk_size)
-            ],
-            chunk_size=chunk_size,
+        return asyncio_run(
+            self.arepack(
+                prompt=prompt,
+                messages=messages,
+                padding=padding,
+                llm=llm,
+                tools=tools,
+            )
         )

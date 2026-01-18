@@ -25,11 +25,12 @@ from typing import (
 )
 
 import filetype
-from ffmpeg import FFmpeg
+from ffmpeg.asyncio import FFmpeg
 from PIL import Image
 from tinytag import TinyTag, UnsupportedFormatError
 from typing_extensions import Self
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import (
     AnyUrl,
     BaseModel,
@@ -63,33 +64,58 @@ class MessageRole(str, Enum):
 class BaseContentBlock(ABC, BaseModel):
     @classmethod
     @abstractmethod
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
+    ) -> list[Self]:
+        """Async merge smaller content blocks into larger blocks up to chunk_size tokens."""
+        ...
+
+    @classmethod
     def merge(
         cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
     ) -> list[Self]:
         """Merge smaller content blocks into larger blocks up to chunk_size tokens."""
-        ...
+        return asyncio_run(
+            cls.amerge(splits=splits, chunk_size=chunk_size, tokenizer=tokenizer)
+        )
 
     @abstractmethod
+    async def aestimate_tokens(self, tokenizer: Any | None = None) -> int:
+        """Async estimate the number of tokens in this content block."""
+        ...
+
     def estimate_tokens(self, tokenizer: Any | None = None) -> int:
         """Estimate the number of tokens in this content block."""
-        ...
+        return asyncio_run(self.aestimate_tokens(tokenizer=tokenizer))
 
     @abstractmethod
+    async def asplit(
+        self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
+    ) -> List[Self]:
+        """Async split the content block into smaller blocks with up to max_tokens tokens each."""
+        ...
+
     def split(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
     ) -> List[Self]:
         """Split the content block into smaller blocks with up to max_tokens tokens each."""
-        ...
+        return asyncio_run(
+            self.asplit(max_tokens=max_tokens, overlap=overlap, tokenizer=tokenizer)
+        )
 
-    def truncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
-        """Truncate the content block to up to max_tokens tokens."""
+    async def atruncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+        """Async truncate the content block to up to max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
-        estimated_tokens = self.estimate_tokens(tokenizer=tknizer)
+        estimated_tokens = await self.aestimate_tokens(tokenizer=tknizer)
         if estimated_tokens <= max_tokens:
             return self
 
-        split_blocks = self.split(max_tokens=max_tokens, tokenizer=tknizer)
+        split_blocks = await self.asplit(max_tokens=max_tokens, tokenizer=tknizer)
         return split_blocks[0]
+
+    def truncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+        """Truncate the content block to up to max_tokens tokens."""
+        return asyncio_run(self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer))
 
     @classmethod
     def templatable_attributes(cls) -> List[str]:
@@ -183,7 +209,7 @@ class TextBlock(BaseContentBlock):
     text: str
 
     @classmethod
-    def merge(
+    async def amerge(
         cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
     ) -> list[Self]:
         merged_blocks = []
@@ -193,7 +219,7 @@ class TextBlock(BaseContentBlock):
         # TODO: Think about separators when merging, since correctly joining them requires us to understand how they
         #  were previously split. For now, we just universally join with spaces.
         for split in splits:
-            split_tokens = split.estimate_tokens(tokenizer=tokenizer)
+            split_tokens = await split.aestimate_tokens(tokenizer=tokenizer)
 
             if current_block_tokens + split_tokens <= chunk_size:
                 current_block_texts.append(split.text)
@@ -208,11 +234,11 @@ class TextBlock(BaseContentBlock):
 
         return merged_blocks
 
-    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
+    async def aestimate_tokens(self, tokenizer: Any | None = None) -> int:
         tknizer = tokenizer or get_tokenizer()
         return len(tknizer(self.text))
 
-    def split(
+    async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
     ) -> List[Self]:
         from llama_index.core.node_parser import TokenTextSplitter
@@ -286,7 +312,7 @@ class ImageBlock(BaseContentBlock):
         return self
 
     @classmethod
-    def merge(cls, splits: List[Self], *args, **kwargs) -> list[Self]:
+    async def amerge(cls, splits: List[Self], *args, **kwargs) -> list[Self]:
         """Images are not mergeable, return splits."""
         return splits
 
@@ -328,7 +354,7 @@ class ImageBlock(BaseContentBlock):
         b64_str = b64.read().decode("utf-8")
         return f"data:{self.image_mimetype};base64,{b64_str}"
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         """Use PIL to read image size and conservatively estimate tokens."""
         try:
             with Image.open(cast(BytesIO, self.resolve_image())) as im:
@@ -355,7 +381,7 @@ class ImageBlock(BaseContentBlock):
         # We take the larger of the two estimates to be safe
         return max(openai_max_count, gemini_max_count)
 
-    def split(self, *args, **kwargs) -> List[Self]:
+    async def asplit(self, *args, **kwargs) -> List[Self]:
         """Images are not splittable, return self."""
         return [self]
 
@@ -384,7 +410,7 @@ class AudioVideoMixIn(ABC):
         """Check if ffmpeg is installed."""
         return bool(shutil.which("ffmpeg"))
 
-    def ffprobe(self) -> dict:
+    async def ffprobe(self) -> dict:
         """
         Probe an audio source and return metadata from ffprobe
         """
@@ -406,9 +432,9 @@ class AudioVideoMixIn(ABC):
                 str(tmp_path), print_format="json", show_streams=None, show_format=None
             )
 
-            return json.loads(ffmpeg.execute())
+            return json.loads(await ffmpeg.execute())
 
-    def can_concatenate(self, other: Self) -> bool:
+    async def can_concatenate(self, other: Self) -> bool:
         """
         Compare two audio/video files for concat-compatibility (no re-encoding).
 
@@ -425,8 +451,8 @@ class AudioVideoMixIn(ABC):
             )
             return False
 
-        info_a = self.ffprobe()
-        info_b = other.ffprobe()
+        info_a = await self.ffprobe()
+        info_b = await other.ffprobe()
 
         streams_a = info_a.get("streams", []) or []
         streams_b = info_b.get("streams", []) or []
@@ -473,9 +499,9 @@ class AudioVideoMixIn(ABC):
                     return False
         return True
 
-    def ffmpeg_segment(
+    async def ffmpeg_segment(
         self, data: bytes, segment_time: float
-    ) -> Generator[bytes, None, None]:
+    ) -> AsyncGenerator[bytes, None]:
         """
         Segment audio/video using ffmpeg
         """
@@ -489,7 +515,7 @@ class AudioVideoMixIn(ABC):
         default_extension = "audio" if isinstance(self, AudioBlock) else "video"
         extension = self.extension or default_extension
 
-        duration = self.ffprobe().get("format", {}).get("duration", None)
+        duration = (await self.ffprobe()).get("format", {}).get("duration", None)
         if duration:
             num_segments = int(float(duration) / segment_time) + 1
             name_padding = len(str(num_segments)) + 1
@@ -514,7 +540,7 @@ class AudioVideoMixIn(ABC):
                     segment_time=segment_time,
                 )
             )
-            ffmpeg.execute()
+            await ffmpeg.execute()
 
             segment_paths = [
                 (f, int(f.split(".")[0].replace("output", "")))
@@ -530,7 +556,7 @@ class AudioVideoMixIn(ABC):
                 yield segment_data
 
     @classmethod
-    def ffmpeg_concat(
+    async def ffmpeg_concat(
         cls, data_list: List[bytes], extension: str | None
     ) -> list[bytes]:
         """
@@ -560,7 +586,7 @@ class AudioVideoMixIn(ABC):
             ffmpeg = FFmpeg(executable="ffmpeg")
             ffmpeg = ffmpeg.input(input_file)
             ffmpeg = ffmpeg.output(str(output_path), f="concat", c="copy", safe=0)
-            ffmpeg.execute()
+            await ffmpeg.execute()
             with open(output_path, "rb") as f:
                 concatenated_data = f.read()
             return [concatenated_data]
@@ -620,7 +646,9 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
         return self.format
 
     @classmethod
-    def merge(cls, splits: List[Self], chunk_size: int, *args, **kwargs) -> list[Self]:
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, *args, **kwargs
+    ) -> list[Self]:
         """
         Use ffmpeg to merge audio files
         """
@@ -635,8 +663,10 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
         cur_tokens = 0
 
         for split in splits:
-            split_tokens = split.estimate_tokens()
-            can_concat = len(cur_splits) == 0 or cur_splits[-1].can_concatenate(split)
+            split_tokens = await split.aestimate_tokens()
+            can_concat = len(cur_splits) == 0 or await cur_splits[-1].can_concatenate(
+                split
+            )
             if cur_tokens + split_tokens <= chunk_size and can_concat:
                 cur_splits.append(split)
                 cur_tokens += split_tokens
@@ -651,7 +681,9 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                     data_splits = [split.source.read() for split in cur_splits]
                     merged_blocks.extend(
                         AudioBlock(audio=split, format=splits[0].format)
-                        for split in cls.ffmpeg_concat(data_splits, splits[0].extension)
+                        for split in await cls.ffmpeg_concat(
+                            data_splits, splits[0].extension
+                        )
                     )
                     cur_splits = [split]
                     cur_tokens = split_tokens
@@ -665,7 +697,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 data_splits = [split.source.read() for split in cur_splits]
                 merged_blocks.extend(
                     AudioBlock(audio=split, format=splits[0].format)
-                    for split in cls.ffmpeg_concat(data_splits, splits[0].format)
+                    for split in await cls.ffmpeg_concat(data_splits, splits[0].format)
                 )
         return merged_blocks
 
@@ -710,7 +742,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 return f"data:{mimetype};base64,{b64_str}"
         return f"data:audio;base64,{b64_str}"
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         """
         Use TinyTag to estimate the duration of the audio file and convert to tokens.
 
@@ -733,7 +765,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 )
             # Next try ffprobe
             if self.has_ffmpeg():
-                metadata = self.ffprobe()
+                metadata = await self.ffprobe()
                 if duration := metadata.get("format", {}).get("duration", None):
                     # We conservatively return the max estimate
                     return max((int(duration) + 1) * 32, int(duration / 0.05) + 1)
@@ -744,7 +776,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 return 0
             raise
 
-    def split(self, max_tokens: int, *args, **kwargs) -> List[Self]:
+    async def asplit(self, max_tokens: int, *args, **kwargs) -> List[Self]:
         """
         Split audio into chunks using ffmpeg
         """
@@ -762,7 +794,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
 
         return [
             AudioBlock(audio=audio_segment, format=self.format)
-            for audio_segment in self.ffmpeg_segment(data, segment_time)
+            async for audio_segment in self.ffmpeg_segment(data, segment_time)
         ]
 
     @classmethod
@@ -836,7 +868,9 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
         return None
 
     @classmethod
-    def merge(cls, splits: List[Self], chunk_size: int, *args, **kwargs) -> list[Self]:
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, *args, **kwargs
+    ) -> list[Self]:
         """
         Use ffmpeg to merge audio files
         """
@@ -851,8 +885,10 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
         cur_tokens = 0
 
         for split in splits:
-            split_tokens = split.estimate_tokens()
-            can_concat = len(cur_splits) == 0 or cur_splits[-1].can_concatenate(split)
+            split_tokens = await split.aestimate_tokens()
+            can_concat = len(cur_splits) == 0 or await cur_splits[-1].can_concatenate(
+                split
+            )
             if cur_tokens + split_tokens <= chunk_size and can_concat:
                 cur_splits.append(split)
                 cur_tokens += split_tokens
@@ -867,7 +903,9 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
                     data_splits = [split.source.read() for split in cur_splits]
                     merged_blocks.extend(
                         VideoBlock(video=split, video_mimetype=splits[0].video_mimetype)
-                        for split in cls.ffmpeg_concat(data_splits, splits[0].extension)
+                        for split in await cls.ffmpeg_concat(
+                            data_splits, splits[0].extension
+                        )
                     )
                     cur_splits = [split.resolve_audio().read()]
                     cur_tokens = split_tokens
@@ -881,7 +919,9 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
                 data_splits = [split.source.read() for split in cur_splits]
                 merged_blocks.extend(
                     VideoBlock(video=split, video_mimetype=splits[0].video_mimetype)
-                    for split in cls.ffmpeg_concat(data_splits, splits[0].extension)
+                    for split in await cls.ffmpeg_concat(
+                        data_splits, splits[0].extension
+                    )
                 )
         return merged_blocks
 
@@ -926,7 +966,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
             return f"data:{self.video_mimetype};base64,{b64_str}"
         return f"data:video;base64,{b64_str}"
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         """
         Use TinyTag or ffprobe (if available) to estimate the duration of the video file and convert to tokens.
 
@@ -946,7 +986,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
 
             # Next try ffprobe
             if self.has_ffmpeg():
-                metadata = self.ffprobe()
+                metadata = await self.ffprobe()
                 if duration := metadata.get("format", {}).get("duration", None):
                     return (int(float(duration)) + 1) * 263
 
@@ -957,7 +997,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
                 return 0
             raise
 
-    def split(self, max_tokens: int, *args, **kwargs) -> List[Self]:
+    async def asplit(self, max_tokens: int, *args, **kwargs) -> List[Self]:
         """
         Split video into chunks using ffmpeg
         """
@@ -975,7 +1015,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
 
         return [
             VideoBlock(video=video_segment, video_mimetype=self.video_mimetype)
-            for video_segment in self.ffmpeg_segment(data, segment_time)
+            async for video_segment in self.ffmpeg_segment(data, segment_time)
         ]
 
     @classmethod
@@ -1020,7 +1060,7 @@ class DocumentBlock(BaseContentBlock):
         return None
 
     @classmethod
-    def merge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
+    async def amerge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
         """Documents are not generally mergeable, return splits."""
         return splits
 
@@ -1084,7 +1124,7 @@ class DocumentBlock(BaseContentBlock):
         guess = filetype.get_type(ext=suffix)
         return str(guess.mime) if guess else None
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         try:
             self.resolve_document()
         except ValueError as e:
@@ -1094,7 +1134,7 @@ class DocumentBlock(BaseContentBlock):
         # We currently only use this fallback estimate for documents which are non zero bytes
         return 512
 
-    def split(self, *args, **kwargs) -> List[Self]:
+    async def asplit(self, *args, **kwargs) -> List[Self]:
         """Documents are not generally splittable since we do not know the type, return self."""
         return [self]
 
@@ -1108,14 +1148,14 @@ class CacheControl(BaseContentBlock):
     ttl: str = Field(default="5m")
 
     @classmethod
-    def merge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
+    async def amerge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
         """CacheControls are not mergeable, return splits."""
         return splits
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         return 0
 
-    def split(self, *args, **kwargs) -> List[Self]:
+    async def asplit(self, *args, **kwargs) -> List[Self]:
         return [self]
 
 
@@ -1126,14 +1166,14 @@ class CachePoint(BaseContentBlock):
     cache_control: CacheControl
 
     @classmethod
-    def merge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
+    async def amerge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
         """CacheControls are not mergeable, return splits."""
         return splits
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         return 0
 
-    def split(self, *args, **kwargs) -> List[Self]:
+    async def asplit(self, *args, **kwargs) -> List[Self]:
         return [self]
 
 
@@ -1172,7 +1212,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         return atts == other_atts
 
     @staticmethod
-    def merge_nested(
+    async def amerge_nested(
         nested_blocks: list[BaseContentBlock],
         chunk_size: int,
         tokenizer: Any | None = None,
@@ -1191,12 +1231,14 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         # merge nested blocks of same type
         for nbs in nested_blocks_by_type:
             new_nested_blocks.extend(
-                type(nbs[0]).merge(nbs, chunk_size=chunk_size, tokenizer=tokenizer)
+                await type(nbs[0]).amerge(
+                    nbs, chunk_size=chunk_size, tokenizer=tokenizer
+                )
             )
         return new_nested_blocks
 
     @classmethod
-    def merge(
+    async def amerge(
         cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
     ) -> list[Self]:
         """
@@ -1209,7 +1251,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         cur_block_tokens = 0
 
         for split in splits:
-            split_tokens = split.estimate_tokens(tokenizer=tokenizer)
+            split_tokens = await split.aestimate_tokens(tokenizer=tokenizer)
             can_merge = len(cur_blocks) == 0 or cur_blocks[-1].can_merge(split)
             if cur_block_tokens + split_tokens <= chunk_size and can_merge:
                 cur_blocks.append(split)
@@ -1218,7 +1260,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                 if cur_blocks:
                     attributes = cur_blocks[0].model_dump() | {
                         # Overwrite nested blocks
-                        cls.nested_blocks_field_name(): cls.merge_nested(
+                        cls.nested_blocks_field_name(): await cls.amerge_nested(
                             nested_blocks=[
                                 nested_block
                                 for block in cur_blocks
@@ -1235,7 +1277,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         if cur_blocks:
             attributes = cur_blocks[0].model_dump() | {
                 # Overwrite nested blocks attribute and merge nested blocks of the same type
-                cls.nested_blocks_field_name(): cls.merge_nested(
+                cls.nested_blocks_field_name(): await cls.amerge_nested(
                     nested_blocks=[
                         nested_block
                         for block in cur_blocks
@@ -1249,13 +1291,16 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
         return merged_blocks
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
         """Estimate the number of tokens in this content block."""
         return sum(
-            [block.estimate_tokens(*args, **kwargs) for block in self.nested_blocks]
+            [
+                await block.aestimate_tokens(*args, **kwargs)
+                for block in self.nested_blocks
+            ]
         )
 
-    def split(
+    async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
     ) -> List[Self]:
         """Split the content block into smaller blocks with up to max_tokens tokens each."""
@@ -1264,7 +1309,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
         cls = type(self)
         for block in self.nested_blocks:
-            block_tokens = block.estimate_tokens(tokenizer=tknizer)
+            block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
             if block_tokens <= max_tokens:
                 attributes = self.model_dump() | {
                     # Overwrite nested blocks
@@ -1272,7 +1317,9 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                 }
                 splits.append(cls(**attributes))
             else:
-                split_blocks = block.split(max_tokens=max_tokens, tokenizer=tknizer)
+                split_blocks = await block.asplit(
+                    max_tokens=max_tokens, tokenizer=tknizer
+                )
                 for split_block in split_blocks:
                     attributes = self.model_dump() | {
                         # Overwrite nested blocks
@@ -1282,7 +1329,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
         return splits
 
-    def truncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+    async def atruncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
         """Truncate the content block to have at most max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
         current_tokens = 0
@@ -1290,21 +1337,21 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
         cls = type(self)
         for block in self.nested_blocks:
-            block_tokens = block.estimate_tokens(tokenizer=tknizer)
+            block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
             if current_tokens + block_tokens <= max_tokens:
                 truncated_blocks.append(block)
                 current_tokens += block_tokens
             else:
                 remaining_tokens = max_tokens - current_tokens
                 if remaining_tokens > 0:
-                    truncated_block = block.truncate(
+                    truncated_block = await block.atruncate(
                         max_tokens=remaining_tokens, tokenizer=tknizer
                     )
                     # For some block types, truncate may return a block larger than requested
                     # However, we still want to include it if no other truncated blocks were added
                     # We leave it the user to handle cases where even the truncated block exceeds max_tokens
                     if (
-                        truncated_block.estimate_tokens(tokenizer=tknizer)
+                        await truncated_block.aestimate_tokens(tokenizer=tknizer)
                         <= remaining_tokens
                         or not truncated_blocks
                     ):
@@ -1428,40 +1475,40 @@ class ThinkingBlock(BaseContentBlock):
     )
 
     @classmethod
-    def merge(
+    async def amerge(
         cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
     ) -> list[Self]:
         text_blocks = [TextBlock(text=split.content or "") for split in splits]
-        merged_text_blocks = TextBlock.merge(
+        merged_text_blocks = await TextBlock.amerge(
             text_blocks, chunk_size=chunk_size, tokenizer=tokenizer
         )
         return [
             ThinkingBlock(
                 content=block.text,
-                num_tokens=block.estimate_tokens(tokenizer=tokenizer),
+                num_tokens=await block.aestimate_tokens(tokenizer=tokenizer),
                 additional_information={},
             )
             for block in merged_text_blocks
         ]
 
-    def estimate_tokens(self, tokenizer: Any | None = None) -> int:
-        return self.num_tokens or TextBlock(text=self.content or "").estimate_tokens(
-            tokenizer=tokenizer
-        )
+    async def aestimate_tokens(self, tokenizer: Any | None = None) -> int:
+        return self.num_tokens or await TextBlock(
+            text=self.content or ""
+        ).aestimate_tokens(tokenizer=tokenizer)
 
-    def split(
+    async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
     ) -> List[Self]:
         if not self.content:
             return [self]
 
-        split_blocks = TextBlock(text=self.content).split(
+        split_blocks = await TextBlock(text=self.content).asplit(
             max_tokens=max_tokens, tokenizer=tokenizer
         )
         return [
             ThinkingBlock(
                 content=block.text,
-                num_tokens=block.estimate_tokens(tokenizer=tokenizer),
+                num_tokens=await block.aestimate_tokens(tokenizer=tokenizer),
                 additional_information=self.additional_information,
             )
             for block in split_blocks
@@ -1495,14 +1542,16 @@ class ToolCallBlock(BaseContentBlock):
     )
 
     @classmethod
-    def merge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
+    async def amerge(cls, splits: list[Self], *args, **kwargs) -> list[Self]:
         """ToolCalls are not mergeable, return splits."""
         return splits
 
-    def estimate_tokens(self, *args, **kwargs) -> int:
-        return TextBlock(text=self.model_dump_json()).estimate_tokens(*args, **kwargs)
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
+        return await TextBlock(text=self.model_dump_json()).aestimate_tokens(
+            *args, **kwargs
+        )
 
-    def split(self, *args, **kwargs) -> List[Self]:
+    async def asplit(self, *args, **kwargs) -> List[Self]:
         # Tool calls are not splittable,
         return [self]
 

@@ -2,7 +2,7 @@ import base64
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
-from unittest.mock import Mock, MagicMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import httpx
@@ -1081,8 +1081,8 @@ def mock_ffprobe(
             execute_out = mock_ffprobe_mp4_split2_width_320_bytes_output
         else:
             raise ValueError("Unrecognized bytes input for ffprobe mock.")
-        mock = MagicMock(spec=FFmpeg)
-        mock.execute.return_value = execute_out
+        mock = Mock(spec=FFmpeg)
+        mock.execute = AsyncMock(return_value=execute_out)
         return mock
 
     return _mock
@@ -1123,7 +1123,9 @@ def mock_ffmpeg_segment(
                     f.write(out_bytes_str)
         else:
             raise ValueError("Unrecognized bytes input for ffmpeg segment mock.")
-        return MagicMock(spec=FFmpeg)
+        mock = Mock(spec=FFmpeg)
+        mock.execute = AsyncMock(return_value=None)
+        return mock
 
     return _mock
 
@@ -1139,7 +1141,9 @@ def mock_ffmpeg_concat(mp3_bytes, mp4_bytes):
                 f.write(mp3_bytes)
         else:
             raise ValueError("Unrecognized output path for ffmpeg concat mock.")
-        return MagicMock(spec=FFmpeg)
+        mock = Mock(spec=FFmpeg)
+        mock.execute = AsyncMock(return_value=None)
+        return mock
 
     return _mock
 
@@ -1159,7 +1163,7 @@ def mock_ffmpeg(mock_ffprobe, mock_ffmpeg_segment, mock_ffmpeg_concat):
             return mock_ffprobe(*args)
 
         # Otherwise we mock the output
-        mock = MagicMock(spec=FFmpeg)
+        mock = AsyncMock(spec=FFmpeg)
         mock.output.side_effect = mock_output
         return mock
 
@@ -1275,7 +1279,8 @@ def test_chat_message_legacy_roundtrip():
     }
 
 
-def test_chat_message_estimate_tokens(
+@pytest.mark.asyncio
+async def test_chat_message_aestimate_tokens(
     png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes, mock_ffmpeg
 ):
     m = ChatMessage(
@@ -1319,10 +1324,13 @@ def test_chat_message_estimate_tokens(
         ]
     )
 
-    assert m.estimate_tokens() == sum([block.estimate_tokens() for block in m.blocks])
+    assert await m.aestimate_tokens() == sum(
+        [await block.aestimate_tokens() for block in m.blocks]
+    )
 
 
-def test_chat_message_split_non_recursive_types(
+@pytest.mark.asyncio
+async def test_chat_message_asplit_non_recursive_types(
     png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes, mock_ffmpeg
 ):
     chat_message = ChatMessage(
@@ -1344,11 +1352,11 @@ def test_chat_message_split_non_recursive_types(
             ),
         ]
     )
-    chunks = chat_message.split(max_tokens=3)
+    chunks = await chat_message.asplit(max_tokens=3)
     assert chunks == [
         ChatMessage(blocks=[chunk])
         for block in chat_message.blocks
-        for chunk in block.split(max_tokens=3)
+        for chunk in await block.asplit(max_tokens=3)
     ]
     # TextBlock Should be split int 3 chunks
     assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], TextBlock)]) == 3
@@ -1375,7 +1383,8 @@ def test_chat_message_split_non_recursive_types(
     )
 
 
-def test_chat_message_split_recursive_types(png_1px, mock_pdf_bytes):
+@pytest.mark.asyncio
+async def test_chat_message_asplit_recursive_types(png_1px, mock_pdf_bytes):
     chat_message = ChatMessage(
         blocks=[
             CitableBlock(
@@ -1401,12 +1410,12 @@ def test_chat_message_split_recursive_types(png_1px, mock_pdf_bytes):
             ),
         ]
     )
-    chunks = chat_message.split(max_tokens=3)
+    chunks = await chat_message.asplit(max_tokens=3)
 
     assert chunks == [
         ChatMessage(blocks=[chunk])
         for block in chat_message.blocks
-        for chunk in block.split(max_tokens=3)
+        for chunk in await block.asplit(max_tokens=3)
     ]
 
     # CitableBlock should be split into 4 chunks (2 text, 1 image, 1 document)
@@ -1481,7 +1490,8 @@ def test_chat_message_split_recursive_types(png_1px, mock_pdf_bytes):
     )
 
 
-def test_chat_message_truncate_simple(
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_simple(
     png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes, mock_ffmpeg
 ):
     m1 = ChatMessage(blocks=[TextBlock(text="Hello world! This is a test.")])
@@ -1490,24 +1500,25 @@ def test_chat_message_truncate_simple(
     m4 = ChatMessage(blocks=[VideoBlock(video=mp4_bytes)])
     m5 = ChatMessage(blocks=[DocumentBlock(data=mock_pdf_bytes)])
 
-    assert m1.truncate(max_tokens=3) == ChatMessage(
-        blocks=[m1.blocks[0].truncate(max_tokens=3)]
+    assert await m1.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m1.blocks[0].atruncate(max_tokens=3)]
     )
-    assert m2.truncate(max_tokens=3) == ChatMessage(
-        blocks=[m2.blocks[0].truncate(max_tokens=3)]
+    assert await m2.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m2.blocks[0].atruncate(max_tokens=3)]
     )
-    assert m3.truncate(max_tokens=3) == ChatMessage(
-        blocks=[m3.blocks[0].truncate(max_tokens=3)]
+    assert await m3.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m3.blocks[0].atruncate(max_tokens=3)]
     )
-    assert m4.truncate(max_tokens=3) == ChatMessage(
-        blocks=[m4.blocks[0].truncate(max_tokens=3)]
+    assert await m4.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m4.blocks[0].atruncate(max_tokens=3)]
     )
-    assert m5.truncate(max_tokens=3) == ChatMessage(
-        blocks=[m5.blocks[0].truncate(max_tokens=3)]
+    assert await m5.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m5.blocks[0].atruncate(max_tokens=3)]
     )
 
 
-def test_chat_message_truncate_nested(
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_multiple_multimodal_blocks(
     png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes, mock_ffmpeg
 ):
     tb = TextBlock(text="Hello world! This is a test.")
@@ -1518,30 +1529,33 @@ def test_chat_message_truncate_nested(
 
     chat_message = ChatMessage(blocks=[tb, ib, ab, vb, db])
 
-    assert chat_message.truncate(max_tokens=3) == ChatMessage(
-        blocks=[chat_message.blocks[0].truncate(max_tokens=3)]
+    assert await chat_message.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await chat_message.blocks[0].atruncate(max_tokens=3)]
     )
-    assert chat_message.truncate(max_tokens=tb.estimate_tokens()) == ChatMessage(
-        blocks=[tb]
-    )
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens() + ib.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+    ) == ChatMessage(blocks=[tb])
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
     ) == ChatMessage(blocks=[tb, ib])
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens() + ib.estimate_tokens() + ab.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+        + await ib.aestimate_tokens()
+        + await ab.aestimate_tokens()
     ) == ChatMessage(blocks=[tb, ib, ab])
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens()
-        + ib.estimate_tokens()
-        + ab.estimate_tokens()
-        + vb.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+        + await ib.aestimate_tokens()
+        + await ab.aestimate_tokens()
+        + await vb.aestimate_tokens()
     ) == ChatMessage(blocks=[tb, ib, ab, vb])
-    assert chat_message.truncate(
-        max_tokens=chat_message.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await chat_message.aestimate_tokens()
     ) == ChatMessage(blocks=[tb, ib, ab, vb, db])
 
 
-def test_chat_message_truncated_recursive(png_1px, mock_pdf_bytes):
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_recursive(png_1px, mock_pdf_bytes):
     tb = TextBlock(text="Block content")
     ib = ImageBlock(image=png_1px)
     db = DocumentBlock(data=mock_pdf_bytes)
@@ -1565,34 +1579,40 @@ def test_chat_message_truncated_recursive(png_1px, mock_pdf_bytes):
         blocks=[citable_block, citation_block_text, citation_block_image]
     )
 
-    assert chat_message.truncate(max_tokens=tb.estimate_tokens()) == ChatMessage(
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+    ) == ChatMessage(
         blocks=[CitableBlock(title="Test Title", source="Test Source", content=[tb])]
     )
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens() + ib.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
     ) == ChatMessage(
         blocks=[
             CitableBlock(title="Test Title", source="Test Source", content=[tb, ib])
         ]
     )
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens() + ib.estimate_tokens() + db.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+        + await ib.aestimate_tokens()
+        + await db.aestimate_tokens()
     ) == ChatMessage(
         blocks=[
             CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
         ]
     )
-    assert chat_message.truncate(
-        max_tokens=tb.estimate_tokens() * 2
-        + ib.estimate_tokens()
-        + db.estimate_tokens()
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens() * 2
+        + await ib.aestimate_tokens()
+        + await db.aestimate_tokens()
     ) == ChatMessage(blocks=[citable_block, citation_block_text])
     assert (
-        chat_message.truncate(max_tokens=chat_message.estimate_tokens()) == chat_message
+        await chat_message.atruncate(max_tokens=await chat_message.aestimate_tokens())
+        == chat_message
     )
 
 
-def test_chat_message_merge(
+@pytest.mark.asyncio
+async def test_chat_message_amerge(
     png_1px,
     mp3_split1_bytes,
     mp3_split2_bytes,
@@ -1614,7 +1634,7 @@ def test_chat_message_merge(
         blocks=[TextBlock(text="This is another test.")], role=MessageRole.ASSISTANT
     )
 
-    merged_m = ChatMessage.merge(
+    merged_m = await ChatMessage.amerge(
         [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10], chunk_size=10000
     )
     assert len(merged_m) == 2
@@ -1623,14 +1643,14 @@ def test_chat_message_merge(
     assert merged_m == [
         ChatMessage(
             # The first two text blocks are merged because they are consecutive
-            blocks=TextBlock.merge(m1.blocks + m2.blocks, chunk_size=10000)
+            blocks=await TextBlock.amerge(m1.blocks + m2.blocks, chunk_size=10000)
             + m3.blocks
             +
             # The two audio blocks are merged because they are consecutive
-            AudioBlock.merge(m4.blocks + m5.blocks, chunk_size=10000)
+            await AudioBlock.amerge(m4.blocks + m5.blocks, chunk_size=10000)
             +
             # The two video blocks are merged because they are consecutive
-            VideoBlock.merge(m6.blocks + m7.blocks, chunk_size=10000)
+            await VideoBlock.amerge(m6.blocks + m7.blocks, chunk_size=10000)
             + m8.blocks
             + m9.blocks
         ),
@@ -1853,41 +1873,46 @@ def test_chat_message_format(
     )
 
 
-def test_text_block_estimate_tokens_default_tokenizer():
+@pytest.mark.asyncio
+async def test_text_block_aestimate_tokens_default_tokenizer():
     tb = TextBlock(text="Hello world!")
 
     tknzr = get_tokenizer()
-    assert tb.estimate_tokens() == len(tknzr(tb.text))
+    assert await tb.aestimate_tokens() == len(tknzr(tb.text))
 
 
-def test_text_block_estimate_tokens_custom_tokenizer():
+@pytest.mark.asyncio
+async def test_text_block_aestimate_tokens_custom_tokenizer():
     tb = TextBlock(text="Hello world!")
 
     mock_tknzer = Mock(spec=type(get_tokenizer()))
     mock_tknzer.return_value = list(range(100))
-    assert tb.estimate_tokens(tokenizer=mock_tknzer) == 100
+    assert await tb.aestimate_tokens(tokenizer=mock_tknzer) == 100
 
 
-def test_text_block_split_no_overlap():
+@pytest.mark.asyncio
+async def test_text_block_asplit_no_overlap():
     tb = TextBlock(text="Hello world! This is a test.")
 
-    chunks = tb.split(max_tokens=3)
+    chunks = await tb.asplit(max_tokens=3)
     splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=0)
     assert len(chunks) == len(splitter.split_text(tb.text))
 
 
-def test_text_block_truncate():
+@pytest.mark.asyncio
+async def test_text_block_atruncate():
     tb = TextBlock(text="Hello world! This is a test.")
-    truncated_tb = tb.truncate(max_tokens=4)
-    assert tb.estimate_tokens() > 4
-    assert truncated_tb.estimate_tokens() <= 4
+    truncated_tb = await tb.atruncate(max_tokens=4)
+    assert await tb.aestimate_tokens() > 4
+    assert await truncated_tb.aestimate_tokens() <= 4
     assert truncated_tb.text == "Hello world! This"
 
 
-def test_text_block_merge():
+@pytest.mark.asyncio
+async def test_text_block_amerge():
     tb1 = TextBlock(text="Hello world!")
     tb2 = TextBlock(text="This is a test.")
-    merged_tb = TextBlock.merge([tb1, tb2], chunk_size=100)
+    merged_tb = await TextBlock.amerge([tb1, tb2], chunk_size=100)
     assert len(merged_tb) == 1
     assert merged_tb[0].text == "Hello world! This is a test."
 
@@ -2023,32 +2048,36 @@ def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
     assert msg.blocks[0].image == png_1px_b64
 
 
-def test_image_block_estimate_tokens(png_1px_b64: bytes):
+@pytest.mark.asyncio
+async def test_image_block_aestimate_tokens(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
-    assert ib.estimate_tokens() == 258
+    assert await ib.aestimate_tokens() == 258
 
 
-def test_image_block_split(png_1px_b64: bytes):
+@pytest.mark.asyncio
+async def test_image_block_asplit(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
-    chunks = ib.split(max_tokens=2)
+    chunks = await ib.asplit(max_tokens=2)
 
     # Images are not splittable
     assert len(chunks) == 1
     assert chunks[0].image == png_1px_b64
 
 
-def test_image_block_truncate(png_1px_b64: bytes):
+@pytest.mark.asyncio
+async def test_image_block_atruncate(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
-    truncated_ib = ib.truncate(max_tokens=2)
+    truncated_ib = await ib.atruncate(max_tokens=2)
 
     # Images are not truncatable
     assert truncated_ib.image == png_1px_b64
 
 
-def test_image_block_merge(png_1px_b64: bytes):
+@pytest.mark.asyncio
+async def test_image_block_amerge(png_1px_b64: bytes):
     ib1 = ImageBlock(image=png_1px_b64)
     ib2 = ImageBlock(image=png_1px_b64)
-    merged_ib = ImageBlock.merge([ib1, ib2], chunk_size=1000)
+    merged_ib = await ImageBlock.amerge([ib1, ib2], chunk_size=1000)
 
     # Images are not mergeable
     assert len(merged_ib) == 2
@@ -2069,111 +2098,124 @@ def test_image_block_format(png_1px: bytes, png_1px_b64: bytes):
     assert formatted_ibb64.image == png_1px_b64
 
 
-def test_audio_block_estimate_tokens(mp3_bytes: bytes):
+@pytest.mark.asyncio
+async def test_audio_block_aestimate_tokens(mp3_bytes: bytes):
     ab = AudioBlock(audio=mp3_bytes)
-    assert ab.estimate_tokens() == 32  # based on 1 token per 4 bytes:
+    assert await ab.aestimate_tokens() == 32  # based on 1 token per 4 bytes:
 
 
-def test_audio_block_split(
+@pytest.mark.asyncio
+async def test_audio_block_asplit(
     mp3_bytes: bytes, mp3_split1_base64, mp3_split2_base64, mock_ffmpeg
 ):
     ab = AudioBlock(audio=mp3_bytes)
-    chunks = ab.split(max_tokens=2)
+    chunks = await ab.asplit(max_tokens=2)
 
     assert len(chunks) == 2
     assert chunks[0].audio == mp3_split1_base64
     assert chunks[1].audio == mp3_split2_base64
 
 
-def test_audio_block_split_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_audio_block_asplit_no_ffmpeg(
     mp3_bytes: bytes, mp3_base64: bytes, mock_no_ffmpeg
 ):
     ab = AudioBlock(audio=mp3_bytes)
-    chunks = ab.split(max_tokens=2)
+    chunks = await ab.asplit(max_tokens=2)
 
     # If no ffmpeg, no splitting occurs
     assert len(chunks) == 1
     assert chunks[0].audio == mp3_base64
 
 
-def test_audio_block_truncate(mp3_bytes: bytes, mp3_split1_base64: bytes, mock_ffmpeg):
+@pytest.mark.asyncio
+async def test_audio_block_atruncate(
+    mp3_bytes: bytes, mp3_split1_base64: bytes, mock_ffmpeg
+):
     ab = AudioBlock(audio=mp3_bytes)
-    truncated_ab = ab.truncate(max_tokens=16)
+    truncated_ab = await ab.atruncate(max_tokens=16)
 
     # Returns the first chunk from calling split with max_tokens = 16
     assert truncated_ab.audio == mp3_split1_base64
 
 
-def test_audio_block_truncate_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_audio_block_atruncate_no_ffmpeg(
     mp3_bytes: bytes, mp3_base64: bytes, mock_no_ffmpeg
 ):
     ab = AudioBlock(audio=mp3_bytes)
-    truncated_ab = ab.truncate(max_tokens=16)
+    truncated_ab = await ab.atruncate(max_tokens=16)
 
     # If no ffmpeg, no truncation occurs
-    assert truncated_ab.estimate_tokens() == 32
+    assert await truncated_ab.aestimate_tokens() == 32
     assert truncated_ab.audio == mp3_base64
 
 
-def test_audio_block_can_concatenate(
+@pytest.mark.asyncio
+async def test_audio_block_can_concatenate(
     mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mock_ffmpeg
 ):
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_bytes)
-    assert ab1.can_concatenate(ab2) is True
+    assert await ab1.can_concatenate(ab2) is True
 
 
-def test_audio_block_can_concatenate_false(
+@pytest.mark.asyncio
+async def test_audio_block_can_concatenate_false(
     mp3_split1_bytes: bytes, mp3_split2_sr_8000_bytes: bytes, mock_ffmpeg
 ):
     """
     Only support concatenation when files can be losslessly merged (no resampling).
 
-    Presumably, this should prevent merging audio blocks from different sources except for in case when
+    Presumably, this should prevent merging audio blocks from different sources except for in cases when
     both audio blocks are exactly the same in terms of sample rate, channels, etc.
     """
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_sr_8000_bytes)
-    assert ab1.can_concatenate(ab2) is False
+    assert await ab1.can_concatenate(ab2) is False
 
 
-def test_audio_block_can_concatenate_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_audio_block_can_concatenate_no_ffmpeg(
     mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mock_no_ffmpeg
 ):
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_bytes)
-    assert ab1.can_concatenate(ab2) is False
+    assert await ab1.can_concatenate(ab2) is False
 
 
-def test_audio_block_merge(
+@pytest.mark.asyncio
+async def test_audio_block_amerge(
     mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mp3_base64: bytes, mock_ffmpeg
 ):
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_bytes)
-    merged_abs = AudioBlock.merge([ab1, ab2], chunk_size=1000)
+    merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
 
     assert len(merged_abs) == 1
     assert merged_abs[0].audio == mp3_base64
 
 
-def test_audio_block_merge_cannot_concatenate(
+@pytest.mark.asyncio
+async def test_audio_block_amerge_cannot_concatenate(
     mp3_split1_bytes: bytes, mp3_split2_sr_8000_bytes: bytes, mock_ffmpeg
 ):
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_sr_8000_bytes)
-    merged_abs = AudioBlock.merge([ab1, ab2], chunk_size=1000)
+    merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
 
     # Cannot concatenate due to different sample rates, so returns both blocks as is
     assert len(merged_abs) == 2
     assert merged_abs == [ab1, ab2]
 
 
-def test_audio_block_merge_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_audio_block_amerge_no_ffmpeg(
     mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mock_no_ffmpeg
 ):
     ab1 = AudioBlock(audio=mp3_split1_bytes)
     ab2 = AudioBlock(audio=mp3_split2_bytes)
-    merged_abs = AudioBlock.merge([ab1, ab2], chunk_size=1000)
+    merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
 
     # If no ffmpeg, no merging occurs
     assert len(merged_abs) == 2
@@ -2270,32 +2312,36 @@ def test_document_block_from_url(pdf_url: str):
     assert document.title == "dummy_pdf"
 
 
-def test_document_block_estimate_tokens(mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_document_block_aestimate_tokens(mock_pdf_bytes: bytes):
     document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
     # Fallback: we currently don't estimate tokens for documents since it's too complicated to handle
     # all the different document types. Essentially kicking the can here.
-    assert document.estimate_tokens() == 512
+    assert await document.aestimate_tokens() == 512
 
 
-def test_document_block_split(mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_document_block_asplit(mock_pdf_bytes: bytes):
     document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
-    chunks = document.split(max_tokens=100)
+    chunks = await document.asplit(max_tokens=100)
     # We dont split documents currently
     assert len(chunks) == 1
     assert chunks[0].data == document.data
 
 
-def test_document_block_truncate(mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_document_block_atruncate(mock_pdf_bytes: bytes):
     document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
-    truncated_document = document.truncate(max_tokens=100)
+    truncated_document = await document.atruncate(max_tokens=100)
     # We dont truncate documents currently
     assert truncated_document.data == document.data
 
 
-def test_document_block_merge(mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_document_block_amerge(mock_pdf_bytes: bytes):
     document1 = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
     document2 = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
-    merged = DocumentBlock.merge([document1, document2], chunk_size=1000)
+    merged = await DocumentBlock.amerge([document1, document2], chunk_size=1000)
     # We dont merge documents currently
     assert len(merged) == 2
     assert merged == [document1, document2]
@@ -2347,31 +2393,35 @@ def test_cache_control() -> None:
         CachePoint.model_validate({"cache_control": "default"})
 
 
-def test_cache_control_estimate_tokens():
+@pytest.mark.asyncio
+async def test_cache_control_aestimate_tokens():
     cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
     # No content length for ephemeral cache control
-    assert cp.estimate_tokens() == 0
+    assert await cp.aestimate_tokens() == 0
 
 
-def test_cache_control_split():
+@pytest.mark.asyncio
+async def test_cache_control_asplit():
     cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
-    chunks = cp.split(max_tokens=10)
+    chunks = await cp.asplit(max_tokens=10)
     # Cache control points are not splittable
     assert len(chunks) == 1
     assert chunks[0].cache_control == cp.cache_control
 
 
-def test_cache_control_truncate():
+@pytest.mark.asyncio
+async def test_cache_control_atruncate():
     cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
-    truncated_cp = cp.truncate(max_tokens=10)
+    truncated_cp = await cp.atruncate(max_tokens=10)
     # Cache control points are not truncatable
     assert truncated_cp.cache_control == cp.cache_control
 
 
-def test_cache_control_merge():
+@pytest.mark.asyncio
+async def test_cache_control_amerge():
     cp1 = CachePoint(cache_control=CacheControl(type="ephemeral"))
     cp2 = CachePoint(cache_control=CacheControl(type="ephemeral"))
-    merged = CachePoint.merge([cp1, cp2], chunk_size=100)
+    merged = await CachePoint.amerge([cp1, cp2], chunk_size=100)
     # Cache control points are not mergeable
     assert len(merged) == 2
     assert merged == [cp1, cp2]
@@ -2477,61 +2527,70 @@ def test_video_block_store_as_base64(mp4_bytes: bytes, mp4_base64: bytes):
     assert VideoBlock(video=mp4_base64).video == mp4_base64
 
 
-def test_video_block_estimate_tokens(mp4_base64: bytes):
+@pytest.mark.asyncio
+async def test_video_block_aestimate_tokens(mp4_base64: bytes):
     vb = VideoBlock(video=mp4_base64)
     assert (
-        vb.estimate_tokens() == 3 * 263
+        await vb.aestimate_tokens() == 3 * 263
     )  # 263 tokens per second (rounded up to 3 seconds)
 
 
-def test_video_block_split(
+@pytest.mark.asyncio
+async def test_video_block_asplit(
     mp4_bytes: bytes, mp4_split1_base64: bytes, mp4_split2_base64: bytes, mock_ffmpeg
 ):
     vb = VideoBlock(video=mp4_bytes)
-    chunks = vb.split(max_tokens=500)
+    chunks = await vb.asplit(max_tokens=500)
 
     assert len(chunks) == 2
     assert chunks[0].video == mp4_split1_base64
     assert chunks[1].video == mp4_split2_base64
 
 
-def test_video_block_split_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_video_block_asplit_no_ffmpeg(
     mp4_bytes: bytes, mp4_base64: bytes, mock_no_ffmpeg
 ):
     vb = VideoBlock(video=mp4_bytes)
-    chunks = vb.split(max_tokens=500)
+    chunks = await vb.asplit(max_tokens=500)
 
     # If no ffmpeg, no splitting occurs
     assert len(chunks) == 1
     assert chunks[0].video == mp4_base64
 
 
-def test_video_block_truncate(mp4_bytes: bytes, mp4_split1_base64: bytes, mock_ffmpeg):
+@pytest.mark.asyncio
+async def test_video_block_atruncate(
+    mp4_bytes: bytes, mp4_split1_base64: bytes, mock_ffmpeg
+):
     vb = VideoBlock(video=mp4_bytes)
-    truncated_vb = vb.truncate(max_tokens=500)
+    truncated_vb = await vb.atruncate(max_tokens=500)
 
     assert truncated_vb.video == mp4_split1_base64
 
 
-def test_video_block_truncate_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_video_block_atruncate_no_ffmpeg(
     mp4_bytes: bytes, mp4_base64: bytes, mock_no_ffmpeg
 ):
     vb = VideoBlock(video=mp4_bytes)
-    truncated_vb = vb.truncate(max_tokens=500)
+    truncated_vb = await vb.atruncate(max_tokens=500)
 
     # If no ffmpeg, no truncation occurs
     assert truncated_vb.video == mp4_base64
 
 
-def test_video_block_can_concatenate(
+@pytest.mark.asyncio
+async def test_video_block_can_concatenate(
     mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_ffmpeg
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_bytes)
-    assert vb1.can_concatenate(vb2) is True
+    assert await vb1.can_concatenate(vb2) is True
 
 
-def test_video_block_can_concatenate_false(
+@pytest.mark.asyncio
+async def test_video_block_can_concatenate_false(
     mp4_split1_bytes: bytes, mp4_split2_width_320_bytes: bytes, mock_ffmpeg
 ):
     """
@@ -2542,46 +2601,50 @@ def test_video_block_can_concatenate_false(
     """
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_width_320_bytes)
-    assert vb1.can_concatenate(vb2) is False
+    assert await vb1.can_concatenate(vb2) is False
 
 
-def test_video_block_can_concatenate_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_video_block_can_concatenate_no_ffmpeg(
     mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_no_ffmpeg
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_bytes)
-    assert vb1.can_concatenate(vb2) is False
+    assert await vb1.can_concatenate(vb2) is False
 
 
-def test_video_block_merge(
+@pytest.mark.asyncio
+async def test_video_block_amerge(
     mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mp4_base64: bytes, mock_ffmpeg
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_bytes)
-    merged_vbs = VideoBlock.merge([vb1, vb2], chunk_size=2000)
+    merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
 
     assert len(merged_vbs) == 1
     assert merged_vbs[0].video == mp4_base64
 
 
-def test_video_block_merge_cannot_concatenate(
+@pytest.mark.asyncio
+async def test_video_block_amerge_cannot_concatenate(
     mp4_split1_bytes: bytes, mp4_split2_width_320_bytes: bytes, mock_ffmpeg
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_width_320_bytes)
-    merged_vbs = VideoBlock.merge([vb1, vb2], chunk_size=2000)
+    merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
 
     # Cannot concatenate due to different resolutions, so returns both blocks as is
     assert len(merged_vbs) == 2
     assert merged_vbs == [vb1, vb2]
 
 
-def test_video_block_merge_no_ffmpeg(
+@pytest.mark.asyncio
+async def test_video_block_amerge_no_ffmpeg(
     mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_no_ffmpeg
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_bytes)
-    merged_vbs = VideoBlock.merge([vb1, vb2], chunk_size=2000)
+    merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
 
     # If no ffmpeg, no merging occurs
     assert len(merged_vbs) == 2
@@ -2601,26 +2664,28 @@ def test_video_block_format(mp4_bytes: bytes, mp4_base64: bytes):
     assert formatted_vbb64.video == mp4_base64
 
 
-def test_citable_block_estimate_tokens(png_1px: bytes, mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_citable_block_aestimate_tokens(png_1px: bytes, mock_pdf_bytes: bytes):
     content_blocks = [
         TextBlock(text="This is the content."),
         ImageBlock(image=png_1px),
         DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
     ]
     cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
-    assert cb.estimate_tokens() == sum(
-        [block.estimate_tokens() for block in content_blocks]
+    assert await cb.aestimate_tokens() == sum(
+        [await block.aestimate_tokens() for block in content_blocks]
     )
 
 
-def test_citable_block_split(png_1px: bytes, mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_citable_block_asplit(png_1px: bytes, mock_pdf_bytes: bytes):
     content_blocks = [
         TextBlock(text="This is the content."),
         ImageBlock(image=png_1px),
         DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
     ]
     cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
-    chunks = cb.split(max_tokens=3)
+    chunks = await cb.asplit(max_tokens=3)
 
     # Citable blocks are recursively splittable. However, since ImageBlock and DocumentBlock are not splittable, only
     # the TextBlock gets split. We expect 4 chunks: one for each original block.
@@ -2645,16 +2710,17 @@ def test_citable_block_split(png_1px: bytes, mock_pdf_bytes: bytes):
     )
 
 
-def test_citable_block_truncate(png_1px: bytes, mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_citable_block_atruncate(png_1px: bytes, mock_pdf_bytes: bytes):
     content_blocks = [
         TextBlock(text="This is the content."),
         ImageBlock(image=png_1px),
         DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
     ]
     cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
-    truncated_cb = cb.truncate(max_tokens=5)
-    truncated_cb2 = cb.truncate(max_tokens=300)
-    truncated_cb3 = cb.truncate(max_tokens=800)
+    truncated_cb = await cb.atruncate(max_tokens=5)
+    truncated_cb2 = await cb.atruncate(max_tokens=300)
+    truncated_cb3 = await cb.atruncate(max_tokens=800)
 
     # Citable blocks are recursively truncatable. However, since ImageBlock and DocumentBlock are not truncatable,
     # only the TextBlock gets truncated.
@@ -2674,7 +2740,8 @@ def test_citable_block_truncate(png_1px: bytes, mock_pdf_bytes: bytes):
     )
 
 
-def test_citable_block_merge(png_1px: bytes, mock_pdf_bytes: bytes):
+@pytest.mark.asyncio
+async def test_citable_block_amerge(png_1px: bytes, mock_pdf_bytes: bytes):
     content_blocks1 = [
         TextBlock(text="This is the content."),
         ImageBlock(image=png_1px),
@@ -2696,7 +2763,7 @@ def test_citable_block_merge(png_1px: bytes, mock_pdf_bytes: bytes):
     cb3 = CitableBlock(
         title="Test Title 2", source="Test Source 2", content=content_blocks3
     )
-    merged_cbs = CitableBlock.merge([cb1, cb2, cb3], chunk_size=10000)
+    merged_cbs = await CitableBlock.amerge([cb1, cb2, cb3], chunk_size=10000)
 
     # content of cb1 and cb2 should be merged, cb3 remains separate because it's of different title/source
     assert len(merged_cbs) == 2
@@ -2704,7 +2771,9 @@ def test_citable_block_merge(png_1px: bytes, mock_pdf_bytes: bytes):
     # The two TextBlocks are not merged since they are not consecutive in the original list
     assert merged_cbs[0].content == content_blocks1 + content_blocks2
     # Second merged block should be cb3 with its content merged since they are two consecutive TextBlocks
-    assert merged_cbs[1].content == TextBlock.merge(content_blocks3, chunk_size=10000)
+    assert merged_cbs[1].content == await TextBlock.amerge(
+        content_blocks3, chunk_size=10000
+    )
 
 
 def test_citable_block_get_template_vars():
@@ -2744,7 +2813,8 @@ def test_citable_block_format(
     )
 
 
-def test_citation_block_estimate_tokens(png_1px):
+@pytest.mark.asyncio
+async def test_citation_block_aestimate_tokens(png_1px):
     cb1 = CitationBlock(
         cited_content=TextBlock(text="Hello world! This is a test."),
         source="Test Source",
@@ -2757,11 +2827,12 @@ def test_citation_block_estimate_tokens(png_1px):
         title="Test Title",
         additional_location_info={},
     )
-    assert cb1.estimate_tokens() == cb1.cited_content.estimate_tokens()
-    assert cb2.estimate_tokens() == cb2.cited_content.estimate_tokens()
+    assert await cb1.aestimate_tokens() == await cb1.cited_content.aestimate_tokens()
+    assert await cb2.aestimate_tokens() == await cb2.cited_content.aestimate_tokens()
 
 
-def test_citation_block_split(png_1px):
+@pytest.mark.asyncio
+async def test_citation_block_asplit(png_1px):
     cb1 = CitationBlock(
         cited_content=TextBlock(text="Hello world! This is a test."),
         source="Test Source",
@@ -2775,27 +2846,28 @@ def test_citation_block_split(png_1px):
         additional_location_info={},
     )
 
-    assert cb1.split(max_tokens=3) == [
+    assert await cb1.asplit(max_tokens=3) == [
         CitationBlock(
             cited_content=chunk,
             source="Test Source",
             title="Test Title",
             additional_location_info={},
         )
-        for chunk in cb1.cited_content.split(max_tokens=3)
+        for chunk in await cb1.cited_content.asplit(max_tokens=3)
     ]
-    assert cb2.split(max_tokens=3) == [
+    assert await cb2.asplit(max_tokens=3) == [
         CitationBlock(
             cited_content=chunk,
             source="Test Source",
             title="Test Title",
             additional_location_info={},
         )
-        for chunk in cb2.cited_content.split(max_tokens=3)
+        for chunk in await cb2.cited_content.asplit(max_tokens=3)
     ]
 
 
-def test_citation_block_truncate(png_1px):
+@pytest.mark.asyncio
+async def test_citation_block_atruncate(png_1px):
     cb1 = CitationBlock(
         cited_content=TextBlock(text="Hello world! This is a test."),
         source="Test Source",
@@ -2809,21 +2881,22 @@ def test_citation_block_truncate(png_1px):
         additional_location_info={},
     )
 
-    assert cb1.truncate(max_tokens=3) == CitationBlock(
-        cited_content=cb1.cited_content.truncate(max_tokens=3),
+    assert await cb1.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3),
         source="Test Source",
         title="Test Title",
         additional_location_info={},
     )
-    assert cb2.truncate(max_tokens=3) == CitationBlock(
-        cited_content=cb2.cited_content.truncate(max_tokens=3),
+    assert await cb2.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3),
         source="Test Source",
         title="Test Title",
         additional_location_info={},
     )
 
 
-def test_citation_block_merge_text_blocks():
+@pytest.mark.asyncio
+async def test_citation_block_amerge_text_blocks():
     cb1 = CitationBlock(
         cited_content=TextBlock(text="Hello world! "),
         source="Test Source",
@@ -2836,13 +2909,15 @@ def test_citation_block_merge_text_blocks():
         title="Test Title",
         additional_location_info={},
     )
-    merged = CitationBlock.merge([cb1, cb2], chunk_size=100)
+    merged = await CitationBlock.amerge([cb1, cb2], chunk_size=100)
 
     # Both citation blocks should be merged into one
     assert len(merged) == 1
     assert merged[0] == CitationBlock(
-        cited_content=TextBlock.merge(
-            [cb1.cited_content, cb2.cited_content], chunk_size=100
+        cited_content=(
+            await TextBlock.amerge(
+                [cb1.cited_content, cb2.cited_content], chunk_size=100
+            )
         )[0],
         source="Test Source",
         title="Test Title",
@@ -2850,7 +2925,8 @@ def test_citation_block_merge_text_blocks():
     )
 
 
-def test_citation_block_merge_image_blocks(png_1px):
+@pytest.mark.asyncio
+async def test_citation_block_amerge_image_blocks(png_1px):
     cb1 = CitationBlock(
         cited_content=ImageBlock(image=png_1px),
         source="Test Source",
@@ -2865,10 +2941,11 @@ def test_citation_block_merge_image_blocks(png_1px):
     )
 
     # Image blocks are not mergeable currently
-    assert CitationBlock.merge([cb1, cb2], chunk_size=100) == [cb1, cb2]
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
 
 
-def test_citation_block_merge_different_types(png_1px):
+@pytest.mark.asyncio
+async def test_citation_block_amerge_different_types(png_1px):
     cb1 = CitationBlock(
         cited_content=TextBlock(text="Hello world! This is a test."),
         source="Test Source",
@@ -2882,7 +2959,7 @@ def test_citation_block_merge_different_types(png_1px):
         additional_location_info={},
     )
     # Citation blocks are not mergeable across different cited content types
-    assert CitationBlock.merge([cb1, cb2], chunk_size=100) == [cb1, cb2]
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
 
 
 def test_citation_block_get_template_vars(png_1px):
@@ -2943,46 +3020,53 @@ def test_thinking_block():
     assert block.num_tokens == 100
 
 
-def test_thinking_block_estimate_tokens():
+@pytest.mark.asyncio
+async def test_thinking_block_aestimate_tokens():
     block1 = ThinkingBlock(content="Some Content", num_tokens=150)
     block2 = ThinkingBlock(content="Some Content")
 
-    assert block1.estimate_tokens() == block1.num_tokens
-    assert block2.estimate_tokens() == TextBlock(text=block2.content).estimate_tokens()
+    assert await block1.aestimate_tokens() == block1.num_tokens
+    assert (
+        await block2.aestimate_tokens()
+        == await TextBlock(text=block2.content).aestimate_tokens()
+    )
 
 
-def test_thinking_block_split():
+@pytest.mark.asyncio
+async def test_thinking_block_asplit():
     block = ThinkingBlock(content="This is a test of the ThinkingBlock split method.")
-    chunks = block.split(max_tokens=5)
+    chunks = await block.asplit(max_tokens=5)
 
     # Thinking blocks are split based on text content
     assert chunks == [
-        ThinkingBlock(content=chunk.text, num_tokens=chunk.estimate_tokens())
-        for chunk in TextBlock(text=block.content).split(max_tokens=5)
+        ThinkingBlock(content=chunk.text, num_tokens=await chunk.aestimate_tokens())
+        for chunk in await TextBlock(text=block.content).asplit(max_tokens=5)
     ]
 
 
-def test_thinking_block_truncate():
+@pytest.mark.asyncio
+async def test_thinking_block_atruncate():
     block = ThinkingBlock(
         content="This is a test of the ThinkingBlock truncate method."
     )
-    truncated_block = block.truncate(max_tokens=5)
+    truncated_block = await block.atruncate(max_tokens=5)
 
     # Thinking blocks are truncated based on text content
-    truncated_text_block = TextBlock(text=block.content).truncate(max_tokens=5)
+    truncated_text_block = await TextBlock(text=block.content).atruncate(max_tokens=5)
     assert truncated_block.content == truncated_text_block.text
-    assert truncated_block.num_tokens == truncated_text_block.estimate_tokens()
+    assert truncated_block.num_tokens == await truncated_text_block.aestimate_tokens()
 
 
-def test_thinking_block_merge():
+@pytest.mark.asyncio
+async def test_thinking_block_amerge():
     block1 = ThinkingBlock(content="This is the first ThinkingBlock.")
     block2 = ThinkingBlock(content="This is the second ThinkingBlock.")
-    merged = ThinkingBlock.merge([block1, block2], chunk_size=100)
+    merged = await ThinkingBlock.amerge([block1, block2], chunk_size=100)
 
     # Thinking blocks are merged based on text content
     assert merged == [
-        ThinkingBlock(content=chunk.text, num_tokens=chunk.estimate_tokens())
-        for chunk in TextBlock.merge(
+        ThinkingBlock(content=chunk.text, num_tokens=await chunk.aestimate_tokens())
+        for chunk in await TextBlock.amerge(
             [TextBlock(text=block1.content), TextBlock(text=block2.content)],
             chunk_size=100,
         )
@@ -3023,39 +3107,43 @@ def test_tool_call_block():
     assert custom_block.tool_kwargs == {"test": 1}
 
 
-def test_tool_call_block_estimate_tokens():
+@pytest.mark.asyncio
+async def test_tool_call_block_aestimate_tokens():
     block = ToolCallBlock(
         tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
     )
     assert (
-        block.estimate_tokens()
-        == TextBlock(text=block.model_dump_json()).estimate_tokens()
+        await block.aestimate_tokens()
+        == await TextBlock(text=block.model_dump_json()).aestimate_tokens()
     )
 
 
-def test_tool_call_block_split():
+@pytest.mark.asyncio
+async def test_tool_call_block_asplit():
     block = ToolCallBlock(
         tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
     )
 
     # ToolCallBlocks are not splittable
-    assert block.split() == [block]
+    assert await block.asplit() == [block]
 
 
-def test_tool_call_block_truncate():
+@pytest.mark.asyncio
+async def test_tool_call_block_atruncate():
     block = ToolCallBlock(
         tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
     )
-    truncated_block = block.truncate(max_tokens=5)
+    truncated_block = await block.atruncate(max_tokens=5)
 
     # ToolCallBlocks are not truncatable
     assert truncated_block == block
 
 
-def test_tool_call_block_merge():
+@pytest.mark.asyncio
+async def test_tool_call_block_amerge():
     block1 = ToolCallBlock(tool_name="example_tool_1", tool_kwargs={"param": "value1"})
     block2 = ToolCallBlock(tool_name="example_tool_2", tool_kwargs={"param": "value2"})
-    merged = ToolCallBlock.merge([block1, block2], chunk_size=100)
+    merged = await ToolCallBlock.amerge([block1, block2], chunk_size=100)
 
     # ToolCallBlocks are not mergeable
     assert len(merged) == 2

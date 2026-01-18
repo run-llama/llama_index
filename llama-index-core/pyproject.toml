@@ -83,6 +83,7 @@ dependencies = [
     "platformdirs",
     "tinytag>=2.2.0",
     "python-ffmpeg>=2.0.12",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [project.urls]
