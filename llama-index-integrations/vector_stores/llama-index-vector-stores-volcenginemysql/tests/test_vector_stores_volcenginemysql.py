@@ -11,7 +11,8 @@ This keeps the suite deterministic and runnable in CI without provisioning a
 Volcengine MySQL instance.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+import unittest
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from llama_index.core.schema import TextNode
@@ -46,7 +47,12 @@ def test_client_property_tracks_engine_lifecycle() -> None:
                     perform_setup=True,
                 )
 
-                # `perform_setup=True` triggers `_initialize()`, so an engine gets created.
+                # Initially None because initialization is lazy
+                assert store.client is None
+
+                # Trigger initialization
+                store._initialize()
+
                 assert store.client is not None
 
                 store.close()
@@ -67,6 +73,9 @@ def test_constructor_with_setup_runs_validation_and_table_creation() -> None:
                     perform_setup=True,
                 )
 
+                # Initialize to trigger calls
+                store._initialize()
+
                 mock_create_engine.assert_called_once()
                 mock_validate.assert_called_once()
                 mock_create_table.assert_called_once()
@@ -86,6 +95,9 @@ def test_constructor_without_setup_skips_validation_and_ddl() -> None:
                     connection_string=_TEST_CONN_STR,
                     perform_setup=False,
                 )
+
+                # Initialize to trigger calls
+                store._initialize()
 
                 # Connection is established but setup steps are skipped
                 mock_create_engine.assert_called_once()
@@ -133,6 +145,7 @@ def test_validate_server_capability_accepts_enabled_flag_and_rejects_disabled() 
             connection_string=_TEST_CONN_STR,
             perform_setup=False,
         )
+        store._engine = mock_engine
         store._validate_server_capability()
 
     # Failure case
@@ -142,6 +155,7 @@ def test_validate_server_capability_accepts_enabled_flag_and_rejects_disabled() 
             connection_string=_TEST_CONN_STR,
             perform_setup=False,
         )
+        store._engine = mock_engine
         with pytest.raises(
             ValueError, match="Volcengine MySQL vector index is not enabled"
         ):
@@ -160,6 +174,7 @@ def test_create_table_if_missing_emits_vector_index_ddl() -> None:
             table_name="test_table",
             perform_setup=False,
         )
+        store._engine = mock_engine
         store._create_table_if_not_exists()
 
         mock_connection.execute.assert_called_once()
@@ -403,3 +418,165 @@ def test_drop_removes_table_and_disposes_engine() -> None:
 
         # Verify engine was disposed
         mock_engine.dispose.assert_called_once()
+
+
+class TestAsyncVolcengineMySQLVectorStore(unittest.IsolatedAsyncioTestCase):
+    async def test_async_add_inserts_rows_and_returns_node_ids(self) -> None:
+        """`async_add()` should batch-insert rows and return the IDs using async engine."""
+        mock_engine = MagicMock()
+        mock_connection = AsyncMock()
+        # Mock engine.connect() context manager
+        mock_engine.connect.return_value.__aenter__.return_value = mock_connection
+        mock_engine.connect.return_value.__aexit__.return_value = None
+
+        with patch(
+            "llama_index.vector_stores.volcengine_mysql.base.create_async_engine",
+            return_value=mock_engine,
+        ) as mock_create:
+            store = VolcengineMySQLVectorStore(
+                connection_string=_TEST_CONN_STR,
+                perform_setup=False,
+            )
+
+            nodes = [
+                TextNode(
+                    text="test text 1",
+                    id_="id1",
+                    embedding=[1.0, 2.0],
+                    metadata={"key": "val1"},
+                )
+            ]
+
+            ids = await store.async_add(nodes)
+
+            # Check async engine creation
+            mock_create.assert_called_once()
+            expected_conn_str = _TEST_CONN_STR.replace("pymysql", "aiomysql")
+            assert mock_create.call_args[0][0] == expected_conn_str
+
+            assert ids == ["id1"]
+            mock_connection.execute.assert_awaited_once()
+            mock_connection.commit.assert_awaited_once()
+
+            args = mock_connection.execute.call_args
+            assert "INSERT INTO `llamaindex`" in str(args[0][0])
+
+    async def test_adelete_by_ref_doc_id_uses_async_execution(self) -> None:
+        """`adelete()` removes rows by `ref_doc_id` using async engine."""
+        mock_engine = MagicMock()
+        mock_connection = AsyncMock()
+        mock_engine.connect.return_value.__aenter__.return_value = mock_connection
+        mock_engine.connect.return_value.__aexit__.return_value = None
+
+        with patch(
+            "llama_index.vector_stores.volcengine_mysql.base.create_async_engine",
+            return_value=mock_engine,
+        ):
+            store = VolcengineMySQLVectorStore(
+                connection_string=_TEST_CONN_STR,
+                perform_setup=False,
+            )
+
+            await store.adelete(ref_doc_id="ref_id_1")
+
+            mock_connection.execute.assert_awaited_once()
+            mock_connection.commit.assert_awaited_once()
+            stmt = mock_connection.execute.call_args[0][0]
+            assert "DELETE FROM `llamaindex`" in str(stmt)
+            assert "JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id" in str(stmt)
+
+    async def test_adelete_nodes_uses_in_clause_async(self) -> None:
+        """`adelete_nodes()` should use IN clause and async execution."""
+        mock_engine = MagicMock()
+        mock_connection = AsyncMock()
+        mock_engine.connect.return_value.__aenter__.return_value = mock_connection
+        mock_engine.connect.return_value.__aexit__.return_value = None
+
+        with patch(
+            "llama_index.vector_stores.volcengine_mysql.base.create_async_engine",
+            return_value=mock_engine,
+        ):
+            store = VolcengineMySQLVectorStore(
+                connection_string=_TEST_CONN_STR,
+                perform_setup=False,
+            )
+
+            await store.adelete_nodes(node_ids=["id1", "id2"])
+
+            mock_connection.execute.assert_awaited_once()
+            stmt = mock_connection.execute.call_args[0][0]
+            assert "DELETE FROM `llamaindex`" in str(stmt)
+            assert "WHERE node_id IN" in str(stmt)
+
+    async def test_aclear_deletes_all_rows_async(self) -> None:
+        """`aclear()` deletes all rows using async engine."""
+        mock_engine = MagicMock()
+        mock_connection = AsyncMock()
+        mock_engine.connect.return_value.__aenter__.return_value = mock_connection
+        mock_engine.connect.return_value.__aexit__.return_value = None
+
+        with patch(
+            "llama_index.vector_stores.volcengine_mysql.base.create_async_engine",
+            return_value=mock_engine,
+        ):
+            store = VolcengineMySQLVectorStore(
+                connection_string=_TEST_CONN_STR,
+                perform_setup=False,
+            )
+
+            await store.aclear()
+
+            mock_connection.execute.assert_awaited_once()
+            stmt = mock_connection.execute.call_args[0][0]
+            assert "DELETE FROM `llamaindex`" in str(stmt)
+
+    async def test_aquery_returns_scored_nodes_async(self) -> None:
+        """`aquery()` should return nodes + similarities using async engine."""
+        mock_engine = MagicMock()
+        mock_connection = AsyncMock()
+        mock_result = MagicMock()
+
+        # Mock result iteration for async
+        row = Mock()
+        row.node_id = "id1"
+        row.text = "text1"
+        row.metadata = '{"key": "val"}'
+        row.distance = 0.1
+
+        # Async result is typically iterable, but here we mock the execute return value
+        # The code does `result = await connection.execute(...)` and then `for item in result:`
+        # Standard SQLAlchemy AsyncResult is synchronous iterable after await.
+        mock_result.__iter__.return_value = [row]
+        mock_connection.execute.return_value = mock_result
+
+        mock_engine.connect.return_value.__aenter__.return_value = mock_connection
+        mock_engine.connect.return_value.__aexit__.return_value = None
+
+        with patch(
+            "llama_index.vector_stores.volcengine_mysql.base.create_async_engine",
+            return_value=mock_engine,
+        ):
+            store = VolcengineMySQLVectorStore(
+                connection_string=_TEST_CONN_STR,
+                perform_setup=False,
+            )
+
+            query = VectorStoreQuery(
+                query_embedding=[1.0, 2.0],
+                similarity_top_k=2,
+            )
+
+            result = await store.aquery(query)
+
+            assert len(result.nodes) == 1
+            assert result.nodes[0].node_id == "id1"
+            assert pytest.approx(result.similarities[0], 0.001) == 0.909
+
+            # We expect at least one execute call (query).
+            # We might have an optional SET SESSION call if ef_search is set (default 20).
+            assert mock_connection.execute.await_count >= 1
+
+            # Verify the SELECT query
+            stmt = str(mock_connection.execute.call_args_list[-1][0][0])
+            assert "SELECT" in stmt
+            assert "L2_DISTANCE" in stmt

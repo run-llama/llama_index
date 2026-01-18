@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import List
 import os
 from volcenginesdkarkruntime import Ark
@@ -97,6 +98,35 @@ def call_ark_llm(prompt: str) -> str:
         extra_headers={"x-is-encrypted": "true"},
     )
     return completion.choices[0].message.content
+
+
+async def run_async_query_demo(
+    vector_store: VolcengineMySQLVectorStore, embed_model: ArkEmbedding, question: str
+) -> None:
+    """Demonstrate async query capabilities."""
+    print(f"\n=== Async Similarity search for: {question!r} ===")
+
+    query_embedding = await embed_model.aget_query_embedding(question)
+    vs_query = VectorStoreQuery(
+        query_embedding=query_embedding,
+        similarity_top_k=3,
+    )
+
+    result = await vector_store.aquery(vs_query)
+
+    print(f"Top {len(result.nodes)} results (fetched asynchronously):")
+    for i, node in enumerate(result.nodes, 1):
+        sim = result.similarities[i - 1] if result.similarities else None
+        if sim is not None:
+            print(f"  {i}. similarity={sim:.4f}")
+        else:
+            print(f"  {i}.")
+        print(f"     text={node.get_content()[:120]}...")
+        print(f"     metadata={node.metadata}")
+
+    # Explicitly close the async engine to release connections before the loop closes.
+    # Otherwise, you may see 'RuntimeError: Event loop is closed' during cleanup.
+    await vector_store.aclose()
 
 
 def build_vector_store() -> VolcengineMySQLVectorStore:
@@ -229,6 +259,9 @@ Answer:"""
     print("\n=== Ark LLM answer ===")
     answer = call_ark_llm(prompt)
     print(answer)
+
+    # Run async query demo
+    asyncio.run(run_async_query_demo(vector_store, embed_model, question))
 
     # Cleanup: drop the demo table after the RAG test finishes
     print("\nCleaning up demo table ...")

@@ -1,47 +1,6 @@
 """
 Volcengine RDS MySQL VectorStore integration for LlamaIndex.
 
-This module provides a :class:`VolcengineMySQLVectorStore` implementation
-that adapts the native vector index capability of Volcengine Cloud
-Database for MySQL (RDS for MySQL with ``VECTOR(N)`` columns and HNSW
-vector indexes) to the :class:`BasePydanticVectorStore` interface in
-LlamaIndex.
-
-Notes
------
-- This implementation **depends on the Volcengine RDS MySQL vector
-  extension**. It requires:
-  - MySQL 8.0 on Volcengine with a version that supports vector indexes;
-  - the parameter ``loose_vector_index_enabled = ON``;
-  - support for the ``VECTOR(N)`` type, ``VECTOR INDEX`` DDL, and
-    functions such as ``TO_VECTOR(...)``, ``L2_DISTANCE(...)``, and
-    ``COSINE_DISTANCE(...)``.
-- It is **not** intended for plain MySQL instances without the
-  Volcengine vector extension (for example, an unmodified community
-  MySQL 8.0 instance).
-
-Design overview
----------------
-- Table schema:
-  - ``id BIGINT AUTO_INCREMENT``: primary key;
-  - ``node_id VARCHAR(255)``: logical identifier used by LlamaIndex;
-  - ``text LONGTEXT``: node text content;
-  - ``metadata JSON``: serialized node metadata;
-  - ``embedding VECTOR(embed_dim)``: embedding vector column with an
-    HNSW vector index.
-- Writes:
-  - Embeddings are serialized as JSON arrays and passed through
-    ``TO_VECTOR(:embedding)`` into the ``VECTOR`` column.
-- Queries:
-  - Similarity search is executed on the database side using
-    ``L2_DISTANCE`` or ``COSINE_DISTANCE`` together with
-    ``ORDER BY ... LIMIT K``, avoiding application-side ANN.
-  - Metadata filters are applied via JSON predicates based on
-    ``JSON_EXTRACT`` and ``JSON_UNQUOTE``.
-
-See :func:`example_usage` at the bottom of this file for a minimal usage
-example.
-
 """
 
 from __future__ import annotations
@@ -53,6 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import quote_plus
 
 import sqlalchemy
+from sqlalchemy.ext.asyncio import create_async_engine
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -138,6 +98,7 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
 
     # Runtime-only attributes
     _engine: Any = PrivateAttr()
+    _aengine: Any = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
@@ -202,9 +163,8 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
 
         # Private attrs
         self._engine = None
+        self._aengine = None
         self._is_initialized = False
-
-        self._initialize()
 
     # ------------------------------------------------------------------
     # LlamaIndex base metadata
@@ -222,6 +182,13 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
             return None
         return self._engine
 
+    @property
+    def aclient(self) -> Any:  # type: ignore[override]
+        """Return the underlying Async SQLAlchemy engine (if initialized)."""
+        if not self._is_initialized:
+            return None
+        return self._aengine
+
     def close(self) -> None:
         """Dispose the underlying SQLAlchemy engine."""
         if not self._is_initialized:
@@ -230,6 +197,12 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         assert self._engine is not None
         self._engine.dispose()
         self._is_initialized = False
+
+    async def aclose(self) -> None:
+        """Dispose the underlying Async SQLAlchemy engine."""
+        if self._aengine is not None:
+            await self._aengine.dispose()
+            self._aengine = None
 
     # ------------------------------------------------------------------
     # Factory construction
@@ -317,6 +290,27 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
             echo=self.debug,
         )
 
+    def _aconnect(self) -> None:
+        """Create Async SQLAlchemy engine."""
+        if self._aengine is not None:
+            return
+
+        # Prepare async connection string
+        # We replace 'pymysql' with 'aiomysql' if present
+        async_conn_str = self.connection_string.replace("pymysql", "aiomysql")
+
+        # aiomysql does not support 'read_timeout' which is commonly used in pymysql
+        # Filter out incompatible args
+        filtered_args = {
+            k: v for k, v in self.connection_args.items() if k != "read_timeout"
+        }
+
+        self._aengine = create_async_engine(
+            async_conn_str,
+            connect_args=filtered_args,
+            echo=self.debug,
+        )
+
     def _validate_server_capability(self) -> None:
         """
         Validate that the MySQL server supports Volcengine vector index.
@@ -336,7 +330,8 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         with self._engine.connect() as connection:
             # Check loose_vector_index_enabled
             result = connection.execute(
-                sqlalchemy.text("SHOW VARIABLES LIKE 'loose_vector_index_enabled'")
+                sqlalchemy.text("SHOW VARIABLES LIKE :var"),
+                {"var": "loose_vector_index_enabled"},
             )
             row = result.fetchone()
             if not row or str(row[1]).upper() != "ON":
@@ -402,16 +397,75 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
 
     def _initialize(self) -> None:
         """Ensure engine is created and table is ready."""
+        if self._engine is None:
+            self._connect()
+
         if self._is_initialized:
             return
-
-        self._connect()
 
         if self.perform_setup:
             self._validate_server_capability()
             self._create_table_if_not_exists()
 
         self._is_initialized = True
+
+    async def _ainitialize(self) -> None:
+        """Ensure async engine is created and table is ready."""
+        if self._aengine is None:
+            self._aconnect()
+
+        if self._is_initialized:
+            return
+
+        if self.perform_setup:
+            await self._avalidate_server_capability()
+            await self._acreate_table_if_not_exists()
+
+        self._is_initialized = True
+
+    async def _avalidate_server_capability(self) -> None:
+        """Async version of _validate_server_capability."""
+        assert self._aengine is not None
+
+        async with self._aengine.connect() as connection:
+            result = await connection.execute(
+                sqlalchemy.text("SHOW VARIABLES LIKE :var"),
+                {"var": "loose_vector_index_enabled"},
+            )
+            row = result.fetchone()
+            if not row or str(row[1]).upper() != "ON":
+                raise ValueError(
+                    "Volcengine MySQL vector index is not enabled: please set loose_vector_index_enabled to ON."
+                )
+
+    async def _acreate_table_if_not_exists(self) -> None:
+        """Async version of _create_table_if_not_exists."""
+        assert self._aengine is not None
+
+        sec_attr = (
+            "{"  # Build JSON string for SECONDARY_ENGINE_ATTRIBUTE
+            f'"algorithm": "{self.ann_index_algorithm}", '
+            f'"M": "{self.ann_m}", '
+            f'"distance": "{self.ann_index_distance}"'
+            "}"
+        )
+
+        create_stmt = f"""
+        CREATE TABLE IF NOT EXISTS `{self.table_name}` (
+            id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            node_id VARCHAR(255) NOT NULL,
+            text LONGTEXT,
+            metadata JSON,
+            embedding VECTOR({self.embed_dim}) NOT NULL,
+            INDEX idx_node_id (node_id),
+            VECTOR INDEX idx_embedding (embedding)
+              SECONDARY_ENGINE_ATTRIBUTE='{sec_attr}'
+        ) ENGINE = InnoDB
+        """
+
+        async with self._aengine.connect() as connection:
+            await connection.execute(sqlalchemy.text(create_stmt))
+            await connection.commit()
 
     # ------------------------------------------------------------------
     # Helpers for (de)serializing nodes and filters
@@ -676,12 +730,41 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """
-        Async wrapper around :meth:`add`.
-
-        The Volcengine RDS MySQL driver is synchronous, so this simply
-        forwards to :meth:`add`.
+        Add nodes with embeddings into the MySQL vector store asynchronously.
         """
-        return self.add(nodes, **kwargs)
+        await self._ainitialize()
+
+        if not nodes:
+            return []
+
+        ids: List[str] = []
+        rows: List[Dict[str, Any]] = []
+
+        for node in nodes:
+            ids.append(node.node_id)
+            item = self._node_to_table_row(node)
+            rows.append(
+                {
+                    "node_id": item["node_id"],
+                    "text": item["text"],
+                    # TO_VECTOR expects a string like "[1.0,2.0,...]"
+                    "embedding": json.dumps(item["embedding"]),
+                    "metadata": json.dumps(item["metadata"]),
+                }
+            )
+
+        insert_stmt = sqlalchemy.text(
+            f"""
+            INSERT INTO `{self.table_name}` (node_id, text, embedding, metadata)
+            VALUES (:node_id, :text, TO_VECTOR(:embedding), :metadata)
+            """
+        )
+
+        async with self._aengine.connect() as connection:
+            await connection.execute(insert_stmt, rows)
+            await connection.commit()
+
+        return ids
 
     def delete(
         self,
@@ -712,7 +795,21 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         """Async wrapper around :meth:`delete`."""
-        self.delete(ref_doc_id, **delete_kwargs)
+        await self._ainitialize()
+
+        if not ref_doc_id:
+            return
+
+        stmt = sqlalchemy.text(
+            f"""
+            DELETE FROM `{self.table_name}`
+            WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id
+            """
+        )
+
+        async with self._aengine.connect() as connection:
+            await connection.execute(stmt, {"doc_id": ref_doc_id})
+            await connection.commit()
 
     def delete_nodes(
         self,
@@ -750,7 +847,19 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         """Async wrapper around :meth:`delete_nodes`."""
-        self.delete_nodes(node_ids=node_ids, filters=filters, **delete_kwargs)
+        await self._ainitialize()
+
+        if not node_ids:
+            return
+
+        stmt_str = f"DELETE FROM `{self.table_name}` WHERE node_id IN :node_ids"
+        stmt = sqlalchemy.text(stmt_str).bindparams(
+            sqlalchemy.bindparam("node_ids", expanding=True)
+        )
+
+        async with self._aengine.connect() as connection:
+            await connection.execute(stmt, {"node_ids": node_ids})
+            await connection.commit()
 
     def count(self) -> int:
         """Return total number of rows in the table."""
@@ -791,7 +900,13 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
 
     async def aclear(self) -> None:  # type: ignore[override]
         """Async wrapper around :meth:`clear`."""
-        self.clear()
+        await self._ainitialize()
+
+        stmt = sqlalchemy.text(f"DELETE FROM `{self.table_name}`")
+
+        async with self._aengine.connect() as connection:
+            await connection.execute(stmt)
+            await connection.commit()
 
     def _build_distance_expression(self) -> str:
         """
@@ -906,7 +1021,81 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Async wrapper around :meth:`query`."""
-        return self.query(query, **kwargs)
+        if query.mode != VectorStoreQueryMode.DEFAULT:
+            raise NotImplementedError(f"Query mode {query.mode} not available.")
+
+        if query.query_embedding is None:
+            raise ValueError(
+                "VolcengineMySQLVectorStore only supports embedding-based queries; query_embedding must be provided"
+            )
+
+        await self._ainitialize()
+
+        distance_expr = self._build_distance_expression()
+
+        base_stmt = f"""
+        SELECT
+            node_id,
+            text,
+            metadata,
+            {distance_expr} AS distance
+        FROM `{self.table_name}`
+        """
+
+        # Metadata filters
+        params = {
+            "query_embedding": json.dumps(query.query_embedding),
+            "limit": int(query.similarity_top_k),
+        }
+
+        if query.filters is not None:
+            param_counter = [0]
+            where_clause = self._filters_to_where_clause(
+                query.filters, params, param_counter
+            )
+            if where_clause:
+                base_stmt += f" WHERE {where_clause}"
+
+        base_stmt += " ORDER BY distance LIMIT :limit"
+
+        rows: List[DBEmbeddingRow] = []
+
+        async with self._aengine.connect() as connection:
+            # Optionally set ef_search, which affects recall and latency
+            if self.ef_search:
+                try:
+                    await connection.execute(
+                        sqlalchemy.text(
+                            "SET SESSION loose_hnsw_ef_search = :ef_search"
+                        ),
+                        {"ef_search": int(self.ef_search)},
+                    )
+                except Exception:
+                    _logger.warning(
+                        "Failed to set loose_hnsw_ef_search, continue without it.",
+                        exc_info=True,
+                    )
+
+            result = await connection.execute(sqlalchemy.text(base_stmt), params)
+
+            for item in result:
+                raw_meta = item.metadata
+                metadata = (
+                    json.loads(raw_meta) if isinstance(raw_meta, str) else raw_meta
+                )
+                distance = float(item.distance) if item.distance is not None else 0.0
+                similarity = 1.0 / (1.0 + distance)
+
+                rows.append(
+                    DBEmbeddingRow(
+                        node_id=item.node_id,
+                        text=item.text,
+                        metadata=metadata,
+                        similarity=similarity,
+                    )
+                )
+
+        return self._db_rows_to_query_result(rows)
 
 
 # ----------------------------------------------------------------------
