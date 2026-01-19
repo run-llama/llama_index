@@ -103,7 +103,9 @@ class BaseContentBlock(ABC, BaseModel):
             self.asplit(max_tokens=max_tokens, overlap=overlap, tokenizer=tokenizer)
         )
 
-    async def atruncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
         """Async truncate the content block to up to max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
         estimated_tokens = await self.aestimate_tokens(tokenizer=tknizer)
@@ -111,11 +113,15 @@ class BaseContentBlock(ABC, BaseModel):
             return self
 
         split_blocks = await self.asplit(max_tokens=max_tokens, tokenizer=tknizer)
-        return split_blocks[0]
+        return split_blocks[0] if not reverse else split_blocks[-1]
 
-    def truncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+    def truncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
         """Truncate the content block to up to max_tokens tokens."""
-        return asyncio_run(self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer))
+        return asyncio_run(
+            self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer, reverse=reverse)
+        )
 
     @classmethod
     def templatable_attributes(cls) -> List[str]:
@@ -1329,23 +1335,30 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
         return splits
 
-    async def atruncate(self, max_tokens: int, tokenizer: Any | None = None) -> Self:
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
         """Truncate the content block to have at most max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
         current_tokens = 0
         truncated_blocks = []
 
         cls = type(self)
-        for block in self.nested_blocks:
+        for block in (
+            self.nested_blocks if not reverse else reversed(self.nested_blocks)
+        ):
             block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
             if current_tokens + block_tokens <= max_tokens:
-                truncated_blocks.append(block)
+                if not reverse:
+                    truncated_blocks.append(block)
+                else:
+                    truncated_blocks.insert(0, block)
                 current_tokens += block_tokens
             else:
                 remaining_tokens = max_tokens - current_tokens
                 if remaining_tokens > 0:
                     truncated_block = await block.atruncate(
-                        max_tokens=remaining_tokens, tokenizer=tknizer
+                        max_tokens=remaining_tokens, tokenizer=tknizer, reverse=reverse
                     )
                     # For some block types, truncate may return a block larger than requested
                     # However, we still want to include it if no other truncated blocks were added
@@ -1355,7 +1368,10 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                         <= remaining_tokens
                         or not truncated_blocks
                     ):
-                        truncated_blocks.append(truncated_block)
+                        if not reverse:
+                            truncated_blocks.append(truncated_block)
+                        else:
+                            truncated_blocks.insert(0, truncated_block)
                 break  # Stop after reaching max_tokens
 
         attributes = self.model_dump() | {

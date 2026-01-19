@@ -1503,17 +1503,32 @@ async def test_chat_message_atruncate_simple(
     assert await m1.atruncate(max_tokens=3) == ChatMessage(
         blocks=[await m1.blocks[0].atruncate(max_tokens=3)]
     )
+    assert await m1.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m1.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
     assert await m2.atruncate(max_tokens=3) == ChatMessage(
         blocks=[await m2.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m2.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m2.blocks[0].atruncate(max_tokens=3, reverse=True)]
     )
     assert await m3.atruncate(max_tokens=3) == ChatMessage(
         blocks=[await m3.blocks[0].atruncate(max_tokens=3)]
     )
+    assert await m3.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m3.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
     assert await m4.atruncate(max_tokens=3) == ChatMessage(
         blocks=[await m4.blocks[0].atruncate(max_tokens=3)]
     )
+    assert await m4.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m4.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
     assert await m5.atruncate(max_tokens=3) == ChatMessage(
         blocks=[await m5.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m5.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m5.blocks[0].atruncate(max_tokens=3, reverse=True)]
     )
 
 
@@ -1539,18 +1554,39 @@ async def test_chat_message_atruncate_multiple_multimodal_blocks(
         max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
     ) == ChatMessage(blocks=[tb, ib])
     assert await chat_message.atruncate(
-        max_tokens=await tb.aestimate_tokens()
-        + await ib.aestimate_tokens()
-        + await ab.aestimate_tokens()
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, ab]])
     ) == ChatMessage(blocks=[tb, ib, ab])
     assert await chat_message.atruncate(
-        max_tokens=await tb.aestimate_tokens()
-        + await ib.aestimate_tokens()
-        + await ab.aestimate_tokens()
-        + await vb.aestimate_tokens()
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, ab, vb]])
     ) == ChatMessage(blocks=[tb, ib, ab, vb])
     assert await chat_message.atruncate(
         max_tokens=await chat_message.aestimate_tokens()
+    ) == ChatMessage(blocks=[tb, ib, ab, vb, db])
+
+    # reverse truncation
+    assert await chat_message.atruncate(
+        max_tokens=await db.aestimate_tokens(), reverse=True
+    ) == ChatMessage(blocks=[db])
+    assert await chat_message.atruncate(
+        max_tokens=await db.aestimate_tokens() + await vb.aestimate_tokens(),
+        reverse=True,
+    ) == ChatMessage(blocks=[vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, vb, ab]]),
+        reverse=True,
+    ) == ChatMessage(blocks=[ab, vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, vb, ab, ib]]),
+        reverse=True,
+    ) == ChatMessage(blocks=[ib, ab, vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=3 + sum([await b.aestimate_tokens() for b in [db, vb, ab, ib]]),
+        reverse=True,
+    ) == ChatMessage(
+        blocks=[await tb.atruncate(max_tokens=3, reverse=True), ib, ab, vb, db]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=await chat_message.aestimate_tokens(), reverse=True
     ) == ChatMessage(blocks=[tb, ib, ab, vb, db])
 
 
@@ -1592,21 +1628,51 @@ async def test_chat_message_atruncate_recursive(png_1px, mock_pdf_bytes):
         ]
     )
     assert await chat_message.atruncate(
-        max_tokens=await tb.aestimate_tokens()
-        + await ib.aestimate_tokens()
-        + await db.aestimate_tokens()
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db]])
     ) == ChatMessage(
         blocks=[
             CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
         ]
     )
     assert await chat_message.atruncate(
-        max_tokens=await tb.aestimate_tokens() * 2
-        + await ib.aestimate_tokens()
-        + await db.aestimate_tokens()
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db, tb]])
     ) == ChatMessage(blocks=[citable_block, citation_block_text])
     assert (
         await chat_message.atruncate(max_tokens=await chat_message.aestimate_tokens())
+        == chat_message
+    )
+
+    # reverse truncation
+    assert await chat_message.atruncate(
+        max_tokens=await ib.aestimate_tokens(), reverse=True
+    ) == ChatMessage(blocks=[citation_block_image])
+    assert await chat_message.atruncate(
+        max_tokens=await ib.aestimate_tokens() + await tb.aestimate_tokens(),
+        reverse=True,
+    ) == ChatMessage(blocks=[citation_block_text, citation_block_image])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [ib, tb, db]]), reverse=True
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[db]),
+            citation_block_text,
+            citation_block_image,
+        ]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [ib, tb, db, ib]]),
+        reverse=True,
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[ib, db]),
+            citation_block_text,
+            citation_block_image,
+        ]
+    )
+    assert (
+        await chat_message.atruncate(
+            max_tokens=await chat_message.aestimate_tokens(), reverse=True
+        )
         == chat_message
     )
 
@@ -1903,9 +1969,12 @@ async def test_text_block_asplit_no_overlap():
 async def test_text_block_atruncate():
     tb = TextBlock(text="Hello world! This is a test.")
     truncated_tb = await tb.atruncate(max_tokens=4)
+    truncated_tb_reverse = await tb.atruncate(max_tokens=4, reverse=True)
     assert await tb.aestimate_tokens() > 4
     assert await truncated_tb.aestimate_tokens() <= 4
+    assert await truncated_tb_reverse.aestimate_tokens() <= 4
     assert truncated_tb.text == "Hello world! This"
+    assert truncated_tb_reverse.text == "is a test."
 
 
 @pytest.mark.asyncio
@@ -2068,9 +2137,10 @@ async def test_image_block_asplit(png_1px_b64: bytes):
 async def test_image_block_atruncate(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
     truncated_ib = await ib.atruncate(max_tokens=2)
-
+    truncated_ib_reverse = await ib.atruncate(max_tokens=2, reverse=True)
     # Images are not truncatable
     assert truncated_ib.image == png_1px_b64
+    assert truncated_ib_reverse.image == png_1px_b64
 
 
 @pytest.mark.asyncio
@@ -2139,13 +2209,14 @@ async def test_audio_block_asplit_no_ffmpeg(
 
 @pytest.mark.asyncio
 async def test_audio_block_atruncate(
-    mp3_bytes: bytes, mp3_split1_base64: bytes, mock_ffmpeg
+    mp3_bytes: bytes, mp3_split1_base64: bytes, mp3_split2_base64: bytes, mock_ffmpeg
 ):
     ab = AudioBlock(audio=mp3_bytes)
     truncated_ab = await ab.atruncate(max_tokens=16)
-
+    truncated_ab_reverse = await ab.atruncate(max_tokens=16, reverse=True)
     # Returns the first chunk from calling split with max_tokens = 16
     assert truncated_ab.audio == mp3_split1_base64
+    assert truncated_ab_reverse.audio == mp3_split2_base64
 
 
 @pytest.mark.asyncio
@@ -2154,10 +2225,12 @@ async def test_audio_block_atruncate_no_ffmpeg(
 ):
     ab = AudioBlock(audio=mp3_bytes)
     truncated_ab = await ab.atruncate(max_tokens=16)
-
+    truncated_ab_reverse = await ab.atruncate(max_tokens=16, reverse=True)
     # If no ffmpeg, no truncation occurs
     assert await truncated_ab.aestimate_tokens() == 32
+    assert await truncated_ab_reverse.aestimate_tokens() == 32
     assert truncated_ab.audio == mp3_base64
+    assert truncated_ab_reverse.audio == mp3_base64
 
 
 @pytest.mark.asyncio
@@ -2342,8 +2415,12 @@ async def test_document_block_asplit(mock_pdf_bytes: bytes):
 async def test_document_block_atruncate(mock_pdf_bytes: bytes):
     document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
     truncated_document = await document.atruncate(max_tokens=100)
+    truncated_document_reverse = await truncated_document.atruncate(
+        max_tokens=100, reverse=True
+    )
     # We dont truncate documents currently
     assert truncated_document.data == document.data
+    assert truncated_document_reverse.data == document.data
 
 
 @pytest.mark.asyncio
@@ -2422,8 +2499,10 @@ async def test_cache_control_asplit():
 async def test_cache_control_atruncate():
     cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
     truncated_cp = await cp.atruncate(max_tokens=10)
+    truncated_cp_reverse = await cp.atruncate(max_tokens=10, reverse=True)
     # Cache control points are not truncatable
     assert truncated_cp.cache_control == cp.cache_control
+    assert truncated_cp_reverse.cache_control == cp.cache_control
 
 
 @pytest.mark.asyncio
@@ -2579,12 +2658,13 @@ async def test_video_block_asplit_no_ffmpeg(
 
 @pytest.mark.asyncio
 async def test_video_block_atruncate(
-    mp4_bytes: bytes, mp4_split1_base64: bytes, mock_ffmpeg
+    mp4_bytes: bytes, mp4_split1_base64: bytes, mp4_split2_base64: bytes, mock_ffmpeg
 ):
     vb = VideoBlock(video=mp4_bytes)
     truncated_vb = await vb.atruncate(max_tokens=500)
-
+    truncated_vb_reverse = await vb.atruncate(max_tokens=500, reverse=True)
     assert truncated_vb.video == mp4_split1_base64
+    assert truncated_vb_reverse.video == mp4_split2_base64
 
 
 @pytest.mark.asyncio
@@ -2593,9 +2673,10 @@ async def test_video_block_atruncate_no_ffmpeg(
 ):
     vb = VideoBlock(video=mp4_bytes)
     truncated_vb = await vb.atruncate(max_tokens=500)
-
+    truncated_vb_reverse = await vb.atruncate(max_tokens=500, reverse=True)
     # If no ffmpeg, no truncation occurs
     assert truncated_vb.video == mp4_base64
+    assert truncated_vb_reverse.video == mp4_base64
 
 
 @pytest.mark.asyncio
@@ -2730,32 +2811,45 @@ async def test_citable_block_asplit(png_1px: bytes, mock_pdf_bytes: bytes):
 
 @pytest.mark.asyncio
 async def test_citable_block_atruncate(png_1px: bytes, mock_pdf_bytes: bytes):
-    content_blocks = [
-        TextBlock(text="This is the content."),
-        ImageBlock(image=png_1px),
-        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
-    ]
-    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
-    truncated_cb = await cb.atruncate(max_tokens=5)
-    truncated_cb2 = await cb.atruncate(max_tokens=300)
-    truncated_cb3 = await cb.atruncate(max_tokens=800)
+    tb = TextBlock(text="This is the content.")
+    ib = ImageBlock(image=png_1px)
+    db = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    cb = CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
+    truncated_cb = await cb.atruncate(max_tokens=await tb.aestimate_tokens())
+    truncated_cb_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens(), reverse=True
+    )
+    truncated_cb2 = await cb.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
+    )
+    truncated_cb2_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens() + await ib.aestimate_tokens(),
+        reverse=True,
+    )
+    truncated_cb3 = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db]])
+    )
+    truncated_cb3_reverse = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, ib, tb]]), reverse=True
+    )
 
     # Citable blocks are recursively truncatable. However, since ImageBlock and DocumentBlock are not truncatable,
     # only the TextBlock gets truncated.
     assert len(truncated_cb.content) == 1
-    assert truncated_cb.content[0] == TextBlock(text="This is the content.")
+    assert len(truncated_cb_reverse.content) == 1
+    assert truncated_cb.content == [tb]
+    assert truncated_cb_reverse.content == [db]
 
     # Truncation for recursive blocks will continue adding blocks until max_tokens is reached.
     assert len(truncated_cb2.content) == 2
-    assert truncated_cb2.content[0] == TextBlock(text="This is the content.")
-    assert truncated_cb2.content[1] == ImageBlock(image=png_1px)
+    assert len(truncated_cb2_reverse.content) == 2
+    assert truncated_cb2.content == [tb, ib]
+    assert truncated_cb2_reverse.content == [ib, db]
 
     assert len(truncated_cb3.content) == 3
-    assert truncated_cb3.content[0] == TextBlock(text="This is the content.")
-    assert truncated_cb3.content[1] == ImageBlock(image=png_1px)
-    assert truncated_cb3.content[2] == DocumentBlock(
-        data=mock_pdf_bytes, document_mimetype="application/pdf"
-    )
+    assert len(truncated_cb3_reverse.content) == 3
+    assert truncated_cb3.content == [tb, ib, db]
+    assert truncated_cb3_reverse.content == [tb, ib, db]
 
 
 @pytest.mark.asyncio
@@ -2905,8 +2999,20 @@ async def test_citation_block_atruncate(png_1px):
         title="Test Title",
         additional_location_info={},
     )
+    assert await cb1.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3, reverse=True),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
     assert await cb2.atruncate(max_tokens=3) == CitationBlock(
         cited_content=await cb2.cited_content.atruncate(max_tokens=3),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb2.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3, reverse=True),
         source="Test Source",
         title="Test Title",
         additional_location_info={},
@@ -3068,11 +3174,19 @@ async def test_thinking_block_atruncate():
         content="This is a test of the ThinkingBlock truncate method."
     )
     truncated_block = await block.atruncate(max_tokens=5)
-
+    truncated_block_reverse = await block.atruncate(max_tokens=5, reverse=True)
     # Thinking blocks are truncated based on text content
     truncated_text_block = await TextBlock(text=block.content).atruncate(max_tokens=5)
+    truncated_text_block_reverse = await TextBlock(text=block.content).atruncate(
+        max_tokens=5, reverse=True
+    )
     assert truncated_block.content == truncated_text_block.text
     assert truncated_block.num_tokens == await truncated_text_block.aestimate_tokens()
+    assert truncated_block_reverse.content == truncated_text_block_reverse.text
+    assert (
+        truncated_block_reverse.num_tokens
+        == await truncated_text_block_reverse.aestimate_tokens()
+    )
 
 
 @pytest.mark.asyncio
@@ -3152,9 +3266,10 @@ async def test_tool_call_block_atruncate():
         tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
     )
     truncated_block = await block.atruncate(max_tokens=5)
-
+    truncated_block_reverse = await block.atruncate(max_tokens=5, reverse=True)
     # ToolCallBlocks are not truncatable
     assert truncated_block == block
+    assert truncated_block_reverse == block
 
 
 @pytest.mark.asyncio
