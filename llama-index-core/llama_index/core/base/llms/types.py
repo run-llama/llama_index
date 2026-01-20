@@ -514,6 +514,51 @@ class AudioVideoMixIn(ABC):
                     return False
         return True
 
+    async def ffmpeg_trim(
+        self, data: bytes, seconds: float, reverse: bool = False
+    ) -> bytes:
+        """
+        Trim `seconds` from start (reverse=False) or end (reverse=True) of `data`
+        using ffmpeg. Returns trimmed bytes or raises on failure.
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio/Video data cannot be segmented"
+            )
+            return data
+
+        default_extension = "audio" if isinstance(self, AudioBlock) else "video"
+        extension = self.extension or default_extension
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            in_path = Path(tmpdir) / f"input.{extension}"
+            out_path = Path(tmpdir) / f"out.{extension}"
+            with open(in_path, "wb") as f:
+                f.write(data)
+
+            # If trimming from end, use input-level sseof to seek from EOF
+            if reverse:
+                # use sseof to start reading `seconds` before EOF, then limit with -t
+                ff = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(str(in_path), sseof=f"-{seconds}")
+                    .output(str(out_path), t=seconds, c="copy")
+                )
+            else:
+                # trim from start: limit duration with -t
+                ff = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(str(in_path))
+                    .output(str(out_path), t=seconds, c="copy")
+                )
+            try:
+                await ff.execute()
+                with open(out_path, "rb") as f:
+                    return f.read()
+            except Exception as e:
+                _logger.warning(f"ffmpeg trim failed: {e}")
+                return data
+
     async def ffmpeg_segment(
         self, data: bytes, segment_time: float
     ) -> AsyncGenerator[bytes, None]:
@@ -542,44 +587,22 @@ class AudioVideoMixIn(ABC):
             with open(tmp_path, "wb") as f:
                 f.write(data)
 
-            if isinstance(self, AudioBlock):
-                ffmpeg = (
-                    FFmpeg(executable="ffmpeg")
-                    .input(
-                        str(tmp_path),
-                    )
-                    .output(
-                        f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
-                        c="copy",
-                        map="0",
-                        f="segment",
-                        segment_time=segment_time,
-                        reset_timestamps=1,
-                        avoid_negative_ts=1,
-                        write_empty_segments=0,
-                    )
+            ffmpeg = (
+                FFmpeg(executable="ffmpeg")
+                .input(
+                    str(tmp_path),
                 )
-            else:  # VideoBlock
-                ffmpeg = (
-                    FFmpeg(executable="ffmpeg")
-                    .input(
-                        str(tmp_path),
-                    )
-                    .output(
-                        f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
-                        c="copy",
-                        map="0",
-                        # Force key frames at 0.5 * segment_time intervals so that when splitting on key frames,
-                        # we get segments of approximately segment_time duration
-                        # This is a lossless re-encoding operation
-                        force_key_frames=f"expr:gte(t,n_forced*{0.5 * segment_time})",
-                        f="segment",
-                        segment_time=segment_time,
-                        reset_timestamps=1,
-                        avoid_negative_ts=1,
-                        write_empty_segments=0,
-                    )
+                .output(
+                    f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
+                    c="copy",
+                    map="0",
+                    f="segment",
+                    segment_time=segment_time,
+                    reset_timestamps=1,
+                    avoid_negative_ts=1,
+                    write_empty_segments=0,
                 )
+            )
             try:
                 await ffmpeg.execute()
 
@@ -600,6 +623,7 @@ class AudioVideoMixIn(ABC):
                     f"ffmpeg segmentation failed with error: {e}. Returning original data."
                 )
                 yield data
+                return
 
     @classmethod
     async def ffmpeg_concat(
@@ -851,6 +875,25 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
             async for audio_segment in self.ffmpeg_segment(data, segment_time)
         ]
 
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
+        """Async truncate the audio block to up to max_tokens tokens."""
+        estimated_tokens = await self.aestimate_tokens(tokenizer=tokenizer)
+        if estimated_tokens <= max_tokens:
+            return self
+
+        source = self.resolve_audio()
+        data = source.read()
+        # default 32 tokens per second
+        # Minimum segment time is 1 second to avoid issues with very small trims
+        segment_time = max(float(max_tokens // 32.0), 1.0)
+
+        trimmed_data = await self.ffmpeg_trim(
+            data, seconds=segment_time, reverse=reverse
+        )
+        return AudioBlock(audio=trimmed_data, format=self.format)
+
     @classmethod
     def templatable_attributes(cls) -> list[str]:
         return ["audio"]
@@ -1063,14 +1106,32 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
 
         source = self.resolve_video()
         data = source.read()
-        segment_time = max(
-            float(max_tokens // 263), 1.0
-        )  # default 263 tokens per second, min 1 second segments
+        # default 263 tokens per second, min 1 second segments
+        segment_time = max(float(max_tokens // 263), 1.0)
 
         return [
             VideoBlock(video=video_segment, video_mimetype=self.video_mimetype)
             async for video_segment in self.ffmpeg_segment(data, segment_time)
         ]
+
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
+        """Async truncate the video block to up to max_tokens tokens."""
+        estimated_tokens = await self.aestimate_tokens(tokenizer=tokenizer)
+        if estimated_tokens <= max_tokens:
+            return self
+
+        source = self.resolve_video()
+        data = source.read()
+        # default 263 tokens per second
+        # Minimum segment time is 1 second to avoid issues with very small trims
+        segment_time = max(float(max_tokens // 263), 1.0)
+
+        trimmed_data = await self.ffmpeg_trim(
+            data, seconds=segment_time, reverse=reverse
+        )
+        return VideoBlock(video=trimmed_data, video_mimetype=self.video_mimetype)
 
     @classmethod
     def templatable_attributes(cls) -> list[str]:
@@ -1358,12 +1419,11 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
     ) -> List[Self]:
         """Split the content block into smaller blocks with up to max_tokens tokens each."""
-        tknizer = tokenizer or get_tokenizer()
         splits = []
 
         cls = type(self)
         for block in self.nested_blocks:
-            block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
+            block_tokens = await block.aestimate_tokens(tokenizer=tokenizer)
             if block_tokens <= max_tokens:
                 attributes = self.model_dump() | {
                     # Overwrite nested blocks
@@ -1372,7 +1432,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
                 splits.append(cls(**attributes))
             else:
                 split_blocks = await block.asplit(
-                    max_tokens=max_tokens, tokenizer=tknizer
+                    max_tokens=max_tokens, tokenizer=tokenizer
                 )
                 for split_block in split_blocks:
                     attributes = self.model_dump() | {
