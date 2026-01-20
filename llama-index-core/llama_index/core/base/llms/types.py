@@ -533,19 +533,44 @@ class AudioVideoMixIn(ABC):
             with open(tmp_path, "wb") as f:
                 f.write(data)
 
-            ffmpeg = (
-                FFmpeg(executable="ffmpeg")
-                .input(
-                    str(tmp_path),
+            if isinstance(self, AudioBlock):
+                ffmpeg = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(
+                        str(tmp_path),
+                    )
+                    .output(
+                        f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
+                        c="copy",
+                        map="0",
+                        f="segment",
+                        segment_time=segment_time,
+                        reset_timestamps=1,
+                        avoid_negative_ts=1,
+                        write_empty_segments=0,
+                    )
                 )
-                .output(
-                    f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
-                    c="copy",
-                    map="0",
-                    f="segment",
-                    segment_time=segment_time,
+            else:  # VideoBlock
+                ffmpeg = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(
+                        str(tmp_path),
+                    )
+                    .output(
+                        f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
+                        c="copy",
+                        map="0",
+                        # Force key frames at 0.5 * segment_time intervals so that when splitting on key frames,
+                        # we get segments of approximately segment_time duration
+                        # This is a lossless re-encoding operation
+                        force_key_frames=f"expr:gte(t,n_forced*{0.5 * segment_time})",
+                        f="segment",
+                        segment_time=segment_time,
+                        reset_timestamps=1,
+                        avoid_negative_ts=1,
+                        write_empty_segments=0,
+                    )
                 )
-            )
             await ffmpeg.execute()
 
             segment_paths = [
@@ -589,9 +614,11 @@ class AudioVideoMixIn(ABC):
                 for path in input_paths:
                     f.write(f"file '{path}'\n")
             output_path = Path(tmpdir) / f"concatenated_output.{ext}"
-            ffmpeg = FFmpeg(executable="ffmpeg")
-            ffmpeg = ffmpeg.input(input_file)
-            ffmpeg = ffmpeg.output(str(output_path), f="concat", c="copy", safe=0)
+            ffmpeg = (
+                FFmpeg(executable="ffmpeg")
+                .input(str(input_file), f="concat", safe=0)
+                .output(str(output_path), c="copy")
+            )
             await ffmpeg.execute()
             with open(output_path, "rb") as f:
                 concatenated_data = f.read()
