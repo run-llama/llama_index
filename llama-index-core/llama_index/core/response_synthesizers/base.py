@@ -68,6 +68,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
         output_cls: Optional[Type[BaseModel]] = None,
+        empty_response: Optional[str] = None,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -87,6 +88,13 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
 
         self._streaming = streaming
         self._output_cls = output_cls
+        self._empty_response = empty_response or "Empty Response"
+
+    def _empty_response_generator(self) -> Generator[str, None, None]:
+        yield self._empty_response
+
+    async def _empty_response_agenerator(self) -> AsyncGenerator[str, None]:
+        yield self._empty_response
 
     def _get_prompt_modules(self) -> Dict[str, Any]:
         """Get prompt modules."""
@@ -206,7 +214,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         if len(nodes) == 0:
             if self._streaming:
                 empty_response_stream = StreamingResponse(
-                    response_gen=empty_response_generator()
+                    response_gen=self._empty_response_generator()
                 )
                 dispatcher.event(
                     SynthesizeEndEvent(
@@ -216,7 +224,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
                 )
                 return empty_response_stream
             else:
-                empty_response = Response("Empty Response")
+                empty_response = Response(self._empty_response)
                 dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
@@ -271,7 +279,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         if len(nodes) == 0:
             if self._streaming:
                 empty_response_stream = AsyncStreamingResponse(
-                    response_gen=empty_response_agenerator()
+                    response_gen=self._empty_response_agenerator()
                 )
                 dispatcher.event(
                     SynthesizeEndEvent(
@@ -281,7 +289,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
                 )
                 return empty_response_stream
             else:
-                empty_response = Response("Empty Response")
+                empty_response = Response(self._empty_response)
                 dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
