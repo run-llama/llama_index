@@ -27,8 +27,10 @@ pip install llama-index-tools-mcp-discovery
 from llama_index.tools.mcp_discovery import MCPDiscoveryTool
 from llama_index.core.agent import ReActAgent
 
-# Initialize the tool with the discovery server URL
-tool_spec = MCPDiscoveryTool(api_url="http://localhost:8000/api")
+# Initialize the tool with the MCP Discovery API
+tool_spec = MCPDiscoveryTool(
+    api_url="https://mcp-discovery-two.vercel.app/api/v1/discover"
+)
 
 # Convert the spec to a list of FunctionTools
 tools = tool_spec.to_tool_list()
@@ -36,31 +38,34 @@ tools = tool_spec.to_tool_list()
 # Create an agent with the discovery tool
 agent = ReActAgent.from_tools(tools, verbose=True)
 
-# The agent can now use the 'discover_tools' function to find what it needs
-agent.chat("Find me a tool that can help with math")
+# The agent can now use the 'discover_tools' function to find MCP servers it needs
+agent.chat("Find me a server that can send Slack notifications")
 ```
 
 ## API Response Format
 
-The MCP discovery API should return responses in the following format:
+This tool uses the standard MCP Discovery response schema as defined in the [MCP Discovery](https://github.com/yksanjo/mcp-discovery). The API should return responses following this format:
 
 ```json
 {
   "recommendations": [
     {
-      "name": "math-calculator",
-      "description": "A tool for performing mathematical calculations",
-      "category": "math"
-    },
-    {
-      "name": "equation-solver",
-      "description": "Solves algebraic equations",
-      "category": "math"
+      "server": "filesystem-server",
+      "name": "Filesystem Server",
+      "npm_package": "@modelcontextprotocol/server-filesystem",
+      "install_command": "npx -y @modelcontextprotocol/server-filesystem",
+      "confidence": 0.85,
+      "description": "Secure file operations for MCP...",
+      "category": "development",
+      "github_url": "https://github.com/modelcontextprotocol/servers"
     }
   ],
-  "total_found": 2
+  "total_found": 10,
+  "query_time_ms": 52
 }
 ```
+
+**Note**: To optimize context window usage, the tool summarizes the raw JSON into a concise string containing only the name, server, and category. This allows the LLM to efficiently evaluate and select the best tool without being overwhelmed by installation metadata.
 
 ## Examples
 
