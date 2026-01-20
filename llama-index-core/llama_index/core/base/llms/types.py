@@ -437,8 +437,13 @@ class AudioVideoMixIn(ABC):
             ffmpeg = FFmpeg(executable="ffprobe").input(
                 str(tmp_path), print_format="json", show_streams=None, show_format=None
             )
-
-            return json.loads(await ffmpeg.execute())
+            try:
+                return json.loads(await ffmpeg.execute())
+            except Exception as e:
+                _logger.warning(
+                    f"ffprobe failed with error: {e}. Returning empty metadata."
+                )
+                return {}
 
     async def can_concatenate(self, other: Self) -> bool:
         """
@@ -459,6 +464,10 @@ class AudioVideoMixIn(ABC):
 
         info_a = await self.ffprobe()
         info_b = await other.ffprobe()
+
+        if not info_a or not info_b:
+            # Ffprobe failed on one of the files
+            return False
 
         streams_a = info_a.get("streams", []) or []
         streams_b = info_b.get("streams", []) or []
@@ -571,20 +580,26 @@ class AudioVideoMixIn(ABC):
                         write_empty_segments=0,
                     )
                 )
-            await ffmpeg.execute()
+            try:
+                await ffmpeg.execute()
 
-            segment_paths = [
-                (f, int(f.split(".")[0].replace("output", "")))
-                for f in os.listdir(tmpdir)
-                if f.startswith("output")
-            ]
-            segment_paths = [
-                segment for segment, _ in sorted(segment_paths, key=lambda x: x[1])
-            ]
-            for path in segment_paths:
-                with open(Path(tmpdir) / path, "rb") as f:
-                    segment_data = f.read()
-                yield segment_data
+                segment_paths = [
+                    (f, int(f.split(".")[0].replace("output", "")))
+                    for f in os.listdir(tmpdir)
+                    if f.startswith("output")
+                ]
+                segment_paths = [
+                    segment for segment, _ in sorted(segment_paths, key=lambda x: x[1])
+                ]
+                for path in segment_paths:
+                    with open(Path(tmpdir) / path, "rb") as f:
+                        segment_data = f.read()
+                    yield segment_data
+            except Exception as e:
+                _logger.warning(
+                    f"ffmpeg segmentation failed with error: {e}. Returning original data."
+                )
+                yield data
 
     @classmethod
     async def ffmpeg_concat(
@@ -619,10 +634,16 @@ class AudioVideoMixIn(ABC):
                 .input(str(input_file), f="concat", safe=0)
                 .output(str(output_path), c="copy")
             )
-            await ffmpeg.execute()
-            with open(output_path, "rb") as f:
-                concatenated_data = f.read()
-            return [concatenated_data]
+            try:
+                await ffmpeg.execute()
+                with open(output_path, "rb") as f:
+                    concatenated_data = f.read()
+                return [concatenated_data]
+            except Exception as e:
+                _logger.warning(
+                    f"ffmpeg concatenation failed with error: {e}. Returning original splits."
+                )
+                return data_list
 
 
 class AudioBlock(AudioVideoMixIn, BaseContentBlock):
@@ -802,8 +823,8 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 if duration := metadata.get("format", {}).get("duration", None):
                     # We conservatively return the max estimate
                     return max((int(duration) + 1) * 32, int(duration / 0.05) + 1)
-            else:
                 return 256  # fallback
+            return 256  # fallback
         except ValueError as e:
             if str(e) == "resolve_audio returned zero bytes":
                 return 0

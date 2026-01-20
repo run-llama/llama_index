@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import httpx
-from ffmpeg import FFmpeg
+from ffmpeg import FFmpegError
+from ffmpeg.asyncio import FFmpeg
+from tinytag import UnsupportedFormatError, TinyTag
 
 from llama_index.core import get_tokenizer
 from llama_index.core.base.llms.types import (
@@ -1042,6 +1044,14 @@ def mock_ffprobe_mp4_split2_width_320_bytes_output():
 
 
 @pytest.fixture()
+def mock_ffmpeg_error_side_effect():
+    async def _side_effect(*args, **kwargs):
+        raise FFmpegError("Mock error")
+
+    return _side_effect
+
+
+@pytest.fixture()
 def mock_ffprobe(
     mp3_bytes,
     mp3_split1_bytes,
@@ -1059,8 +1069,9 @@ def mock_ffprobe(
     mock_ffprobe_mp4_split1_bytes_output,
     mock_ffprobe_mp4_split2_bytes_output,
     mock_ffprobe_mp4_split2_width_320_bytes_output,
+    mock_ffmpeg_error_side_effect,
 ):
-    def _mock(tmp_path):
+    def _mock(tmp_path, error: bool = False):
         with open(tmp_path, "rb") as f:
             bytes_str = f.read()
         if bytes_str == mp3_bytes:
@@ -1082,7 +1093,10 @@ def mock_ffprobe(
         else:
             raise ValueError("Unrecognized bytes input for ffprobe mock.")
         mock = Mock(spec=FFmpeg)
-        mock.execute = AsyncMock(return_value=execute_out)
+        if not error:
+            mock.execute = AsyncMock(return_value=execute_out)
+        else:
+            mock.execute = AsyncMock(side_effect=mock_ffmpeg_error_side_effect)
         return mock
 
     return _mock
@@ -1096,8 +1110,9 @@ def mock_ffmpeg_segment(
     mp4_bytes,
     mp4_split1_bytes,
     mp4_split2_bytes,
+    mock_ffmpeg_error_side_effect,
 ):
-    def _mock(out_pattern):
+    def _mock(out_pattern, error: bool = False):
         out_dir = Path(out_pattern).parent
         out_padding = int(
             Path(out_pattern)
@@ -1124,15 +1139,18 @@ def mock_ffmpeg_segment(
         else:
             raise ValueError("Unrecognized bytes input for ffmpeg segment mock.")
         mock = Mock(spec=FFmpeg)
-        mock.execute = AsyncMock(return_value=None)
+        if not error:
+            mock.execute = AsyncMock(return_value=None)
+        else:
+            mock.execute = AsyncMock(side_effect=mock_ffmpeg_error_side_effect)
         return mock
 
     return _mock
 
 
 @pytest.fixture()
-def mock_ffmpeg_concat(mp3_bytes, mp4_bytes):
-    def _mock(out_path):
+def mock_ffmpeg_concat(mp3_bytes, mp4_bytes, mock_ffmpeg_error_side_effect):
+    def _mock(out_path, error: bool = False):
         if out_path.endswith(".mp4"):
             with open(out_path, "wb") as f:
                 f.write(mp4_bytes)
@@ -1142,42 +1160,68 @@ def mock_ffmpeg_concat(mp3_bytes, mp4_bytes):
         else:
             raise ValueError("Unrecognized output path for ffmpeg concat mock.")
         mock = Mock(spec=FFmpeg)
-        mock.execute = AsyncMock(return_value=None)
+        if not error:
+            mock.execute = AsyncMock(return_value=None)
+        else:
+            mock.execute = AsyncMock(side_effect=mock_ffmpeg_error_side_effect)
         return mock
 
     return _mock
 
 
 @pytest.fixture()
-def mock_ffmpeg(mock_ffprobe, mock_ffmpeg_segment, mock_ffmpeg_concat):
-    def mock_input(*args, **kwargs):
-        def mock_output(*args, **kwargs):
-            # This parameter is only supplied when ffmpeg segment is called
-            if kwargs.get("f") == "segment":
-                return mock_ffmpeg_segment(*args)
-            # Otherwise we mock the concat output
-            return mock_ffmpeg_concat(*args)
+def _mock_ffmpeg(mock_ffprobe, mock_ffmpeg_segment, mock_ffmpeg_concat):
+    def _mock(error: str | None = None):
+        def mock_input(*args, **kwargs):
+            def mock_output(*args, **kwargs):
+                # This parameter is only supplied when ffmpeg segment is called
+                if kwargs.get("f") == "segment":
+                    return mock_ffmpeg_segment(*args, error=error == "segment")
+                # Otherwise we mock the concat output
+                return mock_ffmpeg_concat(*args, error=error == "concat")
 
-        # This parameter is only supplied when ffprobe is called
-        if "print_format" in kwargs:
-            return mock_ffprobe(*args)
+            # This parameter is only supplied when ffprobe is called
+            if "print_format" in kwargs:
+                return mock_ffprobe(*args, error=error == "ffprobe")
 
-        # Otherwise we mock the output
-        mock = AsyncMock(spec=FFmpeg)
-        mock.output.side_effect = mock_output
-        return mock
+            # Otherwise we mock the output
+            mock = AsyncMock(spec=FFmpeg)
+            mock.output.side_effect = mock_output
+            return mock
 
-    with (
-        mock.patch(
-            "llama_index.core.base.llms.types.shutil.which",
-            return_value="/usr/bin/ffmpeg",
-        ),
-        mock.patch(
-            "llama_index.core.base.llms.types.FFmpeg", spec=FFmpeg
-        ) as mock_ffmpeg,
-    ):
-        mock_ffmpeg.return_value.input.side_effect = mock_input
-        yield mock_ffmpeg
+        with (
+            mock.patch(
+                "llama_index.core.base.llms.types.shutil.which",
+                return_value="/usr/bin/ffmpeg",
+            ),
+            mock.patch(
+                "llama_index.core.base.llms.types.FFmpeg", spec=FFmpeg
+            ) as mock_ffmpeg,
+        ):
+            mock_ffmpeg.return_value.input.side_effect = mock_input
+            yield mock_ffmpeg
+
+    return _mock
+
+
+@pytest.fixture()
+def mock_ffmpeg(_mock_ffmpeg):
+    yield from _mock_ffmpeg(error=None)
+
+
+@pytest.fixture()
+def mock_ffmpeg_ffprobe_error(_mock_ffmpeg):
+    yield from _mock_ffmpeg(error="ffprobe")
+
+
+@pytest.fixture()
+def mock_ffmpeg_segment_error(_mock_ffmpeg):
+    yield from _mock_ffmpeg(error="segment")
+
+
+@pytest.fixture()
+def mock_ffmpeg_concat_error(_mock_ffmpeg):
+    yield from _mock_ffmpeg(error="concat")
 
 
 @pytest.fixture()
@@ -1186,6 +1230,17 @@ def mock_no_ffmpeg():
         "llama_index.core.base.llms.types.shutil.which", return_value=None
     ) as which_ffmpeg:
         yield which_ffmpeg
+
+
+@pytest.fixture()
+def mock_tiny_tag_error():
+    def raise_tiny_tag_error(*args, **kwargs):
+        raise UnsupportedFormatError
+
+    with mock.patch.object(
+        TinyTag, "get", side_effect=raise_tiny_tag_error
+    ) as mock_tinytag:
+        yield mock_tinytag
 
 
 def test_chat_message_from_str():
@@ -2184,6 +2239,15 @@ async def test_audio_block_aestimate_tokens_no_ffmpeg(
 
 
 @pytest.mark.asyncio
+async def test_audio_block_aestimate_tokens_ffmpeg_error(
+    mp3_bytes: bytes, mock_tiny_tag_error, mock_ffmpeg_ffprobe_error
+):
+    """If ffmpeg fails to read duration, use static fallback estimation."""
+    ab = AudioBlock(audio=mp3_bytes)
+    assert await ab.aestimate_tokens() == 256  # Fallback
+
+
+@pytest.mark.asyncio
 async def test_audio_block_asplit(
     mp3_bytes: bytes, mp3_split1_base64, mp3_split2_base64, mock_ffmpeg
 ):
@@ -2208,6 +2272,18 @@ async def test_audio_block_asplit_no_ffmpeg(
 
 
 @pytest.mark.asyncio
+async def test_audio_block_asplit_ffmpeg_error(
+    mp3_bytes: bytes, mp3_base64: bytes, mock_ffmpeg_segment_error
+):
+    ab = AudioBlock(audio=mp3_bytes)
+    chunks = await ab.asplit(max_tokens=2)
+
+    # If ffmpeg fails, no splitting occurs
+    assert len(chunks) == 1
+    assert chunks[0].audio == mp3_base64
+
+
+@pytest.mark.asyncio
 async def test_audio_block_atruncate(
     mp3_bytes: bytes, mp3_split1_base64: bytes, mp3_split2_base64: bytes, mock_ffmpeg
 ):
@@ -2227,6 +2303,20 @@ async def test_audio_block_atruncate_no_ffmpeg(
     truncated_ab = await ab.atruncate(max_tokens=16)
     truncated_ab_reverse = await ab.atruncate(max_tokens=16, reverse=True)
     # If no ffmpeg, no truncation occurs
+    assert await truncated_ab.aestimate_tokens() == 32
+    assert await truncated_ab_reverse.aestimate_tokens() == 32
+    assert truncated_ab.audio == mp3_base64
+    assert truncated_ab_reverse.audio == mp3_base64
+
+
+@pytest.mark.asyncio
+async def test_audio_block_atruncate_ffmpeg_error(
+    mp3_bytes: bytes, mp3_base64: bytes, mock_ffmpeg_segment_error
+):
+    ab = AudioBlock(audio=mp3_bytes)
+    truncated_ab = await ab.atruncate(max_tokens=16)
+    truncated_ab_reverse = await ab.atruncate(max_tokens=16, reverse=True)
+    # If ffmpeg fails, no truncation occurs
     assert await truncated_ab.aestimate_tokens() == 32
     assert await truncated_ab_reverse.aestimate_tokens() == 32
     assert truncated_ab.audio == mp3_base64
@@ -2267,6 +2357,18 @@ async def test_audio_block_can_concatenate_no_ffmpeg(
 
 
 @pytest.mark.asyncio
+async def test_audio_block_can_concatenate_ffmpeg_error(
+    mp3_split1_bytes: bytes,
+    mp3_split2_bytes: bytes,
+    mock_tiny_tag_error,
+    mock_ffmpeg_ffprobe_error,
+):
+    ab1 = AudioBlock(audio=mp3_split1_bytes)
+    ab2 = AudioBlock(audio=mp3_split2_bytes)
+    assert await ab1.can_concatenate(ab2) is False
+
+
+@pytest.mark.asyncio
 async def test_audio_block_amerge(
     mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mp3_base64: bytes, mock_ffmpeg
 ):
@@ -2300,6 +2402,19 @@ async def test_audio_block_amerge_no_ffmpeg(
     merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
 
     # If no ffmpeg, no merging occurs
+    assert len(merged_abs) == 2
+    assert merged_abs == [ab1, ab2]
+
+
+@pytest.mark.asyncio
+async def test_audio_block_amerge_ffmpeg_error(
+    mp3_split1_bytes: bytes, mp3_split2_bytes: bytes, mock_ffmpeg_concat_error
+):
+    ab1 = AudioBlock(audio=mp3_split1_bytes)
+    ab2 = AudioBlock(audio=mp3_split2_bytes)
+    merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
+
+    # If ffmpeg fails, no merging occurs
     assert len(merged_abs) == 2
     assert merged_abs == [ab1, ab2]
 
@@ -2633,6 +2748,15 @@ async def test_video_block_aestimate_tokens_no_ffmpeg(
 
 
 @pytest.mark.asyncio
+async def test_video_block_aestimate_tokens_ffmpeg_error(
+    mp4_bytes: bytes, mock_ffmpeg_ffprobe_error
+):
+    """If ffmpeg fails to read duration, use static fallback estimation."""
+    vb = VideoBlock(video=mp4_bytes)
+    assert await vb.aestimate_tokens() == 256 * 8  # Fallback
+
+
+@pytest.mark.asyncio
 async def test_video_block_asplit(
     mp4_bytes: bytes, mp4_split1_base64: bytes, mp4_split2_base64: bytes, mock_ffmpeg
 ):
@@ -2657,6 +2781,18 @@ async def test_video_block_asplit_no_ffmpeg(
 
 
 @pytest.mark.asyncio
+async def test_video_block_asplit_ffmpeg_error(
+    mp4_bytes: bytes, mp4_base64: bytes, mock_ffmpeg_segment_error
+):
+    vb = VideoBlock(video=mp4_bytes)
+    chunks = await vb.asplit(max_tokens=500)
+
+    # If ffmpeg fails, no splitting occurs
+    assert len(chunks) == 1
+    assert chunks[0].video == mp4_base64
+
+
+@pytest.mark.asyncio
 async def test_video_block_atruncate(
     mp4_bytes: bytes, mp4_split1_base64: bytes, mp4_split2_base64: bytes, mock_ffmpeg
 ):
@@ -2675,6 +2811,18 @@ async def test_video_block_atruncate_no_ffmpeg(
     truncated_vb = await vb.atruncate(max_tokens=500)
     truncated_vb_reverse = await vb.atruncate(max_tokens=500, reverse=True)
     # If no ffmpeg, no truncation occurs
+    assert truncated_vb.video == mp4_base64
+    assert truncated_vb_reverse.video == mp4_base64
+
+
+@pytest.mark.asyncio
+async def test_video_block_atruncate_ffmpeg_error(
+    mp4_bytes: bytes, mp4_base64: bytes, mock_ffmpeg_segment_error
+):
+    vb = VideoBlock(video=mp4_bytes)
+    truncated_vb = await vb.atruncate(max_tokens=500)
+    truncated_vb_reverse = await vb.atruncate(max_tokens=500, reverse=True)
+    # If ffmpeg fails, no truncation occurs
     assert truncated_vb.video == mp4_base64
     assert truncated_vb_reverse.video == mp4_base64
 
@@ -2706,6 +2854,15 @@ async def test_video_block_can_concatenate_false(
 @pytest.mark.asyncio
 async def test_video_block_can_concatenate_no_ffmpeg(
     mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_no_ffmpeg
+):
+    vb1 = VideoBlock(video=mp4_split1_bytes)
+    vb2 = VideoBlock(video=mp4_split2_bytes)
+    assert await vb1.can_concatenate(vb2) is False
+
+
+@pytest.mark.asyncio
+async def test_video_block_can_concatenate_ffmpeg_error(
+    mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_ffmpeg_ffprobe_error
 ):
     vb1 = VideoBlock(video=mp4_split1_bytes)
     vb2 = VideoBlock(video=mp4_split2_bytes)
@@ -2746,6 +2903,19 @@ async def test_video_block_amerge_no_ffmpeg(
     merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
 
     # If no ffmpeg, no merging occurs
+    assert len(merged_vbs) == 2
+    assert merged_vbs == [vb1, vb2]
+
+
+@pytest.mark.asyncio
+async def test_video_block_amerge_ffmpeg_error(
+    mp4_split1_bytes: bytes, mp4_split2_bytes: bytes, mock_ffmpeg_concat_error
+):
+    vb1 = VideoBlock(video=mp4_split1_bytes)
+    vb2 = VideoBlock(video=mp4_split2_bytes)
+    merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
+
+    # If ffmpeg fails, no merging occurs
     assert len(merged_vbs) == 2
     assert merged_vbs == [vb1, vb2]
 
