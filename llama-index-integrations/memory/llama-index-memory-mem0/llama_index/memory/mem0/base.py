@@ -83,7 +83,6 @@ class Mem0Memory(BaseMem0):
 
     @model_serializer
     def serialize_memory(self) -> Dict[str, Any]:
-        # leaving out the two keys since they are causing serialization/deserialization problems
         return {
             "primary_memory": self.primary_memory.model_dump(
                 exclude={
@@ -97,7 +96,6 @@ class Mem0Memory(BaseMem0):
 
     @classmethod
     def class_name(cls) -> str:
-        """Class name."""
         return "Mem0Memory"
 
     @classmethod
@@ -160,45 +158,56 @@ class Mem0Memory(BaseMem0):
         messages = self.primary_memory.get(input=input, **kwargs)
         input = convert_messages_to_string(messages, input, limit=self.search_msg_limit)
 
-        search_results = self.search(query=input, **self.context.get_context())
+        context_dict = self.context.get_context()
 
-        if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
-            search_results = search_results["results"]
+        # If both user_id and agent_id are provided, search separately and merge
+        if "user_id" in context_dict and "agent_id" in context_dict:
+            user_results = self.search(
+                query=input, user_id=context_dict["user_id"]
+            )
+            agent_results = self.search(
+                query=input, agent_id=context_dict["agent_id"]
+            )
+
+            if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
+                user_results = user_results["results"]
+                agent_results = agent_results["results"]
+
+            search_results = user_results + agent_results
+        else:
+            search_results = self.search(query=input, **context_dict)
+
+            if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
+                search_results = search_results["results"]
 
         system_message = convert_memory_to_system_message(search_results)
 
-        # If system message is present
         if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
             assert messages[0].content is not None
             system_message = convert_memory_to_system_message(
                 response=search_results, existing_system_message=messages[0]
             )
+
         messages.insert(0, system_message)
         return messages
 
     def get_all(self) -> List[ChatMessage]:
-        """Returns all chat history."""
         return self.primary_memory.get_all()
 
     def _add_msgs_to_client_memory(self, messages: List[ChatMessage]) -> None:
-        """Add new user and assistant messages to client memory."""
         self.add(
             messages=convert_chat_history_to_dict(messages),
             **self.context.get_context(),
         )
 
     def put(self, message: ChatMessage) -> None:
-        """Add message to chat history and client memory."""
         self._add_msgs_to_client_memory([message])
         self.primary_memory.put(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
-        """Set chat history and add new messages to client memory."""
         initial_chat_len = len(self.primary_memory.get_all())
-        # Insert only new chat messages
         self._add_msgs_to_client_memory(messages[initial_chat_len:])
         self.primary_memory.set(messages)
 
     def reset(self) -> None:
-        """Only reset chat history."""
         self.primary_memory.reset()
