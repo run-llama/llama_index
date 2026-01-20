@@ -89,7 +89,7 @@ def vector_store(
 ) -> MongoDBAtlasVectorSearch:
     # Set up the default llm to be used in tests.
     if isinstance(embed_model, AzureOpenAIEmbedding):
-        deployment_name = os.environ.get("AZURE_LLM_DEPLOYMENT", "gpt-4o-mini")
+        deployment_name = os.environ.get("AZURE_LLM_DEPLOYMENT", "gpt-5-mini")
         Settings.llm = AzureOpenAI(
             engine=deployment_name, api_key=os.environ["AZURE_OPENAI_API_KEY"]
         )
