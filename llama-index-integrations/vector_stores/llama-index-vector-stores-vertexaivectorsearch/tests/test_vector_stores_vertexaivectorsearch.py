@@ -794,9 +794,9 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_must_be_between_0_and_1(self):
         """Test that default_hybrid_alpha must be in [0, 1] range."""
-        with pytest.raises(
-            ValueError, match="default_hybrid_alpha must be between 0 and 1"
-        ):
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -807,9 +807,9 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_negative_raises_error(self):
         """Test that negative alpha raises error."""
-        with pytest.raises(
-            ValueError, match="default_hybrid_alpha must be between 0 and 1"
-        ):
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -820,10 +820,10 @@ class TestV2HybridSearchParameters:
 
     def test_hybrid_ranker_must_be_rrf_or_vertex(self):
         """Test that hybrid_ranker must be 'rrf' or 'vertex'."""
-        # Pydantic validates the Literal type before our custom validation
         from pydantic import ValidationError
 
-        with pytest.raises((ValueError, ValidationError)):
+        # Pydantic validates the Literal type
+        with pytest.raises(ValidationError):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",

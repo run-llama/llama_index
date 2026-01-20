@@ -664,8 +664,10 @@ def _query_v2_default(
     search_client = clients["data_object_search_service_client"]
 
     if query.query_embedding is None:
-        _logger.warning("No query embedding provided, returning empty result")
-        return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+        raise ValueError(
+            "query_embedding is required for DEFAULT (vector) search mode. "
+            "Use TEXT_SEARCH mode if you only have a text query."
+        )
 
     # Build filter
     v2_filter = _convert_filters_to_v2(query.filters)
@@ -959,34 +961,6 @@ def _query_v2_semantic_hybrid(
         raise
 
 
-def _query_v2_sparse(
-    store: Any,
-    query: VectorStoreQuery,
-    clients: dict,
-    parent: str,
-    **kwargs: Any,
-) -> VectorStoreQueryResult:
-    """
-    Execute sparse vector search (Phase 2 - Not yet implemented).
-
-    Args:
-        store: VertexAIVectorStore instance
-        query: The vector store query
-        clients: V2 client dictionary
-        parent: Parent resource path
-        **kwargs: Additional arguments
-
-    Raises:
-        NotImplementedError: SPARSE mode is planned for Phase 2
-
-    """
-    raise NotImplementedError(
-        "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
-        "configured in the collection schema. Consider using TEXT_SEARCH mode "
-        "for keyword search or HYBRID mode for combined vector + keyword search."
-    )
-
-
 # =============================================================================
 # Main Query Function with Mode Routing
 # =============================================================================
@@ -1043,7 +1017,11 @@ def query_v2(
     elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
         return _query_v2_semantic_hybrid(store, query, clients, parent, **kwargs)
     elif query.mode == VectorStoreQueryMode.SPARSE:
-        return _query_v2_sparse(store, query, clients, parent, **kwargs)
+        raise NotImplementedError(
+            "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
+            "configured in the collection schema. Consider using TEXT_SEARCH mode "
+            "for keyword search or HYBRID mode for combined vector + keyword search."
+        )
     else:
         # Fall back to default for unsupported modes
         _logger.warning(

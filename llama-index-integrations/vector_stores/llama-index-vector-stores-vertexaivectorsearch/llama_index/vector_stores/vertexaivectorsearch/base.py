@@ -113,7 +113,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     # Ranker configuration
     hybrid_ranker: Literal["rrf", "vertex"] = Field(default="rrf")
-    default_hybrid_alpha: float = Field(default=0.5)
+    default_hybrid_alpha: float = Field(default=0.5, ge=0.0, le=1.0)
 
     # SemanticSearch configuration
     semantic_task_type: str = Field(default="RETRIEVAL_QUERY")
@@ -267,16 +267,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "enable_hybrid=True is only supported for api_version='v2'. "
                 "V1 hybrid search uses HybridQuery with find_neighbors() directly."
-            )
-
-        if not 0.0 <= self.default_hybrid_alpha <= 1.0:
-            raise ValueError(
-                f"default_hybrid_alpha must be between 0 and 1, got {self.default_hybrid_alpha}"
-            )
-
-        if self.hybrid_ranker not in ("rrf", "vertex"):
-            raise ValueError(
-                f"hybrid_ranker must be 'rrf' or 'vertex', got {self.hybrid_ranker}"
             )
 
         if self.hybrid_ranker == "vertex":
