@@ -676,15 +676,23 @@ def test_stream_chat_usage_and_stop_reason_mock():
     mock_content_stop_event.index = 0
 
     # Create mock RawMessageDeltaEvent with usage and stop_reason
-    mock_usage = MagicMock(spec=Usage)
-    mock_usage.input_tokens = 15
-    mock_usage.output_tokens = 8
+    # First event with initial usage
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 15
+    mock_first_usage.output_tokens = 1
+
+    # Last event with final usage
+    # Note that input_tokens can be None
+    # Also note that output tokens are cumulative
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 8
 
     mock_delta = MagicMock()
     mock_delta.stop_reason = "end_turn"
 
     mock_message_delta_event = MagicMock()
-    mock_message_delta_event.usage = mock_usage
+    mock_message_delta_event.usage = mock_last_usage
     mock_message_delta_event.delta = mock_delta
 
     # Create mock streaming response generator
@@ -693,14 +701,20 @@ def test_stream_chat_usage_and_stop_reason_mock():
             RawContentBlockDeltaEvent,
             ContentBlockStopEvent,
             RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
         )
 
         # Simulate streaming events
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
         yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
         yield MagicMock(spec=ContentBlockStopEvent, index=0)
         yield MagicMock(
             spec=RawMessageDeltaEvent,
-            usage=mock_usage,
+            usage=mock_last_usage,
             delta=mock_delta,
         )
 
@@ -754,9 +768,13 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     mock_text_delta.text = "Hello async"
     mock_text_delta.type = "text_delta"
 
-    mock_usage = MagicMock(spec=Usage)
-    mock_usage.input_tokens = 20
-    mock_usage.output_tokens = 12
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 20
+    mock_first_usage.output_tokens = 1
+
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 12
 
     mock_delta = MagicMock()
     mock_delta.stop_reason = "max_tokens"
@@ -767,13 +785,19 @@ async def test_astream_chat_usage_and_stop_reason_mock():
             RawContentBlockDeltaEvent,
             ContentBlockStopEvent,
             RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
         )
 
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
         yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
         yield MagicMock(spec=ContentBlockStopEvent, index=0)
         yield MagicMock(
             spec=RawMessageDeltaEvent,
-            usage=mock_usage,
+            usage=mock_last_usage,
             delta=mock_delta,
         )
 
