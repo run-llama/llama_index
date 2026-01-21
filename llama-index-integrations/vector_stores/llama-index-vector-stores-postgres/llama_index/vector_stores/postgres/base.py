@@ -836,6 +836,7 @@ class PGVectorStore(BasePydanticVectorStore):
                     text(f"SET hnsw.ef_search = :hnsw_ef_search"),
                     {"hnsw_ef_search": hnsw_ef_search},
                 )
+                session.execute(text("SET LOCAL enable_bitmapscan = off"))
 
             res = session.execute(
                 stmt,
@@ -873,6 +874,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 await async_session.execute(
                     text(f"SET hnsw.ef_search = {hnsw_ef_search}"),
                 )
+                await async_session.execute(text("SET LOCAL enable_bitmapscan = off"))
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
                 await async_session.execute(
