@@ -1,4 +1,3 @@
 ::: llama_index.retrievers.bedrock
-    options:
-      members:
-        - AmazonKnowledgeBasesRetriever
+options:
+members: - AmazonKnowledgeBasesRetriever

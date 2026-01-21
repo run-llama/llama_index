@@ -1,4 +1,3 @@
 ::: llama_index.storage.kvstore.postgres
-    options:
-      members:
-        - PostgresKVStore
+options:
+members: - PostgresKVStore

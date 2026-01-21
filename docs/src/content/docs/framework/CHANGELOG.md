@@ -1,6 +1,7 @@
 ---
 title: ChangeLog
 ---
+
 <!--- generated changelog --->
 
 ## [2025-12-30]

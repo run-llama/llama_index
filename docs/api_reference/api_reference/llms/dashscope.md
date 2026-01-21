@@ -1,4 +1,3 @@
 ::: llama_index.llms.dashscope
-    options:
-      members:
-        - DashScope
+options:
+members: - DashScope

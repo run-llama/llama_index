@@ -1,4 +1,3 @@
 ::: llama_index.readers.airbyte_shopify
-    options:
-      members:
-        - AirbyteShopifyReader
+options:
+members: - AirbyteShopifyReader
