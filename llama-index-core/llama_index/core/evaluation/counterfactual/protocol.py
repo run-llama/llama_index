@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, List
+from typing import Any, Optional, Sequence, List, Dict
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.settings import Settings
@@ -6,14 +6,19 @@ from llama_index.core.settings import Settings
 from llama_index.core.evaluation.counterfactual.perturbations import (
     remove_top_k_contexts,
 )
+from llama_index.core.evaluation.counterfactual.metrics import (
+    lexical_overlap,
+    embedding_distance,
+    significant_drift,
+)
 
 
 class CounterfactualEvaluator(BaseEvaluator):
     """
     Counterfactual evaluator for RAG systems.
 
-    Tests whether a generated response causally depends on retrieved contexts
-    by perturbing the evidence and comparing regenerated answers.
+    Evaluates whether a generated response causally depends on retrieved contexts
+    by perturbing evidence and measuring answer drift.
     """
 
     def __init__(
@@ -53,12 +58,10 @@ class CounterfactualEvaluator(BaseEvaluator):
                 invalid_reason="query, response, and contexts must be provided",
             )
 
-        # Baseline answer (already generated)
-        baseline_answer = response
+        baseline_answer: str = response
+        drift_records: List[Dict[str, float | bool]] = []
 
-        counterfactual_answers: List[str] = []
-
-        # Simple counterfactual: remove top-1 context
+        # ---- Counterfactual generation loop ----
         perturbed_contexts = remove_top_k_contexts(contexts, k=1)
 
         if perturbed_contexts:
@@ -66,15 +69,32 @@ class CounterfactualEvaluator(BaseEvaluator):
                 query=query,
                 contexts=perturbed_contexts,
             )
-            counterfactual_answers.append(cf_answer)
+
+            lex_score = lexical_overlap(baseline_answer, cf_answer)
+            emb_dist = await embedding_distance(baseline_answer, cf_answer)
+            drift_flag = significant_drift(lex_score, emb_dist)
+
+            drift_records.append(
+                {
+                    "lexical_overlap": lex_score,
+                    "embedding_distance": emb_dist,
+                    "significant_drift": drift_flag,
+                }
+            )
+
+        # ---- Aggregate score ----
+        # Score = fraction of counterfactuals that caused significant drift
+        score = (
+            sum(1.0 for r in drift_records if r["significant_drift"])
+            / len(drift_records)
+            if drift_records
+            else 0.0
+        )
 
         return EvaluationResult(
             query=query,
             response=baseline_answer,
             contexts=contexts,
-            feedback=(
-                "Counterfactual answers generated. "
-                f"Num counterfactuals: {len(counterfactual_answers)}"
-            ),
-            score=None,
+            score=score,
+            feedback=str(drift_records),
         )
