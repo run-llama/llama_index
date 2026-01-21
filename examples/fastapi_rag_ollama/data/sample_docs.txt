@@ -1,0 +1,8 @@
+LlamaIndex is a framework for building context-aware applications
+using large language models.
+
+It provides tools for document ingestion, indexing, and querying
+to enable retrieval-augmented generation (RAG).
+
+This example demonstrates how to expose a RAG pipeline
+using FastAPI and a local LLM powered by Ollama.
