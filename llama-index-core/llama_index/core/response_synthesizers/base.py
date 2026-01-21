@@ -50,14 +50,6 @@ logger = logging.getLogger(__name__)
 QueryTextType = QueryType
 
 
-def empty_response_generator() -> Generator[str, None, None]:
-    yield "Empty Response"
-
-
-async def empty_response_agenerator() -> AsyncGenerator[str, None]:
-    yield "Empty Response"
-
-
 class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
     """Response builder class."""
 
