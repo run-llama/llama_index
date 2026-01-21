@@ -19,15 +19,18 @@ retriever = YouRetriever(api_key="your-api-key")
 # Or set YDC_API_KEY environment variable
 # retriever = YouRetriever()
 
-# Retrieve search results
+# Retrieve search results synchronously
 results = retriever.retrieve("your search query")
+
+# Retrieve search results asynchronously
+results = await retriever.aretrieve("your search query")
 ```
 
 ## Features
 
 - Unified web and news search
 - Customizable search parameters (country, language, freshness, etc.)
-- Optional livecrawl for full-page content
+- Optional livecrawl for full-page content in html or markdown format
 - Seamless integration with LlamaIndex query engines and agents
 
 ## API Reference

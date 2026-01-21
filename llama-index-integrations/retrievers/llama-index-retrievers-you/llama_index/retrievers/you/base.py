@@ -3,7 +3,7 @@
 import os
 from typing import Any, Dict, List, Literal, Optional, Union
 
-import requests
+import httpx
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -120,27 +120,8 @@ class YouRetriever(BaseRetriever):
             metadata={k: v for k, v in metadata.items() if v is not None},
         )
 
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes from You.com Search API."""
-        headers = {"X-API-Key": self._api_key, "Accept": "application/json"}
-        params = self._generate_params(query_bundle.query_str)
-
-        try:
-            response = requests.get(
-                _SEARCH_ENDPOINT,
-                params=params,
-                headers=headers,
-                timeout=_DEFAULT_TIMEOUT,
-            )
-            response.raise_for_status()
-            data = response.json()
-        except requests.exceptions.Timeout as e:
-            raise ValueError(f"You.com API request timed out: {e}") from e
-        except requests.exceptions.JSONDecodeError as e:
-            raise ValueError(f"You.com API returned invalid JSON: {e}") from e
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"You.com API request failed: {e}") from e
-
+    def _process_response(self, data: Dict[str, Any]) -> List[NodeWithScore]:
+        """Process API response data into NodeWithScore list."""
         results = data.get("results", {})
         nodes: List[TextNode] = []
 
@@ -153,3 +134,49 @@ class YouRetriever(BaseRetriever):
             nodes.append(self._process_result(article, "news"))
 
         return [NodeWithScore(node=node, score=1.0) for node in nodes]
+
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve nodes from You.com Search API."""
+        headers = {"X-API-Key": self._api_key, "Accept": "application/json"}
+        params = self._generate_params(query_bundle.query_str)
+
+        try:
+            with httpx.Client(timeout=_DEFAULT_TIMEOUT) as client:
+                response = client.get(
+                    _SEARCH_ENDPOINT,
+                    params=params,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                data = response.json()
+        except httpx.TimeoutException as e:
+            raise ValueError(f"You.com API request timed out: {e}") from e
+        except httpx.HTTPStatusError as e:
+            raise ValueError(f"You.com API request failed: {e}") from e
+        except Exception as e:
+            raise ValueError(f"You.com API request failed: {e}") from e
+
+        return self._process_response(data)
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve nodes from You.com Search API asynchronously."""
+        headers = {"X-API-Key": self._api_key, "Accept": "application/json"}
+        params = self._generate_params(query_bundle.query_str)
+
+        try:
+            async with httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT) as client:
+                response = await client.get(
+                    _SEARCH_ENDPOINT,
+                    params=params,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                data = response.json()
+        except httpx.TimeoutException as e:
+            raise ValueError(f"You.com API request timed out: {e}") from e
+        except httpx.HTTPStatusError as e:
+            raise ValueError(f"You.com API request failed: {e}") from e
+        except Exception as e:
+            raise ValueError(f"You.com API request failed: {e}") from e
+
+        return self._process_response(data)

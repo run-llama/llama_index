@@ -1,8 +1,8 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
-import requests
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import QueryBundle
@@ -86,8 +86,33 @@ def test_process_result_filters_none_metadata():
     assert node.metadata["url"] == "https://example.com"
 
 
-@patch("llama_index.retrievers.you.base.requests.get")
-def test_retrieve_processes_web_and_news(mock_get):
+def test_process_response_combines_web_and_news():
+    retriever = YouRetriever(api_key="test")
+    data = {
+        "results": {
+            "web": [
+                {"url": "https://web1.com", "snippets": ["web1"]},
+                {"url": "https://web2.com", "snippets": ["web2"]},
+            ],
+            "news": [{"url": "https://news1.com", "description": "news1"}],
+        }
+    }
+    results = retriever._process_response(data)
+    assert len(results) == 3
+    assert results[0].node.metadata["source_type"] == "web"
+    assert results[1].node.metadata["source_type"] == "web"
+    assert results[2].node.metadata["source_type"] == "news"
+    assert all(r.score == 1.0 for r in results)
+
+
+def test_process_response_handles_empty_results():
+    retriever = YouRetriever(api_key="test")
+    assert retriever._process_response({"results": {}}) == []
+    assert retriever._process_response({}) == []
+
+
+@patch("httpx.Client")
+def test_retrieve_processes_web_and_news(mock_client_class):
     mock_response = MagicMock()
     mock_response.json.return_value = {
         "results": {
@@ -95,7 +120,11 @@ def test_retrieve_processes_web_and_news(mock_get):
             "news": [{"url": "https://news.com", "description": "news content"}],
         }
     }
-    mock_get.return_value = mock_response
+    mock_client = MagicMock()
+    mock_client.get.return_value = mock_response
+    mock_client.__enter__.return_value = mock_client
+    mock_client.__exit__.return_value = None
+    mock_client_class.return_value = mock_client
 
     retriever = YouRetriever(api_key="test")
     results = retriever._retrieve(QueryBundle("test"))
@@ -106,45 +135,123 @@ def test_retrieve_processes_web_and_news(mock_get):
     assert all(r.score == 1.0 for r in results)
 
 
-@patch("llama_index.retrievers.you.base.requests.get")
-def test_retrieve_handles_empty_results(mock_get):
+@patch("httpx.Client")
+def test_retrieve_handles_empty_results(mock_client_class):
     mock_response = MagicMock()
     mock_response.json.return_value = {"results": {}}
-    mock_get.return_value = mock_response
+    mock_client = MagicMock()
+    mock_client.get.return_value = mock_response
+    mock_client.__enter__.return_value = mock_client
+    mock_client.__exit__.return_value = None
+    mock_client_class.return_value = mock_client
 
     retriever = YouRetriever(api_key="test")
     results = retriever._retrieve(QueryBundle("test"))
     assert results == []
 
 
-@patch("llama_index.retrievers.you.base.requests.get")
-def test_retrieve_timeout_raises(mock_get):
-    mock_get.side_effect = requests.exceptions.Timeout("timeout")
+@patch("httpx.Client")
+def test_retrieve_timeout_raises(mock_client_class):
+    mock_client = MagicMock()
+    mock_client.get.side_effect = httpx.TimeoutException("timeout")
+    mock_client.__enter__.return_value = mock_client
+    mock_client.__exit__.return_value = None
+    mock_client_class.return_value = mock_client
+
     retriever = YouRetriever(api_key="test")
     with pytest.raises(ValueError, match="timed out"):
         retriever._retrieve(QueryBundle("test"))
 
 
-@patch("llama_index.retrievers.you.base.requests.get")
-def test_retrieve_request_error_raises(mock_get):
-    mock_get.side_effect = requests.exceptions.ConnectionError("connection failed")
+@patch("httpx.Client")
+def test_retrieve_request_error_raises(mock_client_class):
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "Server error", request=MagicMock(), response=mock_response
+    )
+    mock_client = MagicMock()
+    mock_client.get.return_value = mock_response
+    mock_client.__enter__.return_value = mock_client
+    mock_client.__exit__.return_value = None
+    mock_client_class.return_value = mock_client
+
     retriever = YouRetriever(api_key="test")
     with pytest.raises(ValueError, match="request failed"):
         retriever._retrieve(QueryBundle("test"))
 
 
-@patch("llama_index.retrievers.you.base.requests.get")
-def test_retrieve_passes_correct_headers_and_params(mock_get):
+@patch("httpx.Client")
+def test_retrieve_passes_correct_headers_and_params(mock_client_class):
     mock_response = MagicMock()
     mock_response.json.return_value = {"results": {}}
-    mock_get.return_value = mock_response
+    mock_client = MagicMock()
+    mock_client.get.return_value = mock_response
+    mock_client.__enter__.return_value = mock_client
+    mock_client.__exit__.return_value = None
+    mock_client_class.return_value = mock_client
 
     retriever = YouRetriever(api_key="my-key", count=10, country="US")
     retriever._retrieve(QueryBundle("search term"))
 
-    mock_get.assert_called_once()
-    call_kwargs = mock_get.call_args[1]
+    mock_client.get.assert_called_once()
+    call_kwargs = mock_client.get.call_args[1]
     assert call_kwargs["headers"]["X-API-Key"] == "my-key"
     assert call_kwargs["params"]["query"] == "search term"
     assert call_kwargs["params"]["count"] == 10
-    assert call_kwargs["timeout"] == 30
+
+
+# Async tests
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient")
+async def test_aretrieve_processes_web_and_news(mock_client_class):
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "results": {
+            "web": [{"url": "https://web.com", "snippets": ["web content"]}],
+            "news": [{"url": "https://news.com", "description": "news content"}],
+        }
+    }
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client_class.return_value = mock_client
+
+    retriever = YouRetriever(api_key="test")
+    results = await retriever._aretrieve(QueryBundle("test"))
+
+    assert len(results) == 2
+    assert results[0].node.metadata["source_type"] == "web"
+    assert results[1].node.metadata["source_type"] == "news"
+    assert all(r.score == 1.0 for r in results)
+
+
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient")
+async def test_aretrieve_handles_empty_results(mock_client_class):
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"results": {}}
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client_class.return_value = mock_client
+
+    retriever = YouRetriever(api_key="test")
+    results = await retriever._aretrieve(QueryBundle("test"))
+    assert results == []
+
+
+@pytest.mark.asyncio
+@patch("httpx.AsyncClient")
+async def test_aretrieve_timeout_raises(mock_client_class):
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client_class.return_value = mock_client
+
+    retriever = YouRetriever(api_key="test")
+    with pytest.raises(ValueError, match="timed out"):
+        await retriever._aretrieve(QueryBundle("test"))
