@@ -722,6 +722,11 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-airweave
             - ../../llama-index-integrations/tools/llama-index-tools-typecast
             - ../../llama-index-integrations/llms/llama-index-llms-aibadgr
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-volcenginemysql
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-alibabacloud-mysql
+            - ../../llama-index-integrations/tools/llama-index-tools-parallel-web-systems
+            - ../../llama-index-integrations/ingestion/llama-index-ingestion-ray
+            - ../../llama-index-integrations/readers/llama-index-readers-datasets
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:
