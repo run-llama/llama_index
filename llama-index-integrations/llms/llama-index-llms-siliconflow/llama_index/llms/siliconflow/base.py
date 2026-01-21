@@ -1,6 +1,7 @@
 import json
 import aiohttp
 import functools
+import inspect
 import requests
 import tenacity
 import asyncio
@@ -177,7 +178,7 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         )
         return await retryer(lambda: f(self, *args, **kwargs))
 
-    return async_wrapper if asyncio.iscoroutinefunction(f) else wrapper
+    return async_wrapper if inspect.iscoroutinefunction(f) else wrapper
 
 
 class SiliconFlow(FunctionCallingLLM):

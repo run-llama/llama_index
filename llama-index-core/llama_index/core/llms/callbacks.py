@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -271,7 +272,7 @@ def llm_chat_callback() -> Callable:
                 setattr(dummy_wrapper, attr, v)
                 setattr(wrapped_llm_chat, attr, v)
 
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
             else:
@@ -531,7 +532,7 @@ def llm_completion_callback() -> Callable:
                 setattr(dummy_wrapper, attr, v)
                 setattr(wrapped_llm_predict, attr, v)
 
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
             else:
