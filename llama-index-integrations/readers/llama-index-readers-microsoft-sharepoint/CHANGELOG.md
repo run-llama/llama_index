@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [0.6.0] - 2026-01-21
+
+### Added
+
+- **SharePoint Site Pages Support**: New `SharePointType.PAGE` option to load SharePoint Site Pages as documents
+  - `load_pages_data()`: Load all pages or a specific page from a SharePoint site
+  - `list_pages()`: List all pages in a SharePoint site
+  - `get_page_text()`: Get the text content of a specific page
+  - `get_page_id_by_name()`: Find a page ID by its name
+- **Instrumentation Events**: Added LlamaIndex instrumentation support with `DispatcherSpanMixin`
+  - `TotalPagesToProcessEvent`: Emitted when total page count is determined
+  - `PageDataFetchStartedEvent`: Emitted when page processing begins
+  - `PageDataFetchCompletedEvent`: Emitted when a page is successfully processed
+  - `PageSkippedEvent`: Emitted when a page is skipped (via callback)
+  - `PageFailedEvent`: Emitted when page processing fails
+- **New Parameters**:
+  - `sharepoint_type`: Choose between `DRIVE` (files) or `PAGE` (site pages)
+  - `sharepoint_host_name`: Host name for page URL construction
+  - `sharepoint_relative_url`: Relative URL for page URL construction
+  - `process_document_callback`: Callback function to filter pages before processing
+  - `fail_on_error`: Control error handling behavior (raise or log and continue)
+
 ## [0.5.1] - 2025-04-02
 
 - Fix issue with folder path encoding when a file path contains special characters
