@@ -91,7 +91,9 @@ def vector_store(
     if isinstance(embed_model, AzureOpenAIEmbedding):
         deployment_name = os.environ.get("AZURE_LLM_DEPLOYMENT", "gpt-5-mini")
         Settings.llm = AzureOpenAI(
-            engine=deployment_name, api_key=os.environ["AZURE_OPENAI_API_KEY"]
+            engine=deployment_name,
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            temperature=1.0,
         )
     return MongoDBAtlasVectorSearch(
         mongodb_client=atlas_client,
