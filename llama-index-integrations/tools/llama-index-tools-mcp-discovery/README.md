@@ -2,6 +2,31 @@
 
 This tool allows LlamaIndex agents to query a Model Context Protocol (MCP) Discovery server to find and retrieve other tools dynamically.
 
+## ⚠️ Important Note
+
+This MCP Discovery integration **does not work out of the box**.
+It requires a **separately deployed MCP Discovery server**, which you must **self-host locally or deploy to your own cloud**.
+
+This tool acts only as a **client** and assumes an existing, reachable MCP Discovery server.
+
+---
+
+## Required Environment Variables
+
+```env
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+OPENAI_API_KEY=your-openai-api-key
+```
+
+## Deploying the MCP Discovery Server
+
+```bash
+  git clone https://github.com/yksanjo/mcp-discovery.git
+  cd mcp-discovery
+  npm install
+```
+
 ## Features
 
 - 🔍 **Autonomous Tool Discovery**: Query MCP servers to discover available tools based on natural language descriptions
