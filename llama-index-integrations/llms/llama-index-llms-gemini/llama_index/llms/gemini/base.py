@@ -1,6 +1,5 @@
 """Google's hosted Gemini API."""
 
-import deprecated
 import os
 import uuid
 import warnings
@@ -17,12 +16,12 @@ from typing import (
     Union,
     cast,
 )
+
+import deprecated
 import google.generativeai as genai
-from google.generativeai.types import generation_types, FunctionDeclaration, ToolDict
-from google.generativeai.types.content_types import FunctionCallingMode
-
 import llama_index.core.instrumentation as instrument
-
+from google.generativeai.types import FunctionDeclaration, ToolDict, generation_types
+from google.generativeai.types.content_types import FunctionCallingMode
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -39,9 +38,9 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
-from llama_index.core.prompts import PromptTemplate
+from llama_index.core.llms.llm import Model, ToolSelection
 from llama_index.core.program.utils import FlexibleModel
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
@@ -73,7 +72,9 @@ if TYPE_CHECKING:
     reason=(
         "Should use `llama-index-llms-google-genai` instead, using Google's latest unified SDK. "
         "See: https://docs.llamaindex.ai/en/stable/examples/llm/google_genai/"
-    )
+        "This package will no longer be supported after version 0.6.2"
+    ),
+    version="0.6.2",
 )
 class Gemini(FunctionCallingLLM):
     """
