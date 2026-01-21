@@ -13,6 +13,14 @@ from llama_index.core.evaluation.counterfactual.metrics import (
 )
 
 
+DEFAULT_COUNTERFACTUAL_PROMPT = (
+    "Answer the question using ONLY the information below.\n\n"
+    "Context:\n{context}\n\n"
+    "Question: {query}\n"
+    "Answer:"
+)
+
+
 class CounterfactualEvaluator(BaseEvaluator):
     """
     Counterfactual evaluator for RAG systems.
@@ -24,10 +32,14 @@ class CounterfactualEvaluator(BaseEvaluator):
     def __init__(
         self,
         llm=None,
-        max_counterfactuals: int = 1,
+        enable_regeneration: bool = True,
+        prompt_template: Optional[str] = None,
     ) -> None:
         self._llm = llm or Settings.llm
-        self._max_counterfactuals = max_counterfactuals
+        self._enable_regeneration = enable_regeneration
+        self._prompt_template = (
+            prompt_template or DEFAULT_COUNTERFACTUAL_PROMPT
+        )
 
     async def _generate_answer(
         self,
@@ -36,11 +48,9 @@ class CounterfactualEvaluator(BaseEvaluator):
     ) -> str:
         """Generate an answer from query + contexts using the LLM."""
         context_block = "\n\n".join(contexts)
-        prompt = (
-            "Answer the question using ONLY the information below.\n\n"
-            f"Context:\n{context_block}\n\n"
-            f"Question: {query}\n"
-            "Answer:"
+        prompt = self._prompt_template.format(
+            query=query,
+            context=context_block,
         )
         response = await self._llm.acomplete(prompt)
         return response.text
@@ -58,10 +68,16 @@ class CounterfactualEvaluator(BaseEvaluator):
                 invalid_reason="query, response, and contexts must be provided",
             )
 
+        if not self._enable_regeneration:
+            return EvaluationResult(
+                invalid_result=True,
+                invalid_reason="Counterfactual regeneration is disabled",
+            )
+
         baseline_answer: str = response
         drift_records: List[Dict[str, float | bool]] = []
 
-        # ---- Counterfactual generation loop ----
+        # ---- Counterfactual: remove top-1 context ----
         perturbed_contexts = remove_top_k_contexts(contexts, k=1)
 
         if perturbed_contexts:
@@ -83,7 +99,6 @@ class CounterfactualEvaluator(BaseEvaluator):
             )
 
         # ---- Aggregate score ----
-        # Score = fraction of counterfactuals that caused significant drift
         score = (
             sum(1.0 for r in drift_records if r["significant_drift"])
             / len(drift_records)
@@ -96,5 +111,5 @@ class CounterfactualEvaluator(BaseEvaluator):
             response=baseline_answer,
             contexts=contexts,
             score=score,
-            feedback=str(drift_records),
+            feedback="Counterfactual drift evaluation completed",
         )
