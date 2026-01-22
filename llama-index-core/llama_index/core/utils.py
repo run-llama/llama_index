@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import inspect
 import os
 import random
 import sys
@@ -342,7 +343,7 @@ def get_retry_on_exceptions_with_backoff_decorator(
                 foo, *retry_args, **retry_kwargs
             )
 
-        return awrapper if asyncio.iscoroutinefunction(func) else wrapper
+        return awrapper if inspect.iscoroutinefunction(func) else wrapper
 
     return decorator
 
@@ -446,7 +447,7 @@ def add_sync_version(func: Any) -> Any:
         func(Any): the async function for which a sync variant will be built.
 
     """
-    assert asyncio.iscoroutinefunction(func)
+    assert inspect.iscoroutinefunction(func)
 
     @wraps(func)
     def _wrapper(*args: Any, **kwds: Any) -> Any:
