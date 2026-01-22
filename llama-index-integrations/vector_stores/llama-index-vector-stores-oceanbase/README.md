@@ -81,14 +81,19 @@ Use `VectorStoreQueryMode` for sparse, fulltext, or hybrid search. Sparse and fu
 queries are passed via keyword arguments:
 
 ```python
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 
 # sparse search
 q = VectorStoreQuery(mode=VectorStoreQueryMode.SPARSE, similarity_top_k=5)
 result = oceanbase.query(q, sparse_query={0: 1.0, 10: 0.5})
 
 # fulltext search
-q = VectorStoreQuery(mode=VectorStoreQueryMode.TEXT_SEARCH, query_str="oceanbase")
+q = VectorStoreQuery(
+    mode=VectorStoreQueryMode.TEXT_SEARCH, query_str="oceanbase"
+)
 result = oceanbase.query(q)
 
 # hybrid search

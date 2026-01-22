@@ -24,7 +24,14 @@ from llama_index.core.vector_stores.utils import (
 )
 from sqlalchemy import Column, Table, String, JSON, text, func, select, bindparam
 from sqlalchemy.dialects.mysql import LONGTEXT
-from pyobvector import ObVecClient, VECTOR, SPARSE_VECTOR, FtsIndexParam, FtsParser, MatchAgainst
+from pyobvector import (
+    ObVecClient,
+    VECTOR,
+    SPARSE_VECTOR,
+    FtsIndexParam,
+    FtsParser,
+    MatchAgainst,
+)
 from pyobvector.client.index_param import VecIndexType
 import numpy as np
 
@@ -71,9 +78,7 @@ def _escape_json_path_segment(segment: str) -> str:
     return f'"{escaped}"'
 
 
-def _build_text_clause(
-    sql: str, params: Dict[str, Any], expanding_params: Set[str]
-):
+def _build_text_clause(sql: str, params: Dict[str, Any], expanding_params: Set[str]):
     clause = text(sql)
     for name, value in params.items():
         if name in expanding_params:
@@ -376,7 +381,9 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
                         f"Operator {filter.operator.value} expects a list value."
                     )
                 if len(filter.value) == 0:
-                    filters.append("1=0" if filter.operator == FilterOperator.IN else "1=1")
+                    filters.append(
+                        "1=0" if filter.operator == FilterOperator.IN else "1=1"
+                    )
                     continue
                 placeholder = self._add_filter_param(
                     params, expanding_params, filter.value, prefix="in", expanding=True
@@ -738,9 +745,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
                 Defaults to None.
 
         """
-        where_clause = self._build_where_clause(
-            filters=filters, node_ids=node_ids
-        )
+        where_clause = self._build_where_clause(filters=filters, node_ids=node_ids)
 
         self._client.delete(
             table_name=self._table_name,
@@ -970,7 +975,9 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
                         existing["node"] = record["node"]
                         existing["modality"] = modality
 
-        ranked = sorted(combined.items(), key=lambda item: item[1]["score"], reverse=True)
+        ranked = sorted(
+            combined.items(), key=lambda item: item[1]["score"], reverse=True
+        )
         ranked = ranked[:top_k]
         nodes = [entry["node"] for _, entry in ranked]
         similarities = [entry["score"] for _, entry in ranked]
@@ -1012,7 +1019,9 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         if query.mode == VectorStoreQueryMode.DEFAULT:
             if query.query_embedding is None:
-                raise ValueError("query_embedding must be provided for OceanBase search")
+                raise ValueError(
+                    "query_embedding must be provided for OceanBase search"
+                )
             records = self._query_dense_records(query, search_param, qfilters)
             return self._records_to_query_result(records)
 
@@ -1027,8 +1036,12 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         if query.mode == VectorStoreQueryMode.TEXT_SEARCH:
             fulltext_query = kwargs.get("fulltext_query", query.query_str)
             if fulltext_query is None:
-                raise ValueError("query_str or fulltext_query must be provided for text search")
-            records = self._query_fulltext_records(fulltext_query, query.similarity_top_k, qfilters)
+                raise ValueError(
+                    "query_str or fulltext_query must be provided for text search"
+                )
+            records = self._query_fulltext_records(
+                fulltext_query, query.similarity_top_k, qfilters
+            )
             return self._records_to_query_result(records)
 
         if query.mode == VectorStoreQueryMode.HYBRID:
