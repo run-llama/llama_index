@@ -1,9 +1,11 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
-## [0.7.0]
+## [1.0.0]
 
 - Changed engine default from deprecated `nmslib` (since version 3.0.0) to `faiss`
 - Allow custom index configuration for Opensearch
+- Updated opensearch-py to 3.x
+- Bugfix: Use same event loop to close async client
 
 ## [0.5.5]
 
