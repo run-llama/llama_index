@@ -60,5 +60,5 @@ async def test_index(
                 await asyncio.sleep(5)
 
         assert retries
-        assert "LLM" in response.response
-        assert "LLM" in async_response.response
+        assert "knowledge generation and reasoning" in response.response
+        assert "knowledge generation and reasoning" in async_response.response

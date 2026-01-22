@@ -474,6 +474,7 @@ class Anthropic(FunctionCallingLLM):
             role = MessageRole.ASSISTANT
             # Track usage metadata and stop_reason from RawMessage events
             usage_metadata: Dict[str, Any] = {}
+            input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
@@ -613,6 +614,8 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageStartEvent):
                     # Capture initial usage metadata from message_start
                     if hasattr(r.message, "usage") and r.message.usage:
+                        # Save input tokens for later
+                        input_tokens = r.message.usage.input_tokens
                         usage_metadata = {
                             "input_tokens": r.message.usage.input_tokens,
                             "output_tokens": r.message.usage.output_tokens,
@@ -620,6 +623,8 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
                     if hasattr(r, "usage") and r.usage:
+                        # Modify r.usage.input_tokens if None with saved input tokens value
+                        r.usage.input_tokens = r.usage.input_tokens or input_tokens
                         usage_metadata = {
                             "input_tokens": r.usage.input_tokens,
                             "output_tokens": r.usage.output_tokens,
@@ -721,6 +726,7 @@ class Anthropic(FunctionCallingLLM):
             role = MessageRole.ASSISTANT
             # Track usage metadata and stop_reason from RawMessage events
             usage_metadata: Dict[str, Any] = {}
+            input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             async for r in response:
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
@@ -860,6 +866,8 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageStartEvent):
                     # Capture initial usage metadata from message_start
                     if hasattr(r.message, "usage") and r.message.usage:
+                        # Save input tokens for later
+                        input_tokens = r.message.usage.input_tokens
                         usage_metadata = {
                             "input_tokens": r.message.usage.input_tokens,
                             "output_tokens": r.message.usage.output_tokens,
@@ -867,6 +875,8 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
                     if hasattr(r, "usage") and r.usage:
+                        # Modify r.usage.input_tokens if None with saved input tokens value
+                        r.usage.input_tokens = r.usage.input_tokens or input_tokens
                         usage_metadata = {
                             "input_tokens": r.usage.input_tokens,
                             "output_tokens": r.usage.output_tokens,
