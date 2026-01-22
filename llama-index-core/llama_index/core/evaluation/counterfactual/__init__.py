@@ -1,3 +1,0 @@
-"""
-Counterfactual RAG evaluation (WIP).
-"""
