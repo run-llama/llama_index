@@ -10,7 +10,7 @@ app = FastAPI(title="LlamaIndex FastAPI RAG (Ollama)")
 
 # Configure local LLM and embedding model via Ollama
 Settings.llm = Ollama(model="llama3")
-Settings.embed_model = OllamaEmbedding(model_name="llama3")
+Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
 # Load documents and build index at startup
 documents = SimpleDirectoryReader("data").load_data()

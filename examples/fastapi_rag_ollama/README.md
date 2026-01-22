@@ -5,10 +5,12 @@ Retrieval-Augmented Generation (RAG) API using
 LlamaIndex and FastAPI, powered by a **local LLM via Ollama**.
 
 ## Features
+- Uses `llama3` for text generation and `nomic-embed-text` for embeddings via Ollama
 - Local, free LLM (no API keys required)
 - Document ingestion and indexing
 - Simple query API endpoint
 - Clean, production-style structure
+
 
 ## Prerequisites
 - Python 3.9+
