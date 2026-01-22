@@ -91,6 +91,9 @@ class VectorIndexRetriever(BaseRetriever):
 
     def _needs_embedding(self) -> bool:
         """Check if the current query mode requires embeddings."""
+        if self._vector_store.generates_embeddings:
+            return False
+
         return (
             self._vector_store.is_embedding_query
             and self._vector_store_query_mode
@@ -106,7 +109,11 @@ class VectorIndexRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if self._needs_embedding():
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
+            if (
+                self._embed_model
+                and query_bundle.embedding is None
+                and len(query_bundle.embedding_strs) > 0
+            ):
                 query_bundle.embedding = (
                     self._embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
@@ -118,7 +125,11 @@ class VectorIndexRetriever(BaseRetriever):
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         embedding = query_bundle.embedding
         if self._needs_embedding():
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
+            if (
+                self._embed_model
+                and query_bundle.embedding is None
+                and len(query_bundle.embedding_strs) > 0
+            ):
                 embed_model = self._embed_model
                 embedding = await embed_model.aget_agg_embedding_from_queries(
                     query_bundle.embedding_strs
