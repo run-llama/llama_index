@@ -767,3 +767,570 @@ class TestV2RetryDecorator:
             always_failing()
 
         assert call_count == 3
+
+
+# =============================================================================
+# V2 Hybrid Search Unit Tests
+# =============================================================================
+
+
+class TestV2HybridSearchParameters:
+    """Test hybrid search constructor parameter validation."""
+
+    def test_enable_hybrid_requires_v2(self):
+        """Test that enable_hybrid=True raises error for v1."""
+        with pytest.raises(
+            ValueError,
+            match="enable_hybrid=True is only supported for api_version='v2'",
+        ):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v1",
+                index_id="projects/test/locations/us-central1/indexes/123",
+                endpoint_id="projects/test/locations/us-central1/indexEndpoints/123",
+                enable_hybrid=True,
+            )
+
+    def test_alpha_must_be_between_0_and_1(self):
+        """Test that default_hybrid_alpha must be in [0, 1] range."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                default_hybrid_alpha=1.5,
+            )
+
+    def test_alpha_negative_raises_error(self):
+        """Test that negative alpha raises error."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                default_hybrid_alpha=-0.1,
+            )
+
+    def test_hybrid_ranker_must_be_rrf_or_vertex(self):
+        """Test that hybrid_ranker must be 'rrf' or 'vertex'."""
+        from pydantic import ValidationError
+
+        # Pydantic validates the Literal type
+        with pytest.raises(ValidationError):
+            VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                hybrid_ranker="invalid",
+            )
+
+    def test_v2_accepts_all_hybrid_parameters(self):
+        """Test that v2 accepts all hybrid parameters without error."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            store = VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                enable_hybrid=True,
+                text_search_fields=["title", "content"],
+                embedding_field="embedding",
+                hybrid_ranker="rrf",
+                default_hybrid_alpha=0.7,
+                semantic_task_type="RETRIEVAL_QUERY",
+                vertex_ranker_model="semantic-ranker-default@latest",
+                vertex_ranker_title_field="title",
+                vertex_ranker_content_field="content",
+            )
+
+            assert store.enable_hybrid is True
+            assert store.text_search_fields == ["title", "content"]
+            assert store.embedding_field == "embedding"
+            assert store.hybrid_ranker == "rrf"
+            assert store.default_hybrid_alpha == 0.7
+            assert store.semantic_task_type == "RETRIEVAL_QUERY"
+            assert store.vertex_ranker_model == "semantic-ranker-default@latest"
+            assert store.vertex_ranker_title_field == "title"
+            assert store.vertex_ranker_content_field == "content"
+
+    def test_vertex_ranker_warning_without_fields(self):
+        """Test that VertexRanker logs warning when no title/content fields configured."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch.base._logger"
+            ) as mock_logger:
+                VertexAIVectorStore(
+                    project_id="test-project",
+                    region="us-central1",
+                    api_version="v2",
+                    collection_id="my-collection",
+                    hybrid_ranker="vertex",
+                )
+
+                mock_logger.warning.assert_called_once()
+                assert "VertexRanker works best" in mock_logger.warning.call_args[0][0]
+
+
+class TestV2RRFWeightCalculation:
+    """Test RRF weight calculation from alpha."""
+
+    def test_alpha_0_pure_text(self):
+        """Test that alpha=0 gives pure text weight."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _calculate_rrf_weights,
+        )
+
+        weights = _calculate_rrf_weights(alpha=0.0, num_searches=2)
+        assert weights == [0.0, 1.0]  # [vector, text]
+
+    def test_alpha_1_pure_vector(self):
+        """Test that alpha=1 gives pure vector weight."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _calculate_rrf_weights,
+        )
+
+        weights = _calculate_rrf_weights(alpha=1.0, num_searches=2)
+        assert weights == [1.0, 0.0]  # [vector, text]
+
+    def test_alpha_0_5_balanced(self):
+        """Test that alpha=0.5 gives balanced weights."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _calculate_rrf_weights,
+        )
+
+        weights = _calculate_rrf_weights(alpha=0.5, num_searches=2)
+        assert weights == [0.5, 0.5]  # [vector, text]
+
+    def test_alpha_0_7_favors_vector(self):
+        """Test that alpha=0.7 favors vector search."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _calculate_rrf_weights,
+        )
+
+        weights = _calculate_rrf_weights(alpha=0.7, num_searches=2)
+        assert weights[0] == pytest.approx(0.7)
+        assert weights[1] == pytest.approx(0.3)
+
+    def test_three_searches_equal_weights(self):
+        """Test that 3 searches get equal weights when not two."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _calculate_rrf_weights,
+        )
+
+        weights = _calculate_rrf_weights(alpha=0.5, num_searches=3)
+        expected = 1.0 / 3
+        assert all(w == pytest.approx(expected) for w in weights)
+
+
+class TestV2FilterConversion:
+    """Test LlamaIndex filter to V2 filter conversion."""
+
+    def test_simple_eq_filter(self):
+        """Test simple equality filter conversion."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import (
+            MetadataFilters,
+            MetadataFilter,
+            FilterOperator,
+        )
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="category", value="tech", operator=FilterOperator.EQ)
+            ]
+        )
+
+        result = _convert_filters_to_v2(filters)
+
+        assert result == {"category": {"$eq": "tech"}}
+
+    def test_gt_filter(self):
+        """Test greater than filter conversion."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import (
+            MetadataFilters,
+            MetadataFilter,
+            FilterOperator,
+        )
+
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="price", value=50, operator=FilterOperator.GT)]
+        )
+
+        result = _convert_filters_to_v2(filters)
+
+        assert result == {"price": {"$gt": 50}}
+
+    def test_and_filter(self):
+        """Test AND filter conversion."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import (
+            MetadataFilters,
+            MetadataFilter,
+            FilterOperator,
+            FilterCondition,
+        )
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="category", value="tech", operator=FilterOperator.EQ
+                ),
+                MetadataFilter(key="price", value=50, operator=FilterOperator.LT),
+            ],
+            condition=FilterCondition.AND,
+        )
+
+        result = _convert_filters_to_v2(filters)
+
+        assert result == {
+            "$and": [
+                {"category": {"$eq": "tech"}},
+                {"price": {"$lt": 50}},
+            ]
+        }
+
+    def test_or_filter(self):
+        """Test OR filter conversion."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import (
+            MetadataFilters,
+            MetadataFilter,
+            FilterOperator,
+            FilterCondition,
+        )
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="color", value="red", operator=FilterOperator.EQ),
+                MetadataFilter(key="color", value="blue", operator=FilterOperator.EQ),
+            ],
+            condition=FilterCondition.OR,
+        )
+
+        result = _convert_filters_to_v2(filters)
+
+        assert result == {
+            "$or": [
+                {"color": {"$eq": "red"}},
+                {"color": {"$eq": "blue"}},
+            ]
+        }
+
+    def test_in_filter(self):
+        """Test IN filter conversion."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import (
+            MetadataFilters,
+            MetadataFilter,
+            FilterOperator,
+        )
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="tags", value=["ml", "ai"], operator=FilterOperator.IN
+                )
+            ]
+        )
+
+        result = _convert_filters_to_v2(filters)
+
+        assert result == {"tags": {"$in": ["ml", "ai"]}}
+
+    def test_none_filters(self):
+        """Test that None filters returns None."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+
+        result = _convert_filters_to_v2(None)
+        assert result is None
+
+    def test_empty_filters(self):
+        """Test that empty filters returns None."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _convert_filters_to_v2,
+        )
+        from llama_index.core.vector_stores.types import MetadataFilters
+
+        result = _convert_filters_to_v2(MetadataFilters(filters=[]))
+        assert result is None
+
+
+class TestV2HybridQueryModes:
+    """Test query mode routing and behavior."""
+
+    @pytest.fixture
+    def mock_v2_store(self):
+        """Create a v2 store with hybrid enabled."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            return VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                enable_hybrid=True,
+                text_search_fields=["title", "content"],
+            )
+
+    @pytest.fixture
+    def mock_v2_store_no_hybrid(self):
+        """Create a v2 store without hybrid enabled."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            return VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                enable_hybrid=False,
+            )
+
+    def test_hybrid_mode_requires_enable_hybrid(self, mock_v2_store_no_hybrid):
+        """Test that HYBRID mode raises error without enable_hybrid=True."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_embedding=[0.1] * 768,
+                    query_str="test",
+                    mode=VectorStoreQueryMode.HYBRID,
+                )
+
+                with pytest.raises(ValueError, match="enable_hybrid=True"):
+                    mock_v2_store_no_hybrid.query(query)
+
+    def test_hybrid_mode_requires_query_embedding(self, mock_v2_store):
+        """Test that HYBRID mode raises error without query_embedding."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_embedding=None,
+                    query_str="test",
+                    mode=VectorStoreQueryMode.HYBRID,
+                )
+
+                with pytest.raises(ValueError, match="query_embedding"):
+                    mock_v2_store.query(query)
+
+    def test_text_search_requires_query_str(self, mock_v2_store):
+        """Test that TEXT_SEARCH mode raises error without query_str."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_str=None,
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                )
+
+                with pytest.raises(ValueError, match="query_str"):
+                    mock_v2_store.query(query)
+
+    def test_text_search_requires_text_fields(self, mock_v2_store_no_hybrid):
+        """Test that TEXT_SEARCH mode raises error without text_search_fields."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_str="test query",
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                )
+
+                with pytest.raises(ValueError, match="text_search_fields"):
+                    mock_v2_store_no_hybrid.query(query)
+
+    def test_semantic_hybrid_requires_query_str(self, mock_v2_store):
+        """Test that SEMANTIC_HYBRID mode raises error without query_str."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_embedding=[0.1] * 768,
+                    query_str=None,
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                )
+
+                with pytest.raises(ValueError, match="query_str"):
+                    mock_v2_store.query(query)
+
+    def test_sparse_raises_not_implemented(self, mock_v2_store):
+        """Test that SPARSE mode raises NotImplementedError."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
+        ):
+            with patch(
+                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
+            ):
+                query = VectorStoreQuery(
+                    query_embedding=[0.1] * 768,
+                    mode=VectorStoreQueryMode.SPARSE,
+                )
+
+                with pytest.raises(
+                    NotImplementedError, match="SPARSE mode is planned for Phase 2"
+                ):
+                    mock_v2_store.query(query)
+
+
+class TestV2RankerConfiguration:
+    """Test RRF vs VertexRanker configuration."""
+
+    def test_rrf_ranker_default(self):
+        """Test that RRF ranker is built by default."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            store = VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                hybrid_ranker="rrf",
+            )
+
+            assert store.hybrid_ranker == "rrf"
+
+    def test_vertex_ranker_configuration(self):
+        """Test VertexRanker configuration parameters."""
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            store = VertexAIVectorStore(
+                project_id="test-project",
+                region="us-central1",
+                api_version="v2",
+                collection_id="my-collection",
+                hybrid_ranker="vertex",
+                vertex_ranker_model="semantic-ranker-default@latest",
+                vertex_ranker_title_field="title",
+                vertex_ranker_content_field="content",
+            )
+
+            assert store.hybrid_ranker == "vertex"
+            assert store.vertex_ranker_model == "semantic-ranker-default@latest"
+            assert store.vertex_ranker_title_field == "title"
+            assert store.vertex_ranker_content_field == "content"
+
+    def test_build_ranker_rrf(self):
+        """Test _build_ranker creates RRF ranker."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _build_ranker,
+        )
+        from llama_index.core.vector_stores.types import VectorStoreQuery
+
+        mock_vectorsearch = MagicMock()
+        mock_ranker = MagicMock()
+        mock_rrf = MagicMock()
+        mock_vectorsearch.Ranker.return_value = mock_ranker
+        mock_vectorsearch.ReciprocalRankFusion.return_value = mock_rrf
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk",
+            return_value=mock_vectorsearch,
+        ):
+            mock_store = MagicMock()
+            mock_store.hybrid_ranker = "rrf"
+            mock_store.default_hybrid_alpha = 0.5
+
+            query = VectorStoreQuery(query_embedding=[0.1] * 768, alpha=0.5)
+
+            result = _build_ranker(mock_store, query, num_searches=2)
+
+            mock_vectorsearch.ReciprocalRankFusion.assert_called_once_with(
+                weights=[0.5, 0.5]
+            )
+            mock_vectorsearch.Ranker.assert_called_once()
+            assert result == mock_ranker
+
+    def test_build_ranker_vertex(self):
+        """Test _build_ranker creates VertexRanker."""
+        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            _build_ranker,
+        )
+        from llama_index.core.vector_stores.types import VectorStoreQuery
+
+        mock_vectorsearch = MagicMock()
+        mock_ranker = MagicMock()
+        mock_vertex_ranker = MagicMock()
+        mock_vectorsearch.Ranker.return_value = mock_ranker
+        mock_vectorsearch.VertexRanker.return_value = mock_vertex_ranker
+
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk",
+            return_value=mock_vectorsearch,
+        ):
+            mock_store = MagicMock()
+            mock_store.hybrid_ranker = "vertex"
+            mock_store.vertex_ranker_model = "semantic-ranker-default@latest"
+            mock_store.vertex_ranker_title_field = "title"
+            mock_store.vertex_ranker_content_field = "content"
+
+            query = VectorStoreQuery(
+                query_embedding=[0.1] * 768,
+                query_str="test query",
+            )
+
+            result = _build_ranker(mock_store, query, num_searches=2)
+
+            mock_vectorsearch.VertexRanker.assert_called_once_with(
+                query="test query",
+                model="semantic-ranker-default@latest",
+                title_template="{{ title }}",
+                content_template="{{ content }}",
+            )
+            mock_vectorsearch.Ranker.assert_called_once()
+            assert result == mock_ranker
