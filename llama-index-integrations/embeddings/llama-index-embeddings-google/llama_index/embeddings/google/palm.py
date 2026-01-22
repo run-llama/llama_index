@@ -1,8 +1,8 @@
 """Google PaLM embeddings file."""
 
-import deprecated
 from typing import Any, List, Optional
 
+import deprecated
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
@@ -17,7 +17,9 @@ import google.generativeai as palm
     reason=(
         "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
         "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
-    )
+        "Support for this package will be discontinued after v0.4.2"
+    ),
+    version="0.4.2",
 )
 class GooglePaLMEmbedding(BaseEmbedding):
     """
