@@ -5,23 +5,25 @@ Retrieval-Augmented Generation (RAG) API using
 LlamaIndex and FastAPI, powered by a **local LLM via Ollama**.
 
 ## Features
+
 - Uses `llama3` for text generation and `nomic-embed-text` for embeddings via Ollama
 - Local, free LLM (no API keys required)
 - Document ingestion and indexing
 - Simple query API endpoint
 - Clean, production-style structure
 
-
 ## Prerequisites
+
 - Python 3.9+
 - Ollama installed locally
 
 ## Setup
 
 Pull a model using Ollama:
+
 ```bash
 ollama pull llama3
-````
+```
 
 Install dependencies:
 
@@ -34,6 +36,7 @@ pip install -r requirements.txt
 ```bash
 uvicorn app:app --reload
 ```
+
 Alternatively, you can test the API using FastAPI's built-in Swagger UI:
 
 Open your browser and visit:
@@ -49,6 +52,6 @@ curl -X POST "http://localhost:8000/query" \
 
 ## Notes
 
-* This example uses a local LLM by default.
-* It is intended as a minimal, beginner-friendly
+- This example uses a local LLM by default.
+- It is intended as a minimal, beginner-friendly
   demonstration of integrating LlamaIndex with FastAPI.
