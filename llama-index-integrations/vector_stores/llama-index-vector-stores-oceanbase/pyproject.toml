@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "pyobvector>=0.1.6,<0.2",
+    "pyobvector>=0.2.0,<0.3",
 ]
 
 [tool.codespell]

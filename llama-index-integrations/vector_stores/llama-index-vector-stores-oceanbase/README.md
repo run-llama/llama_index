@@ -15,7 +15,7 @@ OceanBase currently has the ability to store vectors. Users can easily perform t
 
 The vector storage capability of OceanBase is still being enhanced, and currently has the following limitations:
 
-- Cosine vector distance function is not yet supported for vector index. Currently only inner product distance and Euclidean distance are supported, and Euclidean distance is used by default.
+- Cosine vector distance support depends on the OceanBase version. If cosine is not supported, use inner product or Euclidean distance instead (Euclidean is the default).
 - It should be noted that `OceanBase` currently only supports post-filtering (i.e., filtering based on metadata after performing an approximate nearest neighbor search).
 
 ## Install dependencies
@@ -57,5 +57,46 @@ oceanbase = OceanBaseVectorStore(
     dim=1536,
     drop_old=True,
     normalize=True,
+    include_sparse=False,
+    include_fulltext=False,
 )
+```
+
+## Sparse / Fulltext / Hybrid Search
+
+Enable sparse and fulltext support at initialization:
+
+```python
+oceanbase = OceanBaseVectorStore(
+    client=client,
+    dim=1536,
+    drop_old=True,
+    normalize=True,
+    include_sparse=True,
+    include_fulltext=True,
+)
+```
+
+Use `VectorStoreQueryMode` for sparse, fulltext, or hybrid search. Sparse and fulltext
+queries are passed via keyword arguments:
+
+```python
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+
+# sparse search
+q = VectorStoreQuery(mode=VectorStoreQueryMode.SPARSE, similarity_top_k=5)
+result = oceanbase.query(q, sparse_query={0: 1.0, 10: 0.5})
+
+# fulltext search
+q = VectorStoreQuery(mode=VectorStoreQueryMode.TEXT_SEARCH, query_str="oceanbase")
+result = oceanbase.query(q)
+
+# hybrid search
+q = VectorStoreQuery(
+    mode=VectorStoreQueryMode.HYBRID,
+    query_embedding=[...],
+    query_str="oceanbase",
+    similarity_top_k=5,
+)
+result = oceanbase.query(q, sparse_query={0: 1.0})
 ```
