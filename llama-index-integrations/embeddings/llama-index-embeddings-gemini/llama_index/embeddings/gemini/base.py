@@ -1,9 +1,9 @@
 """Gemini embeddings file."""
 
-import deprecated
 import os
 from typing import Any, Dict, List, Optional
 
+import deprecated
 import google.generativeai as gemini
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -17,7 +17,9 @@ from llama_index.core.callbacks.base import CallbackManager
     reason=(
         "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
         "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
-    )
+        "Support for this package will be discontinued as of v0.4.2"
+    ),
+    version="0.4.2",
 )
 class GeminiEmbedding(BaseEmbedding):
     """
