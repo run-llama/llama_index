@@ -4,7 +4,6 @@ import functools
 import inspect
 import requests
 import tenacity
-import asyncio
 from typing import (
     TYPE_CHECKING,
     Any,

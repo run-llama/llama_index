@@ -7,7 +7,6 @@ import inspect
 import requests
 import struct
 import tenacity
-import asyncio
 from typing import Any, Callable, List, Optional
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager

@@ -10,7 +10,6 @@ DEPRECATED: Use `JSONalyzeQueryEngine` from `llama-index-experimental` instead.
 
 """
 
-import asyncio
 import inspect
 import json
 import logging
