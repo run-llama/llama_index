@@ -48,6 +48,8 @@ class BaseMem0(BaseMemory):
 
 
 class Mem0Context(BaseModel):
+    """Context identifiers for Mem0 memory."""
+
     user_id: Optional[str] = None
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
@@ -63,10 +65,13 @@ class Mem0Context(BaseModel):
         return values
 
     def get_context(self) -> Dict[str, Optional[str]]:
-        return {key: value for key, value in self.__dict__.items() if value is not None}
+        """Return non-null context values."""
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 class Mem0Memory(BaseMem0):
+    """Mem0-backed memory integration."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     primary_memory: SerializeAsAny[LlamaIndexMemory] = Field(
@@ -75,7 +80,7 @@ class Mem0Memory(BaseMem0):
     context: Optional[Mem0Context] = None
     search_msg_limit: int = Field(
         default=5,
-        description="Limit of chat history messages to use for context in search API",
+        description="Limit of chat history messages used for search context",
     )
 
     def __init__(self, context: Optional[Mem0Context] = None, **kwargs) -> None:
@@ -85,21 +90,18 @@ class Mem0Memory(BaseMem0):
 
     @model_serializer
     def serialize_memory(self) -> Dict[str, Any]:
-        # leaving out the two keys since they are causing serialization/deserialization problems
+        """Serialize memory state."""
+        # leaving out keys that cause serialization/deserialization issues
         return {
             "primary_memory": self.primary_memory.model_dump(
-                exclude={
-                    "memory_blocks_template",
-                    "insert_method",
-                }
+                exclude={"memory_blocks_template", "insert_method"}
             ),
             "search_msg_limit": self.search_msg_limit,
-            "context": self.context.model_dump(),
+            "context": self.context.model_dump() if self.context else None,
         }
 
     @classmethod
     def class_name(cls) -> str:
-        """Class name."""
         return "Mem0Memory"
 
     @classmethod
@@ -127,6 +129,7 @@ class Mem0Memory(BaseMem0):
         client = MemoryClient(
             api_key=api_key, host=host, org_id=org_id, project_id=project_id
         )
+
         return cls(
             primary_memory=primary_memory,
             context=context,
@@ -146,10 +149,11 @@ class Mem0Memory(BaseMem0):
 
         try:
             context = Mem0Context(**context)
-        except Exception as e:
+        except ValidationError as e:
             raise ValidationError(f"Context validation error: {e}")
 
         client = Memory.from_config(config_dict=config)
+
         return cls(
             primary_memory=primary_memory,
             context=context,
@@ -158,46 +162,38 @@ class Mem0Memory(BaseMem0):
         )
 
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
-        """Get chat history. With memory system message."""
+        """Get chat history with Mem0-enriched system message."""
         messages = self.primary_memory.get(input=input, **kwargs)
-        input = convert_messages_to_string(messages, input, limit=self.search_msg_limit)
+        query = convert_messages_to_string(
+            messages, input, limit=self.search_msg_limit
+        )
 
         context_dict = self.context.get_context()
+        search_results: List[Dict[str, Any]] = []
 
-        # If both user_id and agent_id are provided, search separately and merge
         if "user_id" in context_dict and "agent_id" in context_dict:
-            user_results = self.search(
-                query=input, user_id=context_dict["user_id"]
-            )
-            agent_results = self.search(
-                query=input, agent_id=context_dict["agent_id"]
-            )
+            user_results = self.search(query=query, user_id=context_dict["user_id"])
+            agent_results = self.search(query=query, agent_id=context_dict["agent_id"])
 
             if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
-                user_results = user_results["results"]
-                agent_results = agent_results["results"]
+                user_results = user_results.get("results", [])
+                agent_results = agent_results.get("results", [])
 
-            # Deduplicate merged results by content
+            # Deduplicate merged results
             seen = set()
-            merged_results = []
-            for item in user_results + agent_results:
+            for item in (user_results or []) + (agent_results or []):
                 content = item.get("content")
                 if content and content not in seen:
                     seen.add(content)
-                    merged_results.append(item)
-
-            search_results = merged_results
+                    search_results.append(item)
         else:
-            search_results = self.search(query=input, **context_dict)
-
+            search_results = self.search(query=query, **context_dict) or []
             if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
-                search_results = search_results["results"]
+                search_results = search_results.get("results", [])
 
         system_message = convert_memory_to_system_message(search_results)
 
-        # If system message is present
-        if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
-            assert messages[0].content is not None
+        if messages and messages[0].role == MessageRole.SYSTEM:
             system_message = convert_memory_to_system_message(
                 response=search_results, existing_system_message=messages[0]
             )
@@ -206,27 +202,27 @@ class Mem0Memory(BaseMem0):
         return messages
 
     def get_all(self) -> List[ChatMessage]:
-        """Returns all chat history."""
+        """Return full chat history."""
         return self.primary_memory.get_all()
 
     def _add_msgs_to_client_memory(self, messages: List[ChatMessage]) -> None:
-        """Add new user and assistant messages to client memory."""
+        """Add messages to Mem0 client."""
         self.add(
             messages=convert_chat_history_to_dict(messages),
             **self.context.get_context(),
         )
 
     def put(self, message: ChatMessage) -> None:
-        """Add message to chat history and client memory."""
+        """Add message to memory."""
         self._add_msgs_to_client_memory([message])
         self.primary_memory.put(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
-        """Set chat history and add new messages to client memory."""
-        initial_chat_len = len(self.primary_memory.get_all())
-        self._add_msgs_to_client_memory(messages[initial_chat_len:])
+        """Set chat history and sync new messages to Mem0."""
+        initial_len = len(self.primary_memory.get_all())
+        self._add_msgs_to_client_memory(messages[initial_len:])
         self.primary_memory.set(messages)
 
     def reset(self) -> None:
-        """Only reset chat history."""
+        """Reset only local chat history."""
         self.primary_memory.reset()
