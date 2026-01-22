@@ -189,13 +189,11 @@ plugins:
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-optimum-intel
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-jinaai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-nomic
-            - ../../llama-index-integrations/embeddings/llama-index-embeddings-gemini
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-fastembed
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-fireworks
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-instructor
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-optimum
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-langchain
-            - ../../llama-index-integrations/embeddings/llama-index-embeddings-google
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-mistralai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-bedrock
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-clarifai
@@ -383,13 +381,13 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-cohere
             - ../../llama-index-integrations/llms/llama-index-llms-nvidia-triton
             - ../../llama-index-integrations/llms/llama-index-llms-ai21
+            - ../../llama-index-integrations/llms/llama-index-llms-apertis
             - ../../llama-index-integrations/llms/llama-index-llms-bedrock
             - ../../llama-index-integrations/llms/llama-index-llms-huggingface
             - ../../llama-index-integrations/llms/llama-index-llms-azure-openai
             - ../../llama-index-integrations/llms/llama-index-llms-dashscope
             - ../../llama-index-integrations/llms/llama-index-llms-nvidia-tensorrt
             - ../../llama-index-integrations/llms/llama-index-llms-anthropic
-            - ../../llama-index-integrations/llms/llama-index-llms-gemini
             - ../../llama-index-integrations/llms/llama-index-llms-clarifai
             - ../../llama-index-integrations/llms/llama-index-llms-llama-api
             - ../../llama-index-integrations/llms/llama-index-llms-mymagic
@@ -720,6 +718,13 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-helicone
             - ../../llama-index-integrations/tools/llama-index-tools-serpex
             - ../../llama-index-integrations/tools/llama-index-tools-airweave
+            - ../../llama-index-integrations/tools/llama-index-tools-typecast
+            - ../../llama-index-integrations/llms/llama-index-llms-aibadgr
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-volcenginemysql
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-alibabacloud-mysql
+            - ../../llama-index-integrations/tools/llama-index-tools-parallel-web-systems
+            - ../../llama-index-integrations/ingestion/llama-index-ingestion-ray
+            - ../../llama-index-integrations/readers/llama-index-readers-datasets
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:

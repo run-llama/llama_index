@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-neo4jvector"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index vector_stores neo4jvector integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

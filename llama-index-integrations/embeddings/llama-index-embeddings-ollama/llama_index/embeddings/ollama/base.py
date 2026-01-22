@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -92,20 +91,33 @@ class OllamaEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        embeddings_list: List[List[float]] = []
-        for text in texts:
-            formatted_text = self._format_text(text)
-            embeddings = self.get_general_text_embedding(formatted_text)
-            embeddings_list.append(embeddings)
-
-        return embeddings_list
+        formatted_texts = [self._format_text(text) for text in texts]
+        return self.get_general_text_embeddings(formatted_texts)
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         formatted_texts = [self._format_text(text) for text in texts]
-        return await asyncio.gather(
-            *[self.aget_general_text_embedding(text) for text in formatted_texts]
+        return await self.aget_general_text_embeddings(formatted_texts)
+
+    def get_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get Ollama embeddings."""
+        result = self._client.embed(
+            model=self.model_name,
+            input=texts,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
         )
+        return result.embeddings
+
+    async def aget_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get Ollama embeddings."""
+        result = await self._async_client.embed(
+            model=self.model_name,
+            input=texts,
+            options=self.ollama_additional_kwargs,
+            keep_alive=self.keep_alive,
+        )
+        return result.embeddings
 
     def get_general_text_embedding(self, texts: str) -> List[float]:
         """Get Ollama embedding."""

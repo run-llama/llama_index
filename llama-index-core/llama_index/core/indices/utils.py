@@ -50,7 +50,8 @@ def log_vector_store_query_result(
     """Log vector store query result."""
     logger = logger or _logger
 
-    assert result.ids is not None
+    if result.ids is None:
+        return
 
     similarities = (
         result.similarities
