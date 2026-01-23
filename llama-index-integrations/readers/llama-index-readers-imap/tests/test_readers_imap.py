@@ -24,7 +24,7 @@ def test_read():
 
     mock_msg2 = mock.MagicMock()
     mock_msg2.from_ = "mark@doe.com"
-    mock_msg2.to = ["jenna@doe.com"]
+    mock_msg2.to = ["jenna@doe.com", "joe@doe.com"]
     mock_msg2.to_values = EmailAddress("", "jenna@doe.com")
     mock_msg2.from_values = EmailAddress("", "mark@doe.com")
     mock_msg2.subject = "Test 2"
@@ -36,16 +36,32 @@ def test_read():
 
         reader = ImapReader(host="test", username="test", password="test")
 
-        messages = list(reader.lazy_load_data(metadata_names=["uid"]))
+        messages = list(reader.lazy_load_data(metadata_names=["uid", "to"]))
         assert len(messages) == 2
 
         assert isinstance(messages[0], Document)
         assert isinstance(messages[1], Document)
 
+        # MESSAGE 1
         expected_text = "From: john@doe.com, To: jane@doe.com, Subject: Test, Message: Lorem ipsum dolor sit amet"
         assert messages[0].text == expected_text
 
         assert "uid" in messages[0].metadata
         assert messages[0].metadata["uid"] == 1
 
+        assert "to" in messages[0].metadata
+        assert messages[0].metadata["to"] == "jane@doe.com"
+
         assert "date" in messages[0].metadata
+
+        # MESSAGE 2
+        expected_text = "From: mark@doe.com, To: jenna@doe.com joe@doe.com, Subject: Test 2, Message: Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet."
+        assert messages[1].text == expected_text
+
+        assert "uid" in messages[1].metadata
+        assert messages[1].metadata["uid"] == 2
+
+        assert "to" in messages[1].metadata
+        assert messages[1].metadata["to"] == "jenna@doe.com joe@doe.com"
+
+        assert "date" in messages[1].metadata

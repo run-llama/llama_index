@@ -56,7 +56,10 @@ class ImapReader(BaseReader):
             if metadata_names:
                 metadata = {key: getattr(msg, key, None) for key in metadata_names}
 
-            to_field = msg.to[0] if msg.to else "(no recipient)"
+            to_field = " ".join(msg.to) if msg.to else "(no recipient)"
+            if "to" in metadata:
+                metadata["to"] = to_field
+
             text = f"From: {msg.from_}, To: {to_field}, Subject: {msg.subject}, Message: {msg.text}"
 
             if save_attachment:
