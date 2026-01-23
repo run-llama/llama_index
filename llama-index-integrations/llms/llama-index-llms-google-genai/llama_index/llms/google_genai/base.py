@@ -3,6 +3,7 @@
 import asyncio
 import functools
 import os
+from importlib.metadata import PackageNotFoundError, version
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -198,8 +199,21 @@ class GoogleGenAI(FunctionCallingLLM):
             config_params["api_key"] = None
             config_params["vertexai"] = True
 
-        if http_options:
-            config_params["http_options"] = http_options
+        try:
+            package_v = version("llama-index-llms-google-genai")
+        except PackageNotFoundError:
+            package_v = "0.0.0"
+        client_hdr = {"x-goog-api-client": f"llamaindex/{package_v}"}
+
+        if isinstance(http_options, dict):
+            http_opts = http_options
+        elif isinstance(http_options, types.HttpOptions):
+            http_opts = http_options.to_json_dict()
+        else:
+            http_opts = {}
+        http_opts["headers"] = http_opts.get("headers", {}) | client_hdr
+
+        config_params["http_options"] = types.HttpOptions(**http_opts)
 
         if debug_config:
             config_params["debug_config"] = debug_config

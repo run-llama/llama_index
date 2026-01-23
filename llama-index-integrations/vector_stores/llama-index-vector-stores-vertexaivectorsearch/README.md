@@ -50,7 +50,7 @@ vector_store = VertexAIVectorStore(
     api_version="v2",  # Opt-in to v2
     project_id="my-project",
     region="us-central1",
-    collection_id="my-collection"
+    collection_id="my-collection",
     # No GCS bucket needed!
 )
 ```
@@ -107,6 +107,99 @@ response = query_engine.query("What is LlamaIndex?")
 - `project_id`: Google Cloud project ID
 - `region`: Google Cloud region
 - `collection_id`: Vertex AI collection name
+
+## Hybrid Search (V2 Only)
+
+V2 supports hybrid search, combining vector similarity with text-based search for improved retrieval quality.
+
+### Enable Hybrid Search
+
+```python
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
+vector_store = VertexAIVectorStore(
+    api_version="v2",
+    project_id="my-project",
+    region="us-central1",
+    collection_id="my-collection",
+    enable_hybrid=True,
+    text_search_fields=["title", "content"],  # Fields for text search
+)
+```
+
+### Query Modes
+
+```python
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
+
+# DEFAULT: Vector similarity search only
+query = VectorStoreQuery(
+    query_embedding=embedding,
+    mode=VectorStoreQueryMode.DEFAULT,
+)
+
+# TEXT_SEARCH: Full-text keyword search only
+query = VectorStoreQuery(
+    query_str="search terms",
+    mode=VectorStoreQueryMode.TEXT_SEARCH,
+)
+
+# HYBRID: Vector + Text search combined with RRF
+query = VectorStoreQuery(
+    query_embedding=embedding,
+    query_str="search terms",
+    mode=VectorStoreQueryMode.HYBRID,
+    alpha=0.5,  # 0=text only, 1=vector only
+)
+
+# SEMANTIC_HYBRID: Vector + Semantic search
+query = VectorStoreQuery(
+    query_embedding=embedding,
+    query_str="search terms",
+    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+)
+```
+
+### Ranker Options
+
+Two ranker options are available for combining search results:
+
+```python
+# RRF (default) - uses alpha for weighting
+vector_store = VertexAIVectorStore(
+    ...,
+    hybrid_ranker="rrf",
+    default_hybrid_alpha=0.5,  # 0=text only, 1=vector only
+)
+
+# VertexRanker - AI-powered semantic ranking
+vector_store = VertexAIVectorStore(
+    ...,
+    hybrid_ranker="vertex",
+    vertex_ranker_model="semantic-ranker-default@latest",
+    vertex_ranker_title_field="title",
+    vertex_ranker_content_field="content",
+)
+```
+
+### Hybrid Search Parameters
+
+| Parameter                     | Type        | Default                            | Description                           |
+| ----------------------------- | ----------- | ---------------------------------- | ------------------------------------- |
+| `enable_hybrid`               | `bool`      | `False`                            | Enable hybrid search modes            |
+| `text_search_fields`          | `List[str]` | `None`                             | Data fields for TextSearch            |
+| `embedding_field`             | `str`       | `"embedding"`                      | Vector field name in collection       |
+| `default_hybrid_alpha`        | `float`     | `0.5`                              | Default RRF weight (0=text, 1=vector) |
+| `hybrid_ranker`               | `str`       | `"rrf"`                            | Ranker type: "rrf" or "vertex"        |
+| `semantic_task_type`          | `str`       | `"RETRIEVAL_QUERY"`                | Task type for SemanticSearch          |
+| `vertex_ranker_model`         | `str`       | `"semantic-ranker-default@latest"` | VertexRanker model ID                 |
+| `vertex_ranker_title_field`   | `str`       | `None`                             | Field for VertexRanker title          |
+| `vertex_ranker_content_field` | `str`       | `None`                             | Field for VertexRanker content        |
+
+> For a complete working example with hybrid search, see the [v2 example notebook](https://github.com/run-llama/llama_index/blob/main/docs/examples/vector_stores/VertexAIVectorSearchV2Demo.ipynb).
 
 ## Documentation
 

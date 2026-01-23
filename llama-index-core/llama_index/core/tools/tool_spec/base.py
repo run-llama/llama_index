@@ -1,6 +1,7 @@
 """Base tool spec class."""
 
 import asyncio
+import inspect
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -74,7 +75,7 @@ class BaseToolSpec:
             func_async = None
             if isinstance(func_spec, str):
                 func = getattr(self, func_spec)
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
                     func_async = func
                 else:
                     func_sync = func
