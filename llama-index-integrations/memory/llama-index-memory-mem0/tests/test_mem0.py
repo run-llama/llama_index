@@ -1,14 +1,14 @@
-from unittest.mock import patch, MagicMock
 import json
-
 from typing import Optional
-from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
-from workflows.context.serializers import JsonSerializer
-from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
+from unittest.mock import MagicMock, call, patch
+
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.memory.mem0.base import Mem0Context, Mem0Memory
 from llama_index.memory.mem0.utils import (
     convert_chat_history_to_dict,
     convert_messages_to_string,
 )
+from workflows.context.serializers import JsonSerializer
 
 
 def test_mem0_memory_from_client():
@@ -270,6 +270,7 @@ def test_mem0_memory_get():
         assert result[0].role == MessageRole.SYSTEM
 
         # Assert that the system message contains the search results
+        assert result[0].content is not None
         assert "The user usually starts with a greeting." in result[0].content
         assert "The user often asks about well-being." in result[0].content
 
@@ -330,3 +331,77 @@ def test_mem0_memory_put():
         mock_client.add.assert_called_once_with(
             messages=expected_messages, user_id="test_user"
         )
+
+
+def test_user_id_agent_id_separation() -> None:
+    # Mock context
+    context = {"user_id": "test_user", "agent_id": "test_agent", "run_id": "something"}
+
+    # Mock arguments for MemoryClient
+    api_key = "test_api_key"
+    host = "test_host"
+    org_id = "test_org"
+    project_id = "test_project"
+
+    # Patch MemoryClient
+    with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
+        mock_client = MagicMock()
+        MockMemoryClient.return_value = mock_client
+
+        # Create Mem0Memory instance
+        mem0_memory = Mem0Memory.from_client(
+            context=context,
+            api_key=api_key,
+            host=host,
+            org_id=org_id,
+            project_id=project_id,
+        )
+
+        # Set dummy chat history
+        dummy_messages = [
+            ChatMessage(role=MessageRole.USER, content="Hello"),
+            ChatMessage(role=MessageRole.ASSISTANT, content="Hi there!"),
+            ChatMessage(role=MessageRole.USER, content="How are you?"),
+            ChatMessage(
+                role=MessageRole.ASSISTANT, content="I'm doing well, thank you!"
+            ),
+        ]
+        mem0_memory.primary_memory.set(dummy_messages)
+
+        # Set dummy response for search
+        dummy_search_results = {
+            "results": [
+                {
+                    "categories": ["greeting"],
+                    "memory": "The user usually starts with a greeting.",
+                },
+                {
+                    "categories": ["mood"],
+                    "memory": "The user often asks about well-being.",
+                },
+            ]
+        }
+        mock_client.search.return_value = dummy_search_results
+        # Call get method
+        result = mem0_memory.get(input="How are you?")
+
+        # Assert that search was called with the expected arguments
+        expected_query = convert_messages_to_string(
+            dummy_messages, "How are you?", limit=mem0_memory.search_msg_limit
+        )
+        mock_client.search.assert_has_calls(
+            [
+                call(query=expected_query, agent_id="test_agent", run_id="something"),
+                call(query=expected_query, user_id="test_user", run_id="something"),
+            ]
+        )
+        # Assert that the result contains the correct number of messages
+        assert len(result) == len(dummy_messages) + 1  # +1 for the system message
+
+        # Assert that the first message is a system message
+        assert result[0].role == MessageRole.SYSTEM
+
+        # Assert that the system message contains the search results
+        assert result[0].content is not None
+        assert "The user usually starts with a greeting." in result[0].content
+        assert "The user often asks about well-being." in result[0].content
