@@ -77,6 +77,16 @@ class Mem0Context(BaseModel):
                 "When providing a non-default context, you should have at least one not-null field"
             )
 
+    def build_filter(self) -> dict[str, Any]:
+        flt = {"OR": []}
+        if self.user_id is not None:
+            flt["OR"].append({"user_id": self.user_id})
+        if self.run_id is not None:
+            flt["OR"].append({"run_id": self.run_id})
+        if self.agent_id is not None:
+            flt["OR"].append({"agent_id": self.agent_id})
+        return flt
+
     @model_serializer
     def serialize_with_omitempty(self) -> Dict[str, Any]:
         context: Dict[str, Any] = {}
@@ -188,23 +198,12 @@ class Mem0Memory(BaseMem0):
         """Get chat history. With memory system message."""
         messages = self.primary_memory.get(input=input, **kwargs)
         input = convert_messages_to_string(messages, input, limit=self.search_msg_limit)
-
-        if self.context.agent_id is not None and self.context.user_id is not None:
-            agent_result = self.search(
-                query=input, agent_id=self.context.agent_id, run_id=self.context.run_id
-            )
-            user_result = self.search(
-                query=input, user_id=self.context.user_id, run_id=self.context.run_id
-            )
-            result: Mem0SearchResult = {"results": []}
-            seen = set()
-            for r in agent_result.get("results", []) + user_result.get("results", []):
-                if r.get("memory") in seen:
-                    continue
-                seen.add(r.get("memory"))
-                result["results"].append(r)
+        ctx = self.context.model_dump()
+        if len(ctx) > 1:
+            flt = self.context.build_filter()
+            result = self.search(query=input, filters=flt)
         else:
-            result = self.search(query=input, **self.context.model_dump())
+            result = self.search(query=input, **ctx)
 
         search_results = result.get("results", [])
 

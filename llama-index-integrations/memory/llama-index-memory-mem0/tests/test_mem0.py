@@ -1,6 +1,6 @@
 import json
 from typing import Optional
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.memory.mem0.base import Mem0Context, Mem0Memory
@@ -335,7 +335,7 @@ def test_mem0_memory_put():
 
 def test_user_id_agent_id_separation() -> None:
     # Mock context
-    context = {"user_id": "test_user", "agent_id": "test_agent", "run_id": "something"}
+    context = {"user_id": "test_user", "agent_id": "test_agent"}
 
     # Mock arguments for MemoryClient
     api_key = "test_api_key"
@@ -389,11 +389,9 @@ def test_user_id_agent_id_separation() -> None:
         expected_query = convert_messages_to_string(
             dummy_messages, "How are you?", limit=mem0_memory.search_msg_limit
         )
-        mock_client.search.assert_has_calls(
-            [
-                call(query=expected_query, agent_id="test_agent", run_id="something"),
-                call(query=expected_query, user_id="test_user", run_id="something"),
-            ]
+        mock_client.search.assert_called_once_with(
+            query=expected_query,
+            filters={"OR": [{"user_id": "test_user"}, {"agent_id": "test_agent"}]},
         )
         # Assert that the result contains the correct number of messages
         assert len(result) == len(dummy_messages) + 1  # +1 for the system message
