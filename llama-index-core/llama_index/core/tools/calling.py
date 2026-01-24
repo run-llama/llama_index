@@ -29,6 +29,7 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             raw_input=arguments,
             raw_output=str(e),
             is_error=True,
+            exception=e,
         )
 
 
@@ -55,6 +56,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             raw_input=arguments,
             raw_output=str(e),
             is_error=True,
+            exception=e,
         )
 
 

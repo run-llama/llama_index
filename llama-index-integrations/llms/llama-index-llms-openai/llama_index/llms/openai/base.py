@@ -1,4 +1,5 @@
 import functools
+import re
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
@@ -78,6 +79,7 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
     is_json_schema_supported,
+    is_chatcomp_api_supported,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -298,6 +300,11 @@ class OpenAI(FunctionCallingLLM):
         # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
             temperature = 1.0
+
+        if not is_chatcomp_api_supported(model):
+            raise ValueError(
+                f"Cannot use model {model} as it is only supported by the Responses API. Use the OpenAIResponses class for it."
+            )
 
         super().__init__(
             model=model,
@@ -1064,7 +1071,14 @@ class OpenAI(FunctionCallingLLM):
         )
 
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["response_format"] = _type_to_response_format(output_cls)
+        response_format = _type_to_response_format(output_cls)
+        if isinstance(response_format, dict):
+            json_schema = response_format.get("json_schema")
+            if isinstance(json_schema, dict) and "name" in json_schema:
+                json_schema["name"] = re.sub(
+                    r"[^a-zA-Z0-9_-]", "_", str(json_schema["name"])
+                )
+        llm_kwargs["response_format"] = response_format
         if "tool_choice" in llm_kwargs:
             del llm_kwargs["tool_choice"]
         return llm_kwargs

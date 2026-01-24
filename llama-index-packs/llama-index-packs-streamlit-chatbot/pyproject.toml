@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-streamlit-chatbot"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index packs streamlit_chatbot integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9"
@@ -42,7 +42,6 @@ keywords = [
 dependencies = [
     "streamlit>=1.30.0,<2",
     "wikipedia>=1.4.0,<2",
-    "openai>=1.10.0,<2",
     "streamlit-pills>=0.3.0,<0.4",
     "llama-index-readers-wikipedia>=0.4.0,<0.5",
     "llama-index-llms-openai>=0.5.0,<0.6",

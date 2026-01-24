@@ -1,6 +1,56 @@
+import os
+import pytest
+
 from unittest.mock import patch
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
+
+from ollama import Client
+
+
+# This section of code checks and actual integration with a local ollama server (if it exists)
+# And the actual embedding
+test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
+
+try:
+    client = Client()  # pragma: no cover
+    models = client.list()  # pragma: no cover
+
+    model_found = False  # pragma: no cover
+    for model in models["models"]:  # pragma: no cover
+        if model.model == test_model:  # pragma: no cover
+            model_found = True  # pragma: no cover
+            break  # pragma: no cover
+
+    if not model_found:  # pragma: no cover
+        client = None  # type: ignore
+except Exception:  # pragma: no cover
+    client = None  # type: ignore
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_ollama_embedding() -> None:  # pragma: no cover
+    """Test ollama connection and embedding."""
+    emb = OllamaEmbedding(model_name=test_model, keep_alive="3m")
+
+    # To get an embedding for a query:
+    query_embedding = emb.get_query_embedding("What is the capital of France?")
+
+    # To get an embedding for a document:
+    text_embedding = emb.get_text_embedding("Paris is the capital of France.")
+
+    assert isinstance(query_embedding, list)
+    assert len(query_embedding) > 0
+    assert isinstance(query_embedding[0], float)
+
+    assert isinstance(text_embedding, list)
+    assert len(text_embedding) > 0
+    assert isinstance(text_embedding[0], float)
+
+    assert query_embedding != text_embedding
+    assert len(query_embedding) == len(text_embedding)
 
 
 def test_embedding_class():
@@ -11,6 +61,7 @@ def test_embedding_class():
     assert isinstance(emb, BaseEmbedding)
 
 
+@pytest.mark.asyncio
 class TestInstructionFunctionality:
     """Test cases for the new instruction functionality."""
 
@@ -140,33 +191,33 @@ class TestInstructionFunctionality:
         # Verify the formatting was applied
         mock_embed.assert_called_once_with("Async Text: AI is computer science")
 
-    @patch.object(OllamaEmbedding, "get_general_text_embedding")
+    @patch.object(OllamaEmbedding, "get_general_text_embeddings")
     def test_batch_text_embeddings_use_instruction(self, mock_embed):
         """Test that batch text embedding methods use instructions."""
         embedder = OllamaEmbedding(model_name="test-model", text_instruction="Batch:")
 
-        mock_embed.return_value = [0.1, 0.2, 0.3]
+        mock_embed.return_value = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
         embedder._get_text_embeddings(["Text 1", "Text 2"])
+        expected_calls = ["Batch: Text 1", "Batch: Text 2"]
 
-        # Verify both calls used the instruction
-        expected_calls = [(("Batch: Text 1",),), (("Batch: Text 2",),)]
-        assert mock_embed.call_args_list == expected_calls
+        # Verify the formatting was applied
+        mock_embed.assert_called_once_with(expected_calls)
 
-    @patch.object(OllamaEmbedding, "aget_general_text_embedding")
+    @patch.object(OllamaEmbedding, "aget_general_text_embeddings")
     async def test_async_batch_text_embeddings_use_instruction(self, mock_embed):
         """Test that async batch text embedding methods use instructions."""
         embedder = OllamaEmbedding(
             model_name="test-model", text_instruction="Async Batch:"
         )
 
-        mock_embed.return_value = [0.1, 0.2, 0.3]
+        mock_embed.return_value = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
         await embedder._aget_text_embeddings(["Text 1", "Text 2"])
+        expected_calls = ["Async Batch: Text 1", "Async Batch: Text 2"]
 
-        # Verify both calls used the instruction
-        expected_calls = [(("Async Batch: Text 1",),), (("Async Batch: Text 2",),)]
-        assert mock_embed.call_args_list == expected_calls
+        # Verify the formatting was applied
+        mock_embed.assert_called_once_with(expected_calls)
 
     def test_constructor_passes_instructions_to_parent(self):
         """Test that instructions are properly accessible as attributes."""

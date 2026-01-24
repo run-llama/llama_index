@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-helicone"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index llms helicone (OpenAI-compatible) integration"
 authors = [{name = "Hammad Shami", email = "hammad@helicone.ai"}]
 requires-python = ">=3.9,<4.0"

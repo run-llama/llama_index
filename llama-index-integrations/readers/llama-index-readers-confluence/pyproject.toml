@@ -26,24 +26,24 @@ dev = [
 
 [project]
 name = "llama-index-readers-confluence"
-version = "0.5.0"
+version = "0.6.1"
 description = "llama-index readers confluence integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
-license = "GPL-3.0-or-later"
+license = "MIT"
 maintainers = [{name = "zywilliamli"}]
 dependencies = [
     "atlassian-python-api>=3.41.9,<5",
-    "html2text>=2024.2.26,<2025",
     "pytesseract>=0.3.10,<0.4",
     "pdf2image>=1.17.0,<2",
-    "pillow>=10.2.0,<11",
+    "pillow>=10.2.0",
     "docx2txt>=0.8,<0.9",
     "xlrd>=2.0.1,<3",
     "svglib>=1.5,<1.6",
     "retrying>=1.3.4,<2",
     "llama-index-core>=0.13.0,<0.15",
+    "markdownify>=1.2.0,<2.0.0",
 ]
 
 [tool.codespell]

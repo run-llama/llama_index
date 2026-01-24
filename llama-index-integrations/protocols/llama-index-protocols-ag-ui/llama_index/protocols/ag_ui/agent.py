@@ -181,7 +181,6 @@ class AGUIChatWorkflow(Workflow):
                 )
 
         chat_history.append(resp.message)
-        self._snapshot_messages(ctx, [*chat_history])
         await ctx.store.set("chat_history", chat_history)
 
         tool_calls = self.llm.get_tool_calls_from_response(
@@ -235,8 +234,13 @@ class AGUIChatWorkflow(Workflow):
                     )
                 )
 
+            # Send MessagesSnapshot AFTER ToolCallChunk events, as a "wrap it up" step
+            self._snapshot_messages(ctx, [*chat_history])
+
             return None
 
+        # No tool calls, send snapshot immediately
+        self._snapshot_messages(ctx, [*chat_history])
         return StopEvent()
 
     @step

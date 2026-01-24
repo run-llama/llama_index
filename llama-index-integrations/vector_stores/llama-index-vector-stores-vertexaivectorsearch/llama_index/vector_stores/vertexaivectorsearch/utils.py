@@ -194,7 +194,7 @@ def batch_update_index(
 
     file_content = "\n".join(json.dumps(record) for record in records)
 
-    blob = staging_bucket.blob(f"{prefix}/{file_name}")
+    blob = staging_bucket.blob(f"index/{prefix}/{file_name}")
     blob.upload_from_string(file_content)
 
     contents_delta_uri = f"gs://{staging_bucket.name}/index/{prefix}"

@@ -1,6 +1,6 @@
 # LlamaIndex Embeddings Integration: Bedrock
 
-This integration provides support for AWS Bedrock embedding models through LlamaIndex.
+This integration provides support for Amazon Bedrock embedding models through LlamaIndex.
 
 ## Installation
 
@@ -93,6 +93,33 @@ embeddings = embed_model.get_text_embedding_batch(
 ```
 
 **Note:** Cohere v4 introduces a new response format that wraps embeddings in a `float` key when multiple embedding types are requested. This integration handles both the v3 format (`{"embeddings": [[...]]}`) and v4 formats (`{"embeddings": {"float": [[...]]}}` or `{"float": [[...]]}`) automatically.
+
+## Use an Application Inference Profile
+
+Amazon Bedrock supports user-created [Application Inference Profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-create.html), which are [a sort of provisioned proxy to LLMs on Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles.html) that allow for cost and model usage tracking.
+
+Since these profile ARNs are account-specific, they must be handled specially in `BedrockEmbedding`.
+
+When an application inference profile is created as an AWS resource, it references an existing Bedrock foundation model or a cross-region inference profile. The referenced model must be provided to the `BedrockEmbedding` initializer via the `model_name` argument, and the ARN of the application inference profile must be provided via the `application_inference_profile_arn` argument.
+
+**Important:** `BedrockEmbedding` does _not_ validate that the `model_name` argument matches the underlying model referenced by the provided application inference profile. The caller is responsible for making sure that they match. As such, the behavior for when they _do not_ match is considered undefined.
+
+```py
+# Assumes the existence of a provisioned application inference profile
+# that references a foundation model or cross-region inference profile.
+
+from llama_index.embeddings.bedrock import BedrockEmbedding
+
+
+# Instantiate the BedrockEmbedding model
+# with the model_name and application_inference_profile
+# Make sure the model is the one that the
+# application inference profile refers to in AWS
+embed_model = BedrockEmbedding(
+    model_name="amazon.titan-embed-text-v2:0",  # this is the model referenced by the application inference profile
+    application_inference_profile_arn="arn:aws:bedrock:us-east-1:012345678901:application-inference-profile/someProfileId",
+)
+```
 
 ## Examples
 

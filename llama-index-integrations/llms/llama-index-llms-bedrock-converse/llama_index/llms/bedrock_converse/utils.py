@@ -62,6 +62,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
+    "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
@@ -110,6 +111,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -142,6 +144,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -162,6 +165,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -175,6 +179,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -189,8 +194,8 @@ def is_reasoning(model_name: str) -> bool:
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
-    # Check for region prefixes (us, eu, apac, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "global."]
+    # Check for region prefixes (us, eu, apac, jp, global)
+    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
 
     # If no region prefix, return the original model name
     if not any(prefix in model_name for prefix in REGION_PREFIXES):

@@ -9,7 +9,7 @@ from llama_index.core.agent.workflow.workflow_events import (
 )
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
-from llama_index.core.tools import ToolOutput
+from llama_index.core.tools import FunctionTool, ToolOutput
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.events import StopEvent
 
@@ -430,6 +430,31 @@ async def test_aggregate_tool_results_boolean_logic_verification():
             f"Boolean logic failed for tool_name='{tool_name}', is_error={is_error}. "
             f"Expected {should_stop}, got {condition_result}"
         )
+
+
+@pytest.mark.asyncio
+async def test_call_tool_with_exception(mock_context, test_agent):
+    """
+    Test that when a tool raises an exception, _call_tool catches it
+    and returns a ToolOutput with is_error=True and the exception.
+    """
+
+    # Arrange
+    def error_function(x: int) -> str:
+        raise ValueError("This is a test error")
+
+    error_tool = FunctionTool.from_defaults(error_function)
+    tool_input = {"x": 1}
+
+    # Act
+    tool_output = await test_agent._call_tool(mock_context, error_tool, tool_input)
+
+    # Assert
+    assert tool_output.is_error is True
+    assert isinstance(tool_output.exception, ValueError)
+    assert str(tool_output.exception) == "This is a test error"
+    assert tool_output.tool_name == "error_function"
+    assert tool_output.raw_input == tool_input
 
 
 if __name__ == "__main__":

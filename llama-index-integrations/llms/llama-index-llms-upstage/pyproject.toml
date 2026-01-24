@@ -27,14 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-llms-upstage"
-version = "0.6.4"
+version = "0.6.5"
 description = "llama-index llms upstage integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "AGPL-3.0"
 dependencies = [
-    "openai>=1.21.2,<2",
     "tokenizers>=0.19.1,<0.20",
     "llama-index-core>=0.14.3,<0.15",
     "llama-index-llms-openai>=0.6.0,<0.7",

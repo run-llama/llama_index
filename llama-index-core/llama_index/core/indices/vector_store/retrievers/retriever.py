@@ -89,12 +89,23 @@ class VectorIndexRetriever(BaseRetriever):
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
 
+    def _needs_embedding(self) -> bool:
+        """Check if the current query mode requires embeddings."""
+        return (
+            self._vector_store.is_embedding_query
+            and self._vector_store_query_mode
+            not in (
+                VectorStoreQueryMode.TEXT_SEARCH,
+                VectorStoreQueryMode.SPARSE,
+            )
+        )
+
     @dispatcher.span
     def _retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
+        if self._needs_embedding():
             if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 query_bundle.embedding = (
                     self._embed_model.get_agg_embedding_from_queries(
@@ -106,7 +117,7 @@ class VectorIndexRetriever(BaseRetriever):
     @dispatcher.span
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         embedding = query_bundle.embedding
-        if self._vector_store.is_embedding_query:
+        if self._needs_embedding():
             if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 embed_model = self._embed_model
                 embedding = await embed_model.aget_agg_embedding_from_queries(

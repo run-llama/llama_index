@@ -2,7 +2,7 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Optional
+from typing import Any, Dict, List, Sequence, Tuple, Optional, Literal, cast, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -34,7 +34,16 @@ from anthropic.types.beta import (
     BetaSearchResultBlockParam,
     BetaTextBlockParam,
     BetaCitationsConfigParam,
+    BetaThinkingBlockParam,
+    BetaToolUseBlockParam,
+    BetaToolResultBlockParam,
+    BetaCacheControlEphemeralParam,
+    BetaImageBlockParam,
+    BetaBase64ImageSourceParam,
+    BetaContentBlockParam,
+    BetaMessageParam,
 )
+from anthropic.types.beta.beta_tool_result_block_param import Content as BetaContent
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
@@ -55,6 +64,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
+    "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -67,10 +77,13 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4-1@20250805": 200000,
     "claude-sonnet-4-5@20250929": 200000,
     "claude-haiku-4-5@20251001": 200000,
+    "claude-opus-4-5@20251101": 200000,
 }
 
 # Anthropic API/SDK identifiers
 ANTHROPIC_MODELS: Dict[str, int] = {
+    "claude-3-haiku-20240307": 200000,
+    "claude-3-haiku-latest": 200000,
     "claude-3-5-haiku-latest": 200000,
     "claude-3-5-haiku-20241022": 200000,
     "claude-3-7-sonnet-20250219": 200000,
@@ -87,6 +100,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-5": 200000,
     "claude-haiku-4-5-20251001": 200000,
     "claude-haiku-4-5": 200000,
+    "claude-opus-4-5-20251101": 200000,
 }
 
 # All provider Anthropic identifiers
@@ -127,10 +141,10 @@ def anthropic_modelname_to_contextsize(modelname: str) -> int:
 
 
 def __merge_common_role_msgs(
-    messages: Sequence[MessageParam],
-) -> Sequence[MessageParam]:
+    messages: Sequence[Union[MessageParam, BetaMessageParam]],
+) -> Sequence[Union[MessageParam, BetaMessageParam]]:
     """Merge consecutive messages with the same role."""
-    postprocessed_messages: Sequence[MessageParam] = []
+    postprocessed_messages: Sequence[Union[MessageParam, BetaMessageParam]] = []
     for message in messages:
         if (
             postprocessed_messages
@@ -326,7 +340,7 @@ def messages_to_anthropic_messages(
 
         if message.role == MessageRole.SYSTEM:
             system_prompt.extend(
-                blocks_to_anthropic_blocks(message.blocks, message.additional_kwargs)
+                [block.text for block in message.blocks if isinstance(block, TextBlock)]
             )
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
@@ -352,7 +366,182 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
 
-    return __merge_common_role_msgs(anthropic_messages), system_prompt
+    return cast(
+        Sequence[MessageParam], __merge_common_role_msgs(anthropic_messages)
+    ), "\n".join(system_prompt)
+
+
+def blocks_to_anthropic_beta_blocks(
+    blocks: Sequence[ContentBlock], kwargs: Dict[str, Any]
+) -> Sequence[BetaContentBlockParam]:
+    global_cache_control: Optional[BetaCacheControlEphemeralParam] = None
+    if kwargs.get("cache_control"):
+        global_cache_control = BetaCacheControlEphemeralParam(**kwargs["cache_control"])
+    ant_blocks: Sequence[BetaContentBlockParam] = []
+    unique_tool_calls = []
+    for block in blocks:
+        if isinstance(block, TextBlock):
+            ant_block = BetaTextBlockParam(text=block.text, type=block.block_type)
+            if global_cache_control is not None:
+                ant_block["cache_control"] = global_cache_control
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ThinkingBlock):
+            # does not support cache control
+            ant_block = BetaThinkingBlockParam(
+                thinking=block.content or "",
+                signature=block.additional_information.get("signature", ""),
+                type=block.block_type,
+            )
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ToolCallBlock):
+            unique_tool_calls.append((block.tool_call_id, block.tool_name))
+            ant_block = BetaToolUseBlockParam(
+                id=block.tool_call_id or "",
+                input=block.tool_kwargs,
+                name=block.tool_name,
+                type="tool_use",
+            )
+            if global_cache_control is not None:
+                ant_block["cache_control"] = global_cache_control
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ImageBlock):
+            img_bytes = block.resolve_image(as_base64=True).read()
+            img_str = img_bytes.decode("utf-8")
+
+            block_type: Literal["document", "image"] = (
+                "document" if block.image_mimetype == "application/pdf" else "image"
+            )
+            if block_type == "image":
+                if block.image_mimetype is not None and block.image_mimetype in [
+                    "image/jpeg",
+                    "image/png",
+                    "image/gif",
+                    "image/webp",
+                ]:
+                    source: BetaBase64ImageSourceParam = {
+                        "type": "base64",
+                        "media_type": cast(
+                            Literal[
+                                "image/jpeg", "image/png", "image/gif", "image/webp"
+                            ],
+                            block.image_mimetype,
+                        ),
+                        "data": img_str,
+                    }
+                    ant_block = BetaImageBlockParam(type=block_type, source=source)
+                    if global_cache_control is not None:
+                        ant_block["cache_control"] = global_cache_control
+                    ant_blocks.append(ant_block)
+                else:
+                    raise ValueError(
+                        f"Image mimetype {block.image_mimetype or 'no mimetype detected'} not supported"
+                    )
+            else:
+                raise ValueError("Document upload not supported for beta API")
+        elif isinstance(block, CitableBlock):
+            anthropic_sub_blocks = []
+            for sub_block in block.content:
+                if isinstance(sub_block, TextBlock) and sub_block.text:
+                    anthropic_sub_blocks.append(
+                        BetaTextBlockParam(
+                            type="text",
+                            text=sub_block.text,
+                        )
+                    )
+                else:
+                    raise ValueError(
+                        f"Unsupported block type for citable blocks: {type(sub_block)}"
+                    )
+
+            ant_block = BetaSearchResultBlockParam(
+                type="search_result",
+                content=anthropic_sub_blocks,
+                source=block.source,
+                title=block.title,
+                cache_control=global_cache_control,
+                citations=BetaCitationsConfigParam(
+                    enabled=True,
+                ),
+            )
+            ant_blocks.append(ant_block)
+        elif isinstance(block, CitableBlock):
+            # no need to pass these back to anthropic
+            continue
+        elif isinstance(block, CachePoint):
+            if len(ant_blocks) > 0:
+                ant_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
+                    **block.cache_control.model_dump()
+                )
+            else:
+                raise ValueError("Cache point must be after at least one block")
+        else:
+            raise ValueError(f"Block type not supported: {block.block_type}")
+
+        # keep this code for compatibility with older chat histories
+        tool_calls = kwargs.get("tool_calls", [])
+        for tool_call in tool_calls:
+            try:
+                assert "id" in tool_call
+                assert "input" in tool_call
+                assert "name" in tool_call
+
+                if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                    ant_blocks.append(
+                        BetaToolUseBlockParam(
+                            id=tool_call["id"],
+                            input=tool_call["input"],
+                            name=tool_call["name"],
+                            type="tool_use",
+                        )
+                    )
+            except AssertionError:
+                continue
+    return ant_blocks
+
+
+def messages_to_anthropic_beta_messages(
+    messages: Sequence[ChatMessage],
+    cache_idx: Optional[int] = None,
+    model: Optional[str] = None,
+) -> Tuple[Sequence[BetaMessageParam], str]:
+    anthropic_messages = []
+    system_prompt: list[str] = []
+    for idx, message in enumerate(messages):
+        # inject cache_control for all messages up to and including the cache_idx
+        if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
+            if model is None or is_anthropic_prompt_caching_supported_model(model):
+                message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+
+        if message.role == MessageRole.SYSTEM:
+            system_prompt.extend(
+                [block.text for block in message.blocks if isinstance(block, TextBlock)]
+            )
+        elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
+            anthropic_blocks = blocks_to_anthropic_beta_blocks(
+                message.blocks, message.additional_kwargs
+            )
+            content = BetaToolResultBlockParam(
+                tool_use_id=message.additional_kwargs["tool_call_id"],
+                type="tool_result",
+                content=cast(Sequence[BetaContent], anthropic_blocks),
+            )
+            anth_message = BetaMessageParam(
+                role=MessageRole.USER.value,
+                content=[content],
+            )
+            anthropic_messages.append(anth_message)
+        else:
+            content = blocks_to_anthropic_beta_blocks(
+                message.blocks, message.additional_kwargs
+            )
+            anth_message = BetaMessageParam(
+                role=cast(Literal["assistant", "user"], message.role.value),
+                content=content,
+            )
+            anthropic_messages.append(anth_message)
+    return cast(
+        Sequence[BetaMessageParam], __merge_common_role_msgs(anthropic_messages)
+    ), "\n".join(system_prompt)
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -402,6 +591,17 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-opus-latest",
 )
 
+STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-opus-4-1-20250805",
+    "claude-opus-4-1",
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
+)
+
 
 def update_tool_calls(blocks: list[ContentBlock], tool_call: ToolCallBlock) -> None:
     if len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0:
@@ -444,3 +644,19 @@ def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
 
     """
     return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
+
+
+def is_anthropic_structured_output_supported(model: str) -> bool:
+    """
+    Check if the given Anthropic model supports structured output.
+
+    Args:
+        model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
+
+    Returns:
+        True if the model supports structured output, False otherwise.
+
+    See: https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+
+    """
+    return model in STRUCTURED_OUTPUT_SUPPORT

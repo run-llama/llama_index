@@ -12,7 +12,7 @@ pip install llama-index-vector-stores-couchbase
 
 ### CouchbaseSearchVectorStore
 
-Implements [Search Vector Indexes](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html) using Couchbase Full-Text Search (FTS) with vector search capabilities. Ideal for hybrid searches combining vector, full-text, and geospatial searches.
+Implements [Search Vector Indexes](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html) using Couchbase Search Service with vector search capabilities. Ideal for hybrid searches combining vector, full-text, and geospatial searches.
 
 ### CouchbaseQueryVectorStore (Recommended)
 
@@ -110,9 +110,9 @@ You can also use lowercase strings: `"cosine"`, `"dot_product"`, `"euclidean"`, 
 ## Features
 
 - **Multiple Index Types**: Support for all three Couchbase vector index types:
-  - Hyperscale Vector Indexes (Query Service-based, 8.0+)
-  - Composite Vector Indexes (Query Service-based, 8.0+)
-  - Search Vector Indexes (FTS-based, 7.6+)
+  - Hyperscale Vector Indexes (8.0+)
+  - Composite Vector Indexes (8.0+)
+  - Search Vector Indexes (7.6+)
 - **Flexible Similarity Metrics**: Multiple distance metrics including:
   - COSINE (Cosine similarity)
   - DOT (Dot product)
@@ -152,7 +152,7 @@ Purpose-built for pure vector searches at massive scale:
 
 #### Composite Vector Indexes
 
-Combine a Global Secondary Index (GSI) with vector search functions:
+Combines a standard Global Secondary index (GSI) with a single vector column:
 
 **When to Use:**
 
@@ -176,7 +176,7 @@ Combine a Global Secondary Index (GSI) with vector search functions:
 
 ### Search Vector Indexes (`CouchbaseSearchVectorStore`)
 
-Search Vector Indexes combine Full-Text Search (FTS) with vector search capabilities:
+Search Vector Indexes use Couchbase Search Service with vector search capabilities:
 
 **When to Use:**
 
@@ -202,13 +202,32 @@ Both implementations support metadata filtering:
 
 The same `CouchbaseQueryVectorStore` class works with both Hyperscale and Composite Vector Indexes. The choice of which underlying index type to use is determined by the index you create on your Couchbase collection.
 
-| Feature             | Hyperscale (via QueryVectorStore)    | Composite (via QueryVectorStore) | Search (via SearchVectorStore)     |
-| ------------------- | ------------------------------------ | -------------------------------- | ---------------------------------- |
-| **Index Type**      | Hyperscale Vector Index              | Composite Vector Index           | Search Vector Index                |
-| **Best For**        | Pure vector searches                 | Vector + scalar filters          | Vector + full-text + geospatial    |
-| **Available Since** | Couchbase Server 8.0                 | Couchbase Server 8.0             | Couchbase Server 7.6               |
-| **Scalar Handling** | Compared with vectors simultaneously | Pre-filters before vector search | Searches in parallel               |
-| **Use Cases**       | Content discovery, RAG, image search | Job search, compliance filtering | E-commerce, travel recommendations |
+When selecting the appropriate vector index type, consider the following factors:
+
+- **Dataset Size**: The volume of documents you plan to index.
+- **Query Requirements**: Whether your searches involve pure vector queries or hybrid searches combining vectors with scalar values, text, or geospatial data.
+- **Performance Needs**: The desired speed and efficiency of your search operations.
+
+**Recommendations:**
+
+- **Start with a Hyperscale Vector Index**: In most cases, begin by testing with a **Hyperscale Vector Index**. If performance doesn't meet your requirements, consider the other index types based on your specific use case.
+- **For Hybrid Searches**: If your dataset is under 100 million documents and you need to perform hybrid searches combining vector searches with text or geospatial data, use a **Search Vector Index**.
+- **For Scalar Filtering**: If you need to combine vector searches with scalar filters where scalar values are less selective (20% or less) or where scalars should exclude vectors for compliance purposes, use a **Composite Vector Index**.
+
+#### Comparison Table
+
+| Feature                     | Hyperscale Vector Index                                                                                                                                                                           | Composite Vector Index                                                                                                                                                                           | Search Vector Index                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| **Available Since**         | Couchbase Server 8.0                                                                                                                                                                              | Couchbase Server 8.0                                                                                                                                                                             | Couchbase Server 7.6                                                                                   |
+| **Dataset Size**            | Tens of millions to billions of documents                                                                                                                                                         | Tens of millions to a billion                                                                                                                                                                    | Tens of millions (limited to ~100M documents)                                                          |
+| **Best For**                | Pure vector searches                                                                                                                                                                              | Searches combining vector and scalar values where scalar values are less selective (≤20%); searches where scalars should exclude vectors (e.g., compliance)                                      | Hybrid searches combining vector with keywords or geospatial data                                      |
+| **Use Cases**               | • Content discovery<br>• Recommendations<br>• RAG workflows<br>• Reverse image search<br>• Anomaly detection                                                                                      | • Job search<br>• Content recommendations with scalar filters<br>• Supply chain management<br>• Compliance-based filtering                                                                       | • E-commerce product search<br>• Travel recommendations<br>• Real estate search                        |
+| **Scalar Handling**         | Scalars and vectors evaluated simultaneously                                                                                                                                                      | Scalar values pre-filter data before vector search                                                                                                                                               | Searches performed in parallel                                                                         |
+| **Strengths**               | • High performance for pure vector searches<br>• Higher accuracy at lower quantizations<br>• Low memory footprint<br>• Lowest TCO for huge datasets<br>• Best for concurrent updates and searches | • Scalar pre-filtering reduces vector search scope<br>• Efficient when scalar values have low selectivity<br>• Can restrict searches based on scalars for compliance<br>• Based on familiar GSIs | • Combines semantic, Full-Text Search, and geospatial in single pass<br>• Uses familiar Search indexes |
+| **Limitations**             | Indexing can take longer relative to other index types                                                                                                                                            | • Lower accuracy than Hyperscale at lower quantizations<br>• Scalar filtering potentially misses relevant results                                                                                | • Less efficient for purely numeric/scalar searches<br>• Limited to ~100M documents                    |
+| **LlamaIndex Vector Store** | `CouchbaseQueryVectorStore`                                                                                                                                                                       | `CouchbaseQueryVectorStore`                                                                                                                                                                      | `CouchbaseSearchVectorStore`                                                                           |
+
+> **Note on Scalar Handling:** A key difference between Hyperscale and Composite Vector indexes is how they handle scalar values in queries. Hyperscale Vector indexes compare vectors and scalar values at the same time. Composite Vector indexes always apply scalar filters first, and only perform vector searches on the results. This behavior means Composite Index searches can exclude relevant vectors from the search result. However, it’s useful for cases where you must exclude some vectors (even the nearest neighbors) based on scalar values. For example, it’s useful when meeting compliance requirements.
 
 For more information, refer to: [Couchbase Vector Search Documentation](https://docs.couchbase.com/server/current/vector-index/use-vector-indexes.html)
 

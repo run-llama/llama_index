@@ -86,7 +86,7 @@ dependencies = [
     "markdownify>=1.1.0",
     "oxylabs>=2.0.0",
     "firecrawl-py>=4.3.3",
-    "Scrapy>=2.10.0",
+    "Scrapy>=2.13.3",
 ]
 
 [tool.codespell]

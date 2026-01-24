@@ -5,7 +5,9 @@ from typing import List
 
 import pytest
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from anthropic.types.beta.parsed_beta_message import ParsedBetaMessage
+from anthropic.types.beta import BetaUsage
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import (
@@ -494,7 +496,7 @@ def test_thinking_with_structured_output():
         menu_items: List[MenuItem]
 
     llm = Anthropic(
-        model="claude-sonnet-4-0",
+        model="claude-sonnet-4-5",
         # max_tokens must be greater than budget_tokens
         max_tokens=64000,
         # temperature must be 1.0 for thinking to work
@@ -646,3 +648,405 @@ def test_prepare_chat_with_tools_caching_unsupported_model(caplog):
     # Check that warning was logged
     assert "does not support prompt caching" in caplog.text
     assert "claude-2.1" in caplog.text
+
+
+def test_stream_chat_usage_and_stop_reason_mock():
+    """
+    Mock test for streaming usage metadata and stop_reason - no API key required.
+
+    This test verifies that stream_chat properly captures and yields:
+    - usage metadata (input_tokens, output_tokens) from RawMessageDeltaEvent
+    - stop_reason from RawMessageDeltaEvent
+
+    Related to issue #20194.
+    """
+    from unittest.mock import MagicMock
+    from anthropic.types import TextDelta, Usage
+
+    # Create mock events that simulate Anthropic streaming response
+    mock_text_delta = MagicMock(spec=TextDelta)
+    mock_text_delta.text = "Hello"
+    mock_text_delta.type = "text_delta"
+
+    mock_content_delta_event = MagicMock()
+    mock_content_delta_event.delta = mock_text_delta
+    mock_content_delta_event.index = 0
+
+    mock_content_stop_event = MagicMock()
+    mock_content_stop_event.index = 0
+
+    # Create mock RawMessageDeltaEvent with usage and stop_reason
+    # First event with initial usage
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 15
+    mock_first_usage.output_tokens = 1
+
+    # Last event with final usage
+    # Note that input_tokens can be None
+    # Also note that output tokens are cumulative
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 8
+
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+
+    mock_message_delta_event = MagicMock()
+    mock_message_delta_event.usage = mock_last_usage
+    mock_message_delta_event.delta = mock_delta
+
+    # Create mock streaming response generator
+    def mock_stream_generator():
+        from anthropic.types import (
+            RawContentBlockDeltaEvent,
+            ContentBlockStopEvent,
+            RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
+        )
+
+        # Simulate streaming events
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
+        yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
+        yield MagicMock(spec=ContentBlockStopEvent, index=0)
+        yield MagicMock(
+            spec=RawMessageDeltaEvent,
+            usage=mock_last_usage,
+            delta=mock_delta,
+        )
+
+    # Create Anthropic LLM and mock its client
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_stream_generator()
+    llm._client = mock_client
+
+    # Test stream_chat
+    messages = [ChatMessage(role="user", content="Test message")]
+    stream_resp = llm.stream_chat(messages)
+
+    # Collect all chunks
+    chunks = list(stream_resp)
+
+    # Verify we got responses
+    assert len(chunks) > 0, "Should yield at least one chunk"
+    last_chunk = chunks[-1]
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Verify usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, (
+        "Usage metadata should be captured from RawMessageDeltaEvent"
+    )
+    assert usage["input_tokens"] == 15
+    assert usage["output_tokens"] == 8
+
+    # Verify stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, (
+        "stop_reason should be captured from RawMessageDeltaEvent"
+    )
+    assert stop_reason == "end_turn"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_usage_and_stop_reason_mock():
+    """
+    Mock test for async streaming usage metadata and stop_reason - no API key required.
+
+    Async version of test_stream_chat_usage_and_stop_reason_mock.
+    Related to issue #20194.
+    """
+    from unittest.mock import MagicMock, AsyncMock
+    from anthropic.types import TextDelta, Usage
+
+    # Create mock events
+    mock_text_delta = MagicMock(spec=TextDelta)
+    mock_text_delta.text = "Hello async"
+    mock_text_delta.type = "text_delta"
+
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 20
+    mock_first_usage.output_tokens = 1
+
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 12
+
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "max_tokens"
+
+    # Create async mock streaming response generator
+    async def mock_async_stream_generator():
+        from anthropic.types import (
+            RawContentBlockDeltaEvent,
+            ContentBlockStopEvent,
+            RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
+        )
+
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
+        yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
+        yield MagicMock(spec=ContentBlockStopEvent, index=0)
+        yield MagicMock(
+            spec=RawMessageDeltaEvent,
+            usage=mock_last_usage,
+            delta=mock_delta,
+        )
+
+    # Create Anthropic LLM and mock its async client
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_async_client = AsyncMock()
+    # For async client, the create method should be an AsyncMock that returns the generator
+    mock_async_client.messages.create = AsyncMock(
+        return_value=mock_async_stream_generator()
+    )
+    llm._aclient = mock_async_client
+
+    # Test astream_chat
+    messages = [ChatMessage(role="user", content="Test async message")]
+    stream_resp = await llm.astream_chat(messages)
+
+    # Collect all chunks
+    chunks = []
+    async for chunk in stream_resp:
+        chunks.append(chunk)
+
+    # Verify we got responses
+    assert len(chunks) > 0, "Should yield at least one chunk"
+    last_chunk = chunks[-1]
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Verify usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, "Usage metadata should be captured in async streaming"
+    assert usage["input_tokens"] == 20
+    assert usage["output_tokens"] == 12
+
+    # Verify stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, "stop_reason should be captured in async streaming"
+    assert stop_reason == "max_tokens"
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test streaming metadata",
+)
+def test_stream_chat_usage_and_stop_reason():
+    """
+    Test that streaming captures usage metadata and stop_reason from RawMessageDeltaEvent.
+
+    This addresses issue #20194 - Anthropic RawMessageDeltaEvent support.
+    The streaming API should capture:
+    - input_tokens and output_tokens from usage metadata
+    - stop_reason (e.g., 'end_turn', 'max_tokens') to understand why streaming stopped
+    """
+    llm = Anthropic(model="claude-sonnet-4-5")
+    messages = [
+        ChatMessage(role="user", content="Say hello in 3 words"),
+    ]
+
+    # Stream the response
+    stream_resp = llm.stream_chat(messages)
+    last_chunk = None
+    for chunk in stream_resp:
+        last_chunk = chunk
+
+    # Verify we got a response
+    assert last_chunk is not None
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Check that usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, (
+        "Usage metadata should be captured from RawMessageDeltaEvent"
+    )
+    assert "input_tokens" in usage, "Usage should include input_tokens"
+    assert "output_tokens" in usage, "Usage should include output_tokens"
+    assert isinstance(usage["input_tokens"], int)
+    assert isinstance(usage["output_tokens"], int)
+    assert usage["input_tokens"] > 0, "Should have processed input tokens"
+    assert usage["output_tokens"] > 0, "Should have generated output tokens"
+
+    # Check that stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, (
+        "stop_reason should be captured from RawMessageDeltaEvent"
+    )
+    # Typical stop reasons: "end_turn", "max_tokens", "stop_sequence", "tool_use"
+    assert isinstance(stop_reason, str)
+    print(f"Stop reason: {stop_reason}")
+    print(f"Usage: {usage}")
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test async streaming metadata",
+)
+@pytest.mark.asyncio
+async def test_astream_chat_usage_and_stop_reason():
+    """
+    Test that async streaming captures usage metadata and stop_reason.
+
+    Async version of the streaming metadata test for issue #20194.
+    """
+    llm = Anthropic(model="claude-sonnet-4-5")
+    messages = [
+        ChatMessage(role="user", content="Count to 5"),
+    ]
+
+    # Stream the response asynchronously
+    stream_resp = await llm.astream_chat(messages)
+    last_chunk = None
+    async for chunk in stream_resp:
+        last_chunk = chunk
+
+    # Verify we got a response
+    assert last_chunk is not None
+    assert isinstance(last_chunk, AnthropicChatResponse)
+
+    # Check that usage metadata was captured
+    usage = last_chunk.message.additional_kwargs.get("usage")
+    assert usage is not None, "Usage metadata should be captured in async streaming"
+    assert "input_tokens" in usage
+    assert "output_tokens" in usage
+    assert isinstance(usage["input_tokens"], int)
+    assert isinstance(usage["output_tokens"], int)
+    assert usage["output_tokens"] > 0
+
+    # Check that stop_reason was captured
+    stop_reason = last_chunk.message.additional_kwargs.get("stop_reason")
+    assert stop_reason is not None, "stop_reason should be captured in async streaming"
+    assert isinstance(stop_reason, str)
+    print(f"Async - Stop reason: {stop_reason}")
+    print(f"Async - Usage: {usage}")
+
+
+class Note(BaseModel):
+    content: str
+
+
+STRUCT_MESSAGES = [
+    ChatMessage(
+        role="user",
+        content="Could you please create a note to remind me that delivery service comes today at midday?",
+    )
+]
+
+
+@pytest.mark.skipif(
+    condition=os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available",
+)
+def test_structured_output_supported_sync() -> None:
+    llm = Anthropic(model="claude-sonnet-4-5", max_tokens=8192).as_structured_llm(Note)
+    response = llm.chat(messages=STRUCT_MESSAGES)
+    assert response.message.content is not None
+    try:
+        struct_resp = Note.model_validate_json(response.message.content)
+    except ValidationError:
+        struct_resp = None
+    assert struct_resp is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available",
+)
+async def test_structured_output_supported_async() -> None:
+    llm = Anthropic(model="claude-sonnet-4-5", max_tokens=8192).as_structured_llm(Note)
+    response = await llm.achat(messages=STRUCT_MESSAGES)
+    assert response.message.content is not None
+    try:
+        struct_resp = Note.model_validate_json(response.message.content)
+    except ValidationError:
+        struct_resp = None
+    assert struct_resp is not None
+
+
+@pytest.mark.skipif(
+    condition=os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available",
+)
+def test_structured_output_supported_stream() -> None:
+    llm = Anthropic(model="claude-sonnet-4-5", max_tokens=8192).as_structured_llm(Note)
+    response = llm.stream_chat(messages=STRUCT_MESSAGES)
+    responses: list[ChatResponse] = []
+    for r in response:
+        responses.append(r)
+    assert len(responses) == 1
+    assert responses[0].message.content is not None
+    try:
+        struct_resp = Note.model_validate_json(responses[0].message.content)
+    except ValidationError:
+        struct_resp = None
+    assert struct_resp is not None
+
+
+@pytest.mark.skipif(
+    condition=os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available",
+)
+@pytest.mark.asyncio
+async def test_structured_output_supported_astream() -> None:
+    llm = Anthropic(model="claude-sonnet-4-5", max_tokens=8192).as_structured_llm(Note)
+    response = await llm.astream_chat(messages=STRUCT_MESSAGES)
+    responses: list[ChatResponse] = []
+    async for r in response:
+        responses.append(r)
+    assert len(responses) == 1
+    assert responses[0].message.content is not None
+    try:
+        struct_resp = Note.model_validate_json(responses[0].message.content)
+    except ValidationError:
+        struct_resp = None
+    assert struct_resp is not None
+
+
+@pytest.mark.skipif(
+    condition=os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available",
+)
+def test_structured_output_unsupported_but_compatible() -> None:
+    # simply make sure that LLMs that do not support
+    # structured outputs in the anthropic SDK
+    # are still producing structured output
+    # with the legacy approach
+    llm = Anthropic(model="claude-sonnet-4-0", max_tokens=8192).as_structured_llm(Note)
+    response = llm.chat(messages=STRUCT_MESSAGES)
+    assert response.message.content is not None
+    try:
+        struct_resp = Note.model_validate_json(response.message.content)
+    except ValidationError:
+        struct_resp = None
+    assert struct_resp is not None
+
+
+def test_structured_output_failure_mock() -> None:
+    mock_client = MagicMock()
+    mock_client.beta.messages.parse.return_value = ParsedBetaMessage(
+        id="1",
+        content=[],
+        model="claude-sonnet-4-5",
+        role="assistant",
+        stop_reason="max_tokens",
+        type="message",
+        usage=BetaUsage(input_tokens=0, output_tokens=0),
+    )
+    llm = Anthropic(model="claude-sonnet-4-5")
+    llm._client = mock_client
+    sllm = llm.as_structured_llm(Note)
+    with pytest.raises(
+        ValueError,
+        match="It was not possible to produce a structured response because of max_tokens",
+    ):
+        sllm.chat(STRUCT_MESSAGES)
