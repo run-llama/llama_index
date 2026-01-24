@@ -68,8 +68,11 @@ class Cohere(FunctionCallingLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Cohere API."
     )
-    max_tokens: int = Field(description="The maximum number of tokens to generate.")
-
+    max_tokens: int = Field(description="The maximum number of tokens to generate."
+    )
+    base_url: Optional[str] = Field(
+        default=None, description="The endpoint to use. Defaults to the Cohere API."
+    )
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
 
@@ -80,6 +83,7 @@ class Cohere(FunctionCallingLLM):
         max_tokens: Optional[int] = 8192,
         timeout: Optional[float] = None,
         max_retries: int = 10,
+        base_url: Optional[str]=None,
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -100,14 +104,15 @@ class Cohere(FunctionCallingLLM):
             model=model,
             callback_manager=callback_manager,
             max_tokens=max_tokens,
+            base_url=base_url,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-        self._client = cohere.Client(api_key, client_name="llama_index")
-        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
+        self._client = cohere.Client(api_key, base_url=self.base_url, client_name="llama_index")
+        self._aclient = cohere.AsyncClient(api_key, base_url=self.base_url, client_name="llama_index")
 
     @classmethod
     def class_name(cls) -> str:
