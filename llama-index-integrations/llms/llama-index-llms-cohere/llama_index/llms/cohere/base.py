@@ -68,8 +68,7 @@ class Cohere(FunctionCallingLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Cohere API."
     )
-    max_tokens: int = Field(description="The maximum number of tokens to generate."
-    )
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
     base_url: Optional[str] = Field(
         default=None, description="The endpoint to use. Defaults to the Cohere API."
     )
@@ -91,7 +90,7 @@ class Cohere(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        base_url: Optional[str]=None,
+        base_url: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -111,8 +110,12 @@ class Cohere(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-        self._client = cohere.Client(api_key, base_url=self.base_url, client_name="llama_index")
-        self._aclient = cohere.AsyncClient(api_key, base_url=self.base_url, client_name="llama_index")
+        self._client = cohere.Client(
+            api_key, base_url=self.base_url, client_name="llama_index"
+        )
+        self._aclient = cohere.AsyncClient(
+            api_key, base_url=self.base_url, client_name="llama_index"
+        )
 
     @classmethod
     def class_name(cls) -> str:

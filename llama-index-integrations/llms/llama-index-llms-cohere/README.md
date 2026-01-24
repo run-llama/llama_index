@@ -155,8 +155,7 @@ from llama_index.llms.cohere import Cohere
 
 # Initialize with a custom base URL
 llm = Cohere(
-    api_key="your-api-key",
-    base_url="https://your-custom-endpoint.com/v1"
+    api_key="your-api-key", base_url="https://your-custom-endpoint.com/v1"
 )
 
 resp = llm.complete("What is LlamaIndex?")
