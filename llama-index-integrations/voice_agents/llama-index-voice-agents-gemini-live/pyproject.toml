@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-voice-agents-gemini-live"
-version = "0.2.1"
+version = "0.2.2"
 description = "LlamaIndex x Gemini Live integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -36,7 +36,7 @@ maintainers = [{name = "AstraBert"}]
 dependencies = [
     "pyaudio>=0.2.14,<0.3",
     "llama-index-core>=0.13.0,<0.15",
-    "google-genai>=1.26.0,<1.27",
+    "google-genai>=1.52.0,<2",
 ]
 
 [tool.codespell]

@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-google-genai"
-version = "0.3.1"
+version = "0.3.2"
 description = "llama-index embeddings google genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

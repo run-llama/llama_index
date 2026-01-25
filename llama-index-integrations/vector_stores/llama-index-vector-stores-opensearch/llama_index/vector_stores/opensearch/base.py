@@ -1,7 +1,7 @@
 """Elasticsearch/Opensearch vector store."""
 
-import asyncio
 import uuid
+import warnings
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
@@ -52,11 +52,12 @@ class OpensearchVectorClient:
         method (Optional[dict]): Opensearch "method" JSON obj for configuring
             the KNN index.
             This includes engine, metric, and other config params. Defaults to:
-            {"name": "hnsw", "space_type": "l2", "engine": "nmslib",
+            {"name": "hnsw", "space_type": "l2", "engine": "faiss",
             "parameters": {"ef_construction": 256, "m": 48}}
         settings: Optional[dict]: Settings for the Opensearch index creation. Defaults to:
             {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
+        idx_conf: Optional[dict]: Custom index configuration for Opensearch. Defaults to None and will overwrite settings above.
         os_client (Optional[OSClient]): Custom synchronous client (see OpenSearch from opensearch-py)
         os_async_client (Optional[OSClient]): Custom asynchronous client (see AsyncOpenSearch from opensearch-py)
         excluded_source_fields (Optional[List[str]]): Optional list of document "source" fields to exclude from OpenSearch responses.
@@ -73,8 +74,9 @@ class OpensearchVectorClient:
         text_field: str = "content",
         method: Optional[dict] = None,
         settings: Optional[dict] = None,
-        engine: Optional[str] = "nmslib",
+        engine: Optional[str] = "faiss",
         space_type: Optional[str] = "l2",
+        idx_conf: Optional[dict] = None,
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
         os_client: Optional[OSClient] = None,
@@ -83,6 +85,11 @@ class OpensearchVectorClient:
         **kwargs: Any,
     ):
         """Init params."""
+        if engine == "nmslib":
+            warnings.warn(
+                "nmslib engine is deprecated in OpenSearch starting from version 3.0.0, consider using faiss or lucene instead.",
+                FutureWarning,
+            )
         if method is None:
             method = {
                 "name": "hnsw",
@@ -109,18 +116,19 @@ class OpensearchVectorClient:
         self.space_type = space_type
         self.is_aoss = self._is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
-        idx_conf = {
-            "settings": settings,
-            "mappings": {
-                "properties": {
-                    embedding_field: {
-                        "type": "knn_vector",
-                        "dimension": dim,
-                        "method": method,
-                    },
-                }
-            },
-        }
+        if idx_conf is None:
+            idx_conf = {
+                "settings": settings,
+                "mappings": {
+                    "properties": {
+                        embedding_field: {
+                            "type": "knn_vector",
+                            "dimension": dim,
+                            "method": method,
+                        },
+                    }
+                },
+            }
         self._os_client = os_client or self._get_opensearch_client(
             self._endpoint, **kwargs
         )
@@ -827,14 +835,7 @@ class OpensearchVectorClient:
     def close(self) -> None:
         """Close the OpenSearch clients and release resources."""
         self._os_client.close()
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # No running loop: run async close directly
-            asyncio.run(self._os_async_client.close())
-        else:
-            # Running loop: schedule async close
-            loop.create_task(self._os_async_client.close())
+        asyncio_run(self._os_async_client.close())
 
     async def aclose(self) -> None:
         """Asynchronously close the OpenSearch clients and release resources."""
