@@ -59,6 +59,9 @@ class ImapReader(BaseReader):
             to_field = " ".join(msg.to) if msg.to else "(no recipient)"
             if "to" in metadata:
                 metadata["to"] = to_field
+            if "text" in metadata:
+                # Renaming metadata because LlamaIndex uses text as field for node content in vector store
+                metadata["email_text"] = metadata.pop("text")
 
             text = f"From: {msg.from_}, To: {to_field}, Subject: {msg.subject}, Message: {msg.text}"
 

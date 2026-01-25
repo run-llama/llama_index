@@ -36,7 +36,7 @@ def test_read():
 
         reader = ImapReader(host="test", username="test", password="test")
 
-        messages = list(reader.lazy_load_data(metadata_names=["uid", "to"]))
+        messages = list(reader.lazy_load_data(metadata_names=["uid", "to", "text"]))
         assert len(messages) == 2
 
         assert isinstance(messages[0], Document)
@@ -65,3 +65,5 @@ def test_read():
         assert messages[1].metadata["to"] == "jenna@doe.com joe@doe.com"
 
         assert "date" in messages[1].metadata
+
+        assert "email_text" in messages[0].metadata
