@@ -143,6 +143,18 @@ class Upstage(OpenAI):
         default=None,
         description="An object specifying the format that the model must generate.",
     )
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default="medium",
+        description="Controls the level of reasoning effort. This parameter is only applicable to Reasoning models.",
+    )
+    top_k: Optional[int] = Field(
+        default=None,
+        description="An optional parameter to limit sampling to the top K most likely tokens at each step. Lower values like 50 make the output more focused, while higher values allow more variety.",
+    )
+    prompt_cache_key: Optional[str] = Field(
+        default=None,
+        description="An optional parameter that specifies a unique key for identifying and caching the prompt. Use a distinct key for each conversational context to improve cache utilization.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -175,11 +187,19 @@ class Upstage(OpenAI):
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         response_format: Optional[dict] = None,
+        top_k: Optional[int] = None,
+        prompt_cache_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if "upstage_api_key" in kwargs:
             api_key = kwargs.pop("upstage_api_key")
         additional_kwargs = additional_kwargs or {}
+        # Add Upstage-specific parameters to additional_kwargs
+        # These should not be passed to base class as they're not supported by OpenAI API
+        if top_k is not None:
+            additional_kwargs["top_k"] = top_k
+        if prompt_cache_key is not None:
+            additional_kwargs["prompt_cache_key"] = prompt_cache_key
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base
         )
@@ -218,6 +238,8 @@ class Upstage(OpenAI):
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
         self.response_format = response_format
+        self.top_k = top_k
+        self.prompt_cache_key = prompt_cache_key
 
     def _get_model_name(self) -> str:
         return self.model
@@ -324,6 +346,8 @@ class Upstage(OpenAI):
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         all_kwargs = super()._get_model_kwargs(**kwargs)
+        # Only include parameters that are supported by OpenAI-compatible API
+        # top_k and prompt_cache_key are Upstage-specific and are passed via additional_kwargs
         return all_kwargs | {
             "reasoning_effort": self.reasoning_effort,
             "top_p": self.top_p,
