@@ -394,6 +394,47 @@ class FunctionTool(AsyncBaseTool):
                     raw_output=raw_output,
                 )
         return default_output
+
+    async def acall_stream(self, *args: Any, **kwargs: Any) -> "AsyncIterator[ToolOutput]":
+        """Async Call Stream."""
+        all_kwargs = {**self.partial_params, **kwargs}
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
+                raise ValueError("Context is required for this tool")
+
+        raw_output_gen = self._async_fn(*args, **all_kwargs)
+        if inspect.isawaitable(raw_output_gen):
+            raw_output_gen = await raw_output_gen
+
+        # Exclude the Context param from the tool output so that the Context can be serialized
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+        
+        if inspect.isasyncgen(raw_output_gen):
+            iterator = raw_output_gen.__aiter__()
+            try:
+                prev_item = await iterator.__anext__()
+            except StopAsyncIteration:
+                return
+            
+            while True:
+                try:
+                    next_item = await iterator.__anext__()
+                    # If we got here, prev_item was NOT the last one.
+                    # Yield prev_item as preliminary
+                    yield self._create_tool_output(prev_item, args, tool_output_kwargs, is_preliminary=True)
+                    prev_item = next_item
+                except StopAsyncIteration:
+                    # prev_item IS the last one.
+                    # Yield prev_item as final
+                    yield self._create_tool_output(prev_item, args, tool_output_kwargs, is_preliminary=False)
+                    break
+
+        else:
+            # Not a generator, just single result
+            # Yield it as final
+            yield self._create_tool_output(raw_output_gen, args, tool_output_kwargs, is_preliminary=False)
     
 
 
