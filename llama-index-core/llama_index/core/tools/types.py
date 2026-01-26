@@ -252,6 +252,12 @@ class AsyncBaseTool(BaseTool):
         async-compatible implementation.
         """
 
+    async def acall_stream(self, input: Any) -> "AsyncIterator[ToolOutput]":
+        """
+        Stream the tool output.
+        """
+        yield await self.acall(input)
+
 
 
 
