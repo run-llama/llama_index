@@ -23,7 +23,11 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.llms.vllm.utils import get_response, post_http_request
+from llama_index.llms.vllm.utils import (
+    extract_text_list,
+    get_response,
+    post_http_request,
+)
 import atexit
 
 
@@ -252,7 +256,10 @@ class Vllm(LLM):
 
     @atexit.register
     def close():
-        import torch
+        try:
+            import torch
+        except ImportError:
+            return
         import gc
 
         if torch.cuda.is_available():
@@ -432,6 +439,7 @@ class VllmServer(Vllm):
 
         # build sampling parameters
         sampling_params = dict(**params)
+        sampling_params.setdefault("model", self.model)
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=False)
         output = get_response(response)
@@ -446,6 +454,7 @@ class VllmServer(Vllm):
         params = {**self._model_kwargs, **kwargs}
 
         sampling_params = dict(**params)
+        sampling_params.setdefault("model", self.model)
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=True)
 
@@ -458,7 +467,10 @@ class VllmServer(Vllm):
                 if chunk:
                     data = json.loads(chunk.decode("utf-8"))
 
-                    increasing_concat = data["text"][0]
+                    texts = extract_text_list(data)
+                    if not texts:
+                        continue
+                    increasing_concat = texts[0]
                     pref = prev_prefix_len
                     prev_prefix_len = len(increasing_concat)
                     yield CompletionResponse(
