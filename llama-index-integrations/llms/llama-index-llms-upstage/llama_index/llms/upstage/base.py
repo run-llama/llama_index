@@ -85,6 +85,7 @@ class Upstage(OpenAI):
         description="Whether to return logprobs per token."
     )
     top_logprobs: Optional[int] = Field(
+        default=None,
         description="The number of top token logprobs to return.",
     )
     additional_kwargs: Dict[str, Any] = Field(
@@ -119,12 +120,15 @@ class Upstage(OpenAI):
         description="The Upstage API base URL.",
     )
     top_p: Optional[float] = Field(
+        default=None,
         description="An optional parameter to trigger nucleus sampling.",
     )
     frequency_penalty: Optional[float] = Field(
+        default=None,
         description="An optional parameter that controls the model's tendency to repeat tokens.",
     )
     presence_penalty: Optional[float] = Field(
+        default=None,
         description="An optional parameter that adjusts the model's tendency to include tokens already present in the input or generated text.",
     )
     response_format: Optional[dict] = Field(
@@ -132,6 +136,7 @@ class Upstage(OpenAI):
         description="An object specifying the format that the model must generate.",
     )
     reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
         description="Controls the level of reasoning effort. This parameter is only applicable to Reasoning models.",
     )
     top_k: Optional[int] = Field(
