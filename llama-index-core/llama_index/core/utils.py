@@ -57,8 +57,10 @@ class GlobalsHelper:
             self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
         else:
             # 1. Check for bundled static cache first
-            bundled_path = Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
-            
+            bundled_path = (
+                Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
+            )
+
             # Use bundled cache ONLY if it exists and is not empty
             if bundled_path.exists() and any(bundled_path.iterdir()):
                 self._nltk_data_dir = str(bundled_path)
