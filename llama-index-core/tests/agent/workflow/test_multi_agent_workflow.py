@@ -359,7 +359,12 @@ async def test_workflow_with_state():
     response = await handler
     assert response is not None
 
-    state = await handler.ctx.store.get("state")
+    # Access state via to_dict() since store is only available within steps
+    # State is serialized as JSON strings under state_data._data
+    import json
+
+    ctx_dict = handler.ctx.to_dict()
+    state = json.loads(ctx_dict["state"]["state_data"]["_data"]["state"])
     assert state["counter"] == 1
 
 

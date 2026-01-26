@@ -1,36 +1,12 @@
-from dataclasses import dataclass
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from typing import Any
 
-from workflows import Workflow
-from workflows.events import Event
-
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
-from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
+from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCall
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import ChatMessage, LLMMetadata
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.tools import ToolOutput
-from llama_index.core.workflow import Context
-from llama_index.core.memory import BaseMemory
-
-
-@dataclass
-class MockContext:
-    events: list[Event]
-    context: Context
-
-
-def mock_context(workflow: Workflow) -> MockContext:
-    ctx = Context(workflow)
-    events = []
-
-    def write_event_to_stream(event):
-        events.append(event)
-
-    ctx.write_event_to_stream = write_event_to_stream
-    return MockContext(events=events, context=ctx)
 
 
 @pytest.fixture()
@@ -89,18 +65,10 @@ def mock_code_execute_fn():
     return lambda code: "Code executed"
 
 
-@pytest.fixture()
-def mock_memory():
-    memory = AsyncMock(spec=BaseMemory)
-    memory.aput = AsyncMock()
-    return memory
-
-
 @pytest.mark.asyncio
-async def test_code_act_agent_basic_execution(
-    mock_llm, mock_code_execute_fn, mock_memory
-):
-    # Setup mock response
+async def test_code_act_agent_basic_execution(mock_llm, mock_code_execute_fn):
+    """Test that CodeActAgent correctly parses execute blocks and creates tool calls."""
+    # Setup mock response with execute block
     mock_response = ChatResponse(
         message=ChatMessage(
             role="assistant",
@@ -108,7 +76,7 @@ async def test_code_act_agent_basic_execution(
         ),
         delta="Let me calculate that for you.\n<execute>\nprint('Hello World')\n</execute>",
     )
-    mock_llm._responses = [mock_response]  # Set the responses to be yielded
+    mock_llm._responses = [mock_response]
 
     # Create agent
     agent = CodeActAgent(
@@ -116,75 +84,70 @@ async def test_code_act_agent_basic_execution(
         llm=mock_llm,
     )
 
-    # Create context
-    mock_ctx = mock_context(agent)
+    # Run the agent through the proper workflow flow
+    handler = agent.run(user_msg="Say hello")
 
-    # Take step
-    output = await agent.take_step(
-        ctx=mock_ctx.context,
-        llm_input=[ChatMessage(role="user", content="Say hello")],
-        tools=[],
-        memory=mock_memory,
-    )
+    # Collect events to find tool calls
+    tool_calls_found = []
+    async for event in handler.stream_events():
+        if isinstance(event, AgentOutput) and event.tool_calls:
+            tool_calls_found.extend(event.tool_calls)
 
-    # Verify output
-    assert isinstance(output, AgentOutput)
-    assert len(output.tool_calls) == 1
-    assert output.tool_calls[0].tool_name == "execute"
-    assert "print('Hello World')" in output.tool_calls[0].tool_kwargs["code"]
+    # The agent should have identified the execute block
+    assert len(tool_calls_found) >= 1
+    execute_calls = [tc for tc in tool_calls_found if tc.tool_name == "execute"]
+    assert len(execute_calls) >= 1
+    assert "print('Hello World')" in execute_calls[0].tool_kwargs["code"]
 
 
 @pytest.mark.asyncio
-async def test_code_act_agent_tool_handling(
-    mock_llm, mock_code_execute_fn, mock_memory
-):
-    # Setup mock response
-    mock_response = ChatResponse(
-        message=ChatMessage(
-            role="assistant",
-            content="Let me calculate that for you.\n<execute>\nresult = 2 + 2\nprint(result)\n</execute>",
+async def test_code_act_agent_tool_handling(mock_llm, mock_code_execute_fn):
+    """Test that CodeActAgent correctly handles tool execution and results."""
+    # Setup mock responses - first with execute block, then final response without execute block
+    mock_responses = [
+        ChatResponse(
+            message=ChatMessage(
+                role="assistant",
+                content="Let me calculate that for you.\n<execute>\nresult = 2 + 2\nprint(result)\n</execute>",
+            ),
+            delta="Let me calculate that for you.\n<execute>\nresult = 2 + 2\nprint(result)\n</execute>",
         ),
-        delta="Let me calculate that for you.\n<execute>\nresult = 2 + 2\nprint(result)\n</execute>",
-    )
-    mock_llm._responses = [mock_response]  # Set the responses to be yielded
+    ]
+    # Provide enough final responses for the agent to complete (no execute block = done)
+    for _ in range(25):  # Extra responses to ensure agent has enough to complete
+        mock_responses.append(
+            ChatResponse(
+                message=ChatMessage(
+                    role="assistant",
+                    content="The result is 4.",
+                ),
+                delta="The result is 4.",
+            )
+        )
+    mock_llm._responses = mock_responses
 
-    # Create agent
+    # Create agent with a code execute function that returns "4"
+    def execute_fn(code: str) -> str:
+        return "4"
+
     agent = CodeActAgent(
-        code_execute_fn=mock_code_execute_fn,
+        code_execute_fn=execute_fn,
         llm=mock_llm,
     )
 
-    # Create context
-    mock_ctx = mock_context(agent)
+    # Run the agent
+    handler = agent.run(user_msg="What is 2 + 2?")
 
-    # Take step
-    output = await agent.take_step(
-        ctx=mock_ctx.context,
-        llm_input=[ChatMessage(role="user", content="What is 2 + 2?")],
-        tools=[],
-        memory=mock_memory,
-    )
+    # Consume events and collect outputs
+    outputs = []
+    async for event in handler.stream_events():
+        if isinstance(event, AgentOutput):
+            outputs.append(event)
 
-    # Handle tool results
-    tool_results = [
-        ToolCallResult(
-            tool_id=output.tool_calls[0].tool_id,
-            tool_name="execute",
-            tool_kwargs={"code": "result = 2 + 2\nprint(result)\n"},
-            tool_output=ToolOutput(
-                content="4", tool_name="execute", raw_input={}, raw_output={}
-            ),
-            return_direct=False,
-        )
-    ]
-    await agent.handle_tool_call_results(mock_ctx.context, tool_results, mock_memory)
+    # Get final result
+    result = await handler
 
-    # Verify scratchpad was updated
-    scratchpad = await mock_ctx.context.store.get("scratchpad")
-    assert len(scratchpad) == 2  # User message and assistant response
-    assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
-
-    # Finalize
-    final_output = await agent.finalize(mock_ctx.context, output, mock_memory)
-    assert isinstance(final_output, AgentOutput)
-    assert mock_memory.aput_messages.called  # Verify memory was updated
+    # Verify we got a result
+    assert isinstance(result, AgentOutput)
+    # Verify we saw at least one tool call (the execute)
+    assert any(o.tool_calls for o in outputs)

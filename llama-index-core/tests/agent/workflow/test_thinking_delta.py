@@ -167,6 +167,7 @@ async def test_streaming_an_agent_with_thinking_delta_none():
 
     # Mock context to capture stream events
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True
     stream_events = []
 
     def capture_event(event):
@@ -195,6 +196,7 @@ async def test_function_agent_comprehensive_thinking_streaming():
 
     # Mock context to capture stream events
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True
     stream_events = []
 
     def capture_event(event):
@@ -236,6 +238,7 @@ async def test_codeact_agent_comprehensive_thinking_streaming():
 
     # Mock context to capture stream events
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True
     stream_events = []
 
     def capture_event(event):
@@ -266,6 +269,8 @@ async def test_react_agent_comprehensive_thinking_streaming():
 
     # Mock context to capture stream events
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True
+    mock_context.is_running = True  # Required for streaming to work
     stream_events = []
 
     def capture_event(event):
@@ -320,6 +325,7 @@ async def test_agents_handle_missing_thinking_delta():
     mock_llm = MockNonThinkingLLM()
     agent = FunctionAgent(llm=mock_llm, streaming=True)
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True
     stream_events = []
     mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(
         event
