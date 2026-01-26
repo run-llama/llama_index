@@ -4,9 +4,14 @@ import math
 import logging
 import json
 import re
-from typing import Any, Optional, List, Dict, Iterable, Tuple, Set
+from typing import Any, Optional, List, Dict, Iterable, Tuple, Set, Literal
 
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    PrivateAttr,
+    Field,
+    field_validator,
+    model_validator,
+)
 from llama_index.core.utils import iter_batch
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -64,6 +69,17 @@ DEFAULT_OCEANBASE_SPARSE_VECTOR_FIELD = "sparse_embedding"
 DEFAULT_OCEANBASE_FULLTEXT_FIELD = "fulltext_content"
 
 DEFAULT_OCEANBASE_VEC_INDEX_NAME = "vidx"
+
+VidxMetricType = Literal["l2", "inner_product", "cosine"]
+IndexType = Literal[
+    "HNSW",
+    "HNSW_SQ",
+    "IVF",
+    "IVF_FLAT",
+    "IVF_SQ",
+    "IVF_PQ",
+    "FLAT",
+]
 
 
 _JSON_PATH_SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9_]+$")
@@ -180,6 +196,35 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
     stores_text: bool = True
 
+    vidx_metric_type: VidxMetricType = Field(
+        default=DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE,
+        description="Metric method of distance between vectors.",
+    )
+    index_type: IndexType = Field(
+        default=DEFAULT_OCEANBASE_INDEX_TYPE,
+        description="Vector index type.",
+    )
+    include_sparse: bool = Field(
+        default=False,
+        description="Enable sparse vector support.",
+    )
+    include_fulltext: bool = Field(
+        default=False,
+        description="Enable full-text search support.",
+    )
+    sparse_vector_field: str = Field(
+        default=DEFAULT_OCEANBASE_SPARSE_VECTOR_FIELD,
+        description="Name of the sparse vector column.",
+    )
+    fulltext_field: str = Field(
+        default=DEFAULT_OCEANBASE_FULLTEXT_FIELD,
+        description="Name of the fulltext column.",
+    )
+    normalize: bool = Field(
+        default=False,
+        description="Normalize vector or not.",
+    )
+
     _client: ObVecClient = PrivateAttr()
     _dim: int = PrivateAttr()
     _table_name: str = PrivateAttr()
@@ -201,14 +246,37 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
     _hnsw_ef_search: int = PrivateAttr()
     _normalize: bool = PrivateAttr()
 
+    @field_validator("vidx_metric_type", mode="before")
+    @classmethod
+    def _normalize_vidx_metric_type(cls, value: str) -> str:
+        if isinstance(value, str):
+            return value.lower()
+        return value
+
+    @field_validator("index_type", mode="before")
+    @classmethod
+    def _normalize_index_type(cls, value: str) -> str:
+        if isinstance(value, str):
+            return value.upper()
+        return value
+
+    @model_validator(mode="after")
+    def _validate_fulltext_support(self) -> "OceanBaseVectorStore":
+        if self.include_fulltext and not self.include_sparse:
+            raise ValueError(
+                "Full-text search requires sparse vector support. "
+                "Set include_sparse=True when include_fulltext=True."
+            )
+        return self
+
     def __init__(
         self,
         client: ObVecClient,
         dim: int,
         table_name: str = DEFAULT_OCEANBASE_VECTOR_TABLE_NAME,
-        vidx_metric_type: str = DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE,
+        vidx_metric_type: VidxMetricType = DEFAULT_OCEANBASE_VECTOR_METRIC_TYPE,
         vidx_algo_params: Optional[dict] = None,
-        index_type: str = DEFAULT_OCEANBASE_INDEX_TYPE,
+        index_type: IndexType = DEFAULT_OCEANBASE_INDEX_TYPE,
         drop_old: bool = False,
         *,
         primary_field: str = DEFAULT_OCEANBASE_PFIELD,
@@ -226,7 +294,15 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         normalize: bool = False,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(
+            vidx_metric_type=vidx_metric_type,
+            index_type=index_type,
+            include_sparse=include_sparse,
+            include_fulltext=include_fulltext,
+            sparse_vector_field=sparse_vector_field,
+            fulltext_field=fulltext_field,
+            normalize=normalize,
+        )
 
         try:
             from pyobvector import ObVecClient
@@ -246,26 +322,12 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         self._client: ObVecClient = client
         self._table_name = table_name
         self._extra_columns = extra_columns
-        self._include_sparse = include_sparse
-        self._include_fulltext = include_fulltext
-        if self._include_fulltext and not self._include_sparse:
-            raise ValueError(
-                "Full-text search requires sparse vector support. "
-                "Set include_sparse=True when include_fulltext=True."
-            )
-        self._sparse_vector_field = sparse_vector_field
-        self._fulltext_field = fulltext_field
-        self._vidx_metric_type = vidx_metric_type.lower()
-        if self._vidx_metric_type not in ("l2", "inner_product", "cosine"):
-            raise ValueError(
-                "`vidx_metric_type` should be set in `l2`/`inner_product`/`cosine`."
-            )
-        self._index_type = index_type.upper()
-        if self._index_type not in OCEANBASE_SUPPORTED_VECTOR_INDEX_TYPES:
-            raise ValueError(
-                "Unsupported index_type. "
-                f"Supported types: {sorted(OCEANBASE_SUPPORTED_VECTOR_INDEX_TYPES.keys())}."
-            )
+        self._include_sparse = self.include_sparse
+        self._include_fulltext = self.include_fulltext
+        self._sparse_vector_field = self.sparse_vector_field
+        self._fulltext_field = self.fulltext_field
+        self._vidx_metric_type = self.vidx_metric_type
+        self._index_type = self.index_type
         if vidx_algo_params is None:
             if self._index_type in ("HNSW", "HNSW_SQ"):
                 self._vidx_algo_params = DEFAULT_OCEANBASE_HNSW_BUILD_PARAM

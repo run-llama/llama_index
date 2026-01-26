@@ -4,6 +4,7 @@ import types
 
 import pytest
 
+from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
@@ -400,7 +401,7 @@ def test_init_validations(monkeypatch: pytest.MonkeyPatch) -> None:
         ob_base.OceanBaseVectorStore, "_create_table_with_index", lambda self: None
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         ob_base.OceanBaseVectorStore(
             client=StubClient(),
             dim=8,
@@ -408,14 +409,14 @@ def test_init_validations(monkeypatch: pytest.MonkeyPatch) -> None:
             include_sparse=False,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         ob_base.OceanBaseVectorStore(
             client=StubClient(),
             dim=8,
             vidx_metric_type="bad",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         ob_base.OceanBaseVectorStore(
             client=StubClient(),
             dim=8,
