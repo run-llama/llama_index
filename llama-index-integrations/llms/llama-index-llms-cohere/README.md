@@ -145,3 +145,19 @@ print(resp)
 ### LLM Implementation example
 
 https://docs.llamaindex.ai/en/stable/examples/llm/cohere/
+
+### Using a Custom Base URL
+
+You can now specify a custom base URL when initializing the Cohere LLM. This is useful for enterprise scenarios or when using a proxy.
+
+```python
+from llama_index.llms.cohere import Cohere
+
+# Initialize with a custom base URL
+llm = Cohere(
+    api_key="your-api-key", base_url="https://your-custom-endpoint.com/v1"
+)
+
+resp = llm.complete("What is LlamaIndex?")
+print(resp)
+```

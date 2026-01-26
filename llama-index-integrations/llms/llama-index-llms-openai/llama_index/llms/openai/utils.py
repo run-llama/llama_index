@@ -70,6 +70,7 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.1-chat-latest": 128000,
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
+    "gpt-5.2-chat-latest": 128000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
