@@ -230,13 +230,6 @@ class Upstage(OpenAI):
         self._client = None
         self._aclient = None
         self._http_client = http_client
-        self.reasoning_effort = reasoning_effort
-        self.top_p = top_p
-        self.frequency_penalty = frequency_penalty
-        self.presence_penalty = presence_penalty
-        self.response_format = response_format
-        self.top_k = top_k
-        self.prompt_cache_key = prompt_cache_key
 
     def _get_model_name(self) -> str:
         return self.model
