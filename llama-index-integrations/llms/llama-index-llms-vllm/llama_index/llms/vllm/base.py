@@ -375,7 +375,8 @@ class VllmServer(Vllm):
         description="Treat the endpoint as OpenAI-compatible chat/completions API (streaming supported).",
     )
     api_headers: Dict[str, str] = Field(
-        default_factory=dict, description="Additional headers to send to the vLLM server."
+        default_factory=dict,
+        description="Additional headers to send to the vLLM server.",
     )
     timeout: float = Field(
         default=60.0, description="Request timeout (seconds) for server calls."
@@ -597,7 +598,10 @@ class VllmServer(Vllm):
 
         if messages:
             payload["messages"] = [
-                {"role": msg.role.value if hasattr(msg.role, "value") else msg.role, "content": msg.content}
+                {
+                    "role": msg.role.value if hasattr(msg.role, "value") else msg.role,
+                    "content": msg.content,
+                }
                 for msg in messages
             ]
         else:

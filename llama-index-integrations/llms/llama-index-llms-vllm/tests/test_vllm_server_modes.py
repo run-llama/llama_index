@@ -44,7 +44,9 @@ def test_openai_like_complete(monkeypatch):
 
     monkeypatch.setattr("requests.post", fake_post)
 
-    llm = VllmServer(api_url="http://mock/chat", openai_like=True, api_headers={"X-Test": "1"})
+    llm = VllmServer(
+        api_url="http://mock/chat", openai_like=True, api_headers={"X-Test": "1"}
+    )
     result = llm.complete("hi")
 
     assert result.text == "hello"
@@ -56,8 +58,8 @@ def test_openai_like_complete(monkeypatch):
 
 def test_openai_like_stream(monkeypatch):
     chunks = [
-        b"data: {\"choices\":[{\"delta\":{\"content\":\"he\"}}]}\n",
-        b"data: {\"choices\":[{\"delta\":{\"content\":\"llo\"}}]}\n",
+        b'data: {"choices":[{"delta":{"content":"he"}}]}\n',
+        b'data: {"choices":[{"delta":{"content":"llo"}}]}\n',
         b"data: [DONE]\n",
     ]
 

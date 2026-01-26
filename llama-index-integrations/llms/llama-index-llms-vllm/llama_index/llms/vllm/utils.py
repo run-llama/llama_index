@@ -22,7 +22,11 @@ def post_http_request(
     sampling_params["stream"] = stream
 
     response = requests.post(
-        api_url, headers=base_headers, json=sampling_params, stream=stream, timeout=timeout
+        api_url,
+        headers=base_headers,
+        json=sampling_params,
+        stream=stream,
+        timeout=timeout,
     )
     response.raise_for_status()
     return response
