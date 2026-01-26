@@ -267,3 +267,55 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
         """Reset the token counts."""
         self.llm_token_counts = []
         self.embedding_token_counts = []
+
+
+class TokenBudgetHandler(TokenCountingHandler):
+    """
+    Token Budget Handler.
+
+    This handler checks if the total token usage has exceeded a specified budget
+    before allowing a new event to start. This is useful for preventing
+    accidental overspending during automated runs.
+
+    Args:
+        token_budget (int): The maximum number of tokens allowed.
+        tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
+        verbose (bool): Whether to print usage to stdout.
+
+    """
+
+    def __init__(
+        self,
+        token_budget: int,
+        tokenizer: Optional[Callable[[str], List]] = None,
+        verbose: bool = False,
+    ) -> None:
+        super().__init__(tokenizer=tokenizer, verbose=verbose)
+        self.token_budget = token_budget
+
+    def on_event_start(
+        self,
+        event_type: CBEventType,
+        payload: Optional[Dict[str, Any]] = None,
+        event_id: str = "",
+        parent_id: str = "",
+        **kwargs: Any,
+    ) -> str:
+        """
+        Run before an event starts.
+        Checks if the budget has been exceeded.
+        """
+        # Check if we have already blown the budget
+        if self.total_llm_token_count >= self.token_budget:
+            raise ValueError(
+                f"Token budget exceeded! Limit: {self.token_budget}, "
+                f"Current Usage: {self.total_llm_token_count}"
+            )
+
+        return super().on_event_start(
+            event_type,
+            payload=payload,
+            event_id=event_id,
+            parent_id=parent_id,
+            **kwargs,
+        )
