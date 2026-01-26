@@ -186,8 +186,9 @@ class Upstage(OpenAI):
         if "upstage_api_key" in kwargs:
             api_key = kwargs.pop("upstage_api_key")
         additional_kwargs = additional_kwargs or {}
-        # Add Upstage-specific parameters to additional_kwargs
-        # These should not be passed to base class as they're not supported by OpenAI API
+        # Add Upstage-specific parameters to additional_kwargs.
+        # These parameters are not supported by OpenAI API, so they must be passed via
+        # additional_kwargs. The base class will automatically merge them in _get_model_kwargs.
         if reasoning_effort is not None:
             additional_kwargs["reasoning_effort"] = reasoning_effort
         if top_p is not None:
