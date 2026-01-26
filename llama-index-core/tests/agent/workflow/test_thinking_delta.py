@@ -266,6 +266,7 @@ async def test_react_agent_comprehensive_thinking_streaming():
 
     # Mock context to capture stream events
     mock_context = AsyncMock(spec=Context)
+    mock_context.is_running = True  # Required for event writing
     stream_events = []
 
     def capture_event(event):
