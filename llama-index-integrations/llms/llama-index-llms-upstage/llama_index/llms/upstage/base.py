@@ -289,36 +289,41 @@ class Upstage(OpenAI):
         num_tokens += tokens_suffix
         return num_tokens
 
-    @llm_retry_decorator
-    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def _prepare_messages_for_doc_parsing(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> Sequence[ChatMessage]:
+        """Prepare messages for document parsing if needed."""
         if is_doc_parsing_model(self.model, kwargs):
             document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+            messages_list = (
+                list(messages) if not isinstance(messages, list) else messages
+            )
+            messages_list.append(ChatMessage(role="user", content=document_contents))
+            return messages_list
+        return messages
+
+    @llm_retry_decorator
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._chat(messages, **kwargs)
 
     @llm_retry_decorator
     def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._achat(messages, **kwargs)
 
     @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._stream_chat(messages, **kwargs)
 
     @llm_retry_decorator
     def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._astream_chat(messages, **kwargs)
 
     def _parse_documents(
