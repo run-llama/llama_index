@@ -3,7 +3,7 @@ import json
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Type
 
 from llama_index.core.base.llms.types import ContentBlock, TextBlock
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -111,6 +111,7 @@ class ToolOutput(BaseModel):
     raw_input: Dict[str, Any]
     raw_output: Any
     is_error: bool = False
+    is_preliminary: bool = False
 
     _exception: Optional[Exception] = PrivateAttr(default=None)
 
@@ -122,6 +123,7 @@ class ToolOutput(BaseModel):
         raw_input: Optional[Dict[str, Any]] = None,
         raw_output: Optional[Any] = None,
         is_error: bool = False,
+        is_preliminary: bool = False,
         exception: Optional[Exception] = None,
     ):
         if content and blocks:
@@ -139,6 +141,7 @@ class ToolOutput(BaseModel):
             raw_input=raw_input,
             raw_output=raw_output,
             is_error=is_error,
+            is_preliminary=is_preliminary,
         )
 
         self._exception = exception
@@ -248,6 +251,13 @@ class AsyncBaseTool(BaseTool):
         Should also be implemented by the tool developer as an
         async-compatible implementation.
         """
+
+
+
+
+
+
+
 
 
 class BaseToolAsyncAdapter(AsyncBaseTool):
