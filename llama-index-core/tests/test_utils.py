@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Optional, Type, Union
 from unittest import mock
+import os
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -275,7 +276,7 @@ def test_get_cache_dir_default_behavior(monkeypatch) -> None:
             result = get_cache_dir()
             mock_user_cache_dir.assert_called_once_with("llama_index")
             mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-            assert result == mock_cache_path
+            assert result == os.path.normpath(mock_cache_path)
 
 
 def test_get_cache_dir_creates_directory(tmp_path, monkeypatch) -> None:
