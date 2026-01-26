@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from mcp.client.session import ClientSession
 from mcp.types import Resource
@@ -37,10 +37,12 @@ class McpToolSpec(
         self,
         client: ClientSession,
         allowed_tools: Optional[List[str]] = None,
+        partial_params: Optional[Dict[str, Any]] = None,
         include_resources: bool = False,
     ) -> None:
         self.client = client
         self.allowed_tools = allowed_tools
+        self.partial_params = partial_params
         self.include_resources = include_resources
         self.properties_cache = {}
 
@@ -133,13 +135,19 @@ class McpToolSpec(
             model_schema = self.create_model_from_json_schema(
                 tool.inputSchema, model_name=f"{tool.name}_Schema"
             )
+            if self.partial_params:
+                model_schema = self.remove_model_fields(
+                    model_schema,
+                    fields_to_remove=set(self.partial_params),
+                    model_name=f"{tool.name}_Schema",
+                )
             metadata = ToolMetadata(
                 name=tool.name,
                 description=tool.description,
                 fn_schema=model_schema,
             )
             function_tool = FunctionTool.from_defaults(
-                async_fn=fn, tool_metadata=metadata
+                async_fn=fn, tool_metadata=metadata, partial_params=self.partial_params
             )
             function_tool_list.append(function_tool)
 
@@ -214,6 +222,22 @@ class McpToolSpec(
         model = create_model(model_name, **fields)
         self.properties_cache[model_name] = model
         return model
+
+    def remove_model_fields(
+        self,
+        model: type[BaseModel],
+        fields_to_remove: Set[str],
+        model_name: str,
+    ) -> type[BaseModel]:
+        fields = {
+            name: (
+                field.annotation,
+                field.default if field.is_required() else field.default
+            )
+            for name, field in model.model_fields.items()
+            if name not in fields_to_remove
+        }
+        return create_model(model_name, **fields)
 
 
 def patch_sync(func_async: Callable) -> Callable:
