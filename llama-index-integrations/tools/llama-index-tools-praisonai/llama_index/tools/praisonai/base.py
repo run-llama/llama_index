@@ -26,6 +26,7 @@ class PraisonAIToolSpec(BaseToolSpec):
         Args:
             api_url: The URL of the PraisonAI server.
             timeout: Request timeout in seconds.
+
         """
         self.api_url = api_url
         self.timeout = timeout
@@ -39,6 +40,7 @@ class PraisonAIToolSpec(BaseToolSpec):
 
         Returns:
             The response from the agents.
+
         """
         response = httpx.post(
             f"{self.api_url}/agents",
@@ -58,6 +60,7 @@ class PraisonAIToolSpec(BaseToolSpec):
 
         Returns:
             The response from the agent.
+
         """
         response = httpx.post(
             f"{self.api_url}/agents/{agent}",
@@ -73,6 +76,7 @@ class PraisonAIToolSpec(BaseToolSpec):
 
         Returns:
             A list of agent names.
+
         """
         response = httpx.get(
             f"{self.api_url}/agents/list",
