@@ -1713,7 +1713,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=2,!=2.9.0,<3" },
+    { name = "llama-index-workflows", directory = "../../worktree-adrian-dbos/packages/llama-index-workflows" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "nltk", specifier = ">3.8.1" },
@@ -1816,16 +1816,42 @@ dev = [
 [[package]]
 name = "llama-index-workflows"
 version = "2.13.1"
-source = { registry = "https://pypi.org/simple" }
+source = { directory = "../../worktree-adrian-dbos/packages/llama-index-workflows" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
     { name = "llama-index-instrumentation" },
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/7b/00c35d14dc4a7dc64c63dad8b1532f55cd5b5f8856c34f5bf587693ac270/llama_index_workflows-2.13.1.tar.gz", hash = "sha256:55cd3cff9c92a37272ab8651ad750288abc339165b009066f130cb0c5c65994b", size = 84279, upload-time = "2026-01-25T14:51:50.493Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/8d/ba97cda62829b60658a86d4c012d59e3b13c99d9b336fcf0e507d03812df/llama_index_workflows-2.13.1-py3-none-any.whl", hash = "sha256:e779078817d413b29a5297521fb71694a80e502f18dfd41e8b342f83e45f2c19", size = 107344, upload-time = "2026-01-25T14:51:49.297Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "eval-type-backport", marker = "python_full_version < '3.10'", specifier = ">=0.2.2" },
+    { name = "httpx", marker = "extra == 'client'", specifier = ">=0.28.1,<1" },
+    { name = "llama-index-instrumentation", specifier = ">=0.1.0" },
+    { name = "pydantic", specifier = ">=2.11.5" },
+    { name = "starlette", marker = "extra == 'server'", specifier = ">=0.39.0" },
+    { name = "typing-extensions", specifier = ">=4.6.0" },
+    { name = "uvicorn", marker = "extra == 'server'", specifier = ">=0.32.0" },
+]
+provides-extras = ["server", "client"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hatch", specifier = ">=1.14.1" },
+    { name = "httpx", specifier = ">=0.25.0" },
+    { name = "packaging", specifier = ">=21.0" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "pytest", specifier = ">=8.4.0" },
+    { name = "pytest-asyncio", specifier = ">=1.0.0" },
+    { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "starlette", specifier = ">=0.39.0" },
+    { name = "structlog", specifier = ">=25.5.0" },
+    { name = "time-machine", specifier = ">=2.19.0,<3.0.0" },
+    { name = "uvicorn", specifier = ">=0.32.0" },
 ]
 
 [[package]]
