@@ -186,6 +186,21 @@ class OCIDataScience(FunctionCallingLLM):
         )
         print(response)
         ```
+        **Using Dedicated Streaming endpoint**
+        ```python
+        from llama_index.llms.oci_data_science import OCIDataScience
+        import ads
+        ads.set_auth(auth="security_token", profile="OC1")
+
+        llm = OCIDataScience(
+            endpoint="https://<MD_OCID>/predict",
+            model="odsc-llm",
+        )
+        prompt = "What is the capital of France?"
+        response = llm.complete(prompt)
+        print(response)
+        ```
+       
     """
 
     endpoint: str = Field(
