@@ -6,7 +6,7 @@ An index that is built on top of multiple vector stores for different modalities
 """
 
 import logging
-from typing import Any, List, Optional, Sequence, Union, cast
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.llms.base import BaseLLM
@@ -167,6 +167,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> BaseChatEngine:
         llm = llm or Settings.llm
         assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        llm = cast(LLM, llm)  # kludge. They don't actually inherit from these types.
         class_name = llm.class_name()
         if "multi" not in class_name:
             logger.warning(
@@ -180,7 +181,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
             return MultiModalContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
-                multi_modal_llm=cast(Union[LLM, None], llm),
+                multi_modal_llm=llm,
                 **kwargs,
             )
 
@@ -191,7 +192,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
             return MultiModalCondensePlusContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
-                multi_modal_llm=cast(Union[LLM, None], llm),
+                multi_modal_llm=llm,
                 **kwargs,
             )
 
