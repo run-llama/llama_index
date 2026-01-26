@@ -196,6 +196,16 @@ class Upstage(OpenAI):
         additional_kwargs = additional_kwargs or {}
         # Add Upstage-specific parameters to additional_kwargs
         # These should not be passed to base class as they're not supported by OpenAI API
+        if reasoning_effort is not None:
+            additional_kwargs["reasoning_effort"] = reasoning_effort
+        if top_p is not None:
+            additional_kwargs["top_p"] = top_p
+        if frequency_penalty is not None:
+            additional_kwargs["frequency_penalty"] = frequency_penalty
+        if presence_penalty is not None:
+            additional_kwargs["presence_penalty"] = presence_penalty
+        if response_format is not None:
+            additional_kwargs["response_format"] = response_format
         if top_k is not None:
             additional_kwargs["top_k"] = top_k
         if prompt_cache_key is not None:
@@ -343,15 +353,3 @@ class Upstage(OpenAI):
             file_title = file_titles[min(i, len(file_titles) - 1)]
             document_contents += f"{file_title}:\n{doc.text}\n\n"
         return document_contents
-
-    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        all_kwargs = super()._get_model_kwargs(**kwargs)
-        # Only include parameters that are supported by OpenAI-compatible API
-        # top_k and prompt_cache_key are Upstage-specific and are passed via additional_kwargs
-        return all_kwargs | {
-            "reasoning_effort": self.reasoning_effort,
-            "top_p": self.top_p,
-            "frequency_penalty": self.frequency_penalty,
-            "presence_penalty": self.presence_penalty,
-            "response_format": self.response_format,
-        }
