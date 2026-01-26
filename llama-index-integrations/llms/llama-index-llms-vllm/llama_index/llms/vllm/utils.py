@@ -49,7 +49,7 @@ def post_openai_chat_request(
     if headers:
         base_headers.update(headers)
     payload = dict(payload)
-    payload["stream"] = stream
+    payload.setdefault("stream", stream)
     response = requests.post(
         api_url, headers=base_headers, json=payload, stream=stream, timeout=timeout
     )
