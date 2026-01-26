@@ -84,11 +84,8 @@ class Upstage(OpenAI):
     logprobs: Optional[bool] = Field(
         description="Whether to return logprobs per token."
     )
-    top_logprobs: int = Field(
+    top_logprobs: Optional[int] = Field(
         description="The number of top token logprobs to return.",
-        default=0,
-        gte=0,
-        lte=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         description="Additional kwargs for the Upstage API.", default_factory=dict
@@ -122,29 +119,19 @@ class Upstage(OpenAI):
         description="The Upstage API base URL.",
     )
     top_p: Optional[float] = Field(
-        default=1,
-        gte=0,
-        lte=1,
         description="An optional parameter to trigger nucleus sampling.",
     )
     frequency_penalty: Optional[float] = Field(
-        default=0,
-        gte=-2,
-        lte=2,
-        description="An optional parameter that controls the model’s tendency to repeat tokens.",
+        description="An optional parameter that controls the model's tendency to repeat tokens.",
     )
     presence_penalty: Optional[float] = Field(
-        default=0,
-        gte=-2,
-        lte=2,
-        description="An optional parameter that adjusts the model’s tendency to include tokens already present in the input or generated text.",
+        description="An optional parameter that adjusts the model's tendency to include tokens already present in the input or generated text.",
     )
     response_format: Optional[dict] = Field(
         default=None,
         description="An object specifying the format that the model must generate.",
     )
     reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
-        default="medium",
         description="Controls the level of reasoning effort. This parameter is only applicable to Reasoning models.",
     )
     top_k: Optional[int] = Field(
@@ -166,7 +153,7 @@ class Upstage(OpenAI):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         logprobs: Optional[bool] = None,
-        top_logprobs: int = 0,
+        top_logprobs: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
