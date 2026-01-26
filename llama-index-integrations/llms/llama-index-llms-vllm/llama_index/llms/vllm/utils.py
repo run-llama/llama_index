@@ -48,7 +48,6 @@ def post_openai_chat_request(
     base_headers = {"User-Agent": "LlamaIndex-VLLMOpenAI"}
     if headers:
         base_headers.update(headers)
-    payload = dict(payload)
     payload.setdefault("stream", stream)
     response = requests.post(
         api_url, headers=base_headers, json=payload, stream=stream, timeout=timeout
