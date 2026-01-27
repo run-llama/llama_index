@@ -73,14 +73,16 @@ def test_get_voices_with_filters(mock_filter, mock_typecast):
 @patch("typecast.client.Typecast")
 def test_get_voices_failure(mock_typecast):
     """Test voice retrieval failure handling"""
-    mock_typecast.return_value.voices_v2.side_effect = Exception("API Error")
+    from typecast.exceptions import TypecastError
+
+    mock_typecast.return_value.voices_v2.side_effect = TypecastError("API Error")
 
     tool = TypecastToolSpec(api_key="test-key")
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(TypecastError) as exc_info:
         tool.get_voices()
 
-    assert "Failed to get voices" in str(exc_info.value)
+    assert "API Error" in str(exc_info.value)
 
 
 @patch("typecast.client.Typecast")
@@ -115,11 +117,11 @@ def test_get_voice_not_found(mock_typecast):
     """Test voice not found handling"""
     from typecast.exceptions import NotFoundError
 
-    mock_typecast.return_value.voice_v2.side_effect = NotFoundError("Not found")
+    mock_typecast.return_value.voice_v2.side_effect = NotFoundError("Voice not found")
 
     tool = TypecastToolSpec(api_key="test-key")
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(NotFoundError) as exc_info:
         tool.get_voice("invalid_id")
 
     assert "Voice not found" in str(exc_info.value)
