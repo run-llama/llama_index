@@ -1,7 +1,10 @@
 """Typecast text to speech tool spec."""
 
 from typing import List, Optional
+
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from typecast.client import Typecast
+from typecast.models import Output, Prompt, TTSRequest, VoicesV2Filter
 
 
 class TypecastToolSpec(BaseToolSpec):
@@ -50,9 +53,6 @@ class TypecastToolSpec(BaseToolSpec):
             TypecastError: If API request fails
 
         """
-        from typecast.client import Typecast
-        from typecast.models import VoicesV2Filter
-
         # Create the client
         client = Typecast(host=self.host, api_key=self.api_key)
 
@@ -93,8 +93,6 @@ class TypecastToolSpec(BaseToolSpec):
             TypecastError: If API request fails
 
         """
-        from typecast.client import Typecast
-
         # Create the client
         client = Typecast(host=self.host, api_key=self.api_key)
 
@@ -151,9 +149,6 @@ class TypecastToolSpec(BaseToolSpec):
             IOError: If file save fails
 
         """
-        from typecast.client import Typecast
-        from typecast.models import TTSRequest, Prompt, Output
-
         # Validate parameters
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
