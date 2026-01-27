@@ -73,10 +73,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish-core
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CI_BOT_APP_ID }}
+          private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+          owner: run-llama
+
       - name: Trigger repository_dispatch
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.LLAMA_INDEX_DISPATCH_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           repository: run-llama/workflows-py
           event-type: llama-index-core-release
 
