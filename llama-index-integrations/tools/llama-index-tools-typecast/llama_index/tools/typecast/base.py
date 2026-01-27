@@ -47,33 +47,30 @@ class TypecastToolSpec(BaseToolSpec):
                 - use_cases: List of suitable use cases (optional)
 
         Raises:
-            Exception: If API request fails
+            TypecastError: If API request fails
 
         """
-        try:
-            from typecast.client import Typecast
-            from typecast.models import VoicesV2Filter
+        from typecast.client import Typecast
+        from typecast.models import VoicesV2Filter
 
-            # Create the client
-            client = Typecast(host=self.host, api_key=self.api_key)
+        # Create the client
+        client = Typecast(host=self.host, api_key=self.api_key)
 
-            # Build filter if any parameters provided
-            filter_obj = None
-            if any([model, gender, age, use_case]):
-                filter_obj = VoicesV2Filter(
-                    model=model,
-                    gender=gender,
-                    age=age,
-                    use_cases=use_case,
-                )
+        # Build filter if any parameters provided
+        filter_obj = None
+        if any([model, gender, age, use_case]):
+            filter_obj = VoicesV2Filter(
+                model=model,
+                gender=gender,
+                age=age,
+                use_cases=use_case,
+            )
 
-            # Get the voices using V2 API
-            response = client.voices_v2(filter=filter_obj)
+        # Get the voices using V2 API
+        response = client.voices_v2(filter=filter_obj)
 
-            # Return the dumped voice models as dict
-            return [voice.model_dump() for voice in response]
-        except Exception as e:
-            raise Exception(f"Failed to get voices from Typecast API: {e!s}")
+        # Return the dumped voice models as dict
+        return [voice.model_dump() for voice in response]
 
     def get_voice(self, voice_id: str) -> dict:
         """
@@ -92,30 +89,20 @@ class TypecastToolSpec(BaseToolSpec):
                 - use_cases: List of suitable use cases (optional)
 
         Raises:
-            Exception: If API request fails or voice not found
+            NotFoundError: If voice not found
+            TypecastError: If API request fails
 
         """
-        try:
-            from typecast.client import Typecast
-            from typecast.exceptions import NotFoundError, TypecastError
+        from typecast.client import Typecast
 
-            # Create the client
-            client = Typecast(host=self.host, api_key=self.api_key)
+        # Create the client
+        client = Typecast(host=self.host, api_key=self.api_key)
 
-            # Get the voice using V2 API
-            try:
-                response = client.voice_v2(voice_id)
-            except NotFoundError:
-                raise Exception(f"Voice not found: {voice_id}")
-            except TypecastError as e:
-                raise Exception(f"Typecast API error: {e!s}")
+        # Get the voice using V2 API
+        response = client.voice_v2(voice_id)
 
-            # Return the dumped voice model as dict
-            return response.model_dump()
-        except Exception as e:
-            if "Voice not found" in str(e) or "Typecast API" in str(e):
-                raise
-            raise Exception(f"Failed to get voice from Typecast API: {e!s}")
+        # Return the dumped voice model as dict
+        return response.model_dump()
 
     def text_to_speech(
         self,
@@ -154,95 +141,55 @@ class TypecastToolSpec(BaseToolSpec):
 
         Raises:
             ValueError: If parameters are invalid
-            Exception: If API request fails or file save fails
+            BadRequestError: If request parameters are invalid
+            UnauthorizedError: If API authentication fails
+            PaymentRequiredError: If API quota exceeded
+            NotFoundError: If resource not found
+            UnprocessableEntityError: If validation error
+            InternalServerError: If Typecast API server error
+            TypecastError: If other API error occurs
+            IOError: If file save fails
 
         """
-        try:
-            from typecast.client import Typecast
-            from typecast.models import TTSRequest, Prompt, Output
-            from typecast.exceptions import (
-                BadRequestError,
-                InternalServerError,
-                NotFoundError,
-                PaymentRequiredError,
-                TypecastError,
-                UnauthorizedError,
-                UnprocessableEntityError,
-            )
+        from typecast.client import Typecast
+        from typecast.models import TTSRequest, Prompt, Output
 
-            # Validate parameters
-            if not text or not text.strip():
-                raise ValueError("Text cannot be empty")
-            if not voice_id:
-                raise ValueError("Voice ID is required")
-            if not output_path:
-                raise ValueError("Output path is required")
+        # Validate parameters
+        if not text or not text.strip():
+            raise ValueError("Text cannot be empty")
+        if not voice_id:
+            raise ValueError("Voice ID is required")
+        if not output_path:
+            raise ValueError("Output path is required")
 
-            # Create client
-            client = Typecast(host=self.host, api_key=self.api_key)
+        # Create client
+        client = Typecast(host=self.host, api_key=self.api_key)
 
-            # Build the request
-            request = TTSRequest(
-                voice_id=voice_id,
-                text=text,
-                model=model,
-                language=language,
-                prompt=Prompt(
-                    emotion_preset=emotion_preset,
-                    emotion_intensity=emotion_intensity,
-                ),
-                output=Output(
-                    volume=volume,
-                    audio_pitch=audio_pitch,
-                    audio_tempo=audio_tempo,
-                    audio_format=audio_format,
-                ),
-                seed=seed,
-            )
+        # Build the request
+        request = TTSRequest(
+            voice_id=voice_id,
+            text=text,
+            model=model,
+            language=language,
+            prompt=Prompt(
+                emotion_preset=emotion_preset,
+                emotion_intensity=emotion_intensity,
+            ),
+            output=Output(
+                volume=volume,
+                audio_pitch=audio_pitch,
+                audio_tempo=audio_tempo,
+                audio_format=audio_format,
+            ),
+            seed=seed,
+        )
 
-            # Generate audio
-            try:
-                response = client.text_to_speech(request)
-            except BadRequestError as e:
-                raise Exception(
-                    f"Invalid request parameters: {e!s}"
-                )
-            except UnauthorizedError:
-                raise Exception(
-                    "Typecast API authentication failed. Please check your API key."
-                )
-            except PaymentRequiredError:
-                raise Exception(
-                    "Typecast API quota exceeded. Please check your account balance."
-                )
-            except NotFoundError as e:
-                raise Exception(
-                    f"Resource not found: {e!s}"
-                )
-            except UnprocessableEntityError as e:
-                raise Exception(
-                    f"Validation error: {e!s}"
-                )
-            except InternalServerError as e:
-                raise Exception(
-                    f"Typecast API server error: {e!s}"
-                )
-            except TypecastError as e:
-                raise Exception(f"Typecast API error: {e!s}")
+        # Generate audio
+        response = client.text_to_speech(request)
 
-            # Save the audio
-            try:
-                with open(output_path, "wb") as fp:
-                    fp.write(response.audio_data)
-            except IOError as e:
-                raise Exception(f"Failed to save audio file to {output_path}: {e!s}")
+        # Save the audio
+        with open(output_path, "wb") as fp:
+            fp.write(response.audio_data)
 
-            # Return the save location
-            return output_path
-
-        except ValueError:
-            raise
-        except Exception as e:
-            if "Typecast API" in str(e) or "quota" in str(e).lower():
-                raise
-            raise Exception(f"Failed to generate speech: {e!s}")
+        # Return the save location
+        return output_path
