@@ -9,6 +9,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
@@ -80,7 +81,7 @@ class ReActAgent(BaseWorkflowAgent):
         return await self.llm.achat(current_llm_input)
 
     async def _get_streaming_response(
-        self, ctx: Context, current_llm_input: List[ChatMessage]
+        self, ctx: AgentContext, current_llm_input: List[ChatMessage]
     ) -> ChatResponse:
         response = await self.llm.astream_chat(
             current_llm_input,
@@ -115,7 +116,7 @@ class ReActAgent(BaseWorkflowAgent):
 
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,

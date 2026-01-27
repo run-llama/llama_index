@@ -9,6 +9,9 @@ migration_scripts/
 .vscode
 .zed
 *.code-workspace
+**/.claude
+!/.claude
+/.claude/settings.local.json
 
 # Local development
 venv/
