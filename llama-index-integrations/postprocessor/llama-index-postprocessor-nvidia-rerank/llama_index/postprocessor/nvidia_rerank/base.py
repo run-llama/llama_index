@@ -162,7 +162,10 @@ class NVIDIARerank(BaseNodePostprocessor):
 
     def _get_models(self) -> List[Model]:
         client = self.client
-        _headers = self._get_headers(auth_required=self._is_hosted)
+        _headers = self._get_headers(
+            auth_required=bool(self._api_key != "NO_API_KEY_PROVIDED" and self.api_key)
+            or self._is_hosted
+        )
         url = (
             "https://integrate.api.nvidia.com/v1/models"
             if self._is_hosted
