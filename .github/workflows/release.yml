@@ -82,7 +82,7 @@ jobs:
           owner: run-llama
 
       - name: Trigger repository_dispatch
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: run-llama/workflows-py
