@@ -348,11 +348,12 @@ def get_retry_on_exceptions_with_backoff_decorator(
 
 
 def truncate_text(text: str, max_length: int) -> str:
+    """Truncate text to a maximum length."""
     if len(text) <= max_length:
         return text
     elif max_length < 3:
         return text[:max_length]
-    return text[:max_length - 3] + "..."
+    return text[: max_length - 3] + "..."
 
 
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
