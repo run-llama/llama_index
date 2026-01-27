@@ -1,6 +1,5 @@
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks import trace_method
@@ -22,7 +21,7 @@ from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
 )
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
-from llama_index.core.llms import TextBlock, ChatMessage, ImageBlock
+from llama_index.core.llms import LLM, TextBlock, ChatMessage, ImageBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
@@ -79,7 +78,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
-        multi_modal_llm: BaseLLM,
+        multi_modal_llm: LLM,
         memory: BaseMemory,
         system_prompt: str,
         context_template: Optional[Union[str, PromptTemplate]] = None,
@@ -111,7 +110,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[Union[str, PromptTemplate]] = None,
-        multi_modal_llm: Optional[BaseLLM] = None,
+        multi_modal_llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "MultiModalContextChatEngine":
         """Initialize a MultiModalContextChatEngine from default parameters."""
