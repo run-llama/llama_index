@@ -68,6 +68,18 @@ jobs:
             sleep 10
           done
 
+  notify-workflows-py:
+    name: Trigger llama-index-core bump in workflows-py
+    runs-on: ubuntu-latest
+    needs: publish-core
+    steps:
+      - name: Trigger repository_dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.LLAMA_INDEX_DISPATCH_TOKEN }}
+          repository: run-llama/workflows-py
+          event-type: llama-index-core-release
+
   build-n-publish:
     name: Build and publish 'llama-index' to PyPI
     runs-on: ubuntu-latest
