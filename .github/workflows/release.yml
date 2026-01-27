@@ -68,6 +68,26 @@ jobs:
             sleep 10
           done
 
+  notify-workflows-py:
+    name: Trigger llama-index-core bump in workflows-py
+    runs-on: ubuntu-latest
+    needs: publish-core
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CI_BOT_APP_ID }}
+          private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+          owner: run-llama
+
+      - name: Trigger repository_dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: run-llama/workflows-py
+          event-type: llama-index-core-release
+
   build-n-publish:
     name: Build and publish 'llama-index' to PyPI
     runs-on: ubuntu-latest
