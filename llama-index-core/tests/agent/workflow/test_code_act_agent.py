@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from typing import Any, Sequence
 
 
+from llama_index.core.agent.workflow import SimpleAgentContext
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
 from llama_index.core.base.llms.types import ChatResponse
@@ -12,34 +12,6 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.tools import ToolOutput
 from llama_index.core.memory import BaseMemory
-
-
-@dataclass
-class MockStore:
-    """A simple mock store that implements get/set."""
-
-    data: dict = field(default_factory=dict)
-
-    async def get(self, key: str, default: Any = None) -> Any:
-        return self.data.get(key, default)
-
-    async def set(self, key: str, value: Any) -> None:
-        self.data[key] = value
-
-
-@dataclass
-class MockContext:
-    """A mock context that captures events and provides a simple store."""
-
-    events: list = field(default_factory=list)
-    store: MockStore = field(default_factory=MockStore)
-
-    def write_event_to_stream(self, event: Any) -> None:
-        self.events.append(event)
-
-
-def mock_context() -> MockContext:
-    return MockContext()
 
 
 @pytest.fixture()
@@ -126,11 +98,11 @@ async def test_code_act_agent_basic_execution(
     )
 
     # Create context
-    mock_ctx = mock_context()
+    ctx = SimpleAgentContext()
 
     # Take step
     output = await agent.take_step(
-        ctx=mock_ctx,
+        ctx=ctx,
         llm_input=[ChatMessage(role="user", content="Say hello")],
         tools=[],
         memory=mock_memory,
@@ -164,11 +136,11 @@ async def test_code_act_agent_tool_handling(
     )
 
     # Create context
-    mock_ctx = mock_context()
+    ctx = SimpleAgentContext()
 
     # Take step
     output = await agent.take_step(
-        ctx=mock_ctx,
+        ctx=ctx,
         llm_input=[ChatMessage(role="user", content="What is 2 + 2?")],
         tools=[],
         memory=mock_memory,
@@ -186,15 +158,15 @@ async def test_code_act_agent_tool_handling(
             return_direct=False,
         )
     ]
-    await agent.handle_tool_call_results(mock_ctx, tool_results, mock_memory)
+    await agent.handle_tool_call_results(ctx, tool_results, mock_memory)
 
     # Verify scratchpad was updated
-    scratchpad = await mock_ctx.store.get("scratchpad")
+    scratchpad = await ctx.store.get("scratchpad")
     assert len(scratchpad) == 2  # User message and assistant response
     assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
 
     # Finalize
-    final_output = await agent.finalize(mock_ctx, output, mock_memory)
+    final_output = await agent.finalize(ctx, output, mock_memory)
     assert isinstance(final_output, AgentOutput)
     assert mock_memory.aput_messages.called  # Verify memory was updated
 
