@@ -2,6 +2,371 @@
 
 <!--- generated changelog --->
 
+## [2026-01-21]
+
+### llama-index-core [0.14.13]
+
+- feat: add early_stopping_method parameter to agent workflows ([#20389](https://github.com/run-llama/llama_index/pull/20389))
+- feat: Add token-based code splitting support to CodeSplitter ([#20438](https://github.com/run-llama/llama_index/pull/20438))
+- Add RayIngestionPipeline integration for distributed data ingestion ([#20443](https://github.com/run-llama/llama_index/pull/20443))
+- Added the multi-modal version of the Condensed Conversation & Context… ([#20446](https://github.com/run-llama/llama_index/pull/20446))
+- Replace ChatMemoryBuffer with Memory ([#20458](https://github.com/run-llama/llama_index/pull/20458))
+- fix(bug):Raise value error on when input is empty list in mean_agg instead of returning float ([#20466](https://github.com/run-llama/llama_index/pull/20466))
+- fix: The classmethod of ReActChatFormatter should use cls instead of the class name ([#20475](https://github.com/run-llama/llama_index/pull/20475))
+- feat: add configurable empty response message to synthesizers ([#20503](https://github.com/run-llama/llama_index/pull/20503))
+
+### llama-index-embeddings-bedrock [0.7.3]
+
+- Enable use of ARNs for Bedrock Embedding Models ([#20435](https://github.com/run-llama/llama_index/pull/20435))
+
+### llama-index-embeddings-ollama [0.8.6]
+
+- Improved Ollama batch embedding ([#20447](https://github.com/run-llama/llama_index/pull/20447))
+
+### llama-index-embeddings-voyageai [0.5.3]
+
+- Adding voyage-4 models ([#20497](https://github.com/run-llama/llama_index/pull/20497))
+
+### llama-index-ingestion-ray [0.1.0]
+
+- Add RayIngestionPipeline integration for distributed data ingestion ([#20443](https://github.com/run-llama/llama_index/pull/20443))
+
+### llama-index-llms-anthropic [0.10.6]
+
+- feat: enhance structured predict methods for anthropic ([#20440](https://github.com/run-llama/llama_index/pull/20440))
+- fix: preserve input_tokens in Anthropic stream_chat responses ([#20512](https://github.com/run-llama/llama_index/pull/20512))
+
+### llama-index-llms-apertis [0.1.0]
+
+- Add Apertis LLM integration with example notebook ([#20436](https://github.com/run-llama/llama_index/pull/20436))
+
+### llama-index-llms-bedrock-converse [0.12.4]
+
+- chore(bedrock-converse): Remove extraneous thinking_delta kwarg from ChatMessage ([#20455](https://github.com/run-llama/llama_index/pull/20455))
+
+### llama-index-llms-gemini [0.6.2]
+
+- chore: deprecate llama-index-llms-gemini ([#20511](https://github.com/run-llama/llama_index/pull/20511))
+
+### llama-index-llms-openai [0.6.13]
+
+- Sanitize OpenAI structured output JSON schema name for generic Pydantic models ([#20452](https://github.com/run-llama/llama_index/pull/20452))
+- chore: vbump openai ([#20482](https://github.com/run-llama/llama_index/pull/20482))
+
+### llama-index-llms-openrouter [0.4.3]
+
+- Feature/openrouter provider routing support ([#20431](https://github.com/run-llama/llama_index/pull/20431))
+
+### llama-index-packs-recursive-retriever [0.7.1]
+
+- security: remove exposed OpenAI API keys from notebook outputs ([#20474](https://github.com/run-llama/llama_index/pull/20474))
+
+### llama-index-packs-sentence-window-retriever [0.5.1]
+
+- security: remove exposed OpenAI API keys from notebook outputs ([#20474](https://github.com/run-llama/llama_index/pull/20474))
+
+### llama-index-readers-datasets [0.1.0]
+
+- Add HuggingFace datasets reader integration ([#20468](https://github.com/run-llama/llama_index/pull/20468))
+
+### llama-index-readers-patentsview [1.0.0]
+
+- Patentsview reader api changes ([#20481](https://github.com/run-llama/llama_index/pull/20481))
+
+### llama-index-retrievers-you [1.0.0]
+
+- Revamp YouRetriever integration ([#20493](https://github.com/run-llama/llama_index/pull/20493))
+
+### llama-index-tools-parallel-web-systems [0.1.0]
+
+- feat: added Parallel Web System tools ([#20442](https://github.com/run-llama/llama_index/pull/20442))
+
+### llama-index-vector-stores-alibabacloud-mysql [0.1.0]
+
+- Feature/alibaba mysql vector integration ([#20396](https://github.com/run-llama/llama_index/pull/20396))
+
+### llama-index-vector-stores-milvus [0.9.6]
+
+- Feat milvus partition names ([#20445](https://github.com/run-llama/llama_index/pull/20445))
+- improve(llama-index-vector-stores-milvus): Changed the partition parameter to `milvus_partition_name` in add/delete. ([#20460](https://github.com/run-llama/llama_index/pull/20460))
+
+### llama-index-vector-stores-mongodb [0.9.1]
+
+- INTPYTHON-863 Fix mongodb async integration ([#20444](https://github.com/run-llama/llama_index/pull/20444))
+
+### llama-index-vector-stores-neo4jvector [0.5.2]
+
+- Handle missing metadata for neo4j vector store ([#20491](https://github.com/run-llama/llama_index/pull/20491))
+
+### llama-index-vector-stores-opensearch [0.6.3]
+
+- fix (opensearch): add close and aclose methods to vector client ([#20463](https://github.com/run-llama/llama_index/pull/20463))
+
+### llama-index-vector-stores-qdrant [0.9.1]
+
+- Qdrant search params ([#20476](https://github.com/run-llama/llama_index/pull/20476))
+
+### llama-index-vector-stores-vertexaivectorsearch [0.3.4]
+
+- feat(vertexaivectorsearch): add hybrid search support ([#20487](https://github.com/run-llama/llama_index/pull/20487))
+
+### llama-index-vector-stores-volcenginemysql [0.2.0]
+
+- feat: Volcengine MySQL vector store integration ([#20404](https://github.com/run-llama/llama_index/pull/20404))
+
+## [2025-12-30]
+
+### llama-index-callbacks-agentops [0.4.1]
+
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+
+### llama-index-core [0.14.12]
+
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+- Improve `MockFunctionCallingLLM` ([#20356](https://github.com/run-llama/llama_index/pull/20356))
+- fix(openai): sanitize generic Pydantic model schema names ([#20371](https://github.com/run-llama/llama_index/pull/20371))
+- Element node parser ([#20399](https://github.com/run-llama/llama_index/pull/20399))
+- improve llama dev logging ([#20411](https://github.com/run-llama/llama_index/pull/20411))
+- test(node_parser): add unit tests for Java CodeSplitter ([#20423](https://github.com/run-llama/llama_index/pull/20423))
+- fix: crash in log_vector_store_query_result when result.ids is None ([#20427](https://github.com/run-llama/llama_index/pull/20427))
+
+### llama-index-embeddings-litellm [0.4.1]
+
+- Add docstring to LiteLLM embedding class ([#20336](https://github.com/run-llama/llama_index/pull/20336))
+
+### llama-index-embeddings-ollama [0.8.5]
+
+- feat(llama-index-embeddings-ollama): Add keep_alive parameter ([#20395](https://github.com/run-llama/llama_index/pull/20395))
+- docs: improve Ollama embeddings README with comprehensive documentation ([#20414](https://github.com/run-llama/llama_index/pull/20414))
+
+### llama-index-embeddings-voyageai [0.5.2]
+
+- Voyage multimodal 35 ([#20398](https://github.com/run-llama/llama_index/pull/20398))
+
+### llama-index-graph-stores-nebula [0.5.1]
+
+- feat(nebula): add MENTIONS edge to property graph store ([#20401](https://github.com/run-llama/llama_index/pull/20401))
+
+### llama-index-llms-aibadgr [0.1.0]
+
+- feat(llama-index-llms-aibadgr): Add AI Badgr OpenAI‑compatible LLM integration ([#20365](https://github.com/run-llama/llama_index/pull/20365))
+
+### llama-index-llms-anthropic [0.10.4]
+
+- add back haiku-3 support ([#20408](https://github.com/run-llama/llama_index/pull/20408))
+
+### llama-index-llms-bedrock-converse [0.12.3]
+
+- fix: bedrock converse thinking block issue ([#20355](https://github.com/run-llama/llama_index/pull/20355))
+
+### llama-index-llms-google-genai [0.8.3]
+
+- Switch use_file_api to Flexible file_mode; Improve File Upload Handling & Bump google-genai to v1.52.0 ([#20347](https://github.com/run-llama/llama_index/pull/20347))
+- Fix missing role from Google-GenAI ([#20357](https://github.com/run-llama/llama_index/pull/20357))
+- Add signature index fix ([#20362](https://github.com/run-llama/llama_index/pull/20362))
+- Add positional thought signature for thoughts ([#20418](https://github.com/run-llama/llama_index/pull/20418))
+
+### llama-index-llms-ollama [0.9.1]
+
+- feature: pydantic no longer complains if you pass 'low', 'medium', 'h… ([#20394](https://github.com/run-llama/llama_index/pull/20394))
+
+### llama-index-llms-openai [0.6.12]
+
+- fix: Handle tools=None in OpenAIResponses.\_get_model_kwargs ([#20358](https://github.com/run-llama/llama_index/pull/20358))
+- feat: add support for gpt-5.2 and 5.2 pro ([#20361](https://github.com/run-llama/llama_index/pull/20361))
+
+### llama-index-readers-confluence [0.6.1]
+
+- fix(confluence): support Python 3.14 ([#20370](https://github.com/run-llama/llama_index/pull/20370))
+
+### llama-index-readers-file [0.5.6]
+
+- Loosen constraint on `pandas` version ([#20387](https://github.com/run-llama/llama_index/pull/20387))
+
+### llama-index-readers-service-now [0.2.2]
+
+- chore(deps): bump urllib3 from 2.5.0 to 2.6.0 in /llama-index-integrations/readers/llama-index-readers-service-now in the pip group across 1 directory ([#20341](https://github.com/run-llama/llama_index/pull/20341))
+
+### llama-index-tools-mcp [0.4.5]
+
+- fix: pass timeout parameters to transport clients in BasicMCPClient ([#20340](https://github.com/run-llama/llama_index/pull/20340))
+- feature: Permit to pass a custom httpx.AsyncClient when creating a BasicMcpClient ([#20368](https://github.com/run-llama/llama_index/pull/20368))
+
+### llama-index-tools-typecast [0.1.0]
+
+- feat: add Typecast tool integration with text to speech features ([#20343](https://github.com/run-llama/llama_index/pull/20343))
+
+### llama-index-vector-stores-azurepostgresql [0.2.0]
+
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+
+### llama-index-vector-stores-chroma [0.5.5]
+
+- Fix chroma nested metadata filters ([#20424](https://github.com/run-llama/llama_index/pull/20424))
+- fix(chroma): support multimodal results ([#20426](https://github.com/run-llama/llama_index/pull/20426))
+
+### llama-index-vector-stores-couchbase [0.6.0]
+
+- Update FTS & GSI reference docs for Couchbase vector-store ([#20346](https://github.com/run-llama/llama_index/pull/20346))
+
+### llama-index-vector-stores-faiss [0.5.2]
+
+- fix(faiss): pass numpy array instead of int to add_with_ids ([#20384](https://github.com/run-llama/llama_index/pull/20384))
+
+### llama-index-vector-stores-lancedb [0.4.4]
+
+- Feat/async tool spec support ([#20338](https://github.com/run-llama/llama_index/pull/20338))
+- fix(vector_stores/lancedb): add missing '<' filter operator ([#20364](https://github.com/run-llama/llama_index/pull/20364))
+- fix(lancedb): fix metadata filtering logic and list value SQL generation ([#20374](https://github.com/run-llama/llama_index/pull/20374))
+
+### llama-index-vector-stores-mongodb [0.9.0]
+
+- Update mongo vector store to initialize without list permissions ([#20354](https://github.com/run-llama/llama_index/pull/20354))
+- add mongodb delete index ([#20429](https://github.com/run-llama/llama_index/pull/20429))
+- async mongodb atlas support ([#20430](https://github.com/run-llama/llama_index/pull/20430))
+
+### llama-index-vector-stores-redis [0.6.2]
+
+- Redis metadata filter fix ([#20359](https://github.com/run-llama/llama_index/pull/20359))
+
+### llama-index-vector-stores-vertexaivectorsearch [0.3.3]
+
+- feat(vertex-vector-search): Add Google Vertex AI Vector Search v2.0 support ([#20351](https://github.com/run-llama/llama_index/pull/20351))
+
+## [2025-12-04]
+
+### llama-index-core [0.14.10]
+
+- feat: add mock function calling llm ([#20331](https://github.com/run-llama/llama_index/pull/20331))
+
+### llama-index-llms-qianfan [0.4.1]
+
+- test: fix typo 'reponse' to 'response' in variable names ([#20329](https://github.com/run-llama/llama_index/pull/20329))
+
+### llama-index-tools-airweave [0.1.0]
+
+- feat: add Airweave tool integration with advanced search features ([#20111](https://github.com/run-llama/llama_index/pull/20111))
+
+### llama-index-utils-qianfan [0.4.1]
+
+- test: fix typo 'reponse' to 'response' in variable names ([#20329](https://github.com/run-llama/llama_index/pull/20329))
+
+## [2025-12-02]
+
+### llama-index-agent-azure [0.2.1]
+
+- fix: Pin azure-ai-projects version to prevent breaking changes ([#20255](https://github.com/run-llama/llama_index/pull/20255))
+
+### llama-index-core [0.14.9]
+
+- MultiModalVectorStoreIndex now returns a multi-modal ContextChatEngine. ([#20265](https://github.com/run-llama/llama_index/pull/20265))
+- Ingestion to vector store now ensures that \_node-content is readable ([#20266](https://github.com/run-llama/llama_index/pull/20266))
+- fix: ensure context is copied with async utils run_async ([#20286](https://github.com/run-llama/llama_index/pull/20286))
+- fix(memory): ensure first message in queue is always a user message after flush ([#20310](https://github.com/run-llama/llama_index/pull/20310))
+
+### llama-index-embeddings-bedrock [0.7.2]
+
+- feat(embeddings-bedrock): Add support for Amazon Bedrock Application Inference Profiles ([#20267](https://github.com/run-llama/llama_index/pull/20267))
+- fix:(embeddings-bedrock) correct extraction of provider from model_name ([#20295](https://github.com/run-llama/llama_index/pull/20295))
+- Bump version of bedrock-embedding ([#20304](https://github.com/run-llama/llama_index/pull/20304))
+
+### llama-index-embeddings-voyageai [0.5.1]
+
+- VoyageAI correction and documentation ([#20251](https://github.com/run-llama/llama_index/pull/20251))
+
+### llama-index-llms-anthropic [0.10.3]
+
+- feat: add anthropic opus 4.5 ([#20306](https://github.com/run-llama/llama_index/pull/20306))
+
+### llama-index-llms-bedrock-converse [0.12.2]
+
+- fix(bedrock-converse): Only use guardrail_stream_processing_mode in streaming functions ([#20289](https://github.com/run-llama/llama_index/pull/20289))
+- feat: add anthropic opus 4.5 ([#20306](https://github.com/run-llama/llama_index/pull/20306))
+- feat(bedrock-converse): Additional support for Claude Opus 4.5 ([#20317](https://github.com/run-llama/llama_index/pull/20317))
+
+### llama-index-llms-google-genai [0.7.4]
+
+- Fix gemini-3 support and gemini function call support ([#20315](https://github.com/run-llama/llama_index/pull/20315))
+
+### llama-index-llms-helicone [0.1.1]
+
+- update helicone docs + examples ([#20208](https://github.com/run-llama/llama_index/pull/20208))
+
+### llama-index-llms-openai [0.6.10]
+
+- Smallest Nit ([#20252](https://github.com/run-llama/llama_index/pull/20252))
+- Feat: Add gpt-5.1-chat model support ([#20311](https://github.com/run-llama/llama_index/pull/20311))
+
+### llama-index-llms-ovhcloud [0.1.0]
+
+- Add OVHcloud AI Endpoints provider ([#20288](https://github.com/run-llama/llama_index/pull/20288))
+
+### llama-index-llms-siliconflow [0.4.2]
+
+- [Bugfix] None check on content in delta in siliconflow LLM ([#20327](https://github.com/run-llama/llama_index/pull/20327))
+
+### llama-index-node-parser-docling [0.4.2]
+
+- Relax docling Python constraints ([#20322](https://github.com/run-llama/llama_index/pull/20322))
+
+### llama-index-packs-resume-screener [0.9.3]
+
+- feat: Update pypdf to latest version ([#20285](https://github.com/run-llama/llama_index/pull/20285))
+
+### llama-index-postprocessor-voyageai-rerank [0.4.1]
+
+- VoyageAI correction and documentation ([#20251](https://github.com/run-llama/llama_index/pull/20251))
+
+### llama-index-protocols-ag-ui [0.2.3]
+
+- fix: correct order of ag-ui events to avoid event conflicts ([#20296](https://github.com/run-llama/llama_index/pull/20296))
+
+### llama-index-readers-confluence [0.6.0]
+
+- Refactor Confluence integration: Update license to MIT, remove requirements.txt, and implement HtmlTextParser for HTML to Markdown conversion. Update dependencies and tests accordingly. ([#20262](https://github.com/run-llama/llama_index/pull/20262))
+
+### llama-index-readers-docling [0.4.2]
+
+- Relax docling Python constraints ([#20322](https://github.com/run-llama/llama_index/pull/20322))
+
+### llama-index-readers-file [0.5.5]
+
+- feat: Update pypdf to latest version ([#20285](https://github.com/run-llama/llama_index/pull/20285))
+
+### llama-index-readers-reddit [0.4.1]
+
+- Fix typo in README.md for Reddit integration ([#20283](https://github.com/run-llama/llama_index/pull/20283))
+
+### llama-index-storage-chat-store-postgres [0.3.2]
+
+- [FIX] Postgres ChatStore automatically prefix table name with "data\_" ([#20241](https://github.com/run-llama/llama_index/pull/20241))
+
+### llama-index-vector-stores-azureaisearch [0.4.4]
+
+- `vector-azureaisearch`: check if user agent already in policy before add it to azure client ([#20243](https://github.com/run-llama/llama_index/pull/20243))
+- fix(azureaisearch): Add close/aclose methods to fix unclosed client session warnings ([#20309](https://github.com/run-llama/llama_index/pull/20309))
+
+### llama-index-vector-stores-milvus [0.9.4]
+
+- Fix/consistency level param for milvus ([#20268](https://github.com/run-llama/llama_index/pull/20268))
+
+### llama-index-vector-stores-postgres [0.7.2]
+
+- Fix postgresql dispose ([#20312](https://github.com/run-llama/llama_index/pull/20312))
+
+### llama-index-vector-stores-qdrant [0.9.0]
+
+- fix: Update qdrant-client version constraints ([#20280](https://github.com/run-llama/llama_index/pull/20280))
+- Feat: update Qdrant client to 1.16.0 ([#20287](https://github.com/run-llama/llama_index/pull/20287))
+
+### llama-index-vector-stores-vertexaivectorsearch [0.3.2]
+
+- fix: update blob path in batch_update_index ([#20281](https://github.com/run-llama/llama_index/pull/20281))
+
+### llama-index-voice-agents-openai [0.2.2]
+
+- Smallest Nit ([#20252](https://github.com/run-llama/llama_index/pull/20252))
+
 ## [2025-11-10]
 
 ### llama-index-core [0.14.8]

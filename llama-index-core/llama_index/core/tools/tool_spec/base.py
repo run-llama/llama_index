@@ -1,6 +1,7 @@
 """Base tool spec class."""
 
 import asyncio
+import inspect
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -74,7 +75,7 @@ class BaseToolSpec:
             func_async = None
             if isinstance(func_spec, str):
                 func = getattr(self, func_spec)
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
                     func_async = func
                 else:
                     func_sync = func
@@ -101,3 +102,13 @@ class BaseToolSpec:
             )
             tool_list.append(tool)
         return tool_list
+
+    async def to_tool_list_async(
+        self,
+        spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None,
+        func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
+    ) -> List[FunctionTool]:
+        """Asynchronously convert a tool spec to a list of tools."""
+        return await asyncio.to_thread(
+            self.to_tool_list, spec_functions, func_to_metadata_mapping
+        )

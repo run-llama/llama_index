@@ -1,10 +1,11 @@
-from io import BytesIO
 import json
-import pytest
+from io import BytesIO
 from unittest import TestCase
 
 import boto3
+import pytest
 from botocore.response import StreamingBody
+from botocore.stub import ANY as BOTOCORE_ANY
 from botocore.stub import Stubber
 from llama_index.embeddings.bedrock import BedrockEmbedding, Models
 
@@ -311,6 +312,45 @@ class TestBedrockEmbedding(TestCase):
             ValueError, match="Unexpected Cohere embedding response format"
         ):
             bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+
+    def test_application_inference_profile_in_invoke_model_request(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+        model_name = Models.TITAN_EMBEDDING_V2_0
+        application_inference_profile_arn = "arn:aws:bedrock:us-east-1:012345678901:application-inference-profile/testProfileId"
+
+        mock_stream = BytesIO(json.dumps(self.exp_titan_response).encode())
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(
+                    mock_stream, len(json.dumps(self.exp_titan_response))
+                ),
+            },
+            expected_params={
+                "accept": "application/json",
+                "body": BOTOCORE_ANY,
+                "contentType": "application/json",
+                "modelId": application_inference_profile_arn,
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=model_name,
+            application_inference_profile_arn=application_inference_profile_arn,
+            client=self.bedrock_client,
+        )
+        assert bedrock_embedding.model_name == model_name
+        assert (
+            bedrock_embedding.application_inference_profile_arn
+            == application_inference_profile_arn
+        )
+
+        bedrock_stubber.activate()
+        bedrock_embedding.get_text_embedding(text=self.exp_query)
         bedrock_stubber.deactivate()
 
         bedrock_stubber.assert_no_pending_responses()

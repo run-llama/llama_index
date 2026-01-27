@@ -54,6 +54,7 @@ as the storage backend for `VectorStoreIndex`.
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - VectorX DB (`VectorXVectorStore`). [Quickstart](https://docs.vectorxdb.ai/quickstart)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
+- Volcengine MySQL (VolcengineMySQLVectorStore). [Quickstart](https://www.volcengine.com/docs/6313/1978527?lang=en)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - WordLift (`WordliftVectorStore`). [Quickstart](https://docs.wordlift.io/llm-connectors/wordlift-vector-store/). [Python Client](https://pypi.org/project/wordlift-client/).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
@@ -698,9 +699,12 @@ mongo_uri = (
     "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
 )
 mongodb_client = pymongo.MongoClient(mongo_uri)
+async_mongodb_client = pymongo.AsyncMongoClient(mongo_uri)
 
 # construct store
-store = MongoDBAtlasVectorSearch(mongodb_client)
+store = MongoDBAtlasVectorSearch(
+    mongodb_client=mongodb_client, async_mongodb_client=async_mongodb_client
+)
 storage_context = StorageContext.from_defaults(vector_store=store)
 uber_docs = SimpleDirectoryReader(
     input_files=["../data/10k/uber_2021.pdf"]

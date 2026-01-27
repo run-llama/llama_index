@@ -383,6 +383,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 collection_name=self.collection_name,
                 schema=schema,
                 index_params=index_params,
+                consistency_level=self.consistency_level,
             )
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"
@@ -424,6 +425,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
                 to insert.
+            **add_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         Raises:
             MilvusException: Failed to insert data.
@@ -469,7 +472,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            executor_wrapper(self.collection_name, insert_batch)
+            executor_wrapper(
+                self.collection_name,
+                insert_batch,
+                partition_name=add_kwargs.get("milvus_partition_name"),
+            )
         if add_kwargs.get("force_flush", False):
             self.client.flush(self.collection_name)
         logger.debug(
@@ -521,7 +528,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            await executor_wrapper(self.collection_name, insert_batch)
+            await executor_wrapper(
+                self.collection_name,
+                insert_batch,
+                partition_name=add_kwargs.get("milvus_partition_name"),
+            )
         if add_kwargs.get("force_flush", False):
             raise NotImplementedError("force_flush is not supported in async mode.")
             # await self.aclient.flush(self.collection_name)
@@ -537,6 +548,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+            **delete_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         Raises:
             MilvusException: Failed to delete the doc.
@@ -557,7 +570,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         if len(entries) > 0:
             ids = [entry["id"] for entry in entries]
-            self.client.delete(collection_name=self.collection_name, pks=ids)
+            self.client.delete(
+                collection_name=self.collection_name,
+                pks=ids,
+                partition_name=delete_kwargs.get("milvus_partition_name"),
+            )
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -577,7 +594,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         if len(entries) > 0:
             ids = [entry["id"] for entry in entries]
-            await self.aclient.delete(collection_name=self.collection_name, pks=ids)
+            await self.aclient.delete(
+                collection_name=self.collection_name,
+                pks=ids,
+                partition_name=delete_kwargs.get("milvus_partition_name"),
+            )
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     def delete_nodes(
@@ -592,6 +613,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+            **delete_kwargs (Any): Additional keyword arguments.
+                - `milvus_partition_name` (Optional[str]): Specific Milvus partition.
 
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
@@ -609,6 +632,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.client.delete(
             collection_name=self.collection_name,
             filter=filter,
+            partition_name=delete_kwargs.get("milvus_partition_name"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
@@ -635,6 +659,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         await self.aclient.delete(
             collection_name=self.collection_name,
             filter=filter,
+            partition_name=delete_kwargs.get("milvus_partition_name"),
             **delete_kwargs,
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
@@ -651,6 +676,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
+        **kwargs,
     ) -> List[BaseNode]:
         """
         Get nodes by node ids or metadata filters.
@@ -658,6 +684,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+            **kwargs: Additional keyword arguments.
+                - `milvus_partition_names` (Optional[List[str]]): Specific Milvus partitions.
 
         Raises:
             ValueError: Neither or both of node_ids and filters are provided.
@@ -676,7 +704,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
             raise ValueError("Only one of node_ids or filters can be provided.")
 
         res = self.client.query(
-            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+            ids=node_ids,
+            collection_name=self.collection_name,
+            filter=milvus_filter,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
 
         nodes = []
@@ -707,6 +738,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
+        **kwargs,
     ) -> List[BaseNode]:
         """Asynchronous version of the get_nodes method."""
         if node_ids is None and filters is None:
@@ -719,7 +751,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
             raise ValueError("Only one of node_ids or filters can be provided.")
 
         res = await self.aclient.query(
-            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+            ids=node_ids,
+            collection_name=self.collection_name,
+            filter=milvus_filter,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
 
         nodes = []
@@ -757,6 +792,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]]): list of node_ids to filter by
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
+            milvus_partition_names (Optional[List[str]]): specific Milvus partitions.
 
         """
         if query.mode == VectorStoreQueryMode.DEFAULT:
@@ -800,7 +836,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             nodes, similarities, ids = self._hybrid_search(
-                query, string_expr, output_fields
+                query, string_expr, output_fields, **kwargs
             )
         else:
             nodes, similarities, ids = self._default_search(
@@ -844,7 +880,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             nodes, similarities, ids = await self._async_hybrid_search(
-                query, string_expr, output_fields
+                query, string_expr, output_fields, **kwargs
             )
         else:
             nodes, similarities, ids = await self._async_default_search(
@@ -942,6 +978,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
@@ -985,6 +1022,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         nodes = res[0]
         node_embeddings = []
@@ -1045,6 +1083,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         nodes = res[0]
         node_embeddings = []
@@ -1071,7 +1110,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return nodes, similarities, ids
 
     def _sparse_search(
-        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str]
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
     ) -> Tuple[List[BaseNode], List[float], List[str]]:
         """
         Perform sparse search or full text search.
@@ -1092,12 +1135,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
             filter=string_expr,
             output_fields=output_fields,
             search_params=search_params,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
 
     async def _async_sparse_search(
-        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str]
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
     ) -> Tuple[List[BaseNode], List[float], List[str]]:
         """
         Perform asynchronous sparse search.
@@ -1118,12 +1166,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
             filter=string_expr,
             output_fields=output_fields,
             search_params=search_params,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
 
     def _hybrid_search(
-        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str]
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
     ) -> Tuple[List[BaseNode], List[float], List[str]]:
         """
         Perform hybrid search.
@@ -1181,6 +1234,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             ranker=ranker,
             limit=query.similarity_top_k,
             output_fields=output_fields,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
@@ -1254,6 +1308,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             ranker=ranker,
             limit=query.similarity_top_k,
             output_fields=output_fields,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"

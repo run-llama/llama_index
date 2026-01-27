@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-protocols-ag-ui"
-version = "0.2.2"
+version = "0.2.3"
 description = "llama-index protocols AG-UI integration"
 authors = [
     {name = "Logan Markewich", email = "logan@runllama.ai"},

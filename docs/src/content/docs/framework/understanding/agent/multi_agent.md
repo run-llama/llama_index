@@ -13,11 +13,12 @@ When more than one specialist is required to solve a task you have several optio
 ---
 
 <div id="pattern-1--agentworkflow-ie-linear-swarm-pattern"></div>
+
 ## Pattern 1 – AgentWorkflow (i.e. linear "swarm" pattern)
 
 **When to use** – you want multi-agent behaviour out-of-the-box with almost no extra code, and you are happy with the default hand-off heuristics that ship with `AgentWorkflow`.
 
-`AgentWorkflow` is itself a [Workflow](/python/framework/understanding/workflows) pre-configured to understand agents, state and tool-calling. You supply an _array_ of one or more agents, tell it which one should start, and it will:
+`AgentWorkflow` is itself a [Workflow](/python/llamaagents/workflows) pre-configured to understand agents, state and tool-calling. You supply an _array_ of one or more agents, tell it which one should start, and it will:
 
 1. Give the _root_ agent the user message.
 2. Execute whatever tools that agent selects.
@@ -81,6 +82,7 @@ print(resp)
 ---
 
 <div id="pattern-2--orchestrator-agent-sub-agents-as-tools"></div>
+
 ## Pattern 2 – Orchestrator agent (sub-agents as tools)
 
 **When to use** – you want a single place that decides _every_ step so you can inject custom logic, but you still prefer the declarative _agent as tool_ experience over writing your own planner.
@@ -184,6 +186,7 @@ Because the orchestrator is just another `FunctionAgent` you get streaming, tool
 ---
 
 <div id="pattern-3--custom-planner-diy-prompting--parsing"></div>
+
 ## Pattern 3 – Custom planner (DIY prompting + parsing)
 
 **When to use** – ultimate flexibility. You need to impose a very specific plan format, integrate with external schedulers, or gather additional metadata that the previous patterns cannot provide out-of-the-box.

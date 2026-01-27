@@ -1951,7 +1951,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-vertexaivectorsearch"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },

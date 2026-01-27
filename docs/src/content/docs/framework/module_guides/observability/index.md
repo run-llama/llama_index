@@ -154,6 +154,61 @@ llama_index.core.set_global_handler(
 
 ![](./../../_static/integrations/arize_phoenix.png)
 
+### SigNoz
+
+[SigNoz](https://signoz.io/) is an open source observability framework. It is built natively off of OpenTelemetry, offers traces, logs, and metrics all in one pane, and has both self hosted and cloud deployment options. By using SigNoz with LlamaIndex, you can view detailed traces of all RAG and Agent workflows, while keeping track of important metrics like token usage, latency, error rates, LLM model distribution and much more.
+
+#### Usage Pattern
+
+Install the following dependencies:
+
+```bash
+pip install \
+  opentelemetry-distro \
+  opentelemetry-exporter-otlp \
+  opentelemetry-instrumentation-httpx \
+  opentelemetry-instrumentation-system-metrics \
+  llama-index \
+  openinference-instrumentation-llama-index
+```
+
+Next, add automatic instrumentation:
+
+```bash
+opentelemetry-bootstrap --action=install
+```
+
+Then, run your LlamaIndex application with auto-instrumentation:
+
+```bash
+OTEL_RESOURCE_ATTRIBUTES="service.name=<service_name>" \
+OTEL_EXPORTER_OTLP_ENDPOINT="https://ingest.<region>.signoz.cloud:443" \
+OTEL_EXPORTER_OTLP_HEADERS="signoz-ingestion-key=<your_ingestion_key>" \
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
+OTEL_TRACES_EXPORTER=otlp \
+OTEL_METRICS_EXPORTER=otlp \
+OTEL_LOGS_EXPORTER=otlp \
+OTEL_PYTHON_LOG_CORRELATION=true \
+OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
+opentelemetry-instrument <your_run_command>
+```
+
+- `<service_name>` is the name of your service
+- Set the `<region>` to match your SigNoz Cloud [region](https://signoz.io/docs/ingestion/signoz-cloud/overview/#endpoint)
+- Replace `<your_ingestion_key>` with your SigNoz [ingestion key](https://signoz.io/docs/ingestion/signoz-cloud/keys/)
+- Replace `<your_run_command>` with the actual command you would use to run your application. For example: `python main.py`
+
+> 📌 Note: Using self-hosted SigNoz? Most steps are identical. To adapt this guide, update the endpoint and remove the ingestion key header as shown in [Cloud → Self-Hosted](https://signoz.io/docs/ingestion/cloud-vs-self-hosted/#cloud-to-self-hosted).
+
+You will now be able to see any traces, logs, and metrics that are automatically or manually exported by your LlamaIndex application usage.
+
+![LlamaIndex Trace View](https://signoz.io/img/docs/llm/llamaindex/llamaindex-detailed-trace-view.webp)
+
+#### Example Guides
+
+- [SigNoz LlamaIndex Integration Docs](https://signoz.io/docs/llamaindex-observability/)
+- [SigNoz LLamaIndex Q&A RAG Demo](https://github.com/SigNoz/llamaindex-rag-opentelemetry-demo)
+
 ### Weights and Biases (W&B) Weave
 
 [W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, experimenting with, evaluating, deploying, and improving LLM applications. Designed for scalability and flexibility, Weave supports every stage of your application development workflow.

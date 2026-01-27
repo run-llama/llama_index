@@ -37,6 +37,7 @@ from llama_index.core.vector_stores.simple import (
     SimpleVectorStore,
 )
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +157,44 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
+
+    def as_chat_engine(
+        self,
+        chat_mode: ChatMode = ChatMode.BEST,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
+    ) -> BaseChatEngine:
+        llm = llm or Settings.llm
+        assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        class_name = llm.class_name()
+        if "multi" not in class_name:
+            logger.warning(
+                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
+
+        if chat_mode == ChatMode.CONTEXT:
+            from llama_index.core.chat_engine.multi_modal_context import (
+                MultiModalContextChatEngine,
+            )
+
+            return MultiModalContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                multi_modal_llm=llm,
+                **kwargs,
+            )
+
+        if chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.core.chat_engine.multi_modal_condense_plus_context import (
+                MultiModalCondensePlusContextChatEngine,
+            )
+
+            return MultiModalCondensePlusContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                multi_modal_llm=llm,
+                **kwargs,
+            )
+
+        return super().as_chat_engine(chat_mode, llm, **kwargs)
 
     @classmethod
     def from_vector_store(

@@ -13,7 +13,7 @@ from llama_index.llms.qianfan import Qianfan
 # https://cloud.baidu.com/doc/WENXINWORKSHOP/s/4lqoklvr1
 # https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
 
-mock_service_list_reponse = {
+mock_service_list_response = {
     "log_id": "4102908182",
     "success": True,
     "result": {
@@ -318,7 +318,7 @@ mock_stream_chat_response = [
 @patch("httpx.Client")
 def test_from_model_name(mock_client: httpx.Client):
     mock_response = MagicMock()
-    mock_response.json.return_value = mock_service_list_reponse
+    mock_response.json.return_value = mock_service_list_response
     mock_client.return_value.__enter__.return_value.send.return_value = mock_response
 
     llm = Qianfan.from_model_name(
@@ -337,7 +337,7 @@ def test_from_model_name(mock_client: httpx.Client):
 @patch("httpx.AsyncClient")
 def test_afrom_model_name(mock_client: httpx.AsyncClient):
     mock_response = MagicMock()
-    mock_response.json.return_value = mock_service_list_reponse
+    mock_response.json.return_value = mock_service_list_response
     mock_client.return_value.__aenter__.return_value.send.return_value = mock_response
 
     async def async_process():

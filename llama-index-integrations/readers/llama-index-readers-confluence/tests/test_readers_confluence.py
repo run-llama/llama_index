@@ -19,7 +19,7 @@ class MockConfluence:
 
 @pytest.fixture(autouse=True)
 def mock_atlassian_confluence(monkeypatch):
-    monkeypatch.setattr("llama_index.readers.confluence", MockConfluence)
+    monkeypatch.setattr("atlassian.Confluence", MockConfluence)
 
 
 def test_confluence_reader_with_oauth2():
@@ -287,12 +287,12 @@ def test_confluence_reader_fail_on_error_setting():
     assert reader3.fail_on_error is True
 
 
-@patch("html2text.HTML2Text")
-def test_confluence_reader_process_page_with_callbacks(mock_html2text_class):
+@patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
+def test_confluence_reader_process_page_with_callbacks(mock_html_parser_class):
     """Test that callbacks are properly used during page processing."""
     mock_text_maker = MagicMock()
-    mock_text_maker.handle.return_value = "processed text"
-    mock_html2text_class.return_value = mock_text_maker
+    mock_text_maker.convert.return_value = "processed text"
+    mock_html_parser_class.return_value = mock_text_maker
 
     # Mock the confluence API
     mock_confluence = MagicMock()

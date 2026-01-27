@@ -2,14 +2,14 @@ import json
 import os
 import warnings
 from enum import Enum
-from deprecated import deprecated
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
+from deprecated import deprecated
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -112,6 +112,9 @@ class BedrockEmbedding(BaseEmbedding):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    application_inference_profile_arn: Optional[str] = Field(
+        description="The ARN of an application inference profile to use when calling Bedrock. If provided, make sure that the model_name argument refers to the same model of the application inference profile."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
@@ -134,6 +137,7 @@ class BedrockEmbedding(BaseEmbedding):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         timeout: float = 60.0,
+        application_inference_profile_arn: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         # base class
         system_prompt: Optional[str] = None,
@@ -158,6 +162,7 @@ class BedrockEmbedding(BaseEmbedding):
             model_name=model_name,
             max_retries=max_retries,
             timeout=timeout,
+            application_inference_profile_arn=application_inference_profile_arn,
             botocore_config=botocore_config,
             profile_name=profile_name,
             aws_access_key_id=aws_access_key_id,
@@ -176,8 +181,8 @@ class BedrockEmbedding(BaseEmbedding):
         )
 
         try:
-            import boto3
             import aioboto3
+            import boto3
             from botocore.config import Config
 
             self._config = (
@@ -194,8 +199,7 @@ class BedrockEmbedding(BaseEmbedding):
             self._asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 and/or aioboto3 package not found, install with"
-                "'pip install boto3 aioboto3"
+                "boto3 and/or aioboto3 package not found, install with'pip install boto3 aioboto3"
             )
 
         # Prior to general availability, custom boto3 wheel files were
@@ -219,14 +223,13 @@ class BedrockEmbedding(BaseEmbedding):
         return list_models
 
     @classmethod
-    def class_name(self) -> str:
+    def class_name(cls) -> str:
         return "BedrockEmbedding"
 
     @deprecated(
         version="0.9.48",
         reason=(
-            "Use the provided kwargs in the constructor, "
-            "set_credentials will be removed in future releases."
+            "Use the provided kwargs in the constructor, set_credentials will be removed in future releases."
         ),
         action="once",
     )
@@ -296,8 +299,7 @@ class BedrockEmbedding(BaseEmbedding):
     @deprecated(
         version="0.9.48",
         reason=(
-            "Use the provided kwargs in the constructor, "
-            "set_credentials will be removed in future releases."
+            "Use the provided kwargs in the constructor, set_credentials will be removed in future releases."
         ),
         action="once",
     )
@@ -373,6 +375,33 @@ class BedrockEmbedding(BaseEmbedding):
             verbose=verbose,
         )
 
+    def _get_provider(self) -> str:
+        """
+        Extract the provider name from the model_name.
+
+        Bedrock model names follow different formats:
+        - 2-part format: "provider.model" (e.g., "amazon.titan-embed-text-v1")
+        - 3-part format: "region.provider.model" (e.g., "us.amazon.titan-embed-text-v1")
+          where region can be "us", "eu", "global", etc.
+
+        Returns:
+            str: The provider name (e.g., "amazon", "cohere")
+
+        Raises:
+            ValueError: If the model_name format is unexpected (not 2 or 3 parts)
+
+        """
+        model_identifier = self.model_name.split("/")[-1]
+        model_parts = model_identifier.split(".")
+        if len(model_parts) == 2:
+            return model_parts[0]
+        elif len(model_parts) == 3:
+            return model_parts[1]
+        else:
+            raise ValueError(
+                f"Unexpected number of parts in model_name: {model_identifier}"
+            )
+
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
@@ -393,12 +422,12 @@ class BedrockEmbedding(BaseEmbedding):
         if self._client is None:
             raise ValueError("Client not set")
 
-        provider = self.model_name.split(".")[0]
+        provider = self._get_provider()
         request_body = self._get_request_body(provider, payload, type)
 
         response = self._client.invoke_model(
             body=request_body,
-            modelId=self.model_name,
+            modelId=self.application_inference_profile_arn or self.model_name,
             accept="application/json",
             contentType="application/json",
         )
@@ -416,7 +445,7 @@ class BedrockEmbedding(BaseEmbedding):
         return self._get_embedding(text, "text")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        provider = self.model_name.split(".")[0]
+        provider = self._get_provider()
         if provider == PROVIDERS.COHERE:
             return self._get_embedding(texts, "text")
         return super()._get_text_embeddings(texts)
@@ -505,7 +534,7 @@ class BedrockEmbedding(BaseEmbedding):
         if self._asession is None:
             raise ValueError("Client not set")
 
-        provider = self.model_name.split(".")[0]
+        provider = self._get_provider()
         request_body = self._get_request_body(provider, payload, type)
 
         async with self._asession.client(
@@ -513,7 +542,7 @@ class BedrockEmbedding(BaseEmbedding):
         ) as client:
             response = await client.invoke_model(
                 body=request_body,
-                modelId=self.model_name,
+                modelId=self.application_inference_profile_arn or self.model_name,
                 accept="application/json",
                 contentType="application/json",
             )

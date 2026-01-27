@@ -1,4 +1,5 @@
 from typing import List, Dict
+from unittest.mock import patch, MagicMock
 
 import pymilvus
 import pytest
@@ -819,3 +820,64 @@ def test_custom_node_format():
     assert len(result.nodes) == 1
     assert result.nodes[0].text == "n2_text"
     assert result.nodes[0].metadata.get("custom_meta") == "n2_meta"
+
+
+def test_consistency_level_passed_to_create_collection():
+    """Test that the correct consistency level is passed to create_collection."""
+    test_uri = "./milvus_consistency_test.db"
+    test_collection = "test_consistency_collection"
+
+    with patch(
+        "llama_index.vector_stores.milvus.base.MilvusClient"
+    ) as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.list_collections.return_value = []
+        mock_client.create_schema.return_value = MagicMock()
+        mock_client.prepare_index_params.return_value = MagicMock()
+
+        # Create vector store with custom consistency level
+        with patch("llama_index.vector_stores.milvus.base.AsyncMilvusClient"):
+            with patch("llama_index.vector_stores.milvus.base.Collection"):
+                vector_store = MilvusVectorStore(
+                    uri=test_uri,
+                    dim=DIM,
+                    collection_name=test_collection,
+                    consistency_level="Bounded",
+                    overwrite=False,
+                )
+
+        # Verify create_collection was called with the correct consistency_level
+        mock_client.create_collection.assert_called_once()
+        call_kwargs = mock_client.create_collection.call_args[1]
+        assert call_kwargs["consistency_level"] == "Bounded"
+
+
+def test_collection_created_with_expected_consistency_level():
+    """Test that the collection is created with the expected consistency level."""
+    test_uri = "./milvus_consistency_verification.db"
+    test_collection = "test_consistency_verification_collection"
+
+    # Clean up if collection exists
+    client = pymilvus.MilvusClient(uri=test_uri)
+    if test_collection in client.list_collections():
+        client.drop_collection(test_collection)
+
+    # Create vector store with specific consistency level
+    vector_store = MilvusVectorStore(
+        uri=test_uri,
+        dim=DIM,
+        collection_name=test_collection,
+        consistency_level="Strong",
+        overwrite=False,
+    )
+
+    # Verify the collection exists
+    assert test_collection in vector_store.client.list_collections()
+
+    # Get collection info and verify consistency level
+    collection_info = vector_store.client.describe_collection(test_collection)
+    assert collection_info["consistency_level"] == 0  # Strong is 0
+
+    # Clean up
+    vector_store.client.drop_collection(test_collection)

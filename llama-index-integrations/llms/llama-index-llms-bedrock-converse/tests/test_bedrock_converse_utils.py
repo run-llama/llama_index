@@ -1,29 +1,85 @@
-from typing import Literal
-import pytest
-from llama_index.llms.bedrock_converse.utils import (
-    get_model_name,
-    tools_to_converse_tools,
-    messages_to_converse_messages,
-    converse_with_retry,
-)
 from io import BytesIO
+from typing import Literal
 from unittest.mock import MagicMock, patch
 
+import aioboto3
+import pytest
+from botocore.config import Config
 from llama_index.core.base.llms.types import (
     AudioBlock,
+    CacheControl,
+    CachePoint,
+    ChatMessage,
     ImageBlock,
     MessageRole,
     TextBlock,
-    CacheControl,
-    CachePoint,
     ThinkingBlock,
-    ChatMessage,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
+    converse_with_retry,
+    converse_with_retry_async,
+    get_model_name,
+    messages_to_converse_messages,
+    tools_to_converse_tools,
 )
+
+EXP_RESPONSE = "Test"
+EXP_STREAM_RESPONSE = ["Test ", "value"]
+
+
+class MockExceptions:
+    class ThrottlingException(Exception):
+        pass
+
+
+class AsyncMockClient:
+    def __init__(self) -> None:
+        self.exceptions = MockExceptions()
+
+    async def __aenter__(self) -> "AsyncMockClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        pass
+
+    async def converse(self, *args, **kwargs):
+        return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
+
+    async def converse_stream(self, *args, **kwargs):
+        async def stream_generator():
+            for element in EXP_STREAM_RESPONSE:
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            # Add messageStop and metadata events for token usage testing
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
+
+        return {"stream": stream_generator()}
+
+
+class MockAsyncSession:
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+    def client(self, *args, **kwargs):
+        return AsyncMockClient()
+
+
+@pytest.fixture()
+def mock_aioboto3_session(monkeypatch):
+    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
 
 def test_get_model_name_translates_us():
@@ -585,13 +641,49 @@ def test_converse_with_retry_guardrail_stream_processing_mode(
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stream_processing_mode", ["sync", "async"])
+async def test_converse_with_retry_async_guardrail_stream_processing_mode(
+    stream_processing_mode: Literal["sync", "async"],
+    mock_aioboto3_session,
+):
+    """
+    Test use of guardrail_stream_processing_mode in converse_with_retry_async with streaming.
+    """
+    session = aioboto3.Session()
+    client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse_stream", wraps=client.converse_stream
+    ) as patched_converse_stream:
+        response_gen = await converse_with_retry_async(
+            session=session,
+            config=Config(),
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=True,  # with streaming
+            guardrail_identifier="IDENT",
+            guardrail_version="DRAFT",
+            guardrail_stream_processing_mode=stream_processing_mode,
+        )
+        async for _ in response_gen:
+            pass
+        call_kwargs = patched_converse_stream.call_args.kwargs
+        assert "guardrailConfig" in call_kwargs
+        assert "streamProcessingMode" in call_kwargs["guardrailConfig"]
+        assert (
+            call_kwargs["guardrailConfig"]["streamProcessingMode"]
+            == stream_processing_mode
+        )
+
+
 def test_converse_with_retry_guardrail_stream_processing_mode_without_stream():
     """
     Test use of guardrail_stream_processing_mode in converse_with_retry WITHOUT streaming.
     """
     client = MockClient()
 
-    with patch.object(client, "converse") as patched_converse_stream:
+    with patch.object(client, "converse") as patched_converse:
         converse_with_retry(
             client=client,
             model="anthropic.claude-sonnet-4-5-20250929-v1:0",
@@ -601,6 +693,34 @@ def test_converse_with_retry_guardrail_stream_processing_mode_without_stream():
             guardrail_version="DRAFT",
             guardrail_stream_processing_mode="async",
         )
-        call_kwargs = patched_converse_stream.call_args.kwargs
+        call_kwargs = patched_converse.call_args.kwargs
+        assert "guardrailConfig" in call_kwargs
+        assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_guardrail_stream_processing_mode_without_stream(
+    mock_aioboto3_session,
+):
+    """
+    Test use of guardrail_stream_processing_mode in converse_with_retry_async WITHOUT streaming.
+    """
+    session = aioboto3.Session()
+    client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse", wraps=client.converse
+    ) as patched_converse:
+        await converse_with_retry_async(
+            session=session,
+            config=Config(),
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=False,  # without streaming
+            guardrail_identifier="IDENT",
+            guardrail_version="DRAFT",
+            guardrail_stream_processing_mode="async",
+        )
+        call_kwargs = patched_converse.call_args.kwargs
         assert "guardrailConfig" in call_kwargs
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]

@@ -25,7 +25,7 @@ Use LlamaIndex Workflows to build agentic systems:
 - [Basic RAG](/python/examples/workflow/rag) - Simple RAG workflow implementation
 - [Advanced Text-to-SQL](/python/examples/workflow/advanced_text_to_sql) - Use LlamaIndex to generate SQL queries and execute them
 
-You might also be interested in the [general introduction to agentic workflows](/python/framework/understanding/workflows).
+You might also be interested in the [general introduction to agentic workflows](/python/llamaagents/workflows).
 
 ## LLM Integrations
 

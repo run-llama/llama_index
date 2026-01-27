@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-voyageai"
-version = "0.5.0"
+version = "0.5.3"
 description = "llama-index embeddings voyageai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "voyageai>=0.3.5,<0.4.0 ; python_version >= '3.9' and python_version < '3.13'",
+    "voyageai>=0.3.6,<0.4.0 ; python_version >= '3.9' and python_version < '3.13'",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
@@ -62,3 +62,10 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow",
+    "asyncio: marks tests as async",
+]
