@@ -6,7 +6,10 @@ use, allowing agents to work both in full workflow contexts and in simpler
 scenarios like `LLM.predict_and_call`.
 """
 
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
+
+from workflows.context.state_store import DictState, InMemoryStateStore
 
 
 @runtime_checkable
@@ -46,21 +49,11 @@ class AgentContext(Protocol):
         ...
 
 
-class SimpleAgentContextStore:
-    """Simple dict-based store for non-workflow agent usage."""
-
-    def __init__(self) -> None:
-        self._data: dict[str, Any] = {}
-
-    async def get(self, key: str, default: Any = None) -> Any:
-        """Get a value from the store."""
-        return self._data.get(key, default)
-
-    async def set(self, key: str, value: Any) -> None:
-        """Set a value in the store."""
-        self._data[key] = value
+def _default_store() -> InMemoryStateStore[DictState]:
+    return InMemoryStateStore(DictState())
 
 
+@dataclass(frozen=True)
 class SimpleAgentContext:
     """
     Lightweight context for agents used outside workflows.
@@ -70,23 +63,8 @@ class SimpleAgentContext:
     non-workflow scenarios where a full Context is not needed.
     """
 
-    def __init__(self) -> None:
-        self._store = SimpleAgentContextStore()
-
-    @property
-    def store(self) -> SimpleAgentContextStore:
-        """Access the key-value store for agent state."""
-        return self._store
-
-    @property
-    def is_running(self) -> bool:
-        """
-        Always returns False - events should be skipped.
-
-        In non-workflow usage, there's no event stream to write to,
-        so agents should skip event writing when this returns False.
-        """
-        return False
+    store: InMemoryStateStore[DictState] = field(default_factory=_default_store)
+    is_running: bool = False
 
     def write_event_to_stream(self, event: Any) -> None:
         """No-op - events are discarded in non-workflow usage."""
