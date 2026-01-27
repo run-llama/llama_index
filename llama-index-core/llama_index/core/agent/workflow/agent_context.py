@@ -13,19 +13,6 @@ from workflows.context.state_store import DictState, InMemoryStateStore
 
 
 @runtime_checkable
-class AgentContextStore(Protocol):
-    """Protocol for agent state storage."""
-
-    async def get(self, key: str, default: Any = None) -> Any:
-        """Get a value from the store."""
-        ...
-
-    async def set(self, key: str, value: Any) -> None:
-        """Set a value in the store."""
-        ...
-
-
-@runtime_checkable
 class AgentContext(Protocol):
     """
     Minimal context interface for agent take_step implementations.
@@ -35,7 +22,7 @@ class AgentContext(Protocol):
     """
 
     @property
-    def store(self) -> AgentContextStore:
+    def store(self) -> InMemoryStateStore[Any]:
         """Access the key-value store for agent state."""
         ...
 
