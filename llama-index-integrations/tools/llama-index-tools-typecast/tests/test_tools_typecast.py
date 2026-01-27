@@ -25,7 +25,7 @@ def test_initialization():
     assert tool.host == "https://test.api"
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voices_success(mock_typecast):
     """Test successful voice retrieval (V2 API)"""
     # Mock response with V2 structure
@@ -49,8 +49,8 @@ def test_get_voices_success(mock_typecast):
     mock_typecast.return_value.voices_v2.assert_called_once_with(filter=None)
 
 
-@patch("typecast.client.Typecast")
-@patch("typecast.models.VoicesV2Filter")
+@patch("llama_index.tools.typecast.base.Typecast")
+@patch("llama_index.tools.typecast.base.VoicesV2Filter")
 def test_get_voices_with_filters(mock_filter, mock_typecast):
     """Test voice retrieval with V2 filters"""
     mock_voice = Mock()
@@ -70,7 +70,7 @@ def test_get_voices_with_filters(mock_filter, mock_typecast):
     mock_typecast.return_value.voices_v2.assert_called_once()
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voices_failure(mock_typecast):
     """Test voice retrieval failure handling"""
     from typecast.exceptions import TypecastError
@@ -85,7 +85,7 @@ def test_get_voices_failure(mock_typecast):
     assert "API Error" in str(exc_info.value)
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voice_success(mock_typecast):
     """Test successful single voice retrieval (V2 API)"""
     # Mock response with V2 structure
@@ -112,7 +112,7 @@ def test_get_voice_success(mock_typecast):
     assert "happy" in voice["models"][0]["emotions"]
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 def test_get_voice_not_found(mock_typecast):
     """Test voice not found handling"""
     from typecast.exceptions import NotFoundError
@@ -127,7 +127,7 @@ def test_get_voice_not_found(mock_typecast):
     assert "Voice not found" in str(exc_info.value)
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 @patch("builtins.open", new_callable=mock_open)
 def test_text_to_speech_success(mock_file, mock_typecast):
     """Test successful text-to-speech conversion"""
@@ -158,7 +158,7 @@ def test_text_to_speech_validation():
         tool.text_to_speech(text="Hello", voice_id="", output_path="out.wav")
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 @patch("builtins.open", new_callable=mock_open)
 def test_text_to_speech_with_seed(mock_file, mock_typecast):
     """Test text-to-speech conversion with seed parameter"""
@@ -183,7 +183,7 @@ def test_text_to_speech_with_seed(mock_file, mock_typecast):
     assert request.seed == 42
 
 
-@patch("typecast.client.Typecast")
+@patch("llama_index.tools.typecast.base.Typecast")
 @patch("builtins.open", new_callable=mock_open)
 def test_text_to_speech_with_all_parameters(mock_file, mock_typecast):
     """Test text-to-speech conversion with all parameters"""
