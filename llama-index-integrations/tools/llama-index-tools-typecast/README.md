@@ -53,7 +53,7 @@ result = speech_tool.text_to_speech(
     text="Hello world!",
     voice_id="tc_62a8975e695ad26f7fb514d1",
     output_path="speech.wav",
-    seed=42  # Same seed = same audio
+    seed=42,  # Same seed = same audio
 )
 ```
 
@@ -67,7 +67,7 @@ print(f"Gender: {voice['gender']}, Age: {voice['age']}")
 print(f"Use cases: {voice['use_cases']}")
 
 # Models now include emotions per model version
-for model in voice['models']:
+for model in voice["models"]:
     print(f"Model {model['version']}: emotions = {model['emotions']}")
 ```
 
@@ -76,10 +76,7 @@ for model in voice['models']:
 ```python
 # Filter by model, gender, age, and use case
 voices = speech_tool.get_voices(
-    model="ssfm-v30",
-    gender="female",
-    age="young_adult",
-    use_case="Audiobook"
+    model="ssfm-v30", gender="female", age="young_adult", use_case="Audiobook"
 )
 
 for voice in voices:
