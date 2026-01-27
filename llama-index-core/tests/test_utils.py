@@ -18,6 +18,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    truncate_text,
 )
 
 
@@ -202,6 +203,21 @@ def test_get_color_mapping() -> None:
     assert len(color_mapping_ansi) == len(items)
     assert set(color_mapping_ansi.keys()) == set(items)
     assert all(color in _ANSI_COLORS for color in color_mapping_ansi.values())
+
+
+def test_truncate_text() -> None:
+    """Test truncate_text function."""
+    text = "Hello, world!"
+    assert truncate_text(text, 5) == "He" + "..."
+
+
+def test_truncate_text_with_less_chars() -> None:
+    text = "hello"
+
+    text1 = "world"
+
+    assert truncate_text(text1, 1) == "w"
+    assert truncate_text(text, 2) == "he"
 
 
 def test_get_colored_text() -> None:

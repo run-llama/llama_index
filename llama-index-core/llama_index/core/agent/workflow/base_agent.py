@@ -20,6 +20,7 @@ from llama_index.core.agent.workflow.prompts import (
     DEFAULT_STATE_PROMPT,
     DEFAULT_EARLY_STOPPING_PROMPT,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     AgentInput,
@@ -241,7 +242,7 @@ class BaseWorkflowAgent(
     @abstractmethod
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
