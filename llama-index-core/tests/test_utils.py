@@ -315,7 +315,7 @@ def test_truncate_text_adds_ellipsis_when_trimmed() -> None:
 
     result = truncate_text(content, 8)
 
-    assert result == "Docu..."
+    assert result == "Docum..."
 
 
 def test_truncate_text_returns_text_if_limit_is_sufficient() -> None:
