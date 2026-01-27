@@ -18,6 +18,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    truncate_text,
 )
 
 
@@ -307,3 +308,35 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+def test_truncate_text_adds_ellipsis_when_trimmed() -> None:
+    content = "DocumentationExample"
+
+    result = truncate_text(content, 8)
+
+    assert result == "Docu..."
+
+
+def test_truncate_text_returns_text_if_limit_is_sufficient() -> None:
+    content = "config"
+
+    assert truncate_text(content, 6) == "config"
+    assert truncate_text(content, 12) == "config"
+
+
+def test_truncate_text_without_suffix_for_very_small_limits() -> None:
+    content = "runtime"
+
+    assert truncate_text(content, 1) == "r"
+    assert truncate_text(content, 2) == "ru"
+
+
+def test_truncate_text_with_zero_limit() -> None:
+    content = "payload"
+
+    assert truncate_text(content, 0) == ""
+
+
+def test_truncate_text_handles_empty_string() -> None:
+    assert truncate_text("", 4) == ""
