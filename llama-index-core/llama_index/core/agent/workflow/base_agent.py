@@ -190,6 +190,15 @@ class BaseWorkflowAgent(
         # Initialize Workflow with workflow-specific parameters
         Workflow.__init__(self, timeout=timeout, verbose=verbose, **workflow_kwargs)
 
+    def validate(self, **kwargs: Any) -> bool:  # type: ignore[override]
+        """
+        Validate the workflow to ensure it's well-formed.
+
+        Explicitly delegates to Workflow.validate to resolve the method conflict
+        between Workflow.validate (instance method) and BaseModel.validate (classmethod).
+        """
+        return Workflow.validate(self, **kwargs)
+
     @field_validator("tools", mode="before")
     def validate_tools(
         cls, v: Optional[Sequence[Union[BaseTool, Callable]]]
