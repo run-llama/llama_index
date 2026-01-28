@@ -163,7 +163,7 @@ class NVIDIARerank(BaseNodePostprocessor):
     def _get_models(self) -> List[Model]:
         client = self.client
         _headers = self._get_headers(
-            auth_required=bool(self._api_key != "NO_API_KEY_PROVIDED" and self.api_key)
+            auth_required=bool(self._api_key != "NO_API_KEY_PROVIDED" and self._api_key)
             or self._is_hosted
         )
         url = (

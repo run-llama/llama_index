@@ -1651,7 +1651,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-nvidia-rerank"
-version = "0.5.2"
+version = "0.5.3"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
