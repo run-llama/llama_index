@@ -861,6 +861,7 @@
   "SitemapReader": "llama_index.readers.web",
   "SpiderWebReader": "llama_index.readers.web",
   "TrafilaturaWebReader": "llama_index.readers.web",
+  "TzafonWebReader": "llama_index.readers.web",
   "UnstructuredURLLoader": "llama_index.readers.web",
   "WholeSiteReader": "llama_index.readers.web",
   "HubspotReader": "llama_index.readers.hubspot",
