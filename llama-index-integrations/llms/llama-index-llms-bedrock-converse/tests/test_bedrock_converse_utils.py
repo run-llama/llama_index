@@ -205,6 +205,19 @@ def test_content_block_to_bedrock_format_unsupported(caplog):
     assert str(type(unsupported_block)) in caplog.text
 
 
+def test_tools_to_converse_tools_empty_list():
+    """
+    Test that an empty tools list returns None.
+
+    This prevents AWS Bedrock Converse API validation errors when no tools
+    are configured. The API requires toolConfig.tools to have at least 1 element
+    if toolConfig is provided.
+    """
+    result = tools_to_converse_tools([])
+
+    assert result is None
+
+
 def test_tools_to_converse_tools_with_tool_required():
     """Test that tool_required=True sets toolChoice to {"any": {}}."""
 

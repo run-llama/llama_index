@@ -491,7 +491,7 @@ def tools_to_converse_tools(
     tool_required: bool = False,
     tool_caching: bool = False,
     supports_forced_tool_calls: bool = True,
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
 
@@ -499,9 +499,12 @@ def tools_to_converse_tools(
         tools: List of BaseTools
 
     Returns:
-        AWS Bedrock Converse tools
+        AWS Bedrock Converse tools, or None if tools list is empty
 
     """
+    if not tools:
+        return None
+
     converse_tools = []
     for tool in tools:
         tool_name, tool_description = tool.metadata.name, tool.metadata.description
