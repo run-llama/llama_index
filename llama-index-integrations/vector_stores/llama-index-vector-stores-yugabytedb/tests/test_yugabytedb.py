@@ -27,7 +27,7 @@ PARAMS: Dict[str, Union[str, int]] = {
     "user": "yugabyte",
     "password": "yugabyte",
     "port": 5433,
-    "load_balance": 'True'
+    "load_balance": "True",
 }
 TEST_DB = "test_vector_db"
 TEST_DB_HNSW = "test_vector_db_hnsw"
@@ -189,10 +189,7 @@ def yb_hnsw_multiple(db_hnsw: None) -> Generator[List[YBVectorStore], None, None
             table_name=TEST_TABLE_NAME,
             schema_name=TEST_SCHEMA_NAME,
             embed_dim=TEST_EMBED_DIM,
-            hnsw_kwargs={
-                "hnsw_m": 16,
-                "hnsw_ef_construction": 64
-            },
+            hnsw_kwargs={"hnsw_m": 16, "hnsw_ef_construction": 64},
         )
         ybs.append(yb)
 
@@ -394,9 +391,7 @@ async def test_add_to_db_and_query(
 
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
-async def test_query_hnsw(
-    yb_hnsw: YBVectorStore, node_embeddings: List[TextNode]
-):
+async def test_query_hnsw(yb_hnsw: YBVectorStore, node_embeddings: List[TextNode]):
     yb_hnsw.add(node_embeddings)
 
     assert isinstance(yb_hnsw, YBVectorStore)
@@ -538,7 +533,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
 
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
-@pytest.mark.parametrize("yb_fixture", ["yb","yb_halfvec"], indirect=True)
+@pytest.mark.parametrize("yb_fixture", ["yb", "yb_halfvec"], indirect=True)
 async def test_add_to_db_query_and_delete(
     yb_fixture: YBVectorStore, node_embeddings: List[TextNode]
 ) -> None:
@@ -557,8 +552,7 @@ async def test_add_to_db_query_and_delete(
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
 async def test_sparse_query(
-    yb_hybrid: YBVectorStore,
-    hybrid_node_embeddings: List[TextNode]
+    yb_hybrid: YBVectorStore, hybrid_node_embeddings: List[TextNode]
 ) -> None:
     yb_hybrid.add(hybrid_node_embeddings)
     assert isinstance(yb_hybrid, YBVectorStore)
@@ -643,8 +637,7 @@ async def test_hybrid_query(
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
 async def test_hybrid_query(
-    yb_hnsw_hybrid: YBVectorStore,
-    hybrid_node_embeddings: List[TextNode]
+    yb_hnsw_hybrid: YBVectorStore, hybrid_node_embeddings: List[TextNode]
 ) -> None:
     yb_hnsw_hybrid.add(hybrid_node_embeddings)
     assert isinstance(yb_hnsw_hybrid, YBVectorStore)
@@ -701,8 +694,7 @@ async def test_hybrid_query(
 @pytest.mark.skipif(yugabytedb_not_available, reason="yugabytedb is not available")
 @pytest.mark.asyncio
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
-    yb_hybrid: YBVectorStore,
-    hybrid_node_embeddings: List[TextNode]
+    yb_hybrid: YBVectorStore, hybrid_node_embeddings: List[TextNode]
 ) -> None:
     yb_hybrid.add(hybrid_node_embeddings)
     assert isinstance(yb_hybrid, YBVectorStore)
@@ -1004,14 +996,10 @@ async def test_custom_engines(db: None, node_embeddings: List[TextNode]) -> None
     )
 
     # Create YBVectorStore with custom engines
-    yb = YBVectorStore(
-        embed_dim=TEST_EMBED_DIM,
-        engine=engine
-    )
+    yb = YBVectorStore(embed_dim=TEST_EMBED_DIM, engine=engine)
 
     # Test sync add
     yb.add(node_embeddings[0:4])
-
 
     # Query to verify nodes were added correctly
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)

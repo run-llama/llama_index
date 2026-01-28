@@ -227,6 +227,7 @@ class YBVectorStore(BasePydanticVectorStore):
         ```
 
     """
+
     stores_text: bool = True
     flat_metadata: bool = False
 
@@ -414,18 +415,18 @@ class YBVectorStore(BasePydanticVectorStore):
             YBVectorStore: Instance of YBVectorStore constructed from params.
 
         """
-
         from urllib.parse import urlencode
-        query_params = {
-            "load_balance": str(load_balance)
-        }
+
+        query_params = {"load_balance": str(load_balance)}
 
         if topology is not None:
             query_params["topology_keys"] = topology
         if yb_servers_refresh_interval is not None:
             query_params["yb_servers_refresh_interval"] = yb_servers_refresh_interval
         if fallback_to_topology_keys_only:
-            query_params["fallback_to_topology_keys_only"] = fallback_to_topology_keys_only
+            query_params["fallback_to_topology_keys_only"] = (
+                fallback_to_topology_keys_only
+            )
         if failed_host_ttl_seconds is not None:
             query_params["failed_host_ttl_seconds"] = failed_host_ttl_seconds
 
@@ -748,7 +749,6 @@ class YBVectorStore(BasePydanticVectorStore):
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
         with self._session() as session, session.begin():
-
             res = session.execute(
                 stmt,
             )
@@ -827,11 +827,14 @@ class YBVectorStore(BasePydanticVectorStore):
                 )
                 for item in res.all()
             ]
+
     def _hybrid_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> List[DBEmbeddingRow]:
         if query.alpha is not None:
-            _logger.warning("yugabytedb hybrid search does not support alpha parameter.")
+            _logger.warning(
+                "yugabytedb hybrid search does not support alpha parameter."
+            )
 
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
@@ -1006,6 +1009,7 @@ class YBVectorStore(BasePydanticVectorStore):
                 nodes.append(node)
 
         return nodes
+
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:
     seen_ids = set()
