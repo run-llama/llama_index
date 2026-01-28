@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-vllm"
-version = "0.6.1"
+version = "0.6.2"
 description = "llama-index llms vllm integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

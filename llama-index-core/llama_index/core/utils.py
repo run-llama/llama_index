@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import inspect
 import os
 import random
 import sys
@@ -55,8 +56,18 @@ class GlobalsHelper:
         if "NLTK_DATA" in os.environ:
             self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
         else:
-            path = Path(os.path.dirname(os.path.abspath(__file__)))
-            self._nltk_data_dir = str(path / "_static/nltk_cache")
+            # 1. Check for bundled static cache first
+            bundled_path = (
+                Path(os.path.dirname(os.path.abspath(__file__))) / "_static/nltk_cache"
+            )
+
+            # Use bundled cache ONLY if it exists and is not empty
+            if bundled_path.exists() and any(bundled_path.iterdir()):
+                self._nltk_data_dir = str(bundled_path)
+            else:
+                # 2. Fallback to user cache (prevents crash if bundled cache is missing)
+                path = Path(platformdirs.user_cache_dir("llama_index"))
+                self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
         if not os.path.exists(self._nltk_data_dir):
@@ -342,7 +353,7 @@ def get_retry_on_exceptions_with_backoff_decorator(
                 foo, *retry_args, **retry_kwargs
             )
 
-        return awrapper if asyncio.iscoroutinefunction(func) else wrapper
+        return awrapper if inspect.iscoroutinefunction(func) else wrapper
 
     return decorator
 
@@ -351,6 +362,8 @@ def truncate_text(text: str, max_length: int) -> str:
     """Truncate text to a maximum length."""
     if len(text) <= max_length:
         return text
+    if max_length - 3 < 0:
+        return text[:max_length]
     return text[: max_length - 3] + "..."
 
 
@@ -446,7 +459,7 @@ def add_sync_version(func: Any) -> Any:
         func(Any): the async function for which a sync variant will be built.
 
     """
-    assert asyncio.iscoroutinefunction(func)
+    assert inspect.iscoroutinefunction(func)
 
     @wraps(func)
     def _wrapper(*args: Any, **kwds: Any) -> Any:
