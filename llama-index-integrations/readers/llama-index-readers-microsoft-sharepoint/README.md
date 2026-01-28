@@ -13,10 +13,18 @@ It also supports traversing recursively through the sub-folders.
 ### App Authentication using Microsoft Entra ID (formerly Azure AD)
 
 1. You need to create an App Registration in Microsoft Entra ID. Refer [here](https://learn.microsoft.com/en-us/azure/healthcare-apis/register-application)
-2. API Permissions for the created app.
-   1. Microsoft Graph --> Application Permissions --> Sites.ReadAll (**Grant Admin Consent**)
-   2. Microsoft Graph --> Application Permissions --> Files.ReadAll (**Grant Admin Consent**)
-   3. Microsoft Graph --> Application Permissions --> BrowserSiteLists.Read.All (**Grant Admin Consent**)
+2. API Permissions for the created app:
+   - Microsoft Graph → Application Permissions → **Sites.Read.All** (**Grant Admin Consent**)
+     _(Allows access to all sites in the tenant)_
+   - **OR**
+     Microsoft Graph → Application Permissions → **Sites.Selected** (**Grant Admin Consent**)
+     _(Allows access only to specific sites you select and grant permissions for)_
+   - Microsoft Graph → Application Permissions → Files.Read.All (**Grant Admin Consent**)
+   - Microsoft Graph → Application Permissions → BrowserSiteLists.Read.All (**Grant Admin Consent**)
+
+> **Note:**
+> If you use `Sites.Selected`, you must grant your app access to the specific SharePoint site(s) via the SharePoint admin center.
+> See [Grant access to a specific site](https://learn.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azuread#grant-access-to-a-specific-site) for details.
 
 More info on Microsoft Graph APIs - [Refer here](https://learn.microsoft.com/en-us/graph/permissions-reference)
 
@@ -43,6 +51,27 @@ loader = SharePointReader(
 
 documents = loader.load_data(
     sharepoint_site_name="<Sharepoint Site Name>",
+    sharepoint_folder_path="<Folder Path>",
+    recursive=True,
+)
+```
+
+### Using Sites.Selected Permission
+
+If you have only been granted access to a specific site (using `Sites.Selected`), you can use the site host name and relative URL instead of the site name:
+
+```python
+from llama_index.readers.microsoft_sharepoint import SharePointReader
+
+loader = SharePointReader(
+    client_id="<Client ID of the app>",
+    client_secret="<Client Secret of the app>",
+    tenant_id="<Tenant ID of the Microsoft Azure Directory>",
+    sharepoint_host_name="contoso.sharepoint.com",
+    sharepoint_relative_url="sites/YourSiteName",
+)
+
+documents = loader.load_data(
     sharepoint_folder_path="<Folder Path>",
     recursive=True,
 )

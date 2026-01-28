@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [0.6.0] - 2026-01-21
+## [0.6.0] - 2026-01-28
 
 ### Added
 
@@ -17,10 +17,11 @@
   - `PageFailedEvent`: Emitted when page processing fails
 - **New Parameters**:
   - `sharepoint_type`: Choose between `DRIVE` (files) or `PAGE` (site pages)
-  - `sharepoint_host_name`: Host name for page URL construction
-  - `sharepoint_relative_url`: Relative URL for page URL construction
+  - `sharepoint_host_name`: Host name for accessing sites with `Sites.Selected` permission
+  - `sharepoint_relative_url`: Relative URL for accessing sites with `Sites.Selected` permission
   - `process_document_callback`: Callback function to filter pages before processing
   - `fail_on_error`: Control error handling behavior (raise or log and continue)
+- **Sites.Selected Permission Support**: Use `sharepoint_host_name` and `sharepoint_relative_url` to access specific sites without tenant-wide permissions
 
 ## [0.5.1] - 2025-04-02
 
