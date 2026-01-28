@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1723,7 +1723,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-cohere"
-version = "0.6.1"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "cohere" },

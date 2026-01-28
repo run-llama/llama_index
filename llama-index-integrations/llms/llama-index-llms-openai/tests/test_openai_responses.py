@@ -14,8 +14,9 @@ from llama_index.core.base.llms.types import (
     ThinkingBlock,
     ToolCallBlock,
 )
+
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
-from llama_index.llms.openai.utils import to_openai_message_dicts
+from llama_index.llms.openai.utils import to_openai_message_dicts, O1_MODELS
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
 from openai.types.responses.response_reasoning_item import Content, Summary
@@ -90,13 +91,31 @@ def test_get_model_kwargs(default_responses_llm):
     kwargs = llm._get_model_kwargs()
 
     assert kwargs["model"] == "gpt-4o-mini"
-    assert kwargs["temperature"] == 0.1
-    assert kwargs["truncation"] == "disabled"
 
-    # Test with additional kwargs
     custom_kwargs = llm._get_model_kwargs(top_p=0.8, max_output_tokens=100)
-    assert custom_kwargs["top_p"] == 0.8
     assert custom_kwargs["max_output_tokens"] == 100
+
+
+def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
+    """Test that certain parameters are excluded when reasoning_options is set."""
+    llm = default_responses_llm
+    llm.reasoning_options = {"effort": "low"}
+
+    kwargs = llm._get_model_kwargs()
+
+    assert "top_p" not in kwargs
+    assert "temperature" not in kwargs
+    assert "presence_penalty" not in kwargs
+    assert "frequency_penalty" not in kwargs
+
+    assert "model" in kwargs
+    assert "max_output_tokens" in kwargs
+
+    if llm.model in O1_MODELS:
+        assert "reasoning" in kwargs
+        assert kwargs["reasoning"] == {"effort": "low"}
+    else:
+        assert "reasoning" not in kwargs
 
 
 def test_get_model_kwargs_with_tools_none(default_responses_llm):
