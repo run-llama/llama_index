@@ -27,6 +27,7 @@ from llama_index.core.instrumentation.events.retrieval import (
     RetrievalStartEvent,
 )
 import llama_index.core.instrumentation as instrument
+from llama_index.core.async_utils import run_jobs
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -149,7 +150,26 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
     ) -> List[NodeWithScore]:
         retrieved_nodes: List[NodeWithScore] = []
-        for n in nodes:
+                    # TODO: Add concurrent execution via `run_jobs()` ?
+                    # run_jobs will utilize a semaphore to limit the number of concurrent jobs
+                    # defaults to DEFAULT_NUM_WORKERS (4) if not specified
+                    
+                    # We will collect the jobs first, then run them
+                    # For now, let's just collect this single job. 
+                    # Ideally, we should refactor this loop to collect all jobs first.
+                    pass 
+                else:
+                    retrieved_nodes.append(n)
+            else:
+                retrieved_nodes.append(n)
+
+        # Optimization: Collect all IndexNode jobs
+        jobs = []
+        index_node_positions = [] # Track where to insert results
+        
+        final_results_accum = [None] * len(nodes)
+        
+        for i, n in enumerate(nodes):
             node = n.node
             score = n.score or 1.0
             if isinstance(node, IndexNode):
@@ -160,22 +180,39 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
                             f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
                             color="llama_turquoise",
                         )
-                    # TODO: Add concurrent execution via `run_jobs()` ?
-                    retrieved_nodes.extend(
-                        await self._aretrieve_from_object(
-                            obj, query_bundle=query_bundle, score=score
-                        )
-                    )
+                    # Create job
+                    jobs.append(self._aretrieve_from_object(
+                        obj, query_bundle=query_bundle, score=score
+                    ))
+                    index_node_positions.append(i)
                 else:
-                    retrieved_nodes.append(n)
+                    final_results_accum[i] = [n]
             else:
-                retrieved_nodes.append(n)
+                final_results_accum[i] = [n]
+                
+        # Run jobs
+        if jobs:
+            job_results = await run_jobs(jobs, show_progress=self._verbose, workers=4) # Using default workers count or hardcoded for now? Best to import DEFAULT_NUM_WORKERS or just let run_jobs default. run_jobs default is fine.
+            # actually run_jobs might need "workers" arg if we want to restrict it, but it defaults to 4.
+            
+            for i, result in enumerate(job_results):
+                pos = index_node_positions[i]
+                final_results_accum[pos] = result
+        
+        # Flatten
+        retrieved_nodes = []
+        for res in final_results_accum:
+            if res:
+                retrieved_nodes.extend(res)
 
-        # remove any duplicates based on hash and ref_doc_id
+        return self._ahandle_duplicate_filtering(retrieved_nodes)
+
+    def _ahandle_duplicate_filtering(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
+        """Helper to deduplicate nodes."""
         seen = set()
         return [
             n
-            for n in retrieved_nodes
+            for n in nodes
             if not (
                 (n.node.hash, n.node.ref_doc_id) in seen
                 or seen.add((n.node.hash, n.node.ref_doc_id))  # type: ignore[func-returns-value]
