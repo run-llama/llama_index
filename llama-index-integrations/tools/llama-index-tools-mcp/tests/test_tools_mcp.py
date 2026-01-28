@@ -199,19 +199,19 @@ def test_partial_params_removes_fields_from_schema(client: BasicMCPClient):
     tool_spec_full = McpToolSpec(client, allowed_tools=["add"])
     tools_full = tool_spec_full.to_tool_list()
     assert len(tools_full) == 1
-    
+
     full_schema = tools_full[0].metadata.fn_schema.model_json_schema()
     assert "a" in full_schema["properties"]
     assert "b" in full_schema["properties"]
     assert set(full_schema["required"]) == {"a", "b"}
-    
+
     # Create tool spec with partial_params for parameter 'a'
     tool_spec_partial = McpToolSpec(
         client, allowed_tools=["add"], partial_params={"a": 5.0}
     )
     tools_partial = tool_spec_partial.to_tool_list()
     assert len(tools_partial) == 1
-    
+
     partial_schema = tools_partial[0].metadata.fn_schema.model_json_schema()
     assert "a" not in partial_schema["properties"]
     assert "b" in partial_schema["properties"]
@@ -227,18 +227,18 @@ async def test_partial_params_removes_fields_from_schema_async(
     tool_spec_full = McpToolSpec(client, allowed_tools=["add"])
     tools_full = await tool_spec_full.to_tool_list_async()
     assert len(tools_full) == 1
-    
+
     full_schema = tools_full[0].metadata.fn_schema.model_json_schema()
     assert "a" in full_schema["properties"]
     assert "b" in full_schema["properties"]
-    
+
     # Create tool spec with partial_params for parameter 'a'
     tool_spec_partial = McpToolSpec(
         client, allowed_tools=["add"], partial_params={"a": 5.0}
     )
     tools_partial = await tool_spec_partial.to_tool_list_async()
     assert len(tools_partial) == 1
-    
+
     partial_schema = tools_partial[0].metadata.fn_schema.model_json_schema()
     assert "a" not in partial_schema["properties"]
     assert "b" in partial_schema["properties"]
@@ -251,7 +251,7 @@ def test_partial_params_multiple_fields(client: BasicMCPClient):
     )
     tools = tool_spec.to_tool_list()
     assert len(tools) == 1
-    
+
     schema = tools[0].metadata.fn_schema.model_json_schema()
     # user_id should be removed
     assert "user_id" not in schema["properties"]
@@ -267,10 +267,10 @@ async def test_partial_params_with_pydantic_models(client: BasicMCPClient):
     """Test that partial_params works correctly with tools using Pydantic models."""
     tool_spec_full = McpToolSpec(client, allowed_tools=["test_pydantic"])
     tools_full = await tool_spec_full.to_tool_list_async()
-    
+
     full_schema = tools_full[0].metadata.fn_schema.model_json_schema()
     assert all(key in full_schema["properties"] for key in ["name", "method", "lst"])
-    
+
     # Remove one of the Pydantic model fields
     tool_spec_partial = McpToolSpec(
         client,
@@ -278,7 +278,7 @@ async def test_partial_params_with_pydantic_models(client: BasicMCPClient):
         partial_params={"name": {"name": "Default Name"}},
     )
     tools_partial = await tool_spec_partial.to_tool_list_async()
-    
+
     partial_schema = tools_partial[0].metadata.fn_schema.model_json_schema()
     assert "name" not in partial_schema["properties"]
     assert "method" in partial_schema["properties"]
@@ -288,17 +288,15 @@ async def test_partial_params_with_pydantic_models(client: BasicMCPClient):
 
 def test_partial_params_empty_dict(client: BasicMCPClient):
     """Test that an empty partial_params dict doesn't affect the schema."""
-    tool_spec_empty = McpToolSpec(
-        client, allowed_tools=["add"], partial_params={}
-    )
+    tool_spec_empty = McpToolSpec(client, allowed_tools=["add"], partial_params={})
     tools_empty = tool_spec_empty.to_tool_list()
-    
+
     tool_spec_none = McpToolSpec(client, allowed_tools=["add"], partial_params=None)
     tools_none = tool_spec_none.to_tool_list()
-    
+
     schema_empty = tools_empty[0].metadata.fn_schema.model_json_schema()
     schema_none = tools_none[0].metadata.fn_schema.model_json_schema()
-    
+
     # Both should have the same properties
     assert schema_empty["properties"].keys() == schema_none["properties"].keys()
     assert schema_empty["required"] == schema_none["required"]
@@ -313,7 +311,7 @@ def test_partial_params_nonexistent_field(client: BasicMCPClient):
     )
     tools = tool_spec.to_tool_list()
     assert len(tools) == 1
-    
+
     schema = tools[0].metadata.fn_schema.model_json_schema()
     # 'a' should be removed
     assert "a" not in schema["properties"]
@@ -330,7 +328,7 @@ async def test_partial_params_all_fields_removed(client: BasicMCPClient):
     )
     tools = await tool_spec.to_tool_list_async()
     assert len(tools) == 1
-    
+
     schema = tools[0].metadata.fn_schema.model_json_schema()
     # Both parameters should be removed
     assert "a" not in schema["properties"]
@@ -350,7 +348,7 @@ def test_partial_params_with_optional_fields(client: BasicMCPClient):
     )
     tools = tool_spec.to_tool_list()
     assert len(tools) == 1
-    
+
     schema = tools[0].metadata.fn_schema.model_json_schema()
     # Both user_id and name should be removed
     assert "user_id" not in schema["properties"]
@@ -367,16 +365,16 @@ async def test_partial_params_multiple_tools(client: BasicMCPClient):
     )
     tools = await tool_spec.to_tool_list_async()
     assert len(tools) == 2
-    
+
     # Find each tool by name
     add_tool = next(t for t in tools if t.metadata.name == "add")
     update_user_tool = next(t for t in tools if t.metadata.name == "update_user")
-    
+
     # add tool should not be affected (it doesn't have user_id parameter)
     add_schema = add_tool.metadata.fn_schema.model_json_schema()
     assert "a" in add_schema["properties"]
     assert "b" in add_schema["properties"]
-    
+
     # update_user tool should have user_id removed
     update_schema = update_user_tool.metadata.fn_schema.model_json_schema()
     assert "user_id" not in update_schema["properties"]

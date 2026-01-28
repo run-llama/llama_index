@@ -232,7 +232,7 @@ class McpToolSpec(
         fields = {
             name: (
                 field.annotation,
-                field.default if field.is_required() else field.default
+                field.default if field.is_required() else field.default,
             )
             for name, field in model.model_fields.items()
             if name not in fields_to_remove
