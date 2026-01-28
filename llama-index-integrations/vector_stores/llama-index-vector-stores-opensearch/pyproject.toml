@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-opensearch"
-version = "0.6.2"
+version = "1.0.0"
 description = "llama-index vector_stores opensearch integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "opensearch-py[async]>=2.4.2,<3",
+    "opensearch-py[async]>=3.0.0",
 ]
 
 [tool.codespell]

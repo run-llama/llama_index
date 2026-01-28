@@ -85,7 +85,7 @@ embedding = embedding_model.get_general_text_embedding(
 
 ### Multimodal Embeddings
 
-VoyageAI supports multimodal embeddings for both text and images with the `voyage-multimodal-3` model. **Important:** You must set `truncation=True` when using multimodal models.
+VoyageAI supports multimodal embeddings for text and images with `voyage-multimodal-3`, and text, images, and **video** with `voyage-multimodal-3.5`. **Important:** You must set `truncation=True` when using multimodal models.
 
 ```python
 from llama_index.embeddings.voyageai import VoyageEmbedding
@@ -93,7 +93,7 @@ from io import BytesIO
 
 # Initialize with multimodal model (truncation=True is REQUIRED)
 embedding_model = VoyageEmbedding(
-    model_name="voyage-multimodal-3",
+    model_name="voyage-multimodal-3",  # or "voyage-multimodal-3.5" for video support
     truncation=True,  # Required for multimodal models
 )
 
@@ -115,6 +115,32 @@ query_embedding = embedding_model.get_query_embedding(
 # Batch text embeddings
 batch_embeddings = embedding_model.get_text_embedding_batch(
     ["Image description 1", "Image description 2", "Image description 3"]
+)
+```
+
+#### Video Embeddings (voyage-multimodal-3.5 only)
+
+```python
+from llama_index.embeddings.voyageai import VoyageEmbedding
+
+# Initialize with voyage-multimodal-3.5 for video support
+embedding_model = VoyageEmbedding(
+    model_name="voyage-multimodal-3.5",
+    truncation=True,
+)
+
+# Embed a single video (max 20MB, supports MP4, MPEG, MOV, AVI, FLV, MPG, WEBM, WMV, 3GP)
+video_embedding = embedding_model.get_video_embedding("path/to/video.mp4")
+print(f"Video embedding dimension: {len(video_embedding)}")  # 1024
+
+# Embed multiple videos
+video_embeddings = embedding_model.get_video_embeddings(
+    ["video1.mp4", "video2.mp4", "video3.mp4"]
+)
+
+# Async video embedding
+video_embedding = await embedding_model.aget_video_embedding(
+    "path/to/video.mp4"
 )
 ```
 
@@ -209,6 +235,9 @@ VoyageAI offers several specialized embedding models:
 
 ### Text Embeddings
 
+- **voyage-4**: General-purpose and multilingual retrieval with 1024 dimensions (supports 256, 512, 1024, 2048)
+- **voyage-4-lite**: Cost and latency optimized with highest throughput, 1024 dimensions (supports 256, 512, 1024, 2048)
+- **voyage-4-large**: Best retrieval quality in voyage-4 series, 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3.5**: Latest general-purpose model with 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3.5-lite**: Cost and latency optimized variant with 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3-large**: Best for general-purpose and multilingual retrieval, 1024 dimensions (supports 256, 512, 1024, 2048)
@@ -224,7 +253,8 @@ VoyageAI offers several specialized embedding models:
 
 ### Specialized Models
 
-- **voyage-multimodal-3**: Supports both text and image embeddings (1024 dimensions)
+- **voyage-multimodal-3**: Supports text and image embeddings (1024 dimensions)
+- **voyage-multimodal-3.5**: Supports text, image, and video embeddings (1024 dimensions, supports 256, 512, 2048). Currently in preview.
 - **voyage-context-3**: Enhanced contextual embeddings with 32K batch token limit (1024 dimensions)
 
 ### Legacy Models
@@ -252,7 +282,8 @@ For the latest model information, visit the [VoyageAI documentation](https://doc
 
 - **Dynamic Batching**: Automatically batches requests based on token limits for each model
 - **Token Management**: Respects per-model token limits (ranging from 32K to 1M tokens)
-- **Multimodal Support**: Process both text and images with multimodal models
+- **Multimodal Support**: Process text, images, and videos with multimodal models
+- **Video Embeddings**: Embed video content with `voyage-multimodal-3.5` (requires voyageai>=0.3.6)
 - **Contextual Embeddings**: Enhanced context-aware embeddings with specialized models
 - **Async Support**: Full async/await support for better performance
 - **Flexible Output**: Support for various output data types and dimensions
@@ -264,9 +295,14 @@ These limits represent the maximum total tokens that can be sent in a single API
 
 | Model                   | Batch Token Limit |
 | ----------------------- | ----------------- |
+| voyage-4-lite           | 1,000,000         |
 | voyage-3.5-lite         | 1,000,000         |
+| voyage-4                | 320,000           |
 | voyage-3.5              | 320,000           |
+| voyage-multimodal-3     | 320,000           |
+| voyage-multimodal-3.5   | 320,000           |
 | voyage-2                | 320,000           |
+| voyage-4-large          | 120,000           |
 | voyage-3-large          | 120,000           |
 | voyage-code-3           | 120,000           |
 | voyage-large-2-instruct | 120,000           |

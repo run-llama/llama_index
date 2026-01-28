@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-file"
-version = "0.5.5"
+version = "0.5.6"
 description = "llama-index readers file integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -73,8 +73,7 @@ dependencies = [
     "beautifulsoup4>=4.12.3,<5",
     "pypdf>=6.1.3,<7",
     "striprtf>=0.0.26,<0.0.27",
-    # note: pandas 2.3.0 changed build requirements, unpin when resolved
-    "pandas<2.3.0",
+    "pandas>=2.0.0,<3",
     "llama-index-core>=0.13.0,<0.15",
     "defusedxml>=0.7.1",
 ]

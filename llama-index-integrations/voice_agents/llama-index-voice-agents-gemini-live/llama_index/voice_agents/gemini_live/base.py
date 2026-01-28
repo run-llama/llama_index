@@ -1,4 +1,5 @@
 import asyncio
+from importlib.metadata import PackageNotFoundError, version
 import logging
 from typing import Optional, Any, List, Dict, Callable
 from typing_extensions import override
@@ -56,8 +57,17 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
     @property
     def client(self) -> Client:
         if not self._client:
+            try:
+                package_v = version("llama-index-voice-agents-gemini-live")
+            except PackageNotFoundError:
+                package_v = "0.0.0"
+
             self._client = Client(
-                api_key=self.api_key, http_options={"api_version": "v1beta"}
+                api_key=self.api_key,
+                http_options={
+                    "api_version": "v1beta",
+                    "headers": {"x-goog-api-client": f"llamaindex/{package_v}"},
+                },
             )
         return self._client
 

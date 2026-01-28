@@ -771,7 +771,7 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
         ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
     ]
 
-    next_msg, chat_kwargs = await prepare_chat_params(
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
         expected_model_name, test_messages
     )
 
@@ -831,7 +831,9 @@ async def test_prepare_chat_params_with_system_message():
     ]
 
     # Execute prepare_chat_params
-    next_msg, chat_kwargs = await prepare_chat_params(model_name, messages)
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
+        model_name, messages
+    )
 
     # Verify system_prompt is forwarded to system_instruction
     cfg = chat_kwargs["config"]
@@ -1061,7 +1063,7 @@ async def test_cached_content_in_chat_params() -> None:
     messages = [ChatMessage(content="Test message", role=MessageRole.USER)]
 
     # Prepare chat params with the LLM's generation config
-    next_msg, chat_kwargs = await prepare_chat_params(
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
         llm.model, messages, generation_config=llm._generation_config
     )
 
@@ -1231,7 +1233,7 @@ async def test_built_in_tool_in_chat_params() -> None:
         )
 
         # Prepare chat params
-        next_msg, chat_kwargs = await prepare_chat_params(
+        next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
             llm.model, messages, generation_config=llm._generation_config
         )
 
@@ -1882,3 +1884,24 @@ async def test_thoughts_with_async_chat() -> None:
         )
         != 0
     )
+
+
+def test_client_header_initialization() -> None:
+    """Test that the client header is correctly passed to the GoogleGenAI LLM."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_client.models.get.return_value = mock_model
+
+        GoogleGenAI(model="models/gemini-3.0-flash", api_key="test-key")
+
+        # Check if http_options were passed to the client constructor
+        call_args = mock_client_class.call_args
+        _, kwargs = call_args
+        http_options = kwargs["http_options"]
+        headers = http_options.headers
+
+        assert "x-goog-api-client" in headers
+        assert headers["x-goog-api-client"].startswith("llamaindex/")

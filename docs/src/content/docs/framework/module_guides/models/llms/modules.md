@@ -5,6 +5,7 @@ title: Available LLM integrations
 We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 
 - [AI21](/python/examples/llm/ai21)
+- [Apertis](/python/examples/llm/apertis)
 - [Anthropic](/python/examples/llm/anthropic)
 - [AnyScale](/python/examples/llm/anyscale)
 - [ASI](/python/examples/llm/asi1)

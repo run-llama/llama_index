@@ -9,6 +9,14 @@ from typing import Any, Generator, List, Optional, Tuple, Union
 import voyageai
 from PIL import Image
 
+try:
+    from voyageai.video_utils import Video
+
+    VIDEO_SUPPORT = True
+except ImportError:
+    Video = None  # type: ignore[misc, assignment]
+    VIDEO_SUPPORT = False
+
 from llama_index.core.base.embeddings.base import Embedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -19,16 +27,33 @@ logger = logging.getLogger(__name__)
 
 MAX_BATCH_SIZE = 1000
 
-MULTIMODAL_MODELS = ["voyage-multimodal-3"]
+MULTIMODAL_MODELS = ["voyage-multimodal-3", "voyage-multimodal-3.5"]
+VIDEO_MODELS = ["voyage-multimodal-3.5"]  # Only voyage-multimodal-3.5 supports video
 CONTEXT_MODELS = ["voyage-context-3"]
 
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
+SUPPORTED_VIDEO_FORMATS = {
+    "mp4",
+    "mpeg",
+    "mov",
+    "avi",
+    "flv",
+    "mpg",
+    "webm",
+    "wmv",
+    "3gp",
+}
 
 VOYAGE_TOTAL_TOKEN_LIMITS = {
     "voyage-context-3": 32_000,
+    "voyage-multimodal-3": 320_000,  # 32k per input, 320k total
+    "voyage-multimodal-3.5": 320_000,  # 32k per input, 320k total
+    "voyage-4-lite": 1_000_000,
     "voyage-3.5-lite": 1_000_000,
+    "voyage-4": 320_000,
     "voyage-3.5": 320_000,  # voyage-3.5 supports up to 320k tokens per batch
     "voyage-2": 320_000,
+    "voyage-4-large": 120_000,
     "voyage-3-large": 120_000,
     "voyage-code-3": 120_000,
     "voyage-large-2-instruct": 120_000,
@@ -117,6 +142,11 @@ class VoyageEmbedding(MultiModalEmbedding):
         """Validate image format."""
         return file_type.lower() in SUPPORTED_IMAGE_FORMATS
 
+    @staticmethod
+    def _validate_video_format(file_type: str) -> bool:
+        """Validate video format."""
+        return file_type.lower() in SUPPORTED_VIDEO_FORMATS
+
     @classmethod
     def _texts_to_content(cls, input_strs: List[str]) -> List[dict]:
         return [{"content": [{"type": "text", "text": x}]} for x in input_strs]
@@ -180,7 +210,7 @@ class VoyageEmbedding(MultiModalEmbedding):
             model=self.model_name,
             inputs=[[processed_image]],
             input_type=input_type,
-            truncation=self.truncation,
+            truncation=self.truncation if self.truncation is not None else True,
         ).embeddings[0]
 
     async def _aembed_image(
@@ -197,7 +227,7 @@ class VoyageEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 inputs=[[processed_image]],
                 input_type=input_type,
-                truncation=self.truncation,
+                truncation=self.truncation if self.truncation is not None else True,
             )
         ).embeddings[0]
 
@@ -206,6 +236,153 @@ class VoyageEmbedding(MultiModalEmbedding):
 
     async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         return await self._aembed_image(img_file_path)
+
+    def _video_to_content(self, video_input: Union[str, Path]) -> Any:
+        """Convert a video file path to a Video object for embedding."""
+        if not VIDEO_SUPPORT:
+            raise ImportError(
+                "Video support requires voyageai>=0.3.6. "
+                "Please upgrade: pip install 'voyageai>=0.3.6'"
+            )
+
+        if not isinstance(video_input, (str, Path)):
+            raise ValueError("Video input must be a file path (str or Path).")
+
+        video_path = str(video_input)
+        file_extension = os.path.splitext(video_path)[1][1:].lower()
+
+        if not self._validate_video_format(file_extension):
+            raise ValueError(
+                f"Unsupported video format: {file_extension}. "
+                f"Supported formats: {SUPPORTED_VIDEO_FORMATS}"
+            )
+
+        return Video.from_path(video_path, model=self.model_name)  # type: ignore[union-attr]
+
+    def get_video_embedding(
+        self, video_path: Union[str, Path], input_type: Optional[str] = None
+    ) -> List[float]:
+        """
+        Get embedding for a video file.
+
+        Only supported with voyage-multimodal-3.5 model.
+        Requires voyageai>=0.3.6 for video support.
+
+        Args:
+            video_path: Path to the video file (max 20MB).
+            input_type: Optional input type for the embedding.
+
+        Returns:
+            List of floats representing the video embedding.
+
+        """
+        if self.model_name not in VIDEO_MODELS:
+            raise ValueError(
+                f"{self.model_name} does not support video embeddings. "
+                f"Supported models: {VIDEO_MODELS}"
+            )
+
+        video = self._video_to_content(video_path)
+        return self._client.multimodal_embed(
+            model=self.model_name,
+            inputs=[[video]],
+            input_type=input_type,
+            truncation=self.truncation if self.truncation is not None else True,
+        ).embeddings[0]
+
+    async def aget_video_embedding(
+        self, video_path: Union[str, Path], input_type: Optional[str] = None
+    ) -> List[float]:
+        """
+        Asynchronously get embedding for a video file.
+
+        Only supported with voyage-multimodal-3.5 model.
+
+        Args:
+            video_path: Path to the video file (max 20MB).
+            input_type: Optional input type for the embedding.
+
+        Returns:
+            List of floats representing the video embedding.
+
+        """
+        if self.model_name not in VIDEO_MODELS:
+            raise ValueError(
+                f"{self.model_name} does not support video embeddings. "
+                f"Supported models: {VIDEO_MODELS}"
+            )
+
+        video = self._video_to_content(video_path)
+        return (
+            await self._aclient.multimodal_embed(
+                model=self.model_name,
+                inputs=[[video]],
+                input_type=input_type,
+                truncation=self.truncation if self.truncation is not None else True,
+            )
+        ).embeddings[0]
+
+    def get_video_embeddings(
+        self, video_paths: List[Union[str, Path]], input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        """
+        Get embeddings for multiple video files.
+
+        Only supported with voyage-multimodal-3.5 model.
+
+        Args:
+            video_paths: List of paths to video files (each max 20MB).
+            input_type: Optional input type for the embeddings.
+
+        Returns:
+            List of embeddings, one for each video.
+
+        """
+        if self.model_name not in VIDEO_MODELS:
+            raise ValueError(
+                f"{self.model_name} does not support video embeddings. "
+                f"Supported models: {VIDEO_MODELS}"
+            )
+
+        videos = [[self._video_to_content(path)] for path in video_paths]
+        return self._client.multimodal_embed(
+            model=self.model_name,
+            inputs=videos,
+            input_type=input_type,
+            truncation=self.truncation if self.truncation is not None else True,
+        ).embeddings
+
+    async def aget_video_embeddings(
+        self, video_paths: List[Union[str, Path]], input_type: Optional[str] = None
+    ) -> List[List[float]]:
+        """
+        Asynchronously get embeddings for multiple video files.
+
+        Only supported with voyage-multimodal-3.5 model.
+
+        Args:
+            video_paths: List of paths to video files (each max 20MB).
+            input_type: Optional input type for the embeddings.
+
+        Returns:
+            List of embeddings, one for each video.
+
+        """
+        if self.model_name not in VIDEO_MODELS:
+            raise ValueError(
+                f"{self.model_name} does not support video embeddings. "
+                f"Supported models: {VIDEO_MODELS}"
+            )
+
+        videos = [[self._video_to_content(path)] for path in video_paths]
+        return (
+            await self._aclient.multimodal_embed(
+                model=self.model_name,
+                inputs=videos,
+                input_type=input_type,
+                truncation=self.truncation if self.truncation is not None else True,
+            )
+        ).embeddings
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed texts with dynamic batching based on token limits."""
@@ -226,7 +403,7 @@ class VoyageEmbedding(MultiModalEmbedding):
                     inputs=self._texts_to_content(batch),
                     model=self.model_name,
                     input_type=input_type,
-                    truncation=self.truncation,
+                    truncation=self.truncation if self.truncation is not None else True,
                 ).embeddings
                 embeddings.extend(batch_embeddings)
             else:
@@ -262,7 +439,7 @@ class VoyageEmbedding(MultiModalEmbedding):
                     inputs=self._texts_to_content(batch),
                     model=self.model_name,
                     input_type=input_type,
-                    truncation=self.truncation,
+                    truncation=self.truncation if self.truncation is not None else True,
                 )
                 embeddings.extend(r.embeddings)
             else:

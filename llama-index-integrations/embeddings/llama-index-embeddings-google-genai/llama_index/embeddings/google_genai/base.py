@@ -1,6 +1,7 @@
 """Gemini embeddings file."""
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -221,8 +222,21 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             config_params["api_key"] = None
             config_params["vertexai"] = True
 
-        if http_options:
-            config_params["http_options"] = http_options
+        try:
+            package_v = version("llama-index-embeddings-google-genai")
+        except PackageNotFoundError:
+            package_v = "0.0.0"
+        client_hdr = {"x-goog-api-client": f"llamaindex/{package_v}"}
+
+        if isinstance(http_options, dict):
+            http_opts = http_options
+        elif isinstance(http_options, types.HttpOptions):
+            http_opts = http_options.to_json_dict()
+        else:
+            http_opts = {}
+        http_opts["headers"] = http_opts.get("headers", {}) | client_hdr
+
+        config_params["http_options"] = types.HttpOptions(**http_opts)
 
         if debug_config:
             config_params["debug_config"] = debug_config

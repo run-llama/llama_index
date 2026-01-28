@@ -10,7 +10,7 @@ from llama_index.core import Settings
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from llama_index.llms.azure_openai import AzureOpenAI
-from pymongo import MongoClient
+from pymongo import MongoClient, AsyncMongoClient
 
 import threading
 
@@ -73,18 +73,31 @@ def atlas_client() -> MongoClient:
     return client
 
 
+@pytest.fixture
+def async_client() -> AsyncMongoClient:
+    if MONGODB_URI is None:
+        raise pytest.skip("Requires MONGODB_URI in os.environ")
+
+    return AsyncMongoClient(MONGODB_URI)
+
+
 @pytest.fixture()
 def vector_store(
-    atlas_client: MongoClient, embed_model: OpenAIEmbedding
+    atlas_client: MongoClient,
+    async_client: AsyncMongoClient,
+    embed_model: OpenAIEmbedding,
 ) -> MongoDBAtlasVectorSearch:
     # Set up the default llm to be used in tests.
     if isinstance(embed_model, AzureOpenAIEmbedding):
-        deployment_name = os.environ.get("AZURE_LLM_DEPLOYMENT", "gpt-4o-mini")
+        deployment_name = os.environ.get("AZURE_LLM_DEPLOYMENT", "gpt-5-mini")
         Settings.llm = AzureOpenAI(
-            engine=deployment_name, api_key=os.environ["AZURE_OPENAI_API_KEY"]
+            engine=deployment_name,
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            temperature=1.0,
         )
     return MongoDBAtlasVectorSearch(
         mongodb_client=atlas_client,
+        async_mongodb_client=async_client,
         db_name=DB_NAME,
         collection_name=collection_name,
         vector_index_name=vector_index_name,

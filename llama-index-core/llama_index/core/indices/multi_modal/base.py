@@ -26,6 +26,7 @@ from llama_index.core.indices.multi_modal.retriever import (
     MultiModalVectorIndexRetriever,
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
+from llama_index.core.llms import LLM
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
@@ -166,6 +167,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> BaseChatEngine:
         llm = llm or Settings.llm
         assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        llm = cast(LLM, llm)  # kludge. They don't actually inherit from these types.
         class_name = llm.class_name()
         if "multi" not in class_name:
             logger.warning(
@@ -183,7 +185,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 **kwargs,
             )
 
-        # TODO: handle CONDENSE_PLUS_CONTEXT
+        if chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.core.chat_engine.multi_modal_condense_plus_context import (
+                MultiModalCondensePlusContextChatEngine,
+            )
+
+            return MultiModalCondensePlusContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                multi_modal_llm=llm,
+                **kwargs,
+            )
 
         return super().as_chat_engine(chat_mode, llm, **kwargs)
 

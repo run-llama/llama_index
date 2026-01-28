@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
@@ -26,7 +26,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
-from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.core.memory import BaseMemory, Memory
 
 # from llama_index.core.query_engine.multi_modal import _get_image_and_text_nodes
 from llama_index.core.llms.llm import (
@@ -36,9 +36,6 @@ from llama_index.core.llms.llm import (
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.settings import Settings
 from llama_index.core.base.base_retriever import BaseRetriever
-
-if TYPE_CHECKING:
-    from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
 
 
 def _get_image_and_text_nodes(
@@ -80,7 +77,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
 
     def __init__(
         self,
-        retriever: "MultiModalVectorIndexRetriever",
+        retriever: BaseRetriever,
         multi_modal_llm: LLM,
         memory: BaseMemory,
         system_prompt: str,
@@ -120,7 +117,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
         multi_modal_llm = multi_modal_llm or Settings.llm
 
         chat_history = chat_history or []
-        memory = memory or ChatMemoryBuffer.from_defaults(
+        memory = memory or Memory.from_defaults(
             chat_history=chat_history,
             token_limit=multi_modal_llm.metadata.context_window - 256,
         )

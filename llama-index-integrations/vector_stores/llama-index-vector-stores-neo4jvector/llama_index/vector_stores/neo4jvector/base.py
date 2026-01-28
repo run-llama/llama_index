@@ -565,6 +565,11 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
         for record in results:
+            # Handle missing metadata
+            metadata = record.setdefault("metadata", {})
+            metadata.setdefault("_node_type", "TextNode")
+            metadata.setdefault("_node_content", "{}")
+
             node = metadata_dict_to_node(record["metadata"])
             node.set_content(str(record["text"]))
             nodes.append(node)
