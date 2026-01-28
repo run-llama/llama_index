@@ -1,6 +1,7 @@
 """Google's hosted Gemini API."""
 
 import asyncio
+import inspect
 import functools
 import os
 from importlib.metadata import PackageNotFoundError, version
