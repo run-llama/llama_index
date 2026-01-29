@@ -60,7 +60,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.yugabytedb"
 
 [tool.llamahub.class_authors]
-PGVectorStore = "llama-index"
+YBVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
