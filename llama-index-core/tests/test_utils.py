@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Optional, Type, Union
 from unittest import mock
+import os
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -18,6 +19,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    truncate_text,
 )
 
 
@@ -204,6 +206,21 @@ def test_get_color_mapping() -> None:
     assert all(color in _ANSI_COLORS for color in color_mapping_ansi.values())
 
 
+def test_truncate_text() -> None:
+    """Test truncate_text function."""
+    text = "Hello, world!"
+    assert truncate_text(text, 5) == "He" + "..."
+
+
+def test_truncate_text_with_less_chars() -> None:
+    text = "hello"
+
+    text1 = "world"
+
+    assert truncate_text(text1, 1) == "w"
+    assert truncate_text(text, 2) == "he"
+
+
 def test_get_colored_text() -> None:
     """Test _get_colored_text function."""
     text = "Hello, world!"
@@ -275,7 +292,7 @@ def test_get_cache_dir_default_behavior(monkeypatch) -> None:
             result = get_cache_dir()
             mock_user_cache_dir.assert_called_once_with("llama_index")
             mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-            assert result == mock_cache_path
+            assert result == os.path.normpath(mock_cache_path)
 
 
 def test_get_cache_dir_creates_directory(tmp_path, monkeypatch) -> None:

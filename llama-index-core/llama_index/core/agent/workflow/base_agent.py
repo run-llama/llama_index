@@ -20,6 +20,7 @@ from llama_index.core.agent.workflow.prompts import (
     DEFAULT_STATE_PROMPT,
     DEFAULT_EARLY_STOPPING_PROMPT,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     AgentInput,
@@ -190,6 +191,15 @@ class BaseWorkflowAgent(
         # Initialize Workflow with workflow-specific parameters
         Workflow.__init__(self, timeout=timeout, verbose=verbose, **workflow_kwargs)
 
+    def validate(self, **kwargs: Any) -> bool:  # type: ignore[override]
+        """
+        Validate the workflow to ensure it's well-formed.
+
+        Explicitly delegates to Workflow.validate to resolve the method conflict
+        between Workflow.validate (instance method) and BaseModel.validate (classmethod).
+        """
+        return Workflow.validate(self, **kwargs)
+
     @field_validator("tools", mode="before")
     def validate_tools(
         cls, v: Optional[Sequence[Union[BaseTool, Callable]]]
@@ -232,7 +242,7 @@ class BaseWorkflowAgent(
     @abstractmethod
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,

@@ -84,11 +84,9 @@ class Upstage(OpenAI):
     logprobs: Optional[bool] = Field(
         description="Whether to return logprobs per token."
     )
-    top_logprobs: int = Field(
+    top_logprobs: Optional[int] = Field(
+        default=None,
         description="The number of top token logprobs to return.",
-        default=0,
-        gte=0,
-        lte=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         description="Additional kwargs for the Upstage API.", default_factory=dict
@@ -122,26 +120,32 @@ class Upstage(OpenAI):
         description="The Upstage API base URL.",
     )
     top_p: Optional[float] = Field(
-        default=1,
-        gte=0,
-        lte=1,
+        default=None,
         description="An optional parameter to trigger nucleus sampling.",
     )
     frequency_penalty: Optional[float] = Field(
-        default=0,
-        gte=-2,
-        lte=2,
-        description="An optional parameter that controls the model’s tendency to repeat tokens.",
+        default=None,
+        description="An optional parameter that controls the model's tendency to repeat tokens.",
     )
     presence_penalty: Optional[float] = Field(
-        default=0,
-        gte=-2,
-        lte=2,
-        description="An optional parameter that adjusts the model’s tendency to include tokens already present in the input or generated text.",
+        default=None,
+        description="An optional parameter that adjusts the model's tendency to include tokens already present in the input or generated text.",
     )
     response_format: Optional[dict] = Field(
         default=None,
         description="An object specifying the format that the model must generate.",
+    )
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
+        description="Controls the level of reasoning effort. This parameter is only applicable to Reasoning models.",
+    )
+    top_k: Optional[int] = Field(
+        default=None,
+        description="An optional parameter to limit sampling to the top K most likely tokens at each step. Lower values like 50 make the output more focused, while higher values allow more variety.",
+    )
+    prompt_cache_key: Optional[str] = Field(
+        default=None,
+        description="An optional parameter that specifies a unique key for identifying and caching the prompt. Use a distinct key for each conversational context to improve cache utilization.",
     )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
@@ -154,7 +158,7 @@ class Upstage(OpenAI):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         logprobs: Optional[bool] = None,
-        top_logprobs: int = 0,
+        top_logprobs: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
@@ -175,11 +179,30 @@ class Upstage(OpenAI):
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
         response_format: Optional[dict] = None,
+        top_k: Optional[int] = None,
+        prompt_cache_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if "upstage_api_key" in kwargs:
             api_key = kwargs.pop("upstage_api_key")
         additional_kwargs = additional_kwargs or {}
+        # Add Upstage-specific parameters to additional_kwargs.
+        # These parameters are not supported by OpenAI API, so they must be passed via
+        # additional_kwargs. The base class will automatically merge them in _get_model_kwargs.
+        if reasoning_effort is not None:
+            additional_kwargs["reasoning_effort"] = reasoning_effort
+        if top_p is not None:
+            additional_kwargs["top_p"] = top_p
+        if frequency_penalty is not None:
+            additional_kwargs["frequency_penalty"] = frequency_penalty
+        if presence_penalty is not None:
+            additional_kwargs["presence_penalty"] = presence_penalty
+        if response_format is not None:
+            additional_kwargs["response_format"] = response_format
+        if top_k is not None:
+            additional_kwargs["top_k"] = top_k
+        if prompt_cache_key is not None:
+            additional_kwargs["prompt_cache_key"] = prompt_cache_key
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base
         )
@@ -213,11 +236,6 @@ class Upstage(OpenAI):
         self._client = None
         self._aclient = None
         self._http_client = http_client
-        self.reasoning_effort = reasoning_effort
-        self.top_p = top_p
-        self.frequency_penalty = frequency_penalty
-        self.presence_penalty = presence_penalty
-        self.response_format = response_format
 
     def _get_model_name(self) -> str:
         return self.model
@@ -270,36 +288,41 @@ class Upstage(OpenAI):
         num_tokens += tokens_suffix
         return num_tokens
 
-    @llm_retry_decorator
-    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def _prepare_messages_for_doc_parsing(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> Sequence[ChatMessage]:
+        """Prepare messages for document parsing if needed."""
         if is_doc_parsing_model(self.model, kwargs):
             document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+            messages_list = (
+                list(messages) if not isinstance(messages, list) else messages
+            )
+            messages_list.append(ChatMessage(role="user", content=document_contents))
+            return messages_list
+        return messages
+
+    @llm_retry_decorator
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._chat(messages, **kwargs)
 
     @llm_retry_decorator
     def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._achat(messages, **kwargs)
 
     @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._stream_chat(messages, **kwargs)
 
     @llm_retry_decorator
     def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        if is_doc_parsing_model(self.model, kwargs):
-            document_contents = self._parse_documents(kwargs.pop("file_path"))
-            messages.append(ChatMessage(role="user", content=document_contents))
+        messages = self._prepare_messages_for_doc_parsing(messages, **kwargs)
         return super()._astream_chat(messages, **kwargs)
 
     def _parse_documents(
@@ -321,13 +344,3 @@ class Upstage(OpenAI):
             file_title = file_titles[min(i, len(file_titles) - 1)]
             document_contents += f"{file_title}:\n{doc.text}\n\n"
         return document_contents
-
-    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        all_kwargs = super()._get_model_kwargs(**kwargs)
-        return all_kwargs | {
-            "reasoning_effort": self.reasoning_effort,
-            "top_p": self.top_p,
-            "frequency_penalty": self.frequency_penalty,
-            "presence_penalty": self.presence_penalty,
-            "response_format": self.response_format,
-        }
