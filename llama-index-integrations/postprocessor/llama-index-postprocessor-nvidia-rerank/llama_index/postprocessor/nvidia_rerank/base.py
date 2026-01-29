@@ -282,9 +282,9 @@ class NVIDIARerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        url = (
-            self.base_url if self._is_hosted else f"{self.normalized_base_url}/ranking"
-        )
+        url = self.normalized_base_url
+        if not url.endswith(("/ranking", "/reranking")):
+            url = f"{url}/ranking"
 
         client = self.client
         _headers = self._get_headers(auth_required=True)
