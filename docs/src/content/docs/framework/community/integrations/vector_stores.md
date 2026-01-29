@@ -59,6 +59,7 @@ as the storage backend for `VectorStoreIndex`.
 - WordLift (`WordliftVectorStore`). [Quickstart](https://docs.wordlift.io/llm-connectors/wordlift-vector-store/). [Python Client](https://pypi.org/project/wordlift-client/).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
+- Zvec (`ZvecVectorStore`). [Quickstart](https://zvec.org/en/docs/quickstart/)
 
 A detailed API reference is [found here](/python/framework-api-reference/storage/vector_store).
 
@@ -1030,6 +1031,31 @@ vector_store = MilvusVectorStore(
 )
 ```
 
+**Zvec**
+
+```python
+import zvec
+from llama_index.vector_stores.zvec import ZvecVectorStore
+
+collection_schema = zvec.CollectionSchema(    
+    name="quickstart",
+    vectors=[
+        zvec.VectorSchema(
+            name="embedding",
+            data_type=zvec.DataType.VECTOR_FP32,
+            dimension=1536,
+            index_param=zvec.HnswIndexParam(metric_type=zvec.MetricType.COSINE),
+        ),
+    ],
+)
+collection = zvec.create_and_open(            
+    path="quickstart.zvec",
+    schema=collection_schema,
+)
+
+```
+
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
@@ -1256,3 +1282,4 @@ documents = reader.load_data(
 - [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
 - [WordLift](/python/examples/vector_stores/wordliftdemo)
 - [Zep](/python/examples/vector_stores/zepindexdemo)
+- [Zvec](/python/examples/vector_stores/zvecindexdemo)
