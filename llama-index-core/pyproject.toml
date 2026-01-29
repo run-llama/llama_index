@@ -10,6 +10,7 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
+    "llama-index-llms-openai",
     "mypy==1.11.0",
     "openai",
     "pandas",
@@ -146,3 +147,6 @@ table_keys = false
 [[tool.uv.index]]
 name = "nvidia-pypi"
 url = "https://pypi.nvidia.com"
+
+[tool.uv.sources]
+llama-index-llms-openai = {path = "../llama-index-integrations/llms/llama-index-llms-openai"}
