@@ -129,6 +129,7 @@ plugins:
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-tair
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-redis
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-google
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-zvec
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-pathway
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-bm25
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-you
@@ -375,6 +376,7 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-hwp
             - ../../llama-index-integrations/readers/llama-index-readers-metal
             - ../../llama-index-integrations/readers/llama-index-readers-boarddocs
+            - ../../llama-index-integrations/readers/llama-index-readers-zvec
             - ../../llama-index-integrations/question_gen/llama-index-question-gen-guidance
             - ../../llama-index-integrations/llms/llama-index-llms-palm
             - ../../llama-index-integrations/llms/llama-index-llms-cohere
