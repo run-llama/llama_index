@@ -234,7 +234,6 @@ class NVIDIARerank(BaseNodePostprocessor):
                 if model_name not in available_model_ids:
                     raise ValueError(f"No locally hosted {model_name} was found.")
 
-        
         if self._is_hosted and model and model.endpoint:
             self.base_url = model.endpoint
 
@@ -282,8 +281,10 @@ class NVIDIARerank(BaseNodePostprocessor):
             )
         if len(nodes) == 0:
             return []
-        
-        url = self.base_url if self._is_hosted else f"{self.normalized_base_url}/ranking"
+
+        url = (
+            self.base_url if self._is_hosted else f"{self.normalized_base_url}/ranking"
+        )
 
         client = self.client
         _headers = self._get_headers(auth_required=True)
@@ -313,7 +314,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                         for n in batch
                     ],
                 }
-                
+
                 response = client.post(url, headers=_headers, json=payloads)
                 response.raise_for_status()
                 # expected response format:

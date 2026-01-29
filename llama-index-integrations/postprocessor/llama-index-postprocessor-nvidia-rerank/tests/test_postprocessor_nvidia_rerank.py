@@ -224,12 +224,13 @@ def test_model_incompatible_client_known_model() -> None:
         model = NVIDIARerank(api_key="BOGUS", model=model_name)
     assert "Unable to determine validity" in str(warning[0].message)
 
+
 @pytest.fixture()
 def mock_ranking_endpoint(respx_mock: respx.MockRouter, known_unknown: str) -> None:
     respx_mock.get("http://localhost:8000/v1/models").respond(
         json={"data": [{"id": known_unknown}]}
     )
-    
+
     respx_mock.post("http://localhost:8000/v1/ranking").respond(
         json={"rankings": [{"index": 0, "logit": 1.0}]}
     )
@@ -238,10 +239,9 @@ def mock_ranking_endpoint(respx_mock: respx.MockRouter, known_unknown: str) -> N
 @pytest.fixture()
 def mock_hosted_endpoint(respx_mock: respx.MockRouter) -> None:
     from llama_index.postprocessor.nvidia_rerank.utils import BASE_URL
+
     # Mock the hosted ranking endpoint (no /ranking suffix appended)
-    respx_mock.post(BASE_URL).respond(
-        json={"rankings": [{"index": 0, "logit": 1.0}]}
-    )
+    respx_mock.post(BASE_URL).respond(json={"rankings": [{"index": 0, "logit": 1.0}]})
 
 
 def test_local_appends_ranking_to_url(
