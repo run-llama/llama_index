@@ -34,9 +34,11 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-llms-openai>=0.6.0,<0.7",
-    "transformers>=4.37.0,<5",
     "llama-index-core>=0.14.3,<0.15",
 ]
+
+[project.optional-dependencies]
+transformers = ["transformers>=4.37.0,<5"]
 
 [tool.codespell]
 check-filenames = true
