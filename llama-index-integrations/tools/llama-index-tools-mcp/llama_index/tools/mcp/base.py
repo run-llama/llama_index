@@ -29,6 +29,8 @@ class McpToolSpec(
             - list_resources: List all resources.
             - read_resource: Read a resource.
         allowed_tools: If set, only return tools with the specified names.
+        global_partial_params: A dict of params to apply to all tools globally.
+        partial_params_by_tool: A dict mapping tool names to param overrides. Values override global_partial_params. Use None as a value to remove a global param for a specific tool.
         include_resources: Whether to include resources in the tool list.
 
     """
@@ -37,12 +39,14 @@ class McpToolSpec(
         self,
         client: ClientSession,
         allowed_tools: Optional[List[str]] = None,
-        partial_params: Optional[Dict[str, Any]] = None,
+        global_partial_params: Optional[Dict[str, Any]] = None,
+        partial_params_by_tool: Optional[Dict[str, Dict[str, Any]]] = None,
         include_resources: bool = False,
     ) -> None:
         self.client = client
         self.allowed_tools = allowed_tools
-        self.partial_params = partial_params
+        self.global_partial_params = global_partial_params
+        self.partial_params_by_tool = partial_params_by_tool
         self.include_resources = include_resources
         self.properties_cache = {}
 
@@ -135,19 +139,34 @@ class McpToolSpec(
             model_schema = self.create_model_from_json_schema(
                 tool.inputSchema, model_name=f"{tool.name}_Schema"
             )
-            if self.partial_params:
+            # Set up global partial params as default
+            tool_partial_params = dict(self.global_partial_params or {})
+            # Override with tool-specific partial params
+            if self.partial_params_by_tool and tool.name in self.partial_params_by_tool:
+                tool_overrides = self.partial_params_by_tool[tool.name]
+                for key, value in tool_overrides.items():
+                    if value is None:
+                        # Remove the param if set to None
+                        tool_partial_params.pop(key, None)
+                    else:
+                        # Override or add the param
+                        tool_partial_params[key] = value
+
+            # Remove fields that are set as partial params
+            if tool_partial_params:
                 model_schema = self.remove_model_fields(
                     model_schema,
-                    fields_to_remove=set(self.partial_params),
+                    fields_to_remove=set(tool_partial_params),
                     model_name=f"{tool.name}_Schema",
                 )
+
             metadata = ToolMetadata(
                 name=tool.name,
                 description=tool.description,
                 fn_schema=model_schema,
             )
             function_tool = FunctionTool.from_defaults(
-                async_fn=fn, tool_metadata=metadata, partial_params=self.partial_params
+                async_fn=fn, tool_metadata=metadata, partial_params=tool_partial_params
             )
             function_tool_list.append(function_tool)
 
