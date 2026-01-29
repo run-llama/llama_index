@@ -82,7 +82,10 @@ documents = loader.load_data(
 You can also load SharePoint Site Pages as documents by setting `sharepoint_type` to `PAGE`:
 
 ```python
-from llama_index.readers.microsoft_sharepoint import SharePointReader, SharePointType
+from llama_index.readers.microsoft_sharepoint import (
+    SharePointReader,
+    SharePointType,
+)
 
 loader = SharePointReader(
     client_id="<Client ID of the app>",

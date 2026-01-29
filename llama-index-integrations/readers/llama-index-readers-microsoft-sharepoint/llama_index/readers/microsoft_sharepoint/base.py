@@ -945,13 +945,12 @@ class SharePointReader(
 
     # Page-related methods for SharePoint Site Pages support
 
-    def get_site_pages_list_id(self, site_id: str, token: Optional[str] = None) -> str:
+    def get_site_pages_list_id(self, site_id: str) -> str:
         """
         Gets the ID of the Site Pages list for a SharePoint site.
 
         Args:
             site_id (str): The ID of the SharePoint site.
-            token (Optional[str]): Access token (not used, kept for API compatibility).
 
         Returns:
             str: The ID of the Site Pages list.
@@ -969,22 +968,19 @@ class SharePointReader(
             logger.error(f"Error getting Site Pages list ID: {e}", exc_info=True)
             raise
 
-    def list_pages(
-        self, site_id: str, token: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    def list_pages(self, site_id: str) -> List[Dict[str, Any]]:
         """
         Returns a list of SharePoint site pages with their IDs and names.
 
         Args:
             site_id (str): The ID of the SharePoint site.
-            token (Optional[str]): Access token (not used, kept for API compatibility).
 
         Returns:
             List[Dict[str, Any]]: List of page dictionaries with id, name, and lastModifiedDateTime.
 
         """
         try:
-            list_id = self.get_site_pages_list_id(site_id, token)
+            list_id = self.get_site_pages_list_id(site_id)
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields(select=FileLeafRef,CanvasContent1)"
             response = self._send_get_with_retry(endpoint)
             items = response.json().get("value", [])
@@ -1007,23 +1003,20 @@ class SharePointReader(
             logger.error(f"Error listing SharePoint pages: {e}", exc_info=True)
             raise
 
-    def get_page_id_by_name(
-        self, site_id: str, page_name: str, token: Optional[str] = None
-    ) -> Optional[str]:
+    def get_page_id_by_name(self, site_id: str, page_name: str) -> Optional[str]:
         """
         Get the ID of a SharePoint page by its name.
 
         Args:
             site_id (str): The ID of the SharePoint site.
             page_name (str): The name of the page to find.
-            token (Optional[str]): Access token (not used, kept for API compatibility).
 
         Returns:
             Optional[str]: The page ID if found, None otherwise.
 
         """
         try:
-            list_id = self.get_site_pages_list_id(site_id, token)
+            list_id = self.get_site_pages_list_id(site_id)
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields"
             response = self._send_get_with_retry(endpoint)
             items = response.json().get("value", [])
@@ -1041,17 +1034,14 @@ class SharePointReader(
             )
             raise
 
-    def get_page_text(
-        self, site_id: str, list_id: str, page_id: str, token: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def get_page_text(self, site_id: str, list_id: str, page_id: str) -> Dict[str, Any]:
         """
         Gets the text content of a SharePoint page.
 
         Args:
             site_id (str): The ID of the SharePoint site.
             list_id (str): The ID of the Site Pages list.
-            page_id (str): The ID of the page (can be raw ID or combined listId_itemId).
-            token (Optional[str]): Access token (not used, kept for API compatibility).
+            page_id (str): The ID of the page (can be raw ID or combined listId:itemId).
 
         Returns:
             Dict[str, Any]: Dictionary containing page id, name, lastModifiedDateTime, textContent, and rawHtml.
@@ -1059,12 +1049,12 @@ class SharePointReader(
         """
         try:
             raw_page_id = page_id
-            if "_" in page_id:
-                parts = page_id.split("_", 1)
+            if ":" in page_id:
+                parts = page_id.split(":", 1)
                 if len(parts) == 2:
                     list_id, raw_page_id = parts
             if not list_id:
-                list_id = self.get_site_pages_list_id(site_id, token)
+                list_id = self.get_site_pages_list_id(site_id)
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items/{raw_page_id}?expand=fields(select=FileLeafRef,CanvasContent1)"
             response = self._send_get_with_retry(endpoint)
             fields = response.json().get("fields", {})
@@ -1076,7 +1066,7 @@ class SharePointReader(
             text_content = re.sub(r"<[^>]+>", "", unescaped)
             text_content = re.sub(r"['\"]", "", text_content).strip()
             return {
-                "id": f"{list_id}_{raw_page_id}",
+                "id": f"{list_id}:{raw_page_id}",
                 "name": fields.get("FileLeafRef"),
                 "lastModifiedDateTime": last_modified,
                 "textContent": text_content,
@@ -1113,7 +1103,7 @@ class SharePointReader(
             site_id = self._get_site_id_with_host_name(
                 access_token, self.sharepoint_site_name
             )
-            list_id = self.get_site_pages_list_id(site_id, access_token)
+            list_id = self.get_site_pages_list_id(site_id)
             documents: List[Document] = []
 
             if self.sharepoint_file_id:
@@ -1123,7 +1113,6 @@ class SharePointReader(
                         site_id=site_id,
                         list_id=list_id,
                         page_id=self.sharepoint_file_id,
-                        token=access_token,
                     )
                     combined_id = page_info["id"]
                     page_name = page_info["name"]
@@ -1162,13 +1151,13 @@ class SharePointReader(
                         raise
                 return documents
 
-            # Load all pages
-            pages = self.list_pages(site_id, access_token)
+                # Load all pages
+            pages = self.list_pages(site_id)
             dispatcher.event(TotalPagesToProcessEvent(total_pages=len(pages)))
 
             for page in pages:
                 raw_page_id = page["id"]
-                combined_id = f"{list_id}_{raw_page_id}"
+                combined_id = f"{list_id}:{raw_page_id}"
                 page_name = page["name"]
                 last_modified_date_time = page.get("lastModifiedDateTime", "")
 
@@ -1198,7 +1187,6 @@ class SharePointReader(
                         site_id=site_id,
                         list_id=list_id,
                         page_id=raw_page_id,
-                        token=access_token,
                     )
                     text = page_content.get("textContent", "")
                     metadata["lastModifiedDateTime"] = page_content.get(
