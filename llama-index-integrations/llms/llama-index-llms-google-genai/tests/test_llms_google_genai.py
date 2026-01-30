@@ -1,3 +1,4 @@
+import inspect
 import os
 from typing import List, Optional
 from unittest.mock import MagicMock, patch
@@ -1905,3 +1906,46 @@ def test_client_header_initialization() -> None:
 
         assert "x-goog-api-client" in headers
         assert headers["x-goog-api-client"].startswith("llamaindex/")
+
+
+def test_sync_function_stays_sync(monkeypatch):
+    def fake_retry(**kwargs):
+        return lambda f: f
+
+    monkeypatch.setattr(
+        "your_module.create_retry_decorator",
+        fake_retry,
+    )
+
+    class Foo:
+        max_retries = 1
+
+        @llm_retry_decorator
+        def method(self):
+            return "ok"
+
+    obj = Foo()
+    assert not inspect.iscoroutinefunction(obj.method)
+    assert obj.method() == "ok"
+
+
+@pytest.mark.asyncio
+async def test_async_function_stays_async(monkeypatch):
+    def fake_retry(**kwargs):
+        return lambda f: f
+
+    monkeypatch.setattr(
+        "your_module.create_retry_decorator",
+        fake_retry,
+    )
+
+    class Foo:
+        max_retries = 1
+
+        @llm_retry_decorator
+        async def method(self):
+            return "ok"
+
+    obj = Foo()
+    assert inspect.iscoroutinefunction(obj.method)
+    assert await obj.method() == "ok"
