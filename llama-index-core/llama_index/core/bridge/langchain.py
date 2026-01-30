@@ -1,10 +1,16 @@
 import langchain  # pants: no-infer-dep
-from langchain.agents import (
-    AgentExecutor,
-    AgentType,
-    initialize_agent,
-)  # pants: no-infer-dep
 
+# agents and tools
+try:
+    # # For langchain v1.x.x
+    from langchain_classic.agents import AgentExecutor, AgentType, initialize_agent
+except ImportError:
+    # For langchain v0.x.x
+    from langchain.agents import (
+        AgentExecutor,
+        AgentType,
+        initialize_agent,
+    )  # pants: no-infer-dep
 
 # agents and tools
 try:
