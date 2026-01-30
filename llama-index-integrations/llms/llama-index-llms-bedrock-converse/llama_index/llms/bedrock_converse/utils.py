@@ -12,6 +12,7 @@ from typing import (
     Literal,
     Union,
 )
+from botocore.exceptions import ClientError
 from typing_extensions import TypedDict
 from tenacity import (
     before_sleep_log,
@@ -593,8 +594,6 @@ RETRYABLE_ERROR_CODES = frozenset(
 
 def _is_retryable_client_error(exception: BaseException) -> bool:
     """Check if an exception is a retryable ClientError from botocore."""
-    from botocore.exceptions import ClientError
-
     if isinstance(exception, ClientError):
         error_code = exception.response.get("Error", {}).get("Code", "")
         return error_code in RETRYABLE_ERROR_CODES
