@@ -10,6 +10,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -25,16 +26,20 @@ dev = [
 ]
 
 [project]
-name = "llama-index-llms-openrouter"
-version = "0.4.4"
-description = "llama-index llms openrouter integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+name = "llama-index-vector-stores-yugabytedb"
+version = "0.5.4"
+description = "llama-index vector_stores yugabytedb integration"
+authors = [{name = "YugabyteDB", email = "pypi@yugabyte.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai-like>=0.5.0,<0.7",
-    "llama-index-core>=0.13.0,<0.15",
+    "pgvector>=0.3.6,<1.0.0",
+    "psycopg2-yugabytedb>=2.9.3.5",
+    "asyncpg>=0.29.0,<1.0.0",
+    "llama-index-core>=0.12.6,<0.13",
+    "sqlalchemy[asyncio]>=1.4.49,<2.1",
+    "sqlalchemy-yugabytedb>=1.0.0.1",
 ]
 
 [tool.codespell]
@@ -52,13 +57,18 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.openrouter"
+import_path = "llama_index.vector_stores.yugabytedb"
 
 [tool.llamahub.class_authors]
-OpenRouter = "llama-index"
+YBVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning:"]
+markers = ["asyncio"]
