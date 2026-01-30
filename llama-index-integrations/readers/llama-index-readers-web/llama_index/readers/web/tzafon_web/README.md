@@ -2,7 +2,7 @@
 title: TzafonWebReader
 description: Tzafon is a platform for programmatic control of browsers and desktops.
 icon: browser
-mode: "wide"    
+mode: "wide"
 ---
 
 # `TzafonWebReader`
@@ -12,6 +12,7 @@ mode: "wide"
 The `TzafonWebReader` enables web scraping and automation using [Tzafon](https://tzafon.ai), a platform for programmatic control of browsers and desktops. This tool allows agents to navigate websites, interact with content, and extract data using Tzafon's stealth and speed capabilities.
 
 Key Features:
+
 - **Full Stealth**: Bypass anti-bot measures with built-in stealth features.
 - **Lightning Fast**: Optimized for speed and performance.
 - **Multi-Tab Control**: Manage multiple browser tabs programmatically.
@@ -44,15 +45,15 @@ docs = reader.load_data(
     text_content=False,
 )
 docs
-``` 
+```
 
 ## Arguments
 
 The `TzafonWebReader` accepts the following parameters:
 
-| Argument    | Type     | Description                                                                 |
-|:------------|:---------|:----------------------------------------------------------------------------|
-| **api_key** | `string` | _Optional_. Tzafon API key. Default is `TZAFON_API_KEY` env variable.       |
+| Argument    | Type     | Description                                                           |
+| :---------- | :------- | :-------------------------------------------------------------------- |
+| **api_key** | `string` | _Optional_. Tzafon API key. Default is `TZAFON_API_KEY` env variable. |
 
 ## Return Format
 
