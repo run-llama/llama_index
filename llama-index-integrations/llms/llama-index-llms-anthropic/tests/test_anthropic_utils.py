@@ -28,6 +28,11 @@ from anthropic.types.beta import (
 class TestAnthropicPromptCachingSupport:
     """Test suite for Anthropic prompt caching model validation."""
 
+    def test_claude_4_5_opus_supported(self):
+        """Test Claude 4.5 Opus models support prompt caching."""
+        assert is_anthropic_prompt_caching_supported_model("claude-opus-4-5-20251101")
+        assert is_anthropic_prompt_caching_supported_model("claude-opus-4-5")
+
     def test_claude_4_1_opus_supported(self):
         """Test Claude 4.1 Opus models support prompt caching."""
         assert is_anthropic_prompt_caching_supported_model("claude-opus-4-1-20250805")
@@ -60,6 +65,11 @@ class TestAnthropicPromptCachingSupport:
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-20241022")
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-20240620")
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-latest")
+
+    def test_claude_4_5_haiku_supported(self):
+        """Test Claude 4.5 Haiku models support prompt caching."""
+        assert is_anthropic_prompt_caching_supported_model("claude-haiku-4-5-20251001")
+        assert is_anthropic_prompt_caching_supported_model("claude-haiku-4-5")
 
     def test_claude_3_5_haiku_supported(self):
         """Test Claude 3.5 Haiku models support prompt caching."""
@@ -99,12 +109,14 @@ class TestAnthropicPromptCachingSupport:
         assert len(ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS) > 0
 
         expected_patterns = [
+            "claude-opus-4-5",
             "claude-opus-4-1",
             "claude-opus-4-0",
             "claude-sonnet-4-5",
             "claude-sonnet-4-0",
             "claude-3-7-sonnet",
             "claude-3-5-sonnet",
+            "claude-haiku-4-5",
             "claude-3-5-haiku",
             "claude-3-haiku",
             "claude-3-opus",
