@@ -1914,7 +1914,7 @@ def test_sync_function_stays_sync(monkeypatch):
         return lambda f: f
 
     monkeypatch.setattr(
-        "your_module.create_retry_decorator",
+        "llama_index.llms.google_genai.base",
         fake_retry,
     )
 
@@ -1936,7 +1936,7 @@ async def test_async_function_stays_async(monkeypatch):
         return lambda f: f
 
     monkeypatch.setattr(
-        "your_module.create_retry_decorator",
+        "llama_index.llms.google_genai.base",
         fake_retry,
     )
 
