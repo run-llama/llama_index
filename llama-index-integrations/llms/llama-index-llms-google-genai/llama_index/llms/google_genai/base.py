@@ -1,6 +1,7 @@
 """Google's hosted Gemini API."""
 
 import asyncio
+import inspect
 import functools
 import os
 from importlib.metadata import PackageNotFoundError, version
@@ -80,20 +81,36 @@ class VertexAIConfig(typing.TypedDict):
 
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(f)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-        max_retries = getattr(self, "max_retries", 0)
-        if max_retries <= 0:
-            return f(self, *args, **kwargs)
+    if inspect.iscoroutinefunction(f):
 
-        retry = create_retry_decorator(
-            max_retries=max_retries,
-            random_exponential=True,
-            stop_after_delay_seconds=60,
-            min_seconds=1,
-            max_seconds=20,
-        )
-        return retry(f)(self, *args, **kwargs)
+        @functools.wraps(f)
+        async def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            max_retries = getattr(self, "max_retries", 0)
+            if max_retries <= 0:
+                return await f(self, *args, **kwargs)
+            retry = create_retry_decorator(
+                max_retries=max_retries,
+                random_exponential=True,
+                stop_after_delay_seconds=60,
+                min_seconds=1,
+                max_seconds=20,
+            )
+            return await retry(f)(self, *args, **kwargs)
+    else:
+
+        @functools.wraps(f)
+        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            max_retries = getattr(self, "max_retries", 0)
+            if max_retries <= 0:
+                return f(self, *args, **kwargs)
+            retry = create_retry_decorator(
+                max_retries=max_retries,
+                random_exponential=True,
+                stop_after_delay_seconds=60,
+                min_seconds=1,
+                max_seconds=20,
+            )
+            return retry(f)(self, *args, **kwargs)
 
     return wrapper
 
