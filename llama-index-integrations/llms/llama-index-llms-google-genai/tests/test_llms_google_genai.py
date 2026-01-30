@@ -21,6 +21,7 @@ from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.google_genai.base import llm_retry_decorator
 from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
