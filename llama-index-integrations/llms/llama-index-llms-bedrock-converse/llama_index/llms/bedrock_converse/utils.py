@@ -16,6 +16,7 @@ from typing_extensions import TypedDict
 from tenacity import (
     before_sleep_log,
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
@@ -566,9 +567,38 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
+        retry=(
+            retry_if_exception_type(
+                (
+                    client.exceptions.ThrottlingException,
+                    client.exceptions.InternalServerException,
+                    client.exceptions.ServiceUnavailableException,
+                    client.exceptions.ModelTimeoutException,
+                )
+            )
+        ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+RETRYABLE_ERROR_CODES = frozenset(
+    {
+        "ThrottlingException",
+        "InternalServerException",
+        "ServiceUnavailableException",
+        "ModelTimeoutException",
+    }
+)
+
+
+def _is_retryable_client_error(exception: BaseException) -> bool:
+    """Check if an exception is a retryable ClientError from botocore."""
+    from botocore.exceptions import ClientError
+
+    if isinstance(exception, ClientError):
+        error_code = exception.response.get("Error", {}).get("Code", "")
+        return error_code in RETRYABLE_ERROR_CODES
+    return False
 
 
 def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
@@ -588,9 +618,7 @@ def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type()
-        ),  # TODO: Add throttling exception in async version
+        retry=retry_if_exception(_is_retryable_client_error),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
