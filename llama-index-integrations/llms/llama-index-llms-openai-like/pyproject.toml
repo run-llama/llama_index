@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai-like"
-version = "0.5.3"
+version = "0.6.0"
 description = "llama-index llms openai like integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,9 +34,11 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-llms-openai>=0.6.0,<0.7",
-    "transformers>=4.37.0,<5",
     "llama-index-core>=0.14.3,<0.15",
 ]
+
+[project.optional-dependencies]
+transformers = ["transformers>=4.37.0,<5"]
 
 [tool.codespell]
 check-filenames = true
