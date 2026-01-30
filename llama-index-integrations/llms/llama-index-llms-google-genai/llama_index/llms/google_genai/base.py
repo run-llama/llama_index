@@ -1,6 +1,7 @@
 """Google's hosted Gemini API."""
 
 import asyncio
+import inspect
 import functools
 import os
 from importlib.metadata import PackageNotFoundError, version
@@ -80,22 +81,34 @@ class VertexAIConfig(typing.TypedDict):
 
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(f)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-        max_retries = getattr(self, "max_retries", 0)
-        if max_retries <= 0:
-            return f(self, *args, **kwargs)
+    is_async = inspect.iscoroutinefunction(f)
 
-        retry = create_retry_decorator(
-            max_retries=max_retries,
+    def get_retry(self):
+        return create_retry_decorator(
+            max_retries=getattr(self, "max_retries", 0),
             random_exponential=True,
             stop_after_delay_seconds=60,
             min_seconds=1,
             max_seconds=20,
         )
+
+    @functools.wraps(f)
+    def sync_wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        retry = get_retry(self)
+        if getattr(self, "max_retries", 0) <= 0:
+            return f(self, *args, **kwargs)
         return retry(f)(self, *args, **kwargs)
 
-    return wrapper
+    @functools.wraps(f)
+    async def async_wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        retry = get_retry(self)
+        if getattr(self, "max_retries", 0) <= 0:
+            return await f(self, *args, **kwargs)
+
+        wrapped = retry(f)
+        return await wrapped(self, *args, **kwargs)
+
+    return async_wrapper if is_async else sync_wrapper
 
 
 class GoogleGenAI(FunctionCallingLLM):
