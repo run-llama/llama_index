@@ -1628,7 +1628,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.14"
+version = "0.14.15"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1777,7 +1777,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.6.13"
+version = "0.6.15"
 source = { directory = "../llama-index-integrations/llms/llama-index-llms-openai" }
 dependencies = [
     { name = "llama-index-core" },
