@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1710,11 +1710,12 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-cohere"
-version = "0.6.1"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "cohere" },
     { name = "llama-index-core" },
+    { name = "tenacity" },
 ]
 
 [package.dev-dependencies]
@@ -1745,6 +1746,7 @@ dev = [
 requires-dist = [
     { name = "cohere", specifier = ">=5.15,<6" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "tenacity", specifier = ">=8.2.0,<10" },
 ]
 
 [package.metadata.requires-dev]
