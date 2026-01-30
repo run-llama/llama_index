@@ -140,7 +140,14 @@ except ImportError:
         RecursiveCharacterTextSplitter,
         TextSplitter,
     )  # pants: no-infer-dep
-from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-dep
+
+try:
+    # # For langchain v1.x.x
+    from langchain_core.tools import BaseTool, StructuredTool, Tool
+except ImportError:
+    # For langchain v0.x.x
+    from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-dep
+
 from langchain_community.chat_message_histories import (
     ChatMessageHistory,
 )  # pants: no-infer-dep
