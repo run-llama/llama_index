@@ -47,7 +47,9 @@ METADATA_TYPE_MAPPING = {
 }
 
 
-def _to_zvec_filter(standard_filters: Optional[MetadataFilters] = None) -> Optional[str]:
+def _to_zvec_filter(
+    standard_filters: Optional[MetadataFilters] = None,
+) -> Optional[str]:
     """Convert from standard filter to zvec filter string."""
     if standard_filters is None:
         return None
@@ -91,17 +93,18 @@ class ZvecVectorStore(BasePydanticVectorStore):
         from llama_index.vector_stores.zvec import ZvecVectorStore
 
         vector_store = ZvecVectorStore(
-            path="zvec_demo.zvec", 
-            collection_name="zvec_demo", 
+            path="zvec_demo.zvec",
+            collection_name="zvec_demo",
             embed_dim=1536
         )
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         index = VectorStoreIndex.from_documents(
-            documents, 
-            storage_context=storage_context, 
+            documents,
+            storage_context=storage_context,
             embed_model=embed_model
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -139,9 +142,13 @@ class ZvecVectorStore(BasePydanticVectorStore):
         if not path:
             raise ValueError("Path is required for ZvecVectorStore initialization")
         if not collection_name:
-            raise ValueError("Collection name is required for ZvecVectorStore initialization")
+            raise ValueError(
+                "Collection name is required for ZvecVectorStore initialization"
+            )
         if not embed_dim:
-            raise ValueError("Embedding dimension is required for ZvecVectorStore initialization")
+            raise ValueError(
+                "Embedding dimension is required for ZvecVectorStore initialization"
+            )
 
         self._validate_dependencies()
 
@@ -165,24 +172,28 @@ class ZvecVectorStore(BasePydanticVectorStore):
 
     def _validate_dependencies(self) -> None:
         """Validate required dependencies are available."""
-        try:
-            import zvec
-        except ImportError:
+        import importlib.util
+
+        if importlib.util.find_spec("zvec") is None:
             raise ImportError("`zvec` package not found, please run `pip install zvec`")
 
     def _validate_metadata_types(self, collection_metadata: Dict[str, Any]) -> None:
         """Validate metadata types are supported."""
         for key, value_type in collection_metadata.items():
             if value_type not in METADATA_TYPE_MAPPING:
-                raise ValueError(f"Unsupported metadata type '{value_type}' for key '{key}'. "
-                               f"Supported types: {list(METADATA_TYPE_MAPPING.keys())}")
+                raise ValueError(
+                    f"Unsupported metadata type '{value_type}' for key '{key}'. "
+                    f"Supported types: {list(METADATA_TYPE_MAPPING.keys())}"
+                )
 
     def _setup_sparse_encoder(self, encoder: Optional[Any]) -> None:
         """Setup sparse vector encoder."""
         try:
             import dashtext
         except ImportError:
-            raise ImportError("`dashtext` package not found, please run `pip install dashtext`")
+            raise ImportError(
+                "`dashtext` package not found, please run `pip install dashtext`"
+            )
 
         if encoder is None:
             encoder = dashtext.SparseVectorEncoder.default()
@@ -467,7 +478,9 @@ class ZvecVectorStore(BasePydanticVectorStore):
                 node.set_content(doc.fields["text"])
             except Exception as e:
                 # Fallback to legacy parsing
-                logger.debug(f"Failed to parse Node metadata, falling back to legacy logic: {e}")
+                logger.debug(
+                    f"Failed to parse Node metadata, falling back to legacy logic: {e}"
+                )
                 try:
                     metadata, node_info, relationships = legacy_metadata_dict_to_node(
                         json.loads(doc.fields["metadata_"])
@@ -483,7 +496,9 @@ class ZvecVectorStore(BasePydanticVectorStore):
                         relationships=relationships,
                     )
                 except Exception as fallback_error:
-                    logger.error(f"Both metadata parsing methods failed: {fallback_error}")
+                    logger.error(
+                        f"Both metadata parsing methods failed: {fallback_error}"
+                    )
                     continue  # Skip this result
 
             top_k_ids.append(doc.id)
@@ -491,7 +506,5 @@ class ZvecVectorStore(BasePydanticVectorStore):
             top_k_scores.append(doc.score)
 
         return VectorStoreQueryResult(
-            nodes=top_k_nodes,
-            similarities=top_k_scores,
-            ids=top_k_ids
+            nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )

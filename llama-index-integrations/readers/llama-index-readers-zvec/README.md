@@ -19,9 +19,7 @@ from llama_index.core.schema import Document
 from llama_index.readers.zvec import ZvecReader
 
 # Initialize ZvecReader with the collection path
-reader = ZvecReader(
-    path="<your collection path>"
-)
+reader = ZvecReader(path="<your collection path>")
 
 # Load data from Zvec
 documents = reader.load_data(
