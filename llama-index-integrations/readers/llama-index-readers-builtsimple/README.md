@@ -219,12 +219,12 @@ print(response)
 
 ## Rate Limits
 
-| Tier | Rate Limit  | Notes             |
-| ---- | ----------- | ----------------- |
-| Free | 10 req/min  | No API key needed |
-| Pro  | 100 req/min | Requires API key  |
+| Tier | Rate Limit       | Notes             |
+| ---- | ---------------- | ----------------- |
+| Free | 100 req/month    | No API key needed |
+| Pro  | 10,000 req/month | Requires API key  |
 
-Get an API key at [pubmed.built-simple.ai](https://pubmed.built-simple.ai) or [arxiv.built-simple.ai](https://arxiv.built-simple.ai).
+Get an API key at [built-simple.ai](https://built-simple.ai).
 
 ## Why Built-Simple?
 
