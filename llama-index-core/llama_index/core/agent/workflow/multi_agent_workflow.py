@@ -41,6 +41,11 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
+from llama_index.core.agent.workflow.structured_output import (
+    StructuredOutputTool,
+    STRUCTURED_OUTPUT_TOOL_NAME,
+    extract_structured_output_from_tool_result,
+)
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -110,6 +115,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             Callable[[List[ChatMessage]], Dict[str, Any]]
         ] = None,
         early_stopping_method: Literal["force", "generate"] = "force",
+        use_native_structured_output: bool = True,
         **workflow_kwargs: Any,
     ):
         super().__init__(timeout=timeout, **workflow_kwargs)
@@ -180,6 +186,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         self.output_cls = output_cls
         self.structured_output_fn = structured_output_fn
+        self.use_native_structured_output = use_native_structured_output
         if output_cls is not None and structured_output_fn is not None:
             self.structured_output_fn = None
 
@@ -242,6 +249,12 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             async_fn=handoff, description=fn_tool_prompt, return_direct=True
         )
 
+    def _get_structured_output_tool(self) -> Optional[StructuredOutputTool]:
+        """Create a structured output tool if output_cls is set and native mode is enabled."""
+        if self.output_cls is not None and self.use_native_structured_output:
+            return StructuredOutputTool.from_output_cls(self.output_cls)
+        return None
+
     async def get_tools(
         self, agent_name: str, input_str: Optional[str] = None
     ) -> Sequence[AsyncBaseTool]:
@@ -261,7 +274,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             if handoff_tool:
                 tools.append(handoff_tool)
 
-        return self._ensure_tools_are_async(cast(List[BaseTool], tools))
+        async_tools = list(self._ensure_tools_are_async(cast(List[BaseTool], tools)))
+
+        # Inject structured output tool if configured
+        structured_output_tool = self._get_structured_output_tool()
+        if structured_output_tool is not None:
+            async_tools.append(structured_output_tool)
+
+        return async_tools
 
     async def _init_context(self, ctx: Context, ev: StartEvent) -> None:
         """Initialize the context once, if needed."""
@@ -590,7 +610,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     warnings.warn(
                         f"There was a problem with the generation of the structured output: {e}"
                     )
-            if self.output_cls is not None:
+            # Only use legacy structured output approach if native mode is disabled
+            if self.output_cls is not None and not self.use_native_structured_output:
                 try:
                     llm_input = [*messages]
                     if agent.system_prompt:
@@ -726,6 +747,22 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 raw=return_direct_tool.tool_output.raw_output,
                 current_agent_name=agent.name,
             )
+
+            # Check if this is the structured output tool and extract structured response
+            if (
+                return_direct_tool.tool_name == STRUCTURED_OUTPUT_TOOL_NAME
+                and self.output_cls is not None
+                and self.use_native_structured_output
+            ):
+                structured_output = extract_structured_output_from_tool_result(
+                    return_direct_tool.tool_output, self.output_cls
+                )
+                if structured_output is not None:
+                    result.structured_response = structured_output
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=structured_output)
+                    )
+
             result = await agent.finalize(ctx, result, memory)
 
             # we don't want to stop the system if we're just handing off
@@ -785,6 +822,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         structured_output_fn: Optional[
             Callable[[List[ChatMessage]], Dict[str, Any]]
         ] = None,
+        use_native_structured_output: bool = True,
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
@@ -795,6 +833,22 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         If the LLM is a function calling model, the workflow will use the FunctionAgent.
         Otherwise, it will use the ReActAgent.
+
+        Args:
+            tools_or_functions: List of tools or functions to use.
+            llm: The LLM to use. Defaults to Settings.llm.
+            system_prompt: Optional system prompt for the agent.
+            state_prompt: Optional state prompt template.
+            initial_state: Optional initial state dictionary.
+            output_cls: Optional Pydantic model class for structured output.
+            structured_output_fn: Optional custom function for structured output.
+            use_native_structured_output: If True, uses tool-based structured output
+                (no extra LLM call). If False, uses legacy approach with extra LLM call.
+            timeout: Optional timeout for the workflow.
+            verbose: If True, enables verbose logging.
+
+        Returns:
+            An AgentWorkflow instance.
         """
         llm = llm or Settings.llm
         agent_cls = (
@@ -819,6 +873,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ],
             output_cls=output_cls,
             structured_output_fn=structured_output_fn,
+            use_native_structured_output=use_native_structured_output,
             state_prompt=state_prompt,
             initial_state=initial_state,
             timeout=timeout,

@@ -31,6 +31,11 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCall,
     ToolCallResult,
 )
+from llama_index.core.agent.workflow.structured_output import (
+    StructuredOutputTool,
+    STRUCTURED_OUTPUT_TOOL_NAME,
+    extract_structured_output_from_tool_result,
+)
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
@@ -137,6 +142,12 @@ class BaseWorkflowAgent(
         default="force",
         description="Method to handle max iterations. 'force' raises an error (default). 'generate' makes one final LLM call to generate a response.",
     )
+    use_native_structured_output: bool = Field(
+        default=True,
+        description="When True and output_cls is set, uses a tool-based approach for structured output "
+        "that eliminates the need for an extra LLM call. When False, falls back to the legacy "
+        "approach that makes an additional LLM call to generate structured output.",
+    )
 
     def __init__(
         self,
@@ -153,6 +164,7 @@ class BaseWorkflowAgent(
         structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
         streaming: bool = True,
         early_stopping_method: Literal["force", "generate"] = "force",
+        use_native_structured_output: bool = True,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -185,6 +197,7 @@ class BaseWorkflowAgent(
             structured_output_fn=structured_output_fn,
             streaming=streaming,
             early_stopping_method=early_stopping_method,
+            use_native_structured_output=use_native_structured_output,
             **model_kwargs,
         )
 
@@ -267,16 +280,38 @@ class BaseWorkflowAgent(
         """Ensure all tools are async."""
         return [adapt_to_async_tool(tool) for tool in tools]
 
+    def _get_structured_output_tool(self) -> Optional[StructuredOutputTool]:
+        """Create a structured output tool if output_cls is set and native mode is enabled."""
+        if self.output_cls is not None and self.use_native_structured_output:
+            return StructuredOutputTool.from_output_cls(self.output_cls)
+        return None
+
     async def get_tools(
-        self, input_str: Optional[str] = None
+        self, input_str: Optional[str] = None, include_structured_output_tool: bool = True
     ) -> Sequence[AsyncBaseTool]:
-        """Get tools for the given agent."""
+        """Get tools for the given agent.
+
+        Args:
+            input_str: Optional input string for tool retrieval.
+            include_structured_output_tool: If True and output_cls is set with
+                use_native_structured_output=True, includes the structured output tool.
+
+        Returns:
+            Sequence of async tools available to the agent.
+        """
         tools = [*self.tools] if self.tools else []
         if self.tool_retriever is not None:
             retrieved_tools = await self.tool_retriever.aretrieve(input_str or "")
             tools.extend(retrieved_tools)
 
-        return self._ensure_tools_are_async(cast(List[BaseTool], tools))
+        async_tools = list(self._ensure_tools_are_async(cast(List[BaseTool], tools)))
+
+        if include_structured_output_tool:
+            structured_output_tool = self._get_structured_output_tool()
+            if structured_output_tool is not None:
+                async_tools.append(structured_output_tool)
+
+        return async_tools
 
     async def _init_context(self, ctx: Context, ev: AgentWorkflowStartEvent) -> None:
         """Initialize the context once, if needed."""
@@ -580,7 +615,8 @@ class BaseWorkflowAgent(
                     warnings.warn(
                         f"There was a problem with the generation of the structured output: {e}"
                     )
-            if self.output_cls is not None:
+            # Only use legacy structured output approach if native mode is disabled
+            if self.output_cls is not None and not self.use_native_structured_output:
                 try:
                     llm_input = [*messages]
                     if self.system_prompt:
@@ -708,6 +744,22 @@ class BaseWorkflowAgent(
                 raw=return_direct_tool.tool_output.raw_output,
                 current_agent_name=self.name,
             )
+
+            # Check if this is the structured output tool and extract structured response
+            if (
+                return_direct_tool.tool_name == STRUCTURED_OUTPUT_TOOL_NAME
+                and self.output_cls is not None
+                and self.use_native_structured_output
+            ):
+                structured_output = extract_structured_output_from_tool_result(
+                    return_direct_tool.tool_output, self.output_cls
+                )
+                if structured_output is not None:
+                    result.structured_response = structured_output
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=structured_output)
+                    )
+
             result = await self.finalize(ctx, result, memory)
             # we don't want to stop the system if we're just handing off
             if return_direct_tool.tool_name != "handoff":
