@@ -1,17 +1,27 @@
-from enum import Enum
-from typing import Any, List, Optional, Union
-
-from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embedding
-from llama_index.core.embeddings import MultiModalEmbedding
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-import cohere
-import httpx
 import base64
+import logging
+from enum import Enum
 from io import BytesIO
 from pathlib import Path
+from typing import Any, Callable, List, Optional, Union
+
+import cohere
+import httpx
+from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embedding
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.schema import ImageType
 from PIL import Image
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+logger = logging.getLogger(__name__)
 
 
 # Enums for validation and type safety
@@ -120,6 +130,31 @@ SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 # Maximum batch size for Cohere API
 MAX_EMBED_BATCH_SIZE = 96
 
+# Default max retries for API calls
+DEFAULT_MAX_RETRIES = 10
+
+
+def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
+    """Create a retry decorator for Cohere API calls."""
+    min_seconds = 4
+    max_seconds = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type(
+                (
+                    cohere.errors.ServiceUnavailableError,
+                    cohere.errors.InternalServerError,
+                    cohere.errors.GatewayTimeoutError,
+                )
+            )
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
 
 # Assuming BaseEmbedding is a Pydantic model and handles its own initializations
 class CohereEmbedding(MultiModalEmbedding):
@@ -137,6 +172,10 @@ class CohereEmbedding(MultiModalEmbedding):
     )
     embedding_type: str = Field(
         description="Embedding type. If not provided float embedding_type is used when needed."
+    )
+    max_retries: int = Field(
+        default=DEFAULT_MAX_RETRIES,
+        description="Maximum number of retries for API calls.",
     )
 
     _client: cohere.Client = PrivateAttr()
@@ -161,6 +200,7 @@ class CohereEmbedding(MultiModalEmbedding):
         httpx_client: Optional[httpx.Client] = None,
         httpx_async_client: Optional[httpx.AsyncClient] = None,
         num_workers: Optional[int] = None,
+        max_retries: int = DEFAULT_MAX_RETRIES,
         **kwargs: Any,
     ):
         """
@@ -209,6 +249,7 @@ class CohereEmbedding(MultiModalEmbedding):
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             num_workers=num_workers,
+            max_retries=max_retries,
             **kwargs,
         )
 
@@ -288,15 +329,20 @@ class CohereEmbedding(MultiModalEmbedding):
         else:
             input_type = self.input_type or input_type
 
-        result = client.embed(
-            texts=texts,
-            input_type=input_type,
-            embedding_types=[self.embedding_type],
-            model=self.model_name,
-            truncate=self.truncate,
-        ).embeddings
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
-        return getattr(result, self.embedding_type, None)
+        @retry_decorator
+        def _embed_with_retry() -> List[List[float]]:
+            result = client.embed(
+                texts=texts,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return _embed_with_retry()
 
     async def _aembed(
         self,
@@ -311,17 +357,22 @@ class CohereEmbedding(MultiModalEmbedding):
         else:
             input_type = self.input_type or input_type
 
-        result = (
-            await async_client.embed(
-                texts=texts,
-                input_type=input_type,
-                embedding_types=[self.embedding_type],
-                model=self.model_name,
-                truncate=self.truncate,
-            )
-        ).embeddings
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
-        return getattr(result, self.embedding_type, None)
+        @retry_decorator
+        async def _aembed_with_retry() -> List[List[float]]:
+            result = (
+                await async_client.embed(
+                    texts=texts,
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return await _aembed_with_retry()
 
     def _embed_image(
         self, image_paths: List[ImageType], input_type: str
@@ -342,15 +393,20 @@ class CohereEmbedding(MultiModalEmbedding):
             for processed_image in processed_images
         ]
 
-        embeddings = client.embed(
-            inputs=inputs,
-            input_type=input_type,
-            embedding_types=[self.embedding_type],
-            model=self.model_name,
-            truncate=self.truncate,
-        ).embeddings
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
-        return getattr(embeddings, self.embedding_type, None)
+        @retry_decorator
+        def _embed_image_with_retry() -> List[List[float]]:
+            embeddings = client.embed(
+                inputs=inputs,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(embeddings, self.embedding_type, None)
+
+        return _embed_image_with_retry()
 
     async def _aembed_image(
         self,
@@ -373,17 +429,22 @@ class CohereEmbedding(MultiModalEmbedding):
             for processed_image in processed_images
         ]
 
-        embeddings = (
-            await async_client.embed(
-                inputs=inputs,
-                input_type=input_type,
-                embedding_types=[self.embedding_type],
-                model=self.model_name,
-                truncate=self.truncate,
-            )
-        ).embeddings
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
-        return getattr(embeddings, self.embedding_type, None)
+        @retry_decorator
+        async def _aembed_image_with_retry() -> List[List[float]]:
+            embeddings = (
+                await async_client.embed(
+                    inputs=inputs,
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(embeddings, self.embedding_type, None)
+
+        return await _aembed_image_with_retry()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
