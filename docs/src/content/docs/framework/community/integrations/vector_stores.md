@@ -1037,22 +1037,9 @@ vector_store = MilvusVectorStore(
 import zvec
 from llama_index.vector_stores.zvec import ZvecVectorStore
 
-collection_schema = zvec.CollectionSchema(
-    name="quickstart",
-    vectors=[
-        zvec.VectorSchema(
-            name="embedding",
-            data_type=zvec.DataType.VECTOR_FP32,
-            dimension=1536,
-            index_param=zvec.HnswIndexParam(
-                metric_type=zvec.MetricType.COSINE
-            ),
-        ),
-    ],
-)
-collection = zvec.create_and_open(
-    path="quickstart.zvec",
-    schema=collection_schema,
+# construct vector store
+vector_store = ZvecVectorStore(
+    path="zvec_demo.zvec", collection_name="zvec_demo", embed_dim=1536
 )
 ```
 
