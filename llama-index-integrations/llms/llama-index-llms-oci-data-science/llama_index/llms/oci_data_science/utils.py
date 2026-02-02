@@ -251,8 +251,8 @@ def _resolve_tool_choice(
         return {"type": "function", "function": {"name": tool_choice}}
     return tool_choice
 
-_KNOWN_SUFFIXES = ("/predict", "/predictWithStreamResponse")
 
+_KNOWN_SUFFIXES = ("/predict", "/predictWithStreamResponse")
 
 
 def _strip_md_endpoint_suffix(endpoint: str) -> str:
@@ -280,8 +280,8 @@ def _strip_md_endpoint_suffix(endpoint: str) -> str:
 
     Returns:
         str: Base endpoint URL without any known prediction suffix.
-    """
 
+    """
     ep = (endpoint or "").rstrip("/")
     for sfx in _KNOWN_SUFFIXES:
         if ep.endswith(sfx):
@@ -290,7 +290,7 @@ def _strip_md_endpoint_suffix(endpoint: str) -> str:
 
 
 def _endpoint_suffix(endpoint: str) -> str:
-     """
+    """
     Detect which known suffix is present in the configured endpoint.
 
     This function inspects the endpoint string and returns:
@@ -307,6 +307,7 @@ def _endpoint_suffix(endpoint: str) -> str:
 
     Returns:
         str: The detected suffix name, or an empty string if none is found.
+
     """
     ep = (endpoint or "").rstrip("/")
     if ep.endswith("/predictWithStreamResponse"):
@@ -356,9 +357,8 @@ def _resolve_invoke_url(endpoint: str, *, stream: bool) -> str:
 
     Returns:
         str: The resolved URL that should be invoked for this request.
-    """    
 
-
+    """
     base = _strip_md_endpoint_suffix(endpoint)
 
     if not stream:
@@ -372,4 +372,3 @@ def _resolve_invoke_url(endpoint: str, *, stream: bool) -> str:
 
     # base only => default streaming to v2
     return f"{base}/predictWithStreamResponse"
-

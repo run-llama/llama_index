@@ -200,7 +200,7 @@ class OCIDataScience(FunctionCallingLLM):
         response = llm.complete(prompt)
         print(response)
         ```
-       
+
     """
 
     endpoint: str = Field(
