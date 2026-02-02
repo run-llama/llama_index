@@ -570,46 +570,18 @@ async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
     assert isinstance(result.raw, Person)
 
 
-def test_reasoning_effort_passed_for_o1_models():
+@pytest.mark.parametrize(
+    "effort", ["low", "medium", "high", "minimal", "xhigh", "none"]
+)
+def test_reasoning_effort_passed_for_o1_models(effort):
     """Test that reasoning_effort is passed for O1 models."""
     model_name = "o1-mini"
     assert model_name in O1_MODELS
 
-    # Test with low reasoning effort
-    llm = OpenAI(model=model_name, reasoning_effort="low", api_key="test-key")
+    llm = OpenAI(model=model_name, reasoning_effort=effort, api_key="test-key")
     kwargs = llm._get_model_kwargs()
     assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "low"
-
-    # Test with medium reasoning effort
-    llm = OpenAI(model=model_name, reasoning_effort="medium", api_key="test-key")
-    kwargs = llm._get_model_kwargs()
-    assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "medium"
-
-    # Test with minimal reasoning effort
-    llm = OpenAI(model=model_name, reasoning_effort="minimal", api_key="test-key")
-    kwargs = llm._get_model_kwargs()
-    assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "minimal"
-
-    # Test with high reasoning effort
-    llm = OpenAI(model=model_name, reasoning_effort="high", api_key="test-key")
-    kwargs = llm._get_model_kwargs()
-    assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "high"
-
-    # Test with xhigh reasoning effort (new value)
-    llm = OpenAI(model=model_name, reasoning_effort="xhigh", api_key="test-key")
-    kwargs = llm._get_model_kwargs()
-    assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "xhigh"
-
-    # Test with none reasoning effort (new value)
-    llm = OpenAI(model=model_name, reasoning_effort="none", api_key="test-key")
-    kwargs = llm._get_model_kwargs()
-    assert "reasoning_effort" in kwargs
-    assert kwargs["reasoning_effort"] == "none"
+    assert kwargs["reasoning_effort"] == effort
 
 
 def test_reasoning_effort_not_passed_for_non_o1_models():
