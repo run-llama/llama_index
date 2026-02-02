@@ -12,6 +12,8 @@ from typing import (
     Union,
     Tuple,
     get_origin,
+    AsyncIterator,
+    Iterator,
 )
 import re
 
@@ -62,6 +64,14 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 
 # The type that the callback can return: either a ToolOutput instance or a string to override the content.
 CallbackReturn = Optional[Union[ToolOutput, str]]
+
+
+def _is_async_iterable(obj: Any) -> bool:
+    return inspect.isasyncgen(obj) or hasattr(obj, "__aiter__")
+
+
+def _is_sync_iterable(obj: Any) -> bool:
+    return inspect.isgenerator(obj) or hasattr(obj, "__next__")
 
 
 class FunctionTool(AsyncBaseTool):
@@ -303,6 +313,28 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
+        last_output = None
+        for output in self.call_stream(*args, **kwargs):
+            last_output = output
+
+        if last_output is None:
+            tool_output_kwargs = {
+                k: v
+                for k, v in {**self.partial_params, **kwargs}.items()
+                if k != self.ctx_param_name
+            }
+            return ToolOutput(
+                content="Tool returned no output.",
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=None,
+                is_error=True,
+            )
+
+        return last_output
+
+    def call_stream(self, *args: Any, **kwargs: Any) -> Iterator[ToolOutput]:
+        """Sync streaming call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
@@ -315,69 +347,105 @@ class FunctionTool(AsyncBaseTool):
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
-        # Check for a sync callback override
-        callback_result = self._run_sync_callback(raw_output)
-        if callback_result is not None:
-            if isinstance(callback_result, ToolOutput):
-                return callback_result
-            else:
-                # Assume callback_result is a string to override the content.
+        def _build_output(result: Any) -> ToolOutput:
+            output_blocks = self._parse_tool_output(result)
+            default_output = ToolOutput(
+                blocks=output_blocks,
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=result,
+            )
+            callback_result = self._run_sync_callback(result)
+            if callback_result is not None:
+                if isinstance(callback_result, ToolOutput):
+                    return callback_result
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
-                    raw_output=raw_output,
+                    raw_output=result,
                 )
-        return default_output
+            return default_output
+
+        if _is_sync_iterable(raw_output):
+            for result in raw_output:
+                yield _build_output(result)
+        else:
+            yield _build_output(raw_output)
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
+        last_output = None
+        async for output in self.acall_stream(*args, **kwargs):
+            last_output = output
+
+        if last_output is None:
+            tool_output_kwargs = {
+                k: v
+                for k, v in {**self.partial_params, **kwargs}.items()
+                if k != self.ctx_param_name
+            }
+            return ToolOutput(
+                content="Tool returned no output.",
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=None,
+                is_error=True,
+            )
+
+        return last_output
+
+    async def acall_stream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ToolOutput]:
+        """Async streaming call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
-        raw_output = await self._async_fn(*args, **all_kwargs)
+        raw_output = self._async_fn(*args, **all_kwargs)
+        if inspect.isawaitable(raw_output):
+            raw_output = await raw_output
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
-        # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
-        # Check for an async callback override
-        callback_result = await self._run_async_callback(raw_output)
-        if callback_result is not None:
-            if isinstance(callback_result, ToolOutput):
-                return callback_result
-            else:
-                # Assume callback_result is a string to override the content.
+        async def _build_output(result: Any) -> ToolOutput:
+            output_blocks = self._parse_tool_output(result)
+            default_output = ToolOutput(
+                blocks=output_blocks,
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=result,
+            )
+            callback_result = await self._run_async_callback(result)
+            if callback_result is not None:
+                if isinstance(callback_result, ToolOutput):
+                    return callback_result
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
-                    raw_output=raw_output,
+                    raw_output=result,
                 )
-        return default_output
+            return default_output
+
+        if _is_async_iterable(raw_output):
+            async for result in raw_output:
+                yield await _build_output(result)
+        elif _is_sync_iterable(raw_output):
+            iterator = iter(raw_output)
+            while True:
+                try:
+                    result = await asyncio.to_thread(next, iterator)
+                except StopIteration:
+                    break
+                yield await _build_output(result)
+        else:
+            yield await _build_output(raw_output)
 
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
         """To langchain tool."""
