@@ -32,6 +32,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "zvec>=0.1.0,<2",
+    "dashtext==0.0.7",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

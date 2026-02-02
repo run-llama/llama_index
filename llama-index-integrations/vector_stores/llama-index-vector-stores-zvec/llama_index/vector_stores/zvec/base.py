@@ -15,7 +15,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
-    DEFAULT_DOC_ID_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -100,8 +99,7 @@ class ZvecVectorStore(BasePydanticVectorStore):
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         index = VectorStoreIndex.from_documents(
             documents,
-            storage_context=storage_context,
-            embed_model=embed_model
+            storage_context=storage_context
         )
         ```
 
@@ -150,8 +148,6 @@ class ZvecVectorStore(BasePydanticVectorStore):
                 "Embedding dimension is required for ZvecVectorStore initialization"
             )
 
-        self._validate_dependencies()
-
         # Initialize attributes
         self._support_sparse_vector = support_sparse_vector
         self._encoder = encoder
@@ -169,13 +165,6 @@ class ZvecVectorStore(BasePydanticVectorStore):
         self._collection = self._initialize_collection(
             path, collection_name, collection_metadata, embed_dim, support_sparse_vector
         )
-
-    def _validate_dependencies(self) -> None:
-        """Validate required dependencies are available."""
-        import importlib.util
-
-        if importlib.util.find_spec("zvec") is None:
-            raise ImportError("`zvec` package not found, please run `pip install zvec`")
 
     def _validate_metadata_types(self, collection_metadata: Dict[str, Any]) -> None:
         """Validate metadata types are supported."""
@@ -383,8 +372,8 @@ class ZvecVectorStore(BasePydanticVectorStore):
         if not ref_doc_id:
             raise ValueError("Reference document ID cannot be empty")
 
-        # Query for documents matching the ID
-        filter_condition = f"{DEFAULT_DOC_ID_KEY}='{ref_doc_id}'"
+        # Query for documents matching the node_id field
+        filter_condition = f"node_id='{ref_doc_id}'"
         response = self._collection.query(filter=filter_condition)
 
         if not response:
