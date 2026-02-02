@@ -11,6 +11,7 @@ from enum import Enum
 from urllib.parse import quote
 
 import requests
+from pydantic.json_schema import SkipJsonSchema
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
 from llama_index.core.readers.base import (
     BaseReader,
@@ -82,14 +83,14 @@ class SharePointReader(
     sharepoint_folder_id: Optional[str] = None
     sharepoint_file_id: Optional[str] = None
     required_exts: Optional[List[str]] = None
-    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+    file_extractor: Optional[SkipJsonSchema[Dict[str, Union[str, BaseReader]]]] = Field(
         default=None, exclude=True
     )
     attach_permission_metadata: bool = True
     drive_name: Optional[str] = None
     drive_id: Optional[str] = None
     sharepoint_type: SharePointType = SharePointType.DRIVE
-    process_document_callback: Optional[Callable[[str], bool]] = Field(
+    process_document_callback: Optional[SkipJsonSchema[Callable[[str], bool]]] = Field(
         default=None, exclude=True
     )
     fail_on_error: bool = True
