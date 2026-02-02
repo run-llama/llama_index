@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import O1_MODELS
 
 import openai
 from openai.types.chat.chat_completion import (
@@ -567,3 +568,64 @@ async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
 
     # Verify the result has the expected structure
     assert isinstance(result.raw, Person)
+
+
+def test_reasoning_effort_passed_for_o1_models():
+    """Test that reasoning_effort is passed for O1 models."""
+    model_name = "o1-mini"
+    assert model_name in O1_MODELS
+
+    # Test with low reasoning effort
+    llm = OpenAI(model=model_name, reasoning_effort="low", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "low"
+
+    # Test with medium reasoning effort
+    llm = OpenAI(model=model_name, reasoning_effort="medium", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "medium"
+
+    # Test with minimal reasoning effort
+    llm = OpenAI(model=model_name, reasoning_effort="minimal", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "minimal"
+
+    # Test with high reasoning effort
+    llm = OpenAI(model=model_name, reasoning_effort="high", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "high"
+
+    # Test with xhigh reasoning effort (new value)
+    llm = OpenAI(model=model_name, reasoning_effort="xhigh", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "xhigh"
+
+    # Test with none reasoning effort (new value)
+    llm = OpenAI(model=model_name, reasoning_effort="none", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" in kwargs
+    assert kwargs["reasoning_effort"] == "none"
+
+
+def test_reasoning_effort_not_passed_for_non_o1_models():
+    """Test that reasoning_effort is NOT passed for non-O1 models."""
+    model_name = "gpt-4o"
+    assert model_name not in O1_MODELS
+
+    llm = OpenAI(model=model_name, reasoning_effort="low", api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" not in kwargs
+
+
+def test_reasoning_effort_none_default():
+    """Test that reasoning_effort defaults to None and is not passed."""
+    model_name = "o1-mini"
+
+    llm = OpenAI(model=model_name, api_key="test-key")
+    kwargs = llm._get_model_kwargs()
+    assert "reasoning_effort" not in kwargs
