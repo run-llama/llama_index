@@ -1,28 +1,18 @@
 """Zvec reader."""
 
-from typing import Dict, List, Optional
 import json
+from typing import Dict, List, Optional
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+import zvec
 
 
 class ZvecReader(BaseReader):
-    """
-    Zvec reader.
-
-    Args:
-        path (str): Zvec Collection path.
-
-    """
+    """Zvec reader."""
 
     def __init__(self, path: str):
         """Initialize with parameters."""
         super().__init__()
-        try:
-            import zvec
-        except ImportError:
-            raise ImportError("`zvec` package not found, please run `pip install zvec`")
-
         try:
             self._collection = zvec.open(path)
         except Exception as e:

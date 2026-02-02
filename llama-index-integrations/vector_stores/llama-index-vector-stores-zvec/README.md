@@ -13,7 +13,7 @@
 ## 🚀 Installation
 
 ```bash
-pip install llama-index-core zvec
+pip install llama-index-core llama-index-vector-store-zvec zvec dashtext
 ```
 
 ## Usage
