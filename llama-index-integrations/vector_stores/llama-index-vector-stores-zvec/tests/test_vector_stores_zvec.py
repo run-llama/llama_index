@@ -1,5 +1,3 @@
-import tempfile
-import os
 from typing import List
 import pytest
 
@@ -31,10 +29,9 @@ def text_to_embedding(text: str) -> List[float]:
 
 
 @pytest.fixture()
-def zvec_vector_store() -> ZvecVectorStore:
+def zvec_vector_store(tmp_path) -> ZvecVectorStore:
     """Create a temporary ZvecVectorStore for testing."""
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, "test.zvec")
+    temp_path = tmp_path / "test.zvec"
 
     # Define sample metadata schema for testing
     metadata_schema = {
@@ -45,7 +42,7 @@ def zvec_vector_store() -> ZvecVectorStore:
     }
 
     vector_store = ZvecVectorStore(
-        path=temp_path,
+        path=str(temp_path),
         collection_name="test_collection",
         collection_metadata=metadata_schema,
         embed_dim=1536,
@@ -55,27 +52,10 @@ def zvec_vector_store() -> ZvecVectorStore:
 
     # Close the collection connection before cleanup
     try:
-        if hasattr(vector_store, "client") and vector_store.client is not None:
-            # Try to explicitly sync/flush before closing if the method exists
-            if hasattr(vector_store.client, "sync"):
-                vector_store.client.sync()
-            elif hasattr(vector_store.client, "flush"):
-                vector_store.client.flush()
-
-            # Close the collection properly
-            vector_store.client.close()
+        vector_store.client.close()
     except Exception as e:
         # Log the error but don't fail the test
         print(f"Error closing zvec client: {e}")
-
-    # Cleanup temp directory
-    import shutil
-
-    try:
-        shutil.rmtree(temp_dir)
-    except Exception as e:
-        # Log the error but don't fail the test
-        print(f"Error removing temp directory: {e}")
 
 
 @pytest.fixture()
@@ -209,15 +189,14 @@ def test_metadata_filtering(
             assert node.metadata.get("genre") == "Mystery"
 
 
-def test_sparse_vector_query() -> None:
+def test_sparse_vector_query(tmp_path) -> None:
     """Test sparse vector query functionality."""
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, "test_sparse_query.zvec")
+    temp_path = tmp_path / "test_sparse_query.zvec"
 
     try:
         # Create a vector store with sparse vector support
         sparse_store = ZvecVectorStore(
-            path=temp_path,
+            path=str(temp_path),
             collection_name="test_sparse_query_collection",
             embed_dim=1536,
             support_sparse_vector=True,
@@ -289,19 +268,10 @@ def test_sparse_vector_query() -> None:
         # If dashtext is not available, skip this test
         pass
 
-    # Clean up temp directory
-    import shutil
 
-    try:
-        shutil.rmtree(temp_dir)
-    except Exception:
-        pass
-
-
-def test_invalid_initialization() -> None:
+def test_invalid_initialization(tmp_path) -> None:
     """Test that initialization fails with invalid parameters."""
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, "test_invalid.zvec")
+    temp_path = tmp_path / "test_invalid.zvec"
 
     # Test with missing path
     with pytest.raises(ValueError):
@@ -314,45 +284,28 @@ def test_invalid_initialization() -> None:
     # Test with missing collection_name
     with pytest.raises(ValueError):
         ZvecVectorStore(
-            path=temp_path,
-            collection_name=None,  # type: ignore
+            path=str(temp_path),
+            collection_name=None,
             embed_dim=1536,
         )
 
     # Test with missing embed_dim
     with pytest.raises(ValueError):
         ZvecVectorStore(
-            path=temp_path,
+            path=str(temp_path),
             collection_name="test",
-            embed_dim=None,  # type: ignore
+            embed_dim=None,
         )
 
-    # Clean up temp directory
-    import shutil
 
-    try:
-        shutil.rmtree(temp_dir)
-    except Exception as e:
-        print(f"Error removing invalid init temp directory: {e}")
-
-
-def test_unsupported_metadata_type() -> None:
+def test_unsupported_metadata_type(tmp_path) -> None:
     """Test that initialization fails with unsupported metadata type."""
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, "test_meta.zvec")
+    temp_path = tmp_path / "test_meta.zvec"
 
     with pytest.raises(ValueError):
         ZvecVectorStore(
-            path=temp_path,
+            path=str(temp_path),
             collection_name="test",
-            collection_metadata={"invalid_field": "unsupported_type"},  # type: ignore
+            collection_metadata={"invalid_field": "unsupported_type"},
             embed_dim=1536,
         )
-
-    # Clean up temp directory
-    import shutil
-
-    try:
-        shutil.rmtree(temp_dir)
-    except Exception as e:
-        print(f"Error removing metadata type test temp directory: {e}")

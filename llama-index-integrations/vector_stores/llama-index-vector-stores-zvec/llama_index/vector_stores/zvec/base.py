@@ -4,6 +4,7 @@ import logging
 import json
 from typing import Any, List, Dict, Optional, cast
 from typing_extensions import override
+import dashtext
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -177,13 +178,6 @@ class ZvecVectorStore(BasePydanticVectorStore):
 
     def _setup_sparse_encoder(self, encoder: Optional[Any]) -> None:
         """Setup sparse vector encoder."""
-        try:
-            import dashtext
-        except ImportError:
-            raise ImportError(
-                "`dashtext` package not found, please run `pip install dashtext`"
-            )
-
         if encoder is None:
             encoder = dashtext.SparseVectorEncoder.default()
 
