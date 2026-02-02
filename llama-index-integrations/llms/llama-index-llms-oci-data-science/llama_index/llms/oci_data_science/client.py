@@ -32,6 +32,7 @@ from tenacity import (
     wait_random_exponential,
 )
 from llama_index.llms.oci_data_science.utils import _resolve_invoke_url
+
 DEFAULT_RETRIES = 3
 DEFAULT_BACKOFF_FACTOR = 3
 TIMEOUT = 600  # Timeout in seconds
