@@ -6,7 +6,6 @@ import functools
 import os
 from importlib.metadata import PackageNotFoundError, version
 import typing
-import logging
 from typing import (
     TYPE_CHECKING,
     cast,
@@ -68,7 +67,6 @@ import google.auth
 import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
-logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "gemini-2.0-flash"
 
@@ -354,14 +352,7 @@ class GoogleGenAI(FunctionCallingLLM):
             )
         finally:
             if self.file_mode in ("fileapi", "hybrid"):
-                try:
-                    delete_uploaded_files(file_api_names, self._client)
-                except Exception:
-                    logger.warning(
-                        "Failed to delete uploaded files from Google GenAI File API: %s",
-                        file_api_names,
-                        exc_info=True,
-                    )
+                delete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response, [])
 
@@ -382,14 +373,7 @@ class GoogleGenAI(FunctionCallingLLM):
             )
         finally:
             if self.file_mode in ("fileapi", "hybrid"):
-                try:
-                    await adelete_uploaded_files(file_api_names, self._client)
-                except Exception:
-                    logger.warning(
-                        "Failed to delete uploaded files from Google GenAI File API: %s",
-                        file_api_names,
-                        exc_info=True,
-                    )
+                await adelete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response, [])
 
@@ -447,14 +431,7 @@ class GoogleGenAI(FunctionCallingLLM):
                                 yield llama_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
-                    try:
-                        delete_uploaded_files(file_api_names, self._client)
-                    except Exception:
-                        logger.warning(
-                            "Failed to delete uploaded files from Google GenAI File API: %s",
-                            file_api_names,
-                            exc_info=True,
-                        )
+                    delete_uploaded_files(file_api_names, self._client)
 
         return gen()
 
@@ -505,14 +482,7 @@ class GoogleGenAI(FunctionCallingLLM):
                                 yield llama_resp
             finally:
                 if self.file_mode in ("fileapi", "hybrid"):
-                    try:
-                        await adelete_uploaded_files(file_api_names, self._client)
-                    except Exception:
-                        logger.warning(
-                            "Failed to delete uploaded files from Google GenAI File API: %s",
-                            file_api_names,
-                            exc_info=True,
-                        )
+                    await adelete_uploaded_files(file_api_names, self._client)
 
         return gen()
 

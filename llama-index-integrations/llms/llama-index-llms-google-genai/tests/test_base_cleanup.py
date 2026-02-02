@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-
 import pytest
 
 from llama_index.llms.google_genai import base as base_mod
@@ -14,7 +13,7 @@ class FakeChat:
     def send_message(self, *_args, **_kwargs):
         if self._send_message_exc:
             raise self._send_message_exc
-        return SimpleNamespace()  # unused in our error-path tests
+        return SimpleNamespace()
 
     def send_message_stream(self, *_args, **_kwargs):
         return self._stream_iter
@@ -48,44 +47,42 @@ def _make_llm(file_mode="fileapi"):
     object.__setattr__(llm, "file_mode", file_mode)
     object.__setattr__(llm, "max_retries", 0)
     object.__setattr__(llm, "_generation_config", {})
-
     return llm
 
 
-def test_chat_deletes_files_and_logs_if_delete_fails(monkeypatch, caplog):
+def test_chat_bubbles_up_cleanup_error_if_delete_fails(monkeypatch):
+    """
+    Test that if cleanup fails, the cleanup exception (RuntimeError) is raised.
+    Note: In Python, if an exception occurs in 'finally', it supersedes
+    any exception that occurred in 'try'.
+    """
+
     async def fake_prepare_chat_params(*_args, **_kwargs):
-        next_msg = "hello"
-        chat_kwargs = {}
-        file_api_names = ["file1"]
-        return next_msg, chat_kwargs, file_api_names
+        return "hello", {}, ["file1"]
 
     monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
 
-    # Force the model call to fail so we hit finally.
+    # 1. Force the model call to fail (ValueError)
     chat = FakeChat(send_message_exc=ValueError("boom"))
     aio_chat = FakeAioChat()
     llm = _make_llm(file_mode="fileapi")
     llm._client = FakeClient(chat=chat, aio_chat=aio_chat)
 
-    # Force delete to fail so we hit the logger.warning path.
+    # 2. Force delete to fail (RuntimeError)
     def fake_delete_uploaded_files(_names, _client):
         raise RuntimeError("delete failed")
 
     monkeypatch.setattr(base_mod, "delete_uploaded_files", fake_delete_uploaded_files)
 
-    with pytest.raises(ValueError, match="boom"):
+    # 3. We expect the RuntimeError (cleanup failure) to be the one raised/visible
+    with pytest.raises(RuntimeError, match="delete failed"):
         llm._chat([])
-
-    assert "Failed to delete uploaded files from Google GenAI File API" in caplog.text
 
 
 @pytest.mark.asyncio
-async def test_achat_deletes_files_and_logs_if_delete_fails(monkeypatch, caplog):
+async def test_achat_bubbles_up_cleanup_error_if_delete_fails(monkeypatch):
     async def fake_prepare_chat_params(*_args, **_kwargs):
-        next_msg = "hello"
-        chat_kwargs = {}
-        file_api_names = ["file1"]
-        return next_msg, chat_kwargs, file_api_names
+        return "hello", {}, ["file1"]
 
     monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
 
@@ -99,22 +96,16 @@ async def test_achat_deletes_files_and_logs_if_delete_fails(monkeypatch, caplog)
 
     monkeypatch.setattr(base_mod, "adelete_uploaded_files", fake_adelete_uploaded_files)
 
-    with pytest.raises(ValueError, match="boom"):
+    with pytest.raises(RuntimeError, match="delete failed"):
         await llm._achat([])
-
-    assert "Failed to delete uploaded files from Google GenAI File API" in caplog.text
 
 
 def test_stream_chat_runs_cleanup(monkeypatch):
     async def fake_prepare_chat_params(*_args, **_kwargs):
-        next_msg = "hello"
-        chat_kwargs = {}
-        file_api_names = ["file1"]
-        return next_msg, chat_kwargs, file_api_names
+        return "hello", {}, ["file1"]
 
     monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
 
-    # Make streaming yield one chunk so the generator executes.
     class Chunk:
         def __init__(self):
             part = SimpleNamespace(text="hi")
@@ -123,13 +114,11 @@ def test_stream_chat_runs_cleanup(monkeypatch):
             self.candidates = [cand]
 
     stream_iter = iter([Chunk()])
-
     chat = FakeChat(stream_iter=stream_iter)
     aio_chat = FakeAioChat()
     llm = _make_llm(file_mode="fileapi")
     llm._client = FakeClient(chat=chat, aio_chat=aio_chat)
 
-    # Avoid depending on llama_index response parsing internals
     monkeypatch.setattr(
         base_mod,
         "chat_from_gemini_response",
@@ -145,7 +134,6 @@ def test_stream_chat_runs_cleanup(monkeypatch):
     monkeypatch.setattr(base_mod, "delete_uploaded_files", fake_delete_uploaded_files)
 
     gen = llm._stream_chat([])
-    # consume one yield so generator body runs
     _ = next(gen)
     with pytest.raises(StopIteration):
         next(gen)
@@ -156,10 +144,7 @@ def test_stream_chat_runs_cleanup(monkeypatch):
 @pytest.mark.asyncio
 async def test_astream_chat_runs_cleanup(monkeypatch):
     async def fake_prepare_chat_params(*_args, **_kwargs):
-        next_msg = "hello"
-        chat_kwargs = {}
-        file_api_names = ["file1"]
-        return next_msg, chat_kwargs, file_api_names
+        return "hello", {}, ["file1"]
 
     monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
 
