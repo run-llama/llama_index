@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-moss"
+version = "0.1.0"
+description = "llama-index tools moss integration"
+authors = [{name = "Roaim Khan", email = "roaimkhan459@gmail.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = []
+dependencies = [
+    "inferedge-moss",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.moss"
+
+[tool.llamahub.class_authors]
+MossToolSpec = "Roaimkhan"
