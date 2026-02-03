@@ -404,7 +404,7 @@ class FunctionTool(AsyncBaseTool):
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
-        raw_output = self._async_fn(*args, **all_kwargs)
+        raw_output: Any = self._async_fn(*args, **all_kwargs)
         if inspect.isawaitable(raw_output):
             raw_output = await raw_output
 
