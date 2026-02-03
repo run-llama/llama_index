@@ -74,10 +74,10 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
-class VertexAIConfig(typing.TypedDict):
-    credentials: Optional[google.auth.credentials.Credentials] = None
-    project: Optional[str] = None
-    location: Optional[str] = None
+class VertexAIConfig(typing.TypedDict, total=False):
+    credentials: Optional[google.auth.credentials.Credentials]
+    project: Optional[str]
+    location: Optional[str]
 
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -346,12 +346,13 @@ class GoogleGenAI(FunctionCallingLLM):
             )
         )
         chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message(
-            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-        )
-
-        if self.file_mode in ("fileapi", "hybrid"):
-            delete_uploaded_files(file_api_names, self._client)
+        try:
+            response = chat.send_message(
+                next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+            )
+        finally:
+            if self.file_mode in ("fileapi", "hybrid"):
+                delete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response, [])
 
@@ -366,12 +367,13 @@ class GoogleGenAI(FunctionCallingLLM):
             self.model, messages, self.file_mode, self._client, **params
         )
         chat = self._client.aio.chats.create(**chat_kwargs)
-        response = await chat.send_message(
-            next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-        )
-
-        if self.file_mode in ("fileapi", "hybrid"):
-            await adelete_uploaded_files(file_api_names, self._client)
+        try:
+            response = await chat.send_message(
+                next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+            )
+        finally:
+            if self.file_mode in ("fileapi", "hybrid"):
+                await adelete_uploaded_files(file_api_names, self._client)
 
         return chat_from_gemini_response(response, [])
 
@@ -404,29 +406,32 @@ class GoogleGenAI(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = []
-            thought_signatures = []
-            for r in response:
-                if candidates := r.candidates:
-                    if not candidates:
-                        continue
+            try:
+                content = []
+                thought_signatures = []
+                for r in response:
+                    if candidates := r.candidates:
+                        if not candidates:
+                            continue
 
-                    top_candidate = candidates[0]
-                    if response_content := top_candidate.content:
-                        if parts := response_content.parts:
-                            content_delta = parts[0].text
+                        top_candidate = candidates[0]
+                        if response_content := top_candidate.content:
+                            if parts := response_content.parts:
+                                content_delta = parts[0].text
 
-                            llama_resp = chat_from_gemini_response(
-                                r,
-                                existing_content=content,
-                                thought_signatures=thought_signatures,
-                            )
-                            llama_resp.delta = llama_resp.delta or content_delta or ""
+                                llama_resp = chat_from_gemini_response(
+                                    r,
+                                    existing_content=content,
+                                    thought_signatures=thought_signatures,
+                                )
+                                llama_resp.delta = (
+                                    llama_resp.delta or content_delta or ""
+                                )
 
-                            yield llama_resp
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                delete_uploaded_files(file_api_names, self._client)
+                                yield llama_resp
+            finally:
+                if self.file_mode in ("fileapi", "hybrid"):
+                    delete_uploaded_files(file_api_names, self._client)
 
         return gen()
 
@@ -450,31 +455,34 @@ class GoogleGenAI(FunctionCallingLLM):
         chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
-            content = []
-            thought_signatures = []
-            async for r in await chat.send_message_stream(
-                next_msg.parts if isinstance(next_msg, types.Content) else next_msg
-            ):
-                if candidates := r.candidates:
-                    if not candidates:
-                        continue
+            try:
+                content = []
+                thought_signatures = []
+                async for r in await chat.send_message_stream(
+                    next_msg.parts if isinstance(next_msg, types.Content) else next_msg
+                ):
+                    if candidates := r.candidates:
+                        if not candidates:
+                            continue
 
-                    top_candidate = candidates[0]
-                    if response_content := top_candidate.content:
-                        if parts := response_content.parts:
-                            content_delta = parts[0].text
+                        top_candidate = candidates[0]
+                        if response_content := top_candidate.content:
+                            if parts := response_content.parts:
+                                content_delta = parts[0].text
 
-                            llama_resp = chat_from_gemini_response(
-                                r,
-                                existing_content=content,
-                                thought_signatures=thought_signatures,
-                            )
-                            llama_resp.delta = llama_resp.delta or content_delta or ""
+                                llama_resp = chat_from_gemini_response(
+                                    r,
+                                    existing_content=content,
+                                    thought_signatures=thought_signatures,
+                                )
+                                llama_resp.delta = (
+                                    llama_resp.delta or content_delta or ""
+                                )
 
-                            yield llama_resp
-
-            if self.file_mode in ("fileapi", "hybrid"):
-                await adelete_uploaded_files(file_api_names, self._client)
+                                yield llama_resp
+            finally:
+                if self.file_mode in ("fileapi", "hybrid"):
+                    await adelete_uploaded_files(file_api_names, self._client)
 
         return gen()
 
