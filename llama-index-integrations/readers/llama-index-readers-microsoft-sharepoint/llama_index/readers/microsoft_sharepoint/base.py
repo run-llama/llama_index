@@ -1,13 +1,17 @@
 """SharePoint files reader."""
 
+import html
 import logging
 import os
+import re
 from pathlib import Path
 import tempfile
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Callable, Dict, List, Union, Optional
+from enum import Enum
 from urllib.parse import quote
 
 import requests
+from pydantic.json_schema import SkipJsonSchema
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
 from llama_index.core.readers.base import (
     BaseReader,
@@ -16,16 +20,34 @@ from llama_index.core.readers.base import (
 )
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
+from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
+from .event import (
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+)
 
 logger = logging.getLogger(__name__)
+dispatcher = get_dispatcher(__name__)
 
 
-class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class SharePointType(Enum):
+    """Enum for SharePoint content types."""
+
+    DRIVE = "drive"
+    PAGE = "page"
+
+
+class SharePointReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin, DispatcherSpanMixin
+):
     """
     SharePoint reader.
 
-
     Reads folders from the SharePoint site from a folder under documents.
+    Also supports reading SharePoint Site Pages when sharepoint_type is set to PAGE.
 
     Args:
         client_id (str): The Application ID for the app registered in Microsoft Azure Portal.
@@ -42,6 +64,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
                                            only supports flat metadata (i.e. no nested fields or lists), or to avoid the additional API calls.
+        sharepoint_type (SharePointType): Type of content to load - DRIVE (files) or PAGE (site pages). Default is DRIVE.
+        sharepoint_host_name (Optional[str]): The host name of the SharePoint site (e.g., 'contoso.sharepoint.com').
+        sharepoint_relative_url (Optional[str]): The relative URL of the SharePoint site (e.g., '/sites/MySite').
+        process_document_callback (Optional[Callable[[str], bool]]): Callback to filter documents before processing.
+        fail_on_error (bool): If True, raise exceptions on errors. If False, log and continue. Default is True.
 
     """
 
@@ -49,16 +76,24 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     client_secret: str = None
     tenant_id: str = None
     sharepoint_site_name: Optional[str] = None
+    sharepoint_host_name: Optional[str] = None
+    sharepoint_relative_url: Optional[str] = None
     sharepoint_site_id: Optional[str] = None
     sharepoint_folder_path: Optional[str] = None
     sharepoint_folder_id: Optional[str] = None
+    sharepoint_file_id: Optional[str] = None
     required_exts: Optional[List[str]] = None
-    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+    file_extractor: Optional[SkipJsonSchema[Dict[str, Union[str, BaseReader]]]] = Field(
         default=None, exclude=True
     )
     attach_permission_metadata: bool = True
     drive_name: Optional[str] = None
     drive_id: Optional[str] = None
+    sharepoint_type: SharePointType = SharePointType.DRIVE
+    process_document_callback: Optional[SkipJsonSchema[Callable[[str], bool]]] = Field(
+        default=None, exclude=True
+    )
+    fail_on_error: bool = True
 
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
@@ -77,6 +112,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         drive_name: Optional[str] = None,
         drive_id: Optional[str] = None,
+        sharepoint_host_name: Optional[str] = None,
+        sharepoint_relative_url: Optional[str] = None,
+        sharepoint_type: SharePointType = SharePointType.DRIVE,
+        process_document_callback: Optional[Callable[[str], bool]] = None,
+        fail_on_error: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -84,12 +124,17 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             client_secret=client_secret,
             tenant_id=tenant_id,
             sharepoint_site_name=sharepoint_site_name,
+            sharepoint_host_name=sharepoint_host_name,
+            sharepoint_relative_url=sharepoint_relative_url,
             sharepoint_folder_path=sharepoint_folder_path,
             sharepoint_folder_id=sharepoint_folder_id,
             required_exts=required_exts,
             file_extractor=file_extractor,
             drive_name=drive_name,
             drive_id=drive_id,
+            sharepoint_type=sharepoint_type,
+            process_document_callback=process_document_callback,
+            fail_on_error=fail_on_error,
             **kwargs,
         )
 
@@ -587,14 +632,18 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
         recursive: bool = True,
+        download_dir: Optional[str] = None,
     ) -> List[Document]:
         """
-        Loads the files from the specified folder in the SharePoint site.
+        Loads data from SharePoint based on sharepoint_type.
+        Handles both drive (files/folders) and page types.
 
         Args:
             sharepoint_site_name (Optional[str]): The name of the SharePoint site.
             sharepoint_folder_path (Optional[str]): The path of the folder in the SharePoint site.
+            sharepoint_folder_id (Optional[str]): The ID of the folder in the SharePoint site.
             recursive (bool): If True, files from all subfolders are downloaded.
+            download_dir (Optional[str]): Directory to download files to.
 
         Returns:
             List[Document]: A list containing the documents with metadata.
@@ -603,6 +652,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             Exception: If an error occurs while accessing SharePoint site.
 
         """
+        # If sharepoint_type is 'page', use the page loading functionality
+        if self.sharepoint_type == SharePointType.PAGE:
+            logger.info(f"Loading pages from site {self.sharepoint_site_name}")
+            return self.load_pages_data(download_dir=download_dir)
+
         # If no arguments are provided to load_data, default to the object attributes
         if not sharepoint_site_name:
             sharepoint_site_name = self.sharepoint_site_name
@@ -613,7 +667,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if not sharepoint_folder_id:
             sharepoint_folder_id = self.sharepoint_folder_id
 
-        # TODO: make both of these values optional — and just default to the client ID defaults
+        # TODO: make both of these values optional — and just default to the client ID defaults
         if not (sharepoint_site_name or self.sharepoint_site_id):
             raise ValueError("sharepoint_site_name must be provided.")
 
@@ -634,6 +688,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         except Exception as exp:
             logger.error("An error occurred while accessing SharePoint: %s", exp)
+            if self.fail_on_error:
+                raise
+            return []
 
     def _list_folder_contents(
         self, folder_id: str, recursive: bool, current_path: str
@@ -886,3 +943,275 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 "An error occurred while reading file content from SharePoint: %s", exp
             )
             raise
+
+    # Page-related methods for SharePoint Site Pages support
+
+    def get_site_pages_list_id(self, site_id: str) -> str:
+        """
+        Gets the ID of the Site Pages list for a SharePoint site.
+
+        Args:
+            site_id (str): The ID of the SharePoint site.
+
+        Returns:
+            str: The ID of the Site Pages list.
+
+        """
+        endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists?$filter=displayName eq 'Site Pages'"
+        try:
+            response = self._send_get_with_retry(endpoint)
+            lists = response.json().get("value", [])
+            if not lists:
+                logger.error("Site Pages list not found for site %s", site_id)
+                raise ValueError("Site Pages list not found")
+            return lists[0]["id"]
+        except Exception as e:
+            logger.error(f"Error getting Site Pages list ID: {e}", exc_info=True)
+            raise
+
+    def list_pages(self, site_id: str) -> List[Dict[str, Any]]:
+        """
+        Returns a list of SharePoint site pages with their IDs and names.
+
+        Args:
+            site_id (str): The ID of the SharePoint site.
+
+        Returns:
+            List[Dict[str, Any]]: List of page dictionaries with id, name, and lastModifiedDateTime.
+
+        """
+        try:
+            list_id = self.get_site_pages_list_id(site_id)
+            endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields(select=FileLeafRef,CanvasContent1)"
+            response = self._send_get_with_retry(endpoint)
+            items = response.json().get("value", [])
+            pages = []
+            for item in items:
+                fields = item.get("fields", {})
+                page_id = item.get("id")
+                page_name = fields.get("FileLeafRef")
+                last_modified = item.get("lastModifiedDateTime")
+                if page_id and page_name:
+                    pages.append(
+                        {
+                            "id": page_id,
+                            "name": page_name,
+                            "lastModifiedDateTime": last_modified,
+                        }
+                    )
+            return pages
+        except Exception as e:
+            logger.error(f"Error listing SharePoint pages: {e}", exc_info=True)
+            raise
+
+    def get_page_id_by_name(self, site_id: str, page_name: str) -> Optional[str]:
+        """
+        Get the ID of a SharePoint page by its name.
+
+        Args:
+            site_id (str): The ID of the SharePoint site.
+            page_name (str): The name of the page to find.
+
+        Returns:
+            Optional[str]: The page ID if found, None otherwise.
+
+        """
+        try:
+            list_id = self.get_site_pages_list_id(site_id)
+            endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields"
+            response = self._send_get_with_retry(endpoint)
+            items = response.json().get("value", [])
+            matches = [
+                item
+                for item in items
+                if item.get("fields", {}).get("FileLeafRef") == page_name
+            ]
+            if matches:
+                return matches[0].get("id")
+            return None
+        except Exception as e:
+            logger.error(
+                f"Error getting page ID by name {page_name}: {e}", exc_info=True
+            )
+            raise
+
+    def get_page_text(self, site_id: str, list_id: str, page_id: str) -> Dict[str, Any]:
+        """
+        Gets the text content of a SharePoint page.
+
+        Args:
+            site_id (str): The ID of the SharePoint site.
+            list_id (str): The ID of the Site Pages list.
+            page_id (str): The ID of the page (can be raw ID or combined listId:itemId).
+
+        Returns:
+            Dict[str, Any]: Dictionary containing page id, name, lastModifiedDateTime, textContent, and rawHtml.
+
+        """
+        try:
+            raw_page_id = page_id
+            if ":" in page_id:
+                parts = page_id.split(":", 1)
+                if len(parts) == 2:
+                    list_id, raw_page_id = parts
+            if not list_id:
+                list_id = self.get_site_pages_list_id(site_id)
+            endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items/{raw_page_id}?expand=fields(select=FileLeafRef,CanvasContent1)"
+            response = self._send_get_with_retry(endpoint)
+            fields = response.json().get("fields", {})
+            last_modified = response.json().get("lastModifiedDateTime")
+            if not fields:
+                raise ValueError("Page not found")
+            raw_html = fields.get("CanvasContent1", "") or ""
+            unescaped = html.unescape(raw_html)
+            text_content = re.sub(r"<[^>]+>", "", unescaped)
+            text_content = re.sub(r"['\"]", "", text_content).strip()
+            return {
+                "id": f"{list_id}:{raw_page_id}",
+                "name": fields.get("FileLeafRef"),
+                "lastModifiedDateTime": last_modified,
+                "textContent": text_content,
+                "rawHtml": raw_html,
+            }
+        except Exception as e:
+            logger.error(
+                f"Error getting page text for page {page_id}: {e}", exc_info=True
+            )
+            raise
+
+    @dispatcher.span
+    def load_pages_data(self, download_dir: Optional[str] = None) -> List[Document]:
+        """
+        Loads SharePoint pages as Documents.
+
+        If self.sharepoint_file_id (combined page id) is provided, only process that page.
+        Otherwise, process all pages.
+
+        Args:
+            download_dir (Optional[str]): Directory to download files to (not used for pages,
+                kept for API compatibility).
+
+        Returns:
+            List[Document]: A list of Document objects containing page content.
+
+        """
+        logger.info(
+            f"Loading page data for site {self.sharepoint_site_name} "
+            f"(single_page={bool(self.sharepoint_file_id)})"
+        )
+        try:
+            access_token = self._get_access_token()
+            site_id = self._get_site_id_with_host_name(
+                access_token, self.sharepoint_site_name
+            )
+            list_id = self.get_site_pages_list_id(site_id)
+            documents: List[Document] = []
+
+            if self.sharepoint_file_id:
+                # Specific page requested
+                try:
+                    page_info = self.get_page_text(
+                        site_id=site_id,
+                        list_id=list_id,
+                        page_id=self.sharepoint_file_id,
+                    )
+                    combined_id = page_info["id"]
+                    page_name = page_info["name"]
+                    last_modified_date_time = page_info.get("lastModifiedDateTime", "")
+                    url_with_id = f"https://{self.sharepoint_host_name}/{self.sharepoint_relative_url}/SitePages/{page_name}?id={self.sharepoint_file_id}"
+                    metadata = {
+                        "page_id": combined_id,
+                        "page_name": page_name,
+                        "site_id": site_id,
+                        "site_name": self.sharepoint_site_name,
+                        "host_name": self.sharepoint_host_name,
+                        "lastModifiedDateTime": last_modified_date_time,
+                        "sharepoint_relative_url": self.sharepoint_relative_url,
+                        "url": url_with_id,
+                        "file_name": page_name,
+                        "sharepoint_type": SharePointType.PAGE.value,
+                    }
+                    text = page_info.get("textContent", "")
+                    document = Document(text=text, metadata=metadata, id_=combined_id)
+                    dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
+                    dispatcher.event(
+                        PageDataFetchCompletedEvent(
+                            page_id=combined_id, document=document
+                        )
+                    )
+                    documents.append(document)
+                except Exception as e:
+                    dispatcher.event(
+                        PageFailedEvent(page_id=self.sharepoint_file_id, error=str(e))
+                    )
+                    logger.error(
+                        f"Error loading SharePoint page {self.sharepoint_file_id}: {e}",
+                        exc_info=True,
+                    )
+                    if self.fail_on_error:
+                        raise
+                return documents
+
+                # Load all pages
+            pages = self.list_pages(site_id)
+            dispatcher.event(TotalPagesToProcessEvent(total_pages=len(pages)))
+
+            for page in pages:
+                raw_page_id = page["id"]
+                combined_id = f"{list_id}:{raw_page_id}"
+                page_name = page["name"]
+                last_modified_date_time = page.get("lastModifiedDateTime", "")
+
+                try:
+                    if (
+                        self.process_document_callback
+                        and not self.process_document_callback(page_name)
+                    ):
+                        dispatcher.event(PageSkippedEvent(page_id=combined_id))
+                        continue
+
+                    url_with_id = f"https://{self.sharepoint_host_name}/{self.sharepoint_relative_url}/SitePages/{page_name}?id={raw_page_id}"
+                    metadata = {
+                        "page_id": combined_id,
+                        "page_name": page_name,
+                        "site_id": site_id,
+                        "site_name": self.sharepoint_site_name,
+                        "host_name": self.sharepoint_host_name,
+                        "lastModifiedDateTime": last_modified_date_time,
+                        "sharepoint_relative_url": self.sharepoint_relative_url,
+                        "url": url_with_id,
+                        "file_name": page_name,
+                        "sharepoint_type": SharePointType.PAGE.value,
+                    }
+                    dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
+                    page_content = self.get_page_text(
+                        site_id=site_id,
+                        list_id=list_id,
+                        page_id=raw_page_id,
+                    )
+                    text = page_content.get("textContent", "")
+                    metadata["lastModifiedDateTime"] = page_content.get(
+                        "lastModifiedDateTime", last_modified_date_time
+                    )
+                    document = Document(text=text, metadata=metadata, id_=combined_id)
+                    dispatcher.event(
+                        PageDataFetchCompletedEvent(
+                            page_id=combined_id, document=document
+                        )
+                    )
+                    documents.append(document)
+                except Exception as e:
+                    dispatcher.event(PageFailedEvent(page_id=combined_id, error=str(e)))
+                    logger.error(
+                        f"Error loading SharePoint page {combined_id}: {e}",
+                        exc_info=True,
+                    )
+                    if self.fail_on_error:
+                        raise
+            return documents
+        except Exception as e:
+            error_msg = f"Error loading SharePoint pages: {e}"
+            logger.error(f"{error_msg}", exc_info=True)
+            if self.fail_on_error:
+                raise
+            return []

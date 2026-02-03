@@ -169,7 +169,7 @@ class Thread(threading.Thread):
 
         super().__init__(
             group=group,
-            target=copy_context().run,
+            target=copy_context().run if target else None,
             name=name,
             args=args,
             daemon=daemon,
