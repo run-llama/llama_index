@@ -282,7 +282,6 @@ def test_to_openai_message_dicts_with_content_blocks() -> None:
                 "type": "image_url",
                 "image_url": {
                     "url": "https://example.com/image.jpg",
-                    "detail": "auto",
                 },
             },
         ],

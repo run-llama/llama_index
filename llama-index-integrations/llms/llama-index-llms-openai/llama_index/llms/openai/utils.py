@@ -383,28 +383,18 @@ def to_openai_message_dict(
                 }
             )
         elif isinstance(block, ImageBlock):
+            image_url_dict: Dict[str, Any] = {}
             if block.url:
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": str(block.url),
-                            "detail": block.detail or "auto",
-                        },
-                    }
-                )
+                image_url_dict["url"] = str(block.url)
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
                 img_str = img_bytes.decode("utf-8")
-                content.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{block.image_mimetype};base64,{img_str}",
-                            "detail": block.detail or "auto",
-                        },
-                    }
-                )
+                image_url_dict["url"] = f"data:{block.image_mimetype};base64,{img_str}"
+
+            if block.detail:
+                image_url_dict["detail"] = block.detail
+
+            content.append({"type": "image_url", "image_url": image_url_dict})
         elif isinstance(block, AudioBlock):
             audio_bytes = block.resolve_audio(as_base64=True).read()
             audio_str = audio_bytes.decode("utf-8")
@@ -553,24 +543,20 @@ def to_openai_responses_message_dict(
                 }
             )
         elif isinstance(block, ImageBlock):
+            image_block_dict: Dict[str, Any] = {"type": "input_image"}
             if block.url:
-                content.append(
-                    {
-                        "type": "input_image",
-                        "image_url": str(block.url),
-                        "detail": block.detail or "auto",
-                    }
-                )
+                image_block_dict["image_url"] = str(block.url)
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
                 img_str = img_bytes.decode("utf-8")
-                content.append(
-                    {
-                        "type": "input_image",
-                        "image_url": f"data:{block.image_mimetype};base64,{img_str}",
-                        "detail": block.detail or "auto",
-                    }
+                image_block_dict["image_url"] = (
+                    f"data:{block.image_mimetype};base64,{img_str}"
                 )
+
+            if block.detail:
+                image_block_dict["detail"] = block.detail
+
+            content.append(image_block_dict)
         elif isinstance(block, ThinkingBlock):
             if block.content and "id" in block.additional_information:
                 reasoning.append(
@@ -830,7 +816,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
                 blocks.append(TextBlock(text=elem.get("text")))
             elif t == "image_url":
                 img = elem["image_url"]["url"]
-                detail = elem["image_url"]["detail"]
+                detail = elem["image_url"].get("detail")
                 if img.startswith("data:"):
                     blocks.append(ImageBlock(image=img, detail=detail))
                 else:
