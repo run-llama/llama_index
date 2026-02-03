@@ -7,12 +7,13 @@ DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
 DEFAULT_CONTEXT_WINDOW = 32768
 CHAT_MODELS = {"solar-mini": 32768, "solar-pro2": 65536}
 
-FUNCTION_CALLING_MODELS = ["solar-mini", "solar-pro2"]
-DOC_PARSING_MODELS = ["solar-pro2"]
+FUNCTION_CALLING_MODELS = ["solar-mini", "solar-pro2", "solar-pro3"]
+DOC_PARSING_MODELS = ["solar-pro2", "solar-pro3"]
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 
 SOLAR_TOKENIZERS = {
+    "solar-pro3": "upstage/solar-pro3-tokenizer",
     "solar-pro2": "upstage/solar-pro2-tokenizer",
     "solar-mini": "upstage/solar-1-mini-tokenizer",
 }

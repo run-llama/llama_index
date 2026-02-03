@@ -9,6 +9,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
@@ -80,7 +81,7 @@ class ReActAgent(BaseWorkflowAgent):
         return await self.llm.achat(current_llm_input)
 
     async def _get_streaming_response(
-        self, ctx: Context, current_llm_input: List[ChatMessage]
+        self, ctx: AgentContext, current_llm_input: List[ChatMessage]
     ) -> ChatResponse:
         response = await self.llm.astream_chat(
             current_llm_input,
@@ -115,7 +116,7 @@ class ReActAgent(BaseWorkflowAgent):
 
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
@@ -157,7 +158,32 @@ class ReActAgent(BaseWorkflowAgent):
         # Parse reasoning step and check if done
         message_content = last_chat_response.message.content
         if not message_content:
-            raise ValueError("Got empty message")
+            error_msg = (
+                "FAILURE: Your previous response was empty.\n"
+                "You must output a thought and an action/answer.\n\n"
+                "Please follow this structure exactly:\n"
+                "Thought: <what you are thinking>\n"
+                "Action: <tool_name>\n"
+                "Action Input: <json_params>\n\n"
+                "OR:\n\n"
+                "Thought: <what you are thinking>\n"
+                "Answer: <your final response to the user>"
+            )
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+
+            return AgentOutput(
+                response=last_chat_response.message,
+                raw=raw,
+                current_agent_name=self.name,
+                retry_messages=[
+                    last_chat_response.message,
+                    ChatMessage(role="user", content=error_msg),
+                ],
+            )
 
         try:
             reasoning_step = output_parser.parse(message_content, is_streaming=False)

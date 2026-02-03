@@ -100,6 +100,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-5": 200000,
     "claude-haiku-4-5-20251001": 200000,
     "claude-haiku-4-5": 200000,
+    "claude-opus-4-5": 200000,
     "claude-opus-4-5-20251101": 200000,
 }
 
@@ -559,6 +560,9 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude 4.5 Opus
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
     # Claude 4.1 Opus
     "claude-opus-4-1-20250805",
     "claude-opus-4-1",
@@ -580,6 +584,9 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-5-sonnet-20241022",
     "claude-3-5-sonnet-20240620",
     "claude-3-5-sonnet-latest",
+    # Claude 4.5 Haiku
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
     # Claude 3.5 Haiku
     "claude-3-5-haiku-20241022",
     "claude-3-5-haiku-latest",
