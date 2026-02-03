@@ -66,5 +66,4 @@ jobs:
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }} \
             llama-index-core
