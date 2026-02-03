@@ -379,28 +379,33 @@ class GithubRepositoryReader(BaseReader):
         self,
         ref: str,
         file_paths: List[str],
-        check_file_exist: Optional[Callable[[str], bool]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load specific files by path.
         """
         documents = []
 
-        async def fetch_and_process(path: str) -> Optional[Document]:
-            try:
-                content_data = await self._github_client.get_content(
-                    self._owner,
-                    self._repo,
-                    path,
-                    ref=ref,
-                    timeout=self._timeout,
-                    retries=self._retries,
-                )
-            except Exception as e:
-                self.logger.warning(f"Failed to fetch {path}: {e}")
-                return None
+        sem = asyncio.Semaphore(self._concurrent_requests)
 
-            if check_file_exist and check_file_exist(content_data.sha):
+        async def fetch_and_process(path: str) -> Optional[Document]:
+            async with sem:
+                try:
+                    content_data = await self._github_client.get_content(
+                        self._owner,
+                        self._repo,
+                        path,
+                        ref=ref,
+                        timeout=self._timeout,
+                        retries=self._retries,
+                    )
+                except Exception as e:
+                    if self.fail_on_error:
+                        raise
+                    self.logger.warning(f"Failed to fetch {path}: {e}")
+                    return None
+
+            if file_exists_callback and file_exists_callback(content_data.sha):
                 return None
 
             return self._create_and_process_document(
@@ -544,7 +549,7 @@ class GithubRepositoryReader(BaseReader):
         file_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
         ignore_file_paths: Optional[List[str]] = None,
-        check_file_exist: Optional[Callable[[str], bool]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load data from a commit.
@@ -565,7 +570,7 @@ class GithubRepositoryReader(BaseReader):
                 self._load_files_by_path(
                     ref=commit_sha,
                     file_paths=file_paths,
-                    check_file_exist=check_file_exist,
+                    file_exists_callback=file_exists_callback,
                 )
             )
 
@@ -597,12 +602,12 @@ class GithubRepositoryReader(BaseReader):
                 if path not in ignore_file_paths
             ]
 
-        # Filter based on check_file_exist
-        if check_file_exist:
+        # Filter based on file_exists_callback
+        if file_exists_callback:
             blobs_and_paths = [
                 (blob, path)
                 for blob, path in blobs_and_paths
-                if not check_file_exist(blob.sha)
+                if not file_exists_callback(blob.sha)
             ]
 
         print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
@@ -642,7 +647,7 @@ class GithubRepositoryReader(BaseReader):
         file_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
         ignore_file_paths: Optional[List[str]] = None,
-        check_file_exist: Optional[Callable[[str], bool]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load data from a branch.
@@ -664,7 +669,7 @@ class GithubRepositoryReader(BaseReader):
                 self._load_files_by_path(
                     ref=branch,
                     file_paths=file_paths,
-                    check_file_exist=check_file_exist,
+                    file_exists_callback=file_exists_callback,
                 )
             )
 
@@ -696,12 +701,12 @@ class GithubRepositoryReader(BaseReader):
                 if path not in ignore_file_paths
             ]
 
-        # Filter based on check_file_exist
-        if check_file_exist:
+        # Filter based on file_exists_callback
+        if file_exists_callback:
             blobs_and_paths = [
                 (blob, path)
                 for blob, path in blobs_and_paths
-                if not check_file_exist(blob.sha)
+                if not file_exists_callback(blob.sha)
             ]
 
         print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
@@ -740,7 +745,7 @@ class GithubRepositoryReader(BaseReader):
         file_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
         ignore_file_paths: Optional[List[str]] = None,
-        check_file_exist: Optional[Callable[[str], bool]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load data from a commit or a branch.
@@ -752,7 +757,7 @@ class GithubRepositoryReader(BaseReader):
         :param `file_path`: the full path to a specific file in the repo
         :param `file_paths`: list of full paths to specific files in the repo
         :param `ignore_file_paths`: list of full paths to ignore
-        :param `check_file_exist`: callback to check if a file exists (by SHA)
+        :param `file_exists_callback`: callback to check if a file exists (by SHA)
 
         :return: list of documents
         """
@@ -768,7 +773,7 @@ class GithubRepositoryReader(BaseReader):
                 file_path=file_path,
                 file_paths=file_paths,
                 ignore_file_paths=ignore_file_paths,
-                check_file_exist=check_file_exist,
+                file_exists_callback=file_exists_callback,
             )
 
         if branch is not None:
@@ -777,7 +782,7 @@ class GithubRepositoryReader(BaseReader):
                 file_path=file_path,
                 file_paths=file_paths,
                 ignore_file_paths=ignore_file_paths,
-                check_file_exist=check_file_exist,
+                file_exists_callback=file_exists_callback,
             )
 
         raise ValueError("You must specify one of commit or branch.")
