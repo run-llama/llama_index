@@ -14,6 +14,8 @@ from typing import (
     get_origin,
 )
 import re
+import os
+from textwrap import indent
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -176,6 +178,11 @@ class FunctionTool(AsyncBaseTool):
             assert fn_to_parse is not None, "fn must be provided"
             name = name or fn_to_parse.__name__
             docstring = fn_to_parse.__doc__ or ""
+
+            # in python 3.14+, __doc__ returns a cleaned docstring
+            # we want the indent though
+            if os.version_info >= (3, 14):
+                docstring = indent(docstring, " " * 4).strip()
 
             # Get function signature
             fn_sig = inspect.signature(fn_to_parse)
