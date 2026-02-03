@@ -16,6 +16,13 @@ dependencies = [
     "llama-index-core>=0.13.0,<0.15",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pre-commit",
+]
+
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
@@ -30,3 +37,14 @@ import_path = "llama_index.tools.moss"
 
 [tool.llamahub.class_authors]
 MossToolSpec = "Roaimkhan"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --ignore=examples"
+asyncio_mode = "auto"
+testpaths = [
+    "tests",
+]
+pythonpath = [
+    ".",
+]
