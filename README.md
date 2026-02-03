@@ -221,3 +221,5 @@ url = {https://github.com/jerryjliu/llama_index},
 year = {2022}
 }
 ```
+
+- [AgentMarket](https://agentmarket.cloud) - B2A marketplace for AI agents. Real energy data (28M+ records). Free API.
