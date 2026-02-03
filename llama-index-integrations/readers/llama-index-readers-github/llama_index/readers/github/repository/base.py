@@ -37,7 +37,6 @@ from llama_index.readers.github.repository.github_client import (
     GitCommitResponseModel,
     GithubClient,
     GitTreeResponseModel,
-    GitContentResponseModel,
 )
 from llama_index.readers.github.repository.utils import (
     BufferedGitBlobDataIterator,
@@ -440,7 +439,7 @@ class GithubRepositoryReader(BaseReader):
         assert encoding == "base64", f"blob encoding {encoding} not supported"
 
         file_extension = get_file_extension(full_path)
-        
+
         # Notify file processing started
         self.dispatcher.event(
             GitHubFileProcessingStartedEvent(
@@ -777,7 +776,7 @@ class GithubRepositoryReader(BaseReader):
             )
 
         if branch is not None:
-             return self._load_data_from_branch(
+            return self._load_data_from_branch(
                 branch,
                 file_path=file_path,
                 file_paths=file_paths,
@@ -906,15 +905,15 @@ class GithubRepositoryReader(BaseReader):
         documents = []
         async for blob_data, full_path in buffered_iterator:
             print_if_verbose(self._verbose, f"generating document for {full_path}")
-            
+
             # Construct URL for the document (mimicking what was there before)
             # The original code constructed URL manually at the end.
             # My helper _create_and_process_document takes a URL.
             # blob_data.url is the API URL. The original code constructed a blob URL.
-            
+
             # Original URL construction:
             # url = os.path.join(self._get_base_url(blob_data.url), self._owner, self._repo, "blob/", id, full_path)
-            
+
             url = os.path.join(
                 self._get_base_url(blob_data.url),
                 self._owner,
@@ -929,9 +928,9 @@ class GithubRepositoryReader(BaseReader):
                 sha=blob_data.sha,
                 content=blob_data.content,
                 encoding=blob_data.encoding,
-                url=url
+                url=url,
             )
-            
+
             if document:
                 documents.append(document)
 
