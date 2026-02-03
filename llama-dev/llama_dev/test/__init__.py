@@ -157,7 +157,6 @@ def test(
             for package_path in sorted(packages_to_test)
         }
 
-<<<<<<< HEAD
         # Detect if we're in a CI environment (GitHub Actions, etc.)
         is_ci = (
             os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
@@ -175,28 +174,6 @@ def test(
                 result = future.result()
                 results.append(result)
 
-=======
-        # Use Rich Live display to show progress
-        with Live(
-            _generate_status_table(
-                len(packages_to_test),
-                0,
-                0,
-                0,
-                0,
-                [
-                    str(p.relative_to(repo_root))
-                    for p in sorted(packages_to_test)[: int(workers)]
-                ],
-            ),
-            console=console,
-            refresh_per_second=2,
-        ) as live:
-            for future in concurrent.futures.as_completed(future_to_package):
-                result = future.result()
-                results.append(result)
-
->>>>>>> dc5ab2798 (improve llama-dev logging)
                 # Update counts
                 if result["status"] == ResultStatus.TESTS_PASSED:
                     passed_count += 1
@@ -209,7 +186,6 @@ def test(
                 else:
                     skipped_count += 1
 
-<<<<<<< HEAD
                 # Print status update periodically
                 current_time = time.time()
                 if (
@@ -288,26 +264,6 @@ def test(
                             running_packages,
                         )
                     )
-=======
-                # Get currently running packages
-                running_packages = [
-                    str(future_to_package[f].relative_to(repo_root))
-                    for f in future_to_package
-                    if not f.done()
-                ]
-
-                # Update the live display
-                live.update(
-                    _generate_status_table(
-                        len(packages_to_test),
-                        len(results),
-                        passed_count,
-                        failed_count,
-                        skipped_count,
-                        running_packages,
-                    )
-                )
->>>>>>> dc5ab2798 (improve llama-dev logging)
 
         # Print detailed results after completion
         console.print("\n" + "=" * 60 + "\n")
