@@ -38,7 +38,9 @@ from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context import Context
 
 AsyncCallable = Callable[..., Awaitable[Any]]
-AsyncGeneratorCallable = Callable[..., Any] # Should probably be stricter but Any works for now
+AsyncGeneratorCallable = Callable[
+    ..., Any
+]  # Should probably be stricter but Any works for now
 
 
 def _is_context_param(param_annotation: Any) -> bool:
@@ -315,21 +317,20 @@ class FunctionTool(AsyncBaseTool):
 
         raw_output = self._fn(*args, **all_kwargs)
 
+        # Handle generator output (consume and return last)
+        if inspect.isgenerator(raw_output):
+            final_result = None
+            for item in raw_output:
+                final_result = item
+            raw_output = final_result
+
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
         # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
+        default_output = self._create_tool_output(raw_output, args, tool_output_kwargs)
         # Check for a sync callback override
         callback_result = self._run_sync_callback(raw_output)
         if callback_result is not None:
@@ -357,29 +358,21 @@ class FunctionTool(AsyncBaseTool):
         raw_output = self._async_fn(*args, **all_kwargs)
         if inspect.isawaitable(raw_output):
             raw_output = await raw_output
-        
+
         # Handle async generator output (consume and return last)
         if inspect.isasyncgen(raw_output):
-             final_result = None
-             async for item in raw_output:
-                 final_result = item
-             raw_output = final_result
+            final_result = None
+            async for item in raw_output:
+                final_result = item
+            raw_output = final_result
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
-        output_blocks = self._parse_tool_output(raw_output)
-
         # Default ToolOutput based on the raw output
-        default_output = ToolOutput(
-            blocks=output_blocks,
-            tool_name=self.metadata.get_name(),
-            raw_input={"args": args, "kwargs": tool_output_kwargs},
-            raw_output=raw_output,
-        )
+        default_output = self._create_tool_output(raw_output, args, tool_output_kwargs)
         # Check for an async callback override
         callback_result = await self._run_async_callback(raw_output)
         if callback_result is not None:
@@ -395,7 +388,9 @@ class FunctionTool(AsyncBaseTool):
                 )
         return default_output
 
-    async def acall_stream(self, *args: Any, **kwargs: Any) -> "AsyncIterator[ToolOutput]":
+    async def acall_stream(
+        self, *args: Any, **kwargs: Any
+    ) -> "AsyncIterator[ToolOutput]":
         """Async Call Stream."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
@@ -410,44 +405,54 @@ class FunctionTool(AsyncBaseTool):
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
-        
+
         if inspect.isasyncgen(raw_output_gen):
             iterator = raw_output_gen.__aiter__()
             try:
                 prev_item = await iterator.__anext__()
             except StopAsyncIteration:
                 return
-            
+
             while True:
                 try:
                     next_item = await iterator.__anext__()
                     # If we got here, prev_item was NOT the last one.
                     # Yield prev_item as preliminary
-                    yield self._create_tool_output(prev_item, args, tool_output_kwargs, is_preliminary=True)
+                    yield self._create_tool_output(
+                        prev_item, args, tool_output_kwargs, is_preliminary=True
+                    )
                     prev_item = next_item
                 except StopAsyncIteration:
                     # prev_item IS the last one.
                     # Yield prev_item as final
-                    yield self._create_tool_output(prev_item, args, tool_output_kwargs, is_preliminary=False)
+                    yield self._create_tool_output(
+                        prev_item, args, tool_output_kwargs, is_preliminary=False
+                    )
                     break
 
         else:
             # Not a generator, just single result
             # Yield it as final
-            yield self._create_tool_output(raw_output_gen, args, tool_output_kwargs, is_preliminary=False)
-    
+            yield self._create_tool_output(
+                raw_output_gen, args, tool_output_kwargs, is_preliminary=False
+            )
 
-
-    def _create_tool_output(self, raw_output: Any, args: tuple, tool_output_kwargs: dict, is_preliminary: bool = False) -> ToolOutput:
+    def _create_tool_output(
+        self,
+        raw_output: Any,
+        args: tuple,
+        tool_output_kwargs: dict,
+        is_preliminary: bool = False,
+    ) -> ToolOutput:
         # Parse tool output into content blocks
         output_blocks = self._parse_tool_output(raw_output)
-        
+
         return ToolOutput(
             blocks=output_blocks,
             tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
-            is_preliminary=is_preliminary
+            is_preliminary=is_preliminary,
         )
 
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":

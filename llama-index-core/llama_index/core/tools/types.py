@@ -259,13 +259,6 @@ class AsyncBaseTool(BaseTool):
         yield await self.acall(input)
 
 
-
-
-
-
-
-
-
 class BaseToolAsyncAdapter(AsyncBaseTool):
     """
     Adapter class that allows a synchronous tool to be used as an async tool.
