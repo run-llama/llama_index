@@ -13,6 +13,7 @@ from llama_index.core.node_parser.interface import (
 from llama_index.core.node_parser.node_utils import default_id_func
 
 # a list of strings of all available chunkers in chonkie
+# see https://github.com/chonkie-inc/chonkie/blob/cd8bd643bd7045686f0a8b73a64f1c9296c0dae2/src/chonkie/cli/cli_utils.py#L34-L36
 CHUNKERS = sorted(
     c.alias
     for c in ComponentRegistry.list_components(component_type=ComponentType.CHUNKER)
@@ -28,8 +29,8 @@ class ChonkieChunker(MetadataAwareTextSplitter):
     MetadataAwareTextSplitter interface.
     """
 
-    # this is related to the metadata schema in the super, or it pydantic will fail
-    # apparently attributes need to be defined as pydantic fields, this is a workaround
+    # this is related to the metadata schema in the super, or pydantic will fail
+    # apparently attributes need to be defined as pydantic fields
     chunker: Optional[BaseChunker] = Field(default=None, exclude=True)
 
     def __init__(
