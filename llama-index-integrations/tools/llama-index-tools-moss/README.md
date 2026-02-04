@@ -19,7 +19,10 @@ from llama_index.tools.moss import MossToolSpec
 from inferedge_moss import MossClient
 
 # Initialize the client
-client = MossClient()
+# The client requires a Moss API key and a project ID
+MOSS_API_KEY = os.getenv("MOSS_API_KEY")
+PROJECT_ID = os.getenv("PROJECT_ID")
+client = MossClient(project_id=PROJECT_ID, api_key=MOSS_API_KEY)
 
 # Initialize the tool
 # Note: You can customize top_k and alpha (hybrid search weight)
@@ -59,5 +62,5 @@ await tool.index_docs(docs)
 
 The `examples/` directory contains:
 
-- [Moss Agent Notebook](examples/moss_agent.ipynb): A Jupyter notebook walking through installation, indexing, and agent usage.
-- [Moss Agent Script](examples/moss_agent.py): A concise Python script demonstrating the ReAct agent flow.
+- [Moss Agent Notebook](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-moss/examples/moss_agent.ipynb): A Jupyter notebook walking through installation, indexing, and agent usage.
+- [Moss Agent Script](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-moss/examples/moss_agent.py): A concise Python script demonstrating the ReAct agent flow.
