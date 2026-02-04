@@ -14,6 +14,7 @@ from typing import (
     get_origin,
     get_origin,
     AsyncIterator,
+    Iterator,
 )
 import re
 
@@ -317,8 +318,10 @@ class FunctionTool(AsyncBaseTool):
 
         raw_output = self._fn(*args, **all_kwargs)
 
-        # Handle generator output (consume and return last)
-        if inspect.isgenerator(raw_output):
+        # Handle generator/iterator output (consume and return last)
+        # We check for Iterator to handle generators and custom iterators,
+        # but exclude lists/tuples which are Iterable but not Iterator.
+        if isinstance(raw_output, Iterator):
             final_result = None
             for item in raw_output:
                 final_result = item
@@ -363,6 +366,12 @@ class FunctionTool(AsyncBaseTool):
         if inspect.isasyncgen(raw_output):
             final_result = None
             async for item in raw_output:
+                final_result = item
+            raw_output = final_result
+        # Handle sync generator/iterator output (consume and return last)
+        elif isinstance(raw_output, Iterator):
+            final_result = None
+            for item in raw_output:
                 final_result = item
             raw_output = final_result
 
