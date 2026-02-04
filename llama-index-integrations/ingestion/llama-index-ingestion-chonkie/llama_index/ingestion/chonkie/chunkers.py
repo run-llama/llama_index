@@ -35,7 +35,7 @@ class ChonkieChunker(MetadataAwareTextSplitter):
 
     def __init__(
         self,
-        chunker_type: str = "recursive",  # works only with pyhton 3.10
+        chunker_type: str = "recursive",
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
