@@ -42,18 +42,10 @@ class ChonkieChunker(MetadataAwareTextSplitter):
         id_func: Optional[Callable] = None,
         **kwargs: Any,
     ):
-        """
-        Initialize with a Chonkie chunker instance or create one if not provided.
-
-        Args:
-            chunker_type (str): The type of Chonkie chunker to use. Must be one of CHUNKERS.
-            callback_manager (Optional[CallbackManager]): Callback manager for handling callbacks.
-            include_metadata (bool): Whether to include metadata in the nodes.
-            include_prev_next_rel (bool): Whether to include previous/next relationships.
-            id_func (Optional[Callable]): Function to generate node IDs.
-            **kwargs: Additional keyword arguments for Chonkie's RecursiveChunker.
-
-        """
+        if chunker_type not in CHUNKERS:
+            raise ValueError(
+                f"Invalid chunker_type '{chunker_type}'. Must be one of: {CHUNKERS}"
+            )
         id_func = id_func or default_id_func
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -62,7 +54,7 @@ class ChonkieChunker(MetadataAwareTextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
-        # flexible approach to pull chunker classes based on their alias "chunker_type"
+        # flexible approach to pull chunker classes based on their alias
         ChunkingClass = ComponentRegistry.get_chunker(chunker_type).component_class
         self.chunker = ChunkingClass(**kwargs)
 
@@ -108,10 +100,16 @@ class ChonkieChunker(MetadataAwareTextSplitter):
             return [chunks.text if hasattr(chunks, "text") else str(chunks)]
 
 
-# minor docstring adjustment
-docstring = ChonkieChunker.__init__.__doc__
-if docstring:
-    ChonkieChunker.__init__.__doc__ = docstring.replace(
-        "chunker_type (str)",
-        "chunker_type (Literal[{}])".format(", ".join(f'"{c}"' for c in CHUNKERS)),
-    )
+# MonkeyPatch for https://github.com/run-llama/llama_index/pull/20622#discussion_r2764697454
+ChonkieChunker.__init__.__doc__ = f"""
+        Initialize with a Chonkie chunker instance or create one if not provided.
+
+        Args:
+            chunker_type (str): The type of Chonkie chunker to use. Must be one of {CHUNKERS}.
+            callback_manager (Optional[CallbackManager]): Callback manager for handling callbacks.
+            include_metadata (bool): Whether to include metadata in the nodes.
+            include_prev_next_rel (bool): Whether to include previous/next relationships.
+            id_func (Optional[Callable]): Function to generate node IDs.
+            **kwargs: Additional keyword arguments for Chonkie's RecursiveChunker.
+
+        """
