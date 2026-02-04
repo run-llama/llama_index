@@ -12,10 +12,10 @@ pip install llama-index-ingestion-chonkie
 
 ```python
 from llama_index.core import Document
-from llama_index.ingestion.chonkie import ChonkieChunker
+from llama_index.ingestion.chonkie import Chunker
 
 # Create a chunker (defaults to 'recursive')
-chunker = ChonkieChunker(chunk_size=512, chunk_overlap=50)
+chunker = Chunker(chunk_size=512, chunk_overlap=50)
 
 # Create a document
 doc = Document(text="Your long text here...")
@@ -26,7 +26,7 @@ nodes = chunker.get_nodes_from_documents([doc])
 
 ## Supported Chunkers
 
-The `ChonkieChunker` acts as a wrapper for various Chonkie chunking strategies. You can specify the strategy using the `chunker_type` parameter:
+The `Chunker` acts as a wrapper for various Chonkie chunking strategies. You can specify the strategy using the `chunker_type` parameter:
 
 | `chunker_type` | Description |
 |----------------|-------------|
@@ -42,10 +42,10 @@ The `ChonkieChunker` acts as a wrapper for various Chonkie chunking strategies. 
 
 ## Advanced Configuration
 
-You can pass any keyword arguments accepted by the underlying Chonkie chunker directly to `ChonkieChunker`:
+You can pass any keyword arguments accepted by the underlying Chonkie chunker directly to `Chunker`:
 
 ```python
-chunker = ChonkieChunker(
+chunker = Chunker(
     chunker_type="semantic",
     chunk_size=512,
     embedding_model="all-MiniLM-L6-v2",
@@ -58,11 +58,11 @@ chunker = ChonkieChunker(
 ```python
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.ingestion.chonkie import ChonkieChunker
+from llama_index.ingestion.chonkie import Chunker
 
 pipeline = IngestionPipeline(
     transformations=[
-        ChonkieChunker(chunker_type="recursive", chunk_size=512),
+        Chunker(chunker_type="recursive", chunk_size=512),
         # ... other transformations
     ]
 )
