@@ -2223,7 +2223,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-bedrock-converse"
-version = "0.12.4"
+version = "0.12.6"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },

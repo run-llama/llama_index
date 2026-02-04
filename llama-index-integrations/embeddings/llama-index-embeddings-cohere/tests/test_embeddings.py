@@ -1,12 +1,18 @@
 import os
 import tempfile
+from unittest.mock import MagicMock, AsyncMock, patch
+
+import cohere
 import httpx
 import pytest
 from PIL import Image
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
 from llama_index.embeddings.cohere import CohereEmbedding
-from llama_index.embeddings.cohere.base import VALID_MODEL_INPUT_TYPES
+from llama_index.embeddings.cohere.base import (
+    VALID_MODEL_INPUT_TYPES,
+    _create_retry_decorator,
+)
 
 
 def test_embedding_class():
@@ -176,3 +182,164 @@ def test_cohere_embeddings_custom_endpoint_multiprocessing():
 
     # Assert: Verify that the deserialized instance retains the correct base_url
     assert deserialized_embeddings.base_url == custom_base_url
+
+
+def test_create_retry_decorator():
+    """Test that _create_retry_decorator creates a working decorator."""
+    decorator = _create_retry_decorator(max_retries=3)
+    assert decorator is not None
+
+    call_count = 0
+
+    @decorator
+    def failing_function():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise cohere.errors.ServiceUnavailableError(body=None)
+        return "success"
+
+    result = failing_function()
+    assert result == "success"
+    assert call_count == 3
+
+
+def test_create_retry_decorator_retries_on_internal_server_error():
+    """Test that retry decorator retries on InternalServerError."""
+    decorator = _create_retry_decorator(max_retries=3)
+    call_count = 0
+
+    @decorator
+    def failing_function():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 2:
+            raise cohere.errors.InternalServerError(body=None)
+        return "success"
+
+    result = failing_function()
+    assert result == "success"
+    assert call_count == 2
+
+
+def test_create_retry_decorator_retries_on_gateway_timeout():
+    """Test that retry decorator retries on GatewayTimeoutError."""
+    decorator = _create_retry_decorator(max_retries=3)
+    call_count = 0
+
+    @decorator
+    def failing_function():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 2:
+            raise cohere.errors.GatewayTimeoutError(body=None)
+        return "success"
+
+    result = failing_function()
+    assert result == "success"
+    assert call_count == 2
+
+
+def test_embed_with_retry():
+    """Test that _embed uses retry logic."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+
+    mock_embeddings = MagicMock()
+    mock_embeddings.float = [[0.1, 0.2, 0.3]]
+
+    mock_response = MagicMock()
+    mock_response.embeddings = mock_embeddings
+
+    mock_client = MagicMock()
+    mock_client.embed.return_value = mock_response
+
+    with patch.object(emb, "_get_client", return_value=mock_client):
+        result = emb._embed(texts=["test text"])
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_client.embed.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_aembed_with_retry():
+    """Test that _aembed uses retry logic."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+
+    mock_embeddings = MagicMock()
+    mock_embeddings.float = [[0.1, 0.2, 0.3]]
+
+    mock_response = MagicMock()
+    mock_response.embeddings = mock_embeddings
+
+    mock_client = MagicMock()
+    mock_client.embed = AsyncMock(return_value=mock_response)
+
+    with patch.object(emb, "_get_async_client", return_value=mock_client):
+        result = await emb._aembed(texts=["test text"])
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_client.embed.assert_called_once()
+
+
+def test_embed_image_with_retry():
+    """Test that _embed_image uses retry logic."""
+    emb = CohereEmbedding(api_key="test_key", model_name="embed-v4.0", max_retries=3)
+
+    mock_embeddings = MagicMock()
+    mock_embeddings.float = [[0.1, 0.2, 0.3]]
+
+    mock_response = MagicMock()
+    mock_response.embeddings = mock_embeddings
+
+    mock_client = MagicMock()
+    mock_client.embed.return_value = mock_response
+
+    with (
+        patch.object(emb, "_get_client", return_value=mock_client),
+        patch.object(
+            emb,
+            "_image_to_base64_data_url",
+            return_value="data:image/png;base64,test",
+        ),
+    ):
+        result = emb._embed_image(image_paths=["test.png"], input_type="image")
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_client.embed.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_aembed_image_with_retry():
+    """Test that _aembed_image uses retry logic."""
+    emb = CohereEmbedding(api_key="test_key", model_name="embed-v4.0", max_retries=3)
+
+    mock_embeddings = MagicMock()
+    mock_embeddings.float = [[0.1, 0.2, 0.3]]
+
+    mock_response = MagicMock()
+    mock_response.embeddings = mock_embeddings
+
+    mock_client = MagicMock()
+    mock_client.embed = AsyncMock(return_value=mock_response)
+
+    with (
+        patch.object(emb, "_get_async_client", return_value=mock_client),
+        patch.object(
+            emb,
+            "_image_to_base64_data_url",
+            return_value="data:image/png;base64,test",
+        ),
+    ):
+        result = await emb._aembed_image(image_paths=["test.png"], input_type="image")
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_client.embed.assert_called_once()
+
+
+def test_max_retries_parameter():
+    """Test that max_retries parameter is properly set."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=5)
+    assert emb.max_retries == 5
+
+    emb_default = CohereEmbedding(api_key="test_key")
+    assert emb_default.max_retries == 10
