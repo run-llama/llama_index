@@ -15,7 +15,7 @@ classifiers = [
 ]
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "chonkie>=1.5.0",
+    "chonkie[all]>=1.5.0",
 ]
 
 [project.urls]
