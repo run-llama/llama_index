@@ -10,6 +10,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-cov>=4.0.0,<5",
     "pytest-mock==3.11.1",
     "ruff==0.0.292",
     "types-Deprecated>=0.1.0",
