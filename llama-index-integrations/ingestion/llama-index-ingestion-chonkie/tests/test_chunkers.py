@@ -1,25 +1,25 @@
-"""Tests for Chonkie ChonkieChunker integration."""
+"""Tests for Chonkie Chunker integration."""
 
 from typing import List
 
 
 from llama_index.core.schema import Document, MetadataMode, TextNode
 
-from llama_index.ingestion.chonkie.chunkers import ChonkieChunker, CHUNKERS
+from llama_index.ingestion.chonkie.chunkers import Chunker, CHUNKERS
 
 
 def test_chonkie_chunker_initialization() -> None:
-    """Test ChonkieChunker can be initialized with default parameters."""
-    chunker = ChonkieChunker(chunk_size=512)
+    """Test Chunker can be initialized with default parameters."""
+    chunker = Chunker(chunk_size=512)
     assert chunker is not None
     assert chunker.chunker is not None
 
 
 def test_chonkie_chunker_from_defaults() -> None:
-    """Test ChonkieChunker can be created using from_defaults."""
-    chunker = ChonkieChunker.from_defaults()
+    """Test Chunker can be created using from_defaults."""
+    chunker = Chunker.from_defaults()
     assert chunker is not None
-    assert isinstance(chunker, ChonkieChunker)
+    assert isinstance(chunker, Chunker)
     # Default is recursive
     from chonkie import RecursiveChunker
 
@@ -28,20 +28,20 @@ def test_chonkie_chunker_from_defaults() -> None:
 
 def test_chonkie_chunker_class_name() -> None:
     """Test that class_name returns the correct name."""
-    chunker = ChonkieChunker(chunk_size=512)
-    assert chunker.class_name() == "ChonkieChunker"
+    chunker = Chunker(chunk_size=512)
+    assert chunker.class_name() == "Chunker"
 
 
 def test_split_text_empty() -> None:
     """Test splitting empty text returns empty list with one empty string."""
-    chunker = ChonkieChunker(chunk_size=512)
+    chunker = Chunker(chunk_size=512)
     result = chunker.split_text("")
     assert result == [""]
 
 
 def test_split_text_basic() -> None:
     """Test basic text splitting functionality."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     text = "This is a test. " * 50  # Create text that will need splitting
     chunks = chunker.split_text(text)
 
@@ -52,7 +52,7 @@ def test_split_text_basic() -> None:
 
 def test_split_text_short() -> None:
     """Test that short text is not split."""
-    chunker = ChonkieChunker(chunk_size=512)
+    chunker = Chunker(chunk_size=512)
     text = "This is a short text."
     chunks = chunker.split_text(text)
 
@@ -62,7 +62,7 @@ def test_split_text_short() -> None:
 
 def test_split_text_with_paragraphs() -> None:
     """Test splitting text with multiple paragraphs."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     text = "First paragraph. " * 20 + "\n\n" + "Second paragraph. " * 20
     chunks = chunker.split_text(text)
 
@@ -72,7 +72,7 @@ def test_split_text_with_paragraphs() -> None:
 
 def test_split_text_metadata_aware() -> None:
     """Test metadata-aware text splitting."""
-    chunker = ChonkieChunker(chunk_size=512)
+    chunker = Chunker(chunk_size=512)
     text = "This is a test document. " * 20
     metadata_str = "title: Test Document\nauthor: Test Author\n"
 
@@ -84,7 +84,7 @@ def test_split_text_metadata_aware() -> None:
 
 def test_get_nodes_from_documents() -> None:
     """Test generating nodes from documents."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     documents = [
         Document(text="This is document one. " * 30, metadata={"doc_id": "1"}),
         Document(text="This is document two. " * 30, metadata={"doc_id": "2"}),
@@ -100,7 +100,7 @@ def test_get_nodes_from_documents() -> None:
 
 def test_start_end_char_idx() -> None:
     """Test that start and end character indices are correctly set."""
-    chunker = ChonkieChunker(chunk_size=50)
+    chunker = Chunker(chunk_size=50)
     document = Document(text="This is a test document. " * 20)
 
     nodes: List[TextNode] = chunker.get_nodes_from_documents([document])
@@ -116,7 +116,7 @@ def test_start_end_char_idx() -> None:
 
 def test_nodes_preserve_document_metadata() -> None:
     """Test that nodes preserve document metadata."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     metadata = {"title": "Test Document", "author": "Test Author", "year": 2024}
     document = Document(text="This is a test. " * 30, metadata=metadata)
 
@@ -130,7 +130,7 @@ def test_nodes_preserve_document_metadata() -> None:
 
 def test_chunker_with_long_text() -> None:
     """Test chunker with a longer piece of text."""
-    chunker = ChonkieChunker(chunk_size=200)
+    chunker = Chunker(chunk_size=200)
     # Create a long text that will require multiple chunks
     text = (
         """
@@ -158,7 +158,7 @@ def test_chunker_preserves_text_content() -> None:
 
     Using TokenChunker as we want to test overlap=0 which is explicit there.
     """
-    chunker = ChonkieChunker(chunker_type="token", chunk_size=100, chunk_overlap=0)
+    chunker = Chunker(chunker_type="token", chunk_size=100, chunk_overlap=0)
     text = "This is a test sentence. " * 50
 
     chunks = chunker.split_text(text)
@@ -172,8 +172,8 @@ def test_chunker_preserves_text_content() -> None:
 
 def test_include_metadata_flag() -> None:
     """Test that include_metadata flag works correctly."""
-    chunker_with_metadata = ChonkieChunker(chunk_size=100, include_metadata=True)
-    chunker_without_metadata = ChonkieChunker(chunk_size=100, include_metadata=False)
+    chunker_with_metadata = Chunker(chunk_size=100, include_metadata=True)
+    chunker_without_metadata = Chunker(chunk_size=100, include_metadata=False)
 
     document = Document(
         text="This is a test. " * 30, metadata={"title": "Test", "author": "Author"}
@@ -189,8 +189,8 @@ def test_include_metadata_flag() -> None:
 
 def test_include_prev_next_rel_flag() -> None:
     """Test that include_prev_next_rel flag affects node relationships."""
-    chunker_with_rel = ChonkieChunker(chunk_size=100, include_prev_next_rel=True)
-    chunker_without_rel = ChonkieChunker(chunk_size=100, include_prev_next_rel=False)
+    chunker_with_rel = Chunker(chunk_size=100, include_prev_next_rel=True)
+    chunker_without_rel = Chunker(chunk_size=100, include_prev_next_rel=False)
 
     document = Document(text="This is a test. " * 30)
 
@@ -212,7 +212,7 @@ def test_include_prev_next_rel_flag() -> None:
 
 def test_chunker_with_special_characters() -> None:
     """Test chunker handles text with special characters."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     text = "Hello! How are you? I'm fine. This costs $10. Email: test@example.com"
 
     chunks = chunker.split_text(text)
@@ -225,7 +225,7 @@ def test_chunker_with_special_characters() -> None:
 
 def test_chunker_with_unicode() -> None:
     """Test chunker handles Unicode text."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     text = "Hello 世界! This is a test with émojis 🎉 and special chars: café, naïve."
 
     chunks = chunker.split_text(text)
@@ -237,7 +237,7 @@ def test_chunker_with_unicode() -> None:
 
 def test_multiple_documents() -> None:
     """Test processing multiple documents at once."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     documents = [
         Document(text="Document one. " * 30, metadata={"id": 1}),
         Document(text="Document two. " * 30, metadata={"id": 2}),
@@ -255,7 +255,7 @@ def test_multiple_documents() -> None:
 
 def test_chunker_consistency() -> None:
     """Test that chunker produces consistent results."""
-    chunker = ChonkieChunker(chunk_size=100)
+    chunker = Chunker(chunk_size=100)
     text = "This is a test sentence. " * 20
 
     chunks1 = chunker.split_text(text)
@@ -272,10 +272,10 @@ def test_chunker_kwargs() -> None:
     Using TokenChunker to test chunk_overlap support.
     """
     # Test with various chunk sizes
-    chunker_small = ChonkieChunker(
+    chunker_small = Chunker(
         chunker_type="token", chunk_size=50, chunk_overlap=10
     )
-    chunker_large = ChonkieChunker(
+    chunker_large = Chunker(
         chunker_type="token", chunk_size=500, chunk_overlap=50
     )
 
@@ -292,6 +292,6 @@ def test_available_chunkers() -> None:
     """Test that all available chunkers can be initialized."""
     assert len(CHUNKERS) > 0
     for chunker_type in CHUNKERS:
-        chunker = ChonkieChunker(chunker_type=chunker_type)
+        chunker = Chunker(chunker_type=chunker_type)
         assert chunker is not None
         assert chunker.chunker is not None

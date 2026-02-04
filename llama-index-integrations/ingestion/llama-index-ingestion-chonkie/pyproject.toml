@@ -62,7 +62,7 @@ contains_example = false
 import_path = "llama_index.ingestion.chonkie"
 
 [tool.llamahub.class_authors]
-ChonkieChunker = "Hafedh Hichri"
+Chunker = "Hafedh Hichri"
 
 [tool.mypy]
 disallow_untyped_defs = true

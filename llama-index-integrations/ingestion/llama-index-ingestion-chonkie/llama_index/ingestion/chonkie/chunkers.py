@@ -21,7 +21,7 @@ CHUNKERS = sorted(
 )
 
 
-class ChonkieChunker(MetadataAwareTextSplitter):
+class Chunker(MetadataAwareTextSplitter):
     """
     Wrapper for Chonkie's chunkers.
 
@@ -64,7 +64,7 @@ class ChonkieChunker(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
-    ) -> "ChonkieChunker":
+    ) -> "Chunker":
         """Initialize with parameters."""
         callback_manager = callback_manager or CallbackManager([])
         return cls(
@@ -75,7 +75,7 @@ class ChonkieChunker(MetadataAwareTextSplitter):
 
     @classmethod
     def class_name(cls) -> str:
-        return "ChonkieChunker"
+        return "Chunker"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text with metadata awareness."""
@@ -101,7 +101,7 @@ class ChonkieChunker(MetadataAwareTextSplitter):
 
 
 # MonkeyPatch for https://github.com/run-llama/llama_index/pull/20622#discussion_r2764697454
-ChonkieChunker.__init__.__doc__ = f"""
+Chunker.__init__.__doc__ = f"""
         Initialize with a Chonkie chunker instance or create one if not provided.
 
         Args:
