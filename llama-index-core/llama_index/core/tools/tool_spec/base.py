@@ -2,7 +2,9 @@
 
 import asyncio
 import inspect
+import sys
 from inspect import signature
+from textwrap import indent
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from llama_index.core.bridge.pydantic import BaseModel
@@ -55,6 +57,12 @@ class BaseToolSpec:
         func = getattr(self, fn_name)
         name = fn_name
         docstring = func.__doc__ or ""
+
+        # in python 3.14+, __doc__ returns a cleaned docstring
+        # we want the indent though
+        if sys.version_info >= (3, 14):
+            docstring = indent(docstring, " " * 4).strip()
+
         description = f"{name}{signature(func)}\n{docstring}"
         fn_schema = self.get_fn_schema_from_fn_name(
             fn_name, spec_functions=spec_functions
