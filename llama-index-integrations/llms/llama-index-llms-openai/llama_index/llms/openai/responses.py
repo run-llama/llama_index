@@ -421,10 +421,8 @@ class OpenAIResponses(FunctionCallingLLM):
             "user": self.user,
         }
 
-        if self.model in O1_MODELS and self.reasoning_options is not None:
-            model_kwargs["reasoning"] = self.reasoning_options
-
         if self.reasoning_options is not None:
+            model_kwargs["reasoning"] = self.reasoning_options
             params_to_exclude_for_reasoning = {
                 "top_p",
                 "temperature",
