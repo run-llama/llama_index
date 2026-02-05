@@ -23,7 +23,7 @@ module_patches = {
 
 # Apply patches before importing the unit under test
 with patch.dict("sys.modules", module_patches):
-    from llama_index.tools.moss.base import MossToolSpec
+    from llama_index.tools.moss.base import MossToolSpec, QueryOptions
 
 
 @pytest.fixture
@@ -54,7 +54,9 @@ async def test_index_docs(mock_client):
     await spec.index_docs([])
 
     assert not spec._index_loaded
-    mock_client.create_index.assert_awaited_once()
+    mock_client.create_index.assert_awaited_once_with(
+        "test", [], model_id="moss-minilm"
+    )
 
 
 @pytest.mark.asyncio
@@ -74,14 +76,26 @@ async def test_query(mock_client):
     assert "33" in output
 
 
+def test_query_options_application():
+    client = MagicMock()
+    options = QueryOptions(top_k=10, alpha=0.8, model_id="custom-model")
+    spec = MossToolSpec(client=client, index_name="test", query_options=options)
+
+    assert spec.top_k == 10
+    assert spec.alpha == 0.8
+    assert spec.model_id == "custom-model"
+
+
 def test_initialization_validation():
     # Synchronous test
     client = MagicMock()
 
     # Test invalid alpha
+    opt1 = QueryOptions(alpha=2)
     with pytest.raises(ValueError, match="alpha must be between 0 and 1"):
-        MossToolSpec(client, "test", alpha=1.5)
+        MossToolSpec(client, "test", query_options=opt1)
 
     # Test invalid top_k
+    opt2 = QueryOptions(top_k=-2)
     with pytest.raises(ValueError, match="top_k must be greater than 0"):
-        MossToolSpec(client, "test", top_k=0)
+        MossToolSpec(client, "test", query_options=opt2)

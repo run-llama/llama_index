@@ -15,18 +15,22 @@ You can use the `MossToolSpec` to interact with your Moss index.
 ### Initialization
 
 ```python
-from llama_index.tools.moss import MossToolSpec
+import os
+from llama_index.tools.moss import MossToolSpec, QueryOptions
 from inferedge_moss import MossClient
 
 # Initialize the client
-# The client requires a Moss API key and a project ID
-MOSS_API_KEY = os.getenv("MOSS_API_KEY")
-PROJECT_ID = os.getenv("PROJECT_ID")
-client = MossClient(project_id=PROJECT_ID, api_key=MOSS_API_KEY)
+# The client requires a Moss project key and a project ID
+MOSS_PROJECT_KEY = os.getenv("MOSS_PROJECT_KEY")
+MOSS_PROJECT_ID = os.getenv("MOSS_PROJECT_ID")
+client = MossClient(project_id=MOSS_PROJECT_ID, project_key=MOSS_PROJECT_KEY)
 
 # Initialize the tool
-# Note: You can customize top_k and alpha (hybrid search weight)
-tool = MossToolSpec(client=client, index_name="my_index", top_k=5, alpha=0.5)
+# Note: You can customize top_k and alpha through query_options (hybrid search weight)
+options = QueryOptions(alpha=0.6, top_k=9, model_id="moss-minilm")
+tool = MossToolSpec(
+    client=client, index_name="my_index", query_options=options
+)
 
 # Convert to tool list for agents
 tools = tool.to_tool_list()
@@ -54,9 +58,15 @@ await tool.index_docs(docs)
 
 - `client` (MossClient): The initialized Moss client.
 - `index_name` (str): The name of the index to query.
-- `top_k` (int, default=5): Number of results to return.
-- `alpha` (float, default=0.5): Weight for hybrid search (0.0=keyword, 1.0=semantic).
-- `model_id` (str, default="moss-minilm"): The model ID to use for embeddings.
+- `query_options` (QueryOptions): Configuration options for the tool (optional).
+  - `top_k` (int, default=5): Number of results to return.
+  - `alpha` (float, default=0.5): Weight for hybrid search (0.0=keyword, 1.0=semantic).
+  - `model_id` (str, default="moss-minilm"): The model ID to use for embeddings.
+
+### MODEL IDs
+
+- `moss-minilm`: Fast, lightweight (default). Best for speed-first, edge/offline use.
+- `moss-mediumlm`: Higher accuracy with reasonable performance. Best when search quality is important.
 
 ## Examples
 

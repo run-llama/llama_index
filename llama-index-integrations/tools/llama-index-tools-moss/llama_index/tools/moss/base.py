@@ -1,9 +1,26 @@
 """Moss tool spec."""
 
-from typing import List
-
+from typing import List, Optional
+from dataclasses import dataclass
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from inferedge_moss import MossClient, DocumentInfo
+
+
+@dataclass
+class QueryOptions:
+    """
+    Configuration options for Moss search queries.
+
+    Attributes:
+        top_k (int): Number of results to return from queries. Defaults to 5.
+        alpha (float): Hybrid search weight (0.0=keyword, 1.0=semantic). Defaults to 0.5.
+        model_id (str): The model ID to use for embeddings. Defaults to "moss-minilm".
+
+    """
+
+    top_k: int = 5
+    alpha: float = 0.5
+    model_id: str = "moss-minilm"
 
 
 class MossToolSpec(BaseToolSpec):
@@ -20,9 +37,7 @@ class MossToolSpec(BaseToolSpec):
         self,
         client: MossClient,
         index_name: str,
-        top_k: int = 5,
-        alpha: float = 0.5,
-        model_id: str = "moss-minilm",
+        query_options: Optional[QueryOptions] = None,
     ) -> None:
         """
         Initialize the Moss tool spec.
@@ -30,22 +45,23 @@ class MossToolSpec(BaseToolSpec):
         Args:
             client (MossClient): The client to interact with the Moss service.
             index_name (str): The name of the index to use.
-            top_k (int): Number of results to return from queries. Defaults to 5.
-            alpha (float): Hybrid search weight (0.0=keyword, 1.0=semantic). Defaults to 0.5.
-            model_id (str): The model ID to use for embeddings. Defaults to "moss-minilm".
+            query_options (Optional[QueryOptions]): Configuration options for the tool.
+                Includes top_k (int), alpha (float), and model_id (str).
 
         """
-        if not (0.0 <= alpha <= 1.0):
+        opt = query_options or QueryOptions()
+
+        if not (0.0 <= opt.alpha <= 1.0):
             raise ValueError("alpha must be between 0 and 1")
-        if top_k < 1:
+        if opt.top_k < 1:
             raise ValueError("top_k must be greater than 0")
 
-        self.top_k: int = top_k
-        self.alpha: float = alpha
+        self.top_k: int = opt.top_k
+        self.alpha: float = opt.alpha
         self.client: MossClient = client
         self.index_name: str = index_name
         self._index_loaded: bool = False
-        self.model_id: str = model_id
+        self.model_id: str = opt.model_id
 
     async def index_docs(self, docs: List[DocumentInfo]) -> None:
         await self.client.create_index(self.index_name, docs, model_id=self.model_id)

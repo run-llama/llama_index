@@ -20,6 +20,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-asyncio",
+    "llama-index-llms-openai",
     "pre-commit",
 ]
 
