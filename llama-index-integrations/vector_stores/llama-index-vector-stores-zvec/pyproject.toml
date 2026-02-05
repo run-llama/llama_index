@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-zvec"
-version = "0.4.1"
+version = "0.1.0"
 description = "llama-index vector_stores zvec integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

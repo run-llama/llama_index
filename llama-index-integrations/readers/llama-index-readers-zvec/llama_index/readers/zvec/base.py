@@ -43,8 +43,6 @@ class ZvecReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        import zvec
-
         vectors = [zvec.VectorQuery(field_name="dense_embedding", vector=vector)]
 
         if sparse_vector:
