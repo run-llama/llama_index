@@ -288,6 +288,9 @@ def test_available_chunkers() -> None:
     """Test that all available chunkers can be initialized."""
     assert len(CHUNKERS) > 0
     for chunker_type in CHUNKERS:
-        chunker = Chunker(chunker_type=chunker_type)
+        try:
+            chunker = Chunker(chunker_type=chunker_type)
+        except Exception as e:
+            raise AssertionError(f"Failed to initialize chunker '{chunker_type}': {e}")
         assert chunker is not None
         assert chunker.chunker is not None
