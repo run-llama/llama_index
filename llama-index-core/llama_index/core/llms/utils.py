@@ -158,12 +158,19 @@ def parse_partial_json(s: str) -> Dict:
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing and no colon was found after the opening quote,
-    # this is an incomplete key - remove it
-    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
-        new_s = new_s[: new_s.rindex('"')]
-    elif is_inside_string:
-        new_s += '"'
+    # If we're still inside a string at the end of processing,
+    # we need to decide if we should close the string or remove it.
+    if is_inside_string:
+        # Check if we are in an object and this is a key
+        prefix = new_s[: new_s.rindex('"')].rstrip()
+        print(f"DEBUG: prefix='{prefix}'")
+        if stack and stack[-1] == "}" and (prefix.endswith("{") or prefix.endswith(",")):
+            # Incomplete key - remove it
+            new_s = new_s[: new_s.rindex('"')]
+        else:
+            # Complete the string
+            new_s += '"'
+    print(f"DEBUG: new_s after string check='{new_s}'")
 
     # Check if we have an incomplete key-value pair
     new_s = new_s.rstrip()
