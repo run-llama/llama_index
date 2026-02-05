@@ -6,14 +6,27 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
-    Literal,
     Union,
 )
+
 from botocore.exceptions import ClientError
-from typing_extensions import TypedDict
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    CachePoint,
+    ChatMessage,
+    ChatResponse,
+    ContentBlock,
+    DocumentBlock,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -22,21 +35,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    MessageRole,
-    ImageBlock,
-    TextBlock,
-    ContentBlock,
-    AudioBlock,
-    DocumentBlock,
-    CachePoint,
-    ThinkingBlock,
-    ToolCallBlock,
-)
-
+from typing_extensions import TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +64,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
@@ -114,6 +114,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -147,6 +148,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -168,6 +170,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -182,6 +185,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
