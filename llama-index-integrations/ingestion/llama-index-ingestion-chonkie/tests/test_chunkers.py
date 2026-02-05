@@ -272,12 +272,8 @@ def test_chunker_kwargs() -> None:
     Using TokenChunker to test chunk_overlap support.
     """
     # Test with various chunk sizes
-    chunker_small = Chunker(
-        chunker_type="token", chunk_size=50, chunk_overlap=10
-    )
-    chunker_large = Chunker(
-        chunker_type="token", chunk_size=500, chunk_overlap=50
-    )
+    chunker_small = Chunker(chunker_type="token", chunk_size=50, chunk_overlap=10)
+    chunker_large = Chunker(chunker_type="token", chunk_size=500, chunk_overlap=50)
 
     text = "This is a test sentence. " * 50
 
