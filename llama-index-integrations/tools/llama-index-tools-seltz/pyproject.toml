@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "WilliamEspegren"}]
 dependencies = [
-    "seltz>=0.1.3",
+    "seltz>=0.1.4",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

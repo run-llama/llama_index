@@ -17,15 +17,15 @@ def test_spec_functions():
     assert "search" in SeltzToolSpec.spec_functions
 
 
-@patch("seltz.Seltz")
+@patch("llama_index.tools.seltz.base.Seltz")
 def test_init(mock_seltz):
     tool = SeltzToolSpec(api_key="test-key")
     mock_seltz.assert_called_once_with(api_key="test-key")
     assert tool.client == mock_seltz.return_value
 
 
-@patch("seltz.Includes")
-@patch("seltz.Seltz")
+@patch("llama_index.tools.seltz.base.Includes")
+@patch("llama_index.tools.seltz.base.Seltz")
 def test_search(mock_seltz, mock_includes_class):
     mock_doc1 = Mock()
     mock_doc1.content = "Result content 1"
@@ -59,8 +59,8 @@ def test_search(mock_seltz, mock_includes_class):
     assert results[1].metadata["url"] == "https://example2.com"
 
 
-@patch("seltz.Includes")
-@patch("seltz.Seltz")
+@patch("llama_index.tools.seltz.base.Includes")
+@patch("llama_index.tools.seltz.base.Seltz")
 def test_search_default_max_documents(mock_seltz, mock_includes_class):
     mock_response = Mock()
     mock_response.documents = []
@@ -79,7 +79,7 @@ def test_search_default_max_documents(mock_seltz, mock_includes_class):
     mock_client.search.assert_called_once_with("test query", includes=mock_includes)
 
 
-@patch("seltz.Seltz")
+@patch("llama_index.tools.seltz.base.Seltz")
 def test_search_empty_results(mock_seltz):
     mock_response = Mock()
     mock_response.documents = []
