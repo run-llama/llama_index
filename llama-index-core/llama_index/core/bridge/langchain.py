@@ -35,14 +35,6 @@ except ImportError:
     from langchain.chat_models.base import BaseChatModel
     from langchain.docstore.document import Document
 
-# output parsers
-try:
-    # # For langchain v1.x.x
-    from langchain_core.output_parsers import ResponseSchema
-except ImportError:
-    # For langchain v0.x.x
-    from langchain.output_parsers import ResponseSchema
-
 # prompts
 try:
     # # For langchain v1.x.x
@@ -70,28 +62,20 @@ try:
     # # For langchain v1.x.x
     from langchain_core.messages import (
         AIMessage,
-        BaseMemory,
         BaseMessage,
-        BaseOutputParser,
-        ChatGeneration,
         ChatMessage,
         FunctionMessage,
         HumanMessage,
-        LLMResult,
         SystemMessage,
     )
 except ImportError:
     # For langchain v0.x.x
     from langchain.schema import (
         AIMessage,
-        BaseMemory,
         BaseMessage,
-        BaseOutputParser,
-        ChatGeneration,
         ChatMessage,
         FunctionMessage,
         HumanMessage,
-        LLMResult,
         SystemMessage,
     )
 
@@ -162,7 +146,6 @@ __all__ = [
     "StructuredTool",
     "Tool",
     "BaseTool",
-    "ResponseSchema",
     "BaseCallbackHandler",
     "BaseCallbackManager",
     "AIMessage",
@@ -171,9 +154,5 @@ __all__ = [
     "ChatMessage",
     "HumanMessage",
     "SystemMessage",
-    "BaseMemory",
-    "BaseOutputParser",
-    "LLMResult",
-    "ChatGeneration",
     "Document",
 ]
