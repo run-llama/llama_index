@@ -1,26 +1,12 @@
-import langchain  # pants: no-infer-dep
+import langchain
 
-# agents and tools
+# base language model
 try:
     # # For langchain v1.x.x
-    from langchain_classic.agents import AgentExecutor, AgentType, initialize_agent
+    from langchain_core.language_models import BaseLanguageModel
 except ImportError:
     # For langchain v0.x.x
-    from langchain.agents import (
-        AgentExecutor,
-        AgentType,
-        initialize_agent,
-    )  # pants: no-infer-dep
-
-# agents and tools
-try:
-    # # For langchain v1.x.x
-    from langchain_core.tools.base import BaseToolkit  # pants: no-infer-dep
-    from langchain_core.language_models import BaseLanguageModel  # pants: no-infer-dep
-except ImportError:
-    # For langchain v0.x.x
-    from langchain.agents.agent_toolkits.base import BaseToolkit  # pants: no-infer-dep
-    from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+    from langchain.base_language import BaseLanguageModel
 
 # callback
 try:
@@ -28,138 +14,117 @@ try:
     from langchain_core.callbacks.base import (
         BaseCallbackHandler,
         BaseCallbackManager,
-    )  # pants: no-infer-dep
+    )
     from langchain_classic.chains.prompt_selector import (
         ConditionalPromptSelector,
         is_chat_model,
-    )  # pants: no-infer-dep
-    from langchain.chat_models.base import BaseChatModel  # pants: no-infer-dep
-    from langchain_core.documents.base import Document  # pants: no-infer-dep
-    from langchain_classic.memory import ConversationBufferMemory  # pants: no-infer-dep
+    )
+    from langchain.chat_models.base import BaseChatModel
+    from langchain_core.documents.base import Document
 
 except ImportError:
     # For langchain v0.x.x
     from langchain.callbacks.base import (
         BaseCallbackHandler,
         BaseCallbackManager,
-    )  # pants: no-infer-dep
+    )
     from langchain.chains.prompt_selector import (
         ConditionalPromptSelector,
         is_chat_model,
-    )  # pants: no-infer-dep
-    from langchain.chat_models.base import BaseChatModel  # pants: no-infer-dep
-    from langchain.docstore.document import Document  # pants: no-infer-dep
-    from langchain.memory import ConversationBufferMemory  # pants: no-infer-dep
+    )
+    from langchain.chat_models.base import BaseChatModel
+    from langchain.docstore.document import Document
 
-# chat and memory
+# output parsers
 try:
     # # For langchain v1.x.x
-    from langchain_classic.memory.chat_memory import (
-        BaseChatMemory,
-    )  # pants: no-infer-dep
-    from langchain_core.output_parsers import ResponseSchema  # pants: no-infer-dep
+    from langchain_core.output_parsers import ResponseSchema
 except ImportError:
     # For langchain v0.x.x
-    from langchain.memory.chat_memory import BaseChatMemory  # pants: no-infer-dep
-    from langchain.output_parsers import ResponseSchema  # pants: no-infer-dep
+    from langchain.output_parsers import ResponseSchema
 
 # prompts
 try:
     # # For langchain v1.x.x
-    from langchain_core.prompts import PromptTemplate  # pants: no-infer-dep
-    from langchain_core.prompts.chat import (  # pants: no-infer-dep
-        AIMessagePromptTemplate,  # pants: no-infer-dep
-        BaseMessagePromptTemplate,  # pants: no-infer-dep
-        ChatPromptTemplate,  # pants: no-infer-dep
-        HumanMessagePromptTemplate,  # pants: no-infer-dep
-        SystemMessagePromptTemplate,  # pants: no-infer-dep
-    )  # pants: no-infer-dep
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.prompts.chat import (
+        AIMessagePromptTemplate,
+        BaseMessagePromptTemplate,
+        ChatPromptTemplate,
+        HumanMessagePromptTemplate,
+        SystemMessagePromptTemplate,
+    )
 except ImportError:
     # For langchain v0.x.x
-    from langchain.prompts import PromptTemplate  # pants: no-infer-dep
-    from langchain.prompts.chat import (  # pants: no-infer-dep
-        AIMessagePromptTemplate,  # pants: no-infer-dep
-        BaseMessagePromptTemplate,  # pants: no-infer-dep
-        ChatPromptTemplate,  # pants: no-infer-dep
-        HumanMessagePromptTemplate,  # pants: no-infer-dep
-        SystemMessagePromptTemplate,  # pants: no-infer-dep
-    )  # pants: no-infer-dep
+    from langchain.prompts import PromptTemplate
+    from langchain.prompts.chat import (
+        AIMessagePromptTemplate,
+        BaseMessagePromptTemplate,
+        ChatPromptTemplate,
+        HumanMessagePromptTemplate,
+        SystemMessagePromptTemplate,
+    )
 
 # schema
 try:
     # # For langchain v1.x.x
-    from langchain_core.messages import (  # pants: no-infer-dep
-        AIMessage,  # pants: no-infer-dep
-        BaseMemory,  # pants: no-infer-dep
-        BaseMessage,  # pants: no-infer-dep
-        BaseOutputParser,  # pants: no-infer-dep
-        ChatGeneration,  # pants: no-infer-dep
-        ChatMessage,  # pants: no-infer-dep
-        FunctionMessage,  # pants: no-infer-dep
-        HumanMessage,  # pants: no-infer-dep
-        LLMResult,  # pants: no-infer-dep
-        SystemMessage,  # pants: no-infer-dep
-    )  # pants: no-infer-dep
+    from langchain_core.messages import (
+        AIMessage,
+        BaseMemory,
+        BaseMessage,
+        BaseOutputParser,
+        ChatGeneration,
+        ChatMessage,
+        FunctionMessage,
+        HumanMessage,
+        LLMResult,
+        SystemMessage,
+    )
 except ImportError:
     # For langchain v0.x.x
-    from langchain.schema import (  # pants: no-infer-dep
-        AIMessage,  # pants: no-infer-dep
-        BaseMemory,  # pants: no-infer-dep
-        BaseMessage,  # pants: no-infer-dep
-        BaseOutputParser,  # pants: no-infer-dep
-        ChatGeneration,  # pants: no-infer-dep
-        ChatMessage,  # pants: no-infer-dep
-        FunctionMessage,  # pants: no-infer-dep
-        HumanMessage,  # pants: no-infer-dep
-        LLMResult,  # pants: no-infer-dep
-        SystemMessage,  # pants: no-infer-dep
-    )  # pants: no-infer-dep
+    from langchain.schema import (
+        AIMessage,
+        BaseMemory,
+        BaseMessage,
+        BaseOutputParser,
+        ChatGeneration,
+        ChatMessage,
+        FunctionMessage,
+        HumanMessage,
+        LLMResult,
+        SystemMessage,
+    )
 
 # embeddings
 try:
     # # For langchain v1.x.x
-    from langchain_core.embeddings import Embeddings  # pants: no-infer-dep
-    from langchain_core.prompts import BasePromptTemplate  # pants: no-infer-dep
+    from langchain_core.embeddings import Embeddings
+    from langchain_core.prompts import BasePromptTemplate
 except ImportError:
     # For langchain v0.x.x
-    from langchain.schema.embeddings import Embeddings  # pants: no-infer-dep
+    from langchain.schema.embeddings import Embeddings
     from langchain.schema.prompt_template import (
         BasePromptTemplate,
-    )  # pants: no-infer-dep
+    )
 
-# input & output
-try:
-    # # For langchain v1.x.x
-    from langchain_text_splitters import (
-        RecursiveCharacterTextSplitter,
-        TextSplitter,
-    )  # pants: no-infer-dep
-except ImportError:
-    # For langchain v0.x.x
-    from langchain.text_splitter import (
-        RecursiveCharacterTextSplitter,
-        TextSplitter,
-    )  # pants: no-infer-dep
-
+# tools
 try:
     # # For langchain v1.x.x
     from langchain_core.tools import BaseTool, StructuredTool, Tool
 except ImportError:
     # For langchain v0.x.x
-    from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-dep
+    from langchain.tools import BaseTool, StructuredTool, Tool
 
-from langchain_community.chat_message_histories import (
-    ChatMessageHistory,
-)  # pants: no-infer-dep
+# Models
 from langchain_community.chat_models import (
     ChatAnyscale,
     ChatOpenAI,
     ChatFireworks,
-)  # pants: no-infer-dep
-from langchain_community.embeddings import (  # pants: no-infer-dep
-    HuggingFaceBgeEmbeddings,  # pants: no-infer-dep
-    HuggingFaceEmbeddings,  # pants: no-infer-dep
-)  # pants: no-infer-dep
+)
+from langchain_community.embeddings import (
+    HuggingFaceBgeEmbeddings,
+    HuggingFaceEmbeddings,
+)
 
 # LLMs
 from langchain_community.llms import (
@@ -168,7 +133,7 @@ from langchain_community.llms import (
     Cohere,
     FakeListLLM,
     OpenAI,
-)  # pants: no-infer-dep
+)
 
 __all__ = [
     "langchain",
@@ -194,13 +159,6 @@ __all__ = [
     "HumanMessagePromptTemplate",
     "BaseMessagePromptTemplate",
     "SystemMessagePromptTemplate",
-    "BaseChatMemory",
-    "ConversationBufferMemory",
-    "ChatMessageHistory",
-    "BaseToolkit",
-    "AgentType",
-    "AgentExecutor",
-    "initialize_agent",
     "StructuredTool",
     "Tool",
     "BaseTool",
@@ -218,6 +176,4 @@ __all__ = [
     "LLMResult",
     "ChatGeneration",
     "Document",
-    "RecursiveCharacterTextSplitter",
-    "TextSplitter",
 ]
