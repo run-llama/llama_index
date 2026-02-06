@@ -31,7 +31,7 @@ dev = [
 
 [project]
 name = "llama-index-postprocessor-nvidia-rerank"
-version = "0.5.1"
+version = "0.5.4"
 description = "llama-index postprocessor nvidia_rerank integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

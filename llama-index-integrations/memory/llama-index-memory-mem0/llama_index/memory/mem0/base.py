@@ -1,22 +1,34 @@
-from typing import Dict, List, Optional, Union, Any
-from llama_index.core.memory import BaseMemory, Memory as LlamaIndexMemory
-from llama_index.memory.mem0.utils import (
-    convert_memory_to_system_message,
-    convert_chat_history_to_dict,
-    convert_messages_to_string,
-)
-from mem0 import MemoryClient, Memory
+from typing import Any, Dict, List, Optional, Union, cast
+
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import (
     BaseModel,
-    Field,
-    ValidationError,
-    model_validator,
-    SerializeAsAny,
-    PrivateAttr,
     ConfigDict,
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+    ValidationError,
     model_serializer,
 )
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.memory import BaseMemory
+from llama_index.core.memory import Memory as LlamaIndexMemory
+from llama_index.memory.mem0.utils import (
+    convert_chat_history_to_dict,
+    convert_memory_to_system_message,
+    convert_messages_to_string,
+)
+from typing_extensions import NotRequired, TypedDict
+
+from mem0 import Memory, MemoryClient
+
+
+class Mem0AddResult(TypedDict):
+    results: list[Any]
+    relations: NotRequired[Any]
+
+
+class Mem0SearchResult(TypedDict):
+    results: Any
 
 
 class BaseMem0(BaseMemory):
@@ -28,22 +40,30 @@ class BaseMem0(BaseMemory):
         self, client: Optional[Union[MemoryClient, Memory]] = None, **kwargs
     ) -> None:
         super().__init__(**kwargs)
-        if client is not None:
-            self._client = client
+        self._client = client
 
     def add(
-        self, messages: Union[str, List[Dict[str, str]]], **kwargs
-    ) -> Optional[Dict[str, Any]]:
-        if self._client is None:
-            raise ValueError("Client is not initialized")
+        self,
+        messages: Union[str, Dict[str, str], List[Dict[str, str]]],
+        **kwargs: Any,
+    ) -> Optional[Union[Mem0AddResult, Dict[str, Any]]]:
+        assert self._client is not None, (
+            "Client should be not-null when performing memory operations"
+        )
         if not messages:
             return None
         return self._client.add(messages=messages, **kwargs)
 
-    def search(self, query: str, **kwargs) -> Optional[Dict[str, Any]]:
-        if self._client is None:
-            raise ValueError("Client is not initialized")
-        return self._client.search(query=query, **kwargs)
+    def search(self, query: str, **kwargs) -> Mem0SearchResult:
+        assert self._client is not None, (
+            "Client should be not-null when performing memory operations"
+        )
+        result = self._client.search(query=query, **kwargs)
+        if isinstance(result, list):
+            search_result: Mem0SearchResult = {"results": result}
+            return search_result
+        # client should return results in the form of {'results': ...}
+        return cast(Mem0SearchResult, result)
 
 
 class Mem0Context(BaseModel):
@@ -51,18 +71,32 @@ class Mem0Context(BaseModel):
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
 
-    @model_validator(mode="after")
-    def check_at_least_one_assigned(cls, values):
-        if not any(
-            getattr(values, field) for field in ["user_id", "agent_id", "run_id"]
-        ):
-            raise ValueError(
-                "At least one of 'user_id', 'agent_id', or 'run_id' must be assigned."
+    def validate_provided_context(self) -> None:
+        if all(el is None for el in [self.user_id, self.agent_id, self.run_id]):
+            raise ValidationError(
+                "When providing a non-default context, you should have at least one not-null field"
             )
-        return values
 
-    def get_context(self) -> Dict[str, Optional[str]]:
-        return {key: value for key, value in self.__dict__.items() if value is not None}
+    def build_filter(self) -> dict[str, Any]:
+        flt = {"OR": []}
+        if self.user_id is not None:
+            flt["OR"].append({"user_id": self.user_id})
+        if self.run_id is not None:
+            flt["OR"].append({"run_id": self.run_id})
+        if self.agent_id is not None:
+            flt["OR"].append({"agent_id": self.agent_id})
+        return flt
+
+    @model_serializer
+    def serialize_with_omitempty(self) -> Dict[str, Any]:
+        context: Dict[str, Any] = {}
+        if self.user_id is not None:
+            context.update({"user_id": self.user_id})
+        if self.run_id is not None:
+            context.update({"run_id": self.run_id})
+        if self.agent_id is not None:
+            context.update({"agent_id": self.agent_id})
+        return context
 
 
 class Mem0Memory(BaseMem0):
@@ -70,15 +104,20 @@ class Mem0Memory(BaseMem0):
     primary_memory: SerializeAsAny[LlamaIndexMemory] = Field(
         description="Primary memory source for chat agent."
     )
-    context: Optional[Mem0Context] = None
+    context: Mem0Context = Mem0Context()
     search_msg_limit: int = Field(
         default=5,
         description="Limit of chat history messages to use for context in search API",
     )
 
-    def __init__(self, context: Optional[Mem0Context] = None, **kwargs) -> None:
+    def __init__(
+        self, context: Optional[Union[Mem0Context, dict[str, Any]]] = None, **kwargs
+    ) -> None:
         super().__init__(**kwargs)
         if context is not None:
+            if isinstance(context, dict):
+                context = Mem0Context.model_validate(context)
+            context.validate_provided_context()
             self.context = context
 
     @model_serializer
@@ -118,7 +157,7 @@ class Mem0Memory(BaseMem0):
         primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
-            context = Mem0Context(**context)
+            mem0_ctx = Mem0Context.model_validate(context)
         except ValidationError as e:
             raise ValidationError(f"Context validation error: {e}")
 
@@ -127,7 +166,7 @@ class Mem0Memory(BaseMem0):
         )
         return cls(
             primary_memory=primary_memory,
-            context=context,
+            context=mem0_ctx,
             client=client,
             search_msg_limit=search_msg_limit,
         )
@@ -143,14 +182,14 @@ class Mem0Memory(BaseMem0):
         primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
-            context = Mem0Context(**context)
+            mem0_ctx = Mem0Context(**context)
         except Exception as e:
             raise ValidationError(f"Context validation error: {e}")
 
         client = Memory.from_config(config_dict=config)
         return cls(
             primary_memory=primary_memory,
-            context=context,
+            context=mem0_ctx,
             client=client,
             search_msg_limit=search_msg_limit,
         )
@@ -159,11 +198,14 @@ class Mem0Memory(BaseMem0):
         """Get chat history. With memory system message."""
         messages = self.primary_memory.get(input=input, **kwargs)
         input = convert_messages_to_string(messages, input, limit=self.search_msg_limit)
+        ctx = self.context.model_dump()
+        if len(ctx) > 1:
+            flt = self.context.build_filter()
+            result = self.search(query=input, filters=flt)
+        else:
+            result = self.search(query=input, **ctx)
 
-        search_results = self.search(query=input, **self.context.get_context())
-
-        if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
-            search_results = search_results["results"]
+        search_results = result.get("results", [])
 
         system_message = convert_memory_to_system_message(search_results)
 
@@ -184,7 +226,7 @@ class Mem0Memory(BaseMem0):
         """Add new user and assistant messages to client memory."""
         self.add(
             messages=convert_chat_history_to_dict(messages),
-            **self.context.get_context(),
+            **self.context.model_dump(),
         )
 
     def put(self, message: ChatMessage) -> None:

@@ -3,6 +3,7 @@ import re
 import uuid
 from typing import Awaitable, Callable, List, Sequence, Union, Optional, Tuple
 
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
@@ -211,7 +212,7 @@ class CodeActAgent(BaseWorkflowAgent):
 
     async def _get_streaming_response(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         current_llm_input: List[ChatMessage],
         tools: Sequence[BaseTool],
     ) -> Tuple[ChatResponse, str]:
@@ -260,7 +261,7 @@ class CodeActAgent(BaseWorkflowAgent):
 
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[BaseTool],
         memory: BaseMemory,

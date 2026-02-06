@@ -1884,3 +1884,24 @@ async def test_thoughts_with_async_chat() -> None:
         )
         != 0
     )
+
+
+def test_client_header_initialization() -> None:
+    """Test that the client header is correctly passed to the GoogleGenAI LLM."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_client.models.get.return_value = mock_model
+
+        GoogleGenAI(model="models/gemini-3.0-flash", api_key="test-key")
+
+        # Check if http_options were passed to the client constructor
+        call_args = mock_client_class.call_args
+        _, kwargs = call_args
+        http_options = kwargs["http_options"]
+        headers = http_options.headers
+
+        assert "x-goog-api-client" in headers
+        assert headers["x-goog-api-client"].startswith("llamaindex/")

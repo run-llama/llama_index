@@ -12,10 +12,12 @@ from typing import (
     Literal,
     Union,
 )
+from botocore.exceptions import ClientError
 from typing_extensions import TypedDict
 from tenacity import (
     before_sleep_log,
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
@@ -491,7 +493,7 @@ def tools_to_converse_tools(
     tool_required: bool = False,
     tool_caching: bool = False,
     supports_forced_tool_calls: bool = True,
-) -> Dict[str, Any]:
+) -> Optional[Dict[str, Any]]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
 
@@ -499,9 +501,12 @@ def tools_to_converse_tools(
         tools: List of BaseTools
 
     Returns:
-        AWS Bedrock Converse tools
+        AWS Bedrock Converse tools, or None if tools list is empty
 
     """
+    if not tools:
+        return None
+
     converse_tools = []
     for tool in tools:
         tool_name, tool_description = tool.metadata.name, tool.metadata.description
@@ -563,9 +568,36 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
+        retry=(
+            retry_if_exception_type(
+                (
+                    client.exceptions.ThrottlingException,
+                    client.exceptions.InternalServerException,
+                    client.exceptions.ServiceUnavailableException,
+                    client.exceptions.ModelTimeoutException,
+                )
+            )
+        ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+RETRYABLE_ERROR_CODES = frozenset(
+    {
+        "ThrottlingException",
+        "InternalServerException",
+        "ServiceUnavailableException",
+        "ModelTimeoutException",
+    }
+)
+
+
+def _is_retryable_client_error(exception: BaseException) -> bool:
+    """Check if an exception is a retryable ClientError from botocore."""
+    if isinstance(exception, ClientError):
+        error_code = exception.response.get("Error", {}).get("Code", "")
+        return error_code in RETRYABLE_ERROR_CODES
+    return False
 
 
 def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
@@ -585,9 +617,7 @@ def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type()
-        ),  # TODO: Add throttling exception in async version
+        retry=retry_if_exception(_is_retryable_client_error),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 

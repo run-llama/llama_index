@@ -235,6 +235,9 @@ VoyageAI offers several specialized embedding models:
 
 ### Text Embeddings
 
+- **voyage-4**: General-purpose and multilingual retrieval with 1024 dimensions (supports 256, 512, 1024, 2048)
+- **voyage-4-lite**: Cost and latency optimized with highest throughput, 1024 dimensions (supports 256, 512, 1024, 2048)
+- **voyage-4-large**: Best retrieval quality in voyage-4 series, 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3.5**: Latest general-purpose model with 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3.5-lite**: Cost and latency optimized variant with 1024 dimensions (supports 256, 512, 1024, 2048)
 - **voyage-3-large**: Best for general-purpose and multilingual retrieval, 1024 dimensions (supports 256, 512, 1024, 2048)
@@ -292,11 +295,14 @@ These limits represent the maximum total tokens that can be sent in a single API
 
 | Model                   | Batch Token Limit |
 | ----------------------- | ----------------- |
+| voyage-4-lite           | 1,000,000         |
 | voyage-3.5-lite         | 1,000,000         |
+| voyage-4                | 320,000           |
 | voyage-3.5              | 320,000           |
 | voyage-multimodal-3     | 320,000           |
 | voyage-multimodal-3.5   | 320,000           |
 | voyage-2                | 320,000           |
+| voyage-4-large          | 120,000           |
 | voyage-3-large          | 120,000           |
 | voyage-code-3           | 120,000           |
 | voyage-large-2-instruct | 120,000           |
