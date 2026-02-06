@@ -288,9 +288,19 @@ def test_available_chunkers() -> None:
     """Test that all available chunkers can be initialized."""
     assert len(CHUNKERS) > 0
     for chunker_type in CHUNKERS:
+        kwargs = {}
         try:
-            chunker = Chunker(chunker_type=chunker_type)
+            if chunker_type == "code":
+                kwargs = {"language": "python"}
+            chunker = Chunker(chunker_type=chunker_type, **kwargs)
         except Exception as e:
             raise AssertionError(f"Failed to initialize chunker '{chunker_type}': {e}")
         assert chunker is not None
         assert chunker.chunker is not None
+        # slow section (downloading embedding models in workflow is slow)
+        # try:
+        #     chunker.split_text("some text")
+        # except Exception as e:
+        #     raise AssertionError(
+        #         f"Failed to split text with chunker '{chunker_type}': {e}"
+        #     )
