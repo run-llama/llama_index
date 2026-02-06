@@ -359,6 +359,19 @@ def test_document_block_from_url(pdf_url: str):
     assert document.title == "dummy_pdf"
 
 
+def test_document_block_preserves_empty_strings(pdf_base64: bytes):
+    """Test that empty string fields are not coerced to None or default values."""
+    document = DocumentBlock(
+        data=pdf_base64,
+        document_mimetype="",
+        title="",
+        url="",
+    )
+    assert document.document_mimetype == ""
+    assert document.title == ""
+    assert document.url == ""
+
+
 def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
     errors = []
     try:
