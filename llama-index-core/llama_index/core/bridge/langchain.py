@@ -21,6 +21,7 @@ try:
     )
     from langchain.chat_models.base import BaseChatModel
     from langchain_core.documents.base import Document
+    from langchain_core.outputs import LLMResult
 
 except ImportError:
     # For langchain v0.x.x
@@ -34,6 +35,7 @@ except ImportError:
     )
     from langchain.chat_models.base import BaseChatModel
     from langchain.docstore.document import Document
+    from langchain.schema import LLMResult
 
 # prompts
 try:
@@ -155,4 +157,5 @@ __all__ = [
     "HumanMessage",
     "SystemMessage",
     "Document",
+    "LLMResult",
 ]
