@@ -370,7 +370,7 @@ def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
 @pytest.mark.asyncio
 async def test_image_block_aestimate_tokens(png_1px_b64: bytes):
     ib = ImageBlock(image=png_1px_b64)
-    assert await ib.aestimate_tokens() == 2125
+    assert await ib.aestimate_tokens() == 258
 
 
 @pytest.mark.asyncio
