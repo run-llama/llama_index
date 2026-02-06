@@ -236,7 +236,12 @@ class GoogleGenAI(FunctionCallingLLM):
             config_params["debug_config"] = debug_config
 
         client = google.genai.Client(**config_params)
-        model_meta = client.models.get(model=model)
+
+        # only get model meta data if max_tokens or context_window is not specified
+        if max_tokens is None or context_window is None:
+            model_meta = client.models.get(model=model)
+        else:
+            model_meta = None
 
         super().__init__(
             model=model,
