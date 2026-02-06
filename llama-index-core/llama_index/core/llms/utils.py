@@ -163,14 +163,12 @@ def parse_partial_json(s: str) -> Dict:
     if is_inside_string:
         # Check if we are in an object and this is a key
         prefix = new_s[: new_s.rindex('"')].rstrip()
-        print(f"DEBUG: prefix='{prefix}'")
         if stack and stack[-1] == "}" and (prefix.endswith("{") or prefix.endswith(",")):
             # Incomplete key - remove it
             new_s = new_s[: new_s.rindex('"')]
         else:
             # Complete the string
             new_s += '"'
-    print(f"DEBUG: new_s after string check='{new_s}'")
 
     # Check if we have an incomplete key-value pair
     new_s = new_s.rstrip()
