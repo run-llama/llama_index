@@ -25,6 +25,8 @@ from llama_index.core.base.llms.types import (
     CacheControl,
     ThinkingBlock,
     ToolCallBlock,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.bridge.pydantic import ValidationError
@@ -2254,6 +2256,292 @@ async def test_cache_control_amerge():
     # Cache control points are not mergeable
     assert len(merged) == 2
     assert merged == [cp1, cp2]
+
+
+@pytest.mark.asyncio
+async def test_citable_block_aestimate_tokens(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    assert await cb.aestimate_tokens() == sum(
+        [await block.aestimate_tokens() for block in content_blocks]
+    )
+
+
+@pytest.mark.asyncio
+async def test_citable_block_asplit(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    chunks = await cb.asplit(max_tokens=3)
+
+    # Citable blocks are recursively splittable. However, since ImageBlock and DocumentBlock are not splittable, only
+    # the TextBlock gets split. We expect 4 chunks: one for each original block.
+    assert len(chunks) == 4
+    assert chunks[0] == CitableBlock(
+        title="Test Title",
+        source="Test Source",
+        content=[TextBlock(text="This is the")],
+    )
+    assert chunks[1] == CitableBlock(
+        title="Test Title", source="Test Source", content=[TextBlock(text="content.")]
+    )
+    assert chunks[2] == CitableBlock(
+        title="Test Title", source="Test Source", content=[ImageBlock(image=png_1px)]
+    )
+    assert chunks[3] == CitableBlock(
+        title="Test Title",
+        source="Test Source",
+        content=[
+            DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_citable_block_atruncate(png_1px: bytes, mock_pdf_bytes: bytes):
+    tb = TextBlock(text="This is the content.")
+    ib = ImageBlock(image=png_1px)
+    db = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    cb = CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
+    truncated_cb = await cb.atruncate(max_tokens=await tb.aestimate_tokens())
+    truncated_cb_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens(), reverse=True
+    )
+    truncated_cb2 = await cb.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
+    )
+    truncated_cb2_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens() + await ib.aestimate_tokens(),
+        reverse=True,
+    )
+    truncated_cb3 = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db]])
+    )
+    truncated_cb3_reverse = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, ib, tb]]), reverse=True
+    )
+
+    # Citable blocks are recursively truncatable. However, since ImageBlock and DocumentBlock are not truncatable,
+    # only the TextBlock gets truncated.
+    assert len(truncated_cb.content) == 1
+    assert len(truncated_cb_reverse.content) == 1
+    assert truncated_cb.content == [tb]
+    assert truncated_cb_reverse.content == [db]
+
+    # Truncation for recursive blocks will continue adding blocks until max_tokens is reached.
+    assert len(truncated_cb2.content) == 2
+    assert len(truncated_cb2_reverse.content) == 2
+    assert truncated_cb2.content == [tb, ib]
+    assert truncated_cb2_reverse.content == [ib, db]
+
+    assert len(truncated_cb3.content) == 3
+    assert len(truncated_cb3_reverse.content) == 3
+    assert truncated_cb3.content == [tb, ib, db]
+    assert truncated_cb3_reverse.content == [tb, ib, db]
+
+
+@pytest.mark.asyncio
+async def test_citable_block_amerge(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks1 = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+    ]
+    content_blocks2 = [
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+        TextBlock(text="More content."),
+    ]
+    content_blocks3 = [
+        TextBlock(text="This is also the content."),
+        TextBlock(text="More content."),
+    ]
+    cb1 = CitableBlock(
+        title="Test Title 1", source="Test Source 1", content=content_blocks1
+    )
+    cb2 = CitableBlock(
+        title="Test Title 1", source="Test Source 1", content=content_blocks2
+    )
+    cb3 = CitableBlock(
+        title="Test Title 2", source="Test Source 2", content=content_blocks3
+    )
+    merged_cbs = await CitableBlock.amerge([cb1, cb2, cb3], chunk_size=10000)
+
+    # content of cb1 and cb2 should be merged, cb3 remains separate because it's of different title/source
+    assert len(merged_cbs) == 2
+    # first merged block should contain content from cb1 and cb2
+    # The two TextBlocks are not merged since they are not consecutive in the original list
+    assert merged_cbs[0].content == content_blocks1 + content_blocks2
+    # Second merged block should be cb3 with its content merged since they are two consecutive TextBlocks
+    assert merged_cbs[1].content == await TextBlock.amerge(
+        content_blocks3, chunk_size=10000
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_aestimate_tokens(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb1.aestimate_tokens() == await cb1.cited_content.aestimate_tokens()
+    assert await cb2.aestimate_tokens() == await cb2.cited_content.aestimate_tokens()
+
+
+@pytest.mark.asyncio
+async def test_citation_block_asplit(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    assert await cb1.asplit(max_tokens=3) == [
+        CitationBlock(
+            cited_content=chunk,
+            source="Test Source",
+            title="Test Title",
+            additional_location_info={},
+        )
+        for chunk in await cb1.cited_content.asplit(max_tokens=3)
+    ]
+    assert await cb2.asplit(max_tokens=3) == [
+        CitationBlock(
+            cited_content=chunk,
+            source="Test Source",
+            title="Test Title",
+            additional_location_info={},
+        )
+        for chunk in await cb2.cited_content.asplit(max_tokens=3)
+    ]
+
+
+@pytest.mark.asyncio
+async def test_citation_block_atruncate(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    assert await cb1.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb1.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3, reverse=True),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb2.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb2.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3, reverse=True),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_text_blocks():
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! "),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=TextBlock(text="This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    merged = await CitationBlock.amerge([cb1, cb2], chunk_size=100)
+
+    # Both citation blocks should be merged into one
+    assert len(merged) == 1
+    assert merged[0] == CitationBlock(
+        cited_content=(
+            await TextBlock.amerge(
+                [cb1.cited_content, cb2.cited_content], chunk_size=100
+            )
+        )[0],
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_image_blocks(png_1px):
+    cb1 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    # Image blocks are not mergeable currently
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_different_types(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    # Citation blocks are not mergeable across different cited content types
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
 
 
 def test_thinking_block():

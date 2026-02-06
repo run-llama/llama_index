@@ -302,6 +302,10 @@ class ImageBlock(BaseContentBlock):
         # We take the larger of the two estimates to be safe
         return max(openai_max_count, gemini_max_count)
 
+    async def asplit(self, *args, **kwargs) -> List[Self]:
+        """Images are not splittable, return self."""
+        return [self]
+
 
 class AudioVideoMixIn(ABC):
     """Mixin for audio and video blocks."""
@@ -750,6 +754,7 @@ class AudioBlock(AudioVideoMixIn, BaseContentBlock):
                 return 256  # fallback
             return 256  # fallback
         except ValueError as e:
+            # Null case
             if str(e) == "resolve_audio returned zero bytes":
                 return 0
             raise
@@ -954,7 +959,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
 
     async def aestimate_tokens(self, *args, **kwargs) -> int:
         """
-        Use TinyTag to estimate the duration of the video file and convert to tokens.
+        Use TinyTag or ffprobe (if available) to estimate the duration of the video file and convert to tokens.
 
         Gemini estimates 263 tokens per second of video
         https://ai.google.dev/gemini-api/docs/tokens?lang=python
@@ -980,6 +985,7 @@ class VideoBlock(AudioVideoMixIn, BaseContentBlock):
             # fallback of roughly 8 times the fallback cost of audio (263 // 32; based on gemini pricing per sec)
             return 256 * 8
         except ValueError as e:
+            # Null case
             if str(e) == "resolve_video returned zero bytes":
                 return 0
             raise
@@ -1130,6 +1136,10 @@ class DocumentBlock(BaseContentBlock):
         # We currently only use this fallback estimate for documents which are non zero bytes
         return 512
 
+    async def asplit(self, *args, **kwargs) -> List[Self]:
+        """Documents are not generally splittable since we do not know the type, return self."""
+        return [self]
+
 
 class CacheControl(BaseContentBlock):
     type: str
@@ -1143,7 +1153,227 @@ class CachePoint(BaseContentBlock):
     cache_control: CacheControl
 
 
-class CitableBlock(BaseContentBlock):
+class BaseRecursiveContentBlock(BaseContentBlock):
+    """Base class for content blocks that can contain other content blocks."""
+
+    @classmethod
+    def nested_blocks_field_name(self) -> str:
+        """
+        Return the name of the field that contains nested content blocks.
+
+        By default, this is "content", but subclasses can override this method
+        """
+        return "content"
+
+    @property
+    def nested_blocks(self) -> List[BaseContentBlock]:
+        """Return the nested content blocks."""
+        blocks = getattr(self, self.nested_blocks_field_name())
+        if isinstance(blocks, str):
+            blocks = TextBlock(text=blocks)
+        return blocks if isinstance(blocks, list) else [blocks]
+
+    def can_merge(self, other: Self) -> bool:
+        """Check if this block can be merged with another block of the same type."""
+        atts = {
+            k: v
+            for k, v in self.model_dump().items()
+            if k != self.nested_blocks_field_name()
+        }
+        other_atts = {
+            k: v
+            for k, v in other.model_dump().items()
+            if k != self.nested_blocks_field_name()
+        }
+        return atts == other_atts
+
+    @staticmethod
+    async def amerge_nested(
+        nested_blocks: list[BaseContentBlock],
+        chunk_size: int,
+        tokenizer: Any | None = None,
+    ) -> list[BaseContentBlock]:
+        # make list of lists out of nested blocks of same type
+        nested_blocks_by_type = []
+        for nb in nested_blocks:
+            if not nested_blocks_by_type or type(
+                nested_blocks_by_type[-1][0]
+            ) is not type(nb):
+                nested_blocks_by_type.append([nb])
+            else:
+                nested_blocks_by_type[-1].append(nb)
+
+        new_nested_blocks = []
+        # merge nested blocks of same type
+        for nbs in nested_blocks_by_type:
+            new_nested_blocks.extend(
+                await type(nbs[0]).amerge(
+                    nbs, chunk_size=chunk_size, tokenizer=tokenizer
+                )
+            )
+        return new_nested_blocks
+
+    @classmethod
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, tokenizer: Any | None = None
+    ) -> list[Self]:
+        """
+        First merge nested_blocks of consecutive BaseRecursiveContentBlock types based on token estimates
+
+        Then, merge consecutive nested content blocks of the same type.
+        """
+        merged_blocks = []
+        cur_blocks = []
+        cur_block_tokens = 0
+
+        for split in splits:
+            split_tokens = await split.aestimate_tokens(tokenizer=tokenizer)
+            can_merge = len(cur_blocks) == 0 or cur_blocks[-1].can_merge(split)
+            if cur_block_tokens + split_tokens <= chunk_size and can_merge:
+                cur_blocks.append(split)
+                cur_block_tokens += split_tokens
+            else:
+                if cur_blocks:
+                    attributes = cur_blocks[0].model_dump() | {
+                        # Overwrite nested blocks
+                        cls.nested_blocks_field_name(): await cls.amerge_nested(
+                            nested_blocks=[
+                                nested_block
+                                for block in cur_blocks
+                                for nested_block in block.nested_blocks
+                            ],
+                            chunk_size=chunk_size,
+                            tokenizer=tokenizer,
+                        )
+                    }
+                    merged_blocks.append(cls(**attributes))
+                cur_blocks = [split]
+                cur_block_tokens = split_tokens
+
+        if cur_blocks:
+            attributes = cur_blocks[0].model_dump() | {
+                # Overwrite nested blocks attribute and merge nested blocks of the same type
+                cls.nested_blocks_field_name(): await cls.amerge_nested(
+                    nested_blocks=[
+                        nested_block
+                        for block in cur_blocks
+                        for nested_block in block.nested_blocks
+                    ],
+                    chunk_size=chunk_size,
+                    tokenizer=tokenizer,
+                )
+            }
+            merged_blocks.append(cls(**attributes))
+
+        return merged_blocks
+
+    async def aestimate_tokens(self, *args, **kwargs) -> int:
+        """Estimate the number of tokens in this content block."""
+        return sum(
+            [
+                await block.aestimate_tokens(*args, **kwargs)
+                for block in self.nested_blocks
+            ]
+        )
+
+    async def asplit(
+        self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
+    ) -> List[Self]:
+        """Split the content block into smaller blocks with up to max_tokens tokens each."""
+        splits = []
+
+        cls = type(self)
+        for block in self.nested_blocks:
+            block_tokens = await block.aestimate_tokens(tokenizer=tokenizer)
+            if block_tokens <= max_tokens:
+                attributes = self.model_dump() | {
+                    # Overwrite nested blocks
+                    self.nested_blocks_field_name(): [block]
+                }
+                splits.append(cls(**attributes))
+            else:
+                split_blocks = await block.asplit(
+                    max_tokens=max_tokens, tokenizer=tokenizer
+                )
+                for split_block in split_blocks:
+                    attributes = self.model_dump() | {
+                        # Overwrite nested blocks
+                        self.nested_blocks_field_name(): [split_block]
+                    }
+                    splits.append(cls(**attributes))
+
+        return splits
+
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
+        """Truncate the content block to have at most max_tokens tokens."""
+        tknizer = tokenizer or get_tokenizer()
+        current_tokens = 0
+        truncated_blocks = []
+
+        cls = type(self)
+        for block in (
+            self.nested_blocks if not reverse else reversed(self.nested_blocks)
+        ):
+            block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
+            if current_tokens + block_tokens <= max_tokens:
+                if not reverse:
+                    truncated_blocks.append(block)
+                else:
+                    truncated_blocks.insert(0, block)
+                current_tokens += block_tokens
+            else:
+                remaining_tokens = max_tokens - current_tokens
+                if remaining_tokens > 0:
+                    truncated_block = await block.atruncate(
+                        max_tokens=remaining_tokens, tokenizer=tknizer, reverse=reverse
+                    )
+                    # For some block types, truncate may return a block larger than requested
+                    # However, we still want to include it if no other truncated blocks were added
+                    # We leave it the user to handle cases where even the truncated block exceeds max_tokens
+                    if (
+                        await truncated_block.aestimate_tokens(tokenizer=tknizer)
+                        <= remaining_tokens
+                        or not truncated_blocks
+                    ):
+                        if not reverse:
+                            truncated_blocks.append(truncated_block)
+                        else:
+                            truncated_blocks.insert(0, truncated_block)
+                break  # Stop after reaching max_tokens
+
+        attributes = self.model_dump() | {
+            # Overwrite nested blocks
+            self.nested_blocks_field_name(): truncated_blocks
+        }
+        return cls(**attributes)
+
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return [cls.nested_blocks_field_name()]
+
+    def get_template_vars(self) -> list[str]:
+        vars = []
+        for block in self.nested_blocks:
+            vars.extend(block.get_template_vars())
+        return vars
+
+    def format_vars(self, **kwargs) -> Self:
+        formatted_blocks = []
+        for block in self.nested_blocks:
+            relevant_kwargs = {
+                k: v for k, v in kwargs.items() if k in block.get_template_vars()
+            }
+            formatted_blocks.append(block.format_vars(**relevant_kwargs))
+        attributes = self.model_dump() | {
+            # Overwrite nested blocks
+            self.nested_blocks_field_name(): formatted_blocks
+        }
+        return type(self)(**attributes)
+
+
+class CitableBlock(BaseRecursiveContentBlock):
     """Supports providing citable content to LLMs that have built-in citation support."""
 
     block_type: Literal["citable"] = "citable"
@@ -1166,7 +1396,7 @@ class CitableBlock(BaseContentBlock):
         return v
 
 
-class CitationBlock(BaseContentBlock):
+class CitationBlock(BaseRecursiveContentBlock):
     """A representation of cited content from past messages."""
 
     block_type: Literal["citation"] = "citation"
@@ -1182,7 +1412,34 @@ class CitationBlock(BaseContentBlock):
     def validate_cited_content(cls, v: Any) -> Any:
         if isinstance(v, str):
             return TextBlock(text=v)
+        if isinstance(v, list):
+            if len(v) != 1:
+                raise ValueError(
+                    "CitableBlock content must contain exactly one block when provided as a list."
+                )
+            value = v[0]
+            if isinstance(value, str):
+                return TextBlock(text=value)
+            else:
+                return value
         return v
+
+    @classmethod
+    def nested_blocks_field_name(self) -> str:
+        return "cited_content"
+
+    def can_merge(self, other: Self) -> bool:
+        """Check if this block can be merged with another block of the same type."""
+        # Only merge if cited_content is of the same type and is a TextBlock
+        if type(self.cited_content) is type(other.cited_content) and isinstance(
+            self.cited_content, TextBlock
+        ):
+            atts = {k: v for k, v in self.model_dump().items() if k != "cited_content"}
+            other_atts = {
+                k: v for k, v in other.model_dump().items() if k != "cited_content"
+            }
+            return atts == other_atts
+        return False
 
 
 class ThinkingBlock(BaseContentBlock):
