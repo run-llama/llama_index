@@ -2,9 +2,13 @@ import base64
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
+from unittest.mock import Mock
+
 import pytest
 import httpx
+from tinytag import UnsupportedFormatError, TinyTag
 
+from llama_index.core import get_tokenizer
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -22,6 +26,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.bridge.pydantic import ValidationError
+from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
 
@@ -60,6 +65,19 @@ def pdf_base64(mock_pdf_bytes) -> bytes:
 
 
 @pytest.fixture()
+def mp3_bytes() -> bytes:
+    """
+    Small mp3 file bytes (0.2 seconds of audio).
+    """
+    return b"ID3\x04\x00\x00\x00\x00\x01\tTXXX\x00\x00\x00\x12\x00\x00\x03major_brand\x00isom\x00TXXX\x00\x00\x00\x13\x00\x00\x03minor_version\x00512\x00TXXX\x00\x00\x00$\x00\x00\x03compatible_brands\x00isomiso2avc1mp41\x00TSSE\x00\x00\x00\x0e\x00\x00\x03Lavf62.3.100\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xf3X\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00Info\x00\x00\x00\x0f\x00\x00\x00\x06\x00\x00\x03<\x00YYYYYYYYYYYYYYYYzzzzzzzzzzzzzzzzz\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\x9b\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xbd\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xde\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00Lavf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00\x00\x00\x00\x00\x00\x00\x00\x03<\xa6\xbc`\x8e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xf38\xc4\x00\x00\x00\x03H\x00\x00\x00\x00LAME3.100UUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4_\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU\xff\xf38\xc4\xa0\x00\x00\x03H\x00\x00\x00\x00UUUUUUUUUUUUUUUUUUUUUUUUUUUUUULAME3.100UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
+
+
+@pytest.fixture()
+def mp3_base64(mp3_bytes: bytes) -> bytes:
+    return base64.b64encode(mp3_bytes)
+
+
+@pytest.fixture()
 def mp4_bytes() -> bytes:
     # Minimal fake MP4 header bytes (ftyp box)
     return b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
@@ -68,6 +86,17 @@ def mp4_bytes() -> bytes:
 @pytest.fixture()
 def mp4_base64(mp4_bytes: bytes) -> bytes:
     return base64.b64encode(mp4_bytes)
+
+
+@pytest.fixture()
+def mock_tiny_tag_error():
+    def raise_tiny_tag_error(*args, **kwargs):
+        raise UnsupportedFormatError
+
+    with mock.patch.object(
+        TinyTag, "get", side_effect=raise_tiny_tag_error
+    ) as mock_tinytag:
+        yield mock_tinytag
 
 
 def test_chat_message_from_str():
@@ -159,6 +188,64 @@ def test_chat_message_legacy_roundtrip():
         "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
     }
+
+
+def test_chat_response():
+    message = ChatMessage("some content")
+    cr = ChatResponse(message=message)
+    assert str(cr) == str(message)
+
+
+def test_completion_response():
+    cr = CompletionResponse(text="some text")
+    assert str(cr) == "some text"
+
+
+@pytest.mark.asyncio
+async def test_text_block_aestimate_tokens_default_tokenizer():
+    tb = TextBlock(text="Hello world!")
+
+    tknzr = get_tokenizer()
+    assert await tb.aestimate_tokens() == len(tknzr(tb.text))
+
+
+@pytest.mark.asyncio
+async def test_text_block_aestimate_tokens_custom_tokenizer():
+    tb = TextBlock(text="Hello world!")
+
+    mock_tknzer = Mock(spec=type(get_tokenizer()))
+    mock_tknzer.return_value = list(range(100))
+    assert await tb.aestimate_tokens(tokenizer=mock_tknzer) == 100
+
+
+@pytest.mark.asyncio
+async def test_text_block_asplit_no_overlap():
+    tb = TextBlock(text="Hello world! This is a test.")
+
+    chunks = await tb.asplit(max_tokens=3)
+    splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=0)
+    assert len(chunks) == len(splitter.split_text(tb.text))
+
+
+@pytest.mark.asyncio
+async def test_text_block_atruncate():
+    tb = TextBlock(text="Hello world! This is a test.")
+    truncated_tb = await tb.atruncate(max_tokens=4)
+    truncated_tb_reverse = await tb.atruncate(max_tokens=4, reverse=True)
+    assert await tb.aestimate_tokens() > 4
+    assert await truncated_tb.aestimate_tokens() <= 4
+    assert await truncated_tb_reverse.aestimate_tokens() <= 4
+    assert truncated_tb.text == "Hello world! This"
+    assert truncated_tb_reverse.text == "is a test."
+
+
+@pytest.mark.asyncio
+async def test_text_block_amerge():
+    tb1 = TextBlock(text="Hello world!")
+    tb2 = TextBlock(text="This is a test.")
+    merged_tb = await TextBlock.amerge([tb1, tb2], chunk_size=100)
+    assert len(merged_tb) == 1
+    assert merged_tb[0].text == "Hello world! This is a test."
 
 
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
@@ -280,116 +367,84 @@ def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
     assert msg.blocks[0].image == png_1px_b64
 
 
-def test_chat_response():
-    message = ChatMessage("some content")
-    cr = ChatResponse(message=message)
-    assert str(cr) == str(message)
+@pytest.mark.asyncio
+async def test_image_block_aestimate_tokens(png_1px_b64: bytes):
+    ib = ImageBlock(image=png_1px_b64)
+    assert await ib.aestimate_tokens() == 258
 
 
-def test_completion_response():
-    cr = CompletionResponse(text="some text")
-    assert str(cr) == "some text"
+@pytest.mark.asyncio
+async def test_image_block_asplit(png_1px_b64: bytes):
+    ib = ImageBlock(image=png_1px_b64)
+    chunks = await ib.asplit(max_tokens=2)
+
+    # Images are not splittable
+    assert chunks == [ib]
 
 
-def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
-    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
-    assert document.title == "input_document"
-    assert document.document_mimetype == "application/pdf"
-    assert pdf_base64 == document.data
+@pytest.mark.asyncio
+async def test_image_block_atruncate(png_1px_b64: bytes):
+    ib = ImageBlock(image=png_1px_b64)
+    truncated_ib = await ib.atruncate(max_tokens=2)
+    truncated_ib_reverse = await ib.atruncate(max_tokens=2, reverse=True)
+    # Images are not truncatable
+    assert truncated_ib == ib
+    assert truncated_ib_reverse == ib
 
 
-def test_document_block_from_b64(pdf_base64: bytes):
-    document = DocumentBlock(data=pdf_base64)
-    assert document.title == "input_document"
-    assert pdf_base64 == document.data
+@pytest.mark.asyncio
+async def test_image_block_amerge(png_1px_b64: bytes):
+    ib1 = ImageBlock(image=png_1px_b64)
+    ib2 = ImageBlock(image=png_1px_b64)
+    merged = await ImageBlock.amerge([ib1, ib2], chunk_size=1000)
+
+    # Images are not mergeable
+    assert merged == [ib1, ib2]
 
 
-def test_document_block_from_path(tmp_path: Path, pdf_url: str):
-    pdf_path = tmp_path / "test.pdf"
-    pdf_content = httpx.get(pdf_url).content
-    pdf_path.write_bytes(pdf_content)
-    document = DocumentBlock(path=pdf_path.__str__())
-    file_buffer = document.resolve_document()
-    assert isinstance(file_buffer, BytesIO)
-    file_bytes = file_buffer.read()
-    document._guess_mimetype()
-    assert document.document_mimetype == "application/pdf"
-    fm = document.guess_format()
-    assert fm == "pdf"
-    b64_string = document._get_b64_string(file_buffer)
-    try:
-        base64.b64decode(b64_string, validate=True)
-        string_base64_encoded = True
-    except Exception:
-        string_base64_encoded = False
-    assert string_base64_encoded
-    b64_bytes = document._get_b64_bytes(file_buffer)
-    try:
-        base64.b64decode(b64_bytes, validate=True)
-        bytes_base64_encoded = True
-    except Exception:
-        bytes_base64_encoded = False
-    assert bytes_base64_encoded
-    assert document.title == "input_document"
+@pytest.mark.asyncio
+async def test_audio_block_aestimate_tokens(mp3_bytes: bytes):
+    ab = AudioBlock(audio=mp3_bytes)
+    assert await ab.aestimate_tokens() == 32  # based on 1 token per 4 bytes
 
 
-def test_document_block_from_url(pdf_url: str):
-    document = DocumentBlock(url=pdf_url, title="dummy_pdf")
-    file_buffer = document.resolve_document()
-    assert isinstance(file_buffer, BytesIO)
-    file_bytes = file_buffer.read()
-    document._guess_mimetype()
-    assert document.document_mimetype == "application/pdf"
-    fm = document.guess_format()
-    assert fm == "pdf"
-    b64_string = document._get_b64_string(file_buffer)
-    try:
-        base64.b64decode(b64_string, validate=True)
-        string_base64_encoded = True
-    except Exception as e:
-        string_base64_encoded = False
-    assert string_base64_encoded
-    b64_bytes = document._get_b64_bytes(file_buffer)
-    try:
-        base64.b64decode(b64_bytes, validate=True)
-        bytes_base64_encoded = True
-    except Exception:
-        bytes_base64_encoded = False
-    assert bytes_base64_encoded
-    assert document.title == "dummy_pdf"
+@pytest.mark.asyncio
+async def test_audio_block_aestimate_tokens_tiny_tag_error(
+    mp3_base64: bytes, mock_tiny_tag_error
+):
+    """TinyTag is able to read mp3 metadata without ffmpeg installed."""
+    ab = AudioBlock(audio=mp3_base64)
+    assert await ab.aestimate_tokens() == 256  # Fallback
 
 
-def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
-    errors = []
-    try:
-        DocumentBlock(data=empty_bytes).resolve_document()
-        errors.append(0)
-    except ValueError:
-        errors.append(1)
-    try:
-        AudioBlock(audio=empty_bytes).resolve_audio()
-        errors.append(0)
-    except ValueError:
-        errors.append(1)
-    try:
-        ImageBlock(image=empty_bytes).resolve_image()
-        errors.append(0)
-    except ValueError:
-        errors.append(1)
-    try:
-        ImageBlock(image=png_1px).resolve_image()
-        errors.append(0)
-    except ValueError:
-        errors.append(1)
-    assert sum(errors) == 3
+@pytest.mark.asyncio
+async def test_audio_block_asplit(mp3_bytes: bytes, mp3_base64: bytes):
+    ab = AudioBlock(audio=mp3_bytes)
+    chunks = await ab.asplit(max_tokens=2)
+
+    # No splitting occurs
+    assert chunks == [ab]
 
 
-def test_cache_control() -> None:
-    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
-    assert isinstance(cp.model_dump()["cache_control"], dict)
-    assert cp.model_dump()["cache_control"]["type"] == "ephemeral"
-    with pytest.raises(ValidationError):
-        CachePoint.model_validate({"cache_control": "default"})
+@pytest.mark.asyncio
+async def test_audio_block_atruncate(mp3_bytes: bytes, mp3_base64: bytes):
+    ab = AudioBlock(audio=mp3_bytes)
+    truncated_ab = await ab.atruncate(max_tokens=16)
+    truncated_ab_reverse = await ab.atruncate(max_tokens=16, reverse=True)
+    # No truncation occurs
+    assert truncated_ab == ab
+    assert truncated_ab_reverse == ab
+
+
+@pytest.mark.asyncio
+async def test_audio_block_amerge(mp3_bytes: bytes):
+    ab1 = AudioBlock(audio=mp3_bytes)
+    ab2 = AudioBlock(audio=mp3_bytes)
+    merged_abs = await AudioBlock.amerge([ab1, ab2], chunk_size=1000)
+
+    # No merging occurs
+    assert len(merged_abs) == 2
+    assert merged_abs == [ab1, ab2]
 
 
 def test_video_block_resolve_video_bytes(mp4_bytes: bytes, mp4_base64: bytes):
@@ -477,6 +532,215 @@ def test_video_block_store_as_base64(mp4_bytes: bytes, mp4_base64: bytes):
     assert VideoBlock(video=mp4_base64).video == mp4_base64
 
 
+@pytest.mark.asyncio
+async def test_video_block_aestimate_tokens(mp4_base64: bytes):
+    """TinyTag fails for most video types, including this mp4 type."""
+    vb = VideoBlock(video=mp4_base64)
+    assert await vb.aestimate_tokens() == 256 * 8  # Fallback
+
+
+@pytest.mark.asyncio
+async def test_video_block_asplit(mp4_bytes: bytes, mp4_base64: bytes):
+    vb = VideoBlock(video=mp4_bytes)
+    chunks = await vb.asplit(max_tokens=500)
+
+    # No splitting occurs
+    assert chunks == [vb]
+
+
+@pytest.mark.asyncio
+async def test_video_block_atruncate(mp4_bytes: bytes, mp4_base64: bytes):
+    vb = VideoBlock(video=mp4_bytes)
+    truncated_vb = await vb.atruncate(max_tokens=500)
+    truncated_vb_reverse = await vb.atruncate(max_tokens=500, reverse=True)
+    # No truncation occurs
+    assert truncated_vb == vb
+    assert truncated_vb_reverse == vb
+
+
+@pytest.mark.asyncio
+async def test_video_block_amerge(mp4_bytes: bytes):
+    vb1 = VideoBlock(video=mp4_bytes)
+    vb2 = VideoBlock(video=mp4_bytes)
+    merged_vbs = await VideoBlock.amerge([vb1, vb2], chunk_size=2000)
+
+    # No merging occurs
+    assert len(merged_vbs) == 2
+    assert merged_vbs == [vb1, vb2]
+
+
+def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    assert document.title == "input_document"
+    assert document.document_mimetype == "application/pdf"
+    assert pdf_base64 == document.data
+
+
+def test_document_block_from_b64(pdf_base64: bytes):
+    document = DocumentBlock(data=pdf_base64)
+    assert document.title == "input_document"
+    assert pdf_base64 == document.data
+
+
+def test_document_block_from_path(tmp_path: Path, pdf_url: str):
+    pdf_path = tmp_path / "test.pdf"
+    pdf_content = httpx.get(pdf_url).content
+    pdf_path.write_bytes(pdf_content)
+    document = DocumentBlock(path=pdf_path.__str__())
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype()
+    assert document.document_mimetype == "application/pdf"
+    fm = document.guess_format()
+    assert fm == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "input_document"
+
+
+def test_document_block_from_url(pdf_url: str):
+    document = DocumentBlock(url=pdf_url, title="dummy_pdf")
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype()
+    assert document.document_mimetype == "application/pdf"
+    fm = document.guess_format()
+    assert fm == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception as e:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "dummy_pdf"
+
+
+def test_document_block_empty_bytes(empty_bytes: bytes, png_1px: bytes):
+    errors = []
+    try:
+        DocumentBlock(data=empty_bytes).resolve_document()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        AudioBlock(audio=empty_bytes).resolve_audio()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=empty_bytes).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=png_1px).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    assert sum(errors) == 3
+
+
+@pytest.mark.asyncio
+async def test_document_block_aestimate_tokens(mock_pdf_bytes: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    # Fallback: we currently don't estimate tokens for documents since it's too complicated to handle
+    # all the different document types. Essentially kicking the can here.
+    assert await document.aestimate_tokens() == 512
+
+
+@pytest.mark.asyncio
+async def test_document_block_asplit(mock_pdf_bytes: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    chunks = await document.asplit(max_tokens=100)
+    # We dont split documents currently
+    assert chunks == [document]
+
+
+@pytest.mark.asyncio
+async def test_document_block_atruncate(mock_pdf_bytes: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    truncated_document = await document.atruncate(max_tokens=100)
+    truncated_document_reverse = await truncated_document.atruncate(
+        max_tokens=100, reverse=True
+    )
+    # We dont truncate documents currently
+    assert truncated_document == document
+    assert truncated_document_reverse == document
+
+
+@pytest.mark.asyncio
+async def test_document_block_amerge(mock_pdf_bytes: bytes):
+    document1 = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    document2 = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    merged = await DocumentBlock.amerge([document1, document2], chunk_size=1000)
+    # We dont merge documents currently
+    assert merged == [document1, document2]
+
+
+def test_cache_control() -> None:
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    assert isinstance(cp.model_dump()["cache_control"], dict)
+    assert cp.model_dump()["cache_control"]["type"] == "ephemeral"
+    with pytest.raises(ValidationError):
+        CachePoint.model_validate({"cache_control": "default"})
+
+
+@pytest.mark.asyncio
+async def test_cache_control_aestimate_tokens():
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    # No content length for ephemeral cache control
+    assert await cp.aestimate_tokens() == 0
+
+
+@pytest.mark.asyncio
+async def test_cache_control_asplit():
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    chunks = await cp.asplit(max_tokens=10)
+    # Cache control points are not splittable
+    assert chunks == [cp]
+
+
+@pytest.mark.asyncio
+async def test_cache_control_atruncate():
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    truncated_cp = await cp.atruncate(max_tokens=10)
+    truncated_cp_reverse = await cp.atruncate(max_tokens=10, reverse=True)
+    # Cache control points are not truncatable
+    assert truncated_cp == cp
+    assert truncated_cp_reverse == cp
+
+
+@pytest.mark.asyncio
+async def test_cache_control_amerge():
+    cp1 = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    cp2 = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    merged = await CachePoint.amerge([cp1, cp2], chunk_size=100)
+    # Cache control points are not mergeable
+    assert merged == [cp1, cp2]
+
+
 def test_thinking_block():
     block = ThinkingBlock()
     assert block.block_type == "thinking"
@@ -494,6 +758,49 @@ def test_thinking_block():
     assert block.num_tokens == 100
 
 
+@pytest.mark.asyncio
+async def test_thinking_block_aestimate_tokens():
+    block1 = ThinkingBlock(content="Some Content", num_tokens=150)
+    block2 = ThinkingBlock(content="Some Content")
+
+    assert await block1.aestimate_tokens() == block1.num_tokens
+    assert (
+        await block2.aestimate_tokens()
+        == await TextBlock(text=block2.content).aestimate_tokens()
+    )
+
+
+@pytest.mark.asyncio
+async def test_thinking_block_asplit():
+    block = ThinkingBlock(content="This is a test of the ThinkingBlock split method.")
+    chunks = await block.asplit(max_tokens=5)
+
+    # Thinking blocks are not splittable
+    assert chunks == [block]
+
+
+@pytest.mark.asyncio
+async def test_thinking_block_atruncate():
+    block = ThinkingBlock(
+        content="This is a test of the ThinkingBlock truncate method."
+    )
+    truncated_block = await block.atruncate(max_tokens=5)
+    truncated_block_reverse = await block.atruncate(max_tokens=5, reverse=True)
+    # Thinking blocks are not truncatable
+    assert truncated_block == block
+    assert truncated_block_reverse == block
+
+
+@pytest.mark.asyncio
+async def test_thinking_block_amerge():
+    block1 = ThinkingBlock(content="This is the first ThinkingBlock.")
+    block2 = ThinkingBlock(content="This is the second ThinkingBlock.")
+    merged = await ThinkingBlock.amerge([block1, block2], chunk_size=100)
+
+    # Thinking blocks are not mergeable
+    assert merged == [block1, block2]
+
+
 def test_tool_call_block():
     default_block = ToolCallBlock(tool_name="hello_world")
     assert default_block.block_type == "tool_call"
@@ -508,3 +815,46 @@ def test_tool_call_block():
     assert custom_block.tool_call_id == "1"
     assert custom_block.tool_name == "hello_world"
     assert custom_block.tool_kwargs == {"test": 1}
+
+
+@pytest.mark.asyncio
+async def test_tool_call_block_aestimate_tokens():
+    block = ToolCallBlock(
+        tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
+    )
+    assert (
+        await block.aestimate_tokens()
+        == await TextBlock(text=block.model_dump_json()).aestimate_tokens()
+    )
+
+
+@pytest.mark.asyncio
+async def test_tool_call_block_asplit():
+    block = ToolCallBlock(
+        tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
+    )
+
+    # ToolCallBlocks are not splittable
+    assert await block.asplit(max_tokens=5) == [block]
+
+
+@pytest.mark.asyncio
+async def test_tool_call_block_atruncate():
+    block = ToolCallBlock(
+        tool_name="example_tool", tool_kwargs={"param1": "value1", "param2": 42}
+    )
+    truncated_block = await block.atruncate(max_tokens=5)
+    truncated_block_reverse = await block.atruncate(max_tokens=5, reverse=True)
+    # ToolCallBlocks are not truncatable
+    assert truncated_block == block
+    assert truncated_block_reverse == block
+
+
+@pytest.mark.asyncio
+async def test_tool_call_block_amerge():
+    block1 = ToolCallBlock(tool_name="example_tool_1", tool_kwargs={"param": "value1"})
+    block2 = ToolCallBlock(tool_name="example_tool_2", tool_kwargs={"param": "value2"})
+    merged = await ToolCallBlock.amerge([block1, block2], chunk_size=100)
+
+    # ToolCallBlocks are not mergeable
+    assert merged == [block1, block2]
