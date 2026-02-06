@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
-from abc import ABC
+import os
+import shutil
+import tempfile
+from abc import ABC, abstractmethod
 
 from enum import Enum
 from io import IOBase, BytesIO
@@ -21,6 +25,7 @@ from typing import (
 )
 
 import filetype
+from ffmpeg.asyncio import FFmpeg
 from PIL import Image
 from tinytag import TinyTag, UnsupportedFormatError
 from typing_extensions import Self
@@ -293,7 +298,305 @@ class ImageBlock(BaseContentBlock):
         return max(openai_max_count, gemini_max_count)
 
 
-class AudioBlock(BaseContentBlock):
+class AudioVideoMixIn(ABC):
+    """Mixin for audio and video blocks."""
+
+    @property
+    @abstractmethod
+    def source(self) -> BytesIO:
+        """Resolve the audio or video source as bytes."""
+        ...
+
+    @property
+    @abstractmethod
+    def extension(self) -> str | None:
+        """The file extension"""
+        ...
+
+    @staticmethod
+    def has_ffmpeg() -> bool:
+        """Check if ffmpeg is installed."""
+        return bool(shutil.which("ffmpeg"))
+
+    async def ffprobe(self) -> dict:
+        """
+        Probe an audio source and return metadata from ffprobe
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Cannot probe audio/video data."
+            )
+            return {}
+
+        data = self.source.read()
+
+        # I found that piping in bytes does not work as well and sometimes results in critical metadata missing if
+        # ffprobe can't determine format from pipe input. More reliable performance is achieved by writing to a temp file
+        # with the proper extension
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp_path = Path(tmpdir) / f"input.{self.extension or 'video'}"
+                with open(tmp_path, "wb") as f:
+                    f.write(data)
+
+                ffmpeg = FFmpeg(executable="ffprobe").input(
+                    str(tmp_path),
+                    print_format="json",
+                    show_streams=None,
+                    show_format=None,
+                )
+                try:
+                    return json.loads(await ffmpeg.execute())
+                except Exception as e:
+                    _logger.warning(
+                        f"ffprobe output parsing error: {e}. Returning empty metadata."
+                    )
+                    return {}
+        except Exception as e:
+            _logger.warning(
+                f"ffprobe failed with error: {e}. Returning empty metadata."
+            )
+            return {}
+
+    async def can_concatenate(self, other: Self) -> bool:
+        """
+        Compare two audio/video files for concat-compatibility (no re-encoding).
+
+        For audio files, video streams will be empty.
+
+        Checks:
+        - stream layout / order (video/audio/subtitle types must match)
+        - per-video-stream keys
+        - per-audio-stream keys
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio/Video data cannot be compared"
+            )
+            return False
+
+        info_a = await self.ffprobe()
+        info_b = await other.ffprobe()
+
+        if not info_a or not info_b:
+            # Ffprobe failed on one of the files
+            return False
+
+        streams_a = info_a.get("streams", []) or []
+        streams_b = info_b.get("streams", []) or []
+
+        # Ensure stream layout and order match (codec_type sequence)
+        layout_a = [s.get("codec_type") for s in streams_a]
+        layout_b = [s.get("codec_type") for s in streams_b]
+        if layout_a != layout_b:
+            return False
+
+        video_keys = [
+            "codec_name",
+            "profile",
+            "width",
+            "height",
+            "pix_fmt",
+            "codec_tag_string",
+        ]
+        video_streams_a = [s for s in streams_a if s.get("codec_type") == "video"]
+        video_streams_b = [s for s in streams_b if s.get("codec_type") == "video"]
+        if len(video_streams_a) != len(video_streams_b):
+            return False
+        for sa, sb in zip(video_streams_a, video_streams_b):
+            for k in video_keys:
+                if sa.get(k) != sb.get(k):
+                    return False
+
+        # Audio stream checks (if any)
+        audio_keys = [
+            "codec_name",
+            "sample_rate",
+            "channels",
+            "channel_layout",
+            "sample_fmt",
+            "codec_tag_string",
+        ]
+        audio_streams_a = [s for s in streams_a if s.get("codec_type") == "audio"]
+        audio_streams_b = [s for s in streams_b if s.get("codec_type") == "audio"]
+        if len(audio_streams_a) != len(audio_streams_b):
+            return False
+        for sa, sb in zip(audio_streams_a, audio_streams_b):
+            for k in audio_keys:
+                if sa.get(k) != sb.get(k):
+                    return False
+        return True
+
+    async def ffmpeg_trim(
+        self, data: bytes, seconds: float, reverse: bool = False
+    ) -> bytes:
+        """
+        Trim `seconds` from start (reverse=False) or end (reverse=True) of `data`
+        using ffmpeg. Returns trimmed bytes or raises on failure.
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio/Video data cannot be segmented"
+            )
+            return data
+
+        default_extension = "audio" if isinstance(self, AudioBlock) else "video"
+        extension = self.extension or default_extension
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            in_path = Path(tmpdir) / f"input.{extension}"
+            out_path = Path(tmpdir) / f"out.{extension}"
+            with open(in_path, "wb") as f:
+                f.write(data)
+
+            if reverse:
+                # If trimming from end, use input-level sseof to seek from EOF
+                ff = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(str(in_path), sseof=f"-{seconds}")
+                    .output(str(out_path), t=seconds, c="copy")
+                )
+            else:
+                # trim from start: limit duration with -t
+                ff = (
+                    FFmpeg(executable="ffmpeg")
+                    .input(str(in_path))
+                    .output(str(out_path), t=seconds, c="copy")
+                )
+            try:
+                await ff.execute()
+                with open(out_path, "rb") as f:
+                    return f.read()
+            except Exception as e:
+                _logger.warning(f"ffmpeg trim failed: {e}")
+                return data
+
+    async def ffmpeg_segment(
+        self, data: bytes, segment_time: float
+    ) -> AsyncGenerator[bytes, None]:
+        """
+        Segment audio/video using ffmpeg.
+
+        This function is intentionally lightweight. It does not do any sort of forceful re-encoding or attempt to
+        perfectly split on segment_time boundaries, but rather just cuts the input into segments of approximately
+        segment_time length using ffmpeg's segment muxer with copy codec. For audio data, where it is cut primarily
+        depends on packet boundaries, and for video data it depends on keyframe placement.
+        This means that segments may be slightly
+        longer than segment_time and may not be perfectly split if the input format does not support it,
+        but it will be much faster, less resource-intensive and maintain data integrity.
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio/Video data cannot be segmented"
+            )
+            yield data
+            return
+
+        default_extension = "audio" if isinstance(self, AudioBlock) else "video"
+        extension = self.extension or default_extension
+
+        duration = (await self.ffprobe()).get("format", {}).get("duration", None)
+        if duration:
+            num_segments = int(float(duration) / segment_time) + 1
+            name_padding = len(str(num_segments)) + 1
+        else:
+            name_padding = 9
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir) / f"input.{extension}"
+            with open(tmp_path, "wb") as f:
+                f.write(data)
+
+            ffmpeg = (
+                FFmpeg(executable="ffmpeg")
+                .input(
+                    str(tmp_path),
+                )
+                .output(
+                    f"{tmp_path.parent}/output%0{name_padding}d.{extension}",
+                    c="copy",
+                    map="0",
+                    f="segment",
+                    segment_time=segment_time,
+                    reset_timestamps=1,
+                    avoid_negative_ts=1,
+                    write_empty_segments=0,
+                )
+            )
+            try:
+                await ffmpeg.execute()
+
+                segment_paths = [
+                    (f, int(f.split(".")[0].replace("output", "")))
+                    for f in os.listdir(tmpdir)
+                    if f.startswith("output")
+                ]
+                segment_paths = [
+                    segment for segment, _ in sorted(segment_paths, key=lambda x: x[1])
+                ]
+                for path in segment_paths:
+                    with open(Path(tmpdir) / path, "rb") as f:
+                        segment_data = f.read()
+                    yield segment_data
+            except Exception as e:
+                _logger.warning(
+                    f"ffmpeg segmentation failed with error: {e}. Returning original data."
+                )
+                yield data
+                return
+
+    @classmethod
+    async def ffmpeg_concat(
+        cls, data_list: List[bytes], extension: str | None
+    ) -> list[bytes]:
+        """
+        Concatenate audio/video using ffmpeg
+
+        This function is intentionally lightweight. It does not do any sort of forceful re-encoding or attempt to
+        perfectly concatenate on segment_time boundaries, but rather just concatenates the inputs using ffmpeg's
+        concat demuxer with copy codec. This means that concatenation may fail if the inputs are not perfectly
+        compatible (e.g. different codecs or metadata), but it will be much faster, less resource-intensive and
+        maintain data integrity when it works.
+        """
+        if not cls.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio/Video data cannot be concatenated"
+            )
+            return data_list
+
+        default_extension = "audio" if cls.__name__ == "AudioBlock" else "video"
+        ext = extension or default_extension
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_paths = []
+            for i, data in enumerate(data_list):
+                tmp_path = Path(tmpdir) / f"input_{i}.{ext}"
+                with open(tmp_path, "wb") as f:
+                    f.write(data)
+                input_paths.append(str(tmp_path))
+            input_file = Path(tmpdir) / "input.txt"
+            with open(input_file, "w") as f:
+                for path in input_paths:
+                    f.write(f"file '{path}'\n")
+            output_path = Path(tmpdir) / f"concatenated_output.{ext}"
+            ffmpeg = (
+                FFmpeg(executable="ffmpeg")
+                .input(str(input_file), f="concat", safe=0)
+                .output(str(output_path), c="copy")
+            )
+            try:
+                await ffmpeg.execute()
+                with open(output_path, "rb") as f:
+                    concatenated_data = f.read()
+                return [concatenated_data]
+            except Exception as e:
+                _logger.warning(
+                    f"ffmpeg concatenation failed with error: {e}. Returning original splits."
+                )
+                return data_list
+
+
+class AudioBlock(AudioVideoMixIn, BaseContentBlock):
     """A representation of audio data to directly pass to/from the LLM."""
 
     block_type: Literal["audio"] = "audio"
@@ -337,6 +640,70 @@ class AudioBlock(BaseContentBlock):
         self._guess_format(resolve_binary(self.audio).read())
         self.audio = resolve_binary(self.audio, as_base64=True).read()
         return self
+
+    @property
+    def source(self) -> BytesIO:
+        return cast(BytesIO, self.resolve_audio())
+
+    @property
+    def extension(self) -> str | None:
+        return self.format
+
+    @classmethod
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, *args, **kwargs
+    ) -> list[Self]:
+        """
+        Use ffmpeg to merge audio files
+        """
+        if not cls.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio data cannot be merged"
+            )
+            return splits
+
+        merged_blocks = []
+        cur_splits = []
+        cur_tokens = 0
+
+        for split in splits:
+            split_tokens = await split.aestimate_tokens()
+            can_concat = len(cur_splits) == 0 or await cur_splits[-1].can_concatenate(
+                split
+            )
+            if cur_tokens + split_tokens <= chunk_size and can_concat:
+                cur_splits.append(split)
+                cur_tokens += split_tokens
+            else:
+                if len(cur_splits) == 1:
+                    # Just add the single split
+                    merged_blocks.append(cur_splits[0])
+                    cur_splits = [split]
+                    cur_tokens = split_tokens
+                elif len(cur_splits) > 0:
+                    # Merge current audios
+                    data_splits = [split.source.read() for split in cur_splits]
+                    merged_blocks.extend(
+                        AudioBlock(audio=split, format=splits[0].format)
+                        for split in await cls.ffmpeg_concat(
+                            data_splits, splits[0].extension
+                        )
+                    )
+                    cur_splits = [split]
+                    cur_tokens = split_tokens
+
+        if cur_splits:
+            if len(cur_splits) == 1:
+                # Just add the single split
+                merged_blocks.append(cur_splits[0])
+            else:
+                # Merge current audios
+                data_splits = [split.source.read() for split in cur_splits]
+                merged_blocks.extend(
+                    AudioBlock(audio=split, format=splits[0].format)
+                    for split in await cls.ffmpeg_concat(data_splits, splits[0].format)
+                )
+        return merged_blocks
 
     def _guess_format(self, audio_data: bytes) -> None:
         if not self.format:
@@ -391,15 +758,63 @@ class AudioBlock(BaseContentBlock):
                 _logger.info(
                     "TinyTag does not support file type for video token estimation."
                 )
+            # Next try ffprobe
+            if self.has_ffmpeg():
+                metadata = await self.ffprobe()
+                if duration := metadata.get("format", {}).get("duration", None):
+                    # We conservatively return the max estimate
+                    # First convert string to float
+                    duration = float(duration)
+                    return max((int(duration) + 1) * 32, int(duration / 0.05) + 1)
+                return 256  # fallback
             return 256  # fallback
         except ValueError as e:
-            # Null case
             if str(e) == "resolve_audio returned zero bytes":
                 return 0
             raise
 
+    async def asplit(self, max_tokens: int, *args, **kwargs) -> List[Self]:
+        """
+        Split audio into chunks using ffmpeg
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio data cannot be split"
+            )
+            return [self]
 
-class VideoBlock(BaseContentBlock):
+        source = self.resolve_audio()
+        data = source.read()
+        segment_time = max(
+            float(max_tokens // 32.0), 1.0
+        )  # default 32 tokens per second, min 1 second segments
+
+        return [
+            AudioBlock(audio=audio_segment, format=self.format)
+            async for audio_segment in self.ffmpeg_segment(data, segment_time)
+        ]
+
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
+        """Async truncate the audio block to up to max_tokens tokens."""
+        estimated_tokens = await self.aestimate_tokens(tokenizer=tokenizer)
+        if estimated_tokens <= max_tokens:
+            return self
+
+        source = self.resolve_audio()
+        data = source.read()
+        # default 32 tokens per second
+        # Minimum segment time is 1 second to avoid issues with very small trims
+        segment_time = max(float(max_tokens // 32.0), 1.0)
+
+        trimmed_data = await self.ffmpeg_trim(
+            data, seconds=segment_time, reverse=reverse
+        )
+        return AudioBlock(audio=trimmed_data, format=self.format)
+
+
+class VideoBlock(AudioVideoMixIn, BaseContentBlock):
     """A representation of video data to directly pass to/from the LLM."""
 
     block_type: Literal["video"] = "video"
@@ -453,6 +868,75 @@ class VideoBlock(BaseContentBlock):
         self.video = resolve_binary(self.video, as_base64=True).read()
         return self
 
+    @property
+    def source(self) -> BytesIO:
+        return cast(BytesIO, self.resolve_video())
+
+    @property
+    def extension(self) -> str | None:
+        if self.video_mimetype:
+            kind = filetype.get_type(mime=self.video_mimetype)
+            return kind.extension if kind else None
+        return None
+
+    @classmethod
+    async def amerge(
+        cls, splits: List[Self], chunk_size: int, *args, **kwargs
+    ) -> list[Self]:
+        """
+        Use ffmpeg to merge audio files
+        """
+        if not cls.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Audio data cannot be merged"
+            )
+            return splits
+
+        merged_blocks = []
+        cur_splits = []
+        cur_tokens = 0
+
+        for split in splits:
+            split_tokens = await split.aestimate_tokens()
+            can_concat = len(cur_splits) == 0 or await cur_splits[-1].can_concatenate(
+                split
+            )
+            if cur_tokens + split_tokens <= chunk_size and can_concat:
+                cur_splits.append(split)
+                cur_tokens += split_tokens
+            else:
+                if len(cur_splits) == 1:
+                    # Just add the single split
+                    merged_blocks.append(cur_splits[0])
+                    cur_splits = [split]
+                    cur_tokens = split_tokens
+                elif len(cur_splits) > 0:
+                    # Merge current videos
+                    data_splits = [split.source.read() for split in cur_splits]
+                    merged_blocks.extend(
+                        VideoBlock(video=split, video_mimetype=splits[0].video_mimetype)
+                        for split in await cls.ffmpeg_concat(
+                            data_splits, splits[0].extension
+                        )
+                    )
+                    cur_splits = [split.resolve_audio().read()]
+                    cur_tokens = split_tokens
+
+        if cur_splits:
+            if len(cur_splits) == 1:
+                # Just add the single split
+                merged_blocks.append(cur_splits[0])
+            else:
+                # Merge current videos
+                data_splits = [split.source.read() for split in cur_splits]
+                merged_blocks.extend(
+                    VideoBlock(video=split, video_mimetype=splits[0].video_mimetype)
+                    for split in await cls.ffmpeg_concat(
+                        data_splits, splits[0].extension
+                    )
+                )
+        return merged_blocks
+
     def _guess_mimetype(self, vid_data: bytes) -> None:
         if not self.video_mimetype:
             guess = filetype.guess(vid_data)
@@ -504,13 +988,59 @@ class VideoBlock(BaseContentBlock):
                 _logger.info(
                     "TinyTag does not support file type for video token estimation."
                 )
+
+            # Next try ffprobe
+            if self.has_ffmpeg():
+                metadata = await self.ffprobe()
+                if duration := metadata.get("format", {}).get("duration", None):
+                    # First convert string to float
+                    duration = float(duration)
+                    return (int(float(duration)) + 1) * 263
             # fallback of roughly 8 times the fallback cost of audio (263 // 32; based on gemini pricing per sec)
             return 256 * 8
         except ValueError as e:
-            # Null case
             if str(e) == "resolve_video returned zero bytes":
                 return 0
             raise
+
+    async def asplit(self, max_tokens: int, *args, **kwargs) -> List[Self]:
+        """
+        Split video into chunks using ffmpeg
+        """
+        if not self.has_ffmpeg():
+            _logger.warning(
+                "ffmpeg is not installed or not found in PATH. Video data cannot be split"
+            )
+            return [self]
+
+        source = self.resolve_video()
+        data = source.read()
+        # default 263 tokens per second, min 1 second segments
+        segment_time = max(float(max_tokens // 263), 1.0)
+
+        return [
+            VideoBlock(video=video_segment, video_mimetype=self.video_mimetype)
+            async for video_segment in self.ffmpeg_segment(data, segment_time)
+        ]
+
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse=False
+    ) -> Self:
+        """Async truncate the video block to up to max_tokens tokens."""
+        estimated_tokens = await self.aestimate_tokens(tokenizer=tokenizer)
+        if estimated_tokens <= max_tokens:
+            return self
+
+        source = self.resolve_video()
+        data = source.read()
+        # default 263 tokens per second
+        # Minimum segment time is 1 second to avoid issues with very small trims
+        segment_time = max(float(max_tokens // 263), 1.0)
+
+        trimmed_data = await self.ffmpeg_trim(
+            data, seconds=segment_time, reverse=reverse
+        )
+        return VideoBlock(video=trimmed_data, video_mimetype=self.video_mimetype)
 
 
 class DocumentBlock(BaseContentBlock):
