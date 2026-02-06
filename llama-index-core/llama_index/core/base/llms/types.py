@@ -609,7 +609,207 @@ class CachePoint(BaseContentBlock):
     cache_control: CacheControl
 
 
-class CitableBlock(BaseContentBlock):
+class BaseRecursiveContentBlock(BaseContentBlock):
+    """Base class for content blocks that can contain other content blocks."""
+
+    @classmethod
+    def nested_blocks_field_name(self) -> str:
+        """
+        Return the name of the field that contains nested content blocks.
+
+        By default, this is "content", but subclasses can override this method
+        """
+        return "content"
+
+    @property
+    def nested_blocks(self) -> List[BaseContentBlock]:
+        """Return the nested content blocks."""
+        blocks = getattr(self, self.nested_blocks_field_name())
+        if isinstance(blocks, str):
+            blocks = TextBlock(text=blocks)
+        return blocks if isinstance(blocks, list) else [blocks]
+
+    def can_merge(self, other: Self) -> bool:
+        """Check if this block can be merged with another block of the same type."""
+        atts = {
+            k: v
+            for k, v in self.model_dump().items()
+            if k != self.nested_blocks_field_name()
+        }
+        other_atts = {
+            k: v
+            for k, v in other.model_dump().items()
+            if k != self.nested_blocks_field_name()
+        }
+        return atts == other_atts
+
+    @staticmethod
+    async def amerge_nested(
+        nested_blocks: list[BaseContentBlock],
+        chunk_size: int,
+        tokenizer: Any | None = None,
+    ) -> list[BaseContentBlock]:
+        # make list of lists out of nested blocks of same type
+        nested_blocks_by_type: list[list[BaseContentBlock]] = []
+        for nb in nested_blocks:
+            if not nested_blocks_by_type or type(
+                nested_blocks_by_type[-1][0]
+            ) is not type(nb):
+                nested_blocks_by_type.append([nb])
+            else:
+                nested_blocks_by_type[-1].append(nb)
+
+        new_nested_blocks = []
+        # merge nested blocks of same type
+        for nbs in nested_blocks_by_type:
+            new_nested_blocks.extend(
+                await type(nbs[0]).amerge(
+                    nbs, chunk_size=chunk_size, tokenizer=tokenizer
+                )
+            )
+        return new_nested_blocks
+
+    @classmethod
+    async def amerge(
+        cls,
+        splits: List[BaseRecursiveContentBlock],
+        chunk_size: int,
+        tokenizer: Any | None = None,
+    ) -> list[BaseRecursiveContentBlock]:
+        """
+        First merge nested_blocks of consecutive BaseRecursiveContentBlock types based on token estimates
+
+        Then, merge consecutive nested content blocks of the same type.
+        """
+        merged_blocks = []
+        cur_blocks: list[BaseRecursiveContentBlock] = []
+        cur_block_tokens = 0
+
+        for split in splits:
+            split_tokens = await split.aestimate_tokens(tokenizer=tokenizer)
+            can_merge = len(cur_blocks) == 0 or cur_blocks[-1].can_merge(split)
+            if cur_block_tokens + split_tokens <= chunk_size and can_merge:
+                cur_blocks.append(split)
+                cur_block_tokens += split_tokens
+            else:
+                if cur_blocks:
+                    attributes = cur_blocks[0].model_dump() | {
+                        # Overwrite nested blocks
+                        cls.nested_blocks_field_name(): await cls.amerge_nested(
+                            nested_blocks=[
+                                nested_block
+                                for block in cur_blocks
+                                for nested_block in block.nested_blocks
+                            ],
+                            chunk_size=chunk_size,
+                            tokenizer=tokenizer,
+                        )
+                    }
+                    merged_blocks.append(cls(**attributes))
+                cur_blocks = [split]
+                cur_block_tokens = split_tokens
+
+        if cur_blocks:
+            attributes = cur_blocks[0].model_dump() | {
+                # Overwrite nested blocks attribute and merge nested blocks of the same type
+                cls.nested_blocks_field_name(): await cls.amerge_nested(
+                    nested_blocks=[
+                        nested_block
+                        for block in cur_blocks
+                        for nested_block in block.nested_blocks
+                    ],
+                    chunk_size=chunk_size,
+                    tokenizer=tokenizer,
+                )
+            }
+            merged_blocks.append(cls(**attributes))
+
+        return merged_blocks
+
+    async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
+        """Estimate the number of tokens in this content block."""
+        return sum(
+            [
+                await block.aestimate_tokens(*args, **kwargs)
+                for block in self.nested_blocks
+            ]
+        )
+
+    async def asplit(
+        self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
+    ) -> List[BaseRecursiveContentBlock]:
+        """Split the content block into smaller blocks with up to max_tokens tokens each."""
+        splits = []
+
+        cls = type(self)
+        for block in self.nested_blocks:
+            block_tokens = await block.aestimate_tokens(tokenizer=tokenizer)
+            if block_tokens <= max_tokens:
+                attributes = self.model_dump() | {
+                    # Overwrite nested blocks
+                    self.nested_blocks_field_name(): [block]
+                }
+                splits.append(cls(**attributes))
+            else:
+                split_blocks = await block.asplit(
+                    max_tokens=max_tokens, tokenizer=tokenizer
+                )
+                for split_block in split_blocks:
+                    attributes = self.model_dump() | {
+                        # Overwrite nested blocks
+                        self.nested_blocks_field_name(): [split_block]
+                    }
+                    splits.append(cls(**attributes))
+
+        return splits
+
+    async def atruncate(
+        self, max_tokens: int, tokenizer: Any | None = None, reverse: bool = False
+    ) -> BaseRecursiveContentBlock:
+        """Truncate the content block to have at most max_tokens tokens."""
+        tknizer = tokenizer or get_tokenizer()
+        current_tokens = 0
+        truncated_blocks = []
+
+        cls = type(self)
+        for block in (
+            self.nested_blocks if not reverse else reversed(self.nested_blocks)
+        ):
+            block_tokens = await block.aestimate_tokens(tokenizer=tknizer)
+            if current_tokens + block_tokens <= max_tokens:
+                if not reverse:
+                    truncated_blocks.append(block)
+                else:
+                    truncated_blocks.insert(0, block)
+                current_tokens += block_tokens
+            else:
+                remaining_tokens = max_tokens - current_tokens
+                if remaining_tokens > 0:
+                    truncated_block = await block.atruncate(
+                        max_tokens=remaining_tokens, tokenizer=tknizer, reverse=reverse
+                    )
+                    # For some block types, truncate may return a block larger than requested
+                    # However, we still want to include it if no other truncated blocks were added
+                    # We leave it the user to handle cases where even the truncated block exceeds max_tokens
+                    if (
+                        await truncated_block.aestimate_tokens(tokenizer=tknizer)
+                        <= remaining_tokens
+                        or not truncated_blocks
+                    ):
+                        if not reverse:
+                            truncated_blocks.append(truncated_block)
+                        else:
+                            truncated_blocks.insert(0, truncated_block)
+                break  # Stop after reaching max_tokens
+
+        attributes = self.model_dump() | {
+            # Overwrite nested blocks
+            self.nested_blocks_field_name(): truncated_blocks
+        }
+        return cls(**attributes)
+
+
+class CitableBlock(BaseRecursiveContentBlock):
     """Supports providing citable content to LLMs that have built-in citation support."""
 
     block_type: Literal["citable"] = "citable"
@@ -632,7 +832,7 @@ class CitableBlock(BaseContentBlock):
         return v
 
 
-class CitationBlock(BaseContentBlock):
+class CitationBlock(BaseRecursiveContentBlock):
     """A representation of cited content from past messages."""
 
     block_type: Literal["citation"] = "citation"
@@ -648,7 +848,34 @@ class CitationBlock(BaseContentBlock):
     def validate_cited_content(cls, v: Any) -> Any:
         if isinstance(v, str):
             return TextBlock(text=v)
+        if isinstance(v, list):
+            if len(v) != 1:
+                raise ValueError(
+                    "CitableBlock content must contain exactly one block when provided as a list."
+                )
+            value = v[0]
+            if isinstance(value, str):
+                return TextBlock(text=value)
+            else:
+                return value
         return v
+
+    @classmethod
+    def nested_blocks_field_name(self) -> str:
+        return "cited_content"
+
+    def can_merge(self, other: Self) -> bool:
+        """Check if this block can be merged with another block of the same type."""
+        # Only merge if cited_content is of the same type and is a TextBlock
+        if type(self.cited_content) is type(other.cited_content) and isinstance(
+            self.cited_content, TextBlock
+        ):
+            atts = {k: v for k, v in self.model_dump().items() if k != "cited_content"}
+            other_atts = {
+                k: v for k, v in other.model_dump().items() if k != "cited_content"
+            }
+            return atts == other_atts
+        return False
 
 
 class ThinkingBlock(BaseContentBlock):
@@ -714,7 +941,7 @@ ContentBlock = Annotated[
 ]
 
 
-class ChatMessage(BaseModel):
+class ChatMessage(BaseRecursiveContentBlock):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
@@ -750,6 +977,10 @@ class ChatMessage(BaseModel):
                 img_base64_bytes = doc.resolve_image(as_base64=True).read()
                 self.blocks.append(ImageBlock(image=img_base64_bytes))
         return self
+
+    @classmethod
+    def nested_blocks_field_name(self) -> str:
+        return "blocks"
 
     @property
     def content(self) -> str | None:
