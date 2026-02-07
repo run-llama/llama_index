@@ -695,12 +695,7 @@ class Node(BaseNode):
 
 
 class TextNode(BaseNode):
-    """
-    Provided for backward compatibility.
-
-    Note: we keep the field with the typo "seperator" to maintain backward compatibility for
-    serialized objects.
-    """
+    """Provided for backward compatibility."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
@@ -721,10 +716,6 @@ class TextNode(BaseNode):
     )
     end_char_idx: Optional[int] = Field(
         default=None, description="End char index of the node."
-    )
-    metadata_seperator: str = Field(
-        default="\n",
-        description="Separator between metadata fields when converting to string.",
     )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
@@ -757,29 +748,6 @@ class TextNode(BaseNode):
         return self.text_template.format(
             content=self.text, metadata_str=metadata_str
         ).strip()
-
-    def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """Metadata info string."""
-        if mode == MetadataMode.NONE:
-            return ""
-
-        usable_metadata_keys = set(self.metadata.keys())
-        if mode == MetadataMode.LLM:
-            for key in self.excluded_llm_metadata_keys:
-                if key in usable_metadata_keys:
-                    usable_metadata_keys.remove(key)
-        elif mode == MetadataMode.EMBED:
-            for key in self.excluded_embed_metadata_keys:
-                if key in usable_metadata_keys:
-                    usable_metadata_keys.remove(key)
-
-        return self.metadata_seperator.join(
-            [
-                self.metadata_template.format(key=key, value=str(value))
-                for key, value in self.metadata.items()
-                if key in usable_metadata_keys
-            ]
-        )
 
     def set_content(self, value: str) -> None:
         """Set the content of the node."""
