@@ -35,7 +35,7 @@ from llama_index.core.storage.docstore import (
     SimpleDocumentStore,
 )
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
-from llama_index.core.utils import concat_dirs
+from llama_index.core.utils import concat_dirs, get_tqdm_iterable
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
@@ -74,6 +74,7 @@ def run_transformations(
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
+    show_progress: bool = False,
     **kwargs: Any,
 ) -> Sequence[BaseNode]:
     """
@@ -82,6 +83,7 @@ def run_transformations(
     Args:
         nodes: The nodes to transform.
         transformations: The transformations to apply to the nodes.
+        show_progress: Whether to show progress bar for transformations.
 
     Returns:
         The transformed nodes.
@@ -90,7 +92,11 @@ def run_transformations(
     if not in_place:
         nodes = list(nodes)
 
-    for transform in transformations:
+    transformations_with_progress = get_tqdm_iterable(
+        transformations, show_progress, "Applying transformations"
+    )
+
+    for transform in transformations_with_progress:
         if cache is not None:
             hash = get_transformation_hash(nodes, transform)
             cached_nodes = cache.get(hash, collection=cache_collection)
@@ -111,6 +117,7 @@ async def arun_transformations(
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
+    show_progress: bool = False,
     **kwargs: Any,
 ) -> Sequence[BaseNode]:
     """
@@ -119,6 +126,7 @@ async def arun_transformations(
     Args:
         nodes: The nodes to transform.
         transformations: The transformations to apply to the nodes.
+        show_progress: Whether to show progress bar for transformations.
 
     Returns:
         The transformed nodes.
@@ -127,7 +135,11 @@ async def arun_transformations(
     if not in_place:
         nodes = list(nodes)
 
-    for transform in transformations:
+    transformations_with_progress = get_tqdm_iterable(
+        transformations, show_progress, "Applying transformations"
+    )
+
+    for transform in transformations_with_progress:
         if cache is not None:
             hash = get_transformation_hash(nodes, transform)
 
