@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -1657,12 +1657,17 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-github"
-version = "0.8.1"
+version = "0.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "llama-index-core" },
     { name = "llama-index-readers-file" },
+]
+
+[package.optional-dependencies]
+github-app = [
+    { name = "pyjwt", extra = ["crypto"] },
 ]
 
 [package.dev-dependencies]
@@ -1675,6 +1680,7 @@ dev = [
     { name = "jupyter" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "pylint" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -1693,7 +1699,9 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.26.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-readers-file", specifier = ">=0.5.0,<0.6" },
+    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'github-app'", specifier = ">=2.8.0" },
 ]
+provides-extras = ["github-app"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1704,6 +1712,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2" },
     { name = "mypy", specifier = "==0.991" },
     { name = "pre-commit", specifier = "==3.2.0" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
     { name = "pylint", specifier = "==2.15.10" },
     { name = "pytest", specifier = "==7.2.1" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
@@ -2809,6 +2818,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7c/2d/c3338d48ea6cc0feb8446d8e6937e1408088a72a39937982cc6111d17f84/pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f", size = 4968581, upload-time = "2025-01-06T17:26:30.443Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8a/0b/9fcc47d19c48b59121088dd6da2488a49d5f72dacf8262e2790a1d2c7d15/pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c", size = 1225293, upload-time = "2025-01-06T17:26:25.553Z" },
+]
+
+[[package]]
+name = "pyjwt"
+version = "2.11.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/5a/b46fa56bf322901eee5b0454a34343cdbdae202cd421775a8ee4e42fd519/pyjwt-2.11.0.tar.gz", hash = "sha256:35f95c1f0fbe5d5ba6e43f00271c275f7a1a4db1dab27bf708073b75318ea623", size = 98019, upload-time = "2026-01-30T19:59:55.694Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/01/c26ce75ba460d5cd503da9e13b21a33804d38c2165dec7b716d06b13010c/pyjwt-2.11.0-py3-none-any.whl", hash = "sha256:94a6bde30eb5c8e04fee991062b534071fd1439ef58d2adc9ccb823e7bcd0469", size = 28224, upload-time = "2026-01-30T19:59:54.539Z" },
+]
+
+[package.optional-dependencies]
+crypto = [
+    { name = "cryptography" },
 ]
 
 [[package]]
