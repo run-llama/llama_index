@@ -193,11 +193,13 @@ class OCIDataScience(FunctionCallingLLM):
         ads.set_auth(auth="security_token", profile="OC1")
 
         llm = OCIDataScience(
-            endpoint="https://<MD_OCID>/predict",
+            endpoint="https://<MD_OCID>/predictWithResponseStream",
             model="odsc-llm",
         )
         prompt = "What is the capital of France?"
-        response = llm.complete(prompt)
+        response = llm.stream_complete(prompt)
+        for chunk in response:
+            print(chunk.delta, end="")
         print(response)
         ```
 
