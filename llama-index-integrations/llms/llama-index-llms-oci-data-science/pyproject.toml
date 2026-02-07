@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-oci-data-science"
-version = "0.3.1"
+version = "1.0.0"
 description = "llama-index llms OCI Data Science integration"
 authors = [{name = "Dmitrii Cherkasov", email = "dmitrii.cherkasov@oracle.com"}]
 requires-python = ">=3.9,<4.0"
