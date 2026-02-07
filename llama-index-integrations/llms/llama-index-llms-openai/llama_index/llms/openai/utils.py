@@ -346,6 +346,39 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old and not is_o1_beta
 
 
+def _set_additional_properties_false(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Fix additionalProperties in anyOf schemas for OpenAI API compatibility.
+
+    OpenAI GPT-4o-mini and newer models require 'additionalProperties' to be
+    explicitly set to false for all object types in anyOf schemas.
+
+    Args:
+        schema: The JSON schema dict to fix (modified in place)
+
+    Returns:
+        The fixed schema dict
+    """
+
+    def fix_recursive(obj):
+        if isinstance(obj, dict):
+            # Fix anyOf schemas with object types
+            if "anyOf" in obj:
+                for alt in obj["anyOf"]:
+                    if isinstance(alt, dict) and alt.get("type") == "object":
+                        # Always set to false (OpenAI requires this field to be present)
+                        alt["additionalProperties"] = False
+
+            # Recursively fix nested objects
+            for val in obj.values():
+                fix_recursive(val)
+        elif isinstance(obj, list):
+            for item in obj:
+                fix_recursive(item)
+
+    fix_recursive(schema)
+    return schema
+
+
 def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,

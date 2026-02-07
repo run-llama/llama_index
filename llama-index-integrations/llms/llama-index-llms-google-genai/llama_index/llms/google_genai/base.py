@@ -60,6 +60,7 @@ from llama_index.llms.google_genai.utils import (
     create_retry_decorator,
     adelete_uploaded_files,
     delete_uploaded_files,
+    _remove_additional_properties_from_schema,
 )
 
 import google.genai
@@ -236,7 +237,12 @@ class GoogleGenAI(FunctionCallingLLM):
             config_params["debug_config"] = debug_config
 
         client = google.genai.Client(**config_params)
-        model_meta = client.models.get(model=model)
+
+        # only get model meta data if max_tokens or context_window is not specified
+        if max_tokens is None or context_window is None:
+            model_meta = client.models.get(model=model)
+        else:
+            model_meta = None
 
         super().__init__(
             model=model,
@@ -653,7 +659,10 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+
+            schema = output_cls.model_json_schema()
+            schema = _remove_additional_properties_from_schema(schema)
+            generation_config["response_schema"] = schema
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
@@ -704,7 +713,11 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+            generation_config["response_schema"] = (
+                _remove_additional_properties_from_schema(
+                    output_cls.model_json_schema()
+                )
+            )
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = await asyncio.gather(
@@ -755,7 +768,11 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+            generation_config["response_schema"] = (
+                _remove_additional_properties_from_schema(
+                    output_cls.model_json_schema()
+                )
+            )
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
