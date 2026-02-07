@@ -1,18 +1,19 @@
 from bs4 import BeautifulSoup
 
 
-def clean_syntax_highlighting_spans(html: str) -> str:
+def clean_spans(html: str) -> str:
     r"""
-    Remove syntax highlighting spans that cause markdownify newline issues.
+    Unwrap all <span> elements since they are semantically neutral.
 
-    Confluence wraps code in per-character <span> tags for syntax highlighting.
-    Without preprocessing, markdownify produces 'c\no\nn\ns\nt' instead of 'const'.
+    Spans cause markdownify to insert unwanted newlines (e.g. 'c\no\nn\ns\nt'
+    instead of 'const'). Since span attributes have no meaning in markdown,
+    all spans are unconditionally unwrapped.
 
     Args:
         html: Raw HTML string from Confluence
 
     Returns:
-        Cleaned HTML with syntax highlighting spans unwrapped
+        Cleaned HTML with all spans unwrapped
 
     """
     if not html:
@@ -21,18 +22,7 @@ def clean_syntax_highlighting_spans(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
 
     for span in soup.find_all("span"):
-        span_style = span.get("style", "")
-        span_class = span.get("class", [])
-
-        # Identify syntax highlighting spans by color/background styles or code-related classes
-        is_syntax_span = (
-            "color" in span_style
-            or "background" in span_style
-            or any("code" in c for c in span_class if isinstance(c, str))
-        )
-
-        if is_syntax_span:
-            span.unwrap()
+        span.unwrap()
 
     return str(soup)
 
@@ -52,7 +42,7 @@ class HtmlTextParser:
         if not html:
             return ""
 
-        cleaned_html = clean_syntax_highlighting_spans(html)
+        cleaned_html = clean_spans(html)
 
         return markdownify(
             cleaned_html,

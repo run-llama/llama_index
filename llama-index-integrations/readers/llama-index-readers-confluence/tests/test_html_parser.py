@@ -1,7 +1,7 @@
 import pytest
 from llama_index.readers.confluence.html_parser import (
     HtmlTextParser,
-    clean_syntax_highlighting_spans,
+    clean_spans,
 )
 
 
@@ -278,33 +278,32 @@ class TestHtmlTextParser:
         assert "H4 Subsection" in result
 
 
-class TestCleanSyntaxHighlightingSpans:
-    """Tests for syntax highlighting span cleaning functionality."""
+class TestCleanSpans:
+    """Tests for span cleaning functionality."""
 
-    def test_strips_color_styled_spans(self):
+    def test_unwraps_color_styled_spans(self):
         """Spans with color styles should be unwrapped."""
         html = '<p>Code: <span style="color: #000080;">const</span> x = 1</p>'
-        result = clean_syntax_highlighting_spans(html)
+        result = clean_spans(html)
         assert "<span" not in result
         assert "const" in result
 
-    def test_strips_background_styled_spans(self):
+    def test_unwraps_background_styled_spans(self):
         """Spans with background styles should be unwrapped."""
         html = '<p><span style="background-color: yellow;">highlighted</span></p>'
-        result = clean_syntax_highlighting_spans(html)
+        result = clean_spans(html)
         assert "<span" not in result
         assert "highlighted" in result
 
-    def test_strips_code_class_spans(self):
-        """Spans with code-related classes should be unwrapped."""
+    def test_unwraps_class_spans(self):
+        """Spans with classes should be unwrapped."""
         html = '<p><span class="code-keyword">function</span></p>'
-        result = clean_syntax_highlighting_spans(html)
+        result = clean_spans(html)
         assert "<span" not in result
         assert "function" in result
 
-    def test_per_character_spans(self):
+    def test_unwraps_per_character_spans(self):
         """Per-character spans (common in Confluence) should be unwrapped and concatenated."""
-        # This is the problematic pattern that causes newlines between chars
         html = (
             '<span style="color: #000;">c</span>'
             '<span style="color: #000;">o</span>'
@@ -312,34 +311,34 @@ class TestCleanSyntaxHighlightingSpans:
             '<span style="color: #000;">s</span>'
             '<span style="color: #000;">t</span>'
         )
-        result = clean_syntax_highlighting_spans(html)
+        result = clean_spans(html)
         assert "<span" not in result
         assert "const" in result
 
-    def test_preserves_semantic_spans(self):
-        """Spans with id or data-* attributes should be preserved."""
+    def test_unwraps_all_spans_regardless_of_attributes(self):
+        """All spans should be unwrapped, even with id or data-* attributes."""
         html = '<p><span id="anchor">text</span></p>'
-        result = clean_syntax_highlighting_spans(html)
-        assert "<span" in result
-        assert "anchor" in result
+        result = clean_spans(html)
+        assert "<span" not in result
+        assert "text" in result
 
         html = '<p><span data-macro="true">macro content</span></p>'
-        result = clean_syntax_highlighting_spans(html)
-        assert "<span" in result
+        result = clean_spans(html)
+        assert "<span" not in result
         assert "macro content" in result
 
     def test_empty_html(self):
         """Empty input should return empty output."""
-        assert clean_syntax_highlighting_spans("") == ""
+        assert clean_spans("") == ""
 
     def test_none_html(self):
         """None input should return None."""
-        assert clean_syntax_highlighting_spans(None) is None
+        assert clean_spans(None) is None
 
     def test_preserves_other_elements(self):
         """Non-span elements should be preserved."""
         html = "<div><p>paragraph</p><code>code block</code></div>"
-        result = clean_syntax_highlighting_spans(html)
+        result = clean_spans(html)
         assert "<div>" in result
         assert "<p>" in result
         assert "<code>" in result
