@@ -1628,7 +1628,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.15"
+version = "0.14.14"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1656,12 +1656,15 @@ dependencies = [
     { name = "platformdirs", version = "4.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "platformdirs", version = "4.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pydantic" },
+    { name = "pytest-asyncio" },
+    { name = "python-ffmpeg" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "setuptools" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
     { name = "tiktoken" },
+    { name = "tinytag" },
     { name = "tqdm" },
     { name = "typing-extensions" },
     { name = "typing-inspect" },
@@ -1705,7 +1708,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.6,<4" },
     { name = "aiosqlite" },
-    { name = "banks", specifier = ">=2.2.0,<3" },
+    { name = "banks", specifier = ">=2.3.0,<3" },
     { name = "dataclasses-json" },
     { name = "deprecated", specifier = ">=1.2.9.3" },
     { name = "dirtyjson", specifier = ">=1.0.8,<2" },
@@ -1721,12 +1724,15 @@ requires-dist = [
     { name = "pillow", specifier = ">=9.0.0" },
     { name = "platformdirs" },
     { name = "pydantic", specifier = ">=2.8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.0" },
+    { name = "python-ffmpeg", specifier = ">=2.0.12" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "setuptools", specifier = ">=80.9.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=1.4.49" },
     { name = "tenacity", specifier = ">=8.2.0,!=8.4.0,<10.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0" },
+    { name = "tinytag", specifier = ">=2.2.0" },
     { name = "tqdm", specifier = ">=4.66.1,<5" },
     { name = "typing-extensions", specifier = ">=4.5.0" },
     { name = "typing-inspect", specifier = ">=0.8.0" },
@@ -1777,7 +1783,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.6.15"
+version = "0.6.17"
 source = { directory = "../llama-index-integrations/llms/llama-index-llms-openai" }
 dependencies = [
     { name = "llama-index-core" },
@@ -3101,6 +3107,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyee"
+version = "13.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/03/1fd98d5841cd7964a27d729ccf2199602fe05eb7a405c1462eb7277945ed/pyee-13.0.0.tar.gz", hash = "sha256:b391e3c5a434d1f5118a25615001dbc8f669cf410ab67d04c4d4e07c55481c37", size = 31250, upload-time = "2025-03-17T18:53:15.955Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/4d/b9add7c84060d4c1906abe9a7e5359f2a60f7a9a4f67268b2766673427d8/pyee-13.0.0-py3-none-any.whl", hash = "sha256:48195a3cddb3b1515ce0695ed76036b5ccc2ef3a9f963ff9f77aec0139845498", size = 15730, upload-time = "2025-03-17T18:53:14.532Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3230,6 +3248,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f0/26/19cadc79a718c5edbec86fd4919a6b6d3f681039a2f6d66d14be94e75fb9/python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6", size = 44221, upload-time = "2025-10-26T15:12:10.434Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61", size = 21230, upload-time = "2025-10-26T15:12:09.109Z" },
+]
+
+[[package]]
+name = "python-ffmpeg"
+version = "2.0.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyee" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/4d/7ecffb341d646e016be76e36f5a42cb32f409c9ca21a57b68f067fad3fc7/python_ffmpeg-2.0.12.tar.gz", hash = "sha256:19ac80af5a064a2f53c245af1a909b2d7648ea045500d96d3bcd507b88d43dc7", size = 14126292, upload-time = "2024-04-15T10:15:31.878Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/6d/02e817aec661defe148cb9eb0c4eca2444846305f625c2243fb9f92a9045/python_ffmpeg-2.0.12-py3-none-any.whl", hash = "sha256:d86697da8dfb39335183e336d31baf42fb217468adf5ac97fd743898240faae3", size = 14411, upload-time = "2024-04-15T10:15:28.966Z" },
 ]
 
 [[package]]
@@ -3689,6 +3720,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/99/4c/0a3504157c81364fc0c64cada54efef0567961357e786706ea63bc8946e1/tiktoken-0.12.0-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:20cf97135c9a50de0b157879c3c4accbb29116bcf001283d26e073ff3b345946", size = 1196766, upload-time = "2025-10-06T20:22:41.365Z" },
     { url = "https://files.pythonhosted.org/packages/d4/46/8e6a258ae65447c75770fe5ea8968acab369e8c9f537f727c91f83772325/tiktoken-0.12.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:15d875454bbaa3728be39880ddd11a5a2a9e548c29418b41e8fd8a767172b5ec", size = 1258278, upload-time = "2025-10-06T20:22:42.846Z" },
     { url = "https://files.pythonhosted.org/packages/35/43/3b95de4f5e76f3cafc70dac9b1b9cfe759ff3bfd494ac91a280e93772e90/tiktoken-0.12.0-cp39-cp39-win_amd64.whl", hash = "sha256:2cff3688ba3c639ebe816f8d58ffbbb0aa7433e23e08ab1cade5d175fc973fb3", size = 881888, upload-time = "2025-10-06T20:22:44.059Z" },
+]
+
+[[package]]
+name = "tinytag"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/07/fb260bac73119f369a10e884016516d07cd760b5068e703773f83dd5e7bf/tinytag-2.2.0.tar.gz", hash = "sha256:f15b082510f6e0fc717e597edc8759d6f2d3ff6194ac0f3bcd675a9a09d9b798", size = 38120, upload-time = "2025-12-15T21:10:19.093Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b1/e2/9818fcebb348237389d2ac2fea97cf2b2638378a0866105a45ae9be49728/tinytag-2.2.0-py3-none-any.whl", hash = "sha256:d2cf3ef8ee0f6c854663f77d9d5f8159ee1c834c70f5ea4f214ddc4af8148f79", size = 32861, upload-time = "2025-12-15T21:10:17.63Z" },
 ]
 
 [[package]]
