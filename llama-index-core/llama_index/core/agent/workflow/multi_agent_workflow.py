@@ -3,6 +3,7 @@ import inspect
 import warnings
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -22,6 +23,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
     _get_waiting_for_event_exception,
+    _extract_preliminary_flag,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
@@ -349,6 +351,28 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         tool_input: dict,
     ) -> ToolOutput:
         """Call the given tool with the given input."""
+        last_output = None
+        async for tool_output in self._call_tool_stream(ctx, tool, tool_input):
+            last_output = tool_output
+
+        if last_output is None:
+            return ToolOutput(
+                content="Tool returned no output.",
+                tool_name=tool.metadata.get_name(),
+                raw_input=tool_input,
+                raw_output=None,
+                is_error=True,
+            )
+
+        return last_output
+
+    async def _call_tool_stream(
+        self,
+        ctx: Context,
+        tool: AsyncBaseTool,
+        tool_input: dict,
+    ) -> AsyncIterator[ToolOutput]:
+        """Stream tool outputs as they are produced."""
         try:
             if (
                 isinstance(tool, FunctionTool)
@@ -357,14 +381,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ):
                 new_tool_input = {**tool_input}
                 new_tool_input[tool.ctx_param_name] = ctx
-                tool_output = await tool.acall(**new_tool_input)
+                async for tool_output in tool.acall_stream(**new_tool_input):
+                    yield tool_output
             else:
-                tool_output = await tool.acall(**tool_input)
+                async for tool_output in tool.acall_stream(**tool_input):
+                    yield tool_output
         except Exception as e:
             event_exception = _get_waiting_for_event_exception()
             if event_exception and isinstance(e, event_exception):
                 raise
-            tool_output = ToolOutput(
+            yield ToolOutput(
                 content=str(e),
                 tool_name=tool.metadata.get_name(),
                 raw_input=tool_input,
@@ -372,8 +398,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 is_error=True,
                 exception=e,
             )
-
-        return tool_output
 
     @step
     async def init_run(self, ctx: Context, ev: AgentWorkflowStartEvent) -> AgentInput:
@@ -638,8 +662,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         current_agent_name = await ctx.store.get("current_agent_name")
         tools = await self.get_tools(current_agent_name, ev.tool_name)
         tools_by_name = {tool.metadata.name: tool for tool in tools}
+        tool = None
+        streamed_final = False
         if ev.tool_name not in tools_by_name:
-            tool = None
             result = ToolOutput(
                 content=f"Tool {ev.tool_name} not found. Please select a tool that is available.",
                 tool_name=ev.tool_name,
@@ -649,7 +674,110 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
         else:
             tool = tools_by_name[ev.tool_name]
-            result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+            streaming_hint = isinstance(tool, FunctionTool) and (
+                inspect.isasyncgenfunction(tool.real_fn)
+                or inspect.isgeneratorfunction(tool.real_fn)
+            )
+            pending_output: Optional[ToolOutput] = None
+            result = None
+
+            async for tool_output in self._call_tool_stream(ctx, tool, ev.tool_kwargs):
+                result = tool_output
+                preliminary_flag = _extract_preliminary_flag(tool_output.raw_output)
+
+                if tool_output.is_error:
+                    preliminary_flag = False
+
+                if preliminary_flag is not None:
+                    if pending_output is not None:
+                        ctx.write_event_to_stream(
+                            ToolCallResult(
+                                tool_name=ev.tool_name,
+                                tool_kwargs=ev.tool_kwargs,
+                                tool_id=ev.tool_id,
+                                tool_output=pending_output,
+                                return_direct=tool.metadata.return_direct,
+                                preliminary=True,
+                            )
+                        )
+                        pending_output = None
+
+                    if preliminary_flag:
+                        ctx.write_event_to_stream(
+                            ToolCallResult(
+                                tool_name=ev.tool_name,
+                                tool_kwargs=ev.tool_kwargs,
+                                tool_id=ev.tool_id,
+                                tool_output=tool_output,
+                                return_direct=tool.metadata.return_direct,
+                                preliminary=True,
+                            )
+                        )
+                    else:
+                        streamed_final = True
+                        ctx.write_event_to_stream(
+                            ToolCallResult(
+                                tool_name=ev.tool_name,
+                                tool_kwargs=ev.tool_kwargs,
+                                tool_id=ev.tool_id,
+                                tool_output=tool_output,
+                                return_direct=tool.metadata.return_direct,
+                                preliminary=False,
+                            )
+                        )
+                    continue
+
+                if streaming_hint:
+                    ctx.write_event_to_stream(
+                        ToolCallResult(
+                            tool_name=ev.tool_name,
+                            tool_kwargs=ev.tool_kwargs,
+                            tool_id=ev.tool_id,
+                            tool_output=tool_output,
+                            return_direct=tool.metadata.return_direct,
+                            preliminary=True,
+                        )
+                    )
+                    continue
+
+                if pending_output is None:
+                    pending_output = tool_output
+                    continue
+
+                ctx.write_event_to_stream(
+                    ToolCallResult(
+                        tool_name=ev.tool_name,
+                        tool_kwargs=ev.tool_kwargs,
+                        tool_id=ev.tool_id,
+                        tool_output=pending_output,
+                        return_direct=tool.metadata.return_direct,
+                        preliminary=True,
+                    )
+                )
+                ctx.write_event_to_stream(
+                    ToolCallResult(
+                        tool_name=ev.tool_name,
+                        tool_kwargs=ev.tool_kwargs,
+                        tool_id=ev.tool_id,
+                        tool_output=tool_output,
+                        return_direct=tool.metadata.return_direct,
+                        preliminary=True,
+                    )
+                )
+                pending_output = None
+
+            if result is None and pending_output is not None:
+                result = pending_output
+                pending_output = None
+
+            if result is None:
+                result = ToolOutput(
+                    content="Tool returned no output.",
+                    tool_name=ev.tool_name,
+                    raw_input=ev.tool_kwargs,
+                    raw_output=None,
+                    is_error=True,
+                )
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,
@@ -659,7 +787,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             return_direct=tool.metadata.return_direct if tool else False,
         )
 
-        ctx.write_event_to_stream(result_ev)
+        if not streamed_final:
+            ctx.write_event_to_stream(result_ev)
         return result_ev
 
     @step
@@ -667,6 +796,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         self, ctx: Context, ev: ToolCallResult
     ) -> Union[AgentInput, StopEvent, None]:
         """Aggregate tool results and return the next agent input."""
+        if ev.preliminary:
+            return None
         num_tool_calls = await ctx.store.get("num_tool_calls", default=0)
         if num_tool_calls == 0:
             raise ValueError("No tool calls found, cannot aggregate results.")
