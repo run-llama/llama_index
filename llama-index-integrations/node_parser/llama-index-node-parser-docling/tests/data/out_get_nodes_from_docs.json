@@ -39,7 +39,7 @@
       "end_char_idx": 872,
       "text_template": "{metadata_str}\n\n{content}",
       "metadata_template": "{key}: {value}",
-      "metadata_seperator": "\n",
+      "metadata_separator": "\n",
       "class_name": "TextNode"
     },
     {
@@ -82,7 +82,7 @@
       "end_char_idx": 1090,
       "text_template": "{metadata_str}\n\n{content}",
       "metadata_template": "{key}: {value}",
-      "metadata_seperator": "\n",
+      "metadata_separator": "\n",
       "class_name": "TextNode"
     }
   ]

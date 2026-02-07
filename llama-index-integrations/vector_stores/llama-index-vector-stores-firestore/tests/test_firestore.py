@@ -63,7 +63,7 @@ def document_snapshots() -> List[DocumentSnapshot]:
                             "end_char_idx": None,
                             "text_template": "{metadata_str}\n\n{content}",
                             "metadata_template": "{key}: {value}",
-                            "metadata_seperator": "\n",
+                            "metadata_separator": "\n",
                             "class_name": "TextNode",
                         }
                     ),

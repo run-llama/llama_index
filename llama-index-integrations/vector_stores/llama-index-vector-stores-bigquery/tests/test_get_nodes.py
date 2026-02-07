@@ -85,7 +85,7 @@ def test_get_nodes_constructs_nodes_from_valid_metadata_row(
                 "mimetype": "text/plain",
                 "start_char_idx": None,
                 "end_char_idx": None,
-                "metadata_seperator": "\n",
+                "metadata_separator": "\n",
                 "text_template": "{metadata_str}\n\n{content}",
                 "class_name": "TextNode",
             }

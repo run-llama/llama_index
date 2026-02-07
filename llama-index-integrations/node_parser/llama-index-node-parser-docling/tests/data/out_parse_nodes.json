@@ -27,7 +27,7 @@
       "end_char_idx": null,
       "text_template": "{metadata_str}\n\n{content}",
       "metadata_template": "{key}: {value}",
-      "metadata_seperator": "\n",
+      "metadata_separator": "\n",
       "class_name": "TextNode"
     },
     {
@@ -57,7 +57,7 @@
       "end_char_idx": null,
       "text_template": "{metadata_str}\n\n{content}",
       "metadata_template": "{key}: {value}",
-      "metadata_seperator": "\n",
+      "metadata_separator": "\n",
       "class_name": "TextNode"
     }
   ]

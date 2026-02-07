@@ -171,7 +171,7 @@ def test_query_vector_store_result(
                 "mimetype": "text/plain",
                 "start_char_idx": None,
                 "end_char_idx": None,
-                "metadata_seperator": "\n",
+                "metadata_separator": "\n",
                 "text_template": "{metadata_str}\n\n{content}",
                 "class_name": "TextNode",
             }
