@@ -35,7 +35,7 @@ from llama_index.core.storage.docstore import (
     SimpleDocumentStore,
 )
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
-from llama_index.core.utils import concat_dirs
+from llama_index.core.utils import concat_dirs, get_tqdm_iterable
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
@@ -92,8 +92,6 @@ def run_transformations(
     if not in_place:
         nodes = list(nodes)
 
-    from llama_index.core.utils import get_tqdm_iterable
-
     transformations_with_progress = get_tqdm_iterable(
         transformations, show_progress, "Applying transformations"
     )
@@ -136,8 +134,6 @@ async def arun_transformations(
     """
     if not in_place:
         nodes = list(nodes)
-
-    from llama_index.core.utils import get_tqdm_iterable
 
     transformations_with_progress = get_tqdm_iterable(
         transformations, show_progress, "Applying transformations"
