@@ -282,7 +282,6 @@ def test_to_openai_message_dicts_with_content_blocks() -> None:
                 "type": "image_url",
                 "image_url": {
                     "url": "https://example.com/image.jpg",
-                    "detail": "auto",
                 },
             },
         ],
@@ -309,6 +308,32 @@ def test_to_openai_message_dicts_with_content_blocks() -> None:
     assert openai_message == {
         "role": "assistant",
         "content": "test question",
+    }
+
+
+def test_to_openai_message_dicts_with_content_blocks_with_detail() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg", detail="high"),
+        ],
+    )
+
+    # user messages are converted to blocks
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "test question"},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://example.com/image.jpg",
+                    "detail": "high",
+                },
+            },
+        ],
     }
 
 
