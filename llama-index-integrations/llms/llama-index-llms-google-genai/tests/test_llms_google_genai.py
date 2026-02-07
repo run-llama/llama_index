@@ -24,6 +24,7 @@ from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
     chat_from_gemini_response,
+    _remove_additional_properties_from_schema,
 )
 
 
@@ -1939,3 +1940,120 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+def test_removes_additional_properties_from_anyof():
+    """Test that additionalProperties is removed from anyOf schemas."""
+    schema = {
+        "anyOf": [
+            {
+                "type": "object",
+                "properties": {"field1": {"type": "string"}},
+                "additionalProperties": True,
+            },
+            {
+                "type": "object",
+                "properties": {"field2": {"type": "number"}},
+                "additionalProperties": False,
+            },
+        ]
+    }
+    result = _remove_additional_properties_from_schema(schema)
+    for item in result["anyOf"]:
+        assert "additionalProperties" not in item
+
+
+def test_removes_empty_objects():
+    """Test that empty object types (no properties) are removed."""
+    schema = {
+        "anyOf": [
+            {"type": "object", "additionalProperties": True},  # Empty object
+            {
+                "type": "object",
+                "properties": {"field1": {"type": "string"}},
+                "additionalProperties": True,
+            },
+        ]
+    }
+    result = _remove_additional_properties_from_schema(schema)
+    # Empty object should be removed, only the one with properties remains
+    assert len(result["anyOf"]) == 1
+    assert "field1" in result["anyOf"][0]["properties"]
+
+
+def test_nested_schema_cleaning():
+    """Test that nested schemas are recursively cleaned."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "nested": {
+                "type": "object",
+                "properties": {"inner": {"type": "string"}},
+                "additionalProperties": True,
+            }
+        },
+        "additionalProperties": False,
+    }
+    result = _remove_additional_properties_from_schema(schema)
+    assert "additionalProperties" not in result
+    assert "additionalProperties" not in result["properties"]["nested"]
+
+
+def test_schema_llm_path_extractor_compatibility():
+    """Test with a schema similar to SchemaLLMPathExtractor output."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "entities": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "entity": {"type": "string"},
+                            "type": {"type": "string"},
+                        },
+                        "additionalProperties": True,
+                    },
+                    {"type": "object", "additionalProperties": True},  # Empty
+                ]
+            }
+        },
+        "additionalProperties": True,
+    }
+    result = _remove_additional_properties_from_schema(schema)
+    # Top-level additionalProperties should be removed
+    assert "additionalProperties" not in result
+    # anyOf should only contain the non-empty object
+    assert len(result["properties"]["entities"]["anyOf"]) == 1
+    # The remaining object should not have additionalProperties
+    remaining = result["properties"]["entities"]["anyOf"][0]
+    assert "additionalProperties" not in remaining
+    assert "entity" in remaining["properties"]
+
+
+def test_empty_schema():
+    """Test handling of empty schema."""
+    schema = {}
+    result = _remove_additional_properties_from_schema(schema)
+    assert result == {}
+
+
+def test_list_of_schemas():
+    """Test handling when schema contains arrays of objects."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "additionalProperties": True,
+                },
+            }
+        },
+        "additionalProperties": False,
+    }
+    result = _remove_additional_properties_from_schema(schema)
+    assert "additionalProperties" not in result
+    assert "additionalProperties" not in result["properties"]["items"]["items"]

@@ -39,6 +39,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     is_chatcomp_api_supported,
+    _set_additional_properties_false,
 )
 
 
@@ -477,3 +478,141 @@ def test_gpt_5_chat_latest_model_support() -> None:
 def test_is_chatcomp_api_supported() -> None:
     assert is_chatcomp_api_supported("gpt-5.2")
     assert not is_chatcomp_api_supported("gpt-5.2-pro")
+
+
+def test_sets_additional_properties_to_false_in_anyof():
+    """Test that additionalProperties is set to false for object types in anyOf."""
+    schema = {
+        "properties": {
+            "field": {
+                "anyOf": [
+                    {"type": "object", "additionalProperties": True},
+                    {"type": "null"},
+                ]
+            }
+        }
+    }
+
+    result = _set_additional_properties_false(schema)
+
+    # Check that additionalProperties is now false
+    any_of = result["properties"]["field"]["anyOf"]
+    for alt in any_of:
+        if alt.get("type") == "object":
+            assert "additionalProperties" in alt, "additionalProperties must be present"
+            assert alt["additionalProperties"] is False, (
+                "additionalProperties must be false"
+            )
+
+
+def test_adds_additional_properties_false_if_missing():
+    """Test that additionalProperties=false is added even if it was missing."""
+    schema = {
+        "properties": {
+            "field": {
+                "anyOf": [
+                    {"type": "object"},  # No additionalProperties field
+                    {"type": "null"},
+                ]
+            }
+        }
+    }
+
+    result = _set_additional_properties_false(schema)
+
+    any_of = result["properties"]["field"]["anyOf"]
+    for alt in any_of:
+        if alt.get("type") == "object":
+            assert alt.get("additionalProperties") is False
+
+
+def test_nested_anyof_schemas():
+    """Test recursive fixing in deeply nested schemas."""
+    schema = {
+        "$defs": {
+            "Entity": {
+                "properties": {
+                    "properties": {
+                        "anyOf": [
+                            {"type": "object", "additionalProperties": True},
+                            {"type": "null"},
+                        ]
+                    }
+                }
+            }
+        }
+    }
+
+    result = _set_additional_properties_false(schema)
+
+    any_of = result["$defs"]["Entity"]["properties"]["properties"]["anyOf"]
+    for alt in any_of:
+        if alt.get("type") == "object":
+            assert alt["additionalProperties"] is False
+
+
+def test_schema_llm_path_extractor_compatibility():
+    """Test with a schema structure similar to SchemaLLMPathExtractor output."""
+    schema = {
+        "$defs": {
+            "Entity": {
+                "properties": {
+                    "type": {"type": "string", "enum": ["PERSON", "ORG"]},
+                    "name": {"type": "string"},
+                    "properties": {
+                        "anyOf": [
+                            {"additionalProperties": True, "type": "object"},
+                            {"type": "null"},
+                        ],
+                        "default": None,
+                        "description": "Properties of the entity",
+                    },
+                },
+                "required": ["type", "name"],
+                "type": "object",
+            }
+        }
+    }
+
+    result = _set_additional_properties_false(schema)
+
+    # Verify the fix
+    entity_props = result["$defs"]["Entity"]["properties"]["properties"]
+    any_of = entity_props["anyOf"]
+
+    for alt in any_of:
+        if alt.get("type") == "object":
+            assert alt["additionalProperties"] is False, (
+                "OpenAI requires additionalProperties=false for object types"
+            )
+
+
+def test_multiple_anyof_in_same_schema():
+    """Test fixing multiple anyOf instances in the same schema."""
+    schema = {
+        "properties": {
+            "field1": {
+                "anyOf": [
+                    {"type": "object", "additionalProperties": True},
+                    {"type": "null"},
+                ]
+            },
+            "field2": {"anyOf": [{"type": "object"}, {"type": "null"}]},
+        }
+    }
+
+    result = _set_additional_properties_false(schema)
+
+    # Check both fields were fixed
+    for field_name in ["field1", "field2"]:
+        any_of = result["properties"][field_name]["anyOf"]
+        for alt in any_of:
+            if alt.get("type") == "object":
+                assert alt["additionalProperties"] is False
+
+
+def test_empty_schema_in_additional_properties_fix():
+    """Test that empty schemas are handled gracefully."""
+    schema = {}
+    result = _set_additional_properties_false(schema)
+    assert result == {}

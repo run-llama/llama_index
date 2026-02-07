@@ -60,6 +60,7 @@ from llama_index.llms.google_genai.utils import (
     create_retry_decorator,
     adelete_uploaded_files,
     delete_uploaded_files,
+    _remove_additional_properties_from_schema,
 )
 
 import google.genai
@@ -658,7 +659,10 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+
+            schema = output_cls.model_json_schema()
+            schema = _remove_additional_properties_from_schema(schema)
+            generation_config["response_schema"] = schema
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
@@ -709,7 +713,11 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+            generation_config["response_schema"] = (
+                _remove_additional_properties_from_schema(
+                    output_cls.model_json_schema()
+                )
+            )
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = await asyncio.gather(
@@ -760,7 +768,11 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = output_cls
+            generation_config["response_schema"] = (
+                _remove_additional_properties_from_schema(
+                    output_cls.model_json_schema()
+                )
+            )
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
