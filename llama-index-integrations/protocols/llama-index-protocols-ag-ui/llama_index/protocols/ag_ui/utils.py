@@ -28,15 +28,15 @@ def llama_index_message_to_ag_ui_message(
     elif (
         message.role.value == "user" and "tool_call_id" not in message.additional_kwargs
     ):
-        message.content = re.sub(
-            r"<state>[\s\S]*?</state>", "", message.content
-        ).strip()
-        return UserMessage(id=msg_id, content=message.content, role="user")
+        content = message.content or ""
+        content = re.sub(r"<state>[\s\S]*?</state>", "", content).strip()
+        return UserMessage(id=msg_id, content=content, role="user")
     elif message.role.value == "assistant":
         # Remove tool calls from the message
-        if message.content:
-            message.content = re.sub(
-                r"<tool_call>[\s\S]*?</tool_call>", "", message.content
+        content = message.content
+        if content:
+            content = re.sub(
+                r"<tool_call>[\s\S]*?</tool_call>", "", content
             ).strip()
 
         # Fetch tool calls from the message
@@ -57,7 +57,7 @@ def llama_index_message_to_ag_ui_message(
 
         return AssistantMessage(
             id=msg_id,
-            content=message.content or None,
+            content=content or None,
             role="assistant",
             tool_calls=tool_calls,
         )
