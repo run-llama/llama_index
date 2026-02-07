@@ -82,6 +82,9 @@ dependencies = [
     "llama-index-workflows>=2,<3,!=2.9.0",
     "setuptools>=80.9.0",
     "platformdirs",
+    "tinytag>=2.2.0",
+    "pytest-asyncio>=0.21.0",
+    "python-ffmpeg>=2.0.12",
 ]
 
 [project.urls]
