@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 from chonkie.chunker.base import BaseChunker
 from chonkie.pipeline import ComponentRegistry, ComponentType
@@ -30,22 +30,21 @@ class Chunker(MetadataAwareTextSplitter):
     """
 
     # this is related to the metadata schema in the super, or pydantic will fail
-    # apparently attributes need to be defined as pydantic fields
+    #  attributes need to be defined as pydantic fields
     chunker: Optional[BaseChunker] = Field(default=None, exclude=True)
 
     def __init__(
         self,
-        chunker_type: str = "recursive",
+        chunker: Union[str, BaseChunker] = "recursive",
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable] = None,
         **kwargs: Any,
     ):
-        if chunker_type not in CHUNKERS:
-            raise ValueError(
-                f"Invalid chunker_type '{chunker_type}'. Must be one of: {CHUNKERS}"
-            )
+        if isinstance(chunker, str) and chunker not in CHUNKERS:
+            raise ValueError(f"Invalid chunker '{chunker}'. Must be one of: {CHUNKERS}")
+
         id_func = id_func or default_id_func
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -54,9 +53,13 @@ class Chunker(MetadataAwareTextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
-        # flexible approach to pull chunker classes based on their alias
-        ChunkingClass = ComponentRegistry.get_chunker(chunker_type).component_class
-        self.chunker = ChunkingClass(**kwargs)
+
+        if isinstance(chunker, str):
+            # flexible approach to pull chunker classes based on their alias
+            ChunkingClass = ComponentRegistry.get_chunker(chunker).component_class
+            self.chunker = ChunkingClass(**kwargs)
+        else:
+            self.chunker = chunker
 
     @classmethod
     def from_defaults(
@@ -105,7 +108,7 @@ Chunker.__init__.__doc__ = f"""
         Initialize with a Chonkie chunker instance or create one if not provided.
 
         Args:
-            chunker_type (str): The type of Chonkie chunker to use. Must be one of {CHUNKERS}.
+            chunker Union[str, BaseChunker]: The chunker to use. Must be one of {CHUNKERS} or a chonkie chunker instance.
             callback_manager (Optional[CallbackManager]): Callback manager for handling callbacks.
             include_metadata (bool): Whether to include metadata in the nodes.
             include_prev_next_rel (bool): Whether to include previous/next relationships.

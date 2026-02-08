@@ -158,7 +158,7 @@ def test_chunker_preserves_text_content() -> None:
 
     Using TokenChunker as we want to test overlap=0 which is explicit there.
     """
-    chunker = Chunker(chunker_type="token", chunk_size=100, chunk_overlap=0)
+    chunker = Chunker(chunker="token", chunk_size=100, chunk_overlap=0)
     text = "This is a test sentence. " * 50
 
     chunks = chunker.split_text(text)
@@ -272,8 +272,8 @@ def test_chunker_kwargs() -> None:
     Using TokenChunker to test chunk_overlap support.
     """
     # Test with various chunk sizes
-    chunker_small = Chunker(chunker_type="token", chunk_size=50, chunk_overlap=10)
-    chunker_large = Chunker(chunker_type="token", chunk_size=500, chunk_overlap=50)
+    chunker_small = Chunker(chunker="token", chunk_size=50, chunk_overlap=10)
+    chunker_large = Chunker(chunker="token", chunk_size=500, chunk_overlap=50)
 
     text = "This is a test sentence. " * 50
 
@@ -292,15 +292,19 @@ def test_available_chunkers() -> None:
         try:
             if chunker_type == "code":
                 kwargs = {"language": "python"}
-            chunker = Chunker(chunker_type=chunker_type, **kwargs)
+            chunker = Chunker(chunker=chunker_type, **kwargs)
         except Exception as e:
             raise AssertionError(f"Failed to initialize chunker '{chunker_type}': {e}")
         assert chunker is not None
         assert chunker.chunker is not None
-        # slow section (downloading embedding models in workflow is slow)
-        # try:
-        #     chunker.split_text("some text")
-        # except Exception as e:
-        #     raise AssertionError(
-        #         f"Failed to split text with chunker '{chunker_type}': {e}"
-        #     )
+
+
+def test_chunker_with_instance() -> None:
+    """Test Chunker initialization with a chonkie chunker instance."""
+    from chonkie import RecursiveChunker
+
+    chonkie_chunker = RecursiveChunker(chunk_size=2048)
+    chunker = Chunker(chunker=chonkie_chunker)
+    assert chunker is not None
+    assert chunker.chunker is not None
+    assert isinstance(chunker.chunker, RecursiveChunker)
