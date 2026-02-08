@@ -304,7 +304,7 @@ def test_chunker_with_instance() -> None:
     from chonkie import RecursiveChunker
 
     chonkie_chunker = RecursiveChunker(chunk_size=2048)
-    chunker = Chunker(chunker=chonkie_chunker)
-    assert chunker is not None
-    assert chunker.chunker is not None
-    assert isinstance(chunker.chunker, RecursiveChunker)
+    parser = Chunker(chunker=chonkie_chunker)
+    assert parser is not None
+    assert parser.chunker is not None
+    assert isinstance(parser.chunker, RecursiveChunker)

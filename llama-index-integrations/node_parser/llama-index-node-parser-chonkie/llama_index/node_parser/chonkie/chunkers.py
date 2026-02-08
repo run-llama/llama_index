@@ -32,6 +32,9 @@ class Chunker(MetadataAwareTextSplitter):
     # this is related to the metadata schema in the super, or pydantic will fail
     #  attributes need to be defined as pydantic fields
     chunker: Optional[BaseChunker] = Field(default=None, exclude=True)
+    valid_chunker_aliases: List[str] = Field(
+        default_factory=lambda: CHUNKERS, exclude=True
+    )
 
     def __init__(
         self,
@@ -42,9 +45,6 @@ class Chunker(MetadataAwareTextSplitter):
         id_func: Optional[Callable] = None,
         **kwargs: Any,
     ):
-        if isinstance(chunker, str) and chunker not in CHUNKERS:
-            raise ValueError(f"Invalid chunker '{chunker}'. Must be one of: {CHUNKERS}")
-
         id_func = id_func or default_id_func
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -53,6 +53,11 @@ class Chunker(MetadataAwareTextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+
+        if isinstance(chunker, str) and chunker not in self.valid_chunker_aliases:
+            raise ValueError(
+                f"Invalid chunker '{chunker}'. Must be one of: {self.valid_chunker_aliases}"
+            )
 
         if isinstance(chunker, str):
             # flexible approach to pull chunker classes based on their alias
