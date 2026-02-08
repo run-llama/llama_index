@@ -722,10 +722,6 @@ class TextNode(BaseNode):
     end_char_idx: Optional[int] = Field(
         default=None, description="End char index of the node."
     )
-    metadata_seperator: str = Field(
-        default="\n",
-        description="Separator between metadata fields when converting to string.",
-    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
@@ -773,7 +769,7 @@ class TextNode(BaseNode):
                 if key in usable_metadata_keys:
                     usable_metadata_keys.remove(key)
 
-        return self.metadata_seperator.join(
+        return self.metadata_separator.join(
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
