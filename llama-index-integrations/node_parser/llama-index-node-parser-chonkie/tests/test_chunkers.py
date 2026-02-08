@@ -1,5 +1,6 @@
 """Tests for Chonkie Chunker integration."""
 
+import pytest
 from typing import List
 
 
@@ -80,6 +81,101 @@ def test_split_text_metadata_aware() -> None:
 
     assert len(chunks) > 0
     assert isinstance(chunks, list)
+
+
+def test_split_text_metadata_aware_with_token_chunker() -> None:
+    """Test that metadata-aware splitting with token chunker produces more chunks when metadata is present."""
+    # Token chunker has _tokenizer, so it uses the metadata-aware path
+    chunker = Chunker(chunker="token", chunk_size=100, chunk_overlap=0)
+    text = "This is a test document. " * 30
+
+    chunks_no_metadata = chunker.split_text(text)
+    metadata_str = "title: Test Document\nauthor: Test Author\ndate: 2024\n"
+    chunks_with_metadata = chunker.split_text_metadata_aware(text, metadata_str)
+
+    assert len(chunks_with_metadata) >= len(chunks_no_metadata)
+    assert all(isinstance(c, str) for c in chunks_with_metadata)
+    assert "".join(chunks_with_metadata).strip() == text.strip()
+
+
+def test_split_text_metadata_aware_empty_metadata() -> None:
+    """Test metadata-aware splitting with empty metadata string."""
+    chunker = Chunker(chunker="token", chunk_size=80, chunk_overlap=0)
+    text = "This is a test. " * 20
+
+    chunks_empty_metadata = chunker.split_text_metadata_aware(text, "")
+    chunks_no_metadata = chunker.split_text(text)
+
+    assert len(chunks_empty_metadata) == len(chunks_no_metadata)
+    assert chunks_empty_metadata == chunks_no_metadata
+
+
+def test_split_text_metadata_aware_value_error_when_metadata_too_long() -> None:
+    """Test that ValueError is raised when metadata token count >= chunk_size."""
+    # Small chunk size so a modest metadata string can exceed it
+    chunker = Chunker(chunker="token", chunk_size=5, chunk_overlap=0)
+    text = "Short text."
+    # Metadata that will tokenize to more than 5 tokens
+    long_metadata = "title: " + "very long title " * 20 + "author: " + "name " * 20
+
+    with pytest.raises(ValueError) as exc_info:
+        chunker.split_text_metadata_aware(text, long_metadata)
+
+    assert "Metadata length" in str(exc_info.value)
+    assert "chunk size" in str(exc_info.value).lower()
+
+
+def test_split_text_metadata_aware_chunk_size_restored() -> None:
+    """Test that chunk_size is restored after metadata-aware split so repeated calls behave correctly."""
+    chunker = Chunker(chunker="token", chunk_size=60, chunk_overlap=0)
+    text = "This is a test document. " * 15
+    metadata_str = "title: Doc\n"
+
+    chunks1 = chunker.split_text_metadata_aware(text, metadata_str)
+    chunks2 = chunker.split_text_metadata_aware(text, metadata_str)
+
+    assert chunks1 == chunks2
+    # Verify chunk_size was restored by comparing to split_text (same effective behavior after reset)
+    chunks_plain = chunker.split_text(text)
+    assert len(chunks_plain) >= 1
+
+
+def test_split_text_metadata_aware_fallback_chunker() -> None:
+    """Test that chunkers without tokenizer fall back to regular split_text (e.g. recursive)."""
+    # Recursive chunker typically has no _tokenizer, so uses fallback
+    chunker = Chunker(chunker="recursive", chunk_size=100)
+    text = "This is a test. " * 25
+    metadata_str = "title: Test\n"
+
+    chunks_metadata_aware = chunker.split_text_metadata_aware(text, metadata_str)
+    chunks_plain = chunker.split_text(text)
+
+    assert chunks_metadata_aware == chunks_plain
+
+
+def test_split_text_metadata_aware_preserves_content() -> None:
+    """Test that metadata-aware splitting preserves all text content (no overlap so join == text)."""
+    chunker = Chunker(chunker="token", chunk_size=50, chunk_overlap=0)
+    text = "One. Two. Three. Four. Five. " * 10
+    metadata_str = "key: value\n"
+
+    chunks = chunker.split_text_metadata_aware(text, metadata_str)
+    combined = "".join(chunks)
+
+    assert combined.strip() == text.strip()
+    assert len(chunks) > 0
+
+
+def test_split_text_metadata_aware_single_chunk_short_text() -> None:
+    """Test metadata-aware with short text that fits in one chunk."""
+    chunker = Chunker(chunker="token", chunk_size=512, chunk_overlap=0)
+    text = "Short piece of text."
+    metadata_str = "title: Short\n"
+
+    chunks = chunker.split_text_metadata_aware(text, metadata_str)
+
+    assert len(chunks) == 1
+    assert chunks[0] == text
 
 
 def test_get_nodes_from_documents() -> None:

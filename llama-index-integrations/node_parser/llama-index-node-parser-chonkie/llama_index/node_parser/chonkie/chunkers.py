@@ -5,6 +5,7 @@ from chonkie.pipeline import ComponentRegistry, ComponentType
 
 
 from pydantic import Field
+import logging
 
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser.interface import (
@@ -20,6 +21,8 @@ CHUNKERS = sorted(
     if c.alias not in ["table", "slumber"]
 )
 
+logger = logging.getLogger(__name__)
+
 
 class Chunker(MetadataAwareTextSplitter):
     """
@@ -32,9 +35,11 @@ class Chunker(MetadataAwareTextSplitter):
     # this is related to the metadata schema in the super, or pydantic will fail
     #  attributes need to be defined as pydantic fields
     chunker: Optional[BaseChunker] = Field(default=None, exclude=True)
+
     valid_chunker_aliases: List[str] = Field(
         default_factory=lambda: CHUNKERS, exclude=True
     )
+    _logged_warning_for_incompatible_chunker: bool = False
 
     def __init__(
         self,
@@ -87,6 +92,38 @@ class Chunker(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text with metadata awareness."""
+        # Only apply token reservation for token-based chunkers (chunk_size in token space).
+        # Other chunkers (e.g. recursive) may use character-based sizes or different semantics.
+        is_token_chunker = type(self.chunker).__name__ == "TokenChunker"
+        if (
+            is_token_chunker
+            and hasattr(self.chunker, "_tokenizer")
+            and (self.chunker._tokenizer is not None)
+            and hasattr(self.chunker, "chunk_size")
+            and self.chunker.chunk_size is not None
+        ):
+            # count tokens and update chunk_size
+            num_tokens = self.chunker._tokenizer.count_tokens(metadata_str)
+            original_chunk_size = self.chunker.chunk_size
+            effective_chunk_size = original_chunk_size - num_tokens
+            self.chunker.chunk_size = effective_chunk_size
+            if effective_chunk_size <= 0:
+                raise ValueError(
+                    f"Metadata length ({num_tokens} tokens) is longer than or equal to "
+                    f"chunk size ({original_chunk_size}). Consider increasing the chunk size or "
+                    "decreasing the size of your metadata to avoid this."
+                )
+            splits = self.split_text(text)
+            # reset chunk_size to original value after splitting
+            self.chunker.chunk_size = original_chunk_size
+            return splits
+        # fallback mechanism for incompatible chunkers
+        if not self._logged_warning_for_incompatible_chunker:
+            logger.warning(
+                "current chunker type does not support metadata awareness. Proceeding with regular chunking."
+                " This warning will only be logged once per instance."
+            )
+            self._logged_warning_for_incompatible_chunker = True
         return self.split_text(text)
 
     def split_text(self, text: str) -> List[str]:
