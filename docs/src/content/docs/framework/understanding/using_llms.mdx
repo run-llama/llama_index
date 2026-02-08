@@ -62,13 +62,14 @@ Use this in standard Python scripts or notebooks where blocking operations are a
 ```python
 stream_response = llm.stream_chat(messages)
 
+# token is a response chunk object depending on the backend
 for token in stream_response:
     print(token.delta, end="", flush=True)
 ```
 
 **Asynchronous (`astream_chat`):**
 
-When using async frameworks (like FastAPI), remember to await the method call to get the generator, and then iterate asynchronously.
+When using async frameworks (like FastAPI), remember to `await` the method call and iterate over the returned async stream.
 
 ```python
 stream_response = await llm.astream_chat(messages)
