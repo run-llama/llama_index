@@ -125,6 +125,103 @@ class BaseContentBlock(ABC, BaseModel):
             self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer, reverse=reverse)
         )
 
+    @classmethod
+    def templatable_attributes(cls) -> List[str]:
+        """
+        List of attributes that can be templated.
+
+        Can be overridden by subclasses.
+        """
+        return []
+
+    @staticmethod
+    def _get_template_str_from_attribute(attribute: Any) -> str | None:
+        """
+        Helper function to get template string from attribute.
+
+        It primarily enables cases of template_vars in binary strings for non text types such as:
+            - ImageBlock(image=b'{image_bytes}')
+            - AudioBlock(audio=b'{audio_bytes}')
+            - VideoBlock(video=b'{video_bytes}')
+            - DocumentBlock(data=b'{document_bytes}')
+
+        However, it could in theory also work with other attributes like:
+            - ImageBlock(path=b'{image_path}')
+            - AudioBlock(url=b'{audio_url}')
+
+        For that to work, the validation on those fields would need to be updated though.
+        """
+        if attribute is None:
+            return None
+        if isinstance(attribute, str):
+            return attribute
+        elif isinstance(attribute, bytes):
+            try:
+                return resolve_binary(attribute).read().decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+        else:
+            return str(attribute)
+
+    def get_template_vars(self) -> list[str]:
+        """
+        Get template variables from the content block.
+        """
+        from llama_index.core.prompts.utils import get_template_vars
+
+        for attribute_name in self.templatable_attributes():
+            attribute = getattr(self, attribute_name, None)
+            template_str = self._get_template_str_from_attribute(attribute)
+            if template_str:
+                return get_template_vars(template_str)
+        return []
+
+    def format_vars(self, **kwargs: Any) -> BaseContentBlock:
+        """
+        Format the content block with the given keyword arguments.
+
+        This function primarily enables formatting of template_vars in Textblocks and binary strings for non text:
+            - ImageBlock(image=b'{image_bytes}')
+            - AudioBlock(audio=b'{audio_bytes}')
+            - VideoBlock(video=b'{video_bytes}')
+            - DocumentBlock(data=b'{document_bytes}')
+
+        However, it could in theory also work with other attributes like:
+            - ImageBlock(path=b'{image_path}')
+            - AudioBlock(url=b'{audio_url}')
+
+        For that to work, the validation on those fields would need to be updated though.
+        """
+        from llama_index.core.prompts.utils import format_string
+
+        formatted_attrs: Dict[str, Any] = {}
+        for attribute_name in self.templatable_attributes():
+            attribute = getattr(self, attribute_name, None)
+            att_type = type(attribute)
+            template_str = self._get_template_str_from_attribute(attribute)
+            # If the attribute is a binary string, we need to coerce to string for formatting,
+            # but then we need to re-encode to bytes after formatting, which is what the code below does.
+            formatted_kwargs = {
+                k: resolve_binary(v, as_base64=True).read().decode()
+                if isinstance(v, bytes)
+                else v
+                for k, v in kwargs.items()
+            }
+            if template_str:
+                formatted_str = format_string(template_str, **formatted_kwargs)
+                if att_type is str:
+                    formatted_attrs[attribute_name] = formatted_str
+                elif att_type is bytes:
+                    formatted_attrs[attribute_name] = formatted_str.encode()
+                else:
+                    try:
+                        formatted_attrs[attribute_name] = att_type(formatted_str)  # type: ignore
+                    except Exception:
+                        raise ValueError(
+                            "Could not format attribute {attribute_name} with value {template_str} to type {att_type}"
+                        )
+        return type(self).model_validate(self.model_copy(update=formatted_attrs))
+
 
 class TextBlock(BaseContentBlock):
     """A representation of text data to directly pass to/from the LLM."""
@@ -172,6 +269,10 @@ class TextBlock(BaseContentBlock):
         )
         chunks = text_splitter.split_text(self.text)
         return [TextBlock(text=chunk) for chunk in chunks]
+
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return ["text"]
 
 
 class ImageBlock(BaseContentBlock):
@@ -273,6 +374,10 @@ class ImageBlock(BaseContentBlock):
         TODO: In the future, LLMs should be able to count their own tokens.
         """
         return 2125
+
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return ["image"]
 
 
 class AudioBlock(BaseContentBlock):
@@ -379,6 +484,10 @@ class AudioBlock(BaseContentBlock):
             if str(e) == "resolve_audio returned zero bytes":
                 return 0
             raise
+
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return ["audio"]
 
 
 class VideoBlock(BaseContentBlock):
@@ -494,6 +603,10 @@ class VideoBlock(BaseContentBlock):
                 return 0
             raise
 
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return ["video"]
+
 
 class DocumentBlock(BaseContentBlock):
     """A representation of a document to directly pass to the LLM."""
@@ -595,6 +708,10 @@ class DocumentBlock(BaseContentBlock):
             raise
         # We currently only use this fallback estimate for documents which are non zero bytes
         return 512
+
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return ["data"]
 
 
 class CacheControl(BaseContentBlock):
@@ -808,6 +925,29 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         }
         return cls(**attributes)
 
+    @classmethod
+    def templatable_attributes(cls) -> list[str]:
+        return [cls.nested_blocks_field_name()]
+
+    def get_template_vars(self) -> list[str]:
+        vars = []
+        for block in self.nested_blocks:
+            vars.extend(block.get_template_vars())
+        return vars
+
+    def format_vars(self, **kwargs: Any) -> Self:
+        formatted_blocks = []
+        for block in self.nested_blocks:
+            relevant_kwargs = {
+                k: v for k, v in kwargs.items() if k in block.get_template_vars()
+            }
+            formatted_blocks.append(block.format_vars(**relevant_kwargs))
+        attributes = self.model_dump() | {
+            # Overwrite nested blocks
+            self.nested_blocks_field_name(): formatted_blocks
+        }
+        return type(self)(**attributes)
+
 
 class CitableBlock(BaseRecursiveContentBlock):
     """Supports providing citable content to LLMs that have built-in citation support."""
@@ -885,6 +1025,8 @@ class ThinkingBlock(BaseContentBlock):
     Because of LLM provider's reliance on signatures for Thought Processes,
     we do not support merging/splitting/truncating for this block, as we want to preserve the integrity of the content
     provided by the LLM.
+
+    For the same reason, they are also not templatable.
     """
 
     block_type: Literal["thinking"] = "thinking"
