@@ -95,12 +95,12 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         )
         self._summary_query = summary_query
         self._embed_summaries = embed_summaries
+        self._show_progress = show_progress
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             storage_context=storage_context,
-            show_progress=show_progress,
             objects=objects,
             **kwargs,
         )
