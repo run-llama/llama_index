@@ -49,13 +49,16 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_code_model,
     mistralai_modelname_to_contextsize,
     MISTRAL_AI_REASONING_MODELS,
+    THINKING_START_TAG,
+    THINKING_END_TAG,
     THINKING_REGEX,
     THINKING_START_REGEX,
 )
 
-from mistralai import Mistral
+from mistralai import CompletionEvent, Mistral
 from mistralai.models import ToolCall, FunctionCall
 from mistralai.models import (
+    ChatCompletionResponse,
     Messages,
     AssistantMessage,
     SystemMessage,
@@ -341,9 +344,13 @@ class MistralAI(FunctionCallingLLM):
         else:
             for chunk in response:
                 if isinstance(chunk, ThinkChunk):
+                    content += THINKING_START_TAG + "\n"
                     for c in chunk.thinking:
                         if isinstance(c, TextChunk):
                             content += c.text + "\n"
+                    content += THINKING_END_TAG + "\n"
+                elif isinstance(chunk, TextChunk):
+                    content += chunk.text + "\n"
 
         match = THINKING_REGEX.search(content)
         if match:
@@ -355,160 +362,7 @@ class MistralAI(FunctionCallingLLM):
 
         return "", content
 
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        # convert messages to mistral ChatMessage
-
-        messages = to_mistral_chatmessage(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        response = self._client.chat.complete(messages=messages, **all_kwargs)
-        blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
-
-        if self.model in MISTRAL_AI_REASONING_MODELS:
-            thinking_txt, response_txt = self._separate_thinking(
-                response.choices[0].message.content or []
-            )
-            if thinking_txt:
-                blocks.append(ThinkingBlock(content=thinking_txt))
-
-            response_txt_think_show = ""
-            if response.choices[0].message.content:
-                if isinstance(response.choices[0].message.content, str):
-                    response_txt_think_show = response.choices[0].message.content
-                else:
-                    for chunk in response.choices[0].message.content:
-                        if isinstance(chunk, TextBlock):
-                            response_txt_think_show += chunk.text + "\n"
-                        if isinstance(chunk, ThinkChunk):
-                            for c in chunk.thinking:
-                                if isinstance(c, TextChunk):
-                                    response_txt_think_show += c.text + "\n"
-
-            response_txt = (
-                response_txt if not self.show_thinking else response_txt_think_show
-            )
-        else:
-            response_txt = response.choices[0].message.content
-
-        blocks.append(TextBlock(text=response_txt))
-        tool_calls = response.choices[0].message.tool_calls
-        if tool_calls is not None:
-            for tool_call in tool_calls:
-                if isinstance(tool_call, ToolCall):
-                    blocks.append(
-                        ToolCallBlock(
-                            tool_call_id=tool_call.id,
-                            tool_kwargs=tool_call.function.arguments,
-                            tool_name=tool_call.function.name,
-                        )
-                    )
-
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                blocks=blocks,
-            ),
-            raw=dict(response),
-        )
-
-    @llm_completion_callback()
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        complete_fn = chat_to_completion_decorator(self.chat)
-        return complete_fn(prompt, **kwargs)
-
-    @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        # convert messages to mistral ChatMessage
-
-        messages = to_mistral_chatmessage(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
-
-        response = self._client.chat.stream(messages=messages, **all_kwargs)
-
-        def gen() -> ChatResponseGen:
-            content = ""
-            blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
-            for chunk in response:
-                delta = chunk.data.choices[0].delta
-                role = delta.role or MessageRole.ASSISTANT
-
-                # NOTE: Unlike openAI, we are directly injecting the tool calls
-                if delta.tool_calls:
-                    for tool_call in delta.tool_calls:
-                        if isinstance(tool_call, ToolCall):
-                            blocks.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.function.name,
-                                    tool_kwargs=tool_call.function.arguments,
-                                )
-                            )
-
-                content_delta = delta.content or ""
-                content_delta_str = ""
-                if isinstance(content_delta, str):
-                    content_delta_str = content_delta
-                else:
-                    for chunk in content_delta:
-                        if isinstance(chunk, TextChunk):
-                            content_delta_str += chunk.text + "\n"
-                        elif isinstance(chunk, ThinkChunk):
-                            for c in chunk.thinking:
-                                if isinstance(c, TextChunk):
-                                    content_delta_str += c.text + "\n"
-                        else:
-                            continue
-
-                content += content_delta_str
-
-                # decide whether to include thinking in deltas/responses
-                if self.model in MISTRAL_AI_REASONING_MODELS:
-                    thinking_txt, response_txt = self._separate_thinking(content)
-
-                    if thinking_txt:
-                        blocks.append(ThinkingBlock(content=thinking_txt))
-
-                    content = response_txt if not self.show_thinking else content
-
-                    # If thinking hasn't ended, don't include it in the delta
-                    if thinking_txt is None and not self.show_thinking:
-                        content_delta = ""
-                blocks.append(TextBlock(text=content))
-
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        blocks=blocks,
-                    ),
-                    delta=content_delta_str,
-                    raw=chunk,
-                )
-
-        return gen()
-
-    @llm_completion_callback()
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseGen:
-        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
-        return stream_complete_fn(prompt, **kwargs)
-
-    @llm_chat_callback()
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        # convert messages to mistral ChatMessage
-
-        messages = to_mistral_chatmessage(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._client.chat.complete_async(
-            messages=messages, **all_kwargs
-        )
-
+    def _parse_response_output(self, response: ChatCompletionResponse) -> ChatResponse:
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
@@ -527,9 +381,11 @@ class MistralAI(FunctionCallingLLM):
                         if isinstance(chunk, TextBlock):
                             response_txt_think_show += chunk.text + "\n"
                         if isinstance(chunk, ThinkChunk):
+                            response_txt_think_show += THINKING_START_TAG + "\n"
                             for c in chunk.thinking:
                                 if isinstance(c, TextChunk):
                                     response_txt_think_show += c.text + "\n"
+                            response_txt_think_show += THINKING_END_TAG + "\n"
 
             response_txt = (
                 response_txt if not self.show_thinking else response_txt_think_show
@@ -570,6 +426,135 @@ class MistralAI(FunctionCallingLLM):
             raw=dict(response),
         )
 
+    def _parse_completion_event(
+        self, event: CompletionEvent, is_thinking: bool = False
+    ) -> Tuple[List[ToolCallBlock], str, str, bool]:
+        tool_call_blocks: List[ToolCallBlock] = []
+        delta = event.data.choices[0].delta
+        role = delta.role or MessageRole.ASSISTANT
+
+        # NOTE: Unlike openAI, we are directly injecting the tool calls
+        if delta.tool_calls:
+            for tool_call in delta.tool_calls:
+                if isinstance(tool_call, ToolCall):
+                    tool_call_blocks.append(
+                        ToolCallBlock(
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.function.name,
+                            tool_kwargs=tool_call.function.arguments,
+                        )
+                    )
+
+        content_delta = delta.content or ""
+        content_delta_str = ""
+
+        if isinstance(content_delta, str):
+            content_delta_str = ""
+            if is_thinking:
+                is_thinking = False
+                content_delta_str += THINKING_END_TAG + "\n"
+            content_delta_str += content_delta
+        else:
+            for chunk in content_delta:
+                if isinstance(chunk, TextChunk):
+                    if is_thinking:
+                        is_thinking = False
+                        content_delta_str += THINKING_END_TAG + "\n"
+                    content_delta_str += chunk.text + "\n"
+                elif isinstance(chunk, ThinkChunk):
+                    if not is_thinking:
+                        is_thinking = True
+                        content_delta_str += THINKING_START_TAG + "\n"
+
+                    for c in chunk.thinking:
+                        if isinstance(c, TextChunk):
+                            content_delta_str += c.text + "\n"
+                else:
+                    continue
+
+        return tool_call_blocks, content_delta_str, role, is_thinking
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        # convert messages to mistral ChatMessage
+
+        messages = to_mistral_chatmessage(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = self._client.chat.complete(messages=messages, **all_kwargs)
+        return self._parse_response_output(response)
+
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        # convert messages to mistral ChatMessage
+
+        messages = to_mistral_chatmessage(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        response = self._client.chat.stream(messages=messages, **all_kwargs)
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
+            is_thinking = False
+            for chunk in response:
+                tool_call_blocks, content_delta_str, role, is_thinking = (
+                    self._parse_completion_event(chunk, is_thinking=is_thinking)
+                )
+
+                blocks.append(*tool_call_blocks)
+                content += content_delta_str
+
+                # decide whether to include thinking in deltas/responses
+                if self.model in MISTRAL_AI_REASONING_MODELS:
+                    thinking_txt, response_txt = self._separate_thinking(content)
+
+                    if thinking_txt:
+                        blocks.append(ThinkingBlock(content=thinking_txt))
+
+                    content = response_txt if not self.show_thinking else content
+
+                blocks.append(TextBlock(text=content))
+
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=role,
+                        blocks=blocks,
+                    ),
+                    delta=content_delta_str,
+                    raw=chunk,
+                )
+
+        return gen()
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        # convert messages to mistral ChatMessage
+
+        messages = to_mistral_chatmessage(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = await self._client.chat.complete_async(
+            messages=messages, **all_kwargs
+        )
+        return self._parse_response_output(response)
+
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -591,36 +576,13 @@ class MistralAI(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+            is_thinking = False
             async for chunk in response:
-                delta = chunk.data.choices[0].delta
-                role = delta.role or MessageRole.ASSISTANT
-                # NOTE: Unlike openAI, we are directly injecting the tool calls
-                if delta.tool_calls:
-                    for tool_call in delta.tool_calls:
-                        if isinstance(tool_call, ToolCall):
-                            blocks.append(
-                                ToolCallBlock(
-                                    tool_call_id=tool_call.id,
-                                    tool_name=tool_call.function.name,
-                                    tool_kwargs=tool_call.function.arguments,
-                                )
-                            )
+                tool_call_blocks, content_delta_str, role, is_thinking = (
+                    self._parse_completion_event(chunk, is_thinking=is_thinking)
+                )
 
-                content_delta = delta.content or ""
-                content_delta_str = ""
-                if isinstance(content_delta, str):
-                    content_delta_str = content_delta
-                else:
-                    for chunk in content_delta:
-                        if isinstance(chunk, TextChunk):
-                            content_delta_str += chunk.text + "\n"
-                        elif isinstance(chunk, ThinkChunk):
-                            for c in chunk.thinking:
-                                if isinstance(c, TextChunk):
-                                    content_delta_str += c.text + "\n"
-                        else:
-                            continue
-
+                blocks.append(*tool_call_blocks)
                 content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses

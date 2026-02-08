@@ -70,8 +70,12 @@ MISTRAL_AI_REASONING_MODELS = (
 
 MISTRALAI_CODE_MODELS = "codestral-latest"
 
-THINKING_REGEX = re.compile(r"^<think>\n(.*?)\n</think>\n")
-THINKING_START_REGEX = re.compile(r"^<think>\n")
+THINKING_START_TAG = "<think>"
+THINKING_END_TAG = "</think>"
+THINKING_REGEX = re.compile(
+    rf"^{THINKING_START_TAG}\n(.*?)\n{THINKING_END_TAG}\n", flags=re.DOTALL
+)
+THINKING_START_REGEX = re.compile(rf"^{THINKING_START_TAG}\n")
 
 
 def mistralai_modelname_to_contextsize(modelname: str) -> int:
