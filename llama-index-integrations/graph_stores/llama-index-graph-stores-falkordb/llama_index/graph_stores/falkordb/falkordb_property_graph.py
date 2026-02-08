@@ -227,9 +227,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                     MERGE (e:`__Entity__` {{id: $data.id}})
                     SET e += $data.properties
                     SET e.name = $data.name
-                    WITH e
+                    WITH e, $data.properties.triplet_source_id AS tsid
                     SET e:{entity_dict["label"]}
-                    WITH e
+                    WITH e, tsid
                     CALL {{
                         WITH e
                         WITH e
@@ -237,8 +237,8 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                         SET e.embedding = vecf32($data.embedding)
                         RETURN count(*) AS count
                     }}
-                    WITH e WHERE $data.properties.triplet_source_id IS NOT NULL
-                    MERGE (c:Chunk {{id: $data.properties.triplet_source_id}})
+                    WITH e, tsid WHERE tsid IS NOT NULL
+                    MERGE (c:Chunk {{id: tsid}})
                     MERGE (e)<-[:MENTIONS]-(c)
                     """,
                     param_map={"data": entity_dict},
