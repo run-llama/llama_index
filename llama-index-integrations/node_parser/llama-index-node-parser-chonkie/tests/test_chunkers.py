@@ -5,7 +5,7 @@ from typing import List
 
 from llama_index.core.schema import Document, MetadataMode, TextNode
 
-from llama_index.ingestion.chonkie.chunkers import Chunker, CHUNKERS
+from llama_index.node_parser.chonkie.chunkers import Chunker, CHUNKERS
 
 
 def test_chonkie_chunker_initialization() -> None:
