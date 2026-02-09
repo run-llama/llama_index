@@ -87,7 +87,8 @@ def test_text_node_with_text_resource():
 
 
 def test_text_node_metadata_separator_consistency() -> None:
-    """Test that metadata_separator works consistently on TextNode.
+    """
+    Test that metadata_separator works consistently on TextNode.
 
     Regression test for https://github.com/run-llama/llama_index/issues/20645.
     Previously, TextNode defined its own `metadata_seperator` field that
