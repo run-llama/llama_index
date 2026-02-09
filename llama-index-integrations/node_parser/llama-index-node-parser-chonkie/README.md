@@ -12,7 +12,7 @@ pip install llama-index-ingestion-chonkie
 
 ```python
 from llama_index.core import Document
-from llama_index.ingestion.chonkie import Chunker
+from llama_index.node_parser.chonkie import Chunker
 
 # Create a chunker (defaults to 'recursive')
 chunker = Chunker(chunk_size=512, chunk_overlap=50)
@@ -53,18 +53,29 @@ chunker = Chunker(
 )
 ```
 
-## Integration with IngestionPipeline
+## Integration with Node Parsing
 
-<!-- see https://developers.llamaindex.ai/python/framework/module_guides/loading/ingestion_pipeline/#usage-pattern for reference -->
+You can use `Chunker` directly to parse documents into nodes:
+
+```python
+from llama_index.core import Document
+from llama_index.node_parser.chonkie import Chunker
+
+chunker = Chunker(chunk_size=512)
+doc = Document(text="Your long text here...")
+nodes = chunker.get_nodes_from_documents([doc])
+```
+
+or you can also use it as a component within the Ingestion pipeline:
 
 ```python
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.ingestion.chonkie import Chunker
+from llama_index.node_parser.chonkie import Chunker
 
 pipeline = IngestionPipeline(
     transformations=[
-        Chunker(chunker_type="recursive", chunk_size=512),
+        Chunker("recursive", chunk_size=512),
         # ... other transformations
     ]
 )
