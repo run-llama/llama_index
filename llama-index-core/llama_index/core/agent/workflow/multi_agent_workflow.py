@@ -331,8 +331,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             response=last_response.message.content or "",
                             raw=raw,
                             current_agent_name=agent.name,
-                            thinking_delta=last_response.additional_kwargs.get(
-                                "thinking_delta", None
+                            thinking_delta=BaseWorkflowAgent._extract_thinking_delta(
+                                last_response
                             ),
                         )
                     )

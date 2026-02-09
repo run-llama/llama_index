@@ -239,6 +239,102 @@ class BaseWorkflowAgent(
     def _update_prompts(self, prompts_dict: PromptDictType) -> None:
         """Update prompts."""
 
+    @staticmethod
+    def _extract_thinking_delta(response: ChatResponse) -> Optional[str]:
+        """Extract model reasoning deltas across providers."""
+        thinking_delta = response.additional_kwargs.get("thinking_delta")
+        if isinstance(thinking_delta, str) and thinking_delta:
+            return thinking_delta
+        if thinking_delta is not None:
+            return str(thinking_delta)
+
+        raw = (
+            response.raw.model_dump()
+            if isinstance(response.raw, BaseModel)
+            else response.raw
+        )
+        if not isinstance(raw, dict):
+            return None
+
+        def _extract_text(value: Any, seen: set[int]) -> Optional[str]:
+            if isinstance(value, str):
+                return value or None
+            if isinstance(value, dict):
+                value_id = id(value)
+                if value_id in seen:
+                    return None
+                seen.add(value_id)
+
+                for key in ("text", "content"):
+                    if key not in value:
+                        continue
+                    extracted = _extract_text(value[key], seen)
+                    if extracted:
+                        return extracted
+            if isinstance(value, list):
+                value_id = id(value)
+                if value_id in seen:
+                    return None
+                seen.add(value_id)
+
+                for item in value:
+                    extracted = _extract_text(item, seen)
+                    if extracted:
+                        return extracted
+            return None
+
+        def _extract_reasoning_content(node: Any, seen: set[int]) -> Optional[str]:
+            if isinstance(node, dict):
+                node_id = id(node)
+                if node_id in seen:
+                    return None
+                seen.add(node_id)
+
+                for key in ("reasoningContent", "reasoning_content", "thinking", "reasoning"):
+                    if key not in node:
+                        continue
+                    extracted = _extract_text(node[key], seen)
+                    if extracted:
+                        return extracted
+
+                if str(node.get("type", "")).lower() in ("reasoning", "thinking"):
+                    for key in ("text", "content", "reasoningContent", "reasoning_content", "thinking"):
+                        if key not in node:
+                            continue
+                        extracted = _extract_text(node[key], seen)
+                        if extracted:
+                            return extracted
+
+                for key in ("contentBlockDelta", "delta"):
+                    if key in node:
+                        extracted = _extract_reasoning_content(node[key], seen)
+                        if extracted:
+                            return extracted
+
+                for value in node.values():
+                    extracted = _extract_reasoning_content(value, seen)
+                    if extracted:
+                        return extracted
+
+            if isinstance(node, list):
+                node_id = id(node)
+                if node_id in seen:
+                    return None
+                seen.add(node_id)
+
+                for item in node:
+                    extracted = _extract_reasoning_content(item, seen)
+                    if extracted:
+                        return extracted
+
+            return None
+
+        extracted = _extract_reasoning_content(raw, set())
+        if extracted:
+            return extracted
+
+        return None
+
     @abstractmethod
     async def take_step(
         self,
@@ -330,9 +426,7 @@ class BaseWorkflowAgent(
                             response=last_response.message.content or "",
                             raw=raw,
                             current_agent_name=self.name,
-                            thinking_delta=last_response.additional_kwargs.get(
-                                "thinking_delta", None
-                            ),
+                            thinking_delta=self._extract_thinking_delta(last_response),
                         )
                     )
             if last_response is None:

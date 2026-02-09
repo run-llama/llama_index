@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, LLMMetadata
 from llama_index.core.llms import MockLLM
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.react_agent import ReActAgent
@@ -157,6 +158,28 @@ def test_thinking_delta_extraction():
         "thinking_delta", None
     )
     assert thinking_delta is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (
+            {"contentBlockDelta": {"delta": {"reasoningContent": {"text": "nested"}}}},
+            "nested",
+        ),
+        ({"delta": {"reasoning_content": {"content": "snake_case"}}}, "snake_case"),
+        ({"choices": [{"delta": {"thinking": {"text": "thought"}}}]}, "thought"),
+    ],
+)
+def test_extract_thinking_delta_from_nested_raw_response(raw, expected):
+    response = ChatResponse(
+        message=ChatMessage(role="assistant", content="Hello"),
+        delta="Hello",
+        raw=raw,
+    )
+
+    thinking_delta = BaseWorkflowAgent._extract_thinking_delta(response)
+    assert thinking_delta == expected
 
 
 @pytest.mark.asyncio
