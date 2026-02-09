@@ -35,7 +35,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -857,5 +857,5 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
 
 class ThinkingDict(TypedDict):
-    type: Literal["enabled"]
-    budget_tokens: int
+    type: Literal["enabled", "adaptive"]
+    budget_tokens: NotRequired[int]
