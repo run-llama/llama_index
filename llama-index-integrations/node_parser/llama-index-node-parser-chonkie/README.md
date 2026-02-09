@@ -15,7 +15,7 @@ from llama_index.core import Document
 from llama_index.node_parser.chonkie import Chunker
 
 # Create a chunker (defaults to 'recursive')
-chunker = Chunker(chunk_size=512, chunk_overlap=50)
+chunker = Chunker(chunk_size=512)
 
 # Create a document
 doc = Document(text="Your long text here...")
@@ -26,19 +26,27 @@ nodes = chunker.get_nodes_from_documents([doc])
 
 ## Supported Chunkers
 
-The `Chunker` acts as a wrapper for various Chonkie chunking strategies. You can specify the strategy using the `chunker_type` parameter:
+The `Chunker` acts as a wrapper for various Chonkie chunking strategies. You can specify the strategy using the `chunker` parameter:
 
-| `chunker_type` | Description                                                           |
-| -------------- | --------------------------------------------------------------------- |
-| `recursive`    | (Default) Recursively splits text based on a hierarchy of separators. |
-| `sentence`     | Splits text into sentences.                                           |
-| `token`        | Splits text into chunks based on token counts.                        |
-| `word`         | Splits text based on word counts.                                     |
-| `semantic`     | Splits text based on semantic similarity.                             |
-| `late`         | Late chunking strategy.                                               |
-| `neural`       | Neural-based chunking.                                                |
-| `code`         | Optimized for source code.                                            |
-| `fast`         | High-performance basic chunking.                                      |
+| `chunker`   | Description                                                           |
+| ----------- | --------------------------------------------------------------------- |
+| `recursive` | (Default) Recursively splits text based on a hierarchy of separators. |
+| `sentence`  | Splits text into sentences.                                           |
+| `token`     | Splits text into chunks based on token counts.                        |
+| `word`      | Splits text based on word counts.                                     |
+| `semantic`  | Splits text based on semantic similarity.                             |
+| `late`      | Late chunking strategy.                                               |
+| `neural`    | Neural-based chunking.                                                |
+| `code`      | Optimized for source code.                                            |
+| `fast`      | High-performance basic chunking.                                      |
+
+run the following code to see the full list of valid aliases:
+
+```python
+from llama_index.node_parser import Chunker
+
+print(Chunker.valid_chunkers)
+```
 
 ## Advanced Configuration
 
@@ -46,7 +54,7 @@ You can pass any keyword arguments accepted by the underlying Chonkie chunker di
 
 ```python
 chunker = Chunker(
-    chunker_type="semantic",
+    chunker="semantic",
     chunk_size=512,
     embedding_model="all-MiniLM-L6-v2",
     threshold=0.5,
