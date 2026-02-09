@@ -1,6 +1,6 @@
 """Cryptographic identity management for AgentMesh.
 
-Uses Ed25519 for cryptographic operations when available.
+Uses Ed25519 for cryptographic operations.
 """
 
 from __future__ import annotations
@@ -12,13 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-try:
-    from cryptography.hazmat.primitives.asymmetric import ed25519
-    from cryptography.exceptions import InvalidSignature
-
-    CRYPTO_AVAILABLE = True
-except ImportError:
-    CRYPTO_AVAILABLE = False
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.exceptions import InvalidSignature
 
 
 @dataclass
@@ -73,19 +68,14 @@ class CMVKIdentity:
         did_hash = hashlib.sha256(seed.encode()).hexdigest()[:32]
         did = f"did:cmvk:{did_hash}"
 
-        if CRYPTO_AVAILABLE:
-            private_key_obj = ed25519.Ed25519PrivateKey.generate()
-            public_key_obj = private_key_obj.public_key()
-            private_key_b64 = base64.b64encode(
-                private_key_obj.private_bytes_raw()
-            ).decode("ascii")
-            public_key_b64 = base64.b64encode(
-                public_key_obj.public_bytes_raw()
-            ).decode("ascii")
-        else:
-            key_seed = hashlib.sha256(f"{did}:key".encode()).hexdigest()
-            private_key_b64 = base64.b64encode(key_seed[:32].encode()).decode("ascii")
-            public_key_b64 = base64.b64encode(key_seed[32:].encode()).decode("ascii")
+        private_key_obj = ed25519.Ed25519PrivateKey.generate()
+        public_key_obj = private_key_obj.public_key()
+        private_key_b64 = base64.b64encode(
+            private_key_obj.private_bytes_raw()
+        ).decode("ascii")
+        public_key_b64 = base64.b64encode(
+            public_key_obj.public_bytes_raw()
+        ).decode("ascii")
 
         return cls(
             did=did,
@@ -100,18 +90,12 @@ class CMVKIdentity:
         if not self.private_key:
             raise ValueError("Cannot sign without private key")
 
-        if CRYPTO_AVAILABLE:
-            private_key_bytes = base64.b64decode(self.private_key)
-            private_key_obj = ed25519.Ed25519PrivateKey.from_private_bytes(
-                private_key_bytes
-            )
-            signature_bytes = private_key_obj.sign(data.encode("utf-8"))
-            signature_b64 = base64.b64encode(signature_bytes).decode("ascii")
-        else:
-            sig_input = f"{data}:{self.private_key}"
-            signature_b64 = base64.b64encode(
-                hashlib.sha256(sig_input.encode()).digest()
-            ).decode("ascii")
+        private_key_bytes = base64.b64decode(self.private_key)
+        private_key_obj = ed25519.Ed25519PrivateKey.from_private_bytes(
+            private_key_bytes
+        )
+        signature_bytes = private_key_obj.sign(data.encode("utf-8"))
+        signature_b64 = base64.b64encode(signature_bytes).decode("ascii")
 
         return CMVKSignature(public_key=self.public_key, signature=signature_b64)
 
@@ -120,19 +104,16 @@ class CMVKIdentity:
         if signature.public_key != self.public_key:
             return False
 
-        if CRYPTO_AVAILABLE:
-            try:
-                public_key_bytes = base64.b64decode(self.public_key)
-                public_key_obj = ed25519.Ed25519PublicKey.from_public_bytes(
-                    public_key_bytes
-                )
-                signature_bytes = base64.b64decode(signature.signature)
-                public_key_obj.verify(signature_bytes, data.encode("utf-8"))
-                return True
-            except (InvalidSignature, ValueError):
-                return False
-        else:
-            return len(signature.signature) > 0
+        try:
+            public_key_bytes = base64.b64decode(self.public_key)
+            public_key_obj = ed25519.Ed25519PublicKey.from_public_bytes(
+                public_key_bytes
+            )
+            signature_bytes = base64.b64decode(signature.signature)
+            public_key_obj.verify(signature_bytes, data.encode("utf-8"))
+            return True
+        except (InvalidSignature, ValueError):
+            return False
 
     def to_dict(self) -> Dict[str, Any]:
         return {

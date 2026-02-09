@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, List, Optional, Sequence
 
 from llama_index.core.agent import AgentRunner
@@ -170,9 +171,14 @@ class TrustedAgentWorker(BaseAgentWorker):
                     f"Task rejected: invoker verification failed - {result.reason}"
                 )
 
-        # Execute the step (simplified - real implementation would use the LLM)
+        # Use the LLM to generate a response
+        from llama_index.core.chat_engine import SimpleChatEngine
+
+        chat_engine = SimpleChatEngine.from_defaults(llm=self._llm)
+        response = chat_engine.chat(step.input)
+
         output = TaskStepOutput(
-            output=f"Executed step {step.step_id} for task {task.task_id}",
+            output=str(response),
             task_step=step,
             is_last=True,
             next_steps=[],
@@ -193,8 +199,7 @@ class TrustedAgentWorker(BaseAgentWorker):
         Returns:
             Step output
         """
-        # For now, just call sync version
-        return self.run_step(step, task, **kwargs)
+        return await asyncio.to_thread(self.run_step, step, task, **kwargs)
 
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Stream a task step.
