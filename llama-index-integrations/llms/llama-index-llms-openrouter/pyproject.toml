@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-llms-openrouter"
-version = "0.4.3"
+version = "0.4.4"
 description = "llama-index llms openrouter integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai-like>=0.5.0,<0.6",
+    "llama-index-llms-openai-like>=0.5.0,<0.7",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

@@ -384,25 +384,29 @@ def to_openai_message_dict(
             )
         elif isinstance(block, ImageBlock):
             if block.url:
+                image_url = {"url": str(block.url)}
+                if block.detail:
+                    image_url["detail"] = block.detail
+
                 content.append(
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": str(block.url),
-                            "detail": block.detail or "auto",
-                        },
+                        "image_url": image_url,
                     }
                 )
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
                 img_str = img_bytes.decode("utf-8")
+                image_url = f"data:{block.image_mimetype};base64,{img_str}"
+
+                image_url_dict = {"url": image_url}
+                if block.detail:
+                    image_url_dict["detail"] = block.detail
+
                 content.append(
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{block.image_mimetype};base64,{img_str}",
-                            "detail": block.detail or "auto",
-                        },
+                        "image_url": image_url_dict,
                     }
                 )
         elif isinstance(block, AudioBlock):
