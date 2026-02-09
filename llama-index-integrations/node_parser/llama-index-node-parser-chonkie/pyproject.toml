@@ -4,8 +4,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "ipython==8.10.0",
-    "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
@@ -25,17 +23,28 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-clickhouse"
-version = "0.6.2"
-description = "llama-index vector_stores clickhouse integration"
-authors = [{name = "ClickHouse", email = "info@clickhouse.com"}]
-requires-python = ">=3.9,<4.0"
+name = "llama-index-node-parser-chonkie"
+version = "0.1.1"
+description = "llama-index Chonkie integration"
+authors = [{name = "Hafedh Hichri", email = "hhichri60@gmail.com"}]
 readme = "README.md"
 license = "MIT"
-dependencies = [
-    "clickhouse-connect>=0.7.0",
-    "llama-index-core>=0.13.0,<0.15",
+requires-python = ">=3.10"
+keywords = ["llama-index", "node-parser", "chonkie", "chunking"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "chonkie[code, neural,model2vec, st, openai]>=1.5.0",
+]
+
+[project.urls]
+Homepage = "https://llamaindex.ai"
+Repository = "https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/node_parser/llama-index-node-parser-chonkie"
 
 [tool.codespell]
 check-filenames = true
@@ -44,21 +53,20 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.clickhouse"
+import_path = "llama_index.node_parser.chonkie"
 
 [tool.llamahub.class_authors]
-ClickHouseVectorStore = "ClickHouse"
+Chunker = "Hafedh Hichri"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+explicit_package_bases = true
+python_version = "3.10"
