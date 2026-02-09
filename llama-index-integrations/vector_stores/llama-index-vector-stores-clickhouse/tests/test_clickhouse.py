@@ -388,3 +388,82 @@ def check_top_match(
     # test the nodes are return in the expected order
     for i, node in enumerate(expected_nodes):
         assert res.nodes[i].node_id == node
+
+
+@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
+def test_table_not_dropped_by_default(
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
+) -> None:
+    """Test that existing table is not dropped when drop_existing_table=False."""
+    # Create first store and add data
+    store1 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+    store1.add(node_embeddings[:2])
+
+    # Query to verify data exists
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    res1 = store1.query(query)
+    assert len(res1.nodes) == 2
+
+    # Create second store with same table - should NOT drop existing data
+    store2 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+
+    # Verify data still exists
+    res2 = store2.query(query)
+    assert len(res2.nodes) == 2
+    assert res2.nodes[0].node_id == res1.nodes[0].node_id
+
+    # Clean up
+    store2.drop()
+
+
+@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
+def test_table_dropped_when_requested(
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
+) -> None:
+    """Test that table IS dropped when drop_existing_table=True."""
+    # Create first store and add data
+    store1 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+    store1.add(node_embeddings[:2])
+
+    # Verify data exists
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    res1 = store1.query(query)
+    assert len(res1.nodes) == 2
+
+    # Create second store with drop_existing_table=True - should drop table
+    store2 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=True,
+    )
+
+    # Table should be empty now
+    res2 = store2.query(query)
+    assert len(res2.nodes) == 0
+
+    # Clean up
+    store2.drop()
