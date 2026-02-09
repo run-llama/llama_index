@@ -141,9 +141,9 @@ def test_split_text_metadata_aware_chunk_size_restored() -> None:
 
 
 def test_split_text_metadata_aware_fallback_chunker() -> None:
-    """Test that chunkers without tokenizer fall back to regular split_text (e.g. recursive)."""
-    # Recursive chunker typically has no _tokenizer, so uses fallback
-    chunker = Chunker(chunker="recursive", chunk_size=100)
+    """Test that chunkers without tokenizer fall back to regular split_text (e.g. fast)."""
+    # fast chunker's _tokenizer is None, so it uses fallback
+    chunker = Chunker(chunker="fast", chunk_size=100)
     text = "This is a test. " * 25
     metadata_str = "title: Test\n"
 

@@ -92,12 +92,9 @@ class Chunker(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text with metadata awareness."""
-        # Only apply token reservation for token-based chunkers (chunk_size in token space).
-        # Other chunkers (e.g. recursive) may use character-based sizes or different semantics.
-        is_token_chunker = type(self.chunker).__name__ == "TokenChunker"
+        # only apply metadata-aware chunking if the chunker is compatible (example fast)
         if (
-            is_token_chunker
-            and hasattr(self.chunker, "_tokenizer")
+            hasattr(self.chunker, "_tokenizer")
             and (self.chunker._tokenizer is not None)
             and hasattr(self.chunker, "chunk_size")
             and self.chunker.chunk_size is not None
