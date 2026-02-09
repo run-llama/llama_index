@@ -35,9 +35,7 @@ def llama_index_message_to_ag_ui_message(
         # Remove tool calls from the message
         content = message.content
         if content:
-            content = re.sub(
-                r"<tool_call>[\s\S]*?</tool_call>", "", content
-            ).strip()
+            content = re.sub(r"<tool_call>[\s\S]*?</tool_call>", "", content).strip()
 
         # Fetch tool calls from the message
         if message.additional_kwargs.get("ag_ui_tool_calls", None):
