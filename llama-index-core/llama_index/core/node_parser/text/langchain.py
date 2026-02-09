@@ -7,9 +7,14 @@ from llama_index.core.node_parser.node_utils import default_id_func
 from llama_index.core.schema import Document
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import (
-        TextSplitter as LC_TextSplitter,
-    )  # pants: no-infer-dep
+    try:
+        # For langchain v1.x.x
+        from langchain_text_splitters import TextSplitter as LC_TextSplitter
+    except ImportError:
+        # For langchain v0.x.x
+        from langchain.text_splitter import (
+            TextSplitter as LC_TextSplitter,
+        )  # pants: no-infer-dep
 
 
 class LangchainNodeParser(TextSplitter):
