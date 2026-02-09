@@ -71,9 +71,9 @@ def test_split_text_with_paragraphs() -> None:
     assert all(len(chunk) > 0 for chunk in chunks)
 
 
-def test_split_text_metadata_aware() -> None:
-    """Test metadata-aware text splitting."""
-    chunker = Chunker(chunk_size=512)
+def test_split_text_metadata_aware_basic() -> None:
+    """Test metadata-aware text splitting returns valid chunks."""
+    chunker = Chunker(chunker="recursive", chunk_size=200)
     text = "This is a test document. " * 20
     metadata_str = "title: Test Document\nauthor: Test Author\n"
 
@@ -81,12 +81,13 @@ def test_split_text_metadata_aware() -> None:
 
     assert len(chunks) > 0
     assert isinstance(chunks, list)
+    assert all(isinstance(c, str) for c in chunks)
+    assert "".join(chunks).strip() == text.strip()
 
 
-def test_split_text_metadata_aware_with_token_chunker() -> None:
-    """Test that metadata-aware splitting with token chunker produces more chunks when metadata is present."""
-    # Token chunker has _tokenizer, so it uses the metadata-aware path
-    chunker = Chunker(chunker="token", chunk_size=100, chunk_overlap=0)
+def test_split_text_metadata_aware_more_chunks_with_metadata() -> None:
+    """With recursive chunker, metadata reduces effective chunk size so we get more (or equal) chunks."""
+    chunker = Chunker(chunker="recursive", chunk_size=100)
     text = "This is a test document. " * 30
 
     chunks_no_metadata = chunker.split_text(text)
@@ -99,8 +100,8 @@ def test_split_text_metadata_aware_with_token_chunker() -> None:
 
 
 def test_split_text_metadata_aware_empty_metadata() -> None:
-    """Test metadata-aware splitting with empty metadata string."""
-    chunker = Chunker(chunker="token", chunk_size=80, chunk_overlap=0)
+    """Empty metadata: effective_chunk_size equals chunk_size, so result matches split_text."""
+    chunker = Chunker(chunker="token", chunk_size=80)
     text = "This is a test. " * 20
 
     chunks_empty_metadata = chunker.split_text_metadata_aware(text, "")
@@ -111,11 +112,9 @@ def test_split_text_metadata_aware_empty_metadata() -> None:
 
 
 def test_split_text_metadata_aware_value_error_when_metadata_too_long() -> None:
-    """Test that ValueError is raised when metadata token count >= chunk_size."""
-    # Small chunk size so a modest metadata string can exceed it
-    chunker = Chunker(chunker="token", chunk_size=5, chunk_overlap=0)
+    """ValueError when metadata token count >= chunk_size (effective_chunk_size <= 0)."""
+    chunker = Chunker(chunker="recursive", chunk_size=5)
     text = "Short text."
-    # Metadata that will tokenize to more than 5 tokens
     long_metadata = "title: " + "very long title " * 20 + "author: " + "name " * 20
 
     with pytest.raises(ValueError) as exc_info:
@@ -126,8 +125,8 @@ def test_split_text_metadata_aware_value_error_when_metadata_too_long() -> None:
 
 
 def test_split_text_metadata_aware_chunk_size_restored() -> None:
-    """Test that chunk_size is restored after metadata-aware split so repeated calls behave correctly."""
-    chunker = Chunker(chunker="token", chunk_size=60, chunk_overlap=0)
+    """chunk_size is restored after split so repeated metadata-aware calls are consistent."""
+    chunker = Chunker(chunker="recursive", chunk_size=60)
     text = "This is a test document. " * 15
     metadata_str = "title: Doc\n"
 
@@ -135,27 +134,13 @@ def test_split_text_metadata_aware_chunk_size_restored() -> None:
     chunks2 = chunker.split_text_metadata_aware(text, metadata_str)
 
     assert chunks1 == chunks2
-    # Verify chunk_size was restored by comparing to split_text (same effective behavior after reset)
     chunks_plain = chunker.split_text(text)
     assert len(chunks_plain) >= 1
 
 
-def test_split_text_metadata_aware_fallback_chunker() -> None:
-    """Test that chunkers without tokenizer fall back to regular split_text (e.g. fast)."""
-    # fast chunker's _tokenizer is None, so it uses fallback
-    chunker = Chunker(chunker="fast", chunk_size=100)
-    text = "This is a test. " * 25
-    metadata_str = "title: Test\n"
-
-    chunks_metadata_aware = chunker.split_text_metadata_aware(text, metadata_str)
-    chunks_plain = chunker.split_text(text)
-
-    assert chunks_metadata_aware == chunks_plain
-
-
 def test_split_text_metadata_aware_preserves_content() -> None:
-    """Test that metadata-aware splitting preserves all text content (no overlap so join == text)."""
-    chunker = Chunker(chunker="token", chunk_size=50, chunk_overlap=0)
+    """Metadata-aware splitting preserves full text (no overlap, so join equals original)."""
+    chunker = Chunker(chunker="recursive", chunk_size=50)
     text = "One. Two. Three. Four. Five. " * 10
     metadata_str = "key: value\n"
 
@@ -167,8 +152,8 @@ def test_split_text_metadata_aware_preserves_content() -> None:
 
 
 def test_split_text_metadata_aware_single_chunk_short_text() -> None:
-    """Test metadata-aware with short text that fits in one chunk."""
-    chunker = Chunker(chunker="token", chunk_size=512, chunk_overlap=0)
+    """Short text with metadata still fits in one chunk when effective size is large enough."""
+    chunker = Chunker(chunker="recursive", chunk_size=512)
     text = "Short piece of text."
     metadata_str = "title: Short\n"
 
@@ -176,6 +161,35 @@ def test_split_text_metadata_aware_single_chunk_short_text() -> None:
 
     assert len(chunks) == 1
     assert chunks[0] == text
+
+
+def test_split_text_metadata_aware_fallback_same_as_split_text() -> None:
+    """Chunkers without tokenizer (e.g. fast) fall back to split_text; result equals split_text."""
+    chunker = Chunker(chunker="fast", chunk_size=10, forward_fallback=True)
+    text = "This is a test. " * 50
+    metadata_str = "title: Test\n"
+
+    chunks_metadata_aware = chunker.split_text_metadata_aware(text, metadata_str)
+    chunks_plain = chunker.split_text(text)
+
+    assert chunks_metadata_aware == chunks_plain
+
+
+def test_split_text_metadata_aware_fallback_logs_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fallback path logs a warning once per instance for incompatible chunkers."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        chunker = Chunker(chunker="fast", chunk_size=20, forward_fallback=True)
+        chunker.split_text_metadata_aware("Some text." * 100, "meta: value\n")
+        chunker.split_text_metadata_aware("More text." * 100, "meta: value\n")
+
+    # Warning only logged once per instance
+    warnings = [r for r in caplog.records if "metadata awareness" in (r.message or "")]
+    assert len(warnings) >= 1
+    assert "does not support metadata awareness" in (warnings[0].message or "")
 
 
 def test_get_nodes_from_documents() -> None:
@@ -251,18 +265,13 @@ def test_chunker_with_long_text() -> None:
 def test_chunker_preserves_text_content() -> None:
     """
     Test that chunker preserves all text content across chunks.
-
-    Using TokenChunker as we want to test overlap=0 which is explicit there.
     """
-    chunker = Chunker(chunker="token", chunk_size=100, chunk_overlap=0)
+    chunker = Chunker(chunker="recursive", chunk_size=100)
     text = "This is a test sentence. " * 50
 
     chunks = chunker.split_text(text)
 
-    # Combine all chunks and verify total length is reasonable
     combined_text = "".join(chunks)
-    # With overlap=0, combined length might differ slightly due to processing
-    # but should be in the same ballpark
     assert len(combined_text) > 0
 
 
