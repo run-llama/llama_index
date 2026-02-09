@@ -290,7 +290,12 @@ class BaseWorkflowAgent(
                     return None
                 seen.add(node_id)
 
-                for key in ("reasoningContent", "reasoning_content", "thinking", "reasoning"):
+                for key in (
+                    "reasoningContent",
+                    "reasoning_content",
+                    "thinking",
+                    "reasoning",
+                ):
                     if key not in node:
                         continue
                     extracted = _extract_text(node[key], seen)
@@ -298,7 +303,13 @@ class BaseWorkflowAgent(
                         return extracted
 
                 if str(node.get("type", "")).lower() in ("reasoning", "thinking"):
-                    for key in ("text", "content", "reasoningContent", "reasoning_content", "thinking"):
+                    for key in (
+                        "text",
+                        "content",
+                        "reasoningContent",
+                        "reasoning_content",
+                        "thinking",
+                    ):
                         if key not in node:
                             continue
                         extracted = _extract_text(node[key], seen)
