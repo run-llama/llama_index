@@ -34,6 +34,15 @@ class MockExceptions:
     class ThrottlingException(Exception):
         pass
 
+    class InternalServerException(Exception):
+        pass
+
+    class ServiceUnavailableException(Exception):
+        pass
+
+    class ModelTimeoutException(Exception):
+        pass
+
 
 class AsyncMockClient:
     def __init__(self) -> None:

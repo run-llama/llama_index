@@ -55,7 +55,6 @@ plugins:
             - ../../llama-index-packs/llama-index-packs-multidoc-autoretrieval
             - ../../llama-index-packs/llama-index-packs-gmail-openai-agent
             - ../../llama-index-packs/llama-index-packs-neo4j-query-engine
-            - ../../llama-index-packs/llama-index-packs-chroma-autoretrieval
             - ../../llama-index-packs/llama-index-packs-resume-screener
             - ../../llama-index-packs/llama-index-packs-trulens-eval-packs
             - ../../llama-index-packs/llama-index-packs-evaluator-benchmarker

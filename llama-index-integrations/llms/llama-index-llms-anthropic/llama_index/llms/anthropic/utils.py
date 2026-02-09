@@ -2,46 +2,46 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Optional, Literal, cast, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast
 
 from llama_index.core.base.llms.types import (
+    CachePoint,
     ChatMessage,
     ChatResponse,
+    CitableBlock,
+    CitationBlock,
+    ContentBlock,
+    DocumentBlock,
     ImageBlock,
     MessageRole,
     TextBlock,
-    DocumentBlock,
-    CachePoint,
-    CitableBlock,
-    CitationBlock,
     ThinkingBlock,
-    ContentBlock,
     ToolCallBlock,
 )
 
 from anthropic.types import (
+    Base64PDFSourceParam,
+    CacheControlEphemeralParam,
+    DocumentBlockParam,
+    ImageBlockParam,
     MessageParam,
     TextBlockParam,
-    DocumentBlockParam,
     ThinkingBlockParam,
-    ImageBlockParam,
     ToolUseBlockParam,
-    CacheControlEphemeralParam,
-    Base64PDFSourceParam,
 )
 from anthropic.types import ContentBlockParam as AnthropicContentBlock
 from anthropic.types.beta import (
+    BetaBase64ImageSourceParam,
+    BetaCacheControlEphemeralParam,
+    BetaCitationsConfigParam,
+    BetaContentBlockParam,
+    BetaImageBlockParam,
+    BetaMessageParam,
     BetaSearchResultBlockParam,
     BetaTextBlockParam,
-    BetaCitationsConfigParam,
     BetaThinkingBlockParam,
-    BetaToolUseBlockParam,
     BetaToolResultBlockParam,
-    BetaCacheControlEphemeralParam,
-    BetaImageBlockParam,
-    BetaBase64ImageSourceParam,
-    BetaContentBlockParam,
-    BetaMessageParam,
+    BetaToolUseBlockParam,
 )
 from anthropic.types.beta.beta_tool_result_block_param import Content as BetaContent
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
@@ -65,6 +65,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1:0": 200000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -78,6 +79,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-sonnet-4-5@20250929": 200000,
     "claude-haiku-4-5@20251001": 200000,
     "claude-opus-4-5@20251101": 200000,
+    "claude-opus-4-6": 200000,
 }
 
 # Anthropic API/SDK identifiers
@@ -100,7 +102,9 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-5": 200000,
     "claude-haiku-4-5-20251001": 200000,
     "claude-haiku-4-5": 200000,
+    "claude-opus-4-5": 200000,
     "claude-opus-4-5-20251101": 200000,
+    "claude-opus-4-6": 200000,
 }
 
 # All provider Anthropic identifiers
@@ -559,6 +563,9 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude 4.5 Opus
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
     # Claude 4.1 Opus
     "claude-opus-4-1-20250805",
     "claude-opus-4-1",
@@ -580,6 +587,9 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-3-5-sonnet-20241022",
     "claude-3-5-sonnet-20240620",
     "claude-3-5-sonnet-latest",
+    # Claude 4.5 Haiku
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
     # Claude 3.5 Haiku
     "claude-3-5-haiku-20241022",
     "claude-3-5-haiku-latest",
