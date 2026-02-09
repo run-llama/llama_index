@@ -92,7 +92,7 @@ class Chunker(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text with metadata awareness."""
-        # only apply metadata-aware chunking if the chunker is compatible (example fast)
+        # only apply metadata-aware chunking if the chunker is compatible (counter-example fast)
         if (
             hasattr(self.chunker, "_tokenizer")
             and (self.chunker._tokenizer is not None)
@@ -114,7 +114,7 @@ class Chunker(MetadataAwareTextSplitter):
             # reset chunk_size to original value after splitting
             self.chunker.chunk_size = original_chunk_size
             return splits
-        # fallback mechanism for incompatible chunkers
+        # fallback mechanism for incompatible chunkers (only logs a warning once per instance)
         if not self._logged_warning_for_incompatible_chunker:
             logger.warning(
                 "current chunker type does not support metadata awareness. Proceeding with regular chunking."
