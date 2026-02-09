@@ -192,6 +192,8 @@ BEDROCK_REASONING_MODELS = (
     "deepseek.r1-v1:0",
 )
 
+BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = ("anthropic.claude-opus-4-6-v1",)
+
 
 def is_reasoning(model_name: str) -> bool:
     model_name = get_model_name(model_name)
@@ -226,6 +228,10 @@ def is_bedrock_function_calling_model(model_name: str) -> bool:
 
 def is_bedrock_prompt_caching_supported_model(model_name: str) -> bool:
     return get_model_name(model_name) in BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS
+
+
+def is_bedrock_adaptive_thinking_supported_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS
 
 
 def bedrock_modelname_to_context_size(model_name: str) -> int:

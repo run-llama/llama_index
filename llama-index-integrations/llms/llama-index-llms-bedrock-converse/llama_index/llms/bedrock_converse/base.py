@@ -48,6 +48,7 @@ from llama_index.llms.bedrock_converse.utils import (
     converse_with_retry,
     converse_with_retry_async,
     force_single_tool_call,
+    is_bedrock_adaptive_thinking_supported_model,
     is_bedrock_function_calling_model,
     is_reasoning,
     join_two_dicts,
@@ -242,6 +243,18 @@ class BedrockConverse(FunctionCallingLLM):
             thinking = None
             warnings.warn(
                 "You set thinking parameters for a non-reasoning models, they will be ignored",
+                UserWarning,
+            )
+
+        if (
+            thinking is not None
+            and thinking.get("type") == "adaptive"
+            and not is_bedrock_adaptive_thinking_supported_model(model)
+        ):
+            thinking = None
+            warnings.warn(
+                f"Model {model} does not support adaptive thinking mode. "
+                "Thinking will be disabled.",
                 UserWarning,
             )
 

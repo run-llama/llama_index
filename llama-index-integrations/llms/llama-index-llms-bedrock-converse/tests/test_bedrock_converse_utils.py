@@ -749,13 +749,13 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
 
 
-def test_thinking_dict_adaptive_without_budget():
-    td: ThinkingDict = {"type": "adaptive"}
-    assert td["type"] == "adaptive"
-    assert "budget_tokens" not in td
-
-
-def test_thinking_dict_enabled_with_budget():
+def test_thinking_dict_enabled_requires_budget():
     td: ThinkingDict = {"type": "enabled", "budget_tokens": 1024}
     assert td["type"] == "enabled"
     assert td["budget_tokens"] == 1024
+
+
+def test_thinking_dict_adaptive_no_budget():
+    td: ThinkingDict = {"type": "adaptive"}
+    assert td["type"] == "adaptive"
+    assert "budget_tokens" not in td
