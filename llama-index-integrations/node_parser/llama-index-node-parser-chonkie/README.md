@@ -1,11 +1,11 @@
-# LlamaIndex Ingestion Chonkie Integration
+# LlamaIndex Node Parser Chonkie Integration
 
 This package provides an integration between [LlamaIndex](https://www.llamaindex.ai/) and [Chonkie](https://github.com/chonkie-inc/chonkie), a powerful and flexible chunking library.
 
 ## Installation
 
 ```bash
-pip install llama-index-ingestion-chonkie
+pip install llama-index-node_parser-chonkie
 ```
 
 ## Quick Start
