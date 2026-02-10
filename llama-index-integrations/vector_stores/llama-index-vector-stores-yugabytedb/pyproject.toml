@@ -37,7 +37,7 @@ dependencies = [
     "pgvector>=0.3.6,<1.0.0",
     "psycopg2-yugabytedb>=2.9.3.5",
     "asyncpg>=0.29.0,<1.0.0",
-    "llama-index-core>=0.12.6,<0.13",
+    "llama-index-core>=0.12.6,<0.15",
     "sqlalchemy[asyncio]>=1.4.49,<2.1",
     "sqlalchemy-yugabytedb>=1.0.0.1",
 ]

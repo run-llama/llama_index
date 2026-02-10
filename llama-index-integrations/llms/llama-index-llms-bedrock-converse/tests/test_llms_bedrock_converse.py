@@ -252,6 +252,25 @@ def test_init_app_inf_profile(bedrock_converse_with_application_inference_profil
     assert client._model_kwargs["model"] == EXP_APP_INF_PROFILE_ARN
 
 
+def test_init_adaptive_thinking_unsupported_model(mock_boto3_session):
+    with pytest.warns(UserWarning, match="does not support adaptive thinking mode"):
+        llm = BedrockConverse(
+            model="anthropic.claude-sonnet-4-20250514-v1:0",
+            thinking={"type": "adaptive"},
+            botocore_session=mock_boto3_session,
+        )
+        assert llm.thinking is None
+
+
+def test_init_adaptive_thinking_opus_46(mock_boto3_session):
+    llm = BedrockConverse(
+        model="anthropic.claude-opus-4-6-v1",
+        thinking={"type": "adaptive"},
+        botocore_session=mock_boto3_session,
+    )
+    assert llm.thinking == {"type": "adaptive"}
+
+
 def test_chat(bedrock_converse):
     response = bedrock_converse.chat(messages)
 

@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-graph-stores-falkordb"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index graph stores falkordb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
