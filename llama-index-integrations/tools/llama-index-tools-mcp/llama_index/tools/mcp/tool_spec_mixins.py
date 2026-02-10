@@ -22,6 +22,10 @@ class TypeResolutionMixin:
         defs: dict,
     ) -> Any:
         """Resolve the Python type from a field schema."""
+        # JSON Schema allows boolean schemas (true = accept all, false = reject all).
+        # Handle them before attempting dict-like operations.
+        if isinstance(field_schema, bool):
+            return Any
         if "$ref" in field_schema:
             return self._resolve_reference(field_schema, defs)
         if "enum" in field_schema:
@@ -72,6 +76,8 @@ class TypeResolutionMixin:
         defs: dict,
     ) -> Any:
         """Resolve a single option in a union type."""
+        if isinstance(option, bool):
+            return Any
         if "$ref" in option:
             return self._resolve_reference(option, defs)
         if option.get("type") == "null":
