@@ -175,3 +175,73 @@ def test_thinking_block_in_message_blocks(bedrock_with_thinking, mock_bedrock_cl
 
     text_blocks = [b for b in final_response.message.blocks if isinstance(b, TextBlock)]
     assert len(text_blocks) >= 1
+
+
+def test_thinking_delta_populated_in_chat(bedrock_with_thinking, mock_bedrock_client):
+    mock_bedrock_client.converse.return_value = {
+        "output": {
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {
+                        "reasoningContent": {
+                            "reasoningText": {
+                                "text": "I am thinking",
+                                "signature": "sig",
+                            }
+                        }
+                    },
+                    {"text": "The answer is 42"},
+                ],
+            }
+        },
+        "usage": {"inputTokens": 10, "outputTokens": 20, "totalTokens": 30},
+    }
+
+    messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    response = bedrock_with_thinking.chat(messages)
+
+    # In non-streaming chat, thinking_delta should NOT be in additional_kwargs
+    assert "thinking_delta" not in response.additional_kwargs
+    # But it should be in blocks as a ThinkingBlock
+    assert any(isinstance(b, ThinkingBlock) for b in response.message.blocks)
+    thinking_block = [
+        b for b in response.message.blocks if isinstance(b, ThinkingBlock)
+    ][0]
+    assert thinking_block.content == "I am thinking"
+
+
+def test_thinking_block_round_trip(bedrock_with_thinking, mock_bedrock_client):
+    from llama_index.llms.bedrock_converse.utils import messages_to_converse_messages
+
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="Explain 42"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="I need to calculate",
+                    additional_information={"signature": "sig123"},
+                ),
+                TextBlock(text="It is the meaning of life"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="Thanks"),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages, "some-model")
+
+    # The assistant message should have 2 content blocks in Bedrock format
+    assistant_msg = converse_messages[1]
+    assert assistant_msg["role"] == "assistant"
+    assert len(assistant_msg["content"]) == 2
+    assert "reasoningContent" in assistant_msg["content"][0]
+    assert (
+        assistant_msg["content"][0]["reasoningContent"]["reasoningText"]["text"]
+        == "I need to calculate"
+    )
+    assert (
+        assistant_msg["content"][0]["reasoningContent"]["reasoningText"]["signature"]
+        == "sig123"
+    )
+    assert assistant_msg["content"][1]["text"] == "It is the meaning of life"
