@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.fastembed
-options:
-members: - FastEmbedEmbedding
+    options:
+      members:
+        - FastEmbedEmbedding

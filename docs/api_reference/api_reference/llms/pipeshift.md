@@ -1,3 +1,4 @@
 ::: llama_index.llms.pipeshift
-options:
-members: - Pipeshift
+    options:
+      members:
+        - Pipeshift

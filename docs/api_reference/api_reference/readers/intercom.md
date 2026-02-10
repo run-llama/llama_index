@@ -1,3 +1,4 @@
 ::: llama_index.readers.intercom
-options:
-members: - IntercomReader
+    options:
+      members:
+        - IntercomReader

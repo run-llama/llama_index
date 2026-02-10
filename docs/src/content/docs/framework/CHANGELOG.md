@@ -1,8 +1,119 @@
 ---
 title: ChangeLog
 ---
-
 <!--- generated changelog --->
+
+## [2026-01-21]
+
+### llama-index-core [0.14.13]
+
+- feat: add early_stopping_method parameter to agent workflows ([#20389](https://github.com/run-llama/llama_index/pull/20389))
+- feat: Add token-based code splitting support to CodeSplitter ([#20438](https://github.com/run-llama/llama_index/pull/20438))
+- Add RayIngestionPipeline integration for distributed data ingestion ([#20443](https://github.com/run-llama/llama_index/pull/20443))
+- Added the multi-modal version of the Condensed Conversation & Context… ([#20446](https://github.com/run-llama/llama_index/pull/20446))
+- Replace ChatMemoryBuffer with Memory ([#20458](https://github.com/run-llama/llama_index/pull/20458))
+- fix(bug):Raise value error on when input is empty list in mean_agg instead of returning float ([#20466](https://github.com/run-llama/llama_index/pull/20466))
+- fix: The classmethod of ReActChatFormatter should use cls instead of the class name ([#20475](https://github.com/run-llama/llama_index/pull/20475))
+- feat: add configurable empty response message to synthesizers ([#20503](https://github.com/run-llama/llama_index/pull/20503))
+
+### llama-index-embeddings-bedrock [0.7.3]
+
+- Enable use of ARNs for Bedrock Embedding Models ([#20435](https://github.com/run-llama/llama_index/pull/20435))
+
+### llama-index-embeddings-ollama [0.8.6]
+
+- Improved Ollama batch embedding ([#20447](https://github.com/run-llama/llama_index/pull/20447))
+
+### llama-index-embeddings-voyageai [0.5.3]
+
+- Adding voyage-4 models ([#20497](https://github.com/run-llama/llama_index/pull/20497))
+
+### llama-index-ingestion-ray [0.1.0]
+
+- Add RayIngestionPipeline integration for distributed data ingestion ([#20443](https://github.com/run-llama/llama_index/pull/20443))
+
+### llama-index-llms-anthropic [0.10.6]
+
+- feat: enhance structured predict methods for anthropic ([#20440](https://github.com/run-llama/llama_index/pull/20440))
+- fix: preserve input_tokens in Anthropic stream_chat responses ([#20512](https://github.com/run-llama/llama_index/pull/20512))
+
+### llama-index-llms-apertis [0.1.0]
+
+- Add Apertis LLM integration with example notebook ([#20436](https://github.com/run-llama/llama_index/pull/20436))
+
+### llama-index-llms-bedrock-converse [0.12.4]
+
+- chore(bedrock-converse): Remove extraneous thinking_delta kwarg from ChatMessage ([#20455](https://github.com/run-llama/llama_index/pull/20455))
+
+### llama-index-llms-gemini [0.6.2]
+
+- chore: deprecate llama-index-llms-gemini ([#20511](https://github.com/run-llama/llama_index/pull/20511))
+
+### llama-index-llms-openai [0.6.13]
+
+- Sanitize OpenAI structured output JSON schema name for generic Pydantic models ([#20452](https://github.com/run-llama/llama_index/pull/20452))
+- chore: vbump openai ([#20482](https://github.com/run-llama/llama_index/pull/20482))
+
+### llama-index-llms-openrouter [0.4.3]
+
+- Feature/openrouter provider routing support ([#20431](https://github.com/run-llama/llama_index/pull/20431))
+
+### llama-index-packs-recursive-retriever [0.7.1]
+
+- security: remove exposed OpenAI API keys from notebook outputs ([#20474](https://github.com/run-llama/llama_index/pull/20474))
+
+### llama-index-packs-sentence-window-retriever [0.5.1]
+
+- security: remove exposed OpenAI API keys from notebook outputs ([#20474](https://github.com/run-llama/llama_index/pull/20474))
+
+### llama-index-readers-datasets [0.1.0]
+
+- Add HuggingFace datasets reader integration ([#20468](https://github.com/run-llama/llama_index/pull/20468))
+
+### llama-index-readers-patentsview [1.0.0]
+
+- Patentsview reader api changes ([#20481](https://github.com/run-llama/llama_index/pull/20481))
+
+### llama-index-retrievers-you [1.0.0]
+
+- Revamp YouRetriever integration ([#20493](https://github.com/run-llama/llama_index/pull/20493))
+
+### llama-index-tools-parallel-web-systems [0.1.0]
+
+- feat: added Parallel Web System tools ([#20442](https://github.com/run-llama/llama_index/pull/20442))
+
+### llama-index-vector-stores-alibabacloud-mysql [0.1.0]
+
+- Feature/alibaba mysql vector integration ([#20396](https://github.com/run-llama/llama_index/pull/20396))
+
+### llama-index-vector-stores-milvus [0.9.6]
+
+- Feat milvus partition names ([#20445](https://github.com/run-llama/llama_index/pull/20445))
+- improve(llama-index-vector-stores-milvus): Changed the partition parameter to `milvus_partition_name` in add/delete. ([#20460](https://github.com/run-llama/llama_index/pull/20460))
+
+### llama-index-vector-stores-mongodb [0.9.1]
+
+- INTPYTHON-863 Fix mongodb async integration ([#20444](https://github.com/run-llama/llama_index/pull/20444))
+
+### llama-index-vector-stores-neo4jvector [0.5.2]
+
+- Handle missing metadata for neo4j vector store ([#20491](https://github.com/run-llama/llama_index/pull/20491))
+
+### llama-index-vector-stores-opensearch [0.6.3]
+
+- fix (opensearch): add close and aclose methods to vector client ([#20463](https://github.com/run-llama/llama_index/pull/20463))
+
+### llama-index-vector-stores-qdrant [0.9.1]
+
+- Qdrant search params ([#20476](https://github.com/run-llama/llama_index/pull/20476))
+
+### llama-index-vector-stores-vertexaivectorsearch [0.3.4]
+
+- feat(vertexaivectorsearch): add hybrid search support ([#20487](https://github.com/run-llama/llama_index/pull/20487))
+
+### llama-index-vector-stores-volcenginemysql [0.2.0]
+
+- feat: Volcengine MySQL vector store integration ([#20404](https://github.com/run-llama/llama_index/pull/20404))
 
 ## [2025-12-30]
 

@@ -1,3 +1,4 @@
 ::: llama_index.packs.llava_completion
-options:
-members: - LlavaCompletionPack
+    options:
+      members:
+        - LlavaCompletionPack

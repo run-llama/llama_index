@@ -1,3 +1,4 @@
 ::: llama_index.llms.cerebras
-options:
-members: - Cerebras
+    options:
+      members:
+        - Cerebras
