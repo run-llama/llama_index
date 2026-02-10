@@ -241,13 +241,17 @@ class BaseWorkflowAgent(
 
     @staticmethod
     def _extract_thinking_delta(response: ChatResponse) -> Optional[str]:
-        """Extract model reasoning deltas across providers."""
+        """Extract model reasoning deltas across providers.
+
+        This acts as a minimal safety net for integrations that haven't yet
+        implemented explicit thinking_delta extraction.
+        """
+        # 1. Preferred: explicit key in additional_kwargs
         thinking_delta = response.additional_kwargs.get("thinking_delta")
-        if isinstance(thinking_delta, str) and thinking_delta:
-            return thinking_delta
         if thinking_delta is not None:
             return str(thinking_delta)
 
+        # 2. Safety net: Minimal heuristic for common raw formats
         raw = (
             response.raw.model_dump()
             if isinstance(response.raw, BaseModel)
@@ -256,94 +260,18 @@ class BaseWorkflowAgent(
         if not isinstance(raw, dict):
             return None
 
-        def _extract_text(value: Any, seen: set[int]) -> Optional[str]:
-            if isinstance(value, str):
-                return value or None
-            if isinstance(value, dict):
-                value_id = id(value)
-                if value_id in seen:
-                    return None
-                seen.add(value_id)
-
-                for key in ("text", "content"):
-                    if key not in value:
-                        continue
-                    extracted = _extract_text(value[key], seen)
-                    if extracted:
-                        return extracted
-            if isinstance(value, list):
-                value_id = id(value)
-                if value_id in seen:
-                    return None
-                seen.add(value_id)
-
-                for item in value:
-                    extracted = _extract_text(item, seen)
-                    if extracted:
-                        return extracted
-            return None
-
-        def _extract_reasoning_content(node: Any, seen: set[int]) -> Optional[str]:
-            if isinstance(node, dict):
-                node_id = id(node)
-                if node_id in seen:
-                    return None
-                seen.add(node_id)
-
-                for key in (
-                    "reasoningContent",
-                    "reasoning_content",
-                    "thinking",
-                    "reasoning",
-                ):
-                    if key not in node:
-                        continue
-                    extracted = _extract_text(node[key], seen)
-                    if extracted:
-                        return extracted
-
-                if str(node.get("type", "")).lower() in ("reasoning", "thinking"):
-                    for key in (
-                        "text",
-                        "content",
-                        "reasoningContent",
-                        "reasoning_content",
-                        "thinking",
-                    ):
-                        if key not in node:
-                            continue
-                        extracted = _extract_text(node[key], seen)
-                        if extracted:
-                            return extracted
-
-                for key in ("contentBlockDelta", "delta"):
-                    if key in node:
-                        extracted = _extract_reasoning_content(node[key], seen)
-                        if extracted:
-                            return extracted
-
-                for value in node.values():
-                    extracted = _extract_reasoning_content(value, seen)
-                    if extracted:
-                        return extracted
-
-            if isinstance(node, list):
-                node_id = id(node)
-                if node_id in seen:
-                    return None
-                seen.add(node_id)
-
-                for item in node:
-                    extracted = _extract_reasoning_content(item, seen)
-                    if extracted:
-                        return extracted
-
-            return None
-
-        extracted = _extract_reasoning_content(raw, set())
-        if extracted:
-            return extracted
-
+        # Check for common reasoning keys in the top level or common nested structures
+        # (Bedrock/Nova/OpenAI reasoning styles)
+        for base in [raw, raw.get("delta", {}), raw.get("contentBlockDelta", {}).get("delta", {})]:
+            if not isinstance(base, dict):
+                continue
+            for key in ("reasoningContent", "reasoning_content", "thinking"):
+                val = base.get(key)
+                if isinstance(val, str):
+                    return val
+                if isinstance(val, dict):
+                    # Handle nested text: {'text': '...'}
+                    return val.get("text")
         return None
 
     @abstractmethod
