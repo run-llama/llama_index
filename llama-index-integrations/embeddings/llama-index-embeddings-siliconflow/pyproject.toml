@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-siliconflow"
-version = "0.3.1"
+version = "0.3.2"
 description = "llama-index embeddings siliconflow integration"
 authors = [{name = "nightosong", email = "nightosong2013@gmail.com"}]
 requires-python = ">=3.9,<4.0"

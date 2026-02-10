@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
+    ThinkingDict,
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
     converse_with_retry,
@@ -32,6 +33,15 @@ EXP_STREAM_RESPONSE = ["Test ", "value"]
 
 class MockExceptions:
     class ThrottlingException(Exception):
+        pass
+
+    class InternalServerException(Exception):
+        pass
+
+    class ServiceUnavailableException(Exception):
+        pass
+
+    class ModelTimeoutException(Exception):
         pass
 
 
@@ -203,6 +213,19 @@ def test_content_block_to_bedrock_format_unsupported(caplog):
     assert result is None
     assert "Unsupported block type" in caplog.text
     assert str(type(unsupported_block)) in caplog.text
+
+
+def test_tools_to_converse_tools_empty_list():
+    """
+    Test that an empty tools list returns None.
+
+    This prevents AWS Bedrock Converse API validation errors when no tools
+    are configured. The API requires toolConfig.tools to have at least 1 element
+    if toolConfig is provided.
+    """
+    result = tools_to_converse_tools([])
+
+    assert result is None
 
 
 def test_tools_to_converse_tools_with_tool_required():
@@ -724,3 +747,15 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         call_kwargs = patched_converse.call_args.kwargs
         assert "guardrailConfig" in call_kwargs
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
+
+
+def test_thinking_dict_enabled_requires_budget():
+    td: ThinkingDict = {"type": "enabled", "budget_tokens": 1024}
+    assert td["type"] == "enabled"
+    assert td["budget_tokens"] == 1024
+
+
+def test_thinking_dict_adaptive_no_budget():
+    td: ThinkingDict = {"type": "adaptive"}
+    assert td["type"] == "adaptive"
+    assert "budget_tokens" not in td

@@ -1,36 +1,17 @@
-from dataclasses import dataclass
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from typing import Any
+from typing import Any, Sequence
 
-from workflows import Workflow
-from workflows.events import Event
 
+from llama_index.core.agent.workflow import SimpleAgentContext
 from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import ChatMessage, LLMMetadata
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.mock import MockFunctionCallingLLM
 from llama_index.core.tools import ToolOutput
-from llama_index.core.workflow import Context
 from llama_index.core.memory import BaseMemory
-
-
-@dataclass
-class MockContext:
-    events: list[Event]
-    context: Context
-
-
-def mock_context(workflow: Workflow) -> MockContext:
-    ctx = Context(workflow)
-    events = []
-
-    def write_event_to_stream(event):
-        events.append(event)
-
-    ctx.write_event_to_stream = write_event_to_stream
-    return MockContext(events=events, context=ctx)
 
 
 @pytest.fixture()
@@ -117,11 +98,11 @@ async def test_code_act_agent_basic_execution(
     )
 
     # Create context
-    mock_ctx = mock_context(agent)
+    ctx = SimpleAgentContext()
 
     # Take step
     output = await agent.take_step(
-        ctx=mock_ctx.context,
+        ctx=ctx,
         llm_input=[ChatMessage(role="user", content="Say hello")],
         tools=[],
         memory=mock_memory,
@@ -155,11 +136,11 @@ async def test_code_act_agent_tool_handling(
     )
 
     # Create context
-    mock_ctx = mock_context(agent)
+    ctx = SimpleAgentContext()
 
     # Take step
     output = await agent.take_step(
-        ctx=mock_ctx.context,
+        ctx=ctx,
         llm_input=[ChatMessage(role="user", content="What is 2 + 2?")],
         tools=[],
         memory=mock_memory,
@@ -177,14 +158,58 @@ async def test_code_act_agent_tool_handling(
             return_direct=False,
         )
     ]
-    await agent.handle_tool_call_results(mock_ctx.context, tool_results, mock_memory)
+    await agent.handle_tool_call_results(ctx, tool_results, mock_memory)
 
     # Verify scratchpad was updated
-    scratchpad = await mock_ctx.context.store.get("scratchpad")
+    scratchpad = await ctx.store.get("scratchpad")
     assert len(scratchpad) == 2  # User message and assistant response
     assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
 
     # Finalize
-    final_output = await agent.finalize(mock_ctx.context, output, mock_memory)
+    final_output = await agent.finalize(ctx, output, mock_memory)
     assert isinstance(final_output, AgentOutput)
     assert mock_memory.aput_messages.called  # Verify memory was updated
+
+
+@pytest.mark.asyncio
+async def test_code_act_agent_workflow_integration():
+    """
+    Integration test that runs the agent through the full workflow,
+    verifying proper integration with the workflows library.
+    """
+    # Track call count to return different responses
+    call_count = [0]
+
+    def multi_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+        call_count[0] += 1
+        if call_count[0] == 1:
+            # First call: return code to execute
+            return ChatMessage(
+                role="assistant",
+                content="Let me calculate that.\n<execute>\nresult = 2 + 2\nprint(result)\n</execute>",
+            )
+        else:
+            # Second call: return final answer
+            return ChatMessage(
+                role="assistant",
+                content="The answer is 4.",
+            )
+
+    mock_llm = MockFunctionCallingLLM(response_generator=multi_response_generator)
+
+    # Create agent with a code_execute_fn that returns a result
+    def execute_code(code: str) -> str:
+        return "4"
+
+    agent = CodeActAgent(
+        code_execute_fn=execute_code,
+        llm=mock_llm,
+    )
+
+    # Run the agent through the full workflow
+    handler = agent.run(user_msg="What is 2 + 2?")
+    result = await handler
+
+    # Verify we got an AgentOutput
+    assert isinstance(result, AgentOutput)
+    assert result.response.content == "The answer is 4."

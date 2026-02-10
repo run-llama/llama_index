@@ -48,9 +48,12 @@ VOYAGE_TOTAL_TOKEN_LIMITS = {
     "voyage-context-3": 32_000,
     "voyage-multimodal-3": 320_000,  # 32k per input, 320k total
     "voyage-multimodal-3.5": 320_000,  # 32k per input, 320k total
+    "voyage-4-lite": 1_000_000,
     "voyage-3.5-lite": 1_000_000,
+    "voyage-4": 320_000,
     "voyage-3.5": 320_000,  # voyage-3.5 supports up to 320k tokens per batch
     "voyage-2": 320_000,
+    "voyage-4-large": 120_000,
     "voyage-3-large": 120_000,
     "voyage-code-3": 120_000,
     "voyage-large-2-instruct": 120_000,

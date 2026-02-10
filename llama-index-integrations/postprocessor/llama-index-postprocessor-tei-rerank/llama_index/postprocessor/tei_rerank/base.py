@@ -144,11 +144,17 @@ class TextEmbeddingInference(BaseNodePostprocessor):
             scores = self._call_api(query, texts)
             assert len(scores) == len(nodes)
 
-            for node, score in zip(nodes, scores):
+            # Use the index field from API response to correctly assign scores.
+            # The TEI /rerank API returns results sorted by score descending,
+            # with an 'index' field indicating the original document position.
+            for score_item in scores:
+                original_index = score_item["index"]
                 if self.keep_retrieval_score:
                     # keep the retrieval score in metadata
-                    node.node.metadata["retrieval_score"] = node.score
-                node.score = float(score["score"])
+                    nodes[original_index].node.metadata["retrieval_score"] = nodes[
+                        original_index
+                    ].score
+                nodes[original_index].score = float(score_item["score"])
 
             new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
                 : self.top_n
