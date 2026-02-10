@@ -1,0 +1,39 @@
+services:
+  face-lock-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: face_lock_operator
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=error
+      # Set your bot token as an env var — never hardcode
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+    volumes:
+      # Persist workspace (temp images cleaned after each scan)
+      - ./workspace:/app/workspace
+      # Persist config (subscribers database, audit logs)
+      - ./config:/app/config
+      # Mount skills so you can hot-edit without rebuild
+      - ./skills:/app/skills
+      # Mount character files
+      - ./characters:/app/characters
+    ports:
+      - "3000:3000"
+    # Resource limits — MediaPipe is CPU-hungry
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

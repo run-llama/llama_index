@@ -1,0 +1,14 @@
+{
+  "premium_users": [],
+  "free_tier_limits": {
+    "daily_analyses": 5,
+    "platforms": ["generic"]
+  },
+  "premium_features": {
+    "daily_analyses": -1,
+    "platforms": ["reve", "flux", "midjourney", "generic"],
+    "film_presets": true,
+    "drift_detection": true,
+    "batch_analysis": true
+  }
+}
