@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP, Context
