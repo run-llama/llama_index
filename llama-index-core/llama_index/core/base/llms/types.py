@@ -21,7 +21,6 @@ from typing import (
 )
 
 import filetype
-from PIL import Image
 from tinytag import TinyTag, UnsupportedFormatError
 from typing_extensions import Self
 
@@ -266,31 +265,14 @@ class ImageBlock(BaseContentBlock):
         return data_buffer
 
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
-        """Use PIL to read image size and conservatively estimate tokens."""
-        try:
-            with Image.open(cast(BytesIO, self.resolve_image())) as im:
-                width, height = im.size
+        """
+        Many APIs measure images differently. Here, we take a large estimate.
 
-                # Calculates image tokens for OpenAI high res (maximum possible number of tokens)
-                w_quotient, w_remainder = divmod(width, 512)
-                h_quotient, h_remainder = divmod(height, 512)
-                w_512factor = w_quotient + (1 if w_remainder > 0 else 0)
-                h_512factor = h_quotient + (1 if h_remainder > 0 else 0)
-                openai_max_count = 85 + w_512factor * h_512factor * 170
+        This is based on a 2048 x 1536 image using OpenAI.
 
-                # Calculates image tokens for Gemini (maximum possible number of tokens)
-                w_quotient, w_remainder = divmod(width, 768)
-                h_quotient, h_remainder = divmod(height, 768)
-                w_768factor = w_quotient + (1 if w_remainder > 0 else 0)
-                h_768factor = h_quotient + (1 if h_remainder > 0 else 0)
-                gemini_max_count = w_768factor * h_768factor * 258
-        except ValueError as e:
-            if str(e) == "resolve_image returned zero bytes":
-                return 0
-            raise
-
-        # We take the larger of the two estimates to be safe
-        return max(openai_max_count, gemini_max_count)
+        TODO: In the future, LLMs should be able to count their own tokens.
+        """
+        return 2125
 
 
 class AudioBlock(BaseContentBlock):
