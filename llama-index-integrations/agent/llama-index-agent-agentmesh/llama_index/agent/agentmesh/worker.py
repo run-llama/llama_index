@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any, List, Optional, Sequence
 
 from llama_index.core.agent import AgentRunner
 from llama_index.core.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms import LLM
 from llama_index.core.tools import BaseTool
@@ -171,11 +171,9 @@ class TrustedAgentWorker(BaseAgentWorker):
                     f"Task rejected: invoker verification failed - {result.reason}"
                 )
 
-        # Use the LLM to generate a response
-        from llama_index.core.chat_engine import SimpleChatEngine
-
-        chat_engine = SimpleChatEngine.from_defaults(llm=self._llm)
-        response = chat_engine.chat(step.input)
+        # Use the LLM directly to generate a response
+        messages = [ChatMessage(role=MessageRole.USER, content=step.input)]
+        response = self._llm.chat(messages)
 
         output = TaskStepOutput(
             output=str(response),
@@ -199,7 +197,27 @@ class TrustedAgentWorker(BaseAgentWorker):
         Returns:
             Step output
         """
-        return await asyncio.to_thread(self.run_step, step, task, **kwargs)
+        # Verify invoker if policy requires it
+        invoker_card = kwargs.get("invoker_card")
+        if self._policy.require_verification and invoker_card:
+            result = self.verify_peer(invoker_card)
+            if not result.trusted and self._policy.block_unverified:
+                raise PermissionError(
+                    f"Task rejected: invoker verification failed - {result.reason}"
+                )
+
+        # Use the LLM's native async method
+        messages = [ChatMessage(role=MessageRole.USER, content=step.input)]
+        response = await self._llm.achat(messages)
+
+        output = TaskStepOutput(
+            output=str(response),
+            task_step=step,
+            is_last=True,
+            next_steps=[],
+        )
+
+        return output
 
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Stream a task step.
