@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.siliconflow
-    options:
-      members:
-        - SiliconFlowEmbedding
+options:
+members: - SiliconFlowEmbedding

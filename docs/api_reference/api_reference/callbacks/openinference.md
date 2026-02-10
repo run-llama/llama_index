@@ -1,4 +1,3 @@
 ::: llama_index.callbacks.openinference
-    options:
-      members:
-        - OpenInferenceCallbackHandler
+options:
+members: - OpenInferenceCallbackHandler

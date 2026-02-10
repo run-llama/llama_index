@@ -1,4 +1,3 @@
 ::: llama_index.packs.raptor
-    options:
-      members:
-        - RaptorPack
+options:
+members: - RaptorPack

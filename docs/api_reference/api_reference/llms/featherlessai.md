@@ -1,4 +1,3 @@
 ::: llama_index.llms.featherlessai
-    options:
-      members:
-        - FeatherlessLLM
+options:
+members: - FeatherlessLLM

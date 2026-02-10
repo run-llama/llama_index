@@ -1,4 +1,3 @@
 ::: llama_index.callbacks.aim
-    options:
-      members:
-        - AimCallback
+options:
+members: - AimCallback
