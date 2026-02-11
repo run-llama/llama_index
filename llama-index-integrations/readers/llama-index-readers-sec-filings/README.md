@@ -1,4 +1,4 @@
-# SEC DATA DOWNLOADER
+# SEC DATA READER
 
 ```bash
 pip install llama-index-readers-sec-filings
@@ -6,7 +6,128 @@ pip install llama-index-readers-sec-filings
 
 Please checkout this repo that I am building on SEC Question Answering Agent [SEC-QA](https://github.com/Athe-kunal/SEC-QA-Agent)
 
-This repository downloads all the texts from SEC documents (10-K and 10-Q). Currently, it is not supporting documents that are amended, but that will be added in the near futures.
+This package provides two readers for SEC filings:
+
+1. **SECFilingsLoader** - Downloads filings to local files (original loader)
+2. **SECFilingsStreamingReader** - Streams filings directly without local storage (NEW!)
+
+## SECFilingsStreamingReader (Recommended)
+
+The streaming reader provides several advantages:
+
+- **No local storage**: Documents are returned directly in memory
+- **8-K Support**: Full support for 8-K current report filings
+- **Structured Section Extraction**: Extract specific sections like Item 1A (Risk Factors)
+- **Rich Metadata**: CIK, company name, filing date, accession number
+
+### Basic Usage
+
+```python
+from llama_index.readers.sec_filings import SECFilingsStreamingReader
+
+# Fetch 10-K and 8-K filings for Apple and Microsoft
+reader = SECFilingsStreamingReader(
+    tickers=["AAPL", "MSFT"],
+    filing_types=["10-K", "8-K"],
+    num_filings=5,
+)
+
+documents = reader.load_data()
+
+# Each document has rich metadata
+for doc in documents:
+    print(f"Company: {doc.metadata['company_name']}")
+    print(f"CIK: {doc.metadata['cik']}")
+    print(f"Filing Type: {doc.metadata['filing_type']}")
+    print(f"Filing Date: {doc.metadata['filing_date']}")
+    print(f"Accession Number: {doc.metadata['accession_number']}")
+```
+
+### Extract Specific Sections
+
+```python
+# For 10-K filings: Extract Risk Factors and MD&A
+reader = SECFilingsStreamingReader(
+    tickers=["AAPL"],
+    filing_types=["10-K"],
+    num_filings=3,
+    sections=["ITEM_1A", "ITEM_7"],  # Risk Factors and Management's Discussion
+)
+documents = reader.load_data()
+
+# For 8-K filings: Extract specific items
+reader = SECFilingsStreamingReader(
+    tickers=["AAPL"],
+    filing_types=["8-K"],
+    num_filings=10,
+    sections=[
+        "2.02",
+        "7.01",
+        "8.01",
+    ],  # Results of Operations, Reg FD, Other Events
+)
+documents = reader.load_data()
+```
+
+### Available Sections
+
+**10-K Sections:**
+
+- `ITEM_1` - Business
+- `ITEM_1A` - Risk Factors
+- `ITEM_1B` - Unresolved Staff Comments
+- `ITEM_2` - Properties
+- `ITEM_3` - Legal Proceedings
+- `ITEM_7` - Management's Discussion and Analysis
+- `ITEM_7A` - Quantitative and Qualitative Disclosures About Market Risk
+- `ITEM_8` - Financial Statements
+- And more...
+
+**10-Q Sections:**
+
+- `PART_I_ITEM_1` - Financial Statements
+- `PART_I_ITEM_2` - Management's Discussion and Analysis
+- `PART_I_ITEM_3` - Quantitative and Qualitative Disclosures About Market Risk
+- `PART_II_ITEM_1A` - Risk Factors
+- And more...
+
+**8-K Items:**
+
+- `1.01` - Entry into a Material Definitive Agreement
+- `2.02` - Results of Operations and Financial Condition
+- `5.02` - Departure of Directors or Certain Officers
+- `7.01` - Regulation FD Disclosure
+- `8.01` - Other Events
+- And more...
+
+### Filter by Date
+
+```python
+reader = SECFilingsStreamingReader(
+    tickers=["TSLA"],
+    filing_types=["10-K"],
+    num_filings=10,
+    start_date="2020-01-01",
+    end_date="2023-12-31",
+)
+```
+
+### Include Amended Filings
+
+```python
+reader = SECFilingsStreamingReader(
+    tickers=["TSLA"],
+    filing_types=["10-K"],
+    num_filings=5,
+    include_amends=True,  # Include 10-K/A filings
+)
+```
+
+---
+
+## SECFilingsLoader (Original)
+
+This reader downloads all the texts from SEC documents (10-K and 10-Q). Currently, it is not supporting documents that are amended, but that will be added in the near futures.
 
 Install the required dependencies
 
