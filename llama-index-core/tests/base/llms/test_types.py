@@ -23,6 +23,8 @@ from llama_index.core.base.llms.types import (
     CacheControl,
     ThinkingBlock,
     ToolCallBlock,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.bridge.pydantic import ValidationError
@@ -188,6 +190,447 @@ def test_chat_message_legacy_roundtrip():
         "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
     }
+
+
+@pytest.mark.asyncio
+async def test_chat_message_aestimate_tokens(
+    png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes
+):
+    m = ChatMessage(
+        blocks=[
+            TextBlock(text="Hello world! This is a test."),
+            ImageBlock(image=png_1px),
+            AudioBlock(audio=mp3_bytes),
+            VideoBlock(video=mp4_bytes),
+            DocumentBlock(data=mock_pdf_bytes),
+            CachePoint(cache_control=CacheControl(type="ephemeral")),
+            CitableBlock(
+                title="Test Title",
+                source="Test Source",
+                content=[
+                    TextBlock(text="Citable block content."),
+                    ImageBlock(image=png_1px),
+                    DocumentBlock(data=mock_pdf_bytes),
+                ],
+            ),
+            CitationBlock(
+                title="Text Title",
+                source="Text Source",
+                cited_content=TextBlock(text="Citation block content."),
+                additional_location_info={},
+            ),
+            CitationBlock(
+                title="Image Title",
+                source="Image Source",
+                cited_content=ImageBlock(image=png_1px),
+                additional_location_info={},
+            ),
+            ThinkingBlock(
+                content="Thinking block content.",
+            ),
+            ThinkingBlock(num_tokens=50),
+            ToolCallBlock(
+                tool_call_id="tool_123",
+                tool_name="Test Tool",
+                tool_kwargs={"foo": "bar"},
+            ),
+        ]
+    )
+
+    assert await m.aestimate_tokens() == sum(
+        [await block.aestimate_tokens() for block in m.blocks]
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_message_asplit_non_recursive_types(
+    png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes
+):
+    chat_message = ChatMessage(
+        blocks=[
+            TextBlock(text="Hello world! This is a test."),
+            ImageBlock(image=png_1px),
+            AudioBlock(audio=mp3_bytes),
+            VideoBlock(video=mp4_bytes),
+            DocumentBlock(data=mock_pdf_bytes),
+            CachePoint(cache_control=CacheControl(type="ephemeral")),
+            ThinkingBlock(
+                content="Thinking block content.",
+            ),
+            ThinkingBlock(num_tokens=50),
+            ToolCallBlock(
+                tool_call_id="tool_123",
+                tool_name="Test Tool",
+                tool_kwargs={"foo": "bar"},
+            ),
+        ]
+    )
+    chunks = await chat_message.asplit(max_tokens=3)
+    assert chunks == [
+        ChatMessage(blocks=[chunk])
+        for block in chat_message.blocks
+        for chunk in await block.asplit(max_tokens=3)
+    ]
+    # TextBlock Should be split int 3 chunks
+    assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], TextBlock)]) == 3
+    # Image block should not be split
+    assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], ImageBlock)]) == 1
+    # Audio block should not be split
+    assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], AudioBlock)]) == 1
+    # Video block should not be split
+    assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], VideoBlock)]) == 1
+    # Document block should not be split
+    assert (
+        sum([1 for chunk in chunks if isinstance(chunk.blocks[0], DocumentBlock)]) == 1
+    )
+    # CachePoint block should not be split
+    assert sum([1 for chunk in chunks if isinstance(chunk.blocks[0], CachePoint)]) == 1
+    # ThinkingBlocks should not be split
+    assert (
+        sum([1 for chunk in chunks if isinstance(chunk.blocks[0], ThinkingBlock)]) == 2
+    )
+    # ToolCallBlock block should not be split
+    assert (
+        sum([1 for chunk in chunks if isinstance(chunk.blocks[0], ToolCallBlock)]) == 1
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_message_asplit_recursive_types(png_1px, mock_pdf_bytes):
+    chat_message = ChatMessage(
+        blocks=[
+            CitableBlock(
+                title="Test Title",
+                source="Test Source",
+                content=[
+                    TextBlock(text="Citable block content."),
+                    ImageBlock(image=png_1px),
+                    DocumentBlock(data=mock_pdf_bytes),
+                ],
+            ),
+            CitationBlock(
+                title="Text Title",
+                source="Text Source",
+                cited_content=TextBlock(text="Citation block content."),
+                additional_location_info={},
+            ),
+            CitationBlock(
+                title="Image Title",
+                source="Image Source",
+                cited_content=ImageBlock(image=png_1px),
+                additional_location_info={},
+            ),
+        ]
+    )
+    chunks = await chat_message.asplit(max_tokens=3)
+
+    assert chunks == [
+        ChatMessage(blocks=[chunk])
+        for block in chat_message.blocks
+        for chunk in await block.asplit(max_tokens=3)
+    ]
+
+    # CitableBlock should be split into 4 chunks (2 text, 1 image, 1 document)
+    assert (
+        sum([1 for chunk in chunks if isinstance(chunk.blocks[0], CitableBlock)]) == 4
+    )
+    assert (
+        sum(
+            [
+                1
+                for chunk in chunks
+                for rec_chunk in chunk.blocks[0].nested_blocks
+                if isinstance(rec_chunk, TextBlock)
+                and isinstance(chunk.blocks[0], CitableBlock)
+            ]
+        )
+        == 2
+    )
+    assert (
+        sum(
+            [
+                1
+                for chunk in chunks
+                for rec_chunk in chunk.blocks[0].nested_blocks
+                if isinstance(rec_chunk, ImageBlock)
+                and isinstance(chunk.blocks[0], CitableBlock)
+            ]
+        )
+        == 1
+    )
+    assert (
+        sum(
+            [
+                1
+                for chunk in chunks
+                for rec_chunk in chunk.blocks[0].nested_blocks
+                if isinstance(rec_chunk, DocumentBlock)
+                and isinstance(chunk.blocks[0], CitableBlock)
+            ]
+        )
+        == 1
+    )
+
+    # CitationBlock with TextBlock should be split into 2 chunks
+    # CitationBlock with ImageBlock should not be split (1 chunk)
+    assert (
+        sum([1 for chunk in chunks if isinstance(chunk.blocks[0], CitationBlock)]) == 3
+    )
+    assert (
+        sum(
+            [
+                1
+                for chunk in chunks
+                for rec_chunk in chunk.blocks[0].nested_blocks
+                if isinstance(rec_chunk, TextBlock)
+                and isinstance(chunk.blocks[0], CitationBlock)
+            ]
+        )
+        == 2
+    )
+    assert (
+        sum(
+            [
+                1
+                for chunk in chunks
+                for rec_chunk in chunk.blocks[0].nested_blocks
+                if isinstance(rec_chunk, ImageBlock)
+                and isinstance(chunk.blocks[0], CitationBlock)
+            ]
+        )
+        == 1
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_simple(
+    png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes
+):
+    m1 = ChatMessage(blocks=[TextBlock(text="Hello world! This is a test.")])
+    m2 = ChatMessage(blocks=[ImageBlock(image=png_1px)])
+    m3 = ChatMessage(blocks=[AudioBlock(audio=mp3_bytes)])
+    m4 = ChatMessage(blocks=[VideoBlock(video=mp4_bytes)])
+    m5 = ChatMessage(blocks=[DocumentBlock(data=mock_pdf_bytes)])
+
+    assert await m1.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m1.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m1.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m1.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
+    assert await m2.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m2.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m2.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m2.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
+    assert await m3.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m3.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m3.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m3.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
+    assert await m4.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m4.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m4.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m4.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
+    assert await m5.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await m5.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await m5.atruncate(max_tokens=3, reverse=True) == ChatMessage(
+        blocks=[await m5.blocks[0].atruncate(max_tokens=3, reverse=True)]
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_multiple_multimodal_blocks(
+    png_1px, mp3_bytes, mp4_bytes, mock_pdf_bytes
+):
+    tb = TextBlock(text="Hello world! This is a test.")
+    ib = ImageBlock(image=png_1px)
+    ab = AudioBlock(audio=mp3_bytes)
+    vb = VideoBlock(video=mp4_bytes)
+    db = DocumentBlock(data=mock_pdf_bytes)
+
+    chat_message = ChatMessage(blocks=[tb, ib, ab, vb, db])
+
+    assert await chat_message.atruncate(max_tokens=3) == ChatMessage(
+        blocks=[await chat_message.blocks[0].atruncate(max_tokens=3)]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+    ) == ChatMessage(blocks=[tb])
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
+    ) == ChatMessage(blocks=[tb, ib])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, ab]])
+    ) == ChatMessage(blocks=[tb, ib, ab])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, ab, vb]])
+    ) == ChatMessage(blocks=[tb, ib, ab, vb])
+    assert await chat_message.atruncate(
+        max_tokens=await chat_message.aestimate_tokens()
+    ) == ChatMessage(blocks=[tb, ib, ab, vb, db])
+
+    # reverse truncation
+    assert await chat_message.atruncate(
+        max_tokens=await db.aestimate_tokens(), reverse=True
+    ) == ChatMessage(blocks=[db])
+    assert await chat_message.atruncate(
+        max_tokens=await db.aestimate_tokens() + await vb.aestimate_tokens(),
+        reverse=True,
+    ) == ChatMessage(blocks=[vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, vb, ab]]),
+        reverse=True,
+    ) == ChatMessage(blocks=[ab, vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, vb, ab, ib]]),
+        reverse=True,
+    ) == ChatMessage(blocks=[ib, ab, vb, db])
+    assert await chat_message.atruncate(
+        max_tokens=3 + sum([await b.aestimate_tokens() for b in [db, vb, ab, ib]]),
+        reverse=True,
+    ) == ChatMessage(
+        blocks=[await tb.atruncate(max_tokens=3, reverse=True), ib, ab, vb, db]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=await chat_message.aestimate_tokens(), reverse=True
+    ) == ChatMessage(blocks=[tb, ib, ab, vb, db])
+
+
+@pytest.mark.asyncio
+async def test_chat_message_atruncate_recursive(png_1px, mock_pdf_bytes):
+    tb = TextBlock(text="Block content")
+    ib = ImageBlock(image=png_1px)
+    db = DocumentBlock(data=mock_pdf_bytes)
+    citable_block = CitableBlock(
+        title="Test Title", source="Test Source", content=[tb, ib, db]
+    )
+    citation_block_text = CitationBlock(
+        title="Text Title",
+        source="Text Source",
+        cited_content=tb,
+        additional_location_info={},
+    )
+    citation_block_image = CitationBlock(
+        title="Image Title",
+        source="Image Source",
+        cited_content=ib,
+        additional_location_info={},
+    )
+
+    chat_message = ChatMessage(
+        blocks=[citable_block, citation_block_text, citation_block_image]
+    )
+
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens()
+    ) == ChatMessage(
+        blocks=[CitableBlock(title="Test Title", source="Test Source", content=[tb])]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[tb, ib])
+        ]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db]])
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
+        ]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db, tb]])
+    ) == ChatMessage(blocks=[citable_block, citation_block_text])
+    assert (
+        await chat_message.atruncate(max_tokens=await chat_message.aestimate_tokens())
+        == chat_message
+    )
+
+    # reverse truncation
+    assert await chat_message.atruncate(
+        max_tokens=await ib.aestimate_tokens(), reverse=True
+    ) == ChatMessage(blocks=[citation_block_image])
+    assert await chat_message.atruncate(
+        max_tokens=await ib.aestimate_tokens() + await tb.aestimate_tokens(),
+        reverse=True,
+    ) == ChatMessage(blocks=[citation_block_text, citation_block_image])
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [ib, tb, db]]), reverse=True
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[db]),
+            citation_block_text,
+            citation_block_image,
+        ]
+    )
+    assert await chat_message.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [ib, tb, db, ib]]),
+        reverse=True,
+    ) == ChatMessage(
+        blocks=[
+            CitableBlock(title="Test Title", source="Test Source", content=[ib, db]),
+            citation_block_text,
+            citation_block_image,
+        ]
+    )
+    assert (
+        await chat_message.atruncate(
+            max_tokens=await chat_message.aestimate_tokens(), reverse=True
+        )
+        == chat_message
+    )
+
+
+@pytest.mark.asyncio
+async def test_chat_message_amerge(
+    png_1px,
+    mp3_bytes,
+    mp4_bytes,
+    mock_pdf_bytes,
+):
+    m1 = ChatMessage(blocks=[TextBlock(text="Hello world!")])
+    m2 = ChatMessage(blocks=[TextBlock(text="This is a test.")])
+    m3 = ChatMessage(blocks=[ImageBlock(image=png_1px)])
+    m4 = ChatMessage(blocks=[AudioBlock(audio=mp3_bytes)])
+    m5 = ChatMessage(blocks=[AudioBlock(audio=mp3_bytes)])
+    m6 = ChatMessage(blocks=[VideoBlock(video=mp4_bytes)])
+    m7 = ChatMessage(blocks=[VideoBlock(video=mp4_bytes)])
+    m8 = ChatMessage(blocks=[DocumentBlock(data=mock_pdf_bytes)])
+    m9 = ChatMessage(blocks=[TextBlock(text="Hello human!")])
+    m10 = ChatMessage(
+        blocks=[TextBlock(text="This is another test.")], role=MessageRole.ASSISTANT
+    )
+
+    merged_m = await ChatMessage.amerge(
+        [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10], chunk_size=10000
+    )
+    assert len(merged_m) == 2
+    assert len(merged_m[0].blocks) == 8
+    assert len(merged_m[1].blocks) == 1
+    assert merged_m == [
+        ChatMessage(
+            # The first two text blocks are merged because they are consecutive
+            blocks=await TextBlock.amerge(m1.blocks + m2.blocks, chunk_size=10000)
+            # Image, Audio, Video, and Document blocks are not mergeable, but should be merged
+            + m3.blocks
+            + m4.blocks
+            + m5.blocks
+            + m6.blocks
+            + m7.blocks
+            + m8.blocks
+            + m9.blocks
+        ),
+        # m10 has a different role, so it should be its own message, even though it's a consecutive TextBlock to m6
+        ChatMessage(blocks=m10.blocks, role=MessageRole.ASSISTANT),
+    ]
 
 
 def test_chat_response():
@@ -739,6 +1182,292 @@ async def test_cache_control_amerge():
     merged = await CachePoint.amerge([cp1, cp2], chunk_size=100)
     # Cache control points are not mergeable
     assert merged == [cp1, cp2]
+
+
+@pytest.mark.asyncio
+async def test_citable_block_aestimate_tokens(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    assert await cb.aestimate_tokens() == sum(
+        [await block.aestimate_tokens() for block in content_blocks]
+    )
+
+
+@pytest.mark.asyncio
+async def test_citable_block_asplit(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    chunks = await cb.asplit(max_tokens=3)
+
+    # Citable blocks are recursively splittable. However, since ImageBlock and DocumentBlock are not splittable, only
+    # the TextBlock gets split. We expect 4 chunks: one for each original block.
+    assert len(chunks) == 4
+    assert chunks[0] == CitableBlock(
+        title="Test Title",
+        source="Test Source",
+        content=[TextBlock(text="This is the")],
+    )
+    assert chunks[1] == CitableBlock(
+        title="Test Title", source="Test Source", content=[TextBlock(text="content.")]
+    )
+    assert chunks[2] == CitableBlock(
+        title="Test Title", source="Test Source", content=[ImageBlock(image=png_1px)]
+    )
+    assert chunks[3] == CitableBlock(
+        title="Test Title",
+        source="Test Source",
+        content=[
+            DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_citable_block_atruncate(png_1px: bytes, mock_pdf_bytes: bytes):
+    tb = TextBlock(text="This is the content.")
+    ib = ImageBlock(image=png_1px)
+    db = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    cb = CitableBlock(title="Test Title", source="Test Source", content=[tb, ib, db])
+    truncated_cb = await cb.atruncate(max_tokens=await tb.aestimate_tokens())
+    truncated_cb_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens(), reverse=True
+    )
+    truncated_cb2 = await cb.atruncate(
+        max_tokens=await tb.aestimate_tokens() + await ib.aestimate_tokens()
+    )
+    truncated_cb2_reverse = await cb.atruncate(
+        max_tokens=await db.aestimate_tokens() + await ib.aestimate_tokens(),
+        reverse=True,
+    )
+    truncated_cb3 = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [tb, ib, db]])
+    )
+    truncated_cb3_reverse = await cb.atruncate(
+        max_tokens=sum([await b.aestimate_tokens() for b in [db, ib, tb]]), reverse=True
+    )
+
+    # Citable blocks are recursively truncatable. However, since ImageBlock and DocumentBlock are not truncatable,
+    # only the TextBlock gets truncated.
+    assert len(truncated_cb.content) == 1
+    assert len(truncated_cb_reverse.content) == 1
+    assert truncated_cb.content == [tb]
+    assert truncated_cb_reverse.content == [db]
+
+    # Truncation for recursive blocks will continue adding blocks until max_tokens is reached.
+    assert len(truncated_cb2.content) == 2
+    assert len(truncated_cb2_reverse.content) == 2
+    assert truncated_cb2.content == [tb, ib]
+    assert truncated_cb2_reverse.content == [ib, db]
+
+    assert len(truncated_cb3.content) == 3
+    assert len(truncated_cb3_reverse.content) == 3
+    assert truncated_cb3.content == [tb, ib, db]
+    assert truncated_cb3_reverse.content == [tb, ib, db]
+
+
+@pytest.mark.asyncio
+async def test_citable_block_amerge(png_1px: bytes, mock_pdf_bytes: bytes):
+    content_blocks1 = [
+        TextBlock(text="This is the content."),
+        ImageBlock(image=png_1px),
+    ]
+    content_blocks2 = [
+        DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf"),
+        TextBlock(text="More content."),
+    ]
+    content_blocks3 = [
+        TextBlock(text="This is also the content."),
+        TextBlock(text="More content."),
+    ]
+    cb1 = CitableBlock(
+        title="Test Title 1", source="Test Source 1", content=content_blocks1
+    )
+    cb2 = CitableBlock(
+        title="Test Title 1", source="Test Source 1", content=content_blocks2
+    )
+    cb3 = CitableBlock(
+        title="Test Title 2", source="Test Source 2", content=content_blocks3
+    )
+    merged_cbs = await CitableBlock.amerge([cb1, cb2, cb3], chunk_size=10000)
+
+    # content of cb1 and cb2 should be merged, cb3 remains separate because it's of different title/source
+    assert len(merged_cbs) == 2
+    # first merged block should contain content from cb1 and cb2
+    # The two TextBlocks are not merged since they are not consecutive in the original list
+    assert merged_cbs[0].content == content_blocks1 + content_blocks2
+    # Second merged block should be cb3 with its content merged since they are two consecutive TextBlocks
+    assert merged_cbs[1].content == await TextBlock.amerge(
+        content_blocks3, chunk_size=10000
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_aestimate_tokens(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb1.aestimate_tokens() == await cb1.cited_content.aestimate_tokens()
+    assert await cb2.aestimate_tokens() == await cb2.cited_content.aestimate_tokens()
+
+
+@pytest.mark.asyncio
+async def test_citation_block_asplit(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    assert await cb1.asplit(max_tokens=3) == [
+        CitationBlock(
+            cited_content=chunk,
+            source="Test Source",
+            title="Test Title",
+            additional_location_info={},
+        )
+        for chunk in await cb1.cited_content.asplit(max_tokens=3)
+    ]
+    assert await cb2.asplit(max_tokens=3) == [
+        CitationBlock(
+            cited_content=chunk,
+            source="Test Source",
+            title="Test Title",
+            additional_location_info={},
+        )
+        for chunk in await cb2.cited_content.asplit(max_tokens=3)
+    ]
+
+
+@pytest.mark.asyncio
+async def test_citation_block_atruncate(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    assert await cb1.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb1.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb1.cited_content.atruncate(max_tokens=3, reverse=True),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb2.atruncate(max_tokens=3) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    assert await cb2.atruncate(max_tokens=3, reverse=True) == CitationBlock(
+        cited_content=await cb2.cited_content.atruncate(max_tokens=3, reverse=True),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_text_blocks():
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! "),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=TextBlock(text="This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    merged = await CitationBlock.amerge([cb1, cb2], chunk_size=100)
+
+    # Both citation blocks should be merged into one
+    assert len(merged) == 1
+    assert merged[0] == CitationBlock(
+        cited_content=(
+            await TextBlock.amerge(
+                [cb1.cited_content, cb2.cited_content], chunk_size=100
+            )
+        )[0],
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_image_blocks(png_1px):
+    cb1 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    # Image blocks are not mergeable currently
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
+
+
+@pytest.mark.asyncio
+async def test_citation_block_amerge_different_types(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="Hello world! This is a test."),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=png_1px),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    # Citation blocks are not mergeable across different cited content types
+    assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
 
 
 def test_thinking_block():
