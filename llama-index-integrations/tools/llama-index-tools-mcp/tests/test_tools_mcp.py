@@ -533,14 +533,18 @@ def test_by_tool_all_global_params_removed_with_none(client: BasicMCPClient):
 
 def test_get_tools_from_mcp_url_propagates_allowed_tools(client: BasicMCPClient):
     """Test that allowed_tools propagates correctly from utility function to McpToolSpec."""
-    tools = get_tools_from_mcp_url("unused", client=client, allowed_tools=["echo", "add"])
+    tools = get_tools_from_mcp_url(
+        "unused", client=client, allowed_tools=["echo", "add"]
+    )
 
     assert len(tools) == 2
     tool_names = {tool.metadata.name for tool in tools}
     assert tool_names == {"echo", "add"}
 
 
-def test_get_tools_from_mcp_url_propagates_global_partial_params(client: BasicMCPClient):
+def test_get_tools_from_mcp_url_propagates_global_partial_params(
+    client: BasicMCPClient,
+):
     """Test that global_partial_params propagates correctly to remove fields from schema."""
     tools = get_tools_from_mcp_url(
         "unused",
@@ -562,7 +566,9 @@ def test_get_tools_from_mcp_url_propagates_global_partial_params(client: BasicMC
     assert tool.partial_params == {"a": 10.0}
 
 
-def test_get_tools_from_mcp_url_propagates_partial_params_by_tool(client: BasicMCPClient):
+def test_get_tools_from_mcp_url_propagates_partial_params_by_tool(
+    client: BasicMCPClient,
+):
     """Test that partial_params_by_tool propagates correctly for specific tools."""
     tools = get_tools_from_mcp_url(
         "unused",
@@ -699,4 +705,3 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
-
