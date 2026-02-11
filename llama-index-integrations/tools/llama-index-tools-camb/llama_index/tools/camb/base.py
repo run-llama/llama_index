@@ -604,12 +604,23 @@ class CambToolSpec(BaseToolSpec):
             JSON string with 'vocals' and 'background' file paths or URLs.
         """
         kwargs: Dict[str, Any] = {}
-        if audio_file_path:
+        if audio_url:
+            import httpx
+
+            resp = httpx.get(audio_url)
+            resp.raise_for_status()
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp.write(resp.content)
+                tmp_path = tmp.name
+            with open(tmp_path, "rb") as f:
+                kwargs["media_file"] = f
+                result = self._client.audio_separation.create_audio_separation(**kwargs)
+        elif audio_file_path:
             with open(audio_file_path, "rb") as f:
                 kwargs["media_file"] = f
                 result = self._client.audio_separation.create_audio_separation(**kwargs)
         else:
-            result = self._client.audio_separation.create_audio_separation(**kwargs)
+            return json.dumps({"error": "Provide either audio_url or audio_file_path"})
 
         status = self._poll(
             self._client.audio_separation.get_audio_separation_status,

@@ -30,7 +30,7 @@ def test_spec_functions():
 
 
 def test_spec_functions_count():
-    assert len(CambToolSpec.spec_functions) == 8
+    assert len(CambToolSpec.spec_functions) == 9
 
 
 # ---------------------------------------------------------------------------
@@ -175,8 +175,14 @@ def test_clone_voice(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
+@patch("httpx.get")
 @patch("camb.client.CambAI")
-def test_transcribe(mock_client_cls):
+def test_transcribe(mock_client_cls, mock_httpx_get):
+    mock_resp = Mock()
+    mock_resp.content = b"fake audio data"
+    mock_resp.raise_for_status = Mock()
+    mock_httpx_get.return_value = mock_resp
+
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
 
@@ -248,7 +254,7 @@ def test_text_to_sound(mock_client_cls):
 def test_to_tool_list(mock_client_cls):
     tool = CambToolSpec(api_key="test-key")
     tools = tool.to_tool_list()
-    assert len(tools) == 8
+    assert len(tools) == 9
     tool_names = {t.metadata.name for t in tools}
     assert "text_to_speech" in tool_names
     assert "translate" in tool_names
