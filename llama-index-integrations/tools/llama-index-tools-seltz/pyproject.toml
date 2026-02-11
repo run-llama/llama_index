@@ -36,6 +36,7 @@ maintainers = [{name = "WilliamEspegren"}]
 dependencies = [
     "seltz>=0.1.4",
     "llama-index-core>=0.13.0,<0.15",
+    "protobuf<=3.20.3",
 ]
 
 [tool.codespell]

@@ -29,7 +29,7 @@ name = "llama-index-voice-agents-gemini-live"
 version = "0.2.2"
 description = "LlamaIndex x Gemini Live integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]
