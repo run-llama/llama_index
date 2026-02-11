@@ -88,6 +88,42 @@ class GitBlobResponseModel(DataClassJsonMixin):
 
 
 @dataclass
+class GitContentsResponseModel(DataClassJsonMixin):
+    """
+    Dataclass for the response from the Github API's getContents endpoint.
+
+    This endpoint retrieves file contents directly by path, which is more efficient
+    than traversing the tree when you know exactly which files you need.
+
+    Attributes:
+        - name (str): Name of the file.
+        - path (str): Path to the file in the repository.
+        - sha (str): SHA1 checksum ID of the file.
+        - size (int): Size of the file.
+        - url (str): API URL for the file.
+        - html_url (str): URL to view the file on GitHub.
+        - git_url (str): Git URL for the file.
+        - download_url (str): Raw download URL for the file.
+        - type (str): Type of the content ("file", "dir", "symlink", "submodule").
+        - content (Optional[str]): Base64 encoded content (only for files < 1MB).
+        - encoding (Optional[str]): Encoding of the content (usually "base64").
+
+    """
+
+    name: str
+    path: str
+    sha: str
+    size: int
+    url: str
+    html_url: str
+    git_url: str
+    download_url: Optional[str]
+    type: str
+    content: Optional[str] = None
+    encoding: Optional[str] = None
+
+
+@dataclass
 class GitCommitResponseModel(DataClassJsonMixin):
     """
     Dataclass for the response from the Github API's getCommit endpoint.
@@ -202,6 +238,14 @@ class BaseGithubClient(Protocol):
         branch_name: Optional[str],
     ) -> GitBranchResponseModel: ...
 
+    async def get_contents(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: Optional[str],
+    ) -> Optional[GitContentsResponseModel]: ...
+
 
 class GithubClient:
     """
@@ -300,6 +344,7 @@ class GithubClient:
             "getBranch": "/repos/{owner}/{repo}/branches/{branch}",
             "getBlob": "/repos/{owner}/{repo}/git/blobs/{file_sha}",
             "getCommit": "/repos/{owner}/{repo}/commits/{commit_sha}",
+            "getContents": "/repos/{owner}/{repo}/contents/{path}",
         }
 
         # Base headers (Authorization header will be added per-request)
@@ -580,6 +625,84 @@ class GithubClient:
                 )
             ).text
         )
+
+    async def get_contents(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: Optional[str] = None,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
+    ) -> Optional[GitContentsResponseModel]:
+        """
+        Get file contents by path. (Github API endpoint: getContents).
+
+        This method retrieves file contents directly by path using the GitHub Contents API.
+        It is more efficient than traversing the tree when you know exactly which files
+        you need. For files smaller than 1MB, content is returned base64 encoded.
+        For larger files, you should use the blob API with the returned sha.
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `path (str)`: Path to the file in the repository.
+            - `ref (str, optional)`: The name of the commit/branch/tag.
+                Default: the repository's default branch.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
+
+        Returns:
+            - `contents_info (GitContentsResponseModel)`: Information about the file contents.
+            - `None`: If the file is not found or an error occurs.
+
+        Examples:
+            >>> contents = await client.get_contents("owner", "repo", "README.md", ref="main")
+            >>> if contents and contents.content:
+            ...     import base64
+            ...     decoded = base64.b64decode(contents.content).decode('utf-8')
+
+        """
+        try:
+            import httpx
+        except ImportError:
+            raise ImportError(
+                "Please install httpx to use the GithubRepositoryReader. "
+                "You can do so by running `pip install httpx`."
+            )
+
+        # Get authentication headers
+        auth_headers = await self._get_auth_headers()
+
+        # Build the URL with optional ref parameter
+        url = self._endpoints["getContents"].format(owner=owner, repo=repo, path=path)
+        params = {}
+        if ref:
+            params["ref"] = ref
+
+        async with httpx.AsyncClient(
+            headers=auth_headers,
+            base_url=self._base_url,
+            timeout=timeout,
+            transport=httpx.AsyncHTTPTransport(retries=retries),
+        ) as client:
+            try:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                return GitContentsResponseModel.from_json(response.text)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    # File not found
+                    return None
+                print(f"HTTP Exception for {e.request.url} - {e}")
+                if self._fail_on_http_error:
+                    raise
+                return None
+            except HTTPError as excp:
+                print(f"HTTP Exception for {excp.request.url} - {excp}")
+                if self._fail_on_http_error:
+                    raise
+                return None
 
 
 if __name__ == "__main__":

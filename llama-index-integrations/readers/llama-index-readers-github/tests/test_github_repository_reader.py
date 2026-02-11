@@ -781,3 +781,282 @@ class TestGithubRepositoryReaderEdgeCases:
         # since those are handled separately from processing errors
         documents = reader.load_data(branch="main")
         assert isinstance(documents, list)
+
+
+class TestGithubRepositoryReaderSpecificFiles:
+    """Test specific_files functionality."""
+
+    @pytest.fixture
+    def mock_client_for_specific_files(self, monkeypatch):
+        """Mock client for specific files testing."""
+        from llama_index.readers.github.repository.github_client import (
+            GitContentsResponseModel,
+        )
+
+        async def mock_get_contents(self, owner, repo, path, ref=None, **kwargs):
+            contents_json = {
+                "name": path.split("/")[-1],
+                "path": path,
+                "sha": f"sha_{path.replace('/', '_')}",
+                "size": 100,
+                "url": f"https://api.github.com/repos/{owner}/{repo}/contents/{path}",
+                "html_url": f"https://github.com/{owner}/{repo}/blob/main/{path}",
+                "git_url": f"https://api.github.com/repos/{owner}/{repo}/git/blobs/sha_{path}",
+                "download_url": f"https://raw.githubusercontent.com/{owner}/{repo}/main/{path}",
+                "type": "file",
+                "content": "VGVzdCBjb250ZW50IGZvciB0aGlzIGZpbGU=",  # "Test content for this file"
+                "encoding": "base64",
+            }
+            return GitContentsResponseModel.from_json(json.dumps(contents_json))
+
+        monkeypatch.setattr(GithubClient, "get_contents", mock_get_contents)
+
+    def test_specific_files_basic(self, mock_client_for_specific_files):
+        """Test loading specific files directly."""
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            specific_files=["README.md", "docs/guide.md"],
+        )
+
+        documents = reader.load_data(branch="main")
+
+        assert len(documents) == 2
+        file_paths = [doc.metadata["file_path"] for doc in documents]
+        assert "README.md" in file_paths
+        assert "docs/guide.md" in file_paths
+
+    def test_specific_files_with_commit_sha(self, mock_client_for_specific_files):
+        """Test loading specific files with commit sha."""
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            specific_files=["src/main.py"],
+        )
+
+        documents = reader.load_data(commit_sha="abc123")
+
+        assert len(documents) == 1
+        assert documents[0].metadata["file_path"] == "src/main.py"
+
+    def test_specific_files_file_not_found(self, monkeypatch):
+        """Test handling of file not found."""
+
+        async def mock_get_contents_not_found(
+            self, owner, repo, path, ref=None, **kwargs
+        ):
+            return None  # File not found
+
+        monkeypatch.setattr(GithubClient, "get_contents", mock_get_contents_not_found)
+
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            specific_files=["nonexistent.txt"],
+        )
+
+        documents = reader.load_data(branch="main")
+
+        assert len(documents) == 0
+
+    def test_specific_files_with_filter_extensions(
+        self, mock_client_for_specific_files
+    ):
+        """Test specific files respects extension filters."""
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            specific_files=["README.md", "image.png"],
+            filter_file_extensions=(
+                [".png"],
+                GithubRepositoryReader.FilterType.EXCLUDE,
+            ),
+        )
+
+        documents = reader.load_data(branch="main")
+
+        # Should only include the .md file
+        assert len(documents) == 1
+        assert documents[0].metadata["file_path"] == "README.md"
+
+
+class TestGithubRepositoryReaderCaching:
+    """Test cache_store functionality."""
+
+    class SimpleDictCache:
+        """Simple in-memory cache for testing."""
+
+        def __init__(self):
+            self._cache = set()
+
+        def is_processed(self, file_path: str, file_sha: str) -> bool:
+            return f"{file_path}:{file_sha}" in self._cache
+
+        def mark_processed(self, file_path: str, file_sha: str) -> None:
+            self._cache.add(f"{file_path}:{file_sha}")
+
+    @pytest.fixture
+    def mock_client_for_caching(self, monkeypatch):
+        """Mock client for caching tests."""
+
+        async def mock_get_commit(self, *args, **kwargs):
+            return GitCommitResponseModel.from_json(COMMIT_JSON)
+
+        async def mock_get_branch(self, *args, **kwargs):
+            return GitBranchResponseModel.from_json(BRANCH_JSON)
+
+        tree_json = {
+            "sha": "test_tree_sha",
+            "url": "https://api.github.com/test/tree",
+            "tree": [
+                {
+                    "path": "file1.txt",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": "sha_file1",
+                    "size": 100,
+                    "url": "https://api.github.com/test/blob1",
+                },
+                {
+                    "path": "file2.txt",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": "sha_file2",
+                    "size": 100,
+                    "url": "https://api.github.com/test/blob2",
+                },
+            ],
+            "truncated": False,
+        }
+
+        async def mock_get_tree(self, *args, **kwargs):
+            return GitTreeResponseModel.from_json(json.dumps(tree_json))
+
+        async def mock_get_blob(self, owner, repo, file_sha, **kwargs):
+            blob_json = {
+                "sha": file_sha,
+                "node_id": "test_node",
+                "size": 40,
+                "url": f"https://api.github.com/test/blob/{file_sha}",
+                "content": "VGVzdCBjb250ZW50",  # "Test content"
+                "encoding": "base64",
+            }
+            from llama_index.readers.github.repository.github_client import (
+                GitBlobResponseModel,
+            )
+
+            return GitBlobResponseModel.from_json(json.dumps(blob_json))
+
+        monkeypatch.setattr(GithubClient, "get_commit", mock_get_commit)
+        monkeypatch.setattr(GithubClient, "get_branch", mock_get_branch)
+        monkeypatch.setattr(GithubClient, "get_tree", mock_get_tree)
+        monkeypatch.setattr(GithubClient, "get_blob", mock_get_blob)
+
+    def test_cache_marks_processed_files(self, mock_client_for_caching):
+        """Test that processed files are marked in cache."""
+        cache = self.SimpleDictCache()
+
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            cache_store=cache,
+        )
+
+        documents = reader.load_data(branch="main")
+
+        assert len(documents) == 2
+        # Check that files were marked in cache
+        assert cache.is_processed("file1.txt", "sha_file1")
+        assert cache.is_processed("file2.txt", "sha_file2")
+
+    def test_cache_skips_already_processed(self, mock_client_for_caching):
+        """Test that already-processed files are skipped."""
+        cache = self.SimpleDictCache()
+        # Pre-populate cache
+        cache.mark_processed("file1.txt", "sha_file1")
+
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            cache_store=cache,
+        )
+
+        documents = reader.load_data(branch="main")
+
+        # Only file2.txt should be processed
+        assert len(documents) == 1
+        assert documents[0].metadata["file_path"] == "file2.txt"
+
+    def test_cache_with_specific_files(self, monkeypatch):
+        """Test caching with specific_files."""
+        from llama_index.readers.github.repository.github_client import (
+            GitContentsResponseModel,
+        )
+
+        async def mock_get_contents(self, owner, repo, path, ref=None, **kwargs):
+            contents_json = {
+                "name": path.split("/")[-1],
+                "path": path,
+                "sha": f"sha_{path.replace('/', '_')}",
+                "size": 100,
+                "url": f"https://api.github.com/repos/{owner}/{repo}/contents/{path}",
+                "html_url": f"https://github.com/{owner}/{repo}/blob/main/{path}",
+                "git_url": f"https://api.github.com/repos/{owner}/{repo}/git/blobs/sha_{path}",
+                "download_url": f"https://raw.githubusercontent.com/{owner}/{repo}/main/{path}",
+                "type": "file",
+                "content": "VGVzdCBjb250ZW50",
+                "encoding": "base64",
+            }
+            return GitContentsResponseModel.from_json(json.dumps(contents_json))
+
+        monkeypatch.setattr(GithubClient, "get_contents", mock_get_contents)
+
+        cache = self.SimpleDictCache()
+        # Pre-populate cache for file1
+        cache.mark_processed("file1.txt", "sha_file1.txt")
+
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            specific_files=["file1.txt", "file2.txt"],
+            cache_store=cache,
+        )
+
+        documents = reader.load_data(branch="main")
+
+        # Only file2.txt should be processed (file1.txt was cached)
+        assert len(documents) == 1
+        assert documents[0].metadata["file_path"] == "file2.txt"
+
+    def test_cache_different_sha_reprocesses(self, mock_client_for_caching):
+        """Test that files with different sha are reprocessed."""
+        cache = self.SimpleDictCache()
+        # Mark with different sha
+        cache.mark_processed("file1.txt", "old_sha_file1")
+
+        gh_client = GithubClient(GITHUB_TOKEN)
+        reader = GithubRepositoryReader(
+            gh_client,
+            "run-llama",
+            "llama_index",
+            cache_store=cache,
+        )
+
+        documents = reader.load_data(branch="main")
+
+        # Both files should be processed because sha changed
+        assert len(documents) == 2

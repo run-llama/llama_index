@@ -104,6 +104,75 @@ reader = GithubRepositoryReader(
 documents = reader.load_data(branch="main")
 ```
 
+### Fetch Specific Files Directly
+
+When you know exactly which files you need, you can bypass the full repository tree traversal by specifying `specific_files`. This uses the GitHub Contents API to fetch files directly by path, which is significantly more efficient for selective file access.
+
+```python
+reader = GithubRepositoryReader(
+    github_client=github_client,
+    owner="run-llama",
+    repo="llama_index",
+    specific_files=[
+        "README.md",
+        "docs/getting_started.md",
+        "llama-index-core/pyproject.toml",
+    ],
+)
+
+# Files are fetched directly without tree traversal
+documents = reader.load_data(branch="main")
+```
+
+### Caching for Incremental Updates
+
+For incremental updates where you want to skip already-processed files, you can provide a `cache_store`. The cache store should implement the `CacheStore` protocol with `is_processed(file_path, file_sha)` and `mark_processed(file_path, file_sha)` methods.
+
+```python
+from typing import Set
+
+
+class SimpleDictCache:
+    """Simple in-memory cache implementation."""
+
+    def __init__(self):
+        self._cache: Set[str] = set()
+
+    def is_processed(self, file_path: str, file_sha: str) -> bool:
+        return f"{file_path}:{file_sha}" in self._cache
+
+    def mark_processed(self, file_path: str, file_sha: str) -> None:
+        self._cache.add(f"{file_path}:{file_sha}")
+
+
+# Use with the reader
+cache = SimpleDictCache()
+reader = GithubRepositoryReader(
+    github_client=github_client,
+    owner="run-llama",
+    repo="llama_index",
+    cache_store=cache,
+)
+
+# First load - processes all files
+documents = reader.load_data(branch="main")
+
+# Second load - skips already-processed files (same sha)
+documents = reader.load_data(branch="main")  # Much faster!
+```
+
+You can also combine caching with specific files for efficient incremental updates:
+
+```python
+reader = GithubRepositoryReader(
+    github_client=github_client,
+    owner="run-llama",
+    repo="llama_index",
+    specific_files=["README.md", "docs/guide.md"],
+    cache_store=cache,
+)
+```
+
 ### Advanced Filtering Options
 
 #### Filter Specific File Paths

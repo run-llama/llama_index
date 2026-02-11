@@ -15,7 +15,16 @@ import os
 import pathlib
 import re
 import tempfile
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Protocol,
+    runtime_checkable,
+)
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import _try_loading_included_file_formats
@@ -38,6 +47,57 @@ from llama_index.readers.github.repository.github_client import (
     GithubClient,
     GitTreeResponseModel,
 )
+
+
+@runtime_checkable
+class CacheStore(Protocol):
+    """
+    Protocol for cache stores used with GithubRepositoryReader.
+
+    Implementations should provide methods to check if a file has been processed
+    and to mark a file as processed. This allows skipping already-processed files
+    during incremental updates.
+
+    Example implementation:
+
+        class SimpleDictCache:
+            def __init__(self):
+                self._cache: Set[str] = set()
+
+            def is_processed(self, file_path: str, file_sha: str) -> bool:
+                return f"{file_path}:{file_sha}" in self._cache
+
+            def mark_processed(self, file_path: str, file_sha: str) -> None:
+                self._cache.add(f"{file_path}:{file_sha}")
+
+    """
+
+    def is_processed(self, file_path: str, file_sha: str) -> bool:
+        """
+        Check if a file has already been processed.
+
+        Args:
+            file_path: The path of the file in the repository.
+            file_sha: The SHA hash of the file content.
+
+        Returns:
+            True if the file has been processed, False otherwise.
+
+        """
+        ...
+
+    def mark_processed(self, file_path: str, file_sha: str) -> None:
+        """
+        Mark a file as processed.
+
+        Args:
+            file_path: The path of the file in the repository.
+            file_sha: The SHA hash of the file content.
+
+        """
+        ...
+
+
 from llama_index.readers.github.repository.utils import (
     BufferedGitBlobDataIterator,
     get_file_extension,
@@ -120,6 +180,8 @@ class GithubRepositoryReader(BaseReader):
         custom_folder: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         fail_on_error: bool = True,
+        specific_files: Optional[List[str]] = None,
+        cache_store: Optional[CacheStore] = None,
     ):
         """
         Initialize params.
@@ -156,6 +218,13 @@ class GithubRepositoryReader(BaseReader):
             - logger (Optional[logging.Logger]): Custom logger instance.
             - fail_on_error (bool): Whether to raise exceptions on processing errors.
                 If False, errors are logged and processing continues.
+            - specific_files (Optional[List[str]]): List of specific file paths to fetch directly
+                using the GitHub Contents API. When provided, bypasses the tree traversal for
+                these files, which is more efficient when you know exactly which files you need.
+                Can be combined with branch or commit_sha in load_data().
+            - cache_store (Optional[CacheStore]): A cache store instance implementing the CacheStore
+                protocol. Used to skip already-processed files during incremental updates.
+                The cache is keyed by file_path and file_sha combination.
 
         Note:
             The reader uses LlamaIndex's instrumentation system for event notifications.
@@ -190,6 +259,8 @@ class GithubRepositoryReader(BaseReader):
         self.logger = logger or logging.getLogger(__name__)
         self._process_file_callback = process_file_callback
         self.fail_on_error = fail_on_error
+        self._specific_files = specific_files
+        self._cache_store = cache_store
 
         # Set up the event loop
         try:
@@ -511,6 +582,9 @@ class GithubRepositoryReader(BaseReader):
         Load data from a commit or a branch.
 
         Loads github repository data from a specific commit sha or a branch.
+        If specific_files was set during initialization, those files will be
+        fetched directly using the Contents API, which is more efficient than
+        traversing the entire repository tree.
 
         :param `commit_sha`: commit sha
         :param `branch`: branch name
@@ -524,6 +598,11 @@ class GithubRepositoryReader(BaseReader):
         if commit_sha is None and branch is None:
             raise ValueError("You must specify one of commit or branch.")
 
+        # If specific_files is set, use the optimized path
+        if self._specific_files:
+            ref = commit_sha if commit_sha is not None else branch
+            return self._load_specific_files(ref)
+
         if commit_sha is not None:
             return self._load_data_from_commit(commit_sha)
 
@@ -531,6 +610,293 @@ class GithubRepositoryReader(BaseReader):
             return self._load_data_from_branch(branch, file_path=file_path)
 
         raise ValueError("You must specify one of commit or branch.")
+
+    def _load_specific_files(self, ref: str) -> List[Document]:
+        """
+        Load specific files directly using the GitHub Contents API.
+
+        This method bypasses the tree traversal and fetches specific files directly,
+        which is more efficient when you know exactly which files you need.
+
+        :param `ref`: The branch name or commit SHA to fetch files from.
+
+        :return: list of documents
+        """
+        repo_name = f"{self._owner}/{self._repo}"
+
+        # Notify repository processing started
+        self.dispatcher.event(
+            GitHubRepositoryProcessingStartedEvent(
+                repository_name=repo_name, branch_or_commit=ref
+            )
+        )
+
+        # Notify total files to process
+        self.dispatcher.event(
+            GitHubTotalFilesToProcessEvent(
+                repository_name=repo_name,
+                branch_or_commit=ref,
+                total_files=len(self._specific_files),
+            )
+        )
+
+        documents = self._loop.run_until_complete(self._fetch_specific_files(ref))
+
+        # Notify repository processing completed
+        self.dispatcher.event(
+            GitHubRepositoryProcessingCompletedEvent(
+                repository_name=repo_name,
+                branch_or_commit=ref,
+                total_documents=len(documents),
+            )
+        )
+
+        return documents
+
+    async def _fetch_specific_files(self, ref: str) -> List[Document]:
+        """
+        Fetch specific files asynchronously using the Contents API.
+
+        :param `ref`: The branch name or commit SHA.
+        :return: list of documents
+        """
+        documents = []
+
+        # Create semaphore for concurrent requests
+        semaphore = asyncio.Semaphore(self._concurrent_requests)
+
+        async def fetch_file(file_path: str) -> Optional[Document]:
+            async with semaphore:
+                return await self._process_specific_file(file_path, ref)
+
+        # Fetch all files concurrently
+        tasks = [fetch_file(fp) for fp in self._specific_files]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                self.logger.error(f"Error fetching file: {result}")
+                if self.fail_on_error:
+                    raise result
+            elif result is not None:
+                documents.append(result)
+
+        return documents
+
+    async def _process_specific_file(
+        self, file_path: str, ref: str
+    ) -> Optional[Document]:
+        """
+        Process a single specific file using the Contents API.
+
+        :param `file_path`: Path to the file in the repository.
+        :param `ref`: The branch name or commit SHA.
+        :return: Document or None if the file should be skipped.
+        """
+        file_extension = get_file_extension(file_path)
+
+        # Notify file processing started
+        self.dispatcher.event(
+            GitHubFileProcessingStartedEvent(
+                file_path=file_path, file_type=file_extension
+            )
+        )
+
+        try:
+            # Fetch file contents using the Contents API
+            contents = await self._github_client.get_contents(
+                self._owner,
+                self._repo,
+                file_path,
+                ref=ref,
+                timeout=self._timeout,
+                retries=self._retries,
+            )
+
+            if contents is None:
+                self.logger.warning(f"File not found: {file_path}")
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        reason="File not found",
+                    )
+                )
+                return None
+
+            # Check if file is a directory
+            if contents.type != "file":
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        reason=f"Not a file (type: {contents.type})",
+                    )
+                )
+                return None
+
+            # Check cache if available
+            if self._cache_store and self._cache_store.is_processed(
+                file_path, contents.sha
+            ):
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        reason="Already processed (cached)",
+                    )
+                )
+                return None
+
+            # Apply filters
+            if not self._check_filter_file_extensions(file_path):
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        reason="Filtered by extension",
+                    )
+                )
+                return None
+
+            if not self._check_filter_directories(file_path):
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        reason="Filtered by directory",
+                    )
+                )
+                return None
+
+            # Check user callback
+            if not self._check_user_callback(file_path, contents.size):
+                return None  # Event already dispatched in _check_user_callback
+
+            # For files larger than 1MB, content might not be included
+            # In that case, fall back to the blob API
+            if contents.content is None:
+                print_if_verbose(
+                    self._verbose,
+                    f"File {file_path} is too large for Contents API, using blob API",
+                )
+                blob = await self._github_client.get_blob(
+                    self._owner,
+                    self._repo,
+                    contents.sha,
+                    timeout=self._timeout,
+                    retries=self._retries,
+                )
+                if blob is None:
+                    self.dispatcher.event(
+                        GitHubFileFailedEvent(
+                            file_path=file_path,
+                            file_type=file_extension,
+                            error="Failed to fetch blob for large file",
+                        )
+                    )
+                    return None
+                file_content = blob.content
+            else:
+                file_content = contents.content
+
+            # Decode base64 content
+            try:
+                decoded_bytes = base64.b64decode(file_content)
+            except binascii.Error:
+                self.dispatcher.event(
+                    GitHubFileFailedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        error="Could not decode as base64",
+                    )
+                )
+                return None
+
+            # Try to parse with custom parser if available
+            document = None
+            if self._use_parser or file_extension in self._file_readers:
+                document = self._parse_supported_file(
+                    file_path=file_path,
+                    file_content=decoded_bytes,
+                    tree_sha=contents.sha,
+                    tree_path=file_path,
+                )
+                if document is not None:
+                    # Mark as processed in cache
+                    if self._cache_store:
+                        self._cache_store.mark_processed(file_path, contents.sha)
+
+                    self.dispatcher.event(
+                        GitHubFileProcessedEvent(
+                            file_path=file_path,
+                            file_type=file_extension,
+                            file_size=len(decoded_bytes),
+                            document=document,
+                        )
+                    )
+                    return document
+
+            # Fall back to UTF-8 text decoding
+            try:
+                decoded_text = decoded_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                self.dispatcher.event(
+                    GitHubFileFailedEvent(
+                        file_path=file_path,
+                        file_type=file_extension,
+                        error="Could not decode as UTF-8",
+                    )
+                )
+                return None
+
+            # Build URL for the file
+            url = os.path.join(
+                self._get_base_url(contents.url),
+                self._owner,
+                self._repo,
+                "blob/",
+                ref,
+                file_path,
+            )
+
+            document = Document(
+                text=decoded_text,
+                doc_id=contents.sha,
+                metadata={
+                    "file_path": file_path,
+                    "file_name": file_path.split("/")[-1],
+                    "url": url,
+                },
+            )
+
+            # Mark as processed in cache
+            if self._cache_store:
+                self._cache_store.mark_processed(file_path, contents.sha)
+
+            self.dispatcher.event(
+                GitHubFileProcessedEvent(
+                    file_path=file_path,
+                    file_type=file_extension,
+                    file_size=len(decoded_text.encode("utf-8")),
+                    document=document,
+                )
+            )
+
+            return document
+
+        except Exception as e:
+            self.logger.error(f"Error processing file {file_path}: {e}")
+            self.dispatcher.event(
+                GitHubFileFailedEvent(
+                    file_path=file_path,
+                    file_type=file_extension,
+                    error=str(e),
+                )
+            )
+            if self.fail_on_error:
+                raise
+            return None
 
     async def _recurse_tree(
         self,
@@ -655,8 +1021,25 @@ class GithubRepositoryReader(BaseReader):
                 f"blob encoding {blob_data.encoding} not supported"
             )
 
-            # Notify file processing started
+            # Check cache if available
             file_extension = get_file_extension(full_path)
+            if self._cache_store and self._cache_store.is_processed(
+                full_path, blob_data.sha
+            ):
+                print_if_verbose(
+                    self._verbose,
+                    f"skipping {full_path} - already processed (cached)",
+                )
+                self.dispatcher.event(
+                    GitHubFileSkippedEvent(
+                        file_path=full_path,
+                        file_type=file_extension,
+                        reason="Already processed (cached)",
+                    )
+                )
+                continue
+
+            # Notify file processing started
             self.dispatcher.event(
                 GitHubFileProcessingStartedEvent(
                     file_path=full_path, file_type=file_extension
@@ -690,6 +1073,9 @@ class GithubRepositoryReader(BaseReader):
                     )
                     if document is not None:
                         documents.append(document)
+                        # Mark as processed in cache
+                        if self._cache_store:
+                            self._cache_store.mark_processed(full_path, blob_data.sha)
                         self.dispatcher.event(
                             GitHubFileProcessedEvent(
                                 file_path=full_path,
@@ -760,6 +1146,9 @@ class GithubRepositoryReader(BaseReader):
                 },
             )
             documents.append(document)
+            # Mark as processed in cache
+            if self._cache_store:
+                self._cache_store.mark_processed(full_path, blob_data.sha)
             self.dispatcher.event(
                 GitHubFileProcessedEvent(
                     file_path=full_path,
