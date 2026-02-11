@@ -21,7 +21,8 @@ from llama_index.agent.agentmesh.trust import (
 
 
 class TrustedAgentWorker(BaseAgentWorker):
-    """Agent worker with cryptographic identity and trust verification.
+    """
+    Agent worker with cryptographic identity and trust verification.
 
     This worker extends the base agent worker to add:
     - Cryptographic identity for authentication
@@ -39,7 +40,8 @@ class TrustedAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ):
-        """Initialize trusted agent worker.
+        """
+        Initialize trusted agent worker.
 
         Args:
             tools: List of tools available to the agent
@@ -48,6 +50,7 @@ class TrustedAgentWorker(BaseAgentWorker):
             policy: Trust policy to enforce
             callback_manager: Optional callback manager
             verbose: Enable verbose logging
+
         """
         self._tools = list(tools)
         self._llm = llm
@@ -79,7 +82,8 @@ class TrustedAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "TrustedAgentWorker":
-        """Create a trusted agent worker from tools.
+        """
+        Create a trusted agent worker from tools.
 
         Args:
             tools: List of tools for the agent
@@ -92,6 +96,7 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             TrustedAgentWorker instance
+
         """
         return cls(
             tools=tools,
@@ -117,7 +122,8 @@ class TrustedAgentWorker(BaseAgentWorker):
         peer_card: TrustedAgentCard,
         required_capabilities: Optional[List[str]] = None,
     ) -> TrustVerificationResult:
-        """Verify a peer agent before accepting tasks.
+        """
+        Verify a peer agent before accepting tasks.
 
         Args:
             peer_card: The peer's agent card
@@ -125,11 +131,13 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Verification result
+
         """
         return self._handshake.verify_peer(peer_card, required_capabilities)
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
-        """Initialize a new task step.
+        """
+        Initialize a new task step.
 
         Args:
             task: The task to execute
@@ -137,6 +145,7 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Initial task step
+
         """
         # Create initial step with trust context
         return TaskStep(
@@ -150,7 +159,8 @@ class TrustedAgentWorker(BaseAgentWorker):
         )
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
-        """Run a single step of the task.
+        """
+        Run a single step of the task.
 
         Args:
             step: Current step
@@ -159,6 +169,7 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Step output
+
         """
         # Get invoker identity from context if available
         invoker_card = kwargs.get("invoker_card")
@@ -175,19 +186,18 @@ class TrustedAgentWorker(BaseAgentWorker):
         messages = [ChatMessage(role=MessageRole.USER, content=step.input)]
         response = self._llm.chat(messages)
 
-        output = TaskStepOutput(
+        return TaskStepOutput(
             output=str(response),
             task_step=step,
             is_last=True,
             next_steps=[],
         )
 
-        return output
-
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
-        """Async version of run_step.
+        """
+        Async version of run_step.
 
         Args:
             step: Current step
@@ -196,6 +206,7 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Step output
+
         """
         # Verify invoker if policy requires it
         invoker_card = kwargs.get("invoker_card")
@@ -210,17 +221,16 @@ class TrustedAgentWorker(BaseAgentWorker):
         messages = [ChatMessage(role=MessageRole.USER, content=step.input)]
         response = await self._llm.achat(messages)
 
-        output = TaskStepOutput(
+        return TaskStepOutput(
             output=str(response),
             task_step=step,
             is_last=True,
             next_steps=[],
         )
 
-        return output
-
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
-        """Stream a task step.
+        """
+        Stream a task step.
 
         Args:
             step: Current step
@@ -229,13 +239,15 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Step output
+
         """
         return self.run_step(step, task, **kwargs)
 
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
-        """Async stream a task step.
+        """
+        Async stream a task step.
 
         Args:
             step: Current step
@@ -244,15 +256,18 @@ class TrustedAgentWorker(BaseAgentWorker):
 
         Returns:
             Step output
+
         """
         return await self.arun_step(step, task, **kwargs)
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
-        """Finalize a completed task.
+        """
+        Finalize a completed task.
 
         Args:
             task: The completed task
             **kwargs: Additional arguments
+
         """
         # Log completion if auditing
         if self._policy.audit_queries:
@@ -260,13 +275,15 @@ class TrustedAgentWorker(BaseAgentWorker):
             pass
 
     def as_agent(self, **kwargs: Any) -> AgentRunner:
-        """Create an agent runner from this worker.
+        """
+        Create an agent runner from this worker.
 
         Args:
             **kwargs: Additional arguments for AgentRunner
 
         Returns:
             AgentRunner instance
+
         """
         return AgentRunner.from_llm(
             llm=self._llm,

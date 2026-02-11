@@ -46,7 +46,8 @@ class QueryAuditRecord:
 
 
 class TrustGatedQueryEngine(BaseQueryEngine):
-    """Query engine with trust-based access control.
+    """
+    Query engine with trust-based access control.
 
     This wrapper adds trust verification and access control
     to any LlamaIndex query engine.
@@ -59,13 +60,15 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         policy: Optional[TrustPolicy] = None,
         data_policy: Optional[DataAccessPolicy] = None,
     ):
-        """Initialize trust-gated query engine.
+        """
+        Initialize trust-gated query engine.
 
         Args:
             query_engine: The underlying query engine
             identity: This engine's identity
             policy: Trust policy for verification
             data_policy: Data access policy
+
         """
         super().__init__(callback_manager=query_engine.callback_manager)
         self._query_engine = query_engine
@@ -92,7 +95,9 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         return QueryAuditRecord(
             query_id=self._generate_query_id(),
             timestamp=datetime.now(timezone.utc),
-            invoker_did=invoker_card.identity.did if invoker_card and invoker_card.identity else None,
+            invoker_did=invoker_card.identity.did
+            if invoker_card and invoker_card.identity
+            else None,
             query_text=query_text[:500],  # Truncate for storage
             trust_verified=verification.trusted if verification else False,
             trust_score=verification.trust_score if verification else 0.0,
@@ -105,7 +110,8 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         invoker_card: TrustedAgentCard,
         required_capabilities: Optional[List[str]] = None,
     ) -> TrustVerificationResult:
-        """Verify an invoker before processing query.
+        """
+        Verify an invoker before processing query.
 
         Args:
             invoker_card: The invoker's agent card
@@ -113,6 +119,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
 
         Returns:
             Verification result
+
         """
         return self._handshake.verify_peer(invoker_card, required_capabilities)
 
@@ -122,7 +129,8 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         invoker_card: Optional[TrustedAgentCard] = None,
         **kwargs: Any,
     ) -> RESPONSE_TYPE:
-        """Execute query with trust verification.
+        """
+        Execute query with trust verification.
 
         Args:
             query_bundle: The query to execute
@@ -134,6 +142,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
 
         Raises:
             PermissionError: If trust verification fails
+
         """
         verification = None
         query_text = query_bundle.query_str
@@ -156,9 +165,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
                         record.warnings.append("Query blocked due to trust failure")
                         self._audit_log.append(record)
 
-                    raise PermissionError(
-                        f"Query rejected: {verification.reason}"
-                    )
+                    raise PermissionError(f"Query rejected: {verification.reason}")
 
         # Execute the underlying query
         response = self._query_engine.query(query_bundle)
@@ -180,7 +187,8 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         invoker_card: Optional[TrustedAgentCard] = None,
         **kwargs: Any,
     ) -> RESPONSE_TYPE:
-        """Async query with trust verification.
+        """
+        Async query with trust verification.
 
         Args:
             query_bundle: The query to execute
@@ -189,6 +197,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
 
         Returns:
             Query response
+
         """
         verification = None
         query_text = query_bundle.query_str
@@ -221,7 +230,8 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         invoker_card: Optional[TrustedAgentCard] = None,
         **kwargs: Any,
     ) -> RESPONSE_TYPE:
-        """Query with trust verification.
+        """
+        Query with trust verification.
 
         Args:
             str_or_query_bundle: Query string or bundle
@@ -230,6 +240,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
 
         Returns:
             Query response
+
         """
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(query_str=str_or_query_bundle)
@@ -244,7 +255,8 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         invoker_card: Optional[TrustedAgentCard] = None,
         **kwargs: Any,
     ) -> RESPONSE_TYPE:
-        """Async query with trust verification.
+        """
+        Async query with trust verification.
 
         Args:
             str_or_query_bundle: Query string or bundle
@@ -253,6 +265,7 @@ class TrustGatedQueryEngine(BaseQueryEngine):
 
         Returns:
             Query response
+
         """
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(query_str=str_or_query_bundle)
@@ -262,10 +275,12 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         return await self._aquery(query_bundle, invoker_card=invoker_card, **kwargs)
 
     def get_audit_log(self) -> List[QueryAuditRecord]:
-        """Get the query audit log.
+        """
+        Get the query audit log.
 
         Returns:
             List of audit records
+
         """
         return self._audit_log.copy()
 
@@ -274,10 +289,12 @@ class TrustGatedQueryEngine(BaseQueryEngine):
         self._audit_log.clear()
 
     def get_audit_summary(self) -> Dict[str, Any]:
-        """Get summary of audit activity.
+        """
+        Get summary of audit activity.
 
         Returns:
             Audit summary dictionary
+
         """
         total = len(self._audit_log)
         verified = sum(1 for r in self._audit_log if r.trust_verified)

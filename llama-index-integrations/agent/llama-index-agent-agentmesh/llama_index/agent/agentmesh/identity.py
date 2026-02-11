@@ -1,4 +1,5 @@
-"""Cryptographic identity management for AgentMesh.
+"""
+Cryptographic identity management for AgentMesh.
 
 Uses Ed25519 for cryptographic operations.
 """
@@ -70,12 +71,12 @@ class CMVKIdentity:
 
         private_key_obj = ed25519.Ed25519PrivateKey.generate()
         public_key_obj = private_key_obj.public_key()
-        private_key_b64 = base64.b64encode(
-            private_key_obj.private_bytes_raw()
-        ).decode("ascii")
-        public_key_b64 = base64.b64encode(
-            public_key_obj.public_bytes_raw()
-        ).decode("ascii")
+        private_key_b64 = base64.b64encode(private_key_obj.private_bytes_raw()).decode(
+            "ascii"
+        )
+        public_key_b64 = base64.b64encode(public_key_obj.public_bytes_raw()).decode(
+            "ascii"
+        )
 
         return cls(
             did=did,

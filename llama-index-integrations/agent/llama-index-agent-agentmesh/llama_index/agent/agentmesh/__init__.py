@@ -1,4 +1,5 @@
-"""AgentMesh trust layer integration for LlamaIndex.
+"""
+AgentMesh trust layer integration for LlamaIndex.
 
 This package provides cryptographic identity verification and trust-gated
 agent workflows for LlamaIndex.

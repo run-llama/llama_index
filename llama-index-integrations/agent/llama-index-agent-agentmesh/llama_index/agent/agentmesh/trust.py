@@ -235,12 +235,15 @@ class DelegationChain:
         if expires_in_hours:
             expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
 
-        delegation_data = json.dumps({
-            "delegator": delegator.did,
-            "delegatee": delegatee_did,
-            "capabilities": sorted(capabilities),
-            "expires_at": expires_at.isoformat() if expires_at else None,
-        }, sort_keys=True)
+        delegation_data = json.dumps(
+            {
+                "delegator": delegator.did,
+                "delegatee": delegatee_did,
+                "capabilities": sorted(capabilities),
+                "expires_at": expires_at.isoformat() if expires_at else None,
+            },
+            sort_keys=True,
+        )
 
         signature = delegator.sign(delegation_data)
 
@@ -262,7 +265,9 @@ class DelegationChain:
             return True
 
         for i, delegation in enumerate(self.delegations):
-            if delegation.expires_at and delegation.expires_at < datetime.now(timezone.utc):
+            if delegation.expires_at and delegation.expires_at < datetime.now(
+                timezone.utc
+            ):
                 return False
 
             if not delegation.signature:
@@ -272,14 +277,21 @@ class DelegationChain:
             if not delegator_identity:
                 return False
 
-            delegation_data = json.dumps({
-                "delegator": delegation.delegator,
-                "delegatee": delegation.delegatee,
-                "capabilities": sorted(delegation.capabilities),
-                "expires_at": delegation.expires_at.isoformat() if delegation.expires_at else None,
-            }, sort_keys=True)
+            delegation_data = json.dumps(
+                {
+                    "delegator": delegation.delegator,
+                    "delegatee": delegation.delegatee,
+                    "capabilities": sorted(delegation.capabilities),
+                    "expires_at": delegation.expires_at.isoformat()
+                    if delegation.expires_at
+                    else None,
+                },
+                sort_keys=True,
+            )
 
-            if not delegator_identity.verify_signature(delegation_data, delegation.signature):
+            if not delegator_identity.verify_signature(
+                delegation_data, delegation.signature
+            ):
                 return False
 
             if i > 0:
