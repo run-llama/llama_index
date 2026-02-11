@@ -29,7 +29,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-mcp"
-version = "0.4.6"
+version = "0.4.7"
 description = "llama-index tools mcp integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}, {name = "Sebastian Kalisz"}]
 requires-python = ">=3.10,<4.0"
