@@ -723,6 +723,11 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-parallel-web-systems
             - ../../llama-index-integrations/ingestion/llama-index-ingestion-ray
             - ../../llama-index-integrations/readers/llama-index-readers-datasets
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-yugabytedb
+            - ../../llama-index-integrations/node_parser/llama-index-node-parser-chonkie
+            - ../../llama-index-integrations/tools/llama-index-tools-mcp-discovery
+            - ../../llama-index-integrations/tools/llama-index-tools-moss
+            - ../../llama-index-integrations/tools/llama-index-tools-seltz
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:
