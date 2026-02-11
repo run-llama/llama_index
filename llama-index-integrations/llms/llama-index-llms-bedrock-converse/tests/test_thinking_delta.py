@@ -91,6 +91,84 @@ def test_thinking_delta_populated_in_stream_chat(
     assert text_responses[0].delta == "The answer is"
 
 
+@pytest.mark.asyncio
+async def test_thinking_delta_populated_in_astream_chat(
+    bedrock_with_thinking, monkeypatch
+):
+    events = [
+        {
+            "contentBlockDelta": {
+                "delta": {
+                    "reasoningContent": {
+                        "text": "Let me think",
+                        "signature": "sig1",
+                    }
+                },
+                "contentBlockIndex": 0,
+            }
+        },
+        {
+            "contentBlockDelta": {
+                "delta": {
+                    "reasoningContent": {
+                        "text": " about this",
+                        "signature": "sig2",
+                    }
+                },
+                "contentBlockIndex": 0,
+            }
+        },
+        {
+            "contentBlockDelta": {
+                "delta": {"text": "The answer is"},
+                "contentBlockIndex": 1,
+            }
+        },
+        {
+            "metadata": {
+                "usage": {
+                    "inputTokens": 10,
+                    "outputTokens": 20,
+                    "totalTokens": 30,
+                }
+            }
+        },
+    ]
+
+    async def _fake_converse_with_retry_async(**_kwargs):
+        async def _gen():
+            for event in events:
+                yield event
+
+        return _gen()
+
+    monkeypatch.setattr(
+        "llama_index.llms.bedrock_converse.base.converse_with_retry_async",
+        _fake_converse_with_retry_async,
+    )
+
+    messages = [ChatMessage(role=MessageRole.USER, content="Test")]
+    response_stream = await bedrock_with_thinking.astream_chat(messages)
+    responses = [r async for r in response_stream]
+
+    assert len(responses) > 0
+
+    thinking_responses = [
+        r for r in responses if r.additional_kwargs.get("thinking_delta") is not None
+    ]
+    assert len(thinking_responses) == 2
+    assert thinking_responses[0].additional_kwargs["thinking_delta"] == "Let me think"
+    assert thinking_responses[1].additional_kwargs["thinking_delta"] == " about this"
+
+    text_responses = [
+        r
+        for r in responses
+        if r.delta and r.additional_kwargs.get("thinking_delta") is None
+    ]
+    assert len(text_responses) >= 1
+    assert text_responses[0].delta == "The answer is"
+
+
 def test_thinking_delta_none_for_non_thinking_content(
     bedrock_with_thinking, mock_bedrock_client
 ):
@@ -205,9 +283,9 @@ def test_thinking_delta_populated_in_chat(bedrock_with_thinking, mock_bedrock_cl
     assert "thinking_delta" not in response.additional_kwargs
     # But it should be in blocks as a ThinkingBlock
     assert any(isinstance(b, ThinkingBlock) for b in response.message.blocks)
-    thinking_block = [
+    thinking_block = next(
         b for b in response.message.blocks if isinstance(b, ThinkingBlock)
-    ][0]
+    )
     assert thinking_block.content == "I am thinking"
 
 
