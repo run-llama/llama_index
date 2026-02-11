@@ -26,7 +26,7 @@ from llama_index.agent.agentmesh import TrustedAgentWorker, CMVKIdentity
 # Generate cryptographic identity
 identity = CMVKIdentity.generate(
     agent_name="research-agent",
-    capabilities=["document_search", "summarization"]
+    capabilities=["document_search", "summarization"],
 )
 
 # Create trusted agent worker
@@ -52,7 +52,7 @@ trusted_engine = TrustGatedQueryEngine(
         min_trust_score=0.8,
         required_capabilities=["document_access"],
         audit_queries=True,
-    )
+    ),
 )
 
 # Query requires verified identity
@@ -90,6 +90,7 @@ if result.trusted:
 ### TrustedAgentWorker
 
 An agent worker that:
+
 - Has cryptographic identity for authentication
 - Verifies peer agents before accepting tasks
 - Signs outputs for verification by recipients
@@ -98,6 +99,7 @@ An agent worker that:
 ### TrustGatedQueryEngine
 
 A query engine wrapper that:
+
 - Requires identity verification for queries
 - Enforces trust score thresholds
 - Restricts access based on capabilities
@@ -127,20 +129,21 @@ trusted_index = TrustedVectorStoreIndex(
 ## Security Model
 
 AgentMesh uses Ed25519 cryptography for:
+
 - **Identity Generation**: Unique DID per agent
 - **Request Signing**: All queries are signed
 - **Response Verification**: Outputs can be verified
 
 ## API Reference
 
-| Class | Description |
-|-------|-------------|
-| `CMVKIdentity` | Cryptographic agent identity |
-| `TrustedAgentWorker` | Agent worker with trust verification |
-| `TrustGatedQueryEngine` | Query engine with access control |
-| `TrustHandshake` | Peer verification protocol |
-| `TrustedAgentCard` | Agent discovery card |
-| `DataAccessPolicy` | RAG access governance |
+| Class                   | Description                          |
+| ----------------------- | ------------------------------------ |
+| `CMVKIdentity`          | Cryptographic agent identity         |
+| `TrustedAgentWorker`    | Agent worker with trust verification |
+| `TrustGatedQueryEngine` | Query engine with access control     |
+| `TrustHandshake`        | Peer verification protocol           |
+| `TrustedAgentCard`      | Agent discovery card                 |
+| `DataAccessPolicy`      | RAG access governance                |
 
 ## License
 
