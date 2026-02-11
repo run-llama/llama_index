@@ -648,11 +648,6 @@ def resolve_binary(
     if raw_bytes is not None:
         # check if raw_bytes is base64 encoded
         try:
-            decoded_bytes = base64.b64decode(raw_bytes)
-        except Exception:
-            decoded_bytes = raw_bytes
-
-        try:
             # Check if raw_bytes is already base64 encoded.
             # b64decode() can succeed on random binary data, so we
             # pass verify=True to make sure it's not a false positive

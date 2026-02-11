@@ -222,6 +222,21 @@ class BaseContentBlock(ABC, BaseModel):
                         )
         return type(self).model_validate(self.model_copy(update=formatted_attrs))
 
+    @staticmethod
+    def mimetype_from_inline_url(url: str) -> filetype.Type | None:
+        if url.startswith("data:"):
+            try:
+                mimetype = url.split(";base64,")[0].split("data:")[1]
+                return filetype.get_type(mime=mimetype)
+            except Exception:
+                try:
+                    data = url.split(";base64,")[1]
+                    decoded_data = base64.b64decode(data)
+                    return filetype.guess(decoded_data)
+                except Exception:
+                    return None
+        return None
+
 
 class TextBlock(BaseContentBlock):
     """A representation of text data to directly pass to/from the LLM."""
@@ -323,6 +338,8 @@ class ImageBlock(BaseContentBlock):
                 if path:
                     suffix = Path(str(path)).suffix.replace(".", "") or None
                     mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
                     if mimetype and str(mimetype.mime).startswith("image/"):
                         self.image_mimetype = str(mimetype.mime)
 
@@ -364,6 +381,11 @@ class ImageBlock(BaseContentBlock):
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
+
+    def inline_url(self) -> str:
+        b64 = self.resolve_image(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        return f"data:{self.image_mimetype};base64,{b64_str}"
 
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
@@ -414,11 +436,21 @@ class AudioBlock(BaseContentBlock):
         """
         Store the audio as base64 and guess the mimetype when possible.
 
-        In case the model was built passing audio data but without a mimetype,
+        In case the model was built passing audio data but without a format,
         we try to guess it using the filetype library. To avoid resource-intense
-        operations, we won't load the path or the URL to guess the mimetype.
+        operations, we won't load the path or the URL to guess the format.
         """
         if not self.audio or not isinstance(self.audio, bytes):
+            if not self.format:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
+                    if mimetype and str(mimetype.mime).startswith("audio/"):
+                        self.format = str(mimetype.extension)
+
             return self
 
         self._guess_format(resolve_binary(self.audio).read())
@@ -456,6 +488,15 @@ class AudioBlock(BaseContentBlock):
         if size == 0:
             raise ValueError("resolve_audio returned zero bytes")
         return data_buffer
+
+    def inline_url(self) -> str:
+        b64 = self.resolve_audio(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        if self.format:
+            mimetype = filetype.get_type(ext=self.format).mime
+            if mimetype:
+                return f"data:{mimetype};base64,{b64_str}"
+        return f"data:audio;base64,{b64_str}"
 
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
@@ -536,6 +577,8 @@ class VideoBlock(BaseContentBlock):
                 if path:
                     suffix = Path(str(path)).suffix.replace(".", "") or None
                     mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
                     if mimetype and str(mimetype.mime).startswith("video/"):
                         self.video_mimetype = str(mimetype.mime)
             return self
@@ -577,6 +620,13 @@ class VideoBlock(BaseContentBlock):
         if size == 0:
             raise ValueError("resolve_video returned zero bytes")
         return data_buffer
+
+    def inline_url(self) -> str:
+        b64 = self.resolve_video(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        if self.video_mimetype:
+            return f"data:{self.video_mimetype};base64,{b64_str}"
+        return f"data:video;base64,{b64_str}"
 
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
@@ -678,6 +728,12 @@ class DocumentBlock(BaseContentBlock):
         Get base64-encoded string from a IOBase buffer.
         """
         return self._get_b64_bytes(data_buffer).decode("utf-8")
+
+    def inline_url(self) -> str:
+        b64_str = self._get_b64_string(data_buffer=self.resolve_document())
+        if self.document_mimetype:
+            return f"data:{self.document_mimetype};base64,{b64_str}"
+        return f"data:application;base64,{b64_str}"
 
     def guess_format(self) -> str | None:
         path = self.path or self.url
