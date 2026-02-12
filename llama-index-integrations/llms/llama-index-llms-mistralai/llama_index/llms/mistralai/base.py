@@ -262,6 +262,7 @@ class MistralAI(FunctionCallingLLM):
         description="Whether to show thinking in the final response. Only available for reasoning models.",
     )
 
+    _uses_azure: bool = PrivateAttr(default=False)
     _client: Mistral = PrivateAttr()
     _models: MistralModels = mistral_models
 
@@ -360,7 +361,7 @@ class MistralAI(FunctionCallingLLM):
             "timeout_ms": self.timeout * 1000,
         }
         # azure sdk does not support random_seed, so we pop it out if using azure
-        if getattr(self, "_uses_azure", False):
+        if self._uses_azure:
             base_kwargs.pop("random_seed", None)
         return {
             **base_kwargs,
