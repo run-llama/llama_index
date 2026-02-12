@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-program-evaporate"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index program evaporate integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

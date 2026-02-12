@@ -16,10 +16,10 @@ from llama_index.program.evaporate.extractor import (
 def test_validate_allows_safe_code():
     """Normal extraction function should pass validation."""
     code = (
-        'def get_name_field(text: str):\n'
+        "def get_name_field(text: str):\n"
         '    match = re.search(r"Name: (.+)", text)\n'
-        '    if match:\n'
-        '        return match.group(1)\n'
+        "    if match:\n"
+        "        return match.group(1)\n"
         '    return ""\n'
     )
     # Should not raise
@@ -27,7 +27,7 @@ def test_validate_allows_safe_code():
 
 
 def test_validate_allows_re_import():
-    """import re is used in the prompt template and should be allowed."""
+    """Import re is used in the prompt template and should be allowed."""
     code = "import re\nx = re.search(r'a', 'a')\n"
     _validate_generated_code(code)
 
@@ -108,13 +108,24 @@ def test_sandbox_allows_re_import_at_runtime():
     assert sandbox["x"] is not None
 
 
+def test_sandbox_allows_stdlib_imports_at_runtime():
+    """Stdlib modules in the allowlist should be importable at runtime."""
+    sandbox = _build_sandbox("")
+    exec("import datetime\nx = datetime.date(2026, 1, 1).isoformat()", sandbox)
+    assert sandbox["x"] == "2026-01-01"
+
+    sandbox = _build_sandbox("")
+    exec("import collections\nx = collections.Counter('aab')", sandbox)
+    assert sandbox["x"]["a"] == 2
+
+
 def test_sandbox_exec_extraction_function():
     """End-to-end: define and call a function inside the sandbox."""
     fn_str = (
-        'def get_name_field(text):\n'
+        "def get_name_field(text):\n"
         '    match = re.search(r"Name: (.+)", text)\n'
-        '    if match:\n'
-        '        return match.group(1).strip()\n'
+        "    if match:\n"
+        "        return match.group(1).strip()\n"
         '    return ""\n'
     )
     sandbox = _build_sandbox("Name: Alice Johnson")

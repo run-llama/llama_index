@@ -137,7 +137,24 @@ _SANDBOX_BUILTINS = {
 }
 
 
-_SANDBOX_ALLOWED_IMPORTS = {"re", "math", "datetime", "json", "string"}
+_SANDBOX_ALLOWED_IMPORTS = {
+    "re",
+    "math",
+    "datetime",
+    "json",
+    "string",
+    "typing",
+    "time",
+    "collections",
+    "itertools",
+    "functools",
+    "decimal",
+    "fractions",
+    "statistics",
+    "textwrap",
+    "unicodedata",
+    "operator",
+}
 
 
 def _validate_generated_code(code: str) -> None:
@@ -152,7 +169,10 @@ def _validate_generated_code(code: str) -> None:
                         f"in the allowed set: {_SANDBOX_ALLOWED_IMPORTS}"
                     )
         if isinstance(node, ast.ImportFrom):
-            if node.module and node.module.split(".")[0] not in _SANDBOX_ALLOWED_IMPORTS:
+            if (
+                node.module
+                and node.module.split(".")[0] not in _SANDBOX_ALLOWED_IMPORTS
+            ):
                 raise RuntimeError(
                     f"Generated code imports from '{node.module}' which is not "
                     f"in the allowed set: {_SANDBOX_ALLOWED_IMPORTS}"
