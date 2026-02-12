@@ -38,9 +38,10 @@ MOCK_KEYWORD_EXTRACT_PROMPT = PromptTemplate(
 )
 
 # TODO: consolidate with keyword extract
-MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL = "{max_keywords}\n{question}\n"
 MOCK_QUERY_KEYWORD_EXTRACT_PROMPT = PromptTemplate(
-    MOCK_QUERY_KEYWORD_EXTRACT_PROMPT_TMPL, prompt_type=PromptType.QUERY_KEYWORD_EXTRACT
+    MOCK_KEYWORD_EXTRACT_PROMPT_TMPL,
+    prompt_type=PromptType.QUERY_KEYWORD_EXTRACT,
+    template_var_mappings={"question": "text"},
 )
 
 
