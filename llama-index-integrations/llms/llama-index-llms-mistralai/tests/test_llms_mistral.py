@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from mistralai import ImageURLChunk, TextChunk, ThinkChunk
+import mistralai_azure.models as mistral_azure_models
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
@@ -193,3 +194,30 @@ def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
     ]
     tool_chunks = to_mistral_chunks(tool_blocks)
     assert len(tool_chunks) == 0
+
+
+@patch("llama_index.llms.mistralai.base.MistralAzure")
+def test_azure_models_and_random_seed_removed(mock_mistral_azure):
+    with patch("llama_index.llms.mistralai.base.get_from_param_or_env") as mock_get_env:
+        mock_get_env.return_value = "fake-api-key"
+
+        llm = MistralAI(
+            azure_endpoint="https://example.azure.com",
+            azure_api_key="azure-key",
+            random_seed=42,
+        )
+
+    assert llm._models is mistral_azure_models
+    assert "random_seed" not in llm._model_kwargs
+    assert llm._uses_azure is True
+
+
+@patch("mistralai.Mistral")
+def test_non_azure_keeps_random_seed_and_no_flag(mock_mistral_client):
+    with patch("llama_index.llms.mistralai.base.get_from_param_or_env") as mock_get_env:
+        mock_get_env.return_value = "fake-api-key"
+
+        llm = MistralAI(random_seed=7)
+
+    assert "random_seed" in llm._model_kwargs
+    assert llm._uses_azure is False
