@@ -860,7 +860,7 @@ async def test_text_block_amerge():
     assert merged_tb[0].text == "Hello world! This is a test."
 
 
-def test_text_bock_get_template_vars():
+def test_text_block_get_template_vars():
     tb = TextBlock(text="Hello {addressee}!")
     vars = tb.get_template_vars()
     assert vars == ["addressee"]
