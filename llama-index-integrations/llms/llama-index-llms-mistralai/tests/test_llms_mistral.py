@@ -220,4 +220,4 @@ def test_non_azure_keeps_random_seed_and_no_flag(mock_mistral_client):
         llm = MistralAI(random_seed=7)
 
     assert "random_seed" in llm._model_kwargs
-    assert not hasattr(llm, "_uses_azure")
+    assert llm._uses_azure is False
