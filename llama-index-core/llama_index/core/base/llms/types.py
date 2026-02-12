@@ -125,8 +125,8 @@ class BaseContentBlock(ABC, BaseModel):
             self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer, reverse=reverse)
         )
 
-    @classmethod
-    def templatable_attributes(cls) -> List[str]:
+    @property
+    def templatable_attributes(self) -> List[str]:
         """
         List of attributes that can be templated.
 
@@ -169,7 +169,7 @@ class BaseContentBlock(ABC, BaseModel):
         """
         from llama_index.core.prompts.utils import get_template_vars
 
-        for attribute_name in self.templatable_attributes():
+        for attribute_name in self.templatable_attributes:
             attribute = getattr(self, attribute_name, None)
             template_str = self._get_template_str_from_attribute(attribute)
             if template_str:
@@ -195,7 +195,7 @@ class BaseContentBlock(ABC, BaseModel):
         from llama_index.core.prompts.utils import format_string
 
         formatted_attrs: Dict[str, Any] = {}
-        for attribute_name in self.templatable_attributes():
+        for attribute_name in self.templatable_attributes:
             attribute = getattr(self, attribute_name, None)
             att_type = type(attribute)
             template_str = self._get_template_str_from_attribute(attribute)
@@ -270,8 +270,8 @@ class TextBlock(BaseContentBlock):
         chunks = text_splitter.split_text(self.text)
         return [TextBlock(text=chunk) for chunk in chunks]
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
+    @property
+    def templatable_attributes(self) -> list[str]:
         return ["text"]
 
 
@@ -375,8 +375,8 @@ class ImageBlock(BaseContentBlock):
         """
         return 2125
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
+    @property
+    def templatable_attributes(self) -> list[str]:
         return ["image"]
 
 
@@ -485,8 +485,8 @@ class AudioBlock(BaseContentBlock):
                 return 0
             raise
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
+    @property
+    def templatable_attributes(self) -> list[str]:
         return ["audio"]
 
 
@@ -603,8 +603,8 @@ class VideoBlock(BaseContentBlock):
                 return 0
             raise
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
+    @property
+    def templatable_attributes(self) -> list[str]:
         return ["video"]
 
 
@@ -709,8 +709,8 @@ class DocumentBlock(BaseContentBlock):
         # We currently only use this fallback estimate for documents which are non zero bytes
         return 512
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
+    @property
+    def templatable_attributes(self) -> list[str]:
         return ["data"]
 
 
@@ -730,7 +730,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     """Base class for content blocks that can contain other content blocks."""
 
     @classmethod
-    def nested_blocks_field_name(self) -> str:
+    def nested_blocks_field_name(cls) -> str:
         """
         Return the name of the field that contains nested content blocks.
 
@@ -925,9 +925,9 @@ class BaseRecursiveContentBlock(BaseContentBlock):
         }
         return cls(**attributes)
 
-    @classmethod
-    def templatable_attributes(cls) -> list[str]:
-        return [cls.nested_blocks_field_name()]
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return [self.nested_blocks_field_name()]
 
     def get_template_vars(self) -> list[str]:
         vars = []
