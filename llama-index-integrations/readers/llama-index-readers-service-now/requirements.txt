@@ -5,7 +5,7 @@
     # via llama-index-readers-service-now
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.14
+aiohttp==3.13.3
     # via llama-index-core
 aiosignal==1.4.0
     # via aiohttp
@@ -49,7 +49,7 @@ banks==2.1.3
     # via llama-index-core
 beautifulsoup4==4.13.4
     # via nbconvert
-black==23.9.1
+black==24.3.0
 bleach==6.2.0
     # via nbconvert
 certifi==2024.12.14
@@ -243,7 +243,7 @@ jupyter-server==2.16.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.4.4
+jupyterlab==4.4.8
     # via
     #   jupyter
     #   notebook
@@ -265,7 +265,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-marshmallow==3.26.1
+marshmallow==3.26.2
     # via dataclasses-json
 matplotlib-inline==0.1.7
     # via
@@ -287,7 +287,7 @@ mypy-extensions==1.1.0
     #   typing-inspect
 nbclient==0.10.2
     # via nbconvert
-nbconvert==7.16.6
+nbconvert==7.17.0
     # via
     #   jupyter
     #   jupyter-server
@@ -436,7 +436,7 @@ regex==2024.11.6
     # via
     #   nltk
     #   tiktoken
-requests==2.32.4
+requests==2.32.5
     # via
     #   jupyterlab-server
     #   llama-index-core
@@ -497,7 +497,7 @@ tomli==2.2.1 ; python_full_version <= '3.11'
     #   pytest
 tomlkit==0.13.3
     # via pylint
-tornado==6.5.1
+tornado==6.5.4
     # via
     #   ipykernel
     #   jupyter-client
@@ -572,11 +572,11 @@ typing-inspection==0.4.1
     # via pydantic
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.0
+urllib3==2.6.3
     # via
     #   pysnc
     #   requests
-virtualenv==20.31.2
+virtualenv==20.36.1
     # via pre-commit
 wcwidth==0.2.13
     # via prompt-toolkit
