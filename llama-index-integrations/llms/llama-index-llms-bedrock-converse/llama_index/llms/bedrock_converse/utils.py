@@ -273,6 +273,12 @@ def _content_block_to_bedrock_format(
             "text": block.text,
         }
     elif isinstance(block, ThinkingBlock):
+        if role != MessageRole.ASSISTANT:
+            logger.warning(
+                "Bedrock Converse API only supports reasoning content for assistant messages."
+            )
+            return {"text": block.content}
+
         if block.content:
             thinking_data = {
                 "reasoningContent": {"reasoningText": {"text": block.content}}
@@ -830,6 +836,28 @@ async def converse_with_retry_async(
         return _conversion_stream_with_retry(**converse_kwargs)
     else:
         return await _conversion_with_retry(**converse_kwargs)
+
+
+def extract_thinking_from_block(block: Dict[str, Any]) -> Optional[str]:
+    """Extract thinking content from a Bedrock Converse content block or delta."""
+    if "reasoningContent" in block:
+        # For non-streaming, it's reasoningContent.reasoningText.text
+        # For streaming, it's reasoningContent.text
+        reasoning = block["reasoningContent"]
+        if "reasoningText" in reasoning:
+            return reasoning["reasoningText"].get("text")
+        return reasoning.get("text")
+
+    # Fallback for other potential keys (Nova, etc.)
+    for key in ("reasoning_content", "thinking", "reasoning"):
+        if key in block:
+            val = block[key]
+            if isinstance(val, str):
+                return val
+            if isinstance(val, dict):
+                return val.get("text") or val.get("content")
+
+    return None
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
