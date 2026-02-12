@@ -5,6 +5,9 @@ An index that is built on top of an existing vector store.
 
 """
 
+import ast
+import json
+import logging
 import os
 from typing import Any, List, Optional, cast
 
@@ -115,7 +118,10 @@ class FaissMapVectorStore(FaissVectorStore):
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
             self._node_id_to_faiss_id_map[node.id_] = self._faiss_index.ntotal
             self._faiss_id_to_node_id_map[self._faiss_index.ntotal] = node.id_
-            self._faiss_index.add_with_ids(text_embedding_np, self._faiss_index.ntotal)
+            self._faiss_index.add_with_ids(
+                text_embedding_np,
+                np.array([self._faiss_index.ntotal], dtype=np.int64),
+            )
             new_ids.append(node.id_)
         return new_ids
 
@@ -234,11 +240,14 @@ class FaissMapVectorStore(FaissVectorStore):
 
         id_map = {}
         id_map["node_id_to_faiss_id_map"] = self._node_id_to_faiss_id_map
-        id_map["faiss_id_to_node_id_map"] = self._faiss_id_to_node_id_map
-        # save the id map
+        # JSON requires string keys; convert int faiss_ids to strings for storage
+        id_map["faiss_id_to_node_id_map"] = {
+            str(k): v for k, v in self._faiss_id_to_node_id_map.items()
+        }
+        # save the id map as JSON
         id_map_path = os.path.join(dirpath, DEFAULT_ID_MAP_NAME)
         with open(id_map_path, "w") as f:
-            f.write(str(id_map))
+            json.dump(id_map, f)
 
     @classmethod
     def from_persist_dir(
@@ -278,9 +287,24 @@ class FaissMapVectorStore(FaissVectorStore):
 
         faiss_index = faiss.read_index(persist_path)
         with open(id_map_path, "r") as f:
-            id_map = eval(f.read())
+            raw = f.read()
+
+        # Try JSON first (new format), fall back to ast.literal_eval
+        # for files persisted with the old str() format.
+        try:
+            id_map = json.loads(raw)
+        except json.JSONDecodeError:
+            logging.getLogger(__name__).warning(
+                "id_map file is not valid JSON; falling back to "
+                "ast.literal_eval for backward compatibility. "
+                "Re-save with .persist() to migrate to JSON format."
+            )
+            id_map = ast.literal_eval(raw)
 
         map_vs = cls(faiss_index=faiss_index)
         map_vs._node_id_to_faiss_id_map = id_map["node_id_to_faiss_id_map"]
-        map_vs._faiss_id_to_node_id_map = id_map["faiss_id_to_node_id_map"]
+        # Restore integer keys for faiss_id_to_node_id_map
+        map_vs._faiss_id_to_node_id_map = {
+            int(k): v for k, v in id_map["faiss_id_to_node_id_map"].items()
+        }
         return map_vs
