@@ -176,7 +176,7 @@ class BaseContentBlock(ABC, BaseModel):
                 return get_template_vars(template_str)
         return []
 
-    def format_vars(self, **kwargs: Any) -> BaseContentBlock:
+    def format_vars(self, **kwargs: Any) -> "BaseContentBlock":
         """
         Format the content block with the given keyword arguments.
 
@@ -231,8 +231,8 @@ class TextBlock(BaseContentBlock):
 
     @classmethod
     async def amerge(
-        cls, splits: List[TextBlock], chunk_size: int, tokenizer: Any | None = None
-    ) -> list[TextBlock]:
+        cls, splits: List["TextBlock"], chunk_size: int, tokenizer: Any | None = None
+    ) -> list["TextBlock"]:
         merged_blocks = []
         current_block_texts = []
         current_block_tokens = 0
@@ -261,7 +261,7 @@ class TextBlock(BaseContentBlock):
 
     async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
-    ) -> List[TextBlock]:
+    ) -> List["TextBlock"]:
         from llama_index.core.node_parser import TokenTextSplitter
 
         text_splitter = TokenTextSplitter(
@@ -789,17 +789,17 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     @classmethod
     async def amerge(
         cls,
-        splits: List[BaseRecursiveContentBlock],
+        splits: List["BaseRecursiveContentBlock"],
         chunk_size: int,
         tokenizer: Any | None = None,
-    ) -> list[BaseRecursiveContentBlock]:
+    ) -> list["BaseRecursiveContentBlock"]:
         """
         First merge nested_blocks of consecutive BaseRecursiveContentBlock types based on token estimates
 
         Then, merge consecutive nested content blocks of the same type.
         """
         merged_blocks = []
-        cur_blocks: list[BaseRecursiveContentBlock] = []
+        cur_blocks: list["BaseRecursiveContentBlock"] = []
         cur_block_tokens = 0
 
         for split in splits:
@@ -854,7 +854,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
     async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
-    ) -> List[BaseRecursiveContentBlock]:
+    ) -> List["BaseRecursiveContentBlock"]:
         """Split the content block into smaller blocks with up to max_tokens tokens each."""
         splits = []
 
@@ -882,7 +882,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
     async def atruncate(
         self, max_tokens: int, tokenizer: Any | None = None, reverse: bool = False
-    ) -> BaseRecursiveContentBlock:
+    ) -> "BaseRecursiveContentBlock":
         """Truncate the content block to have at most max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
         current_tokens = 0
