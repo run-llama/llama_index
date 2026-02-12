@@ -287,9 +287,9 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
 def get_default_sparse_embedding_function(
     input_field_names: Union[str, List[str]] = DEFAULT_TEXT_KEY,
     output_field_names: Union[str, List[str]] = DEFAULT_SPARSE_EMBEDDING_KEY,
-    collection: Optional["MilvusCollection"] = None,
+    schema_dict: Optional[Dict] = None,
 ) -> Union[BM25BuiltInFunction, BGEM3SparseEmbeddingFunction]:
-    if collection is not None and len(collection.schema.functions) == 0:
+    if schema_dict is not None and len(schema_dict.get("functions", [])) == 0:
         logger.warning(
             "No built-in function detected, using BGEM3SparseEmbeddingFunction()."
         )

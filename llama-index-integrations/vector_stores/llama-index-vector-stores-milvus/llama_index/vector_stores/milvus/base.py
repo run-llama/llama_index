@@ -41,7 +41,6 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from pymilvus import (
-    Collection,
     CollectionSchema,
     MilvusClient,
     AsyncMilvusClient,
@@ -253,7 +252,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     _milvusclient: MilvusClient = PrivateAttr()
     _async_milvusclient: AsyncMilvusClient = PrivateAttr()
-    _collection: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -332,12 +330,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
         if overwrite and collection_name in self.client.list_collections():
             self.client.drop_collection(collection_name)
 
-        # Get the collection
-        if collection_name in self.client.list_collections():
-            self._collection = Collection(collection_name, using=self.client._using)
+        # Ensure index exists if collection already exists
+        collection_exists = collection_name in self.client.list_collections()
+        if collection_exists:
             self._create_index_if_required()
-        else:
-            self._collection = None
 
         # Set default args
         self.similarity_metric = similarity_metrics_map.get(
@@ -356,14 +352,19 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 logger.warning(
                     "Sparse embedding function is not provided, using default."
                 )
+                schema_dict = (
+                    self.client.describe_collection(collection_name)
+                    if collection_exists
+                    else None
+                )
                 self.sparse_embedding_function = get_default_sparse_embedding_function(
                     input_field_names=self.text_key,
                     output_field_names=self.sparse_embedding_field,
-                    collection=self._collection,
+                    schema_dict=schema_dict,
                 )
 
         # Create the collection & index if it does not exist
-        if self._collection is None:
+        if not collection_exists:
             # Prepare schema
             schema = self.client.create_schema(auto_id=False, enable_dynamic_field=True)
             schema = self._add_fields_to_schema(schema)  # add fields
@@ -388,16 +389,20 @@ class MilvusVectorStore(BasePydanticVectorStore):
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"
             )
-            self._collection = Collection(collection_name, using=self.client._using)
 
         # Set properties
         if collection_properties:
-            if self.client.get_load_state(collection_name) == LoadState.Loaded:
-                self._collection.release()
-                self._collection.set_properties(properties=collection_properties)
-                self._collection.load()
+            load_state = self.client.get_load_state(collection_name).get("state")
+            if load_state == LoadState.Loaded:
+                self.client.release_collection(collection_name)
+                self.client.alter_collection_properties(
+                    collection_name, collection_properties
+                )
+                self.client.load_collection(collection_name)
             else:
-                self._collection.set_properties(properties=collection_properties)
+                self.client.alter_collection_properties(
+                    collection_name, collection_properties
+                )
 
         logger.debug(
             f"Successfully set properties for collection: {self.collection_name}"
