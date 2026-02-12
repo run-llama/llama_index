@@ -32,7 +32,7 @@ async def main():
     if not os.path.exists(pdf_path):
         print(f"❌ Error: '{pdf_path}' not found.")
         return
-    
+
     # 3. Run Ingestion
     print(f"\n🚀 [2/3] Starting Ingestion: {pdf_path}")
     # Pipeline: Parsing -> Sidecar Gen -> Entity Deduplication -> Qdrant -> Neo4j

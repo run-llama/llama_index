@@ -63,3 +63,5 @@ htmlcov/
 test-report.xml
 
 .DS_Store
+
+.ipynb_checkpoints/
