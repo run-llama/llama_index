@@ -251,8 +251,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
     scalar_field_names: Optional[List[str]]
     scalar_field_types: Optional[List[DataType]]
 
+    _milvusclient_config: dict = PrivateAttr()
     _milvusclient: MilvusClient = PrivateAttr()
-    _async_milvusclient: AsyncMilvusClient = PrivateAttr()
+    _async_milvusclient: Optional[AsyncMilvusClient] = PrivateAttr(default=None)
     _collection: Any = PrivateAttr()
 
     def __init__(
@@ -318,15 +319,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
             **kwargs,  # pass additional arguments such as server_pem_path
         )
 
-        # As of writing, milvus sets alias internally in the async client.
+        # Store connection params for lazy async client creation.
+        # As of writing, pymilvus sets alias internally in the async client.
         # This will cause an error if not removed.
-        kwargs.pop("alias", None)
-
-        self._async_milvusclient = AsyncMilvusClient(
-            uri=uri,
-            token=token,
-            **kwargs,  # pass additional arguments such as server_pem_path
-        )
+        self._milvusclient_config = {
+            "uri": uri,
+            "token": token,
+            "kwargs": {k: v for k, v in kwargs.items() if k != "alias"},
+        }
 
         # Delete previous collection if overwriting
         if overwrite and collection_name in self.client.list_collections():
@@ -415,7 +415,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     @property
     def aclient(self) -> AsyncMilvusClient:
-        """Get async client."""
+        """Get async client (lazily created on first access)."""
+        if self._async_milvusclient is None:
+            self._async_milvusclient = AsyncMilvusClient(
+                uri=self._milvusclient_config["uri"],
+                token=self._milvusclient_config["token"],
+                **self._milvusclient_config["kwargs"],
+            )
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
