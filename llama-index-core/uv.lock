@@ -1706,7 +1706,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.6,<4" },
     { name = "aiosqlite" },
-    { name = "banks", specifier = ">=2.2.0,<3" },
+    { name = "banks", specifier = ">=2.3.0,<3" },
     { name = "dataclasses-json" },
     { name = "deprecated", specifier = ">=1.2.9.3" },
     { name = "dirtyjson", specifier = ">=1.0.8,<2" },
