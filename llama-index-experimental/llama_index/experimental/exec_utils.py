@@ -1,7 +1,10 @@
 import ast
 import copy
+import signal
+import sys
+from contextlib import contextmanager
 from types import CodeType, ModuleType
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Iterator, Mapping, Sequence, Union
 
 ALLOWED_IMPORTS = {
     "math",
@@ -15,6 +18,97 @@ ALLOWED_IMPORTS = {
     "plotly",
     "seaborn",
 }
+
+# I/O methods on allowed libraries (pandas, numpy, polars) that can read/write
+# files, databases, or the network.  These bypass the sandbox because the
+# library objects are passed into locals, so we block them at the AST level.
+_DANGEROUS_ATTR_CALLS = frozenset(
+    {
+        # pandas read / write
+        "read_csv",
+        "read_excel",
+        "read_json",
+        "read_html",
+        "read_xml",
+        "read_parquet",
+        "read_feather",
+        "read_orc",
+        "read_stata",
+        "read_sas",
+        "read_spss",
+        "read_sql",
+        "read_sql_table",
+        "read_sql_query",
+        "read_gbq",
+        "read_hdf",
+        "read_pickle",
+        "read_table",
+        "read_fwf",
+        "read_clipboard",
+        "to_csv",
+        "to_excel",
+        "to_json",
+        "to_html",
+        "to_xml",
+        "to_parquet",
+        "to_feather",
+        "to_orc",
+        "to_stata",
+        "to_hdf",
+        "to_pickle",
+        "to_sql",
+        "to_gbq",
+        "to_clipboard",
+        "to_latex",
+        "to_markdown",
+        # polars read / write
+        "scan_csv",
+        "scan_parquet",
+        "scan_ipc",
+        "write_csv",
+        "write_parquet",
+        "write_ipc",
+        # numpy file I/O
+        "load",
+        "save",
+        "savez",
+        "savez_compressed",
+        "loadtxt",
+        "savetxt",
+        "genfromtxt",
+        "fromfile",
+        "tofile",
+        # general dangerous calls
+        "system",
+        "popen",
+    }
+)
+
+_DEFAULT_TIMEOUT_SECONDS = 30
+
+
+@contextmanager
+def _time_limit(seconds: int) -> Iterator[None]:
+    """
+    Raise TimeoutError if the wrapped block exceeds *seconds*.
+
+    Uses SIGALRM on Unix.  On Windows (where SIGALRM is unavailable) the
+    timeout is a no-op -- callers should layer additional protection there.
+    """
+    if sys.platform == "win32":
+        yield
+        return
+
+    def _handler(signum: int, frame: Any) -> None:
+        raise TimeoutError(f"Code execution exceeded {seconds}s time limit")
+
+    old_handler = signal.signal(signal.SIGALRM, _handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def _restricted_import(
@@ -91,6 +185,7 @@ class DunderVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.has_access_to_private_entity = False
         self.has_access_to_disallowed_builtin = False
+        self.has_dangerous_io_call = False
 
         builtins = globals()["__builtins__"].keys()
         self._builtins = builtins
@@ -107,6 +202,8 @@ class DunderVisitor(ast.NodeVisitor):
             self.has_access_to_private_entity = True
         if node.attr not in ALLOWED_BUILTINS and node.attr in self._builtins:
             self.has_access_to_disallowed_builtin = True
+        if node.attr in _DANGEROUS_ATTR_CALLS:
+            self.has_dangerous_io_call = True
         self.generic_visit(node)
 
 
@@ -128,6 +225,7 @@ def _contains_protected_access(code: str) -> bool:
     return (
         dunder_visitor.has_access_to_private_entity
         or dunder_visitor.has_access_to_disallowed_builtin
+        or dunder_visitor.has_dangerous_io_call
         or imports_modules
     )
 
@@ -144,7 +242,8 @@ def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
     if _contains_protected_access(__source):
         raise RuntimeError(
             "Execution of code containing references to private or dunder methods, "
-            "disallowed builtins, or any imports, is forbidden!"
+            "disallowed builtins, dangerous I/O operations, or any imports, "
+            "is forbidden!"
         )
 
 
@@ -152,21 +251,21 @@ def safe_eval(
     __source: Union[str, bytes, CodeType],
     __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
+    timeout_seconds: int = _DEFAULT_TIMEOUT_SECONDS,
 ) -> Any:
-    """
-    Eval within safe global context.
-    """
+    """Eval within a safe, time-limited global context."""
     _verify_source_safety(__source)
-    return eval(__source, _get_restricted_globals(__globals), __locals)
+    with _time_limit(timeout_seconds):
+        return eval(__source, _get_restricted_globals(__globals), __locals)
 
 
 def safe_exec(
     __source: Union[str, bytes, CodeType],
     __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
+    timeout_seconds: int = _DEFAULT_TIMEOUT_SECONDS,
 ) -> None:
-    """
-    Eval within safe global context.
-    """
+    """Exec within a safe, time-limited global context."""
     _verify_source_safety(__source)
-    return exec(__source, _get_restricted_globals(__globals), __locals)
+    with _time_limit(timeout_seconds):
+        return exec(__source, _get_restricted_globals(__globals), __locals)

@@ -125,6 +125,118 @@ class BaseContentBlock(ABC, BaseModel):
             self.atruncate(max_tokens=max_tokens, tokenizer=tokenizer, reverse=reverse)
         )
 
+    @property
+    def templatable_attributes(self) -> List[str]:
+        """
+        List of attributes that can be templated.
+
+        Can be overridden by subclasses.
+        """
+        return []
+
+    @staticmethod
+    def _get_template_str_from_attribute(attribute: Any) -> str | None:
+        """
+        Helper function to get template string from attribute.
+
+        It primarily enables cases of template_vars in binary strings for non text types such as:
+            - ImageBlock(image=b'{image_bytes}')
+            - AudioBlock(audio=b'{audio_bytes}')
+            - VideoBlock(video=b'{video_bytes}')
+            - DocumentBlock(data=b'{document_bytes}')
+
+        However, it could in theory also work with other attributes like:
+            - ImageBlock(path=b'{image_path}')
+            - AudioBlock(url=b'{audio_url}')
+
+        For that to work, the validation on those fields would need to be updated though.
+        """
+        if attribute is None:
+            return None
+        if isinstance(attribute, str):
+            return attribute
+        elif isinstance(attribute, bytes):
+            try:
+                return resolve_binary(attribute).read().decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+        else:
+            return str(attribute)
+
+    def get_template_vars(self) -> list[str]:
+        """
+        Get template variables from the content block.
+        """
+        from llama_index.core.prompts.utils import get_template_vars
+
+        for attribute_name in self.templatable_attributes:
+            attribute = getattr(self, attribute_name, None)
+            template_str = self._get_template_str_from_attribute(attribute)
+            if template_str:
+                return get_template_vars(template_str)
+        return []
+
+    def format_vars(self, **kwargs: Any) -> "BaseContentBlock":
+        """
+        Format the content block with the given keyword arguments.
+
+        This function primarily enables formatting of template_vars in Textblocks and binary strings for non text:
+            - ImageBlock(image=b'{image_bytes}')
+            - AudioBlock(audio=b'{audio_bytes}')
+            - VideoBlock(video=b'{video_bytes}')
+            - DocumentBlock(data=b'{document_bytes}')
+
+        However, it could in theory also work with other attributes like:
+            - ImageBlock(path=b'{image_path}')
+            - AudioBlock(url=b'{audio_url}')
+
+        For that to work, the validation on those fields would need to be updated though.
+        """
+        from llama_index.core.prompts.utils import format_string
+
+        formatted_attrs: Dict[str, Any] = {}
+        for attribute_name in self.templatable_attributes:
+            attribute = getattr(self, attribute_name, None)
+            att_type = type(attribute)
+            template_str = self._get_template_str_from_attribute(attribute)
+            # If the attribute is a binary string, we need to coerce to string for formatting,
+            # but then we need to re-encode to bytes after formatting, which is what the code below does.
+            formatted_kwargs = {
+                k: resolve_binary(v, as_base64=True).read().decode()
+                if isinstance(v, bytes)
+                else v
+                for k, v in kwargs.items()
+            }
+            if template_str:
+                formatted_str = format_string(template_str, **formatted_kwargs)
+                if att_type is str:
+                    formatted_attrs[attribute_name] = formatted_str
+                elif att_type is bytes:
+                    formatted_attrs[attribute_name] = formatted_str.encode()
+                else:
+                    try:
+                        formatted_attrs[attribute_name] = att_type(formatted_str)  # type: ignore
+                    except Exception:
+                        raise ValueError(
+                            "Could not format attribute {attribute_name} with value {template_str} to type {att_type}"
+                        )
+        return type(self).model_validate(self.model_copy(update=formatted_attrs))
+
+    @staticmethod
+    def mimetype_from_inline_url(url: str) -> filetype.Type | None:
+        if url.startswith("data:"):
+            try:
+                mimetype = url.split(";base64,")[0].split("data:")[1]
+                return filetype.get_type(mime=mimetype)
+            except Exception:
+                try:
+                    data = url.split(";base64,")[1]
+                    decoded_data = base64.b64decode(data)
+                    return filetype.guess(decoded_data)
+                except Exception:
+                    return None
+        return None
+
 
 class TextBlock(BaseContentBlock):
     """A representation of text data to directly pass to/from the LLM."""
@@ -134,8 +246,8 @@ class TextBlock(BaseContentBlock):
 
     @classmethod
     async def amerge(
-        cls, splits: List[TextBlock], chunk_size: int, tokenizer: Any | None = None
-    ) -> list[TextBlock]:
+        cls, splits: List["TextBlock"], chunk_size: int, tokenizer: Any | None = None
+    ) -> list["TextBlock"]:
         merged_blocks = []
         current_block_texts = []
         current_block_tokens = 0
@@ -164,7 +276,7 @@ class TextBlock(BaseContentBlock):
 
     async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
-    ) -> List[TextBlock]:
+    ) -> List["TextBlock"]:
         from llama_index.core.node_parser import TokenTextSplitter
 
         text_splitter = TokenTextSplitter(
@@ -172,6 +284,10 @@ class TextBlock(BaseContentBlock):
         )
         chunks = text_splitter.split_text(self.text)
         return [TextBlock(text=chunk) for chunk in chunks]
+
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return ["text"]
 
 
 class ImageBlock(BaseContentBlock):
@@ -222,6 +338,8 @@ class ImageBlock(BaseContentBlock):
                 if path:
                     suffix = Path(str(path)).suffix.replace(".", "") or None
                     mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
                     if mimetype and str(mimetype.mime).startswith("image/"):
                         self.image_mimetype = str(mimetype.mime)
 
@@ -264,6 +382,11 @@ class ImageBlock(BaseContentBlock):
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
 
+    def inline_url(self) -> str:
+        b64 = self.resolve_image(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        return f"data:{self.image_mimetype};base64,{b64_str}"
+
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
         Many APIs measure images differently. Here, we take a large estimate.
@@ -273,6 +396,10 @@ class ImageBlock(BaseContentBlock):
         TODO: In the future, LLMs should be able to count their own tokens.
         """
         return 2125
+
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return ["image"]
 
 
 class AudioBlock(BaseContentBlock):
@@ -309,11 +436,21 @@ class AudioBlock(BaseContentBlock):
         """
         Store the audio as base64 and guess the mimetype when possible.
 
-        In case the model was built passing audio data but without a mimetype,
+        In case the model was built passing audio data but without a format,
         we try to guess it using the filetype library. To avoid resource-intense
-        operations, we won't load the path or the URL to guess the mimetype.
+        operations, we won't load the path or the URL to guess the format.
         """
         if not self.audio or not isinstance(self.audio, bytes):
+            if not self.format:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
+                    if mimetype and str(mimetype.mime).startswith("audio/"):
+                        self.format = str(mimetype.extension)
+
             return self
 
         self._guess_format(resolve_binary(self.audio).read())
@@ -352,6 +489,15 @@ class AudioBlock(BaseContentBlock):
             raise ValueError("resolve_audio returned zero bytes")
         return data_buffer
 
+    def inline_url(self) -> str:
+        b64 = self.resolve_audio(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        if self.format:
+            mimetype = filetype.get_type(ext=self.format).mime
+            if mimetype:
+                return f"data:{mimetype};base64,{b64_str}"
+        return f"data:audio;base64,{b64_str}"
+
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
         Use TinyTag to estimate the duration of the audio file and convert to tokens.
@@ -379,6 +525,10 @@ class AudioBlock(BaseContentBlock):
             if str(e) == "resolve_audio returned zero bytes":
                 return 0
             raise
+
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return ["audio"]
 
 
 class VideoBlock(BaseContentBlock):
@@ -427,6 +577,8 @@ class VideoBlock(BaseContentBlock):
                 if path:
                     suffix = Path(str(path)).suffix.replace(".", "") or None
                     mimetype = filetype.get_type(ext=suffix)
+                    if not mimetype or not mimetype.mime:
+                        mimetype = self.mimetype_from_inline_url(str(path))
                     if mimetype and str(mimetype.mime).startswith("video/"):
                         self.video_mimetype = str(mimetype.mime)
             return self
@@ -469,6 +621,13 @@ class VideoBlock(BaseContentBlock):
             raise ValueError("resolve_video returned zero bytes")
         return data_buffer
 
+    def inline_url(self) -> str:
+        b64 = self.resolve_video(as_base64=True)
+        b64_str = b64.read().decode("utf-8")
+        if self.video_mimetype:
+            return f"data:{self.video_mimetype};base64,{b64_str}"
+        return f"data:video;base64,{b64_str}"
+
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         """
         Use TinyTag to estimate the duration of the video file and convert to tokens.
@@ -493,6 +652,10 @@ class VideoBlock(BaseContentBlock):
             if str(e) == "resolve_video returned zero bytes":
                 return 0
             raise
+
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return ["video"]
 
 
 class DocumentBlock(BaseContentBlock):
@@ -566,6 +729,12 @@ class DocumentBlock(BaseContentBlock):
         """
         return self._get_b64_bytes(data_buffer).decode("utf-8")
 
+    def inline_url(self) -> str:
+        b64_str = self._get_b64_string(data_buffer=self.resolve_document())
+        if self.document_mimetype:
+            return f"data:{self.document_mimetype};base64,{b64_str}"
+        return f"data:application;base64,{b64_str}"
+
     def guess_format(self) -> str | None:
         path = self.path or self.url
         if not path:
@@ -596,6 +765,10 @@ class DocumentBlock(BaseContentBlock):
         # We currently only use this fallback estimate for documents which are non zero bytes
         return 512
 
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return ["data"]
+
 
 class CacheControl(BaseContentBlock):
     type: str
@@ -613,7 +786,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     """Base class for content blocks that can contain other content blocks."""
 
     @classmethod
-    def nested_blocks_field_name(self) -> str:
+    def nested_blocks_field_name(cls) -> str:
         """
         Return the name of the field that contains nested content blocks.
 
@@ -672,17 +845,17 @@ class BaseRecursiveContentBlock(BaseContentBlock):
     @classmethod
     async def amerge(
         cls,
-        splits: List[BaseRecursiveContentBlock],
+        splits: List["BaseRecursiveContentBlock"],
         chunk_size: int,
         tokenizer: Any | None = None,
-    ) -> list[BaseRecursiveContentBlock]:
+    ) -> list["BaseRecursiveContentBlock"]:
         """
         First merge nested_blocks of consecutive BaseRecursiveContentBlock types based on token estimates
 
         Then, merge consecutive nested content blocks of the same type.
         """
         merged_blocks = []
-        cur_blocks: list[BaseRecursiveContentBlock] = []
+        cur_blocks: list["BaseRecursiveContentBlock"] = []
         cur_block_tokens = 0
 
         for split in splits:
@@ -737,7 +910,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
     async def asplit(
         self, max_tokens: int, overlap: int = 0, tokenizer: Any | None = None
-    ) -> List[BaseRecursiveContentBlock]:
+    ) -> List["BaseRecursiveContentBlock"]:
         """Split the content block into smaller blocks with up to max_tokens tokens each."""
         splits = []
 
@@ -765,7 +938,7 @@ class BaseRecursiveContentBlock(BaseContentBlock):
 
     async def atruncate(
         self, max_tokens: int, tokenizer: Any | None = None, reverse: bool = False
-    ) -> BaseRecursiveContentBlock:
+    ) -> "BaseRecursiveContentBlock":
         """Truncate the content block to have at most max_tokens tokens."""
         tknizer = tokenizer or get_tokenizer()
         current_tokens = 0
@@ -807,6 +980,29 @@ class BaseRecursiveContentBlock(BaseContentBlock):
             self.nested_blocks_field_name(): truncated_blocks
         }
         return cls(**attributes)
+
+    @property
+    def templatable_attributes(self) -> list[str]:
+        return [self.nested_blocks_field_name()]
+
+    def get_template_vars(self) -> list[str]:
+        vars = []
+        for block in self.nested_blocks:
+            vars.extend(block.get_template_vars())
+        return vars
+
+    def format_vars(self, **kwargs: Any) -> Self:
+        formatted_blocks = []
+        for block in self.nested_blocks:
+            relevant_kwargs = {
+                k: v for k, v in kwargs.items() if k in block.get_template_vars()
+            }
+            formatted_blocks.append(block.format_vars(**relevant_kwargs))
+        attributes = self.model_dump() | {
+            # Overwrite nested blocks
+            self.nested_blocks_field_name(): formatted_blocks
+        }
+        return type(self)(**attributes)
 
 
 class CitableBlock(BaseRecursiveContentBlock):
@@ -885,6 +1081,8 @@ class ThinkingBlock(BaseContentBlock):
     Because of LLM provider's reliance on signatures for Thought Processes,
     we do not support merging/splitting/truncating for this block, as we want to preserve the integrity of the content
     provided by the LLM.
+
+    For the same reason, they are also not templatable.
     """
 
     block_type: Literal["thinking"] = "thinking"
