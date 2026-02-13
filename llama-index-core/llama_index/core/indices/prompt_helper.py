@@ -79,6 +79,8 @@ class PromptHelper(BaseComponent):
     chunk_overlap_ratio: float = Field(
         default=DEFAULT_CHUNK_OVERLAP_RATIO,
         description="The percentage token amount that each chunk should overlap.",
+        ge=0.0,
+        le=1.0,
     )
     chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
     separator: str = Field(
@@ -97,8 +99,6 @@ class PromptHelper(BaseComponent):
         separator: str = " ",
     ) -> None:
         """Init params."""
-        if chunk_overlap_ratio > 1.0 or chunk_overlap_ratio < 0.0:
-            raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
         super().__init__(
             context_window=context_window,
             num_output=num_output,
@@ -345,6 +345,8 @@ class ChatPromptHelper(BaseComponent):
     chunk_overlap_ratio: float = Field(
         default=DEFAULT_CHUNK_OVERLAP_RATIO,
         description="The percentage token amount that each chunk should overlap.",
+        ge=0.0,
+        le=1.0,
     )
     chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
 
@@ -359,8 +361,6 @@ class ChatPromptHelper(BaseComponent):
         tokenizer: Optional[Callable[[str], List]] = None,
     ) -> None:
         """Init params."""
-        if chunk_overlap_ratio > 1.0 or chunk_overlap_ratio < 0.0:
-            raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
         super().__init__(
             context_window=context_window,
             num_output=num_output,
