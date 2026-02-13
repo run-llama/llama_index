@@ -434,3 +434,81 @@ The YugabyteDB specific parameters include:
 - `yb_servers_refresh_interval`: Interval (in seconds) to refresh the list of available servers
 - `fallback_to_topology_keys_only`: Whether to only connect to nodes specified in topology_keys
 - `failed_host_ttl_seconds`: Time (in seconds) to wait before trying to connect to failed nodes
+
+## SuperLocalMemoryChatStore
+
+Using `SuperLocalMemoryChatStore`, you can store your chat history locally in SQLite with zero cloud dependencies. SuperLocalMemory V2 is a local-first, privacy-first memory system that keeps all data on your machine — no API keys, no subscriptions, no external calls.
+
+### Prerequisites
+
+SuperLocalMemory V2 must be installed:
+
+```bash
+npm install -g superlocalmemory
+```
+
+### Installation
+
+```bash
+pip install llama-index-storage-chat-store-superlocalmemory
+```
+
+### Usage
+
+```python
+from llama_index.storage.chat_store.superlocalmemory import SuperLocalMemoryChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+
+chat_store = SuperLocalMemoryChatStore()
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+```
+
+You can also specify a custom database path:
+
+```python
+chat_store = SuperLocalMemoryChatStore(
+    db_path="/path/to/custom/memory.db",
+)
+```
+
+SuperLocalMemory supports both synchronous and asynchronous operations:
+
+```python
+import asyncio
+from llama_index.core.llms import ChatMessage
+
+
+async def main():
+    # Add messages
+    messages = [
+        ChatMessage(content="Hello", role="user"),
+        ChatMessage(content="Hi there!", role="assistant"),
+    ]
+    await chat_store.async_set_messages("conversation1", messages)
+
+    # Retrieve messages
+    retrieved_messages = await chat_store.async_get_messages("conversation1")
+    print(retrieved_messages)
+
+    # Delete last message
+    deleted_message = await chat_store.async_delete_last_message(
+        "conversation1"
+    )
+    print(f"Deleted message: {deleted_message}")
+
+
+asyncio.run(main())
+```
+
+Key features:
+
+- **100% local**: All data stored in SQLite on your machine (`~/.claude-memory/memory.db`)
+- **Zero cloud dependencies**: No API keys, no external services, no subscriptions
+- **Session isolation**: Chat sessions are isolated via hashed tags
+- **Universal memory**: Shared across 17+ AI tools (Claude, Cursor, Windsurf, and more)
+- **Free and open-source**: MIT licensed
