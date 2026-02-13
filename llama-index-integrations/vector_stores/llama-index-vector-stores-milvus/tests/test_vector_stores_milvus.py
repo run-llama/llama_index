@@ -838,14 +838,13 @@ def test_consistency_level_passed_to_create_collection():
 
         # Create vector store with custom consistency level
         with patch("llama_index.vector_stores.milvus.base.AsyncMilvusClient"):
-            with patch("llama_index.vector_stores.milvus.base.Collection"):
-                vector_store = MilvusVectorStore(
-                    uri=test_uri,
-                    dim=DIM,
-                    collection_name=test_collection,
-                    consistency_level="Bounded",
-                    overwrite=False,
-                )
+            vector_store = MilvusVectorStore(
+                uri=test_uri,
+                dim=DIM,
+                collection_name=test_collection,
+                consistency_level="Bounded",
+                overwrite=False,
+            )
 
         # Verify create_collection was called with the correct consistency_level
         mock_client.create_collection.assert_called_once()
