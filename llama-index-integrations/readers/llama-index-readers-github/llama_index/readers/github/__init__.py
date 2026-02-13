@@ -7,8 +7,10 @@ from llama_index.readers.github.issues.base import (
     GitHubRepositoryIssuesReader,
 )
 from llama_index.readers.github.repository.base import (
+    CacheStore,
     GithubClient,
     GithubRepositoryReader,
+    InMemoryCache,
 )
 
 try:
@@ -18,6 +20,7 @@ try:
     )
 
     __all__ = [
+        "CacheStore",
         "GithubClient",
         "GithubRepositoryReader",
         "GitHubRepositoryCollaboratorsReader",
@@ -26,14 +29,17 @@ try:
         "GitHubIssuesClient",
         "GitHubAppAuth",
         "GitHubAppAuthenticationError",
+        "InMemoryCache",
     ]
 except ImportError:
     # PyJWT not installed, GitHub App auth not available
     __all__ = [
+        "CacheStore",
         "GithubClient",
         "GithubRepositoryReader",
         "GitHubRepositoryCollaboratorsReader",
         "GitHubCollaboratorsClient",
         "GitHubRepositoryIssuesReader",
         "GitHubIssuesClient",
+        "InMemoryCache",
     ]

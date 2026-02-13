@@ -126,27 +126,13 @@ documents = reader.load_data(branch="main")
 
 ### Caching for Incremental Updates
 
-For incremental updates where you want to skip already-processed files, you can provide a `cache_store`. The cache store should implement the `CacheStore` protocol with `is_processed(file_path, file_sha)` and `mark_processed(file_path, file_sha)` methods.
+For incremental updates where you want to skip already-processed files, you can provide a `cache_store`. Use the built-in `InMemoryCache` for simple use cases, or implement the `CacheStore` protocol for custom persistence.
 
 ```python
-from typing import Set
+from llama_index.readers.github import InMemoryCache
 
-
-class SimpleDictCache:
-    """Simple in-memory cache implementation."""
-
-    def __init__(self):
-        self._cache: Set[str] = set()
-
-    def is_processed(self, file_path: str, file_sha: str) -> bool:
-        return f"{file_path}:{file_sha}" in self._cache
-
-    def mark_processed(self, file_path: str, file_sha: str) -> None:
-        self._cache.add(f"{file_path}:{file_sha}")
-
-
-# Use with the reader
-cache = SimpleDictCache()
+# Use the built-in in-memory cache
+cache = InMemoryCache()
 reader = GithubRepositoryReader(
     github_client=github_client,
     owner="run-llama",
@@ -159,6 +145,30 @@ documents = reader.load_data(branch="main")
 
 # Second load - skips already-processed files (same sha)
 documents = reader.load_data(branch="main")  # Much faster!
+
+# Check cache stats
+print(f"Cached entries: {len(cache)}")
+
+# Clear cache if needed
+cache.clear()
+```
+
+For custom persistence (e.g., database-backed), implement the `CacheStore` protocol:
+
+```python
+from llama_index.readers.github import CacheStore
+
+
+class DatabaseCache:
+    """Custom cache with database persistence."""
+
+    def is_processed(self, file_path: str, file_sha: str) -> bool:
+        # Query your database
+        ...
+
+    def mark_processed(self, file_path: str, file_sha: str) -> None:
+        # Store in your database
+        ...
 ```
 
 You can also combine caching with specific files for efficient incremental updates:

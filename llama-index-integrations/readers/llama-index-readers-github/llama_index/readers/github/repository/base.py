@@ -98,6 +98,50 @@ class CacheStore(Protocol):
         ...
 
 
+class InMemoryCache:
+    """
+    Simple in-memory cache implementation for GithubRepositoryReader.
+
+    This cache stores processed file identifiers in memory and is suitable
+    for single-session use cases. For persistence across sessions, implement
+    your own CacheStore using a database or file-based storage.
+
+    Example:
+        >>> cache = InMemoryCache()
+        >>> reader = GithubRepositoryReader(
+        ...     github_client=client,
+        ...     owner="org",
+        ...     repo="repo",
+        ...     cache_store=cache,
+        ... )
+        >>> # First load processes all files
+        >>> docs = reader.load_data(branch="main")
+        >>> # Second load skips already-processed files
+        >>> docs = reader.load_data(branch="main")
+
+    """
+
+    def __init__(self):
+        """Initialize an empty cache."""
+        self._cache: set = set()
+
+    def is_processed(self, file_path: str, file_sha: str) -> bool:
+        """Check if a file has already been processed."""
+        return f"{file_path}:{file_sha}" in self._cache
+
+    def mark_processed(self, file_path: str, file_sha: str) -> None:
+        """Mark a file as processed."""
+        self._cache.add(f"{file_path}:{file_sha}")
+
+    def clear(self) -> None:
+        """Clear the cache."""
+        self._cache.clear()
+
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._cache)
+
+
 from llama_index.readers.github.repository.utils import (
     BufferedGitBlobDataIterator,
     get_file_extension,
