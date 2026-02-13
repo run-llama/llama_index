@@ -633,6 +633,175 @@ async def test_chat_message_amerge(
     ]
 
 
+def test_chat_message_get_template_vars():
+    chat_message = ChatMessage(
+        blocks=[
+            # non-recursive types
+            TextBlock(text="{text}"),
+            ImageBlock(image=b"{image_bytes}"),
+            AudioBlock(audio=b"{audio_bytes}"),
+            VideoBlock(video=b"{video_bytes}"),
+            DocumentBlock(data=b"{pdf_bytes}"),
+            # CachePoint, Thinking Blocks and Tool Call Blocks ot templatable, so we don't include them here
+            # recursive types
+            CitableBlock(
+                title="Test Title",
+                source="Test Source",
+                content=[
+                    TextBlock(text="{citable_text}"),
+                    ImageBlock(image=b"{citable_image_bytes}"),
+                    DocumentBlock(data=b"{citable_pdf_bytes}"),
+                ],
+            ),
+            CitationBlock(
+                title="Text Title",
+                source="Text Source",
+                cited_content=TextBlock(text="{citation_text}"),
+                additional_location_info={},
+            ),
+            CitationBlock(
+                title="Image Title",
+                source="Image Source",
+                cited_content=ImageBlock(image=b"{citation_image_bytes}"),
+                additional_location_info={},
+            ),
+        ]
+    )
+    assert set(chat_message.get_template_vars()) == {
+        "text",
+        "image_bytes",
+        "audio_bytes",
+        "video_bytes",
+        "pdf_bytes",
+        "citable_text",
+        "citable_image_bytes",
+        "citable_pdf_bytes",
+        "citation_text",
+        "citation_image_bytes",
+    }
+
+
+def test_chat_message_format(
+    png_1px,
+    png_1px_b64,
+    mp3_bytes,
+    mp3_base64,
+    mp4_bytes,
+    mp4_base64,
+    mock_pdf_bytes,
+    pdf_base64,
+):
+    chat_message = ChatMessage(
+        blocks=[
+            # non-recursive types
+            TextBlock(text="{text}"),
+            ImageBlock(image=b"{image_bytes}"),
+            AudioBlock(audio=b"{audio_bytes}"),
+            VideoBlock(video=b"{video_bytes}"),
+            DocumentBlock(data=b"{pdf_bytes}"),
+            # CachePoint, Thinking Blocks and Tool Call Blocks ot templatable, so we don't include them here
+            # recursive types
+            CitableBlock(
+                title="Test Title",
+                source="Test Source",
+                content=[
+                    TextBlock(text="{citable_text}"),
+                    ImageBlock(image=b"{citable_image_bytes}"),
+                    DocumentBlock(data=b"{citable_pdf_bytes}"),
+                ],
+            ),
+            CitationBlock(
+                title="Text Title",
+                source="Text Source",
+                cited_content=TextBlock(text="{citation_text}"),
+                additional_location_info={},
+            ),
+            CitationBlock(
+                title="Image Title",
+                source="Image Source",
+                cited_content=ImageBlock(image=b"{citation_image_bytes}"),
+                additional_location_info={},
+            ),
+        ]
+    )
+
+    formatted_message = chat_message.format_vars(
+        text="Hello, world!",
+        image_bytes=png_1px,
+        audio_bytes=mp3_bytes,
+        video_bytes=mp4_bytes,
+        pdf_bytes=mock_pdf_bytes,
+        citable_text="This is citable text.",
+        citable_image_bytes=png_1px,
+        citable_pdf_bytes=mock_pdf_bytes,
+        citation_text="This is citation text.",
+        citation_image_bytes=png_1px,
+    )
+    formatted_messageb64 = chat_message.format_vars(
+        text="Hello, world!",
+        image_bytes=png_1px_b64,
+        audio_bytes=mp3_base64,
+        video_bytes=mp4_base64,
+        pdf_bytes=pdf_base64,
+        citable_text="This is citable text.",
+        citable_image_bytes=png_1px_b64,
+        citable_pdf_bytes=pdf_base64,
+        citation_text="This is citation text.",
+        citation_image_bytes=png_1px_b64,
+    )
+
+    assert (
+        formatted_message.blocks[0].text
+        == formatted_messageb64.blocks[0].text
+        == "Hello, world!"
+    )
+    assert (
+        formatted_message.blocks[1].image
+        == formatted_messageb64.blocks[1].image
+        == png_1px_b64
+    )
+    assert (
+        formatted_message.blocks[2].audio
+        == formatted_messageb64.blocks[2].audio
+        == mp3_base64
+    )
+    assert (
+        formatted_message.blocks[3].video
+        == formatted_messageb64.blocks[3].video
+        == mp4_base64
+    )
+    assert (
+        formatted_message.blocks[4].data
+        == formatted_messageb64.blocks[4].data
+        == pdf_base64
+    )
+    assert (
+        formatted_message.blocks[5].nested_blocks[0].text
+        == formatted_messageb64.blocks[5].nested_blocks[0].text
+        == "This is citable text."
+    )
+    assert (
+        formatted_message.blocks[5].nested_blocks[1].image
+        == formatted_messageb64.blocks[5].nested_blocks[1].image
+        == png_1px_b64
+    )
+    assert (
+        formatted_message.blocks[5].nested_blocks[2].data
+        == formatted_messageb64.blocks[5].nested_blocks[2].data
+        == pdf_base64
+    )
+    assert (
+        formatted_message.blocks[6].cited_content.text
+        == formatted_messageb64.blocks[6].cited_content.text
+        == "This is citation text."
+    )
+    assert (
+        formatted_message.blocks[7].cited_content.image
+        == formatted_messageb64.blocks[7].cited_content.image
+        == png_1px_b64
+    )
+
+
 def test_chat_response():
     message = ChatMessage("some content")
     cr = ChatResponse(message=message)
@@ -689,6 +858,18 @@ async def test_text_block_amerge():
     merged_tb = await TextBlock.amerge([tb1, tb2], chunk_size=100)
     assert len(merged_tb) == 1
     assert merged_tb[0].text == "Hello world! This is a test."
+
+
+def test_text_block_get_template_vars():
+    tb = TextBlock(text="Hello {addressee}!")
+    vars = tb.get_template_vars()
+    assert vars == ["addressee"]
+
+
+def test_text_block_format():
+    tb = TextBlock(text="Hello {addressee}!")
+    formatted_tb = tb.format_vars(addressee="world")
+    assert formatted_tb.text == "Hello world!"
 
 
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
@@ -845,6 +1026,19 @@ async def test_image_block_amerge(png_1px_b64: bytes):
     assert merged == [ib1, ib2]
 
 
+def test_image_block_get_template_vars():
+    ib = ImageBlock(image=b"{image_bytes}")
+    assert ib.get_template_vars() == ["image_bytes"]
+
+
+def test_image_block_format(png_1px: bytes, png_1px_b64: bytes):
+    ib = ImageBlock(image=b"{image_bytes}")
+    formatted_ib = ib.format_vars(image_bytes=png_1px)
+    formatted_ibb64 = ib.format_vars(image_bytes=png_1px_b64)
+    assert formatted_ib.image == png_1px_b64
+    assert formatted_ibb64.image == png_1px_b64
+
+
 @pytest.mark.asyncio
 async def test_audio_block_aestimate_tokens(mp3_bytes: bytes):
     ab = AudioBlock(audio=mp3_bytes)
@@ -888,6 +1082,17 @@ async def test_audio_block_amerge(mp3_bytes: bytes):
     # No merging occurs
     assert len(merged_abs) == 2
     assert merged_abs == [ab1, ab2]
+
+
+def test_audio_block_get_template_vars():
+    ab = AudioBlock(audio=b"{audio_bytes}")
+    assert ab.get_template_vars() == ["audio_bytes"]
+
+
+def test_audio_block_format(mp3_bytes: bytes, mp3_base64: bytes):
+    ab = AudioBlock(audio=b"{audio_bytes}")
+    formatted_ib_bytes = ab.format_vars(audio_bytes=mp3_bytes)
+    assert formatted_ib_bytes.audio == mp3_base64
 
 
 def test_video_block_resolve_video_bytes(mp4_bytes: bytes, mp4_base64: bytes):
@@ -1010,6 +1215,19 @@ async def test_video_block_amerge(mp4_bytes: bytes):
     # No merging occurs
     assert len(merged_vbs) == 2
     assert merged_vbs == [vb1, vb2]
+
+
+def test_video_block_get_template_vars():
+    vb = VideoBlock(video=b"{video_bytes}")
+    assert vb.get_template_vars() == ["video_bytes"]
+
+
+def test_video_block_format(mp4_bytes: bytes, mp4_base64: bytes):
+    vb = VideoBlock(video=b"{video_bytes}")
+    formatted_vb = vb.format_vars(video_bytes=mp4_bytes)
+    formatted_vbb64 = vb.format_vars(video_bytes=mp4_base64)
+    assert formatted_vb.video == mp4_base64
+    assert formatted_vbb64.video == mp4_base64
 
 
 def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
@@ -1142,6 +1360,19 @@ async def test_document_block_amerge(mock_pdf_bytes: bytes):
     assert merged == [document1, document2]
 
 
+def test_document_block_get_template_vars():
+    db = DocumentBlock(data=b"{pdf_bytes}", document_mimetype="application/pdf")
+    assert db.get_template_vars() == ["pdf_bytes"]
+
+
+def test_document_block_format(mock_pdf_bytes: bytes, pdf_base64: bytes):
+    db = DocumentBlock(data=b"{pdf_bytes}", document_mimetype="application/pdf")
+    formatted_db = db.format_vars(pdf_bytes=mock_pdf_bytes)
+    formatted_dbb64 = db.format_vars(pdf_bytes=pdf_base64)
+    assert formatted_db.data == pdf_base64
+    assert formatted_dbb64.data == pdf_base64
+
+
 def test_cache_control() -> None:
     cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
     assert isinstance(cp.model_dump()["cache_control"], dict)
@@ -1182,6 +1413,21 @@ async def test_cache_control_amerge():
     merged = await CachePoint.amerge([cp1, cp2], chunk_size=100)
     # Cache control points are not mergeable
     assert merged == [cp1, cp2]
+
+
+def test_cache_control_get_template_vars():
+    cp = CachePoint(cache_control=CacheControl(type="{cache_type}"))
+
+    # CacheControl does not support template vars currently
+    assert cp.get_template_vars() == []
+
+
+def test_cache_control_format():
+    cp = CachePoint(cache_control=CacheControl(type="{cache_type}"))
+    formatted_cp = cp.format_vars(cache_type="ephemeral")
+
+    # CacheControl does not support template vars currently
+    assert formatted_cp.cache_control.type == "{cache_type}"
 
 
 @pytest.mark.asyncio
@@ -1306,6 +1552,43 @@ async def test_citable_block_amerge(png_1px: bytes, mock_pdf_bytes: bytes):
     # Second merged block should be cb3 with its content merged since they are two consecutive TextBlocks
     assert merged_cbs[1].content == await TextBlock.amerge(
         content_blocks3, chunk_size=10000
+    )
+
+
+def test_citable_block_get_template_vars():
+    content_blocks = [
+        TextBlock(text="{text}"),
+        ImageBlock(image=b"{image_bytes}"),
+        DocumentBlock(data=b"{pdf_bytes}", document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    assert set(cb.get_template_vars()) == {"text", "image_bytes", "pdf_bytes"}
+
+
+def test_citable_block_format(
+    png_1px: bytes, png_1px_b64: bytes, mock_pdf_bytes: bytes, pdf_base64: bytes
+):
+    content_blocks = [
+        TextBlock(text="{text}"),
+        ImageBlock(image=b"{image_bytes}"),
+        DocumentBlock(data=b"{pdf_bytes}", document_mimetype="application/pdf"),
+    ]
+    cb = CitableBlock(title="Test Title", source="Test Source", content=content_blocks)
+    formatted_cb = cb.format_vars(
+        text="This is the content.", image_bytes=png_1px, pdf_bytes=mock_pdf_bytes
+    )
+    formatted_cbb64 = cb.format_vars(
+        text="This is the content.", image_bytes=png_1px_b64, pdf_bytes=pdf_base64
+    )
+    assert formatted_cb.content[0] == TextBlock(text="This is the content.")
+    assert formatted_cb.content[1] == ImageBlock(image=png_1px)
+    assert formatted_cb.content[2] == DocumentBlock(
+        data=mock_pdf_bytes, document_mimetype="application/pdf"
+    )
+    assert formatted_cbb64.content[0] == TextBlock(text="This is the content.")
+    assert formatted_cbb64.content[1] == ImageBlock(image=png_1px)
+    assert formatted_cbb64.content[2] == DocumentBlock(
+        data=mock_pdf_bytes, document_mimetype="application/pdf"
     )
 
 
@@ -1470,6 +1753,47 @@ async def test_citation_block_amerge_different_types(png_1px):
     assert await CitationBlock.amerge([cb1, cb2], chunk_size=100) == [cb1, cb2]
 
 
+def test_citation_block_get_template_vars(png_1px):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="{text}"),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=b"{image_bytes}"),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    assert cb1.get_template_vars() == ["text"]
+    assert cb2.get_template_vars() == ["image_bytes"]
+
+
+def test_citation_block_format(png_1px: bytes, png_1px_b64: bytes):
+    cb1 = CitationBlock(
+        cited_content=TextBlock(text="{text}"),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+    cb2 = CitationBlock(
+        cited_content=ImageBlock(image=b"{image_bytes}"),
+        source="Test Source",
+        title="Test Title",
+        additional_location_info={},
+    )
+
+    formatted_cb1 = cb1.format_vars(text="Hello world! This is a test.")
+    formatted_cb2 = cb2.format_vars(image_bytes=png_1px)
+    formatted_cb2b64 = cb2.format_vars(image_bytes=png_1px_b64)
+
+    assert formatted_cb1.cited_content == TextBlock(text="Hello world! This is a test.")
+    assert formatted_cb2.cited_content == ImageBlock(image=png_1px)
+    assert formatted_cb2b64.cited_content == ImageBlock(image=png_1px)
+
+
 def test_thinking_block():
     block = ThinkingBlock()
     assert block.block_type == "thinking"
@@ -1530,6 +1854,26 @@ async def test_thinking_block_amerge():
     assert merged == [block1, block2]
 
 
+def test_thinking_block_get_template_vars():
+    block = ThinkingBlock(
+        content="This is a {test} of the ThinkingBlock template vars."
+    )
+    # Currently, ThinkingBlock does not support template vars
+    assert block.get_template_vars() == []
+
+
+def test_thinking_block_format():
+    block = ThinkingBlock(
+        content="This is a {test} of the ThinkingBlock format method."
+    )
+    formatted_block = block.format_vars(test="demo")
+    # Currently, ThinkingBlock does not support template vars, so content remains unchanged
+    assert (
+        formatted_block.content
+        == "This is a {test} of the ThinkingBlock format method."
+    )
+
+
 def test_tool_call_block():
     default_block = ToolCallBlock(tool_name="hello_world")
     assert default_block.block_type == "tool_call"
@@ -1587,3 +1931,22 @@ async def test_tool_call_block_amerge():
 
     # ToolCallBlocks are not mergeable
     assert merged == [block1, block2]
+
+
+def test_tool_call_block_get_template_vars():
+    block = ToolCallBlock(
+        tool_name="{tool_name}", tool_kwargs={"param": "{param_value}"}
+    )
+    # Currently, ToolCallBlock does not support template vars
+    assert block.get_template_vars() == []
+
+
+def test_tool_call_block_format():
+    block = ToolCallBlock(
+        tool_name="{tool_name}", tool_kwargs={"param": "{param_value}"}
+    )
+    formatted_block = block.format_vars(tool_name="example_tool", param_value="value1")
+
+    # Currently, ToolCallBlock does not support template vars
+    assert formatted_block.tool_name == "{tool_name}"
+    assert formatted_block.tool_kwargs == {"param": "{param_value}"}
