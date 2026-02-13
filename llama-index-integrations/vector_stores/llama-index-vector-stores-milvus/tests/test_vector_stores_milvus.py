@@ -28,16 +28,8 @@ DIM = 64
 COLLECTION_NAME = "test_collection"
 
 
-class MockSparseEmbeddingFunction(BaseSparseEmbeddingFunction):
-    def encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
-        return [{1: 0.5, 2: 0.3}] * len(queries)
-
-    def encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
-        return [{1: 0.5, 2: 0.3}] * len(documents)
-
-
-@pytest.fixture
-def vector_store() -> MilvusVectorStore:
+@pytest.fixture()
+def sync_vector_store() -> MilvusVectorStore:
     return MilvusVectorStore(
         uri=TEST_URI,
         dim=DIM,
@@ -47,12 +39,74 @@ def vector_store() -> MilvusVectorStore:
         similarity_metric="COSINE",
         consistency_level="Strong",
         overwrite=True,
+        use_async_client=False,
     )
+
+
+class MockSparseEmbeddingFunction(BaseSparseEmbeddingFunction):
+    def encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
+        return [{1: 0.5, 2: 0.3}] * len(queries)
+
+    def encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
+        return [{1: 0.5, 2: 0.3}] * len(documents)
 
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in MilvusVectorStore.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
+
+
+def test_async_client_skipped_if_not_async() -> None:
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+        use_async_client=False,
+    )
+    assert vector_store.aclient is None
+    assert vector_store.client is not None
+
+
+@pytest.mark.asyncio
+async def test_async_client_ok() -> None:
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+        use_async_client=True,  # it is true by default, but let's be explicit here
+    )
+    assert vector_store.aclient is not None
+    assert vector_store.client is not None
+
+
+def test_async_client_in_sync_env_raises_error() -> None:
+    with pytest.raises(pymilvus.exceptions.ConnectionConfigException) as exc_info:
+        MilvusVectorStore(
+            uri=TEST_URI,
+            dim=DIM,
+            collection_name=COLLECTION_NAME,
+            embedding_field="embedding",
+            id_field="id",
+            similarity_metric="COSINE",
+            consistency_level="Strong",
+            overwrite=True,
+            use_async_client=True,  # in sync environments, this should throw an error
+        )
+    assert (
+        exc_info.value.message
+        == "Cannot create async connection: no running event loop. Please ensure you are running in an async context."
+    )
+    assert exc_info.value.code == 1
 
 
 def test_to_milvus_filter_with_scalar_filters():
@@ -251,7 +305,18 @@ def test_milvus_filter_with_single_quotes():
 
 
 @pytest.mark.asyncio
-async def test_milvus_delete(vector_store: MilvusVectorStore, event_loop):
+async def test_milvus_delete():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
+
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -278,7 +343,18 @@ async def test_milvus_delete(vector_store: MilvusVectorStore, event_loop):
 
 
 @pytest.mark.asyncio
-async def test_milvus_delete_nodes(vector_store: MilvusVectorStore):
+async def test_milvus_delete_nodes():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
+
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -305,13 +381,33 @@ async def test_milvus_delete_nodes(vector_store: MilvusVectorStore):
 
 
 @pytest.mark.asyncio
-async def test_milvus_clear(vector_store: MilvusVectorStore):
+async def test_milvus_clear():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
     await vector_store.aclear()
     assert not vector_store.client.has_collection(COLLECTION_NAME)
 
 
 @pytest.mark.asyncio
-async def test_get_nodes(vector_store: MilvusVectorStore):
+async def test_get_nodes():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -332,7 +428,17 @@ async def test_get_nodes(vector_store: MilvusVectorStore):
 
 
 @pytest.mark.asyncio
-async def test_query_default_mode(vector_store: MilvusVectorStore):
+async def test_query_default_mode():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -361,7 +467,17 @@ async def test_query_default_mode(vector_store: MilvusVectorStore):
 
 
 @pytest.mark.asyncio
-async def test_query_mmr_mode(vector_store: MilvusVectorStore):
+async def test_query_mmr_mode():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+    )
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -543,8 +659,18 @@ async def test_async_hybrid_search_with_async_encoding():
     assert result.nodes[0].id_ == "n1"
 
 
-@pytest.mark.asyncio
-def test_milvus_index_management(vector_store: MilvusVectorStore):
+def test_milvus_index_management():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+        use_async_client=False,
+    )
     # List all indexes
     indexes = vector_store.client.list_indexes(COLLECTION_NAME)
     # Drop existing indexes
@@ -558,6 +684,7 @@ def test_milvus_index_management(vector_store: MilvusVectorStore):
         uri=TEST_URI,
         collection_name=COLLECTION_NAME,
         index_management="no_validation",
+        use_async_client=False,
     )
     indexes_1 = vector_store_1.client.list_indexes(COLLECTION_NAME)
     assert len(indexes_1) == 0
@@ -567,13 +694,24 @@ def test_milvus_index_management(vector_store: MilvusVectorStore):
         uri=TEST_URI,
         collection_name=COLLECTION_NAME,
         index_management="create_if_not_exists",
+        use_async_client=False,
     )
     indexes_2 = vector_store_2.client.list_indexes(COLLECTION_NAME)
     assert len(indexes_2) > 0
 
 
-@pytest.mark.asyncio
-def test_milvus_add(vector_store: MilvusVectorStore):
+def test_milvus_add():
+    vector_store = MilvusVectorStore(
+        uri=TEST_URI,
+        dim=DIM,
+        collection_name=COLLECTION_NAME,
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        consistency_level="Strong",
+        overwrite=True,
+        use_async_client=False,
+    )
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -588,7 +726,7 @@ def test_milvus_add(vector_store: MilvusVectorStore):
 
 
 @pytest.mark.asyncio
-def test_milvus_delete(vector_store: MilvusVectorStore):
+def test_milvus_delete(sync_vector_store: MilvusVectorStore):
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -601,21 +739,21 @@ def test_milvus_delete(vector_store: MilvusVectorStore):
         embedding=[0.5] * 64,
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n3")},
     )
-    vector_store.add([node1, node2])
-    vector_store.delete(ref_doc_id="n2")
-    row_count = vector_store.client.query(COLLECTION_NAME, output_fields=["count(*)"])[
-        0
-    ]["count(*)"]
+    sync_vector_store.add([node1, node2])
+    sync_vector_store.delete(ref_doc_id="n2")
+    row_count = sync_vector_store.client.query(
+        COLLECTION_NAME, output_fields=["count(*)"]
+    )[0]["count(*)"]
     assert row_count == 1
-    vector_store.delete(ref_doc_id="n3")
-    row_count = vector_store.client.query(COLLECTION_NAME, output_fields=["count(*)"])[
-        0
-    ]["count(*)"]
+    sync_vector_store.delete(ref_doc_id="n3")
+    row_count = sync_vector_store.client.query(
+        COLLECTION_NAME, output_fields=["count(*)"]
+    )[0]["count(*)"]
     assert row_count == 0
 
 
 @pytest.mark.asyncio
-def test_milvus_delete_nodes(vector_store: MilvusVectorStore):
+def test_milvus_delete_nodes(sync_vector_store: MilvusVectorStore):
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -628,27 +766,25 @@ def test_milvus_delete_nodes(vector_store: MilvusVectorStore):
         embedding=[0.5] * 64,
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n3")},
     )
-    vector_store.add([node1, node2])
-    vector_store.delete_nodes(node_ids=["n1"])
-    row_count = vector_store.client.query(COLLECTION_NAME, output_fields=["count(*)"])[
-        0
-    ]["count(*)"]
+    sync_vector_store.add([node1, node2])
+    sync_vector_store.delete_nodes(node_ids=["n1"])
+    row_count = sync_vector_store.client.query(
+        COLLECTION_NAME, output_fields=["count(*)"]
+    )[0]["count(*)"]
     assert row_count == 1
-    vector_store.delete_nodes(node_ids=["n2"])
-    row_count = vector_store.client.query(COLLECTION_NAME, output_fields=["count(*)"])[
-        0
-    ]["count(*)"]
+    sync_vector_store.delete_nodes(node_ids=["n2"])
+    row_count = sync_vector_store.client.query(
+        COLLECTION_NAME, output_fields=["count(*)"]
+    )[0]["count(*)"]
     assert row_count == 0
 
 
-@pytest.mark.asyncio
-def test_milvus_clear(vector_store: MilvusVectorStore):
-    vector_store.clear()
-    assert not vector_store.client.has_collection(COLLECTION_NAME)
+def test_milvus_clear(sync_vector_store: MilvusVectorStore):
+    sync_vector_store.clear()
+    assert not sync_vector_store.client.has_collection(COLLECTION_NAME)
 
 
-@pytest.mark.asyncio
-def test_get_nodes(vector_store: MilvusVectorStore):
+def test_get_nodes(sync_vector_store: MilvusVectorStore):
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -661,15 +797,14 @@ def test_get_nodes(vector_store: MilvusVectorStore):
         embedding=[0.5] * 64,
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n3")},
     )
-    vector_store.add([node1, node2])
-    nodes = vector_store.get_nodes(node_ids=["n1"])
+    sync_vector_store.add([node1, node2])
+    nodes = sync_vector_store.get_nodes(node_ids=["n1"])
     assert nodes[0] == node1
-    nodes = vector_store.get_nodes(node_ids=["n1", "n2"])
+    nodes = sync_vector_store.get_nodes(node_ids=["n1", "n2"])
     assert node1 in nodes and node2 in nodes and len(nodes) == 2
 
 
-@pytest.mark.asyncio
-def test_query_default_mode(vector_store: MilvusVectorStore):
+def test_query_default_mode(sync_vector_store: MilvusVectorStore):
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -682,23 +817,23 @@ def test_query_default_mode(vector_store: MilvusVectorStore):
         embedding=[-0.5] * 64,  # opposite direction of node1's embedding
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n3")},
     )
-    vector_store.add([node1, node2])
+    sync_vector_store.add([node1, node2])
 
     query = VectorStoreQuery(query_embedding=[0.5] * 64, similarity_top_k=1)
-    result = vector_store.query(query=query)
+    result = sync_vector_store.query(query=query)
     assert len(result.nodes) == 1
     assert result.nodes[0].id_ == "n1"
     assert result.nodes[0].text == "n1_text"
 
     query = VectorStoreQuery(query_embedding=[-0.5] * 64, similarity_top_k=1)
-    result = vector_store.query(query=query)
+    result = sync_vector_store.query(query=query)
     assert len(result.nodes) == 1
     assert result.nodes[0].id_ == "n2"
     assert result.nodes[0].text == "n2_text"
 
 
 @pytest.mark.asyncio
-def test_query_mmr_mode(vector_store: MilvusVectorStore):
+def test_query_mmr_mode(sync_vector_store: MilvusVectorStore):
     node1 = TextNode(
         id_="n1",
         text="n1_text",
@@ -717,13 +852,13 @@ def test_query_mmr_mode(vector_store: MilvusVectorStore):
         embedding=[0.5] * 63 + [0.4],
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n4")},
     )
-    vector_store.add([node1, node2, node3])
+    sync_vector_store.add([node1, node2, node3])
     query = VectorStoreQuery(
         query_embedding=[0.5] * 64,
         similarity_top_k=2,
         mode=VectorStoreQueryMode.MMR,
     )
-    result = vector_store.query(query=query, mmr_prefetch_k=3)
+    result = sync_vector_store.query(query=query, mmr_prefetch_k=3)
     assert len(result.nodes) == 2
     assert result.nodes[0].id_ == "n3"
     assert result.nodes[0].text == "n3_text"
@@ -731,7 +866,6 @@ def test_query_mmr_mode(vector_store: MilvusVectorStore):
     assert result.nodes[1].text == "n2_text"
 
 
-@pytest.mark.asyncio
 def test_query_hybrid_mode():
     vector_store = MilvusVectorStore(
         uri="./milvus_llamaindex_hybrid_mode.db",
@@ -743,6 +877,7 @@ def test_query_hybrid_mode():
         hybrid_ranker_params={"k": 60},
         sparse_embedding_function=MockSparseEmbeddingFunction(),
         consistency_level="Strong",
+        use_async_client=False,
     )
     node1 = TextNode(
         id_="n1",
@@ -792,6 +927,7 @@ def test_custom_node_format():
         embedding_field="embedding",
         text_key="custom_text",
         output_fields=["custom_meta"],
+        use_async_client=False,
     )
     vector_store.client.insert(
         COLLECTION_NAME,
@@ -838,14 +974,13 @@ def test_consistency_level_passed_to_create_collection():
 
         # Create vector store with custom consistency level
         with patch("llama_index.vector_stores.milvus.base.AsyncMilvusClient"):
-            with patch("llama_index.vector_stores.milvus.base.Collection"):
-                vector_store = MilvusVectorStore(
-                    uri=test_uri,
-                    dim=DIM,
-                    collection_name=test_collection,
-                    consistency_level="Bounded",
-                    overwrite=False,
-                )
+            MilvusVectorStore(
+                uri=test_uri,
+                dim=DIM,
+                collection_name=test_collection,
+                consistency_level="Bounded",
+                overwrite=False,
+            )
 
         # Verify create_collection was called with the correct consistency_level
         mock_client.create_collection.assert_called_once()
@@ -870,6 +1005,7 @@ def test_collection_created_with_expected_consistency_level():
         collection_name=test_collection,
         consistency_level="Strong",
         overwrite=False,
+        use_async_client=False,
     )
 
     # Verify the collection exists
