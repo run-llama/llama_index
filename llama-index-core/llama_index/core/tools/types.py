@@ -36,6 +36,7 @@ class ToolMiddleware(ABC):
         ...         return kwargs
         ...     def process_output(self, tool, output):
         ...         return output
+
     """
 
     def process_input(
@@ -52,6 +53,7 @@ class ToolMiddleware(ABC):
 
         Returns:
             Modified keyword arguments dict.
+
         """
         return kwargs
 
@@ -82,6 +84,7 @@ class ToolMiddleware(ABC):
 
         Returns:
             Modified output (will be used as the raw_output in ToolOutput).
+
         """
         return output
 

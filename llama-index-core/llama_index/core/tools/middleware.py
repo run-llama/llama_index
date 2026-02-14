@@ -1,6 +1,6 @@
 """Built-in tool middleware implementations."""
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 from llama_index.core.tools.types import ToolMiddleware
 
@@ -32,6 +32,7 @@ class ParameterInjectionMiddleware(ToolMiddleware):
         ...     enforce={"api_key"},  # api_key cannot be overridden
         ... )
         >>> tool = FunctionTool.from_defaults(my_fn, middleware=[middleware])
+
     """
 
     def __init__(
@@ -43,9 +44,7 @@ class ParameterInjectionMiddleware(ToolMiddleware):
         # If enforce is None, enforce all params
         self._enforce = enforce if enforce is not None else set(params.keys())
 
-    def process_input(
-        self, tool: "BaseTool", kwargs: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def process_input(self, tool: "BaseTool", kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Inject parameters, enforcing protected ones."""
         result = dict(kwargs)
 
@@ -79,6 +78,7 @@ class OutputFilterMiddleware(ToolMiddleware):
         ...     allowed_fields={"name", "status", "id"}
         ... )
         >>> tool = FunctionTool.from_defaults(my_fn, middleware=[middleware])
+
     """
 
     def __init__(
@@ -112,4 +112,3 @@ class OutputFilterMiddleware(ToolMiddleware):
                 for item in output
             ]
         return output
-
