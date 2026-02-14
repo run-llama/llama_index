@@ -1091,5 +1091,9 @@
   "run_jobs": "llama_index.core.async_utils",
   "DecomposeQueryTransform": "llama_index.core.query.query_transform.base",
   "get_eval_results": "llama_index.core.evaluation.eval_utils",
-  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base"
+  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base",
+  "SuperpowersBrainstormPack": "llama_index.packs.superpowers_brainstorm",
+  "SuperpowersWritePlanPack": "llama_index.packs.superpowers_write_plan",
+  "SuperpowersExecutePlanPack": "llama_index.packs.superpowers_execute_plan",
+  "SuperpowersPack": "llama_index.packs.superpowers"
 }
