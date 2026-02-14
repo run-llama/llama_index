@@ -47,6 +47,11 @@ from llama_index.readers.github.repository.github_client import (
     GithubClient,
     GitTreeResponseModel,
 )
+from llama_index.readers.github.repository.utils import (
+    BufferedGitBlobDataIterator,
+    get_file_extension,
+    print_if_verbose,
+)
 
 
 @runtime_checkable
@@ -141,12 +146,6 @@ class InMemoryCache:
         """Return the number of cached entries."""
         return len(self._cache)
 
-
-from llama_index.readers.github.repository.utils import (
-    BufferedGitBlobDataIterator,
-    get_file_extension,
-    print_if_verbose,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -719,7 +718,7 @@ class GithubRepositoryReader(BaseReader):
 
         for result in results:
             if isinstance(result, Exception):
-                self.logger.error(f"Error fetching file: {result}")
+                self.logger.error("Error fetching file: %s", result)
                 if self.fail_on_error:
                     raise result
             elif result is not None:
@@ -758,7 +757,7 @@ class GithubRepositoryReader(BaseReader):
             )
 
             if contents is None:
-                self.logger.warning(f"File not found: {file_path}")
+                self.logger.warning("File not found: %s", file_path)
                 self.dispatcher.event(
                     GitHubFileSkippedEvent(
                         file_path=file_path,
@@ -930,7 +929,7 @@ class GithubRepositoryReader(BaseReader):
             return document
 
         except Exception as e:
-            self.logger.error(f"Error processing file {file_path}: {e}")
+            self.logger.error("Error processing file %s: %s", file_path, e)
             self.dispatcher.event(
                 GitHubFileFailedEvent(
                     file_path=file_path,
