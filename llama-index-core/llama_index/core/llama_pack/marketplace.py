@@ -40,6 +40,13 @@ class MarketplaceManager:
             "branch": "main",
             "base_path": "llama-index-packs",
             "description": "Official LlamaIndex packs repository"
+        },
+        {
+            "name": "superpowers-marketplace",
+            "repository": "obra/superpowers-marketplace",
+            "branch": "main",
+            "base_path": "",
+            "description": "Curated Claude Code plugin marketplace by obra"
         }
     ]
 
