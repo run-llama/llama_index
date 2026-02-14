@@ -26,10 +26,10 @@ RUN pip3 install --break-system-packages \
     Pillow
 
 # Install the Face Lock biometric package
-# In production, pip install from PyPI. In dev, copy and install local.
-COPY ../llama_index /opt/face_lock_src/llama_index
-COPY ../pyproject.toml /opt/face_lock_src/pyproject.toml
-COPY ../README.md /opt/face_lock_src/README.md
+# Option A (dev): build context must be set to the parent directory
+#   docker build -f openclaw/Dockerfile -t face-lock ..
+# Option B (production): install from PyPI once published
+COPY face_lock_pkg/ /opt/face_lock_src/
 RUN pip3 install --break-system-packages /opt/face_lock_src
 
 WORKDIR /app
