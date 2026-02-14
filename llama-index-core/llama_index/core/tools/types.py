@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
 
@@ -12,6 +12,91 @@ if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
+
+
+class ToolMiddleware(ABC):
+    """
+    Base class for tool execution middleware.
+
+    Middleware allows pre-processing of tool inputs and post-processing of tool
+    outputs in a composable chain. This enables:
+
+    - Deterministic parameter injection (e.g., auth tokens from trusted context)
+    - Output filtering to reduce context bloat
+    - Input validation and policy enforcement
+    - Logging, auditing, and rate limiting
+
+    Middleware is applied in order for input processing and in reverse order
+    for output processing (like a stack).
+
+    Example:
+        >>> class MyMiddleware(ToolMiddleware):
+        ...     def process_input(self, tool, kwargs):
+        ...         kwargs["api_key"] = "trusted-key"
+        ...         return kwargs
+        ...     def process_output(self, tool, output):
+        ...         return output
+    """
+
+    def process_input(
+        self,
+        tool: "BaseTool",
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Process/modify tool keyword arguments before execution.
+
+        Args:
+            tool: The tool being called.
+            kwargs: The keyword arguments that will be passed to the tool function.
+
+        Returns:
+            Modified keyword arguments dict.
+        """
+        return kwargs
+
+    async def aprocess_input(
+        self,
+        tool: "BaseTool",
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Async version of process_input.
+
+        By default, delegates to the synchronous process_input method.
+        Override this method for middleware that requires async I/O.
+        """
+        return self.process_input(tool, kwargs)
+
+    def process_output(
+        self,
+        tool: "BaseTool",
+        output: Any,
+    ) -> Any:
+        """
+        Process/modify tool output after execution.
+
+        Args:
+            tool: The tool that was called.
+            output: The raw output from the tool function.
+
+        Returns:
+            Modified output (will be used as the raw_output in ToolOutput).
+        """
+        return output
+
+    async def aprocess_output(
+        self,
+        tool: "BaseTool",
+        output: Any,
+    ) -> Any:
+        """
+        Async version of process_output.
+
+        By default, delegates to the synchronous process_output method.
+        Override this method for middleware that requires async I/O.
+        """
+        return self.process_output(tool, output)
 
 
 class DefaultToolFnSchema(BaseModel):
