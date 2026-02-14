@@ -14,6 +14,7 @@ from llama_index.core.llama_pack.download import (
     LLAMA_PACKS_CONTENTS_URL,
     download_llama_pack,
 )
+from llama_index.core.llama_pack.marketplace import MarketplaceManager
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
 
@@ -65,6 +66,69 @@ def handle_download_llama_dataset(
     )
 
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
+
+
+def handle_marketplace_add(
+    name: str,
+    repository: str,
+    branch: str = "main",
+    base_path: str = "",
+    description: str = "",
+    **kwargs: Any,
+) -> None:
+    """Add a new plugin marketplace."""
+    manager = MarketplaceManager()
+    success = manager.add_marketplace(
+        name=name,
+        repository=repository,
+        branch=branch,
+        base_path=base_path,
+        description=description,
+    )
+
+    if success:
+        print(f"Successfully added marketplace '{name}'")
+        print(f"Repository: {repository}")
+        print(f"Branch: {branch}")
+        if base_path:
+            print(f"Base path: {base_path}")
+        print(f"\nTo install a skill, run:")
+        print(f"  llamaindex-cli download-llamapack <PackName>@{name} --download-dir ./path")
+    else:
+        print(f"Error: Marketplace '{name}' already exists")
+
+
+def handle_marketplace_list(**kwargs: Any) -> None:
+    """List all registered marketplaces."""
+    manager = MarketplaceManager()
+    marketplaces = manager.list_marketplaces()
+
+    if not marketplaces:
+        print("No marketplaces registered")
+        return
+
+    print("Registered marketplaces:")
+    print()
+    for marketplace in marketplaces:
+        print(f"  {marketplace.name}")
+        print(f"    Repository: {marketplace.repository}")
+        print(f"    Branch: {marketplace.branch}")
+        if marketplace.base_path:
+            print(f"    Base path: {marketplace.base_path}")
+        if marketplace.description:
+            print(f"    Description: {marketplace.description}")
+        print()
+
+
+def handle_marketplace_remove(name: str, **kwargs: Any) -> None:
+    """Remove a marketplace."""
+    manager = MarketplaceManager()
+    success = manager.remove_marketplace(name)
+
+    if success:
+        print(f"Successfully removed marketplace '{name}'")
+    else:
+        print(f"Error: Marketplace '{name}' not found or cannot be removed")
 
 
 def default_rag_cli() -> RagCLI:
@@ -268,6 +332,76 @@ def main() -> None:
         help="Name of prefix package",
     )
     new_package_parser.set_defaults(func=lambda args: handle_init_package(**vars(args)))
+
+    # marketplace commands
+    marketplace_parser = subparsers.add_parser(
+        "marketplace", help="Manage plugin marketplaces"
+    )
+    marketplace_subparsers = marketplace_parser.add_subparsers(
+        title="marketplace commands", dest="marketplace_command", required=True
+    )
+
+    # marketplace add command
+    marketplace_add_parser = marketplace_subparsers.add_parser(
+        "add", help="Add a new plugin marketplace"
+    )
+    marketplace_add_parser.add_argument(
+        "repository",
+        type=str,
+        help="GitHub repository in format 'owner/repo' (e.g., 'huggingface/skills')",
+    )
+    marketplace_add_parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        required=True,
+        help="Short name for the marketplace (used in install commands)",
+    )
+    marketplace_add_parser.add_argument(
+        "-b",
+        "--branch",
+        type=str,
+        default="main",
+        help="Git branch to use (default: 'main')",
+    )
+    marketplace_add_parser.add_argument(
+        "-p",
+        "--base-path",
+        type=str,
+        default="",
+        help="Base path within the repository for packs",
+    )
+    marketplace_add_parser.add_argument(
+        "-d",
+        "--description",
+        type=str,
+        default="",
+        help="Human-readable description of the marketplace",
+    )
+    marketplace_add_parser.set_defaults(
+        func=lambda args: handle_marketplace_add(**vars(args))
+    )
+
+    # marketplace list command
+    marketplace_list_parser = marketplace_subparsers.add_parser(
+        "list", help="List all registered marketplaces"
+    )
+    marketplace_list_parser.set_defaults(
+        func=lambda args: handle_marketplace_list(**vars(args))
+    )
+
+    # marketplace remove command
+    marketplace_remove_parser = marketplace_subparsers.add_parser(
+        "remove", help="Remove a marketplace"
+    )
+    marketplace_remove_parser.add_argument(
+        "name",
+        type=str,
+        help="Name of the marketplace to remove",
+    )
+    marketplace_remove_parser.set_defaults(
+        func=lambda args: handle_marketplace_remove(**vars(args))
+    )
 
     # Parse the command-line arguments
     args = parser.parse_args()
