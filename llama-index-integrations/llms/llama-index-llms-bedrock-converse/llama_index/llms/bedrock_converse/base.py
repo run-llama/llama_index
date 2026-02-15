@@ -9,6 +9,7 @@ from typing import (
     Union,
     TYPE_CHECKING,
 )
+import re
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -316,6 +317,14 @@ class BedrockConverse(FunctionCallingLLM):
             **kwargs,
         }
 
+    def _strip_thinking_tokens(self, text: str) -> str:
+        """Remove <thinking>...</thinking> tokens from text.
+
+        Some models (e.g., Amazon Nova) include thinking tokens in the response
+        text even when thinking is disabled. This helper removes them.
+        """
+        return re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
     ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
@@ -373,6 +382,9 @@ class BedrockConverse(FunctionCallingLLM):
         content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
             response
         )
+
+        # Strip thinking tokens from content (e.g., for Nova models)
+        content = self._strip_thinking_tokens(content)
 
         return ChatResponse(
             message=ChatMessage(
@@ -460,7 +472,7 @@ class BedrockConverse(FunctionCallingLLM):
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            content=self._strip_thinking_tokens(content.get("text", "")),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
                                 "tool_call_id": [
@@ -469,7 +481,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        delta=content_delta.get("text", ""),
+                        delta=self._strip_thinking_tokens(content_delta.get("text", "")),
                         raw=chunk,
                         additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
@@ -485,7 +497,7 @@ class BedrockConverse(FunctionCallingLLM):
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            content=self._strip_thinking_tokens(content.get("text", "")),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
                                 "tool_call_id": [
@@ -507,7 +519,7 @@ class BedrockConverse(FunctionCallingLLM):
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
-                                content=content.get("text", ""),
+                                content=self._strip_thinking_tokens(content.get("text", "")),
                                 additional_kwargs={
                                     "tool_calls": tool_calls,
                                     "tool_call_id": [
@@ -556,6 +568,9 @@ class BedrockConverse(FunctionCallingLLM):
         content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
             response
         )
+
+        # Strip thinking tokens from content (e.g., for Nova models)
+        content = self._strip_thinking_tokens(content)
 
         return ChatResponse(
             message=ChatMessage(
@@ -645,7 +660,7 @@ class BedrockConverse(FunctionCallingLLM):
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            content=self._strip_thinking_tokens(content.get("text", "")),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
                                 "tool_call_id": [
@@ -654,7 +669,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        delta=content_delta.get("text", ""),
+                        delta=self._strip_thinking_tokens(content_delta.get("text", "")),
                         raw=chunk,
                         additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
@@ -670,7 +685,7 @@ class BedrockConverse(FunctionCallingLLM):
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            content=self._strip_thinking_tokens(content.get("text", "")),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
                                 "tool_call_id": [
@@ -692,7 +707,7 @@ class BedrockConverse(FunctionCallingLLM):
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
-                                content=content.get("text", ""),
+                                content=self._strip_thinking_tokens(content.get("text", "")),
                                 additional_kwargs={
                                     "tool_calls": tool_calls,
                                     "tool_call_id": [

@@ -801,3 +801,57 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert response_5 is not None
     assert hasattr(response_5, "response")
     assert len(str(response_5)) > 0
+
+
+# --- Tests for _strip_thinking_tokens ---
+
+import re
+
+
+def test_strip_thinking_tokens_no_thinking():
+    """Test that text without thinking tokens is unchanged."""
+    text = "Hello world"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_basic():
+    """Test that thinking tokens are removed."""
+    text = "<thinking>reasoning</thinking>Hello world"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_multiline():
+    """Test that multiline thinking tokens are removed."""
+    text = "<thinking>Step 1: Analyze\nStep 2: Decide\nStep 3: Output</thinking>Hello world"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_at_end():
+    """Test that thinking tokens at the end are removed."""
+    text = "Hello world<thinking>some reasoning</thinking>"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_multiple():
+    """Test that multiple thinking tokens are removed."""
+    text = "<thinking>first</thinking>Hello<thinking>second</thinking> world"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_empty():
+    """Test that empty thinking tokens are handled."""
+    text = "<thinking></thinking>Hello world"
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_whitespace_only():
+    """Test that text with only whitespace after stripping is handled."""
+    text = "   <thinking>reasoning</thinking>   "
+    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    assert result == ""
