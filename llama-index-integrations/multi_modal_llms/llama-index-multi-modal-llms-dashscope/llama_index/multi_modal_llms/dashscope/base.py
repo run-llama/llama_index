@@ -17,7 +17,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.schema import ImageNode
+from llama_index.core.schema import ImageDocument, ImageNode
 from llama_index.multi_modal_llms.dashscope.utils import (
     chat_message_to_dashscope_multi_modal_messages,
     dashscope_response_to_chat_response,
@@ -144,7 +144,7 @@ class DashScopeMultiModal(DashScope):
     def _get_input_parameters(
         self,
         prompt: str,
-        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        image_documents: Sequence[Union[ImageDocument, ImageNode, ImageBlock]],
         **kwargs: Any,
     ) -> Tuple[ChatMessage, Dict]:
         parameters = self._get_default_parameters()
@@ -155,16 +155,30 @@ class DashScopeMultiModal(DashScope):
                 role=MessageRole.USER.value, content=[{"text": prompt}]
             )
         else:
-            if all(isinstance(doc, ImageNode) for doc in image_documents):
-                image_docs = cast(
-                    List[ImageBlock],
-                    [image_node_to_image_block(node) for node in image_documents],
-                )
+            # Convert ImageDocument/ImageNode to ImageBlock if needed
+            if all(isinstance(doc, ImageDocument) for doc in image_documents):
+                # Convert ImageDocument to ImageBlock
+                image_docs: List[ImageBlock] = [
+                    image_node_to_image_block(doc)  # type: ignore[arg-type]
+                    for doc in image_documents
+                ]
+            elif all(isinstance(doc, ImageNode) for doc in image_documents):
+                image_docs = [
+                    image_node_to_image_block(node) for node in image_documents
+                ]
             else:
-                image_docs = cast(List[ImageBlock], image_documents)
+                image_docs = cast(List[ImageBlock], list(image_documents))
+
             content = []
             for image_document in image_docs:
-                content.append({"image": image_document.url})
+                if image_document.url:
+                    content.append({"image": image_document.url})
+                elif image_document.path:
+                    content.append({"image": str(image_document.path)})
+                elif image_document.image:
+                    content.append(
+                        {"image": f"data:image/png;base64,{image_document.image.decode('utf-8')}"}
+                    )
             content.append({"text": prompt})
             message = ChatMessage(role=MessageRole.USER.value, content=content)
         return message, parameters
