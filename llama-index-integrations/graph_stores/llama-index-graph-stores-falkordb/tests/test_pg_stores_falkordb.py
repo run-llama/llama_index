@@ -125,6 +125,35 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
         self.pg_store.switch_graph("new_graph")
         self.pg_store.refresh_schema()
 
+    def test_mentions_relationship_with_triplet_source_id(self):
+        """Test that MENTIONS relationships are created when entities have triplet_source_id."""
+        # Create a chunk node first
+        from llama_index.core.graph_stores.types import ChunkNode
+
+        chunk = ChunkNode(id_="chunk_1", text="Test chunk with entities", properties={})
+        self.pg_store.upsert_nodes([chunk])
+
+        # Create entity with triplet_source_id
+        entity = EntityNode(
+            label="PERSON",
+            name="TestEntity",
+            properties={"triplet_source_id": "chunk_1"},
+        )
+
+        self.pg_store.upsert_nodes([entity])
+
+        # Verify MENTIONS relationship exists
+        mentions_query = """
+            MATCH (c:Chunk {id: 'chunk_1'})-[r:MENTIONS]->(e:__Entity__ {name: 'TestEntity'})
+            RETURN count(r) AS mention_count
+        """
+        result = self.pg_store.structured_query(mentions_query)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["mention_count"], 1)
+
+        # Clean up
+        self.pg_store.delete(ids=[entity.id, chunk.id_])
+
 
 if __name__ == "__main__":
     unittest.main()

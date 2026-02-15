@@ -91,6 +91,24 @@ for r in resp:
     print(r.delta, end="")
 ```
 
+## Azure SDK Usage
+
+To use the Azure SDK implementation, pass the Azure endpoint and API key. When these
+are provided, the client uses the Azure SDK instead of the public Mistral endpoint.
+
+```python
+from llama_index.llms.mistralai import MistralAI
+
+llm = MistralAI(
+    azure_endpoint="https://<your-resource-name>.openai.azure.com",
+    azure_api_key="<replace-with-your-azure-key>",
+    model="mistral-large-latest",
+)
+
+resp = llm.complete("Paul Graham is ")
+print(resp)
+```
+
 ## Function Calling
 
 You can call functions from the model by defining tools. Here’s an example:

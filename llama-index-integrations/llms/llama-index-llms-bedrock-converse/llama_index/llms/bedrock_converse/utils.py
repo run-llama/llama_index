@@ -6,14 +6,27 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
-    Literal,
     Union,
 )
+
 from botocore.exceptions import ClientError
-from typing_extensions import TypedDict
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    CachePoint,
+    ChatMessage,
+    ChatResponse,
+    ContentBlock,
+    DocumentBlock,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -22,21 +35,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    MessageRole,
-    ImageBlock,
-    TextBlock,
-    ContentBlock,
-    AudioBlock,
-    DocumentBlock,
-    CachePoint,
-    ThinkingBlock,
-    ToolCallBlock,
-)
-
+from typing_extensions import NotRequired, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +64,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
@@ -114,6 +114,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -147,6 +148,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -168,6 +170,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -182,11 +185,14 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
 )
+
+BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = ("anthropic.claude-opus-4-6-v1",)
 
 
 def is_reasoning(model_name: str) -> bool:
@@ -222,6 +228,10 @@ def is_bedrock_function_calling_model(model_name: str) -> bool:
 
 def is_bedrock_prompt_caching_supported_model(model_name: str) -> bool:
     return get_model_name(model_name) in BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS
+
+
+def is_bedrock_adaptive_thinking_supported_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS
 
 
 def bedrock_modelname_to_context_size(model_name: str) -> int:
@@ -263,6 +273,12 @@ def _content_block_to_bedrock_format(
             "text": block.text,
         }
     elif isinstance(block, ThinkingBlock):
+        if role != MessageRole.ASSISTANT:
+            logger.warning(
+                "Bedrock Converse API only supports reasoning content for assistant messages."
+            )
+            return {"text": block.content}
+
         if block.content:
             thinking_data = {
                 "reasoningContent": {"reasoningText": {"text": block.content}}
@@ -822,6 +838,28 @@ async def converse_with_retry_async(
         return await _conversion_with_retry(**converse_kwargs)
 
 
+def extract_thinking_from_block(block: Dict[str, Any]) -> Optional[str]:
+    """Extract thinking content from a Bedrock Converse content block or delta."""
+    if "reasoningContent" in block:
+        # For non-streaming, it's reasoningContent.reasoningText.text
+        # For streaming, it's reasoningContent.text
+        reasoning = block["reasoningContent"]
+        if "reasoningText" in reasoning:
+            return reasoning["reasoningText"].get("text")
+        return reasoning.get("text")
+
+    # Fallback for other potential keys (Nova, etc.)
+    for key in ("reasoning_content", "thinking", "reasoning"):
+        if key in block:
+            val = block[key]
+            if isinstance(val, str):
+                return val
+            if isinstance(val, dict):
+                return val.get("text") or val.get("content")
+
+    return None
+
+
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
     """
     Joins two dictionaries, summing shared keys and adding new keys.
@@ -853,5 +891,5 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
 
 class ThinkingDict(TypedDict):
-    type: Literal["enabled"]
-    budget_tokens: int
+    type: Literal["enabled", "adaptive"]
+    budget_tokens: NotRequired[int]

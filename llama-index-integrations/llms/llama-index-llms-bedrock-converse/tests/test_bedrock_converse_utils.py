@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
+    ThinkingDict,
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
     converse_with_retry,
@@ -156,9 +157,15 @@ def test_content_block_to_bedrock_format_text():
     assert result == {"text": "Hello, world!"}
 
 
-def test_content_block_to_bedrock_format_thinking():
+def test_content_block_to_bedrock_format_thinking_user_role_falls_back_to_text():
     think_block = ThinkingBlock(content="Hello, world!")
     result = _content_block_to_bedrock_format(think_block, MessageRole.USER)
+    assert result == {"text": "Hello, world!"}
+
+
+def test_content_block_to_bedrock_format_thinking_assistant_role_uses_reasoning_content():
+    think_block = ThinkingBlock(content="Hello, world!")
+    result = _content_block_to_bedrock_format(think_block, MessageRole.ASSISTANT)
     assert result == {"reasoningContent": {"reasoningText": {"text": "Hello, world!"}}}
 
 
@@ -746,3 +753,15 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         call_kwargs = patched_converse.call_args.kwargs
         assert "guardrailConfig" in call_kwargs
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
+
+
+def test_thinking_dict_enabled_requires_budget():
+    td: ThinkingDict = {"type": "enabled", "budget_tokens": 1024}
+    assert td["type"] == "enabled"
+    assert td["budget_tokens"] == 1024
+
+
+def test_thinking_dict_adaptive_no_budget():
+    td: ThinkingDict = {"type": "adaptive"}
+    assert td["type"] == "adaptive"
+    assert "budget_tokens" not in td
