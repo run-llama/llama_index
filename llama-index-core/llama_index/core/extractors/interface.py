@@ -1,8 +1,10 @@
 """Node parser interface."""
 
+import asyncio
+import logging
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, cast
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field
@@ -14,9 +16,19 @@ from llama_index.core.schema import (
 )
 from typing_extensions import Self
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_NODE_TEXT_TEMPLATE = """\
-[Excerpt from document]\n{metadata_str}\n\
-Excerpt:\n-----\n{content}\n-----\n"""
+[Excerpt from document]
+{metadata_str}
+\
+Excerpt:
+-----
+{content}
+-----
+"""
+
+ExtractionErrorMode = Literal["raise", "skip"]
 
 
 class BaseExtractor(TransformComponent):
@@ -45,6 +57,21 @@ class BaseExtractor(TransformComponent):
     num_workers: int = Field(
         default=4,
         description="Number of workers to use for concurrent async processing.",
+    )
+
+    max_retries: int = Field(
+        default=0,
+        description="Maximum number of retries for extraction. 0 means no retries (default behavior).",
+    )
+
+    retry_backoff: float = Field(
+        default=1.0,
+        description="Exponential backoff base in seconds for retry attempts.",
+    )
+
+    on_extraction_error: ExtractionErrorMode = Field(
+        default="raise",
+        description="What to do when extraction fails after retries: 'raise' to raise the exception, 'skip' to return empty metadata.",
     )
 
     @classmethod
@@ -97,6 +124,50 @@ class BaseExtractor(TransformComponent):
         """
         return asyncio_run(self.aextract(nodes))
 
+    async def _aextract_with_retry(
+        self, nodes: Sequence[BaseNode]
+    ) -> List[Dict]:
+        """
+        Extract metadata with retry logic.
+
+        Args:
+            nodes: nodes to extract metadata from
+
+        Returns:
+            List of metadata dicts (empty dicts if skipped after failures)
+        """
+        if self.max_retries == 0:
+            return await self.aextract(nodes)
+
+        last_exception: Optional[Exception] = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                return await self.aextract(nodes)
+            except Exception as e:
+                last_exception = e
+                if attempt < self.max_retries:
+                    wait_time = self.retry_backoff * (2**attempt)
+                    logger.warning(
+                        f"Extraction failed (attempt {attempt + 1}/{self.max_retries + 1}), "
+                        f"retrying in {wait_time:.1f}s: {e}"
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(
+                        f"Extraction failed after {self.max_retries + 1} attempts: {e}"
+                    )
+
+        if self.on_extraction_error == "skip":
+            logger.warning(
+                f"Skipping extraction after {self.max_retries + 1} failures, "
+                "returning empty metadata"
+            )
+            return [{} for _ in nodes]
+
+        raise RuntimeError(
+            f"Extraction failed after {self.max_retries + 1} attempts"
+        ) from last_exception
+
     async def aprocess_nodes(
         self,
         nodes: Sequence[BaseNode],
@@ -122,7 +193,7 @@ class BaseExtractor(TransformComponent):
         else:
             new_nodes = [deepcopy(node) for node in nodes]
 
-        cur_metadata_list = await self.aextract(new_nodes)
+        cur_metadata_list = await self._aextract_with_retry(new_nodes)
         for idx, node in enumerate(new_nodes):
             node.metadata.update(cur_metadata_list[idx])
 
