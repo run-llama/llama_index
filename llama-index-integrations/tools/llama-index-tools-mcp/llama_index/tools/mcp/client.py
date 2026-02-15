@@ -2,7 +2,7 @@ import warnings
 import logging
 import io
 
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AsyncExitStack
 from datetime import timedelta
 from typing import (
     Optional,
@@ -135,6 +135,8 @@ class BasicMCPClient(ClientSession):
         self.sampling_callback = sampling_callback
         self.headers = headers
         self.tool_call_logs_callback = tool_call_logs_callback
+        self._session: Optional[ClientSession] = None
+        self._exit_stack: Optional[AsyncExitStack] = None
 
     @classmethod
     def with_oauth(
@@ -247,6 +249,111 @@ class BasicMCPClient(ClientSession):
                     await session.initialize()
                     yield session
 
+    async def connect(self) -> "BasicMCPClient":
+        """
+        Establish a persistent connection to the MCP server.
+
+        This keeps the underlying transport and session alive across multiple
+        operations, avoiding the overhead of reconnecting for each call.
+        Use as an async context manager or call connect/disconnect explicitly.
+
+        Returns:
+            self, for chaining.
+
+        """
+        if self._session is not None:
+            return self
+
+        self._exit_stack = AsyncExitStack()
+        await self._exit_stack.__aenter__()
+
+        url = urlparse(self.command_or_url)
+        scheme = url.scheme
+
+        if scheme in ("http", "https"):
+            if enable_sse(self.command_or_url):
+                streams = await self._exit_stack.enter_async_context(
+                    sse_client(
+                        self.command_or_url, auth=self.auth, headers=self.headers
+                    )
+                )
+                session = await self._exit_stack.enter_async_context(
+                    ClientSession(
+                        *streams,
+                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        sampling_callback=self.sampling_callback,
+                    )
+                )
+            else:
+                read, write, _ = await self._exit_stack.enter_async_context(
+                    streamablehttp_client(
+                        self.command_or_url, auth=self.auth, headers=self.headers
+                    )
+                )
+                session = await self._exit_stack.enter_async_context(
+                    ClientSession(
+                        read,
+                        write,
+                        read_timeout_seconds=timedelta(seconds=self.timeout),
+                        sampling_callback=self.sampling_callback,
+                    )
+                )
+        else:
+            server_parameters = StdioServerParameters(
+                command=self.command_or_url, args=self.args, env=self.env
+            )
+            streams = await self._exit_stack.enter_async_context(
+                stdio_client(server_parameters)
+            )
+            session = await self._exit_stack.enter_async_context(
+                ClientSession(
+                    *streams,
+                    read_timeout_seconds=timedelta(seconds=self.timeout),
+                    sampling_callback=self.sampling_callback,
+                )
+            )
+
+        await session.initialize()
+        self._session = session
+        return self
+
+    async def disconnect(self) -> None:
+        """Close the persistent connection to the MCP server."""
+        if self._exit_stack is not None:
+            try:
+                await self._exit_stack.aclose()
+            except BaseException as e:
+                logging.warning(f"Error during MCP client disconnect: {e}")
+            finally:
+                self._exit_stack = None
+                self._session = None
+
+    async def __aenter__(self) -> "BasicMCPClient":
+        """Enter async context manager, establishing a persistent connection."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Exit async context manager, closing the persistent connection."""
+        await self.disconnect()
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if there is an active persistent connection."""
+        return self._session is not None
+
+    @asynccontextmanager
+    async def _get_session(self) -> AsyncIterator[ClientSession]:
+        """
+        Get an MCP session. Reuses the persistent session if connected,
+        otherwise creates a temporary session for a single operation.
+        """
+        if self._session is not None:
+            yield self._session
+        else:
+            async with self._run_session() as session:
+                yield session
+
     def _configure_tool_call_logs_callback(self) -> io.StringIO:
         handler = io.StringIO()
         stream_handler = logging.StreamHandler(handler)
@@ -281,7 +388,7 @@ class BasicMCPClient(ClientSession):
             # we use a string stream so that we can recover all logs at the end of the session
             handler = self._configure_tool_call_logs_callback()
 
-            async with self._run_session() as session:
+            async with self._get_session() as session:
                 result = await session.call_tool(
                     tool_name, arguments=arguments, progress_callback=progress_callback
                 )
@@ -294,25 +401,25 @@ class BasicMCPClient(ClientSession):
 
                 return result
         else:
-            async with self._run_session() as session:
+            async with self._get_session() as session:
                 return await session.call_tool(
                     tool_name, arguments=arguments, progress_callback=progress_callback
                 )
 
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             return await session.list_tools()
 
     # Resource methods
-    async def list_resources(self) -> types.ListToolsResult:
+    async def list_resources(self) -> types.ListResourcesResult:
         """List all available resources on the MCP server."""
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             return await session.list_resources()
 
-    async def list_resource_templates(self) -> types.ListToolsResult:
+    async def list_resource_templates(self) -> types.ListResourceTemplatesResult:
         """List all dynamic available resources on the MCP server."""
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             return await session.list_resource_templates()
 
     async def read_resource(self, resource_uri: AnyUrl) -> types.ReadResourceResult:
@@ -323,14 +430,14 @@ class BasicMCPClient(ClientSession):
             Tuple containing the resource content as bytes and the MIME type
 
         """
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             return await session.read_resource(resource_uri)
 
     ## ----- Prompt methods -----
 
     async def list_prompts(self) -> List[types.Prompt]:
         """List all available prompts on the MCP server."""
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             return await session.list_prompts()
 
     async def get_prompt(
@@ -347,7 +454,7 @@ class BasicMCPClient(ClientSession):
             The prompt as a list of llama-index ChatMessage objects
 
         """
-        async with self._run_session() as session:
+        async with self._get_session() as session:
             prompt = await session.get_prompt(prompt_name, arguments)
             llama_messages = []
             for message in prompt.messages:

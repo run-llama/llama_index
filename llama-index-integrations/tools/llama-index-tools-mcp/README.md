@@ -51,6 +51,68 @@ agent = FunctionAgent(
 resp = await agent.run("What is the weather in Tokyo?")
 ```
 
+## Persistent Sessions
+
+By default, `BasicMCPClient` creates a new connection for each operation. For better
+performance, use persistent sessions which keep the connection alive across multiple
+operations. This is especially beneficial for stdio-based servers where each connection
+spawns a new process.
+
+```python
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+
+# Use as an async context manager (recommended)
+async with BasicMCPClient("python", args=["server.py"]) as client:
+    tool_spec = McpToolSpec(client)
+    tools = await tool_spec.to_tool_list_async()
+
+    # Multiple operations reuse the same connection
+    result1 = await client.call_tool("echo", {"message": "hello"})
+    result2 = await client.call_tool("add", {"a": 1, "b": 2})
+
+# Or manage the lifecycle manually
+client = BasicMCPClient("https://example.com/mcp")
+await client.connect()
+try:
+    tools = await client.list_tools()
+    result = await client.call_tool("my_tool", {"arg": "value"})
+finally:
+    await client.disconnect()
+```
+
+## Multi-Server Management
+
+Use `McpServerManager` to connect to multiple MCP servers and aggregate their tools:
+
+```python
+from llama_index.tools.mcp import BasicMCPClient, McpServerManager
+
+manager = McpServerManager()
+manager.add_server("github", BasicMCPClient("https://api.github.com/mcp"))
+manager.add_server("db", BasicMCPClient("python", args=["db_server.py"]))
+manager.add_server("sentry", BasicMCPClient("https://mcp.sentry.dev/mcp"))
+
+async with manager:
+    # Get tools from all servers
+    all_tools = await manager.get_tools()
+
+    # Or filter tools per server
+    filtered_tools = await manager.get_tools(
+        allowed_tools={"github": ["list_repos", "create_issue"]}
+    )
+
+    # Or get tools from a specific server
+    db_tools = await manager.get_tools_from_server("db")
+
+    # Use all tools with an agent
+    agent = FunctionAgent(
+        name="Agent",
+        llm=OpenAI(model="gpt-4o"),
+        tools=all_tools,
+    )
+    resp = await agent.run("List my GitHub repos and check Sentry for errors")
+```
+
 ## Helper Functions
 
 This package also includes several helper functions for working with MCP Servers.

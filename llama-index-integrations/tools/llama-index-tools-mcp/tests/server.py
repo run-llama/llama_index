@@ -34,7 +34,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
 # Create the MCP server
 mcp = FastMCP(
     "TestAllFeatures",
-    description="A test server that demonstrates all MCP features",
+    instructions="A test server that demonstrates all MCP features",
     dependencies=["pillow", "numpy"],
     lifespan=app_lifespan,
 )

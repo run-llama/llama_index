@@ -79,14 +79,14 @@ async def test_pydantic_models_tool(client: BasicMCPClient):
     tool = tools[0]
     assert tool.metadata.name == "test_pydantic"
 
-    result = await tool.async_fn(
+    result = await tool.acall(
         name={"name": "John Doe"},
         method={"method": "POST"},
         lst={"lst": [1, 2, 3, 4, 5]},
     )
 
     assert (
-        "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content[0].text
+        "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content
     )
 
 
