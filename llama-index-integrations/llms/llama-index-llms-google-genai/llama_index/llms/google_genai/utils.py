@@ -16,7 +16,6 @@ from typing import (
     cast,
 )
 import typing
-import copy
 import google.genai.types as types
 import google.genai
 import httpx
@@ -447,56 +446,27 @@ async def chat_message_to_gemini(
     ), file_api_names
 
 
-def _remove_additional_properties_from_schema(
+def _validation_for_additional_properties_from_schema(
     schema: Dict[str, Any],
-) -> Optional[Dict[str, Any]]:
-    """
-    Recursively remove additionalProperties fields from JSON schema.
-    Also removes empty objects (objects with no properties).
-
-    Gemini API does not support additionalProperties in function calling schemas.
-    See: https://github.com/googleapis/python-genai/issues/70
-    """
-    if not isinstance(schema, dict):
-        return schema
-
-    cleaned = copy.deepcopy(schema)
-
-    # Remove additionalProperties
-    if "additionalProperties" in cleaned:
-        del cleaned["additionalProperties"]
-
-    # Remove empty objects entirely (return None, caller will filter)
-    if cleaned.get("type") == "object" and (
-        "properties" not in cleaned or not cleaned["properties"]
-    ):
-        return None
-
-    # Recursively process nested structures
-    for key, value in list(
-        cleaned.items()
-    ):  # Use list() to avoid dict size change during iteration
-        if isinstance(value, dict):
-            result = _remove_additional_properties_from_schema(value)
-            if result is None:
-                del cleaned[key]
-            else:
-                cleaned[key] = result
-        elif isinstance(value, list):
-            cleaned[key] = [
-                result
-                for item in value
-                if (
-                    result := (
-                        _remove_additional_properties_from_schema(item)
-                        if isinstance(item, dict)
-                        else item
-                    )
+):
+    def _validate(obj: Dict[str, Any], path="") -> bool:
+        if isinstance(obj, dict):
+            if "additionalProperties" in obj:
+                raise ValueError(
+                    f"The Gemini API does not support 'additionalProperties' in schemas.\n"
+                    f"Found at path: {path or 'root'}\n"
+                    f"Current value: {obj['additionalProperties']}\n"
+                    f"Solution: Remove the 'additionalProperties' key from your Pydantic model's schema."
                 )
-                is not None
-            ]
+            for key, value in obj.items():
+                new_path = f"{path}.{key}" if path else key
+                _validate(value, new_path)
+        elif isinstance(obj, list):
+            for index, item in enumerate(obj):
+                new_path = f"{path}[{index}]"
+                _validate(item, new_path)
 
-    return cleaned
+    _validate(schema)
 
 
 def convert_schema_to_function_declaration(
@@ -505,19 +475,9 @@ def convert_schema_to_function_declaration(
     if not tool.metadata.fn_schema:
         raise ValueError("fn_schema is missing")
 
-    original_schema_method = tool.metadata.fn_schema.model_json_schema
-    tool.metadata.fn_schema.model_json_schema = (
-        lambda *a, **kw: _remove_additional_properties_from_schema(
-            original_schema_method(*a, **kw)
-        )
-    )
-
-    try:
-        root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
-    finally:
-        tool.metadata.fn_schema.model_json_schema = original_schema_method
-
+    root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
+
     if len(description_parts) > 1:
         description = description_parts[-1]
     elif len(description_parts) == 1:

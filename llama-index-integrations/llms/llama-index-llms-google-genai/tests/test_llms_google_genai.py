@@ -24,7 +24,7 @@ from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
     chat_from_gemini_response,
-    _remove_additional_properties_from_schema,
+    _validation_for_additional_properties_from_schema,
 )
 
 
@@ -1942,118 +1942,84 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
             mock_client.models.get.assert_not_called()
 
 
-def test_removes_additional_properties_from_anyof():
-    """Test that additionalProperties is removed from anyOf schemas."""
+# Validation function tests for _validation_for_additional_properties_from_schema
+
+
+def test_validation_valid_schema_without_additional_properties():
+    """Test validation passes for clean schema without additionalProperties."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+    }
+    # Should not raise ValueError
+    _validation_for_additional_properties_from_schema(schema)
+
+
+def test_validation_invalid_schema_with_additional_properties_at_root():
+    """Test validation raises error for additionalProperties at root level."""
+    schema = {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+        "additionalProperties": False,
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "root" in str(exc_info.value)
+
+
+def test_validation_invalid_schema_with_additional_properties_nested():
+    """Test validation raises error for additionalProperties in nested properties."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "additionalProperties": True,
+            }
+        },
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "properties.user" in str(exc_info.value)
+
+
+def test_validation_invalid_schema_with_additional_properties_in_anyof():
+    """Test validation raises error for additionalProperties in anyOf."""
     schema = {
         "anyOf": [
             {
                 "type": "object",
-                "properties": {"field1": {"type": "string"}},
-                "additionalProperties": True,
-            },
-            {
-                "type": "object",
-                "properties": {"field2": {"type": "number"}},
+                "properties": {"value": {"type": "string"}},
                 "additionalProperties": False,
             },
+            {"type": "null"},
         ]
     }
-    result = _remove_additional_properties_from_schema(schema)
-    for item in result["anyOf"]:
-        assert "additionalProperties" not in item
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
 
 
-def test_removes_empty_objects():
-    """Test that empty object types (no properties) are removed."""
+def test_validation_invalid_schema_with_additional_properties_in_defs():
+    """Test validation raises error for additionalProperties in $defs."""
     schema = {
-        "anyOf": [
-            {"type": "object", "additionalProperties": True},  # Empty object
-            {
+        "type": "object",
+        "properties": {"item": {"$ref": "#/$defs/Item"}},
+        "$defs": {
+            "Item": {
                 "type": "object",
-                "properties": {"field1": {"type": "string"}},
-                "additionalProperties": True,
-            },
-        ]
-    }
-    result = _remove_additional_properties_from_schema(schema)
-    # Empty object should be removed, only the one with properties remains
-    assert len(result["anyOf"]) == 1
-    assert "field1" in result["anyOf"][0]["properties"]
-
-
-def test_nested_schema_cleaning():
-    """Test that nested schemas are recursively cleaned."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "nested": {
-                "type": "object",
-                "properties": {"inner": {"type": "string"}},
-                "additionalProperties": True,
+                "properties": {"name": {"type": "string"}},
+                "additionalProperties": {},
             }
         },
-        "additionalProperties": False,
     }
-    result = _remove_additional_properties_from_schema(schema)
-    assert "additionalProperties" not in result
-    assert "additionalProperties" not in result["properties"]["nested"]
-
-
-def test_schema_llm_path_extractor_compatibility():
-    """Test with a schema similar to SchemaLLMPathExtractor output."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "entities": {
-                "anyOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "entity": {"type": "string"},
-                            "type": {"type": "string"},
-                        },
-                        "additionalProperties": True,
-                    },
-                    {"type": "object", "additionalProperties": True},  # Empty
-                ]
-            }
-        },
-        "additionalProperties": True,
-    }
-    result = _remove_additional_properties_from_schema(schema)
-    # Top-level additionalProperties should be removed
-    assert "additionalProperties" not in result
-    # anyOf should only contain the non-empty object
-    assert len(result["properties"]["entities"]["anyOf"]) == 1
-    # The remaining object should not have additionalProperties
-    remaining = result["properties"]["entities"]["anyOf"][0]
-    assert "additionalProperties" not in remaining
-    assert "entity" in remaining["properties"]
-
-
-def test_empty_schema():
-    """Test handling of empty schema."""
-    schema = {}
-    result = _remove_additional_properties_from_schema(schema)
-    assert result == {}
-
-
-def test_list_of_schemas():
-    """Test handling when schema contains arrays of objects."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "items": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {"name": {"type": "string"}},
-                    "additionalProperties": True,
-                },
-            }
-        },
-        "additionalProperties": False,
-    }
-    result = _remove_additional_properties_from_schema(schema)
-    assert "additionalProperties" not in result
-    assert "additionalProperties" not in result["properties"]["items"]["items"]
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "$defs.Item" in str(exc_info.value)

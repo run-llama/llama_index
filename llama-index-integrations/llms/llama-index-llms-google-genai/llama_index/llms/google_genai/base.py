@@ -60,7 +60,7 @@ from llama_index.llms.google_genai.utils import (
     create_retry_decorator,
     adelete_uploaded_files,
     delete_uploaded_files,
-    _remove_additional_properties_from_schema,
+    _validation_for_additional_properties_from_schema,
 )
 
 import google.genai
@@ -661,7 +661,7 @@ class GoogleGenAI(FunctionCallingLLM):
             generation_config["response_mime_type"] = "application/json"
 
             schema = output_cls.model_json_schema()
-            schema = _remove_additional_properties_from_schema(schema)
+            _validation_for_additional_properties_from_schema(schema)
             generation_config["response_schema"] = schema
 
             messages = prompt.format_messages(**prompt_args)
@@ -713,11 +713,10 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = (
-                _remove_additional_properties_from_schema(
-                    output_cls.model_json_schema()
-                )
-            )
+
+            schema = output_cls.model_json_schema()
+            _validation_for_additional_properties_from_schema(schema)
+            generation_config["response_schema"] = schema
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = await asyncio.gather(
@@ -768,11 +767,10 @@ class GoogleGenAI(FunctionCallingLLM):
 
             # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
-            generation_config["response_schema"] = (
-                _remove_additional_properties_from_schema(
-                    output_cls.model_json_schema()
-                )
-            )
+
+            schema = output_cls.model_json_schema()
+            _validation_for_additional_properties_from_schema(schema)
+            generation_config["response_schema"] = schema
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
@@ -832,8 +830,10 @@ class GoogleGenAI(FunctionCallingLLM):
                 **llm_kwargs.pop("generation_config", {}),
             }
 
-            # set the specific types needed for the response
             generation_config["response_mime_type"] = "application/json"
+            schema = output_cls.model_json_schema()
+            _validation_for_additional_properties_from_schema(schema)
+            generation_config["response_schema"] = schema
             generation_config["response_schema"] = output_cls
 
             messages = prompt.format_messages(**prompt_args)
