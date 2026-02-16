@@ -22,6 +22,10 @@ import tempfile
 import time
 from typing import Any, Dict, List, Optional
 
+import httpx
+from camb import StreamTtsOutputConfiguration, StreamTtsVoiceSettings
+from camb.client import CambAI
+from camb.core.api_error import ApiError
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
@@ -60,8 +64,6 @@ class CambToolSpec(BaseToolSpec):
         max_poll_attempts: int = 60,
         poll_interval: float = 2.0,
     ) -> None:
-        from camb.client import CambAI
-
         self.api_key = api_key or os.environ.get("CAMB_API_KEY")
         if not self.api_key:
             raise ValueError(
@@ -85,14 +87,13 @@ class CambToolSpec(BaseToolSpec):
     def _poll(self, get_status_fn: Any, task_id: str, *, run_id: Any = None) -> Any:
         for _ in range(self.max_poll_attempts):
             status = get_status_fn(task_id, run_id=run_id)
-            if hasattr(status, "status"):
-                val = status.status
-                if val in ("completed", "SUCCESS"):
-                    return status
-                if val in ("failed", "FAILED", "error"):
-                    raise RuntimeError(
-                        f"Task failed: {getattr(status, 'error', 'Unknown error')}"
-                    )
+            val = status.status.lower() if isinstance(status.status, str) else status.status
+            if val in ("completed", "success"):
+                return status
+            if val in ("failed", "error"):
+                raise RuntimeError(
+                    f"Task failed: {status.exception_reason or 'Unknown error'}"
+                )
             time.sleep(self.poll_interval)
         raise TimeoutError(
             f"Task {task_id} did not complete within "
@@ -173,8 +174,6 @@ class CambToolSpec(BaseToolSpec):
         Returns:
             File path to the generated WAV audio file.
         """
-        from camb import StreamTtsOutputConfiguration, StreamTtsVoiceSettings
-
         kwargs: Dict[str, Any] = {
             "text": text,
             "language": language,
@@ -215,8 +214,6 @@ class CambToolSpec(BaseToolSpec):
         Returns:
             The translated text string.
         """
-        from camb.core.api_error import ApiError
-
         kwargs: Dict[str, Any] = {
             "text": text,
             "source_language": source_language,
@@ -274,8 +271,6 @@ class CambToolSpec(BaseToolSpec):
         kwargs: Dict[str, Any] = {"language": language}
 
         if audio_url:
-            import httpx
-
             resp = httpx.get(audio_url)
             resp.raise_for_status()
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -308,10 +303,10 @@ class CambToolSpec(BaseToolSpec):
             for seg in transcription.segments:
                 out["segments"].append(
                     {
-                        "start": getattr(seg, "start", 0),
-                        "end": getattr(seg, "end", 0),
-                        "text": getattr(seg, "text", ""),
-                        "speaker": getattr(seg, "speaker", None),
+                        "start": seg.start,
+                        "end": seg.end,
+                        "text": seg.text,
+                        "speaker": seg.speaker,
                     }
                 )
         if hasattr(transcription, "speakers"):
@@ -348,8 +343,6 @@ class CambToolSpec(BaseToolSpec):
         Returns:
             File path to the audio file of translated speech.
         """
-        import httpx
-
         kwargs: Dict[str, Any] = {
             "text": text,
             "voice_id": voice_id,
@@ -368,13 +361,9 @@ class CambToolSpec(BaseToolSpec):
         # Download audio via httpx (SDK workaround)
         audio_data = b""
         audio_fmt = "pcm"
-        run_id = getattr(status, "run_id", None)
+        run_id = status.run_id
         if run_id:
-            base = getattr(self._client, "_client_wrapper", None)
-            if base and hasattr(base, "base_url"):
-                url = f"{base.base_url}/tts-result/{run_id}"
-            else:
-                url = f"https://client.camb.ai/apis/tts-result/{run_id}"
+            url = f"{self._client._client_wrapper.get_base_url()}/tts-result/{run_id}"
             with httpx.Client() as http:
                 resp = http.get(url, headers={"x-api-key": self.api_key})
                 if resp.status_code == 200:
@@ -384,7 +373,7 @@ class CambToolSpec(BaseToolSpec):
                     )
 
         if not audio_data:
-            message = getattr(status, "message", None)
+            message = status.message
             if message:
                 msg_url = None
                 if isinstance(message, dict):
@@ -456,12 +445,10 @@ class CambToolSpec(BaseToolSpec):
             result = self._client.voice_cloning.create_custom_voice(**kw)
 
         out = {
-            "voice_id": getattr(result, "voice_id", getattr(result, "id", None)),
+            "voice_id": result.voice_id,
             "voice_name": voice_name,
             "status": "created",
         }
-        if hasattr(result, "message"):
-            out["message"] = result.message
         return json.dumps(out, indent=2)
 
     # ------------------------------------------------------------------
@@ -493,13 +480,11 @@ class CambToolSpec(BaseToolSpec):
             else:
                 out.append(
                     {
-                        "id": getattr(v, "id", None),
-                        "name": getattr(
-                            v, "voice_name", getattr(v, "name", "Unknown")
-                        ),
-                        "gender": self._gender_str(getattr(v, "gender", 0)),
-                        "age": getattr(v, "age", None),
-                        "language": getattr(v, "language", None),
+                        "id": v.id,
+                        "name": v.voice_name,
+                        "gender": self._gender_str(v.gender or 0),
+                        "age": v.age,
+                        "language": v.language,
                     }
                 )
         return json.dumps(out, indent=2)
@@ -538,7 +523,7 @@ class CambToolSpec(BaseToolSpec):
         )
 
         out = {
-            "previews": getattr(voice_result, "previews", []),
+            "previews": voice_result.previews,
             "status": "completed",
         }
         return json.dumps(out, indent=2)
@@ -605,8 +590,6 @@ class CambToolSpec(BaseToolSpec):
         """
         kwargs: Dict[str, Any] = {}
         if audio_url:
-            import httpx
-
             resp = httpx.get(audio_url)
             resp.raise_for_status()
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -631,22 +614,8 @@ class CambToolSpec(BaseToolSpec):
         )
 
         out: Dict[str, Any] = {
-            "vocals": None,
-            "background": None,
+            "vocals": sep.foreground_audio_url,
+            "background": sep.background_audio_url,
             "status": "completed",
         }
-        for attr, key in [
-            ("vocals_url", "vocals"),
-            ("vocals", "vocals"),
-            ("voice_url", "vocals"),
-            ("background_url", "background"),
-            ("background", "background"),
-            ("instrumental_url", "background"),
-        ]:
-            val = getattr(sep, attr, None)
-            if val and out[key] is None:
-                if isinstance(val, bytes):
-                    out[key] = self._save_audio(val, f"_{key}.wav")
-                else:
-                    out[key] = val
         return json.dumps(out, indent=2)

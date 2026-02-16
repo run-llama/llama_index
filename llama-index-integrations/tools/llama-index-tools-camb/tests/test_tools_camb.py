@@ -19,18 +19,17 @@ def test_class_inherits_base_tool_spec():
 
 
 def test_spec_functions():
-    assert "text_to_speech" in CambToolSpec.spec_functions
-    assert "translate" in CambToolSpec.spec_functions
-    assert "transcribe" in CambToolSpec.spec_functions
-    assert "translated_tts" in CambToolSpec.spec_functions
-    assert "clone_voice" in CambToolSpec.spec_functions
-    assert "list_voices" in CambToolSpec.spec_functions
-    assert "text_to_sound" in CambToolSpec.spec_functions
-    assert "separate_audio" in CambToolSpec.spec_functions
-
-
-def test_spec_functions_count():
-    assert len(CambToolSpec.spec_functions) == 9
+    assert set(CambToolSpec.spec_functions) == {
+        "text_to_speech",
+        "translate",
+        "transcribe",
+        "translated_tts",
+        "clone_voice",
+        "list_voices",
+        "create_voice_from_description",
+        "text_to_sound",
+        "separate_audio",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -38,14 +37,14 @@ def test_spec_functions_count():
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_init_with_api_key(mock_client):
     tool = CambToolSpec(api_key="test-key")
     assert tool.api_key == "test-key"
     mock_client.assert_called_once()
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_init_with_env_var(mock_client):
     with patch.dict("os.environ", {"CAMB_API_KEY": "env-key"}):
         tool = CambToolSpec()
@@ -63,7 +62,7 @@ def test_init_without_key_raises():
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_text_to_speech(mock_client_cls):
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
@@ -81,7 +80,7 @@ def test_text_to_speech(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_translate(mock_client_cls):
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
@@ -96,7 +95,7 @@ def test_translate(mock_client_cls):
     assert result == "Hola mundo"
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_translate_api_error_workaround(mock_client_cls):
     """Test that ApiError with status 200 is handled as success."""
     from camb.core.api_error import ApiError
@@ -118,7 +117,7 @@ def test_translate_api_error_workaround(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_list_voices(mock_client_cls):
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
@@ -146,7 +145,7 @@ def test_list_voices(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_clone_voice(mock_client_cls):
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
@@ -175,8 +174,8 @@ def test_clone_voice(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
-@patch("httpx.get")
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.httpx.get")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_transcribe(mock_client_cls, mock_httpx_get):
     mock_resp = Mock()
     mock_resp.content = b"fake audio data"
@@ -209,7 +208,7 @@ def test_transcribe(mock_client_cls, mock_httpx_get):
 
 
 def test_transcribe_no_source():
-    with patch("camb.client.CambAI"):
+    with patch("llama_index.tools.camb.base.CambAI"):
         tool = CambToolSpec(api_key="test-key")
         result = tool.transcribe(language=1)
         out = json.loads(result)
@@ -221,7 +220,7 @@ def test_transcribe_no_source():
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_text_to_sound(mock_client_cls):
     mock_client = MagicMock()
     mock_client_cls.return_value = mock_client
@@ -250,7 +249,7 @@ def test_text_to_sound(mock_client_cls):
 # ---------------------------------------------------------------------------
 
 
-@patch("camb.client.CambAI")
+@patch("llama_index.tools.camb.base.CambAI")
 def test_to_tool_list(mock_client_cls):
     tool = CambToolSpec(api_key="test-key")
     tools = tool.to_tool_list()
