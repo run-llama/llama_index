@@ -7,6 +7,7 @@ LayoutIR Reader uses [LayoutIR](https://pypi.org/project/layoutir/) - a producti
 ## Why LayoutIR?
 
 LayoutIR stands out for its:
+
 - **Deterministic Processing**: Hash-based stable IDs ensure reproducible results
 - **Layout Preservation**: Maintains complex multi-column layouts and table structures
 - **Canonical IR Schema**: Typed intermediate representation for reliable downstream processing
@@ -70,7 +71,7 @@ from llama_index.readers.layoutir import LayoutIRReader
 
 reader = LayoutIRReader(
     chunk_strategy="semantic",
-    max_heading_level=2  # Split at h1 and h2 headings
+    max_heading_level=2,  # Split at h1 and h2 headings
 )
 documents = reader.load_data(file_path="structured_document.pdf")
 ```
@@ -85,11 +86,7 @@ from pathlib import Path
 
 reader = LayoutIRReader(use_gpu=True)
 
-file_paths = [
-    "report_2024.pdf",
-    "technical_spec.pdf",
-    "user_manual.pdf"
-]
+file_paths = ["report_2024.pdf", "technical_spec.pdf", "user_manual.pdf"]
 
 documents = reader.load_data(file_path=file_paths)
 print(f"Loaded {len(documents)} document blocks from {len(file_paths)} files")
@@ -105,9 +102,7 @@ from llama_index.core import VectorStoreIndex
 
 # Load documents with preserved layout structure
 reader = LayoutIRReader(
-    use_gpu=True,
-    chunk_strategy="semantic",
-    max_heading_level=2
+    use_gpu=True, chunk_strategy="semantic", max_heading_level=2
 )
 documents = reader.load_data(file_path="company_knowledge_base.pdf")
 
@@ -147,19 +142,16 @@ Full configuration example:
 from llama_index.readers.layoutir import LayoutIRReader
 
 reader = LayoutIRReader(
-    use_gpu=True,                  # Enable GPU acceleration
-    chunk_strategy="semantic",      # Use semantic chunking
-    max_heading_level=3,            # Split up to h3 level
-    model_name="custom_model",      # Optional: specify model
-    api_key="your_api_key"          # Optional: for remote processing
+    use_gpu=True,  # Enable GPU acceleration
+    chunk_strategy="semantic",  # Use semantic chunking
+    max_heading_level=3,  # Split up to h3 level
+    model_name="custom_model",  # Optional: specify model
+    api_key="your_api_key",  # Optional: for remote processing
 )
 
 documents = reader.load_data(
     file_path="complex_layout.pdf",
-    extra_info={
-        "department": "research",
-        "year": 2026
-    }
+    extra_info={"department": "research", "year": 2026},
 )
 
 # Access rich metadata

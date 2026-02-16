@@ -97,11 +97,13 @@ def test_lazy_load_data_single_file(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    # Patch the imports at the source (layoutir module)
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    # Patch the imports in the base module
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader()
@@ -143,10 +145,12 @@ def test_lazy_load_data_multiple_files(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader()
@@ -173,10 +177,12 @@ def test_lazy_load_data_with_extra_info(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader()
@@ -209,10 +215,12 @@ def test_lazy_load_data_with_gpu(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader(use_gpu=True, api_key="test-key")
@@ -239,10 +247,12 @@ def test_lazy_load_data_with_chunks_attribute(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader()
@@ -252,19 +262,19 @@ def test_lazy_load_data_with_chunks_attribute(monkeypatch):
     assert documents[0].text == "Chunk 1"
 
 
-def test_lazy_load_data_import_error():
-    """Test that ImportError is raised with helpful message when layoutir is not installed."""
-    reader = LayoutIRReader()
+def test_lazy_load_data_gpu_check_error():
+    """Test that ImportError is raised when GPU is requested but requirements are not met."""
+    reader = LayoutIRReader(use_gpu=True)
 
-    # Mock the imports to raise ImportError
+    # Mock torch import to raise ImportError
     with patch(
-        "builtins.__import__", side_effect=ImportError("No module named 'layoutir'")
+        "builtins.__import__", side_effect=ImportError("No module named 'torch'")
     ):
         with pytest.raises(ImportError) as exc_info:
             list(reader.lazy_load_data(file_path="test.pdf"))
 
-        assert "LayoutIR is not installed" in str(exc_info.value)
-        assert "pip install layoutir" in str(exc_info.value)
+        assert "GPU acceleration requested" in str(exc_info.value)
+        assert "PyTorch" in str(exc_info.value)
 
 
 def test_load_data_method(monkeypatch):
@@ -281,10 +291,12 @@ def test_load_data_method(monkeypatch):
     mock_adapter_class = MagicMock()
     mock_chunker_class = MagicMock()
 
-    with patch("layoutir.Pipeline", mock_pipeline_class):
-        with patch("layoutir.adapters.DoclingAdapter", mock_adapter_class):
+    with patch("llama_index.readers.layoutir.base.Pipeline", mock_pipeline_class):
+        with patch(
+            "llama_index.readers.layoutir.base.DoclingAdapter", mock_adapter_class
+        ):
             with patch(
-                "layoutir.chunking.SemanticSectionChunker",
+                "llama_index.readers.layoutir.base.SemanticSectionChunker",
                 mock_chunker_class,
             ):
                 reader = LayoutIRReader()

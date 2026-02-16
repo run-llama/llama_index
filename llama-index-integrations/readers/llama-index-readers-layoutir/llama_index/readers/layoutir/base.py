@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 
+from layoutir import Pipeline
+from layoutir.adapters import DoclingAdapter
+from layoutir.chunking import SemanticSectionChunker
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 from pydantic import Field
@@ -63,18 +66,27 @@ class LayoutIRReader(BasePydanticReader):
         Yields:
             Document: LlamaIndex Document objects with preserved layout structure.
 
+        Raises:
+            ImportError: If GPU is requested but PyTorch with CUDA is not available.
+
         """
-        try:
-            from layoutir import Pipeline
-            from layoutir.adapters import DoclingAdapter
-            from layoutir.chunking import SemanticSectionChunker
-        except ImportError as e:
-            raise ImportError(
-                "LayoutIR is not installed. Please install it with: "
-                "pip install layoutir\n"
-                "For GPU support, first install PyTorch: "
-                "pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130"
-            ) from e
+        # Check GPU requirements if use_gpu is enabled
+        if self.use_gpu:
+            try:
+                import torch
+
+                if not torch.cuda.is_available():
+                    raise ImportError(
+                        "GPU acceleration requested but CUDA is not available. "
+                        "Please install PyTorch with CUDA support:\n"
+                        "pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130"
+                    )
+            except ImportError as e:
+                raise ImportError(
+                    "GPU acceleration requested but PyTorch is not installed. "
+                    "Please install PyTorch with CUDA support:\n"
+                    "pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130"
+                ) from e
 
         # Normalize file_path to list
         file_paths = file_path if isinstance(file_path, list) else [file_path]
