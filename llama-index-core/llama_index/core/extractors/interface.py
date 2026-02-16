@@ -4,7 +4,7 @@ import asyncio
 import logging
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Any, Dict, List, Literal, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field
@@ -67,12 +67,12 @@ class BaseExtractor(TransformComponent):
         ),
     )
 
-    on_extraction_error: Literal["raise", "skip"] = Field(
-        default="raise",
+    raise_on_error: bool = Field(
+        default=True,
         description=(
-            "Policy when extraction fails after all retries are exhausted. "
-            "'raise' propagates the exception (current behaviour). "
-            "'skip' logs a warning and returns empty metadata dicts."
+            "Whether to raise exceptions when extraction fails after all retries. "
+            "If True, the exception propagates (current behaviour). "
+            "If False, logs a warning and returns empty metadata dicts."
         ),
     )
 
@@ -146,7 +146,7 @@ class BaseExtractor(TransformComponent):
                     await asyncio.sleep(delay)
 
         # All retries exhausted
-        if self.on_extraction_error == "skip":
+        if not self.raise_on_error:
             logger.warning(
                 "Extraction failed after %d attempt(s) (%s). "
                 "Returning empty metadata for %d node(s).",

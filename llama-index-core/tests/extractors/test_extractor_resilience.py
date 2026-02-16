@@ -44,8 +44,8 @@ def _make_nodes(n: int = 2) -> List[TextNode]:
 
 @pytest.mark.asyncio
 async def test_default_raises_on_error():
-    """With max_retries=0 and on_extraction_error='raise', errors propagate."""
-    ext = _AlwaysFailExtractor(max_retries=0, on_extraction_error="raise")
+    """With max_retries=0 and raise_on_error=True, errors propagate."""
+    ext = _AlwaysFailExtractor(max_retries=0, raise_on_error=True)
     with pytest.raises(RuntimeError, match="Permanent failure"):
         await ext.aprocess_nodes(_make_nodes())
 
@@ -63,8 +63,8 @@ async def test_retry_succeeds_after_transient_failure():
 
 @pytest.mark.asyncio
 async def test_skip_returns_empty_metadata():
-    """With on_extraction_error='skip', failed extraction returns empty dicts."""
-    ext = _AlwaysFailExtractor(max_retries=0, on_extraction_error="skip")
+    """With raise_on_error=False, failed extraction returns empty dicts."""
+    ext = _AlwaysFailExtractor(max_retries=0, raise_on_error=False)
     nodes = _make_nodes(3)
     result = await ext.aprocess_nodes(nodes)
     assert len(result) == 3
@@ -75,9 +75,9 @@ async def test_skip_returns_empty_metadata():
 
 @pytest.mark.asyncio
 async def test_retries_exhausted_then_raises():
-    """After max_retries exhausted with policy 'raise', the error propagates."""
+    """After max_retries exhausted with raise_on_error=True, the error propagates."""
     ext = _AlwaysFailExtractor(
-        max_retries=2, on_extraction_error="raise", retry_backoff=0.01
+        max_retries=2, raise_on_error=True, retry_backoff=0.01
     )
     with pytest.raises(RuntimeError, match="Permanent failure"):
         await ext.aprocess_nodes(_make_nodes())
@@ -85,9 +85,9 @@ async def test_retries_exhausted_then_raises():
 
 @pytest.mark.asyncio
 async def test_retries_exhausted_then_skips():
-    """After max_retries exhausted with policy 'skip', returns empty dicts."""
+    """After max_retries exhausted with raise_on_error=False, returns empty dicts."""
     ext = _AlwaysFailExtractor(
-        max_retries=2, on_extraction_error="skip", retry_backoff=0.01
+        max_retries=2, raise_on_error=False, retry_backoff=0.01
     )
     result = await ext.aprocess_nodes(_make_nodes())
     assert len(result) == 2
@@ -100,7 +100,7 @@ async def test_backoff_delays_applied():
     """Verify asyncio.sleep is called with exponential backoff delays."""
     ext = _AlwaysFailExtractor(
         max_retries=3,
-        on_extraction_error="skip",
+        raise_on_error=False,
         retry_backoff=2.0,
     )
     with patch(
