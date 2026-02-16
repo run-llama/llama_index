@@ -324,7 +324,7 @@ class SharePointReader(
         drives = self._get_all_items_with_pagination(self._drive_id_endpoint)
 
         if drives:
-            if len(drives) > 0 and self.drive_name is not None:
+            if self.drive_name is not None:
                 for drive in drives:
                     if drive["name"].lower() == self.drive_name.lower():
                         return drive["id"]
