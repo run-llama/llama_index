@@ -235,7 +235,8 @@ def test_text_to_sound(mock_client_cls):
     mock_client.text_to_audio.get_text_to_audio_status.return_value = mock_status
 
     mock_client.text_to_audio.get_text_to_audio_result.return_value = [
-        b"chunk1", b"chunk2"
+        b"chunk1",
+        b"chunk2",
     ]
 
     tool = CambToolSpec(api_key="test-key")

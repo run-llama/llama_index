@@ -1,4 +1,5 @@
-"""CAMB AI tool spec for LlamaIndex.
+"""
+CAMB AI tool spec for LlamaIndex.
 
 Provides 9 audio/speech tools powered by CAMB AI:
 - Text-to-Speech (TTS)
@@ -14,13 +15,12 @@ Provides 9 audio/speech tools powered by CAMB AI:
 
 from __future__ import annotations
 
-import base64
 import json
 import os
 import struct
 import tempfile
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import httpx
 from camb import StreamTtsOutputConfiguration, StreamTtsVoiceSettings
@@ -30,7 +30,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class CambToolSpec(BaseToolSpec):
-    """CAMB AI tool spec for LlamaIndex.
+    """
+    CAMB AI tool spec for LlamaIndex.
 
     CAMB AI provides multilingual audio and localization services including
     text-to-speech, translation, transcription, voice cloning, text-to-sound
@@ -42,6 +43,7 @@ class CambToolSpec(BaseToolSpec):
         timeout: Request timeout in seconds.
         max_poll_attempts: Maximum number of polling attempts for async tasks.
         poll_interval: Seconds between polling attempts.
+
     """
 
     spec_functions = [
@@ -75,7 +77,10 @@ class CambToolSpec(BaseToolSpec):
         self.max_poll_attempts = max_poll_attempts
         self.poll_interval = poll_interval
 
-        client_kwargs: Dict[str, Any] = {"api_key": self.api_key, "timeout": self.timeout}
+        client_kwargs: Dict[str, Any] = {
+            "api_key": self.api_key,
+            "timeout": self.timeout,
+        }
         if self.base_url:
             client_kwargs["base_url"] = self.base_url
         self._client = CambAI(**client_kwargs)
@@ -87,7 +92,11 @@ class CambToolSpec(BaseToolSpec):
     def _poll(self, get_status_fn: Any, task_id: str, *, run_id: Any = None) -> Any:
         for _ in range(self.max_poll_attempts):
             status = get_status_fn(task_id, run_id=run_id)
-            val = status.status.lower() if isinstance(status.status, str) else status.status
+            val = (
+                status.status.lower()
+                if isinstance(status.status, str)
+                else status.status
+            )
             if val in ("completed", "success"):
                 return status
             if val in ("failed", "error"):
@@ -112,8 +121,12 @@ class CambToolSpec(BaseToolSpec):
             return "ogg"
         ct = content_type.lower()
         for key, fmt in [
-            ("wav", "wav"), ("wave", "wav"), ("mpeg", "mp3"),
-            ("mp3", "mp3"), ("flac", "flac"), ("ogg", "ogg"),
+            ("wav", "wav"),
+            ("wave", "wav"),
+            ("mpeg", "mp3"),
+            ("mp3", "mp3"),
+            ("flac", "flac"),
+            ("ogg", "ogg"),
         ]:
             if key in ct:
                 return fmt
@@ -127,8 +140,19 @@ class CambToolSpec(BaseToolSpec):
         data_size = len(pcm_data)
         header = struct.pack(
             "<4sI4s4sIHHIIHH4sI",
-            b"RIFF", 36 + data_size, b"WAVE", b"fmt ", 16, 1,
-            ch, sr, byte_rate, block_align, bps, b"data", data_size,
+            b"RIFF",
+            36 + data_size,
+            b"WAVE",
+            b"fmt ",
+            16,
+            1,
+            ch,
+            sr,
+            byte_rate,
+            block_align,
+            bps,
+            b"data",
+            data_size,
         )
         return header + pcm_data
 
@@ -157,7 +181,8 @@ class CambToolSpec(BaseToolSpec):
         speed: float = 1.0,
         user_instructions: Optional[str] = None,
     ) -> str:
-        """Convert text to speech using CAMB AI.
+        """
+        Convert text to speech using CAMB AI.
 
         Supports 140+ languages and multiple voice models. Returns a file path
         to the generated audio. Available models: 'mars-flash' (fast),
@@ -173,6 +198,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             File path to the generated WAV audio file.
+
         """
         kwargs: Dict[str, Any] = {
             "text": text,
@@ -201,7 +227,8 @@ class CambToolSpec(BaseToolSpec):
         target_language: int,
         formality: Optional[int] = None,
     ) -> str:
-        """Translate text between 140+ languages using CAMB AI.
+        """
+        Translate text between 140+ languages using CAMB AI.
 
         Args:
             text: Text to translate.
@@ -213,6 +240,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             The translated text string.
+
         """
         kwargs: Dict[str, Any] = {
             "text": text,
@@ -254,7 +282,8 @@ class CambToolSpec(BaseToolSpec):
         audio_url: Optional[str] = None,
         audio_file_path: Optional[str] = None,
     ) -> str:
-        """Transcribe audio to text with speaker identification using CAMB AI.
+        """
+        Transcribe audio to text with speaker identification using CAMB AI.
 
         Supports audio URLs or local file paths. Returns JSON with full
         transcription text, timed segments, and speaker labels.
@@ -267,6 +296,7 @@ class CambToolSpec(BaseToolSpec):
         Returns:
             JSON string with text, segments (start, end, text, speaker),
             and speakers list.
+
         """
         kwargs: Dict[str, Any] = {"language": language}
 
@@ -329,7 +359,8 @@ class CambToolSpec(BaseToolSpec):
         voice_id: int = 147320,
         formality: Optional[int] = None,
     ) -> str:
-        """Translate text and convert to speech in one step using CAMB AI.
+        """
+        Translate text and convert to speech in one step using CAMB AI.
 
         Translates text to the target language and generates speech audio.
 
@@ -342,6 +373,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             File path to the audio file of translated speech.
+
         """
         kwargs: Dict[str, Any] = {
             "text": text,
@@ -414,7 +446,8 @@ class CambToolSpec(BaseToolSpec):
         age: Optional[int] = None,
         language: Optional[int] = None,
     ) -> str:
-        """Clone a voice from an audio sample using CAMB AI.
+        """
+        Clone a voice from an audio sample using CAMB AI.
 
         Creates a custom voice from a 2+ second audio sample that can be used
         with text_to_speech and translated_tts.
@@ -429,6 +462,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             JSON string with voice_id, voice_name, and status.
+
         """
         with open(audio_file_path, "rb") as f:
             kw: Dict[str, Any] = {
@@ -456,13 +490,15 @@ class CambToolSpec(BaseToolSpec):
     # ------------------------------------------------------------------
 
     def list_voices(self) -> str:
-        """List all available voices from CAMB AI.
+        """
+        List all available voices from CAMB AI.
 
         Returns voice IDs, names, genders, ages, and languages. Use the
         voice ID with text_to_speech or translated_tts.
 
         Returns:
             JSON array of voice objects with id, name, gender, age, language.
+
         """
         voices = self._client.voice_cloning.list_voices()
         out = []
@@ -498,7 +534,8 @@ class CambToolSpec(BaseToolSpec):
         text: str,
         voice_description: str,
     ) -> str:
-        """Generate a synthetic voice from a detailed text description using CAMB AI.
+        """
+        Generate a synthetic voice from a detailed text description using CAMB AI.
 
         Provide sample text and a description of the desired voice (minimum 100
         characters / 18+ words). Include accent, tone, age, gender, speaking
@@ -510,9 +547,11 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             JSON string with preview audio URLs for the generated voice.
+
         """
         result = self._client.text_to_voice.create_text_to_voice(
-            text=text, voice_description=voice_description,
+            text=text,
+            voice_description=voice_description,
         )
         task_id = result.task_id
         status = self._poll(
@@ -538,7 +577,8 @@ class CambToolSpec(BaseToolSpec):
         duration: Optional[float] = None,
         audio_type: Optional[str] = None,
     ) -> str:
-        """Generate sounds, music, or soundscapes from text descriptions using CAMB AI.
+        """
+        Generate sounds, music, or soundscapes from text descriptions using CAMB AI.
 
         Describe the audio you want and the tool generates it.
 
@@ -549,6 +589,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             File path to the generated audio file.
+
         """
         kwargs: Dict[str, Any] = {"prompt": prompt}
         if duration:
@@ -562,9 +603,7 @@ class CambToolSpec(BaseToolSpec):
         )
 
         chunks: list[bytes] = []
-        for chunk in self._client.text_to_audio.get_text_to_audio_result(
-            status.run_id
-        ):
+        for chunk in self._client.text_to_audio.get_text_to_audio_result(status.run_id):
             chunks.append(chunk)
         return self._save_audio(b"".join(chunks), ".wav")
 
@@ -577,7 +616,8 @@ class CambToolSpec(BaseToolSpec):
         audio_url: Optional[str] = None,
         audio_file_path: Optional[str] = None,
     ) -> str:
-        """Separate vocals/speech from background audio using CAMB AI.
+        """
+        Separate vocals/speech from background audio using CAMB AI.
 
         Isolate vocals from background music or noise.
 
@@ -587,6 +627,7 @@ class CambToolSpec(BaseToolSpec):
 
         Returns:
             JSON string with 'vocals' and 'background' file paths or URLs.
+
         """
         kwargs: Dict[str, Any] = {}
         if audio_url:
@@ -609,9 +650,7 @@ class CambToolSpec(BaseToolSpec):
             self._client.audio_separation.get_audio_separation_status,
             result.task_id,
         )
-        sep = self._client.audio_separation.get_audio_separation_run_info(
-            status.run_id
-        )
+        sep = self._client.audio_separation.get_audio_separation_run_info(status.run_id)
 
         out: Dict[str, Any] = {
             "vocals": sep.foreground_audio_url,
