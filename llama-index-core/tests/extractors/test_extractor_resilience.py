@@ -76,9 +76,7 @@ async def test_skip_returns_empty_metadata():
 @pytest.mark.asyncio
 async def test_retries_exhausted_then_raises():
     """After max_retries exhausted with raise_on_error=True, the error propagates."""
-    ext = _AlwaysFailExtractor(
-        max_retries=2, raise_on_error=True, retry_backoff=0.01
-    )
+    ext = _AlwaysFailExtractor(max_retries=2, raise_on_error=True, retry_backoff=0.01)
     with pytest.raises(RuntimeError, match="Permanent failure"):
         await ext.aprocess_nodes(_make_nodes())
 
@@ -86,9 +84,7 @@ async def test_retries_exhausted_then_raises():
 @pytest.mark.asyncio
 async def test_retries_exhausted_then_skips():
     """After max_retries exhausted with raise_on_error=False, returns empty dicts."""
-    ext = _AlwaysFailExtractor(
-        max_retries=2, raise_on_error=False, retry_backoff=0.01
-    )
+    ext = _AlwaysFailExtractor(max_retries=2, raise_on_error=False, retry_backoff=0.01)
     result = await ext.aprocess_nodes(_make_nodes())
     assert len(result) == 2
     for node in result:
