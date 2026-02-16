@@ -395,7 +395,14 @@ class ImageBlock(BaseContentBlock):
 
         TODO: In the future, LLMs should be able to count their own tokens.
         """
-        return 2125
+        try:
+            self.resolve_image()
+            return 2125
+        except ValueError as e:
+            # Null case
+            if str(e) == "resolve_image returned zero bytes":
+                return 0
+            raise
 
     @property
     def templatable_attributes(self) -> list[str]:
