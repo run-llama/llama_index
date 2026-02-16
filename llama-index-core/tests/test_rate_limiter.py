@@ -141,7 +141,10 @@ async def test_aacquire_tpm_limiting() -> None:
     await rl.aacquire(num_tokens=100)
 
     with (
-        patch("llama_index.core.rate_limiter.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        patch(
+            "llama_index.core.rate_limiter.asyncio.sleep",
+            new_callable=AsyncMock,
+        ) as mock_sleep,
         patch("llama_index.core.rate_limiter.time.monotonic") as mock_time,
     ):
         base = 1000.0
