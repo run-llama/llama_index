@@ -7,6 +7,11 @@ import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.types import ToolMiddleware
+from llama_index.core.tools.middleware import (
+    ParameterInjectionMiddleware,
+    OutputFilterMiddleware,
+)
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
@@ -458,12 +463,6 @@ def test_function_tool_output_document_and_nodes():
 
 # --- Middleware Tests ---
 
-from llama_index.core.tools.types import ToolMiddleware
-from llama_index.core.tools.middleware import (
-    ParameterInjectionMiddleware,
-    OutputFilterMiddleware,
-)
-
 
 class AppendMiddleware(ToolMiddleware):
     """Test middleware that appends a suffix to a 'text' kwarg."""
@@ -489,11 +488,11 @@ def test_middleware_single() -> None:
         return f"Hello, {text}"
 
     mw = AppendMiddleware("!")
-    tool = FunctionTool.from_defaults(greet, middleware=[mw])
+    tool = FunctionTool.from_defaults(greet, middlewares=[mw])
 
     result = tool(text="world")
-    # Input: "world" -> "world!" via middleware
-    # Output: "Hello, world!" -> "Hello, world!!" via middleware
+    # Input: "world" -> "world!" via input middleware
+    # Output: "Hello, world!" -> "Hello, world!!" via output middleware
     assert result.raw_output == "Hello, world!!"
 
 
@@ -505,7 +504,7 @@ def test_middleware_chain_order() -> None:
 
     mw1 = AppendMiddleware("-A")
     mw2 = AppendMiddleware("-B")
-    tool = FunctionTool.from_defaults(echo, middleware=[mw1, mw2])
+    tool = FunctionTool.from_defaults(echo, middlewares=[mw1, mw2])
 
     result = tool(text="start")
     # Input: "start" -> "start-A" (mw1) -> "start-A-B" (mw2)
@@ -521,7 +520,7 @@ async def test_middleware_async() -> None:
         return f"Hello, {text}"
 
     mw = AppendMiddleware("!")
-    tool = FunctionTool.from_defaults(greet, middleware=[mw])
+    tool = FunctionTool.from_defaults(greet, middlewares=[mw])
 
     result = await tool.acall(text="world")
     assert result.raw_output == "Hello, world!!"
@@ -548,7 +547,7 @@ def test_parameter_injection_middleware_enforce() -> None:
         params={"api_key": "trusted-key"},
         enforce={"api_key"},
     )
-    tool = FunctionTool.from_defaults(query, middleware=[mw])
+    tool = FunctionTool.from_defaults(query, middlewares=[mw])
 
     # LLM tries to override api_key — middleware should enforce it
     result = tool(text="hello", api_key="hacked-key")
@@ -565,7 +564,7 @@ def test_parameter_injection_middleware_default_only() -> None:
         params={"limit": 5},
         enforce=set(),  # Nothing enforced — all are defaults
     )
-    tool = FunctionTool.from_defaults(query, middleware=[mw])
+    tool = FunctionTool.from_defaults(query, middlewares=[mw])
 
     # Without LLM override: uses middleware default
     assert tool(text="hello").raw_output == "text=hello, limit=5"
@@ -581,7 +580,7 @@ def test_parameter_injection_middleware_enforce_all_by_default() -> None:
         return f"x={x}, y={y}"
 
     mw = ParameterInjectionMiddleware(params={"y": 99})
-    tool = FunctionTool.from_defaults(query, middleware=[mw])
+    tool = FunctionTool.from_defaults(query, middlewares=[mw])
 
     # enforce=None means all params enforced — LLM can't override y
     assert tool(x=1, y=0).raw_output == "x=1, y=99"
@@ -600,7 +599,7 @@ def test_output_filter_middleware_allowed_fields() -> None:
         }
 
     mw = OutputFilterMiddleware(allowed_fields={"id", "name"})
-    tool = FunctionTool.from_defaults(get_user, middleware=[mw])
+    tool = FunctionTool.from_defaults(get_user, middlewares=[mw])
 
     result = tool()
     assert result.raw_output == {"id": 1, "name": "Alice"}
@@ -613,7 +612,7 @@ def test_output_filter_middleware_excluded_fields() -> None:
         return {"id": 1, "name": "Alice", "password_hash": "abc123"}
 
     mw = OutputFilterMiddleware(excluded_fields={"password_hash"})
-    tool = FunctionTool.from_defaults(get_user, middleware=[mw])
+    tool = FunctionTool.from_defaults(get_user, middlewares=[mw])
 
     result = tool()
     assert result.raw_output == {"id": 1, "name": "Alice"}
@@ -629,7 +628,7 @@ def test_output_filter_middleware_list_of_dicts() -> None:
         ]
 
     mw = OutputFilterMiddleware(allowed_fields={"id", "name"})
-    tool = FunctionTool.from_defaults(get_users, middleware=[mw])
+    tool = FunctionTool.from_defaults(get_users, middlewares=[mw])
 
     result = tool()
     assert result.raw_output == [
@@ -655,7 +654,7 @@ def test_middleware_with_partial_params() -> None:
     tool = FunctionTool.from_defaults(
         query,
         partial_params={"user_id": "u1"},
-        middleware=[mw],
+        middlewares=[mw],
     )
 
     result = tool(text="hello", limit=100)
@@ -675,7 +674,43 @@ async def test_parameter_injection_middleware_async() -> None:
         params={"api_key": "trusted-key"},
         enforce={"api_key"},
     )
-    tool = FunctionTool.from_defaults(query, middleware=[mw])
+    tool = FunctionTool.from_defaults(query, middlewares=[mw])
 
     result = await tool.acall(text="hello", api_key="hacked-key")
     assert result.raw_output == "text=hello, key=trusted-key"
+
+
+def test_middleware_via_direct_call() -> None:
+    """Test that middleware is applied when using tool.call() directly."""
+
+    def greet(text: str) -> str:
+        return f"Hello, {text}"
+
+    mw = AppendMiddleware("!")
+    tool = FunctionTool.from_defaults(greet, middlewares=[mw])
+
+    # call() directly — middleware should still run
+    result = tool.call(text="world")
+    assert result.raw_output == "Hello, world!!"
+
+
+def test_output_filter_middleware_passthrough_non_dict() -> None:
+    """Test OutputFilterMiddleware passes through non-dict/non-list output unchanged."""
+
+    def get_message() -> str:
+        return "just a plain string"
+
+    mw = OutputFilterMiddleware(allowed_fields={"id"})
+    tool = FunctionTool.from_defaults(get_message, middlewares=[mw])
+
+    result = tool()
+    assert result.raw_output == "just a plain string"
+
+
+def test_parameter_injection_middleware_enforce_validation() -> None:
+    """Test that enforce keys not in params raises ValueError."""
+    with pytest.raises(ValueError, match="enforce keys"):
+        ParameterInjectionMiddleware(
+            params={"api_key": "key"},
+            enforce={"api_key", "nonexistent"},
+        )

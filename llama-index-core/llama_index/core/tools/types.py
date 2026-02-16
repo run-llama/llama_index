@@ -57,19 +57,6 @@ class ToolMiddleware(ABC):
         """
         return kwargs
 
-    async def aprocess_input(
-        self,
-        tool: "BaseTool",
-        kwargs: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """
-        Async version of process_input.
-
-        By default, delegates to the synchronous process_input method.
-        Override this method for middleware that requires async I/O.
-        """
-        return self.process_input(tool, kwargs)
-
     def process_output(
         self,
         tool: "BaseTool",
@@ -88,6 +75,21 @@ class ToolMiddleware(ABC):
         """
         return output
 
+    async def aprocess_input(
+        self,
+        tool: "BaseTool",
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Async version of process_input.
+
+        Override this if your middleware performs I/O-bound operations
+        (e.g., remote logging, database lookups, API calls). The default
+        implementation delegates to the synchronous ``process_input``.
+
+        """
+        return self.process_input(tool, kwargs)
+
     async def aprocess_output(
         self,
         tool: "BaseTool",
@@ -96,8 +98,10 @@ class ToolMiddleware(ABC):
         """
         Async version of process_output.
 
-        By default, delegates to the synchronous process_output method.
-        Override this method for middleware that requires async I/O.
+        Override this if your middleware performs I/O-bound operations
+        (e.g., remote logging, database lookups, API calls). The default
+        implementation delegates to the synchronous ``process_output``.
+
         """
         return self.process_output(tool, output)
 

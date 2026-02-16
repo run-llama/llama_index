@@ -31,7 +31,7 @@ class ParameterInjectionMiddleware(ToolMiddleware):
         ...     params={"api_key": "trusted-key", "user_id": "user-123"},
         ...     enforce={"api_key"},  # api_key cannot be overridden
         ... )
-        >>> tool = FunctionTool.from_defaults(my_fn, middleware=[middleware])
+        >>> tool = FunctionTool.from_defaults(my_fn, middlewares=[middleware])
 
     """
 
@@ -40,6 +40,9 @@ class ParameterInjectionMiddleware(ToolMiddleware):
         params: Dict[str, Any],
         enforce: Optional[Set[str]] = None,
     ) -> None:
+        if enforce is not None and not enforce.issubset(params.keys()):
+            unknown = enforce - set(params.keys())
+            raise ValueError(f"enforce keys {unknown} not found in params")
         self._params = params
         # If enforce is None, enforce all params
         self._enforce = enforce if enforce is not None else set(params.keys())
@@ -67,6 +70,13 @@ class OutputFilterMiddleware(ToolMiddleware):
     only the fields that matter, reducing the amount of context passed
     back to the LLM.
 
+    .. note::
+        Only **top-level** dict keys are filtered. Nested dicts (e.g.,
+        ``{"data": {"secret": ...}}``) are **not** recursed into. If you
+        need nested filtering, implement a custom ``ToolMiddleware`` subclass.
+
+    Non-dict, non-list outputs are passed through unchanged.
+
     Args:
         allowed_fields: If provided, only these fields will be kept in
             dict outputs. Fields not in this set are removed.
@@ -77,7 +87,7 @@ class OutputFilterMiddleware(ToolMiddleware):
         >>> middleware = OutputFilterMiddleware(
         ...     allowed_fields={"name", "status", "id"}
         ... )
-        >>> tool = FunctionTool.from_defaults(my_fn, middleware=[middleware])
+        >>> tool = FunctionTool.from_defaults(my_fn, middlewares=[middleware])
 
     """
 
