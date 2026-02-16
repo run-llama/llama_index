@@ -54,7 +54,8 @@ class FitzpatrickScale(Enum):
 
 @dataclass
 class FacialMeasurements:
-    """Structured biometric measurements extracted from a face image.
+    """
+    Structured biometric measurements extracted from a face image.
 
     All angles are in degrees. Distances are normalized to inter-pupillary
     distance (IPD) to be scale-invariant.
@@ -197,7 +198,8 @@ def _midpoint(p1: np.ndarray, p2: np.ndarray) -> np.ndarray:
 
 
 class FaceAnalyzer:
-    """Extracts precise biometric measurements from face images.
+    """
+    Extracts precise biometric measurements from face images.
 
     Uses MediaPipe's 468-landmark face mesh for sub-pixel accuracy.
 
@@ -225,7 +227,8 @@ class FaceAnalyzer:
         )
 
     def analyze(self, image_input: Any) -> FacialMeasurements:
-        """Analyze a face image and return biometric measurements.
+        """
+        Analyze a face image and return biometric measurements.
 
         Args:
             image_input: File path (str), numpy array (BGR), or PIL Image.
@@ -235,6 +238,7 @@ class FaceAnalyzer:
 
         Raises:
             ValueError: If no face is detected in the image.
+
         """
         image_rgb, image_bgr = self._load_image(image_input)
         h, w = image_rgb.shape[:2]
@@ -296,7 +300,8 @@ class FaceAnalyzer:
         return [self.analyze(img) for img in image_inputs]
 
     def _load_image(self, image_input: Any) -> Tuple[np.ndarray, np.ndarray]:
-        """Load image from file path, numpy array, or PIL Image.
+        """
+        Load image from file path, numpy array, or PIL Image.
 
         Returns (RGB array, BGR array).
         """
@@ -351,7 +356,8 @@ class FaceAnalyzer:
         return _distance(left_pupil, right_pupil)
 
     def _calculate_gonial_angle(self, landmarks: np.ndarray) -> float:
-        """Calculate the gonial (jaw) angle.
+        """
+        Calculate the gonial (jaw) angle.
 
         Measured at the jaw angle (gonion) between the ramus and body of
         the mandible. Normal range: 120-135°.
@@ -371,7 +377,8 @@ class FaceAnalyzer:
         return (left_angle + right_angle) / 2.0
 
     def _calculate_facial_index(self, landmarks: np.ndarray) -> float:
-        """Calculate facial index (face height / face width ratio).
+        """
+        Calculate facial index (face height / face width ratio).
 
         Normal range: 1.2-1.4 (leptoprosopic to mesoprosopic).
         """
@@ -389,7 +396,8 @@ class FaceAnalyzer:
         return face_height / face_width
 
     def _calculate_canthal_tilt(self, landmarks: np.ndarray) -> float:
-        """Calculate canthal tilt (eye angle).
+        """
+        Calculate canthal tilt (eye angle).
 
         Positive = upward tilt (lateral canthus higher than medial).
         Normal range: ±5°.
@@ -412,7 +420,8 @@ class FaceAnalyzer:
         return (left_tilt + right_tilt) / 2.0
 
     def _calculate_nasal_tip_rotation(self, landmarks: np.ndarray) -> float:
-        """Calculate nasolabial angle (nasal tip rotation).
+        """
+        Calculate nasolabial angle (nasal tip rotation).
 
         Angle between columella and upper lip. Normal range: 90-105°.
         """
@@ -426,7 +435,8 @@ class FaceAnalyzer:
     def _calculate_zygomatic_prominence(
         self, landmarks: np.ndarray, ipd: float
     ) -> float:
-        """Calculate zygomatic (cheekbone) prominence.
+        """
+        Calculate zygomatic (cheekbone) prominence.
 
         Measured as the lateral projection of the cheekbone normalized
         by inter-pupillary distance.
@@ -487,7 +497,8 @@ class FaceAnalyzer:
     def _estimate_fitzpatrick(
         self, image_bgr: np.ndarray, landmarks: np.ndarray
     ) -> FitzpatrickScale:
-        """Estimate Fitzpatrick skin type from facial skin tone.
+        """
+        Estimate Fitzpatrick skin type from facial skin tone.
 
         Uses the cheek and forehead regions to sample skin color, then
         maps to Fitzpatrick scale using ITA (Individual Typology Angle).
@@ -514,7 +525,7 @@ class FaceAnalyzer:
             return FitzpatrickScale.TYPE_III
 
         avg_lab = np.mean(lab_values, axis=0)
-        L, a, b = avg_lab[0], avg_lab[1], avg_lab[2]
+        L, _a, b = avg_lab[0], avg_lab[1], avg_lab[2]
 
         # ITA (Individual Typology Angle) formula
         # ITA = arctan((L - 50) / b) * 180 / pi
@@ -590,7 +601,8 @@ class FaceAnalyzer:
         return avg_arch / ipd
 
     def _calculate_symmetry(self, landmarks: np.ndarray) -> float:
-        """Calculate facial symmetry score (0-1, 1 = perfectly symmetric).
+        """
+        Calculate facial symmetry score (0-1, 1 = perfectly symmetric).
 
         Compares left and right side landmark positions relative to the
         vertical midline.
@@ -629,7 +641,7 @@ class FaceAnalyzer:
     def __enter__(self) -> "FaceAnalyzer":
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
 
@@ -652,7 +664,8 @@ class DriftReport:
 
 
 class DriftDetector:
-    """Compares generated images against locked facial parameters.
+    """
+    Compares generated images against locked facial parameters.
 
     Detects when AI-generated images have drifted from the target
     biometric measurements, enabling quality control across batches.
@@ -784,5 +797,5 @@ class DriftDetector:
     def __enter__(self) -> "DriftDetector":
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()

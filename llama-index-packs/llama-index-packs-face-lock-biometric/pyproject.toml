@@ -75,6 +75,12 @@ import_path = "llama_index.packs.face_lock_biometric"
 [tool.llamahub.class_authors]
 FaceLockBiometricPack = "face-lock"
 
+[tool.ruff.lint]
+# RET504: assignment-before-return is intentional for readability in image processing pipelines
+# PYI034: Self return type requires typing_extensions, overkill for context managers
+# PYI036: star-args annotation with object is pedantic for __exit__
+ignore = ["RET504", "PYI034", "PYI036"]
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

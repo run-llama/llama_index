@@ -12,7 +12,7 @@ Film Presets:
 - Kodak Vision3 500T (Pushed +2)
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -38,7 +38,8 @@ class FilmPreset(Enum):
 
 @dataclass
 class FilmStockProfile:
-    """Configuration for a specific film stock emulation.
+    """
+    Configuration for a specific film stock emulation.
 
     Each parameter controls a different aspect of the analog look.
     """
@@ -135,7 +136,8 @@ FILM_PRESETS: Dict[FilmPreset, FilmStockProfile] = {
 
 
 class AnalogFilmProcessor:
-    """Applies analog film stock characteristics to digital images.
+    """
+    Applies analog film stock characteristics to digital images.
 
     Simulates the organic imperfections of chemical film processing
     including grain, halation, color shifts, and mechanical artifacts.
@@ -167,13 +169,15 @@ class AnalogFilmProcessor:
             self.profile = FilmStockProfile()
 
     def process(self, image: np.ndarray) -> np.ndarray:
-        """Apply all film effects to an image.
+        """
+        Apply all film effects to an image.
 
         Args:
             image: BGR numpy array (OpenCV format).
 
         Returns:
             Processed BGR numpy array.
+
         """
         result = image.astype(np.float32) / 255.0
 
@@ -197,7 +201,8 @@ class AnalogFilmProcessor:
         return [self.process(img) for img in images]
 
     def _apply_grain(self, image: np.ndarray) -> np.ndarray:
-        """Add silver halide grain structure (not digital noise).
+        """
+        Add silver halide grain structure (not digital noise).
 
         Real film grain has a non-uniform, organic distribution that
         varies with exposure level — brighter areas have finer grain.
@@ -226,7 +231,8 @@ class AnalogFilmProcessor:
         return image
 
     def _apply_halation(self, image: np.ndarray) -> np.ndarray:
-        """Add halation — red bloom on highlights.
+        """
+        Add halation — red bloom on highlights.
 
         In real film, bright light passes through the emulsion and
         reflects off the film base, creating a colored halo.
@@ -289,7 +295,8 @@ class AnalogFilmProcessor:
         return image
 
     def _apply_shoulder_compression(self, image: np.ndarray) -> np.ndarray:
-        """Apply film shoulder curve (highlight rolloff).
+        """
+        Apply film shoulder curve (highlight rolloff).
 
         Real film has a characteristic S-curve response where highlights
         compress gradually (the "shoulder") rather than clipping hard.
@@ -320,7 +327,8 @@ class AnalogFilmProcessor:
         return image
 
     def _apply_chromatic_aberration(self, image: np.ndarray) -> np.ndarray:
-        """Apply lateral chromatic aberration (color fringing).
+        """
+        Apply lateral chromatic aberration (color fringing).
 
         Simulates the color separation that occurs in lower-quality
         lenses, especially toward the edges of the frame.
@@ -385,7 +393,8 @@ class AnalogFilmProcessor:
         return image
 
     def _apply_gate_weave(self, image: np.ndarray) -> np.ndarray:
-        """Apply gate weave (subtle frame jitter).
+        """
+        Apply gate weave (subtle frame jitter).
 
         Simulates the mechanical imprecision of a film projector gate.
         """
@@ -421,7 +430,8 @@ def process_with_verification(
     analyzer: Any = None,
     tolerance_multiplier: float = 1.5,
 ) -> Tuple[np.ndarray, Optional[Any]]:
-    """Apply film processing, then verify facial measurements still hold.
+    """
+    Apply film processing, then verify facial measurements still hold.
 
     Film effects (especially contrast shifts) can alter perceived jawlines
     and other features. This function catches such drift.
@@ -436,6 +446,7 @@ def process_with_verification(
 
     Returns:
         Tuple of (processed_image, drift_report_or_None).
+
     """
     processed = processor.process(image)
 

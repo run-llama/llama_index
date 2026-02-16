@@ -9,8 +9,7 @@ for the real-face workflow path. Ensures compliance with Illinois BIPA
 import hashlib
 import json
 import os
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
@@ -28,7 +27,8 @@ class ConsentStatus(Enum):
 
 @dataclass
 class BIPAConsent:
-    """BIPA consent record for biometric data collection.
+    """
+    BIPA consent record for biometric data collection.
 
     Required fields per Illinois BIPA (740 ILCS 14/):
     - Written notice of collection purpose
@@ -110,7 +110,8 @@ class BIPAConsent:
 
 
 def hash_identifier(identifier: str) -> str:
-    """Hash a subject identifier (name, email, etc.) for safe storage.
+    """
+    Hash a subject identifier (name, email, etc.) for safe storage.
 
     BIPA requires we never store raw biometric identifiers. We hash
     them so we can still track consent per subject without storing PII.
@@ -125,7 +126,8 @@ def create_consent(
     data_retention_days: int = 30,
     consent_method: str = "digital_signature",
 ) -> BIPAConsent:
-    """Create a new BIPA consent record with all required disclosures.
+    """
+    Create a new BIPA consent record with all required disclosures.
 
     This function enforces that all BIPA-required disclosures are
     acknowledged before consent can be granted.
@@ -139,6 +141,7 @@ def create_consent(
 
     Returns:
         A BIPAConsent record with status GRANTED.
+
     """
     return BIPAConsent(
         consent_given=True,
@@ -156,7 +159,8 @@ def create_consent(
 
 
 def revoke_consent(consent: BIPAConsent) -> BIPAConsent:
-    """Revoke an existing consent record.
+    """
+    Revoke an existing consent record.
 
     Per BIPA, subjects have the right to revoke consent at any time.
     Revocation triggers immediate data deletion requirements.
@@ -167,7 +171,8 @@ def revoke_consent(consent: BIPAConsent) -> BIPAConsent:
 
 
 class ConsentStore:
-    """Persistent storage for BIPA consent records with audit trail.
+    """
+    Persistent storage for BIPA consent records with audit trail.
 
     Stores consent records as JSON files with integrity hashes.
     Supports audit queries and automatic expiration enforcement.
@@ -260,7 +265,8 @@ class ConsentStore:
         return consent is not None and consent.is_valid
 
     def delete(self, subject_identifier: str) -> bool:
-        """Delete a consent record and associated biometric data.
+        """
+        Delete a consent record and associated biometric data.
 
         Per BIPA, data must be destroyed upon consent revocation or
         retention period expiry.
