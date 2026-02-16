@@ -7,7 +7,7 @@ generate) and negative prompts (drift prevention).
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from .face_lock import EyeShape, FacialMeasurements, FitzpatrickScale
 
@@ -121,7 +121,8 @@ def _lip_descriptor(lip_ratio: float) -> str:
 
 
 class PromptGenerator:
-    """Generates AI image generation prompts from facial measurements.
+    """
+    Generates AI image generation prompts from facial measurements.
 
     Converts numeric biometric data into natural language descriptors
     optimized for specific platforms.
@@ -147,6 +148,7 @@ class PromptGenerator:
             style_suffix: Text appended to every prompt.
             include_technical: If True, include raw numeric values as
                 comments in the prompt (useful for debugging).
+
         """
         self.platform = platform
         self.style_prefix = style_prefix
@@ -158,7 +160,8 @@ class PromptGenerator:
         measurements: FacialMeasurements,
         additional_context: str = "",
     ) -> Tuple[str, str]:
-        """Generate positive and negative prompts from measurements.
+        """
+        Generate positive and negative prompts from measurements.
 
         Args:
             measurements: FacialMeasurements to convert.
@@ -166,6 +169,7 @@ class PromptGenerator:
 
         Returns:
             Tuple of (positive_prompt, negative_prompt).
+
         """
         positive = self._build_positive(measurements, additional_context)
         negative = self._build_negative(measurements)
@@ -179,7 +183,8 @@ class PromptGenerator:
         camera_angle: str = "front-facing portrait",
         lighting: str = "natural lighting",
     ) -> Tuple[str, str]:
-        """Generate a complete character prompt with scene context.
+        """
+        Generate a complete character prompt with scene context.
 
         Args:
             measurements: Target facial measurements.
@@ -190,6 +195,7 @@ class PromptGenerator:
 
         Returns:
             Tuple of (positive_prompt, negative_prompt).
+
         """
         context_parts = [camera_angle, lighting]
         if scene_description:
@@ -319,10 +325,12 @@ class PromptGenerator:
     def format_for_api(
         self, measurements: FacialMeasurements, **kwargs: str
     ) -> Dict[str, str]:
-        """Return a dict suitable for API submission.
+        """
+        Return a dict suitable for API submission.
 
         Returns:
             Dict with 'positive_prompt', 'negative_prompt', and 'platform'.
+
         """
         positive, negative = self.generate(measurements, **kwargs)
         return {
@@ -338,7 +346,8 @@ def generate_prompt_for_platform(
     context: str = "",
     include_technical: bool = False,
 ) -> Tuple[str, str]:
-    """Convenience function to generate prompts without instantiating a class.
+    """
+    Convenience function to generate prompts without instantiating a class.
 
     Args:
         measurements: Target facial measurements.
@@ -348,6 +357,7 @@ def generate_prompt_for_platform(
 
     Returns:
         Tuple of (positive_prompt, negative_prompt).
+
     """
     gen = PromptGenerator(
         platform=platform, include_technical=include_technical
