@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## [0.6.0] - 2026-01-28
+## [0.8.0] - 2026-02-15
+
+### Added
+
+- Add pagination support for all Microsoft Graph API calls to handle large result sets
+
+## [0.7.0] - 2026-01-28
 
 ### Added
 
