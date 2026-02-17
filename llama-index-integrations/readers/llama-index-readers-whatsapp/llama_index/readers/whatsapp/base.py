@@ -37,6 +37,7 @@ class WhatsappChatLoader(BaseReader):
 
         docs = []
         n = 0
+        # note that `itertuples` assumes a pandas dataframe
         for row in df.itertuples():
             extra_info = {
                 "source": str(path).split("/")[-1].replace(".txt", ""),
