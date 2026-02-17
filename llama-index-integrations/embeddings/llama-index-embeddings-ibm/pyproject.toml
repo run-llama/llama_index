@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-ibm"
-version = "0.6.0"
+version = "0.6.0.post1"
 description = "llama-index embeddings IBM watsonx.ai integration"
 authors = [{name = "IBM"}]
 requires-python = ">=3.11,<4.0"
