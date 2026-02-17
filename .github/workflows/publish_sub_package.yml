@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   publish_subpackage_if_needed:
@@ -55,3 +55,4 @@ jobs:
 
             cd - >/dev/null
           done
+          exit $result # exit with a non-zero code if one or more failures

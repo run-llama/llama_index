@@ -4,6 +4,7 @@ from llama_index.observability.otel.base import (
     SERVICE_NAME,
     ConsoleSpanExporter,
 )
+from llama_index.observability.otel.utils import flatten_dict
 
 
 def test_initialization() -> None:
@@ -28,3 +29,13 @@ def test_diff_initialization() -> None:
     assert instrumentor.span_processor == "simple"
     assert instrumentor._tracer is None
     assert instrumentor.debug
+
+
+def test_flatten_dict() -> None:
+    nested_dict = {"a": 1, "b": {"c": 2, "d": {"e": 3}}}
+    flattened = flatten_dict(nested_dict)
+    assert flattened == {"a": 1, "b.c": 2, "b.d.e": 3}
+
+    nested_dict = {"a": 1, "b": {"c": 2, "d": {"e": 3}}, "f": [1, 2, 3]}
+    flattened = flatten_dict(nested_dict)
+    assert flattened == {"a": 1, "b.c": 2, "b.d.e": 3, "f": [1, 2, 3]}
