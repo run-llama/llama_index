@@ -17,10 +17,10 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest~=7.2",
-    "pytest-asyncio==0.21.0",
+    "pytest-asyncio",
     "pytest-cov~=5.0",
     "pytest-dotenv==0.5.2",
-    "pytest-mock==3.11.1",
+    "pytest-mock",
     "pytest-timeout>=2.4.0",
     "rake-nltk==1.0.6",
     "ruff==0.11.11",
@@ -36,7 +36,7 @@ name = "llama-index-core"
 version = "0.14.13"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [

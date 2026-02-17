@@ -12,9 +12,9 @@ dev = [
     "pandas",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest-asyncio>=0.23.7",
-    "pytest-mock>=3.14.0",
-    "pytest>=8.2.1",
+    "pytest-asyncio",
+    "pytest-mock",
+    "pytest",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -69,7 +69,7 @@ maintainers = [
 ]
 name = "llama-index"
 readme = "README.md"
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 version = "0.14.14"
 
 [project.scripts]

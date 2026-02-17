@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4",
+    "pytest",
     "pytest-cov>=6.1.1",
 ]
 

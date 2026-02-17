@@ -397,7 +397,7 @@ pygments==2.19.2
 pylint==2.15.10
 pysnc==1.1.10
     # via llama-index-readers-service-now
-pytest==7.2.1
+pytest
     # via
     #   pytest-cov
     #   pytest-mock

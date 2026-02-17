@@ -9,8 +9,8 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -29,7 +29,7 @@ name = "llama-index-readers-web"
 version = "0.5.6"
 description = "llama-index readers web integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 maintainers = [
@@ -71,7 +71,7 @@ dependencies = [
     "selenium>=4.17.2,<5",
     "chromedriver-autoinstaller>=0.6.3,<0.7",
     "html2text>=2024.2.26,<2025",
-    "aiohttp>=3.9.1,<4",
+    "aiohttp>=3.10.1,<4",
     "beautifulsoup4>=4.12.3,<5",
     "requests>=2.31.0,<3",
     "urllib3>=1.1.0",

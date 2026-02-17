@@ -10,9 +10,9 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -31,7 +31,7 @@ name = "llama-index-vector-stores-qdrant"
 version = "0.9.1"
 description = "llama-index vector_stores qdrant integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -4,8 +4,8 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-mock",
     "pre-commit==3.2.0",
     "pytest-cov>=6.1.1",
 ]

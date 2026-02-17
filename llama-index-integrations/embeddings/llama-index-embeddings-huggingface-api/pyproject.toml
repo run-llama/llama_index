@@ -9,8 +9,8 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -29,7 +29,7 @@ name = "llama-index-embeddings-huggingface-api"
 version = "0.4.1"
 description = "llama-index embeddings huggingface api integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

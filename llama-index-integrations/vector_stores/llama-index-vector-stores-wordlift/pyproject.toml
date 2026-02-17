@@ -12,10 +12,10 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
+    "pytest",
+    "pytest-asyncio",
     "pytest-cov>=6.1.1",
-    "pytest-mock==3.11.1",
+    "pytest-mock",
     "requests>=2.31.0,<2.32.0",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -32,7 +32,7 @@ name = "llama-index-vector-stores-wordlift"
 version = "0.6.1"
 description = "llama-index vector_stores wordlift integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
