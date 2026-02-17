@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest",
+    "pytest-asyncio",
     "ruff==0.11.11",
 ]
 
@@ -14,7 +14,7 @@ name = "llama-index-agent-agentmesh"
 version = "0.1.0"
 description = "AgentMesh trust layer integration for LlamaIndex agents"
 authors = [{name = "AgentMesh Contributors"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15.0", "cryptography>=41.0.0"]

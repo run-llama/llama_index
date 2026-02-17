@@ -7,8 +7,8 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.1",
+    "pytest",
+    "pytest-mock",
     "ruff==0.11.11",
 ]
 
@@ -17,7 +17,7 @@ name = "llama-index-llms-contextual"
 version = "0.1.1"
 description = "llama-index contextual integration"
 authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

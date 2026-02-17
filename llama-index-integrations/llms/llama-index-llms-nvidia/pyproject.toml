@@ -13,11 +13,11 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-asyncio>=0.23.0,<0.24",
-    "pytest-cov>=6.1.1",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
     "pytest-httpx>=0.30.0",
-    "pytest-mock==3.11.1",
+    "pytest-mock",
     "respx>=0.21.1,<0.22",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -37,7 +37,7 @@ name = "llama-index-llms-nvidia"
 version = "0.4.4"
 description = "llama-index llms nvidia api catalog integration"
 authors = [{name = "Chris Alexiuk", email = "calexiuk@nvidia.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

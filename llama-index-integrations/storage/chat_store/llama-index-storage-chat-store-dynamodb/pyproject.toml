@@ -10,8 +10,8 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -30,7 +30,7 @@ name = "llama-index-storage-chat-store-dynamodb"
 version = "0.4.2"
 description = "llama-index storage-chat-store aws dynamodb integration"
 authors = [{name = "brycecf", email = "26725654+brycecf@users.noreply.github.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

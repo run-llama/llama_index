@@ -14,10 +14,10 @@ dev = [
     "pre-commit==3.2.0",
     "pyarrow-stubs>=20.0.0.20250627",
     "pylint==2.15.10",
-    "pytest-asyncio>=0.23.8",
+    "pytest-asyncio",
     "pytest-cov>=6.1.1",
-    "pytest-mock==3.11.1",
-    "pytest==7.2.1",
+    "pytest-mock",
+    "pytest",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-protobuf>=4.24.0.4,<5",
@@ -31,7 +31,7 @@ name = "llama-index-storage-kvstore-duckdb"
 version = "0.2.1"
 description = "llama-index kvstore duckdb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

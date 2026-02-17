@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.12", "3.14"]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,32 +39,3 @@ jobs:
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref ${{ github.event.pull_request.base.ref }}
-
-  test-core-py314:
-    runs-on: ubuntu-latest-unit-tester
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y portaudio19-dev
-
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.14"
-          enable-cache: true
-
-      - name: Run tests for llama-index-core
-        shell: bash
-        working-directory: llama-dev
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- llama-dev \
-            --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
-            --workers ${{ env.NUM_WORKERS }} \
-            --cov \
-            llama-index-core

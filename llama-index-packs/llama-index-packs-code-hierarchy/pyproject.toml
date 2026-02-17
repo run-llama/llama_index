@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
-    "pytest==7.2.1",
+    "pytest",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
@@ -20,7 +20,7 @@ name = "llama-index-packs-code-hierarchy"
 version = "0.6.1"
 description = "A node parser which can create a hierarchy of all code scopes in a directory."
 authors = [{name = "Ryan Peach", email = "rgpeach10@gmail.com"}]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ryanpeach"}]

@@ -5,8 +5,8 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "diff-cover>=9.2.4",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.1",
+    "pytest",
+    "pytest-mock",
 ]
 
 [project]
@@ -16,7 +16,7 @@ description = "The official CLI for development, testing, and automation in the 
 readme = "README.md"
 authors = [{name = "LlamaIndex"}]
 license = "MIT"
-requires-python = ">=3.9.17"
+requires-python = ">=3.10.17"
 classifiers = []
 dependencies = [
     "click",

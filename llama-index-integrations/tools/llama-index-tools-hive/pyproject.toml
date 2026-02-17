@@ -7,7 +7,7 @@ name = "llama-index-tools-hive"
 version = "0.2.1"
 description = "LlamaIndex Tool for Hive Intelligence"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -21,14 +21,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=6.0",
+    "pytest",
     "black>=23.0.0",
     "isort>=5.0.0",
     "mypy>=1.0.0",
     "pytest-cov>=3.0.0",
 ]
 test = [
-    "pytest>=6.0",
+    "pytest",
     "pytest-cov>=3.0.0",
 ]
 

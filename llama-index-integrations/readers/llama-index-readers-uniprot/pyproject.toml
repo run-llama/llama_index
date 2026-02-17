@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "diff-cover>=9.2.0",
-    "pytest>=8.3.5",
+    "pytest",
     "pytest-cov>=6.1.1",
     "ruff==0.11.11",
 ]
@@ -15,7 +15,7 @@ name = "llama-index-readers-uniprot"
 version = "0.2.1"
 description = "UniProt reader for LlamaIndex"
 authors = [{name = "Evgenii Neumerzhitckii", email = "sausageskin@gmail.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 keywords = [
