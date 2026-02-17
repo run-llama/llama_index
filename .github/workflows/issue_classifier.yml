@@ -11,10 +11,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CI_BOT_APP_ID }}
+          private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
+      
       - name: Classify Issues as Good First Issues
         uses: run-llama/issue-classifier@v0.1.0
         with:
           llama-cloud-api-key: ${{ secrets.LLAMA_CLOUD_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           repository-owner: "run-llama"
           repository-name: "llama_index"
