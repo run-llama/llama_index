@@ -231,6 +231,21 @@ class TextSplitter(NodeParser):
 
 
 class MetadataAwareTextSplitter(TextSplitter):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        pydantic_init = getattr(cls, "__pydantic_init__", None)
+        if pydantic_init is None:
+            return
+
+        doc = getattr(pydantic_init, "__doc__", None)
+        if not doc:
+            return
+
+        try:
+            cls.__init__.__doc__ = doc
+        except (AttributeError, TypeError):
+            pass
     @abstractmethod
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]: ...
 
