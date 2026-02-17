@@ -158,6 +158,18 @@ Use this to narrow down where the problem is:
 
 ## Further Reading
 
-- [Building Performant RAG Applications for Production](/docs/framework/optimizing/production_rag/)
-- [Building RAG from Scratch](/docs/framework/optimizing/building_rag_from_scratch/)
-- [Evaluation Guide](/docs/framework/optimizing/evaluation/)
+- [Building Performant RAG Applications for Production](/python/framework/optimizing/production_rag/)
+- [Building RAG from Scratch](/python/framework/optimizing/building_rag_from_scratch/)
+- [Evaluation Guide](/python/framework/optimizing/evaluation/evaluation/)
+
+## Key LlamaIndex Classes Referenced
+
+- [`SentenceSplitter`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/sentence_splitter/)
+- [`HierarchicalNodeParser`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/hierarchical/)
+- [`SentenceWindowNodeParser`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/sentence_window/)
+- [`CohereRerank`](https://docs.llamaindex.ai/en/stable/api_reference/postprocessor/cohere_rerank/)
+- [`SentenceTransformerRerank`](https://docs.llamaindex.ai/en/stable/api_reference/postprocessor/sentence_transformer_rerank/)
+- [`HyDEQueryTransform`](https://docs.llamaindex.ai/en/stable/api_reference/query/query_transform/hyde/)
+- [`SubQuestionQueryEngine`](https://docs.llamaindex.ai/en/stable/api_reference/query/sub_question/)
+- [`IngestionPipeline`](https://docs.llamaindex.ai/en/stable/api_reference/ingestion/pipeline/)
+- [`MetadataFilters`](https://docs.llamaindex.ai/en/stable/api_reference/retrievers/vector_store/)
