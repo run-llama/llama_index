@@ -8,12 +8,21 @@ from llama_index.llms.ibm import WatsonxLLM
 from llama_index.llms.ibm.base import DEFAULT_MAX_TOKENS, DEFAULT_CONTEXT_WINDOW
 
 
-def mock_return_guardrails_stats(*args) -> Dict:
-    from ibm_watsonx_ai.foundation_models import ModelInference
+def mock_return_guardrails_stats(response: Dict) -> Dict:
+    """Extract the first result from the response."""
+    if "results" in response and len(response["results"]) > 0:
+        result = response["results"][0]
+        # Check for HAP detection and raise warning if present
+        if "moderations" in result and "hap" in result["moderations"]:
+            from ibm_watsonx_ai.foundation_models.utils.utils import HAPDetectionWarning
 
-    mock_client = MagicMock()
-    mock_client._client.use_fm_ga_api = True
-    return ModelInference._return_guardrails_stats(mock_client, args[0])
+            warnings.warn(
+                "Hate, Abuse, and Profanity (HAP) detected in the response.",
+                HAPDetectionWarning,
+                stacklevel=2,
+            )
+        return result
+    return response
 
 
 def mock_generate_with_hap(*args: Any, **kwargs: Any) -> Dict[str, Any]:
