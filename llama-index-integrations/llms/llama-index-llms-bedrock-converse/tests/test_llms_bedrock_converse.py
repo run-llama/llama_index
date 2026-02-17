@@ -2,7 +2,6 @@ import random
 import string
 import json
 import os
-import re
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
@@ -969,9 +968,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         if r.additional_kwargs.get("thinking_delta") is not None
         and len(r.additional_kwargs.get("thinking_delta", "")) > 0
     ]
-    assert (
-        len(thinking_responses) > 0
-    ), "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    assert len(thinking_responses) > 0, (
+        "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    )
 
     # Check that text deltas are separate from thinking deltas
     text_responses = [
@@ -1000,9 +999,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         for r in async_responses
         if r.additional_kwargs.get("thinking_delta") is not None
     ]
-    assert (
-        len(async_thinking_responses) > 0
-    ), "Async streaming should also have thinking_delta in additional_kwargs"
+    assert len(async_thinking_responses) > 0, (
+        "Async streaming should also have thinking_delta in additional_kwargs"
+    )
 
 
 @needs_aws_creds
@@ -1060,13 +1059,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
     response_1 = await llm.achat(messages=cache_test_messages_1)
     # Verify cache write tokens are present (first call should write to cache)
     additional_kwargs_1 = getattr(response_1, "additional_kwargs", {})
-    assert (
-        "cache_creation_input_tokens" in additional_kwargs_1
-    ), "First call should show cache creation tokens"
+    assert "cache_creation_input_tokens" in additional_kwargs_1, (
+        "First call should show cache creation tokens"
+    )
     cache_write_tokens_1 = additional_kwargs_1.get("cache_creation_input_tokens", 0)
-    assert (
-        cache_write_tokens_1 > 0
-    ), f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    assert cache_write_tokens_1 > 0, (
+        f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    )
 
     # Second call - should read from cache with different user message
     cache_test_messages_2 = [
@@ -1088,13 +1087,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
 
     # Verify cache read tokens are present (second call should read from cache)
     additional_kwargs_2 = getattr(response_2, "additional_kwargs", {})
-    assert (
-        "cache_read_input_tokens" in additional_kwargs_2
-    ), "Second call should show cache read tokens"
+    assert "cache_read_input_tokens" in additional_kwargs_2, (
+        "Second call should show cache read tokens"
+    )
     cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
-    assert (
-        cache_read_tokens_2 > 0
-    ), f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    assert cache_read_tokens_2 > 0, (
+        f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    )
 
     # Verify cache efficiency - cache read tokens should be close to cache write tokens
     # (since we're using the same cached content)
@@ -1159,13 +1158,13 @@ async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
 
     # Verify cache write tokens are present (first call should write to cache automatically)
     additional_kwargs = getattr(response, "additional_kwargs", {})
-    assert (
-        "cache_creation_input_tokens" in additional_kwargs
-    ), "First call should show cache creation tokens when system_prompt_caching=True"
+    assert "cache_creation_input_tokens" in additional_kwargs, (
+        "First call should show cache creation tokens when system_prompt_caching=True"
+    )
     cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
-    assert (
-        cache_write_tokens > 0
-    ), f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    assert cache_write_tokens > 0, (
+        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    )
 
     # Verify response is meaningful
     assert len(str(response.message.content)) > 50, "Response should be substantial"
@@ -1303,18 +1302,20 @@ async def test_tool_call_input_output(
 # --- Tests for _strip_thinking_tokens ---
 
 
+# --- Tests for _strip_thinking_tokens ---
+
 
 def test_strip_thinking_tokens_no_thinking():
     """Test that text without thinking tokens is unchanged."""
     text = "Hello world"
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
 def test_strip_thinking_tokens_basic():
     """Test that thinking tokens are removed."""
     text = "<thinking>reasoning</thinking>Hello world"
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
@@ -1325,33 +1326,33 @@ def test_strip_thinking_tokens_multiline():
         "Step 2: Decide\n"
         "Step 3: Output</thinking>Hello world"
     )
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
 def test_strip_thinking_tokens_at_end():
     """Test that thinking tokens at the end are removed."""
     text = "Hello world<thinking>some reasoning</thinking>"
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
 def test_strip_thinking_tokens_multiple():
     """Test that multiple thinking tokens are removed."""
     text = "<thinking>first</thinking>Hello<thinking>second</thinking> world"
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
 def test_strip_thinking_tokens_empty():
     """Test that empty thinking tokens are handled."""
     text = "<thinking></thinking>Hello world"
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == "Hello world"
 
 
 def test_strip_thinking_tokens_whitespace_only():
     """Test that text with only whitespace after stripping is handled."""
     text = "   <thinking>reasoning</thinking>   "
-    result = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+    result = BedrockConverse._strip_thinking_tokens(text)
     assert result == ""

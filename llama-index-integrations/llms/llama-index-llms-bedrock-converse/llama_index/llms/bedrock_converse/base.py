@@ -37,6 +37,12 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.llms.bedrock_converse.utils import (
     ThinkingDict,
     bedrock_modelname_to_context_size,
@@ -372,7 +378,8 @@ class BedrockConverse(FunctionCallingLLM):
             **kwargs,
         }
 
-    def _strip_thinking_tokens(self, text: str) -> str:
+    @staticmethod
+    def _strip_thinking_tokens(text: str) -> str:
         """
         Remove <thinking>...</thinking> tokens from text.
 
@@ -391,12 +398,12 @@ class BedrockConverse(FunctionCallingLLM):
         List[str],
         Optional[str],
     ]:
-        assert (
-            response is not None or content is not None
-        ), f"Either response or content must be provided. Got response: {response}, content: {content}"
-        assert (
-            response is None or content is None
-        ), f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+        assert response is not None or content is not None, (
+            f"Either response or content must be provided. Got response: {response}, content: {content}"
+        )
+        assert response is None or content is None, (
+            f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+        )
         tool_call_ids = []
         status = []
         thinking_text = ""
