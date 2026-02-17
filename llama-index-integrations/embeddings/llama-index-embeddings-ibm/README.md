@@ -63,7 +63,7 @@ You need to specify the `model_id` that will be used for inferencing.
 from llama_index.embeddings.ibm import WatsonxEmbeddings
 
 watsonx_embedding = WatsonxEmbeddings(
-    model_id="ibm/slate-125m-english-rtrvr",
+    model_id="ibm/slate-125m-english-rtrvr-v2",
     url="https://us-south.ml.cloud.ibm.com",
     project_id="PASTE YOUR PROJECT_ID HERE",
     truncate_input_tokens=truncate_input_tokens,
@@ -74,12 +74,12 @@ Alternatively, you can use Cloud Pak for Data credentials. For details, see [wat
 
 ```python
 watsonx_embedding = WatsonxEmbeddings(
-    model_id="ibm/slate-125m-english-rtrvr",
+    model_id="ibm/slate-125m-english-rtrvr-v2",
     url="PASTE YOUR URL HERE",
     username="PASTE YOUR USERNAME HERE",
     password="PASTE YOUR PASSWORD HERE",
     instance_id="openshift",
-    version="4.8",
+    version="5.2",
     project_id="PASTE YOUR PROJECT_ID HERE",
     truncate_input_tokens=truncate_input_tokens,
 )
