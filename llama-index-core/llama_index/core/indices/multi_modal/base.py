@@ -80,11 +80,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager")
-        )
-        assert isinstance(image_embed_model, MultiModalEmbedding)
-        self._image_embed_model = image_embed_model
+        self._image_embed_model: Optional[MultiModalEmbedding] = None
+        if not kwargs.get("skip_embedding", False):
+            image_embed_model = resolve_embed_model(
+                image_embed_model, callback_manager=kwargs.get("callback_manager")
+            )
+            assert isinstance(image_embed_model, MultiModalEmbedding)
+            self._image_embed_model = image_embed_model
         self._is_image_to_text = is_image_to_text
         self._is_image_vector_store_empty = is_image_vector_store_empty
         self._is_text_vector_store_empty = is_text_vector_store_empty
@@ -120,7 +122,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return self._image_vector_store
 
     @property
-    def image_embed_model(self) -> MultiModalEmbedding:
+    def image_embed_model(self) -> Optional[MultiModalEmbedding]:
         return self._image_embed_model
 
     @property
@@ -203,6 +205,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
+        skip_embedding: bool = False,
         # Image-related kwargs
         image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
@@ -213,19 +216,22 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 "Cannot initialize from a vector store that does not store text."
             )
 
+        kwargs.pop("storage_context", None)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        resolved_embed_model = (
+            resolve_embed_model(
+                embed_model, callback_manager=kwargs.get("callback_manager")
+            )
+            if embed_model is not None
+            else None
+        )
         return cls(
             nodes=[],
+            embed_model=resolved_embed_model,
+            skip_embedding=skip_embedding,
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
-            embed_model=(
-                resolve_embed_model(
-                    embed_model, callback_manager=kwargs.get("callback_manager")
-                )
-                if embed_model
-                else Settings.embed_model
-            ),
             **kwargs,
         )
 
@@ -242,10 +248,25 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        if self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                if isinstance(result, ImageNode):
+                    result.text_embedding = None
+                results.append(result)
+            return results
+
         id_to_text_embed_map = None
 
         if is_image:
             assert all(isinstance(node, ImageNode) for node in nodes)
+            if not self._image_embed_model:
+                raise ValueError(
+                    "image_embed_model is required when embedding image nodes"
+                )
             id_to_embed_map = embed_image_nodes(
                 nodes,  # type: ignore
                 embed_model=self._image_embed_model,
@@ -253,7 +274,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             )
 
             # text field is populate, so embed them
-            if self._is_image_to_text:
+            if self._is_image_to_text and self._embed_model:
                 id_to_text_embed_map = embed_nodes(
                     nodes,
                     embed_model=self._embed_model,
@@ -263,6 +284,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 self._image_embed_model = self._embed_model  # type: ignore
 
         else:
+            if not self._embed_model:
+                raise ValueError("embed_model is required when skip_embedding=False")
             id_to_embed_map = embed_nodes(
                 nodes,
                 embed_model=self._embed_model,
@@ -297,17 +320,32 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        if self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                if isinstance(result, ImageNode):
+                    result.text_embedding = None
+                results.append(result)
+            return results
+
         id_to_text_embed_map = None
 
         if is_image:
             assert all(isinstance(node, ImageNode) for node in nodes)
+            if not self._image_embed_model:
+                raise ValueError(
+                    "image_embed_model is required when embedding image nodes"
+                )
             id_to_embed_map = await async_embed_image_nodes(
                 nodes,  # type: ignore
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
 
-            if self._is_image_to_text:
+            if self._is_image_to_text and self._embed_model:
                 id_to_text_embed_map = await async_embed_nodes(
                     nodes,
                     embed_model=self._embed_model,
@@ -317,6 +355,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 self._image_embed_model = self._embed_model  # type: ignore
 
         else:
+            if not self._embed_model:
+                raise ValueError("embed_model is required when skip_embedding=False")
             id_to_embed_map = await async_embed_nodes(
                 nodes,
                 embed_model=self._embed_model,

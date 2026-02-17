@@ -42,6 +42,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+        skip_embedding (bool): Whether to skip embedding generation. Defaults to False.
+            If True, the vector store is expected to generate embeddings.
+            This is useful for vector stores that support native embedding generation
+            (e.g. Weaviate, Pinecone).
+            NOTE: When True, embed_model is ignored.
+            NOTE: IndexNode is not supported when skip_embedding=True.
+            NOTE: ImageNode is supported but must have text or image_path/image_url.
 
     """
 
@@ -55,6 +62,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         store_nodes_override: bool = False,
         embed_model: Optional[EmbedType] = None,
         insert_batch_size: int = 2048,
+        skip_embedding: bool = False,
         # parent class params
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
@@ -67,9 +75,19 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Initialize params."""
         self._use_async = use_async
         self._store_nodes_override = store_nodes_override
-        self._embed_model = resolve_embed_model(
-            embed_model or Settings.embed_model, callback_manager=callback_manager
-        )
+        self._skip_embedding = skip_embedding
+
+        is_embedding_provider = False
+        if storage_context:
+            is_embedding_provider = getattr(
+                storage_context.vector_store, "generates_embeddings", False
+            )
+
+        self._embed_model = None
+        if not is_embedding_provider:
+            self._embed_model = resolve_embed_model(
+                embed_model or Settings.embed_model, callback_manager=callback_manager
+            )
 
         self._insert_batch_size = insert_batch_size
         super().__init__(
@@ -83,11 +101,25 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             **kwargs,
         )
 
+        if skip_embedding:
+            # Warn if vector store doesn't support native embedding
+            if not getattr(self._vector_store, "generates_embeddings", False):
+                logger.warning(
+                    "skip_embedding=True but vector store does not support native embedding generation. "
+                    "Ensure your vector store supports native embedding generation."
+                )
+        elif getattr(self._vector_store, "generates_embeddings", False):
+            logger.info(
+                "VectorStoreIndex is generating embeddings, but vector store has generates_embeddings=True. "
+                "Consider setting skip_embedding=True to let the vector store handle embedding generation and reduce costs."
+            )
+
     @classmethod
     def from_vector_store(
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
+        skip_embedding: bool = False,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
         if not vector_store.stores_text:
@@ -101,6 +133,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return cls(
             nodes=[],
             embed_model=embed_model,
+            skip_embedding=skip_embedding,
             storage_context=storage_context,
             **kwargs,
         )
@@ -135,6 +168,22 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
+        if self._vector_store.generates_embeddings or self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            # This ensures the vector store generates its own embeddings
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                results.append(result)
+            return results
+
+        if not self._embed_model:
+            raise ValueError(
+                "embed_model is required when skip_embedding=False and "
+                "vector_store.generates_embeddings=False"
+            )
+
         id_to_embed_map = embed_nodes(
             nodes, self._embed_model, show_progress=show_progress
         )
@@ -159,6 +208,22 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         Embeddings are called in batches.
 
         """
+        if self._vector_store.generates_embeddings or self._skip_embedding:
+            # Clear any existing embeddings and return nodes
+            # This ensures the vector store generates its own embeddings
+            results = []
+            for node in nodes:
+                result = node.model_copy()
+                result.embedding = None
+                results.append(result)
+            return results
+
+        if not self._embed_model:
+            raise ValueError(
+                "embed_model is required when skip_embedding=False and "
+                "vector_store.generates_embeddings=False"
+            )
+
         id_to_embed_map = await async_embed_nodes(
             nodes=nodes,
             embed_model=self._embed_model,
@@ -301,6 +366,35 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             for node in nodes
             if node.get_content(metadata_mode=MetadataMode.EMBED) != ""
         ]
+
+        if self._skip_embedding:
+            invalid_nodes = []
+            for node in nodes:
+                # Check for IndexNode
+                if isinstance(node, IndexNode):
+                    raise ValueError(
+                        f"IndexNode {node.node_id} cannot be used with skip_embedding=True. "
+                        "IndexNode is not supported for native vector store embedding. "
+                        "Use skip_embedding=False to embed IndexNode via LlamaIndex."
+                    )
+
+                # Validate text content
+                content = node.get_content(metadata_mode=MetadataMode.EMBED)
+                if isinstance(node, ImageNode):
+                    # ImageNode needs text OR image source
+                    if not content and not (node.image_path or node.image_url):
+                        invalid_nodes.append(node.node_id)
+                else:
+                    # TextNode needs text content
+                    if not content or content.strip() == "":
+                        invalid_nodes.append(node.node_id)
+
+            if invalid_nodes:
+                raise ValueError(
+                    f"The following nodes have no text content but skip_embedding=True. "
+                    f"Nodes must have text content for vector store to generate embeddings: "
+                    f"{invalid_nodes[:10]}{'...' if len(invalid_nodes) > 10 else ''}"
+                )
 
         # Report if some nodes are missing content
         if len(content_nodes) != len(nodes):

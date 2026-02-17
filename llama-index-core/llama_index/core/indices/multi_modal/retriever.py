@@ -69,8 +69,9 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         # separate image vector store for image retrieval
         self._image_vector_store = self._index.image_vector_store
 
-        assert isinstance(self._index.image_embed_model, BaseEmbedding)
-        self._image_embed_model = index._image_embed_model
+        if index.image_embed_model is not None:
+            assert isinstance(index.image_embed_model, BaseEmbedding)
+        self._image_embed_model = index.image_embed_model
         self._embed_model = index._embed_model
         self._docstore = self._index.docstore
 
@@ -142,7 +143,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_text_vector_store_empty:
-            if self._vector_store.is_embedding_query:
+            if self._vector_store.is_embedding_query and self._embed_model is not None:
                 if (
                     query_bundle.embedding is None
                     and len(query_bundle.embedding_strs) > 0
@@ -168,7 +169,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_image_vector_store_empty:
-            if self._image_vector_store.is_embedding_query:
+            if (
+                self._image_vector_store.is_embedding_query
+                and self._image_embed_model is not None
+            ):
                 # change the embedding for query bundle to Multi Modal Text encoder
                 query_bundle.embedding = (
                     self._image_embed_model.get_agg_embedding_from_queries(
@@ -193,7 +197,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_image_vector_store_empty:
-            if self._image_vector_store.is_embedding_query:
+            if (
+                self._image_vector_store.is_embedding_query
+                and self._image_embed_model is not None
+            ):
                 # change the embedding for query bundle to Multi Modal Image encoder for image input
                 assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
                 query_bundle.embedding = self._image_embed_model.get_image_embedding(
@@ -289,7 +296,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_text_vector_store_empty:
-            if self._vector_store.is_embedding_query:
+            if self._vector_store.is_embedding_query and self._embed_model is not None:
                 # change the embedding for query bundle to Multi Modal Text encoder
                 query_bundle.embedding = (
                     await self._embed_model.aget_agg_embedding_from_queries(
@@ -314,7 +321,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_image_vector_store_empty:
-            if self._image_vector_store.is_embedding_query:
+            if (
+                self._image_vector_store.is_embedding_query
+                and self._image_embed_model is not None
+            ):
                 # change the embedding for query bundle to Multi Modal Text encoder
                 query_bundle.embedding = (
                     await self._image_embed_model.aget_agg_embedding_from_queries(
@@ -351,7 +361,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         if not self._index.is_image_vector_store_empty:
-            if self._image_vector_store.is_embedding_query:
+            if (
+                self._image_vector_store.is_embedding_query
+                and self._image_embed_model is not None
+            ):
                 # change the embedding for query bundle to Multi Modal Image encoder for image input
                 assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
                 # Using the first imaage in the list for image retrieval

@@ -273,6 +273,15 @@ class VectorStore(Protocol):
     is_embedding_query: bool = True
 
     @property
+    def generates_embeddings(self) -> bool:
+        """
+        Check if the vector store provides embeddings.
+
+        If True, the index will skip embedding generation for nodes.
+        """
+        return False
+
+    @property
     def client(self) -> Any:
         """Get client."""
         ...
@@ -337,6 +346,15 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     stores_text: bool
     is_embedding_query: bool = True
+
+    @property
+    def generates_embeddings(self) -> bool:
+        """
+        Check if the vector store provides embeddings.
+
+        If True, the index will skip embedding generation for nodes.
+        """
+        return False
 
     @property
     @abstractmethod

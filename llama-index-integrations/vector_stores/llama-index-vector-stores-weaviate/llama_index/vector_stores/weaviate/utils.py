@@ -6,7 +6,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 """
 
 import logging
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -156,9 +156,52 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     return node
 
 
+def get_collection_vectorizer_config(
+    client: Any, class_name: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Get the vectorizer configuration from an existing Weaviate collection.
+
+    Returns the vectorizer config if found, None otherwise.
+    Vectorizers like 'text2vec-openai', 'text2vec-cohere', etc. are required
+    for native_embedding feature to work.
+    """
+    validate_client(client)
+    try:
+        collection = client.collections.get(class_name)
+        config = collection.config.get()
+        if config and hasattr(config, "vectorizer") and config.vectorizer:
+            return config.vectorizer
+    except Exception as e:
+        _logger.debug(f"Failed to retrieve vectorizer config for {class_name}: {e}")
+    return None
+
+
+async def aget_collection_vectorizer_config(
+    client: Any, class_name: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Asynchronously get the vectorizer configuration from an existing Weaviate collection.
+
+    Returns the vectorizer config if found, None otherwise.
+    Vectorizers like 'text2vec-openai', 'text2vec-cohere', etc. are required
+    for native_embedding feature to work.
+    """
+    validate_async_client(client)
+    try:
+        collection = client.collections.get(class_name)
+        config = await collection.config.get()
+        if config and hasattr(config, "vectorizer") and config.vectorizer:
+            return config.vectorizer
+    except Exception as e:
+        _logger.debug(f"Failed to retrieve vectorizer config for {class_name}: {e}")
+    return None
+
+
 def get_data_object(
     node: BaseNode,
     text_key: str = DEFAULT_TEXT_KEY,
+    use_vector: bool = True,
 ) -> dict:
     """Add node."""
     metadata = {}
@@ -169,7 +212,7 @@ def get_data_object(
     )
     metadata.update(additional_metadata)
 
-    vector = node.get_embedding()
+    vector = node.get_embedding() if use_vector else None
     id = node.node_id
 
     return wvc.data.DataObject(properties=metadata, uuid=id, vector=vector)
