@@ -575,17 +575,11 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+
+        # Omit reasoning items from the conversation history
         elif isinstance(block, ThinkingBlock):
-            if block.content and "id" in block.additional_information:
-                reasoning.append(
-                    {
-                        "type": "reasoning",
-                        "id": block.additional_information["id"],
-                        "summary": [
-                            {"type": "summary_text", "text": block.content or ""}
-                        ],
-                    }
-                )
+            continue
+
         elif isinstance(block, ToolCallBlock):
             tool_calls.extend(
                 [
@@ -712,8 +706,9 @@ def to_openai_message_dicts(
         # If there is only one message, and it is a user message, return the content string directly
         if (
             len(final_message_dicts) == 1
-            and final_message_dicts[0]["role"] == "user"
-            and isinstance(final_message_dicts[0]["content"], str)
+            and isinstance(final_message_dicts[0], dict)
+            and final_message_dicts[0].get("role") == "user"
+            and isinstance(final_message_dicts[0].get("content"), str)
         ):
             return final_message_dicts[0]["content"]
 

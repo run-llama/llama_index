@@ -682,7 +682,7 @@ def test_messages_to_openai_responses_messages():
         ),
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
-    assert len(openai_messages) == 8
+    assert len(openai_messages) == 7
     assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
@@ -703,16 +703,9 @@ def test_messages_to_openai_responses_messages():
         "call_id": "2",
         "name": "get_capital_city_by_state",
     }
-
-    assert openai_messages[6]["type"] == "reasoning"
-    assert (
-        openai_messages[6]["id"] == messages[6].blocks[0].additional_information["id"]
-    )
-    assert openai_messages[6]["summary"][0]["text"] == messages[6].blocks[0].content
-
-    assert openai_messages[7]["role"] == "assistant"
-    assert len(openai_messages[7]["content"]) == 1
-    assert openai_messages[7]["content"][0]["text"] == messages[6].blocks[1].text
+    assert openai_messages[6]["role"] == "assistant"
+    assert len(openai_messages[6]["content"]) == 1
+    assert openai_messages[6]["content"][0]["text"] == messages[6].blocks[1].text
 
 
 @pytest.fixture()
