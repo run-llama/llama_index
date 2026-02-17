@@ -74,9 +74,6 @@ from llama_index.core.service_context import (
     set_global_service_context,
 )
 
-# rate limiter
-from llama_index.core.rate_limiter import RateLimiter
-
 # global settings
 from llama_index.core.settings import Settings
 
@@ -150,7 +147,6 @@ __all__ = [
     "set_global_tokenizer",
     "get_tokenizer",
     "Settings",
-    "RateLimiter",
 ]
 
 # eval global toggle

@@ -150,7 +150,7 @@ class RateLimiter(BaseModel):
                     return
             time.sleep(wait)
 
-    async def aacquire(self, num_tokens: int = 0) -> None:
+    async def async_acquire(self, num_tokens: int = 0) -> None:
         """
         Wait until one request is allowed (asynchronous).
 

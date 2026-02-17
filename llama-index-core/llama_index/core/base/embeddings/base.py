@@ -202,7 +202,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
-                    await self.rate_limiter.aacquire()
+                    await self.rate_limiter.async_acquire()
                 query_embedding = await self._aget_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
@@ -213,7 +213,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     query_embedding = cached_emb[cached_key]
                 else:
                     if self.rate_limiter is not None:
-                        await self.rate_limiter.aacquire()
+                        await self.rate_limiter.async_acquire()
                     query_embedding = await self._aget_query_embedding(query)
                     await self.embeddings_cache.aput(
                         key=query,
@@ -299,7 +299,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     ) -> List[Embedding]:
         """Acquire rate limiter before delegating to _aget_text_embeddings."""
         if self.rate_limiter is not None:
-            await self.rate_limiter.aacquire()
+            await self.rate_limiter.async_acquire()
         return await self._aget_text_embeddings(texts)
 
     def _get_text_embeddings_cached(self, texts: List[str]) -> List[Embedding]:
@@ -438,7 +438,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
-                    await self.rate_limiter.aacquire()
+                    await self.rate_limiter.async_acquire()
                 text_embedding = await self._aget_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
@@ -449,7 +449,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     text_embedding = cached_emb[cached_key]
                 else:
                     if self.rate_limiter is not None:
-                        await self.rate_limiter.aacquire()
+                        await self.rate_limiter.async_acquire()
                     text_embedding = await self._aget_text_embedding(text)
                     await self.embeddings_cache.aput(
                         key=text,

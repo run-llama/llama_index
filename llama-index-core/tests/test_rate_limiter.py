@@ -6,44 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-)
-from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.llms.mock import MockLLM
 from llama_index.core.rate_limiter import RateLimiter
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-class _StubLLM(CustomLLM):
-    """Minimal LLM for testing rate-limiter integration."""
-
-    __test__ = False
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata()
-
-    @llm_completion_callback()
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: object
-    ) -> CompletionResponse:
-        return CompletionResponse(text="ok")
-
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: object
-    ) -> CompletionResponseGen:
-        def gen() -> CompletionResponseGen:
-            yield CompletionResponse(text="ok", delta="ok")
-
-        return gen()
 
 
 # ---------------------------------------------------------------------------
@@ -125,20 +90,20 @@ def test_refill_caps_at_max() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aacquire_burst_within_limit() -> None:
+async def test_async_acquire_burst_within_limit() -> None:
     rl = RateLimiter(requests_per_minute=10)
     start = time.monotonic()
     for _ in range(10):
-        await rl.aacquire()
+        await rl.async_acquire()
     elapsed = time.monotonic() - start
     assert elapsed < 1.0
 
 
 @pytest.mark.asyncio
-async def test_aacquire_tpm_limiting() -> None:
+async def test_async_acquire_tpm_limiting() -> None:
     """TPM limiting should throttle based on token count."""
     rl = RateLimiter(tokens_per_minute=100)
-    await rl.aacquire(num_tokens=100)
+    await rl.async_acquire(num_tokens=100)
 
     with (
         patch(
@@ -154,18 +119,18 @@ async def test_aacquire_tpm_limiting() -> None:
         # First monotonic(): no elapsed time, need 50 tokens but 0 available -> sleep
         # Second monotonic(): 60s elapsed -> refills 100 tokens -> acquire succeeds
         mock_time.side_effect = [base, base + 60.0]
-        await rl.aacquire(num_tokens=50)
+        await rl.async_acquire(num_tokens=50)
         mock_sleep.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_concurrent_async_rate_limiting() -> None:
-    """Multiple concurrent aacquire calls must all complete."""
+    """Multiple concurrent async_acquire calls must all complete."""
     rl = RateLimiter(requests_per_minute=600)
     results: list = []
 
     async def worker(n: int) -> None:
-        await rl.aacquire()
+        await rl.async_acquire()
         results.append(n)
 
     tasks = [worker(i) for i in range(20)]
@@ -180,42 +145,46 @@ async def test_concurrent_async_rate_limiting() -> None:
 
 def test_llm_sync_chat_calls_acquire() -> None:
     mock_limiter = MagicMock()
-    llm = _StubLLM(rate_limiter=mock_limiter)
+    llm = MockLLM()
+    llm.rate_limiter = mock_limiter
     llm.chat([ChatMessage(role="user", content="hello")])
     # chat() triggers callback; internally calls complete() which also triggers
     assert mock_limiter.acquire.call_count >= 1
 
 
 @pytest.mark.asyncio
-async def test_llm_async_chat_calls_aacquire() -> None:
+async def test_llm_async_chat_calls_async_acquire() -> None:
     mock_limiter = MagicMock()
-    mock_limiter.aacquire = AsyncMock()
-    llm = _StubLLM(rate_limiter=mock_limiter)
+    mock_limiter.async_acquire = AsyncMock()
+    llm = MockLLM()
+    llm.rate_limiter = mock_limiter
     await llm.achat([ChatMessage(role="user", content="hello")])
-    mock_limiter.aacquire.assert_called_once()
+    mock_limiter.async_acquire.assert_called_once()
 
 
 def test_llm_sync_complete_calls_acquire() -> None:
     mock_limiter = MagicMock()
-    llm = _StubLLM(rate_limiter=mock_limiter)
+    llm = MockLLM()
+    llm.rate_limiter = mock_limiter
     llm.complete("hello")
     mock_limiter.acquire.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_llm_async_complete_calls_aacquire() -> None:
+async def test_llm_async_complete_calls_async_acquire() -> None:
     mock_limiter = MagicMock()
-    mock_limiter.aacquire = AsyncMock()
-    llm = _StubLLM(rate_limiter=mock_limiter)
+    mock_limiter.async_acquire = AsyncMock()
+    llm = MockLLM()
+    llm.rate_limiter = mock_limiter
     await llm.acomplete("hello")
-    mock_limiter.aacquire.assert_called_once()
+    mock_limiter.async_acquire.assert_called_once()
 
 
 def test_llm_without_rate_limiter_works() -> None:
-    llm = _StubLLM()
+    llm = MockLLM()
     assert llm.rate_limiter is None
-    response = llm.chat([ChatMessage(role="user", content="hello")])
-    assert response.message.content == "ok"
+    response = llm.complete("hello")
+    assert response.text == "hello"
 
 
 # ---------------------------------------------------------------------------
@@ -264,6 +233,7 @@ def test_shared_limiter_between_llm_and_embedding() -> None:
     from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
     rl = RateLimiter(requests_per_minute=100)
-    llm = _StubLLM(rate_limiter=rl)
+    llm = MockLLM()
+    llm.rate_limiter = rl
     embed = MockEmbedding(embed_dim=8, rate_limiter=rl)
     assert llm.rate_limiter is embed.rate_limiter

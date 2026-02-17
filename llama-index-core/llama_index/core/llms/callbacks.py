@@ -72,9 +72,8 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-                _rate_limiter = getattr(_self, "rate_limiter", None)
-                if _rate_limiter is not None:
-                    await _rate_limiter.aacquire()
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
 
                 try:
                     f_return_val = await f(_self, messages, **kwargs)
@@ -175,9 +174,8 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-                _rate_limiter = getattr(_self, "rate_limiter", None)
-                if _rate_limiter is not None:
-                    _rate_limiter.acquire()
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
 
                 try:
                     f_return_val = f(_self, messages, **kwargs)
@@ -341,9 +339,8 @@ def llm_completion_callback() -> Callable:
                     },
                 )
 
-                _rate_limiter = getattr(_self, "rate_limiter", None)
-                if _rate_limiter is not None:
-                    await _rate_limiter.aacquire()
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
 
                 try:
                     f_return_val = await f(_self, *args, **kwargs)
@@ -443,9 +440,8 @@ def llm_completion_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-                _rate_limiter = getattr(_self, "rate_limiter", None)
-                if _rate_limiter is not None:
-                    _rate_limiter.acquire()
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
 
                 try:
                     f_return_val = f(_self, *args, **kwargs)
