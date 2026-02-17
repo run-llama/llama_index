@@ -154,4 +154,7 @@ Args:
 """.strip()
 
 # Pydantic replaces __init__ at runtime; attach docs to the generated constructor so help() is meaningful.
-Chunker.__init__.__doc__ = CHUNKER_INIT_DOC
+try:
+    Chunker.__init__.__doc__ = CHUNKER_INIT_DOC
+except AttributeError:
+    pass
