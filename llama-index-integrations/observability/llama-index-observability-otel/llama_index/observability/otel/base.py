@@ -19,7 +19,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict, Priva
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
 from llama_index.core.instrumentation.span import SimpleSpan, active_span_id
-from llama_index.observability.otel.utils import filter_model_fields
+from llama_index.observability.otel.utils import flatten_dict
 
 
 class OTelEventAttributes(BaseModel):
@@ -198,7 +198,7 @@ class OTelCompatibleEventHandler(BaseEventHandler):
             event_data = {"event_data": str(event)}
 
         otel_event = OTelEventAttributes(
-            name=event.class_name(), attributes=filter_model_fields(event_data)
+            name=event.class_name(), attributes=flatten_dict(event_data)
         )
 
         self.span_handler._events_by_span.setdefault(current_span_id, []).append(
