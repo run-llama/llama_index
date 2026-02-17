@@ -31,7 +31,7 @@ class WhatsappChatLoader(BaseReader):
 
         parser = WhatsAppParser(path)
         parser.parse_file()
-        df = parser.parsed_messages.get_df()
+        df = parser.parsed_messages.get_df(as_pandas=True)
 
         logging.debug(f"> Number of messages: {len(df)}.")
 
