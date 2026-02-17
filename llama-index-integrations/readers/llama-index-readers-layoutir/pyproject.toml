@@ -4,12 +4,16 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.4",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -18,30 +22,26 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
-    "codespell[toml]>=v2.2.6",
-    "diff-cover>=9.2.0",
-    "pytest-cov>=6.1.1",
 ]
 
 [project]
-name = "llama-index-readers-microsoft-sharepoint"
-version = "0.8.0"
-description = "llama-index readers microsoft_sharepoint integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+name = "llama-index-readers-layoutir"
+version = "0.1.0"
+description = "llama-index readers LayoutIR integration"
+authors = [{name = "Rahul Patnaik", email = "rpatnaik2005@gmail.com"}]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "arun-soliton"}]
 keywords = [
-    "microsoft 365",
-    "microsoft365",
-    "sharepoint",
+    "PDF",
+    "document processing",
+    "layout analysis",
+    "IR",
+    "layoutir",
 ]
 dependencies = [
-    "requests>=2.31.0,<3",
-    "llama-index-readers-file>=0.5.0,<0.6",
     "llama-index-core>=0.13.0,<0.15",
+    "layoutir>=1.0.3",
 ]
 
 [tool.codespell]
@@ -59,13 +59,13 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.microsoft_sharepoint"
+import_path = "llama_index.readers.layoutir"
 
 [tool.llamahub.class_authors]
-SharePointReader = "arun-soliton"
+LayoutIRReader = "rahulpatnaik"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.10"

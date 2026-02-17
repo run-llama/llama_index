@@ -478,3 +478,102 @@ def test_sharepoint_type_enum():
     """Test SharePointType enum values."""
     assert SharePointType.DRIVE.value == "drive"
     assert SharePointType.PAGE.value == "page"
+
+
+def test_get_all_items_with_pagination():
+    """Test pagination helper retrieves all items across multiple pages."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+    )
+    reader._authorization_headers = {"Authorization": "Bearer dummy_token"}
+
+    # Mock responses for multiple pages
+    page1_response = MagicMock()
+    page1_response.json.return_value = {
+        "value": [{"id": "item1"}, {"id": "item2"}],
+        "@odata.nextLink": "https://graph.microsoft.com/v1.0/endpoint?$skiptoken=page2",
+    }
+
+    page2_response = MagicMock()
+    page2_response.json.return_value = {
+        "value": [{"id": "item3"}, {"id": "item4"}],
+        "@odata.nextLink": "https://graph.microsoft.com/v1.0/endpoint?$skiptoken=page3",
+    }
+
+    page3_response = MagicMock()
+    page3_response.json.return_value = {
+        "value": [{"id": "item5"}],
+        # No nextLink - last page
+    }
+
+    responses = [page1_response, page2_response, page3_response]
+    call_count = 0
+
+    def mock_get(url):
+        nonlocal call_count
+        response = responses[call_count]
+        call_count += 1
+        return response
+
+    with patch.object(SharePointReader, "_send_get_with_retry", side_effect=mock_get):
+        items = reader._get_all_items_with_pagination(
+            "https://graph.microsoft.com/v1.0/endpoint"
+        )
+
+    assert len(items) == 5
+    assert items[0]["id"] == "item1"
+    assert items[4]["id"] == "item5"
+    assert call_count == 3  # Verify all three pages were fetched
+
+
+def test_get_all_items_with_pagination_single_page():
+    """Test pagination helper with single page (no nextLink)."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+    )
+    reader._authorization_headers = {"Authorization": "Bearer dummy_token"}
+
+    single_page_response = MagicMock()
+    single_page_response.json.return_value = {
+        "value": [{"id": "item1"}, {"id": "item2"}],
+        # No nextLink
+    }
+
+    with patch.object(
+        SharePointReader, "_send_get_with_retry", return_value=single_page_response
+    ):
+        items = reader._get_all_items_with_pagination(
+            "https://graph.microsoft.com/v1.0/endpoint"
+        )
+
+    assert len(items) == 2
+    assert items[0]["id"] == "item1"
+    assert items[1]["id"] == "item2"
+
+
+def test_get_all_items_with_pagination_empty_result():
+    """Test pagination helper with empty result."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+    )
+    reader._authorization_headers = {"Authorization": "Bearer dummy_token"}
+
+    empty_response = MagicMock()
+    empty_response.json.return_value = {
+        "value": [],
+    }
+
+    with patch.object(
+        SharePointReader, "_send_get_with_retry", return_value=empty_response
+    ):
+        items = reader._get_all_items_with_pagination(
+            "https://graph.microsoft.com/v1.0/endpoint"
+        )
+
+    assert len(items) == 0
