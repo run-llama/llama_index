@@ -77,6 +77,29 @@ def _transform_weaviate_filter_operator(operator: str) -> str:
         raise ValueError(f"Filter operator {operator} not supported")
 
 
+# Canonical string representations accepted as boolean True / False.
+_BOOL_TRUE_STRINGS = frozenset({"true", "1", "yes"})
+_BOOL_FALSE_STRINGS = frozenset({"false", "0", "no"})
+
+
+def _parse_bool(value: Any) -> bool:
+    """
+    Parse a value to bool with explicit string handling.
+
+    Plain ``bool("false")`` returns ``True`` (any non-empty string is truthy).
+    This helper recognises common string representations so that e.g.
+    ``"false"`` is correctly coerced to ``False``.
+    """
+    if isinstance(value, str):
+        lower = value.strip().lower()
+        if lower in _BOOL_TRUE_STRINGS:
+            return True
+        if lower in _BOOL_FALSE_STRINGS:
+            return False
+        raise ValueError(f"Cannot convert string '{value}' to bool")
+    return bool(value)
+
+
 def _coerce_filter_value(value: Any, data_type: Any) -> Any:
     """
     Coerce a filter value to match the expected Weaviate property data type.
@@ -103,8 +126,8 @@ def _coerce_filter_value(value: Any, data_type: Any) -> Any:
             return int(value)
         elif dt in ("boolean", "boolean[]"):
             if isinstance(value, list):
-                return [bool(v) for v in value]
-            return bool(value)
+                return [_parse_bool(v) for v in value]
+            return _parse_bool(value)
     except (ValueError, TypeError):
         pass
     return value

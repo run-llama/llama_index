@@ -207,6 +207,36 @@ class TestCoerceFilterValue:
         assert result is True
         assert isinstance(result, bool)
 
+    def test_string_false_to_bool(self):
+        """String 'false' should be coerced to False, not True."""
+        result = _coerce_filter_value("false", "boolean")
+        assert result is False
+        assert isinstance(result, bool)
+
+    def test_string_true_to_bool(self):
+        """String 'true' should be coerced to True."""
+        result = _coerce_filter_value("true", "boolean")
+        assert result is True
+        assert isinstance(result, bool)
+
+    def test_string_zero_to_bool(self):
+        """String '0' should be coerced to False."""
+        result = _coerce_filter_value("0", "boolean")
+        assert result is False
+        assert isinstance(result, bool)
+
+    def test_unrecognised_string_for_bool_returns_original(self):
+        """An unrecognised string should be returned as-is for 'boolean'."""
+        result = _coerce_filter_value("maybe", "boolean")
+        assert result == "maybe"
+        assert isinstance(result, str)
+
+    def test_bool_list_with_strings(self):
+        """A list of string booleans should be parsed correctly for 'boolean[]'."""
+        result = _coerce_filter_value(["true", "false", "1", "0"], "boolean[]")
+        assert result == [True, False, True, False]
+        assert all(isinstance(v, bool) for v in result)
+
 
 class TestToWeaviateFilterWithPropertyTypes:
     """Tests for _to_weaviate_filter with property_types parameter."""
