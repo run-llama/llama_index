@@ -47,6 +47,8 @@ BEDROCK_MODELS = {
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
+    "amazon.nova-2-lite-v1:0": 1000000,
+    "amazon.nova-2-pro-preview-20251202-v1:0": 1000000,
     "amazon.titan-text-express-v1": 8192,
     "amazon.titan-text-lite-v1": 4096,
     "amazon.titan-text-premier-v1:0": 3072,
@@ -105,6 +107,8 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -140,6 +144,8 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -185,6 +191,8 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
 )
 
 BEDROCK_REASONING_MODELS = (
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
