@@ -30,7 +30,7 @@ version = "0.1.0"
 description = "llama-index tools igpt_email integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
-readme = "README.md"
+
 license = "MIT"
 keywords = [
     "email",
