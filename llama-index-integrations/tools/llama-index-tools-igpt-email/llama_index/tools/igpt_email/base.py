@@ -3,6 +3,8 @@
 import json
 from typing import List, Optional
 
+from igptai import IGPT
+
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -12,10 +14,6 @@ class IGPTEmailToolSpec(BaseToolSpec):
 
     Wraps the iGPT recall.ask() and recall.search() endpoints, giving agents
     structured, reasoning-ready context from connected email threads.
-
-    iGPT handles thread reconstruction, participant role detection, temporal
-    reasoning, and intent extraction before returning results — so agents
-    receive clean, structured JSON instead of raw message data.
 
     Args:
         api_key (str): iGPT API key. See https://docs.igpt.ai for details.
@@ -42,12 +40,6 @@ class IGPTEmailToolSpec(BaseToolSpec):
 
     def __init__(self, api_key: str, user: str) -> None:
         """Initialize with parameters."""
-        try:
-            from igptai import IGPT
-        except ImportError:
-            raise ImportError(
-                "`igptai` package not found, please install with `pip install igptai`"
-            )
         self.client = IGPT(api_key=api_key, user=user)
 
     def ask(

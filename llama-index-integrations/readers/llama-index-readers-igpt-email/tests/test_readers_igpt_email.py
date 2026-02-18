@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.readers.igpt_email import IGPTEmailReader
@@ -14,7 +12,7 @@ def test_class():
     assert BaseReader.__name__ in names_of_base_classes
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_returns_documents(mock_igpt_class):
     mock_results = [
         {
@@ -73,7 +71,7 @@ def test_load_data_returns_documents(mock_igpt_class):
     assert results[1].metadata["id"] == "msg-2"
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_with_results_wrapper(mock_igpt_class):
     """Test load_data() handles a dict response with a 'results' key."""
     mock_response = {
@@ -102,7 +100,7 @@ def test_load_data_with_results_wrapper(mock_igpt_class):
     assert results[0].metadata["subject"] == "Support ticket #42"
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_uses_body_fallback(mock_igpt_class):
     """Test load_data() falls back to 'body' when 'content' is absent."""
     mock_results = [
@@ -127,7 +125,7 @@ def test_load_data_uses_body_fallback(mock_igpt_class):
     assert results[0].text == "This message uses the body field."
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_default_max_results(mock_igpt_class):
     """Test load_data() passes default max_results of 50."""
     mock_client = MagicMock()
@@ -145,7 +143,7 @@ def test_load_data_default_max_results(mock_igpt_class):
     )
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_empty_response(mock_igpt_class):
     """Test load_data() returns empty list when API returns nothing."""
     mock_client = MagicMock()
@@ -158,7 +156,7 @@ def test_load_data_empty_response(mock_igpt_class):
     assert results == []
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_none_response(mock_igpt_class):
     """Test load_data() returns empty list when API returns None."""
     mock_client = MagicMock()
@@ -171,7 +169,7 @@ def test_load_data_none_response(mock_igpt_class):
     assert results == []
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.readers.igpt_email.base.IGPT")
 def test_load_data_non_dict_items(mock_igpt_class):
     """Test load_data() handles non-dict items in results gracefully."""
     mock_client = MagicMock()
@@ -184,18 +182,3 @@ def test_load_data_non_dict_items(mock_igpt_class):
     assert len(results) == 1
     assert results[0].text == "raw string result"
     assert results[0].metadata["source"] == "igpt_email"
-
-
-def test_missing_igptai_package():
-    """Test that a clear ImportError is raised if igptai is not installed."""
-    import sys
-
-    igptai = sys.modules.pop("igptai", None)
-    try:
-        with patch.dict("sys.modules", {"igptai": None}):
-            reader = IGPTEmailReader(api_key="key", user="user")
-            with pytest.raises(ImportError, match="igptai"):
-                reader.load_data(query="test")
-    finally:
-        if igptai is not None:
-            sys.modules["igptai"] = igptai

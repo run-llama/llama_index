@@ -3,6 +3,8 @@
 import json
 from typing import List, Optional
 
+from igptai import IGPT
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -12,11 +14,6 @@ class IGPTEmailReader(BaseReader):
 
     Loads structured, reasoning-ready email context from the iGPT API as
     LlamaIndex Documents for indexing and retrieval.
-
-    Unlike raw email connectors that return unprocessed message data, iGPT
-    handles thread reconstruction, participant role detection, and intent
-    extraction before returning results — so each Document contains clean,
-    structured content ready for a RAG pipeline.
 
     Args:
         api_key (str): iGPT API key. See https://docs.igpt.ai for details.
@@ -38,8 +35,7 @@ class IGPTEmailReader(BaseReader):
     def __init__(self, api_key: str, user: str) -> None:
         """Initialize with parameters."""
         super().__init__()
-        self.api_key = api_key
-        self.user = user
+        self.client = IGPT(api_key=api_key, user=user)
 
     def load_data(
         self,
@@ -66,16 +62,7 @@ class IGPTEmailReader(BaseReader):
                 date, thread_id, id).
 
         """
-        try:
-            from igptai import IGPT
-        except ImportError:
-            raise ImportError(
-                "`igptai` package not found, please install with `pip install igptai`"
-            )
-
-        client = IGPT(api_key=self.api_key, user=self.user)
-
-        response = client.recall.search(
+        response = self.client.recall.search(
             query=query,
             date_from=date_from,
             date_to=date_to,

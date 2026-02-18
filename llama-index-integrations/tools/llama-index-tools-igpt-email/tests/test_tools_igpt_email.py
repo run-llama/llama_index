@@ -3,8 +3,6 @@
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.igpt_email import IGPTEmailToolSpec
@@ -20,14 +18,14 @@ def test_spec_functions():
     assert "search" in IGPTEmailToolSpec.spec_functions
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_init(mock_igpt_class):
     tool = IGPTEmailToolSpec(api_key="test-key", user="test-user")
     mock_igpt_class.assert_called_once_with(api_key="test-key", user="test-user")
     assert tool.client == mock_igpt_class.return_value
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_ask_returns_document(mock_igpt_class):
     mock_response = {
         "answer": "You have 3 action items from the project meeting.",
@@ -55,7 +53,7 @@ def test_ask_returns_document(mock_igpt_class):
     assert results[0].metadata["source"] == "igpt_email_ask"
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_ask_with_text_output_format(mock_igpt_class):
     mock_client = MagicMock()
     mock_client.recall.ask.return_value = {"answer": "Some answer", "citations": []}
@@ -70,7 +68,7 @@ def test_ask_with_text_output_format(mock_igpt_class):
     )
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_ask_with_string_response(mock_igpt_class):
     """Test ask() handles a plain string response gracefully."""
     mock_client = MagicMock()
@@ -85,7 +83,7 @@ def test_ask_with_string_response(mock_igpt_class):
     assert results[0].metadata["citations"] == []
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_search_returns_documents(mock_igpt_class):
     mock_results = [
         {
@@ -135,7 +133,7 @@ def test_search_returns_documents(mock_igpt_class):
     assert results[1].metadata["id"] == "msg-2"
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_search_with_results_wrapper(mock_igpt_class):
     """Test search() handles a dict response with a 'results' key."""
     mock_response = {
@@ -164,7 +162,7 @@ def test_search_with_results_wrapper(mock_igpt_class):
     assert results[0].metadata["subject"] == "Deal update"
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_search_empty_response(mock_igpt_class):
     """Test search() returns empty list when API returns nothing."""
     mock_client = MagicMock()
@@ -177,7 +175,7 @@ def test_search_empty_response(mock_igpt_class):
     assert results == []
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_search_none_response(mock_igpt_class):
     """Test search() returns empty list when API returns None."""
     mock_client = MagicMock()
@@ -190,7 +188,7 @@ def test_search_none_response(mock_igpt_class):
     assert results == []
 
 
-@patch("igptai.IGPT")
+@patch("llama_index.tools.igpt_email.base.IGPT")
 def test_search_default_parameters(mock_igpt_class):
     """Test search() uses correct defaults when optional args are omitted."""
     mock_client = MagicMock()
@@ -206,17 +204,3 @@ def test_search_default_parameters(mock_igpt_class):
         date_to=None,
         max_results=10,
     )
-
-
-def test_missing_igptai_package():
-    """Test that a clear ImportError is raised if igptai is not installed."""
-    import sys
-
-    igptai = sys.modules.pop("igptai", None)
-    try:
-        with patch.dict("sys.modules", {"igptai": None}):
-            with pytest.raises(ImportError, match="igptai"):
-                IGPTEmailToolSpec(api_key="key", user="user")
-    finally:
-        if igptai is not None:
-            sys.modules["igptai"] = igptai
