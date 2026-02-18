@@ -4,19 +4,50 @@
 pip install llama-index-tools-hvf
 ```
 
-This tool allows an LLM agent to interact with the
-[Hudson Valley Forestry](https://www.hudsonvalleyforestry.com) public API.
-It supports health checks, retrieving available forestry services, and
-submitting service inquiries for both residential and commercial clients.
+This tool gives LLM agents native access to the
+[Hudson Valley Forestry](https://www.hudsonvalleyforestry.com) agent API.
+It covers three service divisions: **HVF Residential** (forestry mulching, selective
+thinning, clearcut & grub, LiDAR mapping), **HVG Goat Grazing** (targeted grazing for
+invasive species and inaccessible terrain), and **Commercial O&G** (pipeline ROW clearing,
+vegetation management, site prep, LiDAR corridor mapping).
 
-## Available Tools
+**OpenAPI spec**: https://app.hudsonvalleyforestry.com/openapi.json  
+**Interactive docs**: https://app.hudsonvalleyforestry.com/api/docs
 
-| Tool | Description |
-|------|-------------|
-| `health_check` | Verify the HVF API is reachable and healthy |
-| `get_services` | List available forestry services (optionally filtered by category) |
-| `submit_residential_inquiry` | Submit a residential service inquiry / contact form |
-| `submit_commercial_inquiry` | Submit a commercial project inquiry / contact form |
+## Available Tools (9 total)
+
+### HVF Residential
+
+| Tool | Endpoint | Description |
+|------|----------|-------------|
+| `hvf_get_services()` | `GET /api/agent/services` | Get residential service catalog with pricing |
+| `hvf_assess_property(lat, lng, acreage, service_type, vegetation_density)` | `POST /api/agent/assess` | Check eligibility and get price estimate |
+| `hvf_submit_quote(email, name, acreage, service_type, property_description, ...)` | `POST /api/agent/quote` | Submit a residential quote request |
+
+Service area: Hudson Valley NY, Berkshires MA, Western CT (~110-mile radius).  
+Service types: `forestry_mulching`, `selective_thinning`, `clearcut_grub`, `lidar_mapping`.
+
+### HVG Goat Grazing
+
+| Tool | Endpoint | Description |
+|------|----------|-------------|
+| `hvg_get_services()` | `GET /api/agent/goat/services` | Get goat grazing service catalog |
+| `hvg_assess_property(lat, lng, acreage, vegetation_type)` | `POST /api/agent/goat/assess` | Check eligibility (min 0.5 acres) |
+| `hvg_submit_quote(email, name, acreage, service_type, property_description, ...)` | `POST /api/agent/goat/quote` | Submit a goat grazing quote request |
+
+Service type: `goat_grazing`. Vegetation types: `invasive_brush`, `mixed_brush`, `light_grass`, `unknown`.
+
+### Commercial O&G
+
+| Tool | Endpoint | Description |
+|------|----------|-------------|
+| `og_get_services()` | `GET /api/agent/commercial/services` | Get commercial O&G service catalog |
+| `og_assess_project(lat, lng, service_type, project_description, acreage, corridor_miles)` | `POST /api/agent/commercial/assess` | Check project location eligibility |
+| `og_submit_quote(email, name, service_type, project_description, ...)` | `POST /api/agent/commercial/quote` | Submit a commercial quote request |
+
+Service area: Northeast US (NY, NJ, CT, MA, VT, NH, ME, PA, RI, DE, MD).  
+Service types: `row_clearing`, `vegetation_management`, `site_prep`, `lidar_corridor_mapping`.  
+All commercial pricing is custom quoted.
 
 ## Usage
 
@@ -25,55 +56,44 @@ from llama_index.tools.hvf import HVFToolSpec
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
-hvf_tool = HVFToolSpec()
+tools = HVFToolSpec().to_tool_list()
+agent = FunctionAgent(tools=tools, llm=OpenAI(model="gpt-4o"))
 
-agent = FunctionAgent(
-    tools=hvf_tool.to_tool_list(),
-    llm=OpenAI(model="gpt-4.1"),
+# Check if a residential property is eligible and get a price estimate
+result = await agent.run(
+    "Check if a 5-acre property at lat=41.8, lng=-73.9 "
+    "is eligible for HVF forestry mulching and get a price estimate."
 )
 
-# Check API health
-print(await agent.run("Is the Hudson Valley Forestry API currently available?"))
+# Submit a residential quote
+result = await agent.run(
+    "Submit a forestry mulching quote for Jane Smith (jane@example.com, 845-555-0001). "
+    "Her 4-acre wooded lot in Woodstock NY has heavy brush overgrowth."
+)
 
-# List services
-print(await agent.run("What forestry services does Hudson Valley Forestry offer?"))
+# Check goat grazing eligibility
+result = await agent.run(
+    "Is a 2-acre hillside property at lat=41.9, lng=-73.8 with invasive knotweed "
+    "eligible for HVG goat grazing? What would it cost?"
+)
 
-# Submit a residential inquiry
-print(await agent.run(
-    "Submit a tree removal inquiry from Jane Doe (jane@example.com, 845-555-0001) "
-    "at 123 Forest Rd, Woodstock NY. She needs 3 large oaks removed from her 2.5 acre lot."
-))
-
-# Submit a commercial inquiry
-print(await agent.run(
-    "Submit a commercial land clearing inquiry for Acme Land Co. Contact: Bob Smith "
-    "(bob@acme.com, 845-555-0099), 500 Industrial Blvd Kingston NY. "
-    "Need 40 acres cleared by Spring 2026."
-))
+# Submit a commercial O&G quote
+result = await agent.run(
+    "Submit a commercial pipeline ROW clearing quote for Bob Smith at Northeast Pipeline LLC "
+    "(bob@pipeline.com, 845-555-9999). They need 12 miles of corridor cleared by Q3 2026 "
+    "near lat=41.5, lng=-74.0."
+)
 ```
-
-## API Reference
-
-**Base URL**: `https://app.hudsonvalleyforestry.com/api`
-
-### Endpoints used
-
-| Method | Path | Tool |
-|--------|------|------|
-| GET | `/health` | `health_check` |
-| GET | `/services` | `get_services` |
-| POST | `/inquiry` | `submit_residential_inquiry` |
-| POST | `/inquiry/commercial` | `submit_commercial_inquiry` |
 
 ## Configuration
 
 ```python
 # Custom base URL or timeout
 hvf_tool = HVFToolSpec(
-    base_url="https://app.hudsonvalleyforestry.com/api",
+    base_url="https://app.hudsonvalleyforestry.com",
     timeout=60,
 )
 ```
 
 This loader is designed to be used as a way to interact with the
-Hudson Valley Forestry API in an LLM Agent context.
+Hudson Valley Forestry agent API in an LLM Agent context.
