@@ -2223,7 +2223,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-bedrock-converse"
-version = "0.12.7"
+version = "0.12.10"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -2272,7 +2272,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2" },
     { name = "mypy", specifier = "==0.991" },
     { name = "numpy", specifier = ">=1.26.0,<2" },
-    { name = "pillow", specifier = ">=10.0.0,<11" },
+    { name = "pillow", specifier = ">=10.0.0,<12" },
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
     { name = "pytest", specifier = ">=7.2.1" },
