@@ -311,7 +311,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                     prop.name: prop.data_type for prop in config.properties
                 }
             except Exception:
-                self._property_types = {}
+                _logger.warning(
+                    "Failed to fetch property types for collection "
+                    f"'{self.index_name}'. Filter value coercion will be "
+                    "skipped for this call and retried on the next."
+                )
+                return {}
         return self._property_types
 
     async def _aget_property_types(self) -> Dict[str, Any]:
@@ -328,7 +333,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                     prop.name: prop.data_type for prop in config.properties
                 }
             except Exception:
-                self._property_types = {}
+                _logger.warning(
+                    "Failed to fetch property types for collection "
+                    f"'{self.index_name}'. Filter value coercion will be "
+                    "skipped for this call and retried on the next."
+                )
+                return {}
         return self._property_types
 
     def add(
