@@ -37,6 +37,7 @@ def remove_empty_values(input_dict):
 
 
 BASE_ENTITY_LABEL = "__Entity__"
+BASE_NODE_LABEL = "__Node__"
 EXCLUDED_LABELS = []
 EXCLUDED_RELS = []
 EXHAUSTIVE_SEARCH_LIMIT = 10000
@@ -146,7 +147,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         """Refresh the schema."""
         node_query_results = self.structured_query(
             node_properties_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]},
         )
         node_properties = (
             [el["output"] for el in node_query_results] if node_query_results else []
@@ -161,7 +162,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
         rel_objs_query_result = self.structured_query(
             rel_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]},
         )
         relationships = (
             [el["output"] for el in rel_objs_query_result]
@@ -206,10 +207,10 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
         if chunk_dicts:
             self.structured_query(
-                """
+                f"""
                 UNWIND $data AS row
-                MERGE (c:Chunk {id: row.id})
-                SET c.text = row.text
+                MERGE (c:`{BASE_NODE_LABEL}` {{id: row.id}})
+                SET c.text = row.text, c:Chunk
                 WITH c, row
                 SET c += row.properties
                 WITH c, row.embedding AS embedding
@@ -224,9 +225,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             for entity_dict in entity_dicts:
                 self.structured_query(
                     f"""
-                    MERGE (e:`__Entity__` {{id: $data.id}})
+                    MERGE (e:`{BASE_NODE_LABEL}` {{id: $data.id}})
                     SET e += $data.properties
-                    SET e.name = $data.name
+                    SET e.name = $data.name, e:`{BASE_ENTITY_LABEL}`
                     WITH e
                     SET e:{entity_dict["label"]}
                     WITH e
@@ -247,9 +248,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 )
                 if triplet_source_id:
                     self.structured_query(
-                        """
-                        MATCH (e:`__Entity__` {id: $entity_id})
-                        MERGE (c:Chunk {id: $chunk_id})
+                        f"""
+                        MATCH (e:`{BASE_ENTITY_LABEL}` {{id: $entity_id}})
+                        MERGE (c:`{BASE_NODE_LABEL}` {{id: $chunk_id}})
                         MERGE (e)<-[:MENTIONS]-(c)
                         """,
                         param_map={
@@ -265,9 +266,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         for param in params:
             self.structured_query(
                 f"""
-                MERGE (source {{id: $data.source_id}})
+                MERGE (source:`{BASE_NODE_LABEL}` {{id: $data.source_id}})
                 ON CREATE SET source:Chunk
-                MERGE (target {{id: $data.target_id}})
+                MERGE (target:`{BASE_NODE_LABEL}` {{id: $data.target_id}})
                 ON CREATE SET target:Chunk
                 WITH source, target
                 CREATE (source)-[r:`{param["label"]}`]->(target)
@@ -283,28 +284,28 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e) "
+        cypher_statement = f"MATCH (e:`{BASE_NODE_LABEL}`) "
 
         params = {}
-        if properties or ids:
-            cypher_statement += "WHERE "
+        cypher_statement += "WHERE e.id IS NOT NULL "
 
         if ids:
-            cypher_statement += "e.id in $ids "
+            cypher_statement += "AND e.id in $ids "
             params["ids"] = ids
 
         if properties:
+            cypher_statement += "AND "
             prop_list = []
             for i, prop in enumerate(properties):
                 prop_list.append(f"e.`{prop}` = $property_{i}")
                 params[f"property_{i}"] = properties[prop]
             cypher_statement += " AND ".join(prop_list)
 
-        return_statement = """
+        return_statement = f"""
         WITH e
         RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, id: Null} AS properties
+               [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+               e{{.* , embedding: Null, id: Null}} AS properties
         """
         cypher_statement += return_statement
 
@@ -343,7 +344,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         # TODO: handle ids of chunk nodes
-        cypher_statement = "MATCH (e:`__Entity__`) "
+        cypher_statement = f"MATCH (e:`{BASE_ENTITY_LABEL}`) "
 
         params = {}
         if entity_names or properties or ids:
@@ -368,19 +369,19 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:__Entity__)
-            RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
+            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:`{BASE_ENTITY_LABEL}`)
+            RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   t.name AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   t.name AS target_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:__Entity__)
-            RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
+            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:`{BASE_ENTITY_LABEL}`)
+            RETURN t.name AS source_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   e.name AS target_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
         }}
         RETURN source_id, source_type, type, target_id, target_type, source_properties, target_properties"""
@@ -425,7 +426,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             f"""
             WITH $ids AS id_list
             UNWIND range(0, size(id_list) - 1) AS idx
-            MATCH (e:`__Entity__`)
+            MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE e.id = id_list[idx]
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
@@ -436,10 +437,10 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 endNode(rel) AS endNode,
                 idx
             LIMIT $limit
-            RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
+            RETURN source.id AS source_id, [l in labels(source) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                 source{{.* , embedding: Null, id: Null}} AS source_properties,
                 type,
-                endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                endNode.id AS target_id, [l in labels(endNode) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                 endNode{{.* , embedding: Null, id: Null}} AS target_properties,
                 idx
             ORDER BY idx
@@ -504,12 +505,12 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         )
 
         data = self.structured_query(
-            f"""MATCH (e:`__Entity__`)
+            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE e.embedding IS NOT NULL AND ({filters})
             WITH e, vec.euclideanDistance(e.embedding, vecf32($embedding)) AS score
             ORDER BY score LIMIT $limit
             RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
+               [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
                score""",
             param_map={
