@@ -14,7 +14,7 @@ from llama_index.embeddings.ibm.utils import (
 from ibm_watsonx_ai import APIClient, Credentials
 from ibm_watsonx_ai.foundation_models.embeddings import Embeddings
 
-DEFAULT_EMBED_MODEL = "ibm/slate-125m-english-rtrvr"
+DEFAULT_EMBED_MODEL = "ibm/slate-125m-english-rtrvr-v2"
 
 
 class WatsonxEmbeddings(BaseEmbedding):
@@ -25,10 +25,10 @@ class WatsonxEmbeddings(BaseEmbedding):
         `pip install llama-index-embeddings-ibm`
 
         ```python
-
         from llama_index.embeddings.ibm import WatsonxEmbeddings
+
         watsonx_llm = WatsonxEmbeddings(
-            model_id="ibm/slate-125m-english-rtrvr",
+            model_id="ibm/slate-125m-english-rtrvr-v2",
             url="https://us-south.ml.cloud.ibm.com",
             apikey="*****",
             project_id="*****",
@@ -113,12 +113,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         allow_mutation=False,
     )
 
-    # Enabled by default since IBM watsonx SDK 1.1.2 but it can cause problems
-    # in environments where long-running connections are not supported.
-    persistent_connection: bool = Field(
-        default=True, description="Use persistent connection"
-    )
-
     _embed_model: Embeddings = PrivateAttr()
 
     def __init__(
@@ -136,7 +130,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         version: Optional[str] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
-        persistent_connection: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
@@ -177,7 +170,6 @@ class WatsonxEmbeddings(BaseEmbedding):
             username=username,
             version=version,
             verify=verify,
-            persistent_connection=persistent_connection,
             callback_manager=callback_manager,
             embed_batch_size=embed_batch_size,
             **kwargs,
@@ -200,7 +192,6 @@ class WatsonxEmbeddings(BaseEmbedding):
             project_id=self.project_id,
             space_id=self.space_id,
             api_client=api_client,
-            persistent_connection=self.persistent_connection,
         )
 
     class Config:

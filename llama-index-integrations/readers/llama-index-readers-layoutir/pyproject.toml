@@ -4,16 +4,17 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.4",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
-    "numpy>=1.26.0,<2",
-    "pillow>=10.0.0,<12",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest>=7.2.1",
-    "pytest-asyncio<0.24.0",
-    "pytest-mock>=3.11.1",
+    "pytest==7.2.1",
+    "pytest-cov>=6.1.1",
+    "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -21,24 +22,26 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
-    "codespell[toml]>=v2.2.6",
-    "diff-cover>=9.2.0",
-    "pytest-cov>=6.1.1",
 ]
 
 [project]
-name = "llama-index-llms-bedrock-converse"
-version = "0.12.10"
-description = "llama-index llms bedrock converse integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+name = "llama-index-readers-layoutir"
+version = "0.1.0"
+description = "llama-index readers LayoutIR integration"
+authors = [{name = "Rahul Patnaik", email = "rpatnaik2005@gmail.com"}]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+keywords = [
+    "PDF",
+    "document processing",
+    "layout analysis",
+    "IR",
+    "layoutir",
+]
 dependencies = [
-    "boto3>=1.38.27,<2",
-    "aioboto3>=15.0.0,<16",
-    "llama-index-core>=0.14.5,<0.15",
+    "llama-index-core>=0.13.0,<0.15",
+    "layoutir>=1.0.3",
 ]
 
 [tool.codespell]
@@ -56,10 +59,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.bedrock_converse"
+import_path = "llama_index.readers.layoutir"
 
 [tool.llamahub.class_authors]
-BedrockConverse = "AndreCNF"
+LayoutIRReader = "rahulpatnaik"
 
 [tool.mypy]
 disallow_untyped_defs = true
