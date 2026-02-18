@@ -4,7 +4,10 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     MetadataFilter,
 )
-from llama_index.vector_stores.weaviate.base import _to_weaviate_filter
+from llama_index.vector_stores.weaviate.base import (
+    _coerce_filter_value,
+    _to_weaviate_filter,
+)
 
 
 def test_to_weaviate_filter_with_various_operators():
@@ -128,3 +131,171 @@ def test_to_weaviate_filter_with_nested_filters():
     assert or_filters[1].target == "c"
     assert or_filters[1].operator == "GreaterThan"
     assert or_filters[1].value == 3
+
+
+class TestCoerceFilterValue:
+    """Tests for _coerce_filter_value."""
+
+    def test_int_to_float_for_number_type(self):
+        """An int value should be coerced to float for a 'number' property."""
+        result = _coerce_filter_value(5, "number")
+        assert result == 5.0
+        assert isinstance(result, float)
+
+    def test_float_to_int_for_int_type(self):
+        """A float value should be coerced to int for an 'int' property."""
+        result = _coerce_filter_value(5.0, "int")
+        assert result == 5
+        assert isinstance(result, int)
+
+    def test_numeric_string_stays_string_for_text_type(self):
+        """A numeric string should stay as string for a 'text' property."""
+        result = _coerce_filter_value("1234", "text")
+        assert result == "1234"
+        assert isinstance(result, str)
+
+    def test_int_to_string_for_text_type(self):
+        """An int value should be coerced to string for a 'text' property."""
+        result = _coerce_filter_value(42, "text")
+        assert result == "42"
+        assert isinstance(result, str)
+
+    def test_string_to_float_for_number_type(self):
+        """A numeric string should be coerced to float for a 'number' property."""
+        result = _coerce_filter_value("3.14", "number")
+        assert result == 3.14
+        assert isinstance(result, float)
+
+    def test_string_to_int_for_int_type(self):
+        """A numeric string should be coerced to int for an 'int' property."""
+        result = _coerce_filter_value("42", "int")
+        assert result == 42
+        assert isinstance(result, int)
+
+    def test_non_numeric_string_for_number_type_returns_original(self):
+        """A non-numeric string should be returned as-is when coercion fails."""
+        result = _coerce_filter_value("hello", "number")
+        assert result == "hello"
+        assert isinstance(result, str)
+
+    def test_list_coercion_to_float(self):
+        """A list of ints should be coerced to floats for 'number[]' property."""
+        result = _coerce_filter_value([1, 2, 3], "number[]")
+        assert result == [1.0, 2.0, 3.0]
+        assert all(isinstance(v, float) for v in result)
+
+    def test_list_coercion_to_string(self):
+        """A list of ints should be coerced to strings for 'text[]' property."""
+        result = _coerce_filter_value([1, 2, 3], "text[]")
+        assert result == ["1", "2", "3"]
+        assert all(isinstance(v, str) for v in result)
+
+    def test_unknown_data_type_returns_original(self):
+        """An unknown data type should return the value unchanged."""
+        result = _coerce_filter_value(42, "geoCoordinates")
+        assert result == 42
+        assert isinstance(result, int)
+
+    def test_none_value_returns_none(self):
+        """None value should pass through coercion gracefully."""
+        result = _coerce_filter_value(None, "text")
+        assert result == "None"  # str(None) is "None"
+
+    def test_bool_coercion(self):
+        """Integer should be coerced to boolean for 'boolean' property."""
+        result = _coerce_filter_value(1, "boolean")
+        assert result is True
+        assert isinstance(result, bool)
+
+
+class TestToWeaviateFilterWithPropertyTypes:
+    """Tests for _to_weaviate_filter with property_types parameter."""
+
+    def test_int_coerced_to_float_for_number_property(self):
+        """An int filter value should be coerced to float when the schema property is 'number'."""
+        filters = MetadataFilters(filters=[MetadataFilter(key="score", value=5)])
+        property_types = {"score": "number"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert result.target == "score"
+        assert result.value == 5.0
+        assert isinstance(result.value, float)
+
+    def test_numeric_string_stays_string_for_text_property(self):
+        """A numeric string filter value should stay as string when the schema property is 'text'."""
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="article_id", value="1234")]
+        )
+        property_types = {"article_id": "text"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert result.target == "article_id"
+        assert result.value == "1234"
+        assert isinstance(result.value, str)
+
+    def test_no_property_types_preserves_original_value(self):
+        """Without property_types, values should pass through unchanged."""
+        filters = MetadataFilters(filters=[MetadataFilter(key="score", value=5)])
+        result = _to_weaviate_filter(filters)
+        assert result.value == 5
+        assert isinstance(result.value, int)
+
+    def test_property_not_in_types_preserves_original_value(self):
+        """A filter key not found in property_types should preserve its value."""
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="unknown_field", value=5)]
+        )
+        property_types = {"other_field": "text"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert result.value == 5
+        assert isinstance(result.value, int)
+
+    def test_is_empty_not_coerced(self):
+        """IS_EMPTY operator should set value to True regardless of property_types."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="a", value=None, operator=FilterOperator.IS_EMPTY)
+            ]
+        )
+        property_types = {"a": "text"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert result.value is True
+
+    def test_multiple_filters_with_mixed_types(self):
+        """Multiple filters with different types should each be coerced correctly."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="score", value=5, operator=FilterOperator.GTE),
+                MetadataFilter(key="name", value=42, operator=FilterOperator.EQ),
+            ],
+            condition=FilterCondition.AND,
+        )
+        property_types = {"score": "number", "name": "text"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert result.operator == "And"
+        assert result.filters[0].value == 5.0
+        assert isinstance(result.filters[0].value, float)
+        assert result.filters[1].value == "42"
+        assert isinstance(result.filters[1].value, str)
+
+    def test_nested_filters_with_property_types(self):
+        """Property types should be threaded through nested MetadataFilters."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="score", value=5, operator=FilterOperator.EQ),
+                MetadataFilters(
+                    filters=[
+                        MetadataFilter(
+                            key="level", value=3, operator=FilterOperator.GT
+                        ),
+                    ],
+                    condition=FilterCondition.OR,
+                ),
+            ],
+            condition=FilterCondition.AND,
+        )
+        property_types = {"score": "number", "level": "number"}
+        result = _to_weaviate_filter(filters, property_types)
+        assert isinstance(result.filters[0].value, float)
+        assert result.filters[0].value == 5.0
+        nested = result.filters[1]
+        assert isinstance(nested.value, float)
+        assert nested.value == 3.0
