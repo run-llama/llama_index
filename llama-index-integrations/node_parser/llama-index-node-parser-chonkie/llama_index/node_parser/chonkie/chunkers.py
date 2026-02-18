@@ -50,7 +50,8 @@ class Chunker(MetadataAwareTextSplitter):
         id_func: Optional[Callable] = None,
         **kwargs: Any,
     ):
-        """Initialize with a Chonkie chunker instance or create one if not provided.
+        """
+        Initialize with a Chonkie chunker instance or create one if not provided.
 
         Args:
             chunker (Union[str, BaseChunker]): The chunker to use. Must be one of {CHUNKERS}
@@ -60,6 +61,7 @@ class Chunker(MetadataAwareTextSplitter):
             include_prev_next_rel (bool): Whether to include previous/next relationships.
             id_func (Optional[Callable]): Function to generate node IDs.
             **kwargs: Additional keyword arguments for the underlying Chonkie chunker.
+
         """
         id_func = id_func or default_id_func
         callback_manager = callback_manager or CallbackManager([])
@@ -151,4 +153,3 @@ class Chunker(MetadataAwareTextSplitter):
             ]
         else:
             return [chunks.text if hasattr(chunks, "text") else str(chunks)]
-

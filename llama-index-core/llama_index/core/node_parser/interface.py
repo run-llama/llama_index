@@ -246,6 +246,7 @@ class MetadataAwareTextSplitter(TextSplitter):
             cls.__init__.__doc__ = doc
         except (AttributeError, TypeError):
             pass
+
     @abstractmethod
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]: ...
 

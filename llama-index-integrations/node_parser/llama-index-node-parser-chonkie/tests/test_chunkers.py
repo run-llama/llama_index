@@ -402,13 +402,16 @@ def _optional_chunker_available(chunker_type: str) -> bool:
             return False
     return True
 
+
 def test_available_chunkers() -> None:
     """Test that all available chunkers can be initialized."""
     assert len(CHUNKERS) > 0
 
     for chunker_type in CHUNKERS:
         if not _optional_chunker_available(chunker_type):
-            pytest.skip(f"Skipping optional chunker '{chunker_type}' (missing heavy deps)")
+            pytest.skip(
+                f"Skipping optional chunker '{chunker_type}' (missing heavy deps)"
+            )
 
         kwargs = {}
         try:
@@ -422,6 +425,7 @@ def test_available_chunkers() -> None:
 
         assert chunker is not None
         assert chunker.chunker is not None
+
 
 def test_chunker_with_instance() -> None:
     """Test Chunker initialization with a chonkie chunker instance."""
