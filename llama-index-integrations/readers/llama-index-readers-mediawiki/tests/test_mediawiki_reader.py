@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
@@ -13,6 +13,7 @@ from llama_index.readers.mediawiki import MediaWikiReader
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_reader(**overrides):
     """Create a MediaWikiReader with sensible defaults (mwclient.Site is mocked)."""
@@ -34,6 +35,7 @@ def _mock_site():
 # ---------------------------------------------------------------------------
 # Construction & Config
 # ---------------------------------------------------------------------------
+
 
 class TestMediaWikiReaderInit:
     """Construction and config validation."""
@@ -79,6 +81,7 @@ class TestMediaWikiReaderInit:
 # Site property (lazy creation)
 # ---------------------------------------------------------------------------
 
+
 class TestSiteProperty:
     """The .site property lazily creates an mwclient.Site."""
 
@@ -89,9 +92,7 @@ class TestSiteProperty:
 
         _ = reader.site
 
-        mock_site_cls.assert_called_once_with(
-            "example.com", path="/w/", scheme="https"
-        )
+        mock_site_cls.assert_called_once_with("example.com", path="/w/", scheme="https")
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_returns_same_instance(self, mock_site_cls):
@@ -105,6 +106,7 @@ class TestSiteProperty:
 # ---------------------------------------------------------------------------
 # Login
 # ---------------------------------------------------------------------------
+
 
 class TestLogin:
     """Authentication via clientlogin."""
@@ -153,6 +155,7 @@ class TestLogin:
 # Content namespace discovery
 # ---------------------------------------------------------------------------
 
+
 class TestFetchContentNamespaceIds:
     """_fetch_content_namespace_ids filters namespaces for content=True."""
 
@@ -188,9 +191,7 @@ class TestFetchContentNamespaceIds:
         import mwclient.errors
 
         mock_site = _mock_site()
-        mock_site.get.side_effect = mwclient.errors.APIError(
-            "error", "info", {}
-        )
+        mock_site.get.side_effect = mwclient.errors.APIError("error", "info", {})
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -200,6 +201,7 @@ class TestFetchContentNamespaceIds:
 # ---------------------------------------------------------------------------
 # All-pages generator
 # ---------------------------------------------------------------------------
+
 
 class TestGetAllPages:
     """Page listing via mwclient's allpages."""
@@ -300,6 +302,7 @@ class TestGetAllPages:
 # URL building
 # ---------------------------------------------------------------------------
 
+
 class TestBuildPageUrl:
     """_build_page_url builds canonical URLs from title and site base."""
 
@@ -316,15 +319,14 @@ class TestBuildPageUrl:
 # Page content retrieval
 # ---------------------------------------------------------------------------
 
+
 class TestGetPageContents:
     """Content retrieval via Site.parse()."""
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_success(self, mock_site_cls):
         mock_site = _mock_site()
-        mock_site.parse.return_value = {
-            "text": {"*": "<p>Test page content.</p>"}
-        }
+        mock_site.parse.return_value = {"text": {"*": "<p>Test page content.</p>"}}
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -349,9 +351,7 @@ class TestGetPageContents:
         import mwclient.errors
 
         mock_site = _mock_site()
-        mock_site.parse.side_effect = mwclient.errors.APIError(
-            "error", "info", {}
-        )
+        mock_site.parse.side_effect = mwclient.errors.APIError("error", "info", {})
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -362,13 +362,12 @@ class TestGetPageContents:
 # HTML-to-text conversion
 # ---------------------------------------------------------------------------
 
+
 class TestHtmlToCleanText:
     """HTML-to-text conversion (no mocking needed)."""
 
     def test_basic_html(self):
-        result = MediaWikiReader._html_to_clean_text(
-            "<p>Hello <b>world</b></p>"
-        )
+        result = MediaWikiReader._html_to_clean_text("<p>Hello <b>world</b></p>")
         assert "Hello" in result
         assert "world" in result
 
@@ -386,7 +385,9 @@ class TestHtmlToCleanText:
     @patch("llama_index.readers.mediawiki.base.html2text.HTML2Text")
     def test_fallback_when_html2text_raises(self, mock_html2text_cls):
         """When html2text raises, fallback strips tags with regex and normalizes space."""
-        mock_html2text_cls.return_value.handle.side_effect = RuntimeError("html2text fail")
+        mock_html2text_cls.return_value.handle.side_effect = RuntimeError(
+            "html2text fail"
+        )
         result = MediaWikiReader._html_to_clean_text("<p>Hello</p> <b>world</b>")
         assert result == "Hello world"
 
@@ -401,6 +402,7 @@ class TestHtmlToCleanText:
 # ---------------------------------------------------------------------------
 # Resource interface
 # ---------------------------------------------------------------------------
+
 
 class TestResourcesInterface:
     """Public resource-based API."""
@@ -465,9 +467,7 @@ class TestResourcesInterface:
                         "pageid": 123,
                         "title": "Page",
                         "canonicalurl": "https://example.com/wiki/Page",
-                        "revisions": [
-                            {"timestamp": "2024-06-01T00:00:00Z"}
-                        ],
+                        "revisions": [{"timestamp": "2024-06-01T00:00:00Z"}],
                     }
                 }
             }
@@ -535,9 +535,7 @@ class TestResourcesInterface:
         import mwclient.errors
 
         mock_site = _mock_site()
-        mock_site.get.side_effect = mwclient.errors.APIError(
-            "query-error", "code", {}
-        )
+        mock_site.get.side_effect = mwclient.errors.APIError("query-error", "code", {})
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -550,6 +548,7 @@ class TestResourcesInterface:
 # ---------------------------------------------------------------------------
 # lazy_load_data
 # ---------------------------------------------------------------------------
+
 
 class TestLazyLoadData:
     """End-to-end integration via lazy_load_data."""
@@ -566,9 +565,7 @@ class TestLazyLoadData:
         mock_site.allpages.return_value = [page]
 
         # parse returns HTML
-        mock_site.parse.return_value = {
-            "text": {"*": "<p>Hello world</p>"}
-        }
+        mock_site.parse.return_value = {"text": {"*": "<p>Hello world</p>"}}
 
         mock_site_cls.return_value = mock_site
 

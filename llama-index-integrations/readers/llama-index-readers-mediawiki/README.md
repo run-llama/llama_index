@@ -60,14 +60,14 @@ reader = MediaWikiReader(
 
 ### Configuration
 
-| Parameter     | Type     | Default   | Description |
-|---------------|----------|-----------|-------------|
-| `host`        | `str`    | required  | MediaWiki site hostname (e.g. `en.wikipedia.org`). |
-| `path`        | `str`    | `"/w/"`   | MediaWiki script path (API at `{path}api.php`). |
-| `scheme`      | `"https" \| "http"` | `"https"` | URL scheme. |
-| `page_limit`  | `int`    | `500`     | Max page titles per allpages API call (pagination). |
-| `namespaces`  | `list[int] \| None` | `None` | Namespace IDs to list; `None` = wiki content namespaces from siteinfo API ([$wgContentNamespaces](https://www.mediawiki.org/wiki/Manual:$wgContentNamespaces)). |
-| `logger`      | `logging.Logger` | module logger | Logger instance (injectable for tests or custom logging). Not serialized. |
+| Parameter    | Type                | Default       | Description                                                                                                                                                     |
+| ------------ | ------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`       | `str`               | required      | MediaWiki site hostname (e.g. `en.wikipedia.org`).                                                                                                              |
+| `path`       | `str`               | `"/w/"`       | MediaWiki script path (API at `{path}api.php`).                                                                                                                 |
+| `scheme`     | `"https" \| "http"` | `"https"`     | URL scheme.                                                                                                                                                     |
+| `page_limit` | `int`               | `500`         | Max page titles per allpages API call (pagination).                                                                                                             |
+| `namespaces` | `list[int] \| None` | `None`        | Namespace IDs to list; `None` = wiki content namespaces from siteinfo API ([$wgContentNamespaces](https://www.mediawiki.org/wiki/Manual:$wgContentNamespaces)). |
+| `logger`     | `logging.Logger`    | module logger | Logger instance (injectable for tests or custom logging). Not serialized.                                                                                       |
 
 ### Manual testing
 

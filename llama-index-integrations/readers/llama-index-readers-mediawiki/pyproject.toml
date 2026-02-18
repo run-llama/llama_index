@@ -22,6 +22,11 @@ dependencies = [
     "html2text>=2024.2",
 ]
 
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
@@ -30,20 +35,15 @@ exclude = ["**/BUILD"]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
 
-[tool.codespell]
-check-filenames = true
-check-hidden = true
-skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
-
-[tool.mypy]
-disallow_untyped_defs = true
-exclude = ["_static", "build", "examples", "notebooks", "venv"]
-ignore_missing_imports = true
-python_version = "3.9"
-
 [tool.llamahub]
 import_path = "llama_index.readers.mediawiki"
 contains_example = false
 
 [tool.llamahub.class_authors]
 MediaWikiReader = "wikiteq"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.9"

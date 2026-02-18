@@ -1,4 +1,5 @@
-"""MediaWiki reader for LlamaIndex.
+"""
+MediaWiki reader for LlamaIndex.
 
 Provides a LlamaIndex-compatible reader that fetches and converts pages from
 any MediaWiki instance into LlamaIndex Documents, using mwclient for all
@@ -22,7 +23,8 @@ _internal_logger = logging.getLogger(__name__)
 
 
 class MediaWikiReader(BasePydanticReader):
-    """LlamaIndex reader for MediaWiki instances.
+    """
+    LlamaIndex reader for MediaWiki instances.
 
     Fetches pages from a MediaWiki site, converts HTML content to clean text,
     and returns LlamaIndex Documents with metadata (title, URL, last_modified).
@@ -118,7 +120,8 @@ class MediaWikiReader(BasePydanticReader):
         return self._site
 
     def login(self, username: str, password: str) -> None:
-        """Authenticate to the wiki using user credentials.
+        """
+        Authenticate to the wiki using user credentials.
 
         Uses ``clientlogin`` (MW 1.27+). For bot passwords, use the bot
         password as the ``password`` argument with the full bot-username
@@ -130,6 +133,7 @@ class MediaWikiReader(BasePydanticReader):
 
         Raises:
             mwclient.errors.LoginError: If login fails.
+
         """
         self.site.clientlogin(username=username, password=password)
         self.logger.info("Logged in as %s", username)
@@ -137,15 +141,14 @@ class MediaWikiReader(BasePydanticReader):
     # -- Internal helpers -----------------------------------------------------
 
     def _fetch_content_namespace_ids(self) -> List[int]:
-        """Return namespace IDs marked as content ($wgContentNamespaces).
+        """
+        Return namespace IDs marked as content ($wgContentNamespaces).
 
         Uses ``action=query&meta=siteinfo&siprop=namespaces`` and filters for
         the ``content`` attribute. Falls back to ``[0]`` on failure.
         """
         try:
-            result = self.site.get(
-                "query", meta="siteinfo", siprop="namespaces"
-            )
+            result = self.site.get("query", meta="siteinfo", siprop="namespaces")
         except mwclient.errors.APIError as exc:
             self.logger.warning(
                 "Could not fetch siteinfo; defaulting to main namespace (0): %s",
@@ -197,7 +200,8 @@ class MediaWikiReader(BasePydanticReader):
             return None
 
     def _get_all_pages_generator(self) -> Iterator[Dict[str, Any]]:
-        """Yield rich dicts for all pages via mwclient's allpages.
+        """
+        Yield rich dicts for all pages via mwclient's allpages.
 
         Each yielded dict contains:
             - title (str)
@@ -244,19 +248,17 @@ class MediaWikiReader(BasePydanticReader):
                 }
 
     def _get_page_contents(self, page_title: str) -> Optional[str]:
-        """Fetch parsed HTML content for a page via mwclient's parse API.
+        """
+        Fetch parsed HTML content for a page via mwclient's parse API.
 
         Returns:
             Raw HTML from the API, or ``None`` on failure.
+
         """
         try:
-            result = self.site.parse(
-                page=page_title, prop="text"
-            )
+            result = self.site.parse(page=page_title, prop="text")
         except mwclient.errors.APIError as exc:
-            self.logger.warning(
-                "Parse API failed for '%s': %s", page_title, exc
-            )
+            self.logger.warning("Parse API failed for '%s': %s", page_title, exc)
             return None
 
         if not result:
@@ -265,9 +267,7 @@ class MediaWikiReader(BasePydanticReader):
 
         html_content = result.get("text", {}).get("*", "")
         if not html_content:
-            self.logger.warning(
-                "No content in parse result for page '%s'", page_title
-            )
+            self.logger.warning("No content in parse result for page '%s'", page_title)
             return None
 
         return html_content
@@ -290,9 +290,7 @@ class MediaWikiReader(BasePydanticReader):
                 e,
                 exc_info=True,
             )
-            clean_text = re.sub(r"<[^>]+>", "", html_content)
-            clean_text = re.sub(r"\s+", " ", clean_text).strip()
-            return clean_text
+            return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html_content)).strip()
 
     # -- Resource API (load_resource) -----------------------------------------
 
@@ -302,7 +300,8 @@ class MediaWikiReader(BasePydanticReader):
         resource_url: str,
         last_modified: Optional[datetime],
     ) -> List[Document]:
-        """Load a single page as a list containing one Document.
+        """
+        Load a single page as a list containing one Document.
 
         Args:
             resource_id: The page title.
@@ -311,6 +310,7 @@ class MediaWikiReader(BasePydanticReader):
 
         Returns:
             A one-element list with the page Document, or empty on failure.
+
         """
         content = self._get_page_contents(resource_id)
         if not content:
@@ -323,9 +323,7 @@ class MediaWikiReader(BasePydanticReader):
             metadata={
                 "title": resource_id,
                 "url": resource_url,
-                "last_modified": (
-                    last_modified.isoformat() if last_modified else None
-                ),
+                "last_modified": (last_modified.isoformat() if last_modified else None),
             },
         )
         return [doc]
@@ -333,13 +331,15 @@ class MediaWikiReader(BasePydanticReader):
     # -- Resource info (single page) ------------------------------------------
 
     def get_resource_info(self, resource_id: str) -> Dict[str, Any]:
-        """Return metadata for a single page (URL and last_modified).
+        """
+        Return metadata for a single page (URL and last_modified).
 
         Args:
             resource_id: Page title.
 
         Returns:
             ``{"last_modified": datetime | None, "url": str | None}``.
+
         """
         try:
             result = self.site.get(
@@ -350,15 +350,11 @@ class MediaWikiReader(BasePydanticReader):
                 rvprop="timestamp",
             )
         except mwclient.errors.APIError as exc:
-            self.logger.warning(
-                "Query API failed for '%s': %s", resource_id, exc
-            )
+            self.logger.warning("Query API failed for '%s': %s", resource_id, exc)
             return {"last_modified": None, "url": None}
 
         pages = result.get("query", {}).get("pages", {})
-        page_data = next(
-            (p for p in pages.values() if p.get("title")), None
-        )
+        page_data = next((p for p in pages.values() if p.get("title")), None)
         last_modified = None
         url = None
         if page_data and "missing" not in page_data:
@@ -379,7 +375,8 @@ class MediaWikiReader(BasePydanticReader):
     # -- BasePydanticReader / BaseReader interface -----------------------------
 
     def lazy_load_data(self, *args: Any, **kwargs: Any) -> Iterator[Document]:
-        """Yield one Document per page in the wiki.
+        """
+        Yield one Document per page in the wiki.
 
         Iterates all pages via mwclient's allpages, then fetches parsed
         content for each page with one parse API call per page (MediaWiki
