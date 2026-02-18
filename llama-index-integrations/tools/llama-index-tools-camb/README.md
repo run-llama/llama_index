@@ -42,10 +42,10 @@ agent.chat("Say hello in Spanish using text-to-speech")
 
 ```python
 camb = CambToolSpec(
-    api_key="your-api-key",       # or set CAMB_API_KEY env var
-    base_url=None,                # optional custom API URL
-    timeout=60.0,                 # request timeout in seconds
-    max_poll_attempts=60,         # max polling attempts for async tasks
-    poll_interval=2.0,            # seconds between polls
+    api_key="your-api-key",  # or set CAMB_API_KEY env var
+    base_url=None,  # optional custom API URL
+    timeout=60.0,  # request timeout in seconds
+    max_poll_attempts=60,  # max polling attempts for async tasks
+    poll_interval=2.0,  # seconds between polls
 )
 ```
