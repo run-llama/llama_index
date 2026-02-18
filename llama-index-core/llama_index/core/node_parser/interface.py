@@ -242,10 +242,17 @@ class MetadataAwareTextSplitter(TextSplitter):
         if not doc:
             return
 
+        init = getattr(cls, "__init__", None)
+
+        # Avoid touching Pydantic wrappers / non-callables during model construction
+        if not callable(init) or getattr(init, "__module__", "").startswith("pydantic"):
+            return
+
         try:
             cls.__init__.__doc__ = doc
         except (AttributeError, TypeError):
             pass
+        
     @abstractmethod
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]: ...
 
