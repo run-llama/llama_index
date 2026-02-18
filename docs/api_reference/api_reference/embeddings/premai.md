@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.premai
-options:
-members: - PremAIEmbeddings
+    options:
+      members:
+        - PremAIEmbeddings

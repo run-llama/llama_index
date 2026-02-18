@@ -1,3 +1,4 @@
 ::: llama_index.vector_stores.nile
-options:
-members: - NileVectorStore
+    options:
+      members:
+        - NileVectorStore

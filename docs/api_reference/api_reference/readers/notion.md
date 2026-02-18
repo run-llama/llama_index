@@ -1,3 +1,4 @@
 ::: llama_index.readers.notion
-options:
-members: - NotionPageReader
+    options:
+      members:
+        - NotionPageReader
