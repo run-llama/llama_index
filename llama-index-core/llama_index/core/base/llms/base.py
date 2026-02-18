@@ -30,7 +30,7 @@ class BaseLLM(BaseComponent, DispatcherSpanMixin):
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
-    # Use Any to avoid import loops (same pattern as BaseEmbedding.embeddings_cache)
+    # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
     rate_limiter: Optional[Any] = Field(
         default=None,
         description="Rate limiter instance to throttle API calls.",

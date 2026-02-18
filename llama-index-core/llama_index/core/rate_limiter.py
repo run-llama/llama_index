@@ -1,9 +1,10 @@
-"""Token-bucket rate limiter for LLM and embedding API calls."""
+"""Rate limiters for LLM and embedding API calls."""
 
 import asyncio
 import logging
 import threading
 import time
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
@@ -11,7 +12,43 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 logger = logging.getLogger(__name__)
 
 
-class RateLimiter(BaseModel):
+class BaseRateLimiter(ABC):
+    """
+    Abstract base class for rate limiters.
+
+    All rate limiter implementations must inherit from this class and
+    implement :meth:`acquire` (synchronous) and :meth:`async_acquire`
+    (asynchronous). This allows swapping in alternative strategies
+    (e.g. distributed rate limiting via Redis) without changing the
+    calling code in ``BaseLLM`` or ``BaseEmbedding``.
+    """
+
+    @abstractmethod
+    def acquire(self, num_tokens: int = 0) -> None:
+        """
+        Block until one request is allowed (synchronous).
+
+        Args:
+            num_tokens: Estimated token count for this request.
+                Implementations may ignore this if they only track
+                request counts.
+
+        """
+
+    @abstractmethod
+    async def async_acquire(self, num_tokens: int = 0) -> None:
+        """
+        Wait until one request is allowed (asynchronous).
+
+        Args:
+            num_tokens: Estimated token count for this request.
+                Implementations may ignore this if they only track
+                request counts.
+
+        """
+
+
+class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
     """
     Token-bucket rate limiter for controlling API request throughput.
 
@@ -33,10 +70,10 @@ class RateLimiter(BaseModel):
     Examples:
         .. code-block:: python
 
-            from llama_index.core.rate_limiter import RateLimiter
+            from llama_index.core.rate_limiter import TokenBucketRateLimiter
 
             # Share a single limiter across LLM and embedding instances
-            groq_limiter = RateLimiter(requests_per_minute=30)
+            groq_limiter = TokenBucketRateLimiter(requests_per_minute=30)
             llm = SomeLLM(rate_limiter=groq_limiter)
             embed = SomeEmbedding(rate_limiter=groq_limiter)
 
@@ -167,3 +204,7 @@ class RateLimiter(BaseModel):
                     self._consume(num_tokens)
                     return
             await asyncio.sleep(wait)
+
+
+# Backwards-compatible alias
+RateLimiter = TokenBucketRateLimiter

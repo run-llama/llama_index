@@ -1,4 +1,4 @@
-"""Tests for the token-bucket rate limiter."""
+"""Tests for the rate limiter module."""
 
 import asyncio
 import time
@@ -8,7 +8,49 @@ import pytest
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.rate_limiter import RateLimiter
+from llama_index.core.rate_limiter import (
+    BaseRateLimiter,
+    RateLimiter,
+    TokenBucketRateLimiter,
+)
+
+
+# ---------------------------------------------------------------------------
+# BaseRateLimiter contract tests
+# ---------------------------------------------------------------------------
+
+
+def test_base_rate_limiter_is_abstract() -> None:
+    with pytest.raises(TypeError, match="abstract method"):
+        BaseRateLimiter()
+
+
+def test_token_bucket_is_subclass_of_base() -> None:
+    assert issubclass(TokenBucketRateLimiter, BaseRateLimiter)
+
+
+def test_rate_limiter_alias_is_token_bucket() -> None:
+    assert RateLimiter is TokenBucketRateLimiter
+
+
+def test_instance_is_base_rate_limiter() -> None:
+    rl = TokenBucketRateLimiter(requests_per_minute=60)
+    assert isinstance(rl, BaseRateLimiter)
+
+
+def test_custom_rate_limiter_subclass() -> None:
+    """Users can create custom rate limiters by subclassing BaseRateLimiter."""
+
+    class FixedDelayLimiter(BaseRateLimiter):
+        def acquire(self, num_tokens: int = 0) -> None:
+            pass
+
+        async def async_acquire(self, num_tokens: int = 0) -> None:
+            pass
+
+    limiter = FixedDelayLimiter()
+    assert isinstance(limiter, BaseRateLimiter)
+    limiter.acquire()
 
 
 # ---------------------------------------------------------------------------
