@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Union
 
@@ -112,11 +114,15 @@ class LayoutIRReader(BasePydanticReader):
         for source in file_paths:
             source_path = Path(source) if isinstance(source, str) else source
 
-            # Process document through LayoutIR pipeline
-            layoutir_doc = pipeline.process(
-                input_path=source_path,
-                output_dir=None,  # Process in memory
-            )
+            # Use a temp directory for LayoutIR output, cleaned up after processing
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                layoutir_doc = pipeline.process(
+                    input_path=source_path,
+                    output_dir=Path(tmp_dir),
+                )
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
 
             # Extract blocks/chunks from the IR
             if hasattr(layoutir_doc, "blocks"):
@@ -129,12 +135,23 @@ class LayoutIRReader(BasePydanticReader):
 
             # Convert each block to a LlamaIndex Document
             for idx, block in enumerate(blocks):
-                # Extract text content
+                # Extract text content from layoutir.schema.Block objects
                 if isinstance(block, dict):
-                    text = block.get("text", "")
-                    block_type = block.get("type", "unknown")
+                    text = block.get("text", block.get("content", ""))
+                    block_type = str(block.get("type", "unknown"))
                     block_id = block.get("id", f"{source_path.stem}_block_{idx}")
-                    page_number = block.get("page", 0)
+                    page_number = block.get("page", block.get("page_number", 0))
+                elif hasattr(block, "content"):
+                    text = block.content or ""
+                    block_type = (
+                        str(block.type.value)
+                        if hasattr(block.type, "value")
+                        else str(block.type)
+                    )
+                    block_id = getattr(
+                        block, "block_id", f"{source_path.stem}_block_{idx}"
+                    )
+                    page_number = getattr(block, "page_number", 0)
                 else:
                     text = str(block)
                     block_type = "block"
