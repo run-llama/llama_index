@@ -110,7 +110,7 @@ def _coerce_filter_value(value: Any, data_type: Any) -> Any:
     field, or a numeric string is used where the schema expects 'text'.
     This function coerces the value to match the schema's expected data type.
     """
-    dt = str(data_type)
+    dt = data_type.value if hasattr(data_type, "value") else str(data_type)
     try:
         if dt in ("text", "text[]"):
             if isinstance(value, list):

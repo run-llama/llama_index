@@ -8,6 +8,7 @@ from llama_index.vector_stores.weaviate.base import (
     _coerce_filter_value,
     _to_weaviate_filter,
 )
+from weaviate.classes.config import DataType
 
 
 def test_to_weaviate_filter_with_various_operators():
@@ -236,6 +237,36 @@ class TestCoerceFilterValue:
         result = _coerce_filter_value(["true", "false", "1", "0"], "boolean[]")
         assert result == [True, False, True, False]
         assert all(isinstance(v, bool) for v in result)
+
+    def test_with_datatype_number_enum(self):
+        """DataType.NUMBER enum should be handled the same as string 'number'."""
+        result = _coerce_filter_value(5, DataType.NUMBER)
+        assert result == 5.0
+        assert isinstance(result, float)
+
+    def test_with_datatype_text_enum(self):
+        """DataType.TEXT enum should be handled the same as string 'text'."""
+        result = _coerce_filter_value(42, DataType.TEXT)
+        assert result == "42"
+        assert isinstance(result, str)
+
+    def test_with_datatype_int_enum(self):
+        """DataType.INT enum should be handled the same as string 'int'."""
+        result = _coerce_filter_value(5.0, DataType.INT)
+        assert result == 5
+        assert isinstance(result, int)
+
+    def test_with_datatype_bool_enum(self):
+        """DataType.BOOL enum should be handled the same as string 'boolean'."""
+        result = _coerce_filter_value(1, DataType.BOOL)
+        assert result is True
+        assert isinstance(result, bool)
+
+    def test_with_datatype_number_array_enum(self):
+        """DataType.NUMBER_ARRAY enum should coerce list of ints to floats."""
+        result = _coerce_filter_value([1, 2, 3], DataType.NUMBER_ARRAY)
+        assert result == [1.0, 2.0, 3.0]
+        assert all(isinstance(v, float) for v in result)
 
 
 class TestToWeaviateFilterWithPropertyTypes:
