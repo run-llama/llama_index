@@ -1,25 +1,25 @@
 import inspect
 from datetime import datetime
-from opentelemetry import trace, context
-from opentelemetry.trace import set_span_in_context
-from opentelemetry.sdk.trace import TracerProvider, _Span
+from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
+
+import llama_index_instrumentation as instrument
+from llama_index.observability.otel.utils import flatten_dict
+from llama_index_instrumentation.base.event import BaseEvent
+from llama_index_instrumentation.event_handlers import BaseEventHandler
+from llama_index_instrumentation.span import SimpleSpan, active_span_id
+from llama_index_instrumentation.span_handlers.simple import SimpleSpanHandler
+from opentelemetry import context, trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider, _Span
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
+    ConsoleSpanExporter,
     SimpleSpanProcessor,
     SpanExporter,
-    ConsoleSpanExporter,
 )
+from opentelemetry.trace import set_span_in_context
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from termcolor.termcolor import cprint
-from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
-
-import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.event_handlers import BaseEventHandler
-from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict, PrivateAttr
-from llama_index.core.instrumentation.events import BaseEvent
-from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
-from llama_index.core.instrumentation.span import SimpleSpan, active_span_id
-from llama_index.observability.otel.utils import flatten_dict
 
 
 class OTelEventAttributes(BaseModel):
@@ -69,14 +69,14 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             open_spans=open_spans or {},
             completed_spans=completed_spans or [],
             dropped_spans=dropped_spans or [],
-            current_span_ids=current_span_ids or {},
+            current_span_ids=cast(Dict[str, Any], current_span_ids or {}),
         )
         self._tracer = tracer
         self._events_by_span = {}
         self.debug = debug
 
     @classmethod
-    def class_name(cls) -> str:
+    def class_name(cls) -> str:  # type: ignore
         """Class name."""
         return "OTelCompatibleSpanHandler"
 
@@ -225,9 +225,9 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default=ConsoleSpanExporter(),
         description="OpenTelemetry span exporter. Supports all SpanExporter-compatible interfaces, defaults to ConsoleSpanExporter.",
     )
-    span_processor: Literal["simple", "batch"] = Field(
+    span_processor: Union[Literal["simple", "batch"], SpanProcessor] = Field(
         default="batch",
-        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor) or 'simple' (-> SimpleSpanProcessor). Defaults to 'batch'",
+        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor), 'simple' (-> SimpleSpanProcessor) or a custom SpanProcessor subclass. Defaults to 'batch'",
     )
     service_name_or_resource: Union[str, Resource] = Field(
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
@@ -247,10 +247,16 @@ class LlamaIndexOpenTelemetry(BaseModel):
                 attributes={SERVICE_NAME: self.service_name_or_resource}
             )
         tracer_provider = TracerProvider(resource=self.service_name_or_resource)
-        if self.span_processor == "simple":
-            span_processor = SimpleSpanProcessor(self.span_exporter)
+        if isinstance(self.span_processor, str):
+            assert self.span_exporter is not None, (
+                "span_exporter has to be non-null to be used within simple or batch span processors"
+            )
+            if self.span_processor == "simple":
+                span_processor = SimpleSpanProcessor(self.span_exporter)
+            else:
+                span_processor = BatchSpanProcessor(self.span_exporter)
         else:
-            span_processor = BatchSpanProcessor(self.span_exporter)
+            span_processor = self.span_processor
         tracer_provider.add_span_processor(span_processor=span_processor)
         trace.set_tracer_provider(tracer_provider)
         self._tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
@@ -261,6 +267,9 @@ class LlamaIndexOpenTelemetry(BaseModel):
         """Starts LlamaIndex instrumentation."""
         self._start_otel()
         dispatcher = instrument.get_dispatcher()
+        assert self._tracer is not None, (
+            "The tracer has to be non-null to start observabiliy"
+        )
         span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(

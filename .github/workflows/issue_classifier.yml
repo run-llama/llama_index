@@ -19,7 +19,7 @@ jobs:
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
 
       - name: Classify Issues as Good First Issues
-        uses: run-llama/issue-classifier@v0.1.0
+        uses: run-llama/issue-classifier@v0.2.0
         with:
           llama-cloud-api-key: ${{ secrets.LLAMA_CLOUD_API_KEY }}
           github-token: ${{ steps.app-token.outputs.token }}
