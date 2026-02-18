@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest==7.2.1",
+]
+
+[project]
+name = "llama-index-readers-mediawiki"
+version = "0.1.0"
+description = "LlamaIndex reader for MediaWiki instances"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9,<4.0"
+authors = [{name = "WikiTeq"}]
+maintainers = [{name = "wikiteq"}]
+dependencies = [
+    "llama-index-core>=0.14,<0.15",
+    "mwclient>=0.11",
+    "html2text>=2024.2",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.9"
+
+[tool.llamahub]
+import_path = "llama_index.readers.mediawiki"
+contains_example = false
+
+[tool.llamahub.class_authors]
+MediaWikiReader = "wikiteq"
