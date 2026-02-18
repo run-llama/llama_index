@@ -1,4 +1,3 @@
 ::: llama_index.llms.siliconflow
-    options:
-      members:
-        - SiliconFlow
+options:
+members: - SiliconFlow
