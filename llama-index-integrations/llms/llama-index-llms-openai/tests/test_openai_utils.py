@@ -239,6 +239,7 @@ def test_to_openai_tool_with_provided_description() -> None:
             "name": "TestOutput",
             "description": "Provided description",
             "parameters": TestOutput.schema(),
+            "arguments": TestOutput.schema(),
         },
     }
 
@@ -259,6 +260,7 @@ def test_to_openai_message_with_pydantic_description() -> None:
             "name": "TestOutput",
             "description": "Pydantic description.",
             "parameters": TestOutput.schema(),
+            "arguments": TestOutput.schema(),
         },
     }
 

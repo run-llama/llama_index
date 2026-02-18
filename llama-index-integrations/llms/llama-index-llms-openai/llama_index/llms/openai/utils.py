@@ -885,7 +885,8 @@ def to_openai_tool(
     function = {
         "name": schema["title"],
         "description": schema_description,
-        "parameters": pydantic_class.schema(),
+        "parameters": schema,
+        "arguments": schema,
     }
     return {"type": "function", "function": function}
 
