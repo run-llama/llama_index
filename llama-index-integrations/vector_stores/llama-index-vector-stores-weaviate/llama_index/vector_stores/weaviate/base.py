@@ -310,11 +310,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 self._property_types = {
                     prop.name: prop.data_type for prop in config.properties
                 }
-            except Exception:
+            except Exception as e:
                 _logger.warning(
                     "Failed to fetch property types for collection "
-                    f"'{self.index_name}'. Filter value coercion will be "
-                    "skipped for this call and retried on the next."
+                    f"'{self.index_name}': {e}. Filter value coercion will "
+                    "be skipped for this call and retried on the next."
                 )
                 return {}
         return self._property_types
@@ -332,11 +332,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 self._property_types = {
                     prop.name: prop.data_type for prop in config.properties
                 }
-            except Exception:
+            except Exception as e:
                 _logger.warning(
                     "Failed to fetch property types for collection "
-                    f"'{self.index_name}'. Filter value coercion will be "
-                    "skipped for this call and retried on the next."
+                    f"'{self.index_name}': {e}. Filter value coercion will "
+                    "be skipped for this call and retried on the next."
                 )
                 return {}
         return self._property_types
