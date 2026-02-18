@@ -9,5 +9,5 @@ def test_metadataaware_docstring_preserved():
             super().__init__(*args, **kwargs)
 
     doc = inspect.getdoc(MySplitter.__init__) or ""
-    assert "my custom doc" in doc
+    assert "My custom doc" in doc
     assert "Create a new model by parsing and validating" not in doc
