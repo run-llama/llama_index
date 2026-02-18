@@ -75,7 +75,6 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 **Fixes:**
 - Try a **domain-adapted embedding model** (e.g., fine-tuned models for legal, medical, or code)
-- Use LlamaIndex's `SentenceTransformersFinetuneEngine` to fine-tune embeddings on your own data
 - Combine vector search with **keyword search** (hybrid mode) to capture exact terminology matches
 - Generate synthetic QA pairs from your corpus and evaluate embedding recall before deploying
 
@@ -135,7 +134,7 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 - Answers are overly generic despite specific context being available
 
 **Fixes:**
-- Use a stronger LLM for synthesis (e.g., GPT-4 over GPT-3.5) or increase temperature slightly
+- Use a stronger LLM for synthesis (e.g., GPT-4o over GPT-4o-mini) or increase temperature slightly
 - Customize the **QA prompt template** to explicitly instruct the LLM to use only the provided context
 - Use `Refine` response mode to process each chunk sequentially rather than all at once
 - Add `system_prompt` reinforcing that the LLM should answer based on context only
@@ -164,12 +163,12 @@ Use this to narrow down where the problem is:
 
 ## Key LlamaIndex Classes Referenced
 
-- [`SentenceSplitter`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/sentence_splitter/)
-- [`HierarchicalNodeParser`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/hierarchical/)
-- [`SentenceWindowNodeParser`](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/sentence_window/)
-- [`CohereRerank`](https://docs.llamaindex.ai/en/stable/api_reference/postprocessor/cohere_rerank/)
-- [`SentenceTransformerRerank`](https://docs.llamaindex.ai/en/stable/api_reference/postprocessor/sentence_transformer_rerank/)
-- [`HyDEQueryTransform`](https://docs.llamaindex.ai/en/stable/api_reference/query/query_transform/hyde/)
-- [`SubQuestionQueryEngine`](https://docs.llamaindex.ai/en/stable/api_reference/query/sub_question/)
-- [`IngestionPipeline`](https://docs.llamaindex.ai/en/stable/api_reference/ingestion/pipeline/)
-- [`MetadataFilters`](https://docs.llamaindex.ai/en/stable/api_reference/retrievers/vector_store/)
+- [`SentenceSplitter`](https://developers.llamaindex.ai/python/framework-api-reference/node_parsers/sentence_splitter/)
+- [`HierarchicalNodeParser`](https://developers.llamaindex.ai/python/framework-api-reference/node_parsers/hierarchical/)
+- [`SentenceWindowNodeParser`](https://developers.llamaindex.ai/python/framework-api-reference/node_parsers/sentence_window/)
+- [`CohereRerank`](https://developers.llamaindex.ai/python/framework-api-reference/postprocessor/cohere_rerank/)
+- [`SentenceTransformerRerank`](https://developers.llamaindex.ai/python/framework-api-reference/postprocessor/sentence_transformer_rerank/)
+- [`HyDEQueryTransform`](https://developers.llamaindex.ai/python/framework-api-reference/query/query_transform/hyde/)
+- [`SubQuestionQueryEngine`](https://developers.llamaindex.ai/python/framework-api-reference/query/sub_question/)
+- [`IngestionPipeline`](https://developers.llamaindex.ai/python/framework-api-reference/ingestion/pipeline/)
+- [`MetadataFilters`](https://developers.llamaindex.ai/python/framework-api-reference/retrievers/vector_store/)
