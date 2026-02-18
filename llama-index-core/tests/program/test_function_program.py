@@ -8,7 +8,6 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.bridge.pydantic import BaseModel
 from typing import List, Optional, Union, Any, Dict
 from llama_index.core.tools.types import BaseTool
 from llama_index.core.chat_engine.types import AgentChatResponse
