@@ -176,7 +176,7 @@ Each Document includes the following metadata:
 
 ## Requirements
 
-- Python >= 3.10
+- Python >= 3.12
 - llama-index-core >= 0.13.0
 - layoutir >= 1.0.3
 - Optional: PyTorch with CUDA for GPU acceleration
