@@ -69,20 +69,13 @@ class LayoutIRReader(BasePydanticReader):
             Document: LlamaIndex Document objects with preserved layout structure.
 
         Raises:
-            ImportError: If GPU is requested but PyTorch with CUDA is not available.
+            ImportError: If GPU is requested but PyTorch is not installed.
 
         """
         # Check GPU requirements if use_gpu is enabled
         if self.use_gpu:
             try:
-                import torch
-
-                if not torch.cuda.is_available():
-                    raise ImportError(
-                        "GPU acceleration requested but CUDA is not available. "
-                        "Please install PyTorch with CUDA support:\n"
-                        "pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130"
-                    )
+                import torch  # noqa: F401
             except ImportError as e:
                 raise ImportError(
                     "GPU acceleration requested but PyTorch is not installed. "
