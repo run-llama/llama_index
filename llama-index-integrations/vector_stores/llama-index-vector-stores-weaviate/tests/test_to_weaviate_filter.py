@@ -198,9 +198,9 @@ class TestCoerceFilterValue:
         assert isinstance(result, int)
 
     def test_none_value_returns_none(self):
-        """None value should pass through coercion gracefully."""
+        """None value should pass through unchanged."""
         result = _coerce_filter_value(None, "text")
-        assert result == "None"  # str(None) is "None"
+        assert result is None
 
     def test_bool_coercion(self):
         """Integer should be coerced to boolean for 'boolean' property."""
