@@ -253,17 +253,18 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
     def _run_c3(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore], str, ChatMessage]:
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get(input=message)
+        query_str, user_message = self._extract_chat_input(message)
+        chat_history = self._memory.get(input=query_str)
 
         # Condense conversation history and latest message to a standalone question
-        condensed_question = self._condense_question(chat_history, message)  # type: ignore
+        condensed_question = self._condense_question(chat_history, query_str)  # type: ignore
         logger.info(f"Condensed question: {condensed_question}")
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
@@ -282,21 +283,22 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history, streaming=streaming
         )
 
-        return response_synthesizer, context_source, context_nodes
+        return response_synthesizer, context_source, context_nodes, query_str, user_message
 
     async def _arun_c3(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore], str, ChatMessage]:
         if chat_history is not None:
             await self._memory.aset(chat_history)
 
-        chat_history = await self._memory.aget(input=message)
+        query_str, user_message = self._extract_chat_input(message)
+        chat_history = await self._memory.aget(input=query_str)
 
         # Condense conversation history and latest message to a standalone question
-        condensed_question = await self._acondense_question(chat_history, message)  # type: ignore
+        condensed_question = await self._acondense_question(chat_history, query_str)  # type: ignore
         logger.info(f"Condensed question: {condensed_question}")
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
@@ -315,17 +317,24 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history, streaming=streaming
         )
 
-        return response_synthesizer, context_source, context_nodes
+        return response_synthesizer, context_source, context_nodes, query_str, user_message
 
     @trace_method("chat")
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: Union[str, ChatMessage, Any],
+        chat_history: Optional[List[ChatMessage]] = None,
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
+        (
+            synthesizer,
+            context_source,
+            context_nodes,
+            query_str,
+            user_message,
+        ) = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = synthesizer.synthesize(query_str, context_nodes)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
             content=str(response), role=MessageRole.ASSISTANT
         )
@@ -340,13 +349,21 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: Union[str, ChatMessage, Any],
+        chat_history: Optional[List[ChatMessage]] = None,
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(
+        (
+            synthesizer,
+            context_source,
+            context_nodes,
+            query_str,
+            user_message,
+        ) = self._run_c3(
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = synthesizer.synthesize(query_str, context_nodes)
         assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
@@ -360,7 +377,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
@@ -376,15 +392,22 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: Union[str, ChatMessage, Any],
+        chat_history: Optional[List[ChatMessage]] = None,
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
+        (
+            synthesizer,
+            context_source,
+            context_nodes,
+            query_str,
+            user_message,
+        ) = await self._arun_c3(
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await synthesizer.asynthesize(query_str, context_nodes)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
             content=str(response), role=MessageRole.ASSISTANT
         )
@@ -399,13 +422,21 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: Union[str, ChatMessage, Any],
+        chat_history: Optional[List[ChatMessage]] = None,
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
+        (
+            synthesizer,
+            context_source,
+            context_nodes,
+            query_str,
+            user_message,
+        ) = await self._arun_c3(
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await synthesizer.asynthesize(query_str, context_nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
@@ -419,7 +450,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
@@ -441,3 +471,17 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def chat_history(self) -> List[ChatMessage]:
         """Get chat history."""
         return self._memory.get_all()
+    def _extract_chat_input(
+        self, message: Union[str, ChatMessage, Any]
+    ) -> Tuple[str, ChatMessage]:
+        """Normalize user input to retrieval text plus a message stored in memory."""
+        if isinstance(message, ChatMessage):
+            query = message.content or ""
+            if not query:
+                raise ValueError(
+                    "CondensePlusContextChatEngine requires text content in ChatMessage for retrieval."
+                )
+            return query, message
+
+        query = str(message)
+        return query, ChatMessage(content=query, role=MessageRole.USER)

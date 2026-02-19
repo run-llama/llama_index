@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import (
@@ -135,6 +135,21 @@ class ContextChatEngine(BaseChatEngine):
             context_refine_template=context_refine_template,
         )
 
+    def _extract_chat_input(
+        self, message: Union[str, ChatMessage, Any]
+    ) -> Tuple[str, ChatMessage]:
+        """Normalize user input to retrieval text plus a message stored in memory."""
+        if isinstance(message, ChatMessage):
+            query = message.content or ""
+            if not query:
+                raise ValueError(
+                    "ContextChatEngine requires text content in ChatMessage for retrieval."
+                )
+            return query, message
+
+        query = str(message)
+        return query, ChatMessage(content=query, role=MessageRole.USER)
+
     def _get_nodes(self, message: str) -> List[NodeWithScore]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
@@ -198,26 +213,27 @@ class ContextChatEngine(BaseChatEngine):
     @trace_method("chat")
     def chat(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
 
+        query_str, user_message = self._extract_chat_input(message)
+
         # get nodes and postprocess them
-        nodes = self._get_nodes(message)
+        nodes = self._get_nodes(query_str)
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
         chat_history = self._memory.get(
-            input=message,
+            input=query_str,
         )
         synthesizer = self._get_response_synthesizer(chat_history)
 
-        response = synthesizer.synthesize(message, nodes)
-        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+        response = synthesizer.synthesize(query_str, nodes)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         self._memory.put(user_message)
@@ -229,7 +245,7 @@ class ContextChatEngine(BaseChatEngine):
                 ToolOutput(
                     tool_name="retriever",
                     content=str(nodes),
-                    raw_input={"message": message},
+                    raw_input={"message": query_str},
                     raw_output=nodes,
                 )
             ],
@@ -239,25 +255,27 @@ class ContextChatEngine(BaseChatEngine):
     @trace_method("chat")
     def stream_chat(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
 
+        query_str, user_message = self._extract_chat_input(message)
+
         # get nodes and postprocess them
-        nodes = self._get_nodes(message)
+        nodes = self._get_nodes(query_str)
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
         chat_history = self._memory.get(
-            input=message,
+            input=query_str,
         )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
-        response = synthesizer.synthesize(message, nodes)
+        response = synthesizer.synthesize(query_str, nodes)
         assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
@@ -271,7 +289,6 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             self._memory.put(user_message)
             self._memory.put(ai_message)
@@ -282,7 +299,7 @@ class ContextChatEngine(BaseChatEngine):
                 ToolOutput(
                     tool_name="retriever",
                     content=str(nodes),
-                    raw_input={"message": message},
+                    raw_input={"message": query_str},
                     raw_output=nodes,
                 )
             ],
@@ -293,26 +310,27 @@ class ContextChatEngine(BaseChatEngine):
     @trace_method("chat")
     async def achat(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             await self._memory.aset(chat_history)
 
+        query_str, user_message = self._extract_chat_input(message)
+
         # get nodes and postprocess them
-        nodes = await self._aget_nodes(message)
+        nodes = await self._aget_nodes(query_str)
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
         chat_history = await self._memory.aget(
-            input=message,
+            input=query_str,
         )
         synthesizer = self._get_response_synthesizer(chat_history)
 
-        response = await synthesizer.asynthesize(message, nodes)
-        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+        response = await synthesizer.asynthesize(query_str, nodes)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         await self._memory.aput(user_message)
@@ -324,7 +342,7 @@ class ContextChatEngine(BaseChatEngine):
                 ToolOutput(
                     tool_name="retriever",
                     content=str(nodes),
-                    raw_input={"message": message},
+                    raw_input={"message": query_str},
                     raw_output=nodes,
                 )
             ],
@@ -334,24 +352,25 @@ class ContextChatEngine(BaseChatEngine):
     @trace_method("chat")
     async def astream_chat(
         self,
-        message: str,
+        message: Union[str, ChatMessage, Any],
         chat_history: Optional[List[ChatMessage]] = None,
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             await self._memory.aset(chat_history)
+        query_str, user_message = self._extract_chat_input(message)
         # get nodes and postprocess them
-        nodes = await self._aget_nodes(message)
+        nodes = await self._aget_nodes(query_str)
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
         chat_history = await self._memory.aget(
-            input=message,
+            input=query_str,
         )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
-        response = await synthesizer.asynthesize(message, nodes)
+        response = await synthesizer.asynthesize(query_str, nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
@@ -365,7 +384,6 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             await self._memory.aput(user_message)
             await self._memory.aput(ai_message)
@@ -376,7 +394,7 @@ class ContextChatEngine(BaseChatEngine):
                 ToolOutput(
                     tool_name="retriever",
                     content=str(nodes),
-                    raw_input={"message": message},
+                    raw_input={"message": query_str},
                     raw_output=nodes,
                 )
             ],

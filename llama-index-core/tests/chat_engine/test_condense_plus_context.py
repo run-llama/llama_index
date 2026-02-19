@@ -6,6 +6,7 @@ from llama_index.core.chat_engine.condense_plus_context import (
 )
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.base.llms.types import ChatMessage, TextBlock
 from llama_index.core.schema import Document
 
 SYSTEM_PROMPT = "Talk like a pirate."
@@ -33,6 +34,15 @@ def test_chat(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+def test_chat_with_chat_message(chat_engine: CondensePlusContextChatEngine):
+    response = chat_engine.chat(
+        ChatMessage(role="user", blocks=[TextBlock(text="Hello from ChatMessage!")])
+    )
+    assert "Hello from ChatMessage!" in str(response)
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[0].content == "Hello from ChatMessage!"
 
 
 def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
@@ -72,6 +82,16 @@ async def test_achat(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+@pytest.mark.asyncio
+async def test_achat_with_chat_message(chat_engine: CondensePlusContextChatEngine):
+    response = await chat_engine.achat(
+        ChatMessage(role="user", blocks=[TextBlock(text="Hello async ChatMessage!")])
+    )
+    assert "Hello async ChatMessage!" in str(response)
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[0].content == "Hello async ChatMessage!"
 
 
 @pytest.mark.asyncio
