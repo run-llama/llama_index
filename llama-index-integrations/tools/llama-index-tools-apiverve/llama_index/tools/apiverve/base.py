@@ -8,14 +8,20 @@ Schemas are fetched from APIVerve at initialization and cached in memory.
 """
 
 import os
+from importlib.metadata import version as get_version
 from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
+# Package version - dynamically loaded from pyproject.toml
+try:
+    __version__ = get_version("llama-index-tools-apiverve")
+except Exception:
+    __version__ = "0.1.0"  # Fallback for development
 
 # Schema source URL
-SCHEMA_URL = "https://api.apiverve.com/publicapis/mcp-schemas.json"
+SCHEMA_URL = "https://assets.apiverve.com/mcp-schemas.json"
 
 # Module-level cache - schemas are fetched once per process
 _schemas_cache: Optional[Dict[str, Any]] = None
@@ -69,9 +75,15 @@ class APIVerveToolSpec(BaseToolSpec):
         >>>
         >>> # Use the agent
         >>> response = agent.chat("Is test@example.com a valid email?")
+
     """
 
-    spec_functions = ["call_api", "list_available_apis", "list_categories"]
+    spec_functions = [
+        "call_api",
+        "list_available_apis",
+        "list_categories",
+        "get_api_details",
+    ]
 
     def __init__(
         self,
@@ -89,11 +101,13 @@ class APIVerveToolSpec(BaseToolSpec):
 
         self.base_url = base_url.rstrip("/")
         self._session = requests.Session()
-        self._session.headers.update({
-            "x-api-key": self.api_key,
-            "Accept": "application/json",
-            "User-Agent": "llama-index-tools-apiverve/0.1.0",
-        })
+        self._session.headers.update(
+            {
+                "x-api-key": self.api_key,
+                "Accept": "application/json",
+                "User-Agent": f"llama-index-tools-apiverve/{__version__}",
+            }
+        )
 
         # Load API schemas (cached at module level)
         self._schemas = _load_schemas()
@@ -124,6 +138,7 @@ class APIVerveToolSpec(BaseToolSpec):
             - IP geolocation: call_api("iplookup", {"ip": "8.8.8.8"})
             - Generate QR code: call_api("qrcodegenerator", {"value": "https://example.com"})
             - Convert currency: call_api("currencyconverter", {"from": "USD", "to": "EUR", "amount": 100})
+
         """
         # Get schema for this API
         schema = self._schemas.get(api_id)
@@ -155,10 +170,11 @@ class APIVerveToolSpec(BaseToolSpec):
         except requests.exceptions.HTTPError as e:
             error_msg = f"API request failed: {e}"
             try:
-                error_response = response.json()
+                error_response = e.response.json()
                 if "error" in error_response:
                     error_msg = error_response["error"]
             except Exception:
+                # Response body may not be valid JSON; use default error message
                 pass
             return {"status": "error", "error": error_msg, "data": None}
 
@@ -185,6 +201,7 @@ class APIVerveToolSpec(BaseToolSpec):
 
         Returns:
             List of dictionaries with 'id', 'title', 'description', and 'category'.
+
         """
         results = []
 
@@ -201,12 +218,14 @@ class APIVerveToolSpec(BaseToolSpec):
                 if search_lower not in title and search_lower not in desc:
                     continue
 
-            results.append({
-                "id": api_id,
-                "title": schema.get("title", api_id),
-                "description": schema.get("description", ""),
-                "category": schema.get("category", "Other"),
-            })
+            results.append(
+                {
+                    "id": api_id,
+                    "title": schema.get("title", api_id),
+                    "description": schema.get("description", ""),
+                    "category": schema.get("category", "Other"),
+                }
+            )
 
             if len(results) >= limit:
                 break
@@ -222,6 +241,7 @@ class APIVerveToolSpec(BaseToolSpec):
 
         Returns:
             Sorted list of category names.
+
         """
         categories = set()
         for schema in self._schemas.values():
@@ -238,6 +258,7 @@ class APIVerveToolSpec(BaseToolSpec):
 
         Returns:
             Dictionary with full API schema including parameters, or None if not found.
+
         """
         schema = self._schemas.get(api_id)
         if not schema:

@@ -1,6 +1,7 @@
 """Tests for APIVerve tool specification."""
 
 import pytest
+import requests
 from unittest.mock import patch, MagicMock
 
 from llama_index.tools.apiverve import APIVerveToolSpec
@@ -14,9 +15,7 @@ MOCK_SCHEMAS = {
         "description": "Validate email addresses",
         "category": "Validation",
         "methods": ["GET"],
-        "parameters": [
-            {"name": "email", "type": "string", "required": True}
-        ]
+        "parameters": [{"name": "email", "type": "string", "required": True}],
     },
     "dnslookup": {
         "apiId": "dnslookup",
@@ -24,23 +23,23 @@ MOCK_SCHEMAS = {
         "description": "Lookup DNS records for a domain",
         "category": "Lookup",
         "methods": ["GET"],
-        "parameters": [
-            {"name": "domain", "type": "string", "required": True}
-        ]
-    }
+        "parameters": [{"name": "domain", "type": "string", "required": True}],
+    },
 }
 
 
 @pytest.fixture
 def mock_schemas():
     """Mock the schema loading."""
-    with patch('llama_index.tools.apiverve.base._load_schemas', return_value=MOCK_SCHEMAS):
+    with patch(
+        "llama_index.tools.apiverve.base._load_schemas", return_value=MOCK_SCHEMAS
+    ):
         yield
 
 
 def test_requires_api_key(mock_schemas):
     """Test that API key is required."""
-    with patch.dict('os.environ', {}, clear=True):
+    with patch.dict("os.environ", {}, clear=True):
         with pytest.raises(ValueError, match="API key is required"):
             APIVerveToolSpec()
 
@@ -116,14 +115,61 @@ def test_call_api_success(mock_schemas):
     mock_response.json.return_value = {"status": "ok", "data": {"valid": True}}
     mock_response.raise_for_status = MagicMock()
 
-    with patch.object(spec._session, 'get', return_value=mock_response):
+    with patch.object(spec._session, "get", return_value=mock_response):
         result = spec.call_api("emailvalidator", {"email": "test@example.com"})
         assert result["status"] == "ok"
         assert result["data"]["valid"] is True
 
 
-def test_spec_functions():
+def test_spec_functions(mock_schemas):
     """Test that spec_functions is properly defined."""
     assert "call_api" in APIVerveToolSpec.spec_functions
     assert "list_available_apis" in APIVerveToolSpec.spec_functions
     assert "list_categories" in APIVerveToolSpec.spec_functions
+    assert "get_api_details" in APIVerveToolSpec.spec_functions
+
+
+def test_list_available_apis_limit(mock_schemas):
+    """Test that limit parameter works correctly."""
+    spec = APIVerveToolSpec(api_key="test-key")
+
+    # With limit=1, should only return 1 API
+    apis = spec.list_available_apis(limit=1)
+    assert len(apis) == 1
+
+    # With limit=10, should return all 2 mock APIs
+    apis = spec.list_available_apis(limit=10)
+    assert len(apis) == 2
+
+
+def test_call_api_http_error(mock_schemas):
+    """Test API call handling of HTTP errors."""
+    spec = APIVerveToolSpec(api_key="test-key")
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"error": "Invalid API key"}
+
+    http_error = requests.exceptions.HTTPError("401 Unauthorized")
+    http_error.response = mock_response
+    mock_response.raise_for_status.side_effect = http_error
+
+    with patch.object(spec._session, "get", return_value=mock_response):
+        result = spec.call_api("emailvalidator", {"email": "test@example.com"})
+        assert result["status"] == "error"
+        assert result["error"] == "Invalid API key"
+        assert result["data"] is None
+
+
+def test_call_api_request_exception(mock_schemas):
+    """Test API call handling of request exceptions."""
+    spec = APIVerveToolSpec(api_key="test-key")
+
+    with patch.object(
+        spec._session,
+        "get",
+        side_effect=requests.exceptions.ConnectionError("Connection refused"),
+    ):
+        result = spec.call_api("emailvalidator", {"email": "test@example.com"})
+        assert result["status"] == "error"
+        assert "Request failed" in result["error"]
+        assert result["data"] is None
