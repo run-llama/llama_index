@@ -21,7 +21,6 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ToolCallBlock,
-    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
@@ -478,45 +477,3 @@ def test_gpt_5_chat_latest_model_support() -> None:
 def test_is_chatcomp_api_supported() -> None:
     assert is_chatcomp_api_supported("gpt-5.2")
     assert not is_chatcomp_api_supported("gpt-5.2-pro")
-
-
-def test_to_openai_message_dicts_responses_api_drops_reasoning_before_tool_call() -> (
-    None
-):
-    """
-    Test that 'reasoning items' are not included when converting a ChatMessage to an OpenAI message dict.
-    (they are internal model thinking and should not be included in conversational history)
-    """
-    msg = ChatMessage(
-        role=MessageRole.ASSISTANT,
-        blocks=[
-            ThinkingBlock(
-                content="I will call the tool now.",
-                additional_information={"id": "rs_dummy_reasoning_id"},
-            ),
-            ToolCallBlock(
-                block_type="tool_call",
-                tool_call_id="call_123",
-                tool_name="search_hotels",
-                tool_kwargs='{"location":"Rome","max_price":200}',
-            ),
-        ],
-    )
-
-    out = to_openai_message_dicts([msg], is_responses_api=True)
-
-    assert isinstance(out, list)
-
-    # Must not include any reasoning items in the serialized input
-    assert not any(
-        isinstance(item, dict) and item.get("type") == "reasoning" for item in out
-    )
-
-    # Must still include the tool/function call item
-    assert any(
-        isinstance(item, dict)
-        and item.get("type") == "function_call"
-        and item.get("name") == "search_hotels"
-        and item.get("call_id") == "call_123"
-        for item in out
-    )

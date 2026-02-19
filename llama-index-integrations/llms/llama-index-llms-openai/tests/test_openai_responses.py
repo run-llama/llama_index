@@ -708,6 +708,95 @@ def test_messages_to_openai_responses_messages():
     assert openai_messages[6]["content"][0]["text"] == messages[6].blocks[1].text
 
 
+def test_messages_to_openai_responses_messages_with_store():
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="1",
+                    tool_name="get_capital_city_by_state",
+                    tool_kwargs="{'state': 'France'}",
+                )
+            ],
+        ),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Paris"),
+        ChatMessage(role=MessageRole.USER, content="What is the capital of Germany?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="2",
+                    tool_name="get_capital_city_by_state",
+                    tool_kwargs="{'state': 'Germany'}",
+                )
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking a simple question related to the capital of Germany, I should answer it concisely",
+                    additional_information={"id": "123456789"},
+                ),
+                TextBlock(text="Berlin"),
+            ],
+        ),
+    ]
+
+    kwargs = {
+        "model": "fake-model",
+        "include": None,
+        "instructions": None,
+        "max_output_tokens": 100,
+        "metadata": {},
+        "previous_response_id": None,
+        "store": True,
+        "temperature": 0.0,
+        "tools": [],
+        "top_p": 1.0,
+        "truncation": None,
+        "user": None,
+    }
+
+    openai_messages = to_openai_message_dicts(
+        messages, is_responses_api=True, kwargs=kwargs
+    )
+    assert len(openai_messages) == 8
+    assert openai_messages[0]["role"] == "developer"
+    assert openai_messages[0]["content"] == "You are a helpful assistant."
+    assert openai_messages[1]["role"] == "user"
+    assert openai_messages[1]["content"] == "What is the capital of France?"
+    assert openai_messages[2] == {
+        "type": "function_call",
+        "arguments": "{'state': 'France'}",
+        "call_id": "1",
+        "name": "get_capital_city_by_state",
+    }
+    assert openai_messages[3]["role"] == "assistant"
+    assert openai_messages[3]["content"] == "Paris"
+    assert openai_messages[4]["role"] == "user"
+    assert openai_messages[4]["content"] == "What is the capital of Germany?"
+    assert openai_messages[5] == {
+        "type": "function_call",
+        "arguments": "{'state': 'Germany'}",
+        "call_id": "2",
+        "name": "get_capital_city_by_state",
+    }
+
+    assert openai_messages[6]["type"] == "reasoning"
+    assert (
+        openai_messages[6]["id"] == messages[6].blocks[0].additional_information["id"]
+    )
+    assert openai_messages[6]["summary"][0]["text"] == messages[6].blocks[0].content
+
+    assert openai_messages[7]["role"] == "assistant"
+    assert len(openai_messages[7]["content"]) == 1
+    assert openai_messages[7]["content"][0]["text"] == messages[6].blocks[1].text
+
+
 @pytest.fixture()
 def response_output() -> List[ResponseOutputItem]:
     return [
