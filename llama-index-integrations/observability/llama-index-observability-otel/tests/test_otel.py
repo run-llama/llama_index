@@ -44,7 +44,7 @@ def test_initialize_with_extra_span_processors() -> None:
     )
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
-    assert instrumentor.span_processor == "batch"
+    assert instrumentor.span_processor == "simple"
     assert len(instrumentor.extra_span_processors) == 1
     assert all(
         isinstance(span_processor, CustomSpanProcessor)
