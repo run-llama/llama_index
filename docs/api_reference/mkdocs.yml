@@ -728,6 +728,7 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-mcp-discovery
             - ../../llama-index-integrations/tools/llama-index-tools-moss
             - ../../llama-index-integrations/tools/llama-index-tools-seltz
+            - ../../llama-index-integrations/readers/llama-index-readers-layoutir
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:

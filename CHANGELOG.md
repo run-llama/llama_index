@@ -2,6 +2,182 @@
 
 <!--- generated changelog --->
 
+## [2026-02-18]
+
+### llama-index-agent-agentmesh [0.1.0]
+
+- [Integration] AgentMesh: Trust Layer for LlamaIndex Agents ([#20644](https://github.com/run-llama/llama_index/pull/20644))
+
+### llama-index-core [0.14.15]
+
+- Support basic operations for multimodal types ([#20640](https://github.com/run-llama/llama_index/pull/20640))
+- Feat recursive llm type support ([#20642](https://github.com/run-llama/llama_index/pull/20642))
+- fix: remove redundant metadata_seperator field from TextNode ([#20649](https://github.com/run-llama/llama_index/pull/20649))
+- fix(tests): update mock prompt type in mock_prompts.py ([#20661](https://github.com/run-llama/llama_index/pull/20661))
+- Feat multimodal template var formatting ([#20682](https://github.com/run-llama/llama_index/pull/20682))
+- Feat multimodal prompt templates ([#20683](https://github.com/run-llama/llama_index/pull/20683))
+- Feat multimodal chat prompt helper ([#20684](https://github.com/run-llama/llama_index/pull/20684))
+- Add retry and error handling to BaseExtractor ([#20693](https://github.com/run-llama/llama_index/pull/20693))
+- ensure at least one message/content block is returned by the old memory ([#20729](https://github.com/run-llama/llama_index/pull/20729))
+
+### llama-index-embeddings-ibm [0.6.0.post1]
+
+- chore: Remove persistent_connection parameter support, update ([#20714](https://github.com/run-llama/llama_index/pull/20714))
+- docs: Update IBM docs ([#20718](https://github.com/run-llama/llama_index/pull/20718))
+
+### llama-index-llms-anthropic [0.10.9]
+
+- Sonnet 4-6 addition ([#20723](https://github.com/run-llama/llama_index/pull/20723))
+
+### llama-index-llms-bedrock-converse [0.12.10]
+
+- fix(bedrock-converse): ensure thinking_delta is populated in all chat modes ([#20664](https://github.com/run-llama/llama_index/pull/20664))
+- feat(bedrock-converse): Add support for Claude Sonnet 4.6 ([#20726](https://github.com/run-llama/llama_index/pull/20726))
+
+### llama-index-llms-ibm [0.7.0.post1]
+
+- chore: Remove persistent_connection parameter support, update ([#20714](https://github.com/run-llama/llama_index/pull/20714))
+- docs: Update IBM docs ([#20718](https://github.com/run-llama/llama_index/pull/20718))
+
+### llama-index-llms-mistralai [0.10.0]
+
+- Rrubini/mistral azure sdk ([#20668](https://github.com/run-llama/llama_index/pull/20668))
+
+### llama-index-llms-oci-data-science [1.0.0]
+
+- Add support for new OCI DataScience endpoint /predictWithStream for streaming use case ([#20545](https://github.com/run-llama/llama_index/pull/20545))
+
+### llama-index-observability-otel [0.3.0]
+
+- improve otel data serialization by flattening dicts ([#20719](https://github.com/run-llama/llama_index/pull/20719))
+- feat: support custom span processor; refactor: use llama-index-instrumentation instead of llama-index-core ([#20732](https://github.com/run-llama/llama_index/pull/20732))
+
+### llama-index-program-evaporate [0.5.2]
+
+- Sandbox LLM-generated code execution in EvaporateExtractor ([#20676](https://github.com/run-llama/llama_index/pull/20676))
+
+### llama-index-readers-bitbucket [0.4.2]
+
+- fix: replace mutable default argument in load_all_file_paths ([#20698](https://github.com/run-llama/llama_index/pull/20698))
+
+### llama-index-readers-github [0.10.0]
+
+- feat: Enhance GitHubRepoReader with selective file fetching and deduplication (Issue #20471) ([#20550](https://github.com/run-llama/llama_index/pull/20550))
+
+### llama-index-readers-layoutir [0.1.1]
+
+- feat: Add LayoutIR reader integration ([#20708](https://github.com/run-llama/llama_index/pull/20708))
+- fix(layoutir): hotfix for output_dir crash and Block extraction (#20708 follow-up) ([#20715](https://github.com/run-llama/llama_index/pull/20715))
+- fix(layoutir): restrict requires-python to >=3.12 to match layoutir dependency ([#20733](https://github.com/run-llama/llama_index/pull/20733))
+
+### llama-index-readers-microsoft-sharepoint [0.8.0]
+
+- Add pagination support for Microsoft Graph API calls in SharePoint reader ([#20704](https://github.com/run-llama/llama_index/pull/20704))
+
+### llama-index-readers-whatsapp [0.4.2]
+
+- fix: Update WhatsAppChatLoader to retrieve DataFrame in pandas format ([#20722](https://github.com/run-llama/llama_index/pull/20722))
+
+### llama-index-tools-mcp [0.4.7]
+
+- feat: propagate partial_params to get_tools_from_mcp utils ([#20669](https://github.com/run-llama/llama_index/pull/20669))
+
+### llama-index-vector-stores-faiss [0.5.3]
+
+- Replace eval() with json.loads in FaissMapVectorStore persistence ([#20675](https://github.com/run-llama/llama_index/pull/20675))
+
+### llama-index-vector-stores-milvus [1.0.0]
+
+- Fix: remove ORM Collection mix-usage with MilvusClient in Milvus vector store ([#20687](https://github.com/run-llama/llama_index/pull/20687))
+
+## [2026-02-18]
+
+### llama-index-agent-agentmesh [0.1.0]
+
+- [Integration] AgentMesh: Trust Layer for LlamaIndex Agents ([#20644](https://github.com/run-llama/llama_index/pull/20644))
+
+### llama-index-core [0.14.15]
+
+- Support basic operations for multimodal types ([#20640](https://github.com/run-llama/llama_index/pull/20640))
+- Feat recursive llm type support ([#20642](https://github.com/run-llama/llama_index/pull/20642))
+- fix: remove redundant metadata_seperator field from TextNode ([#20649](https://github.com/run-llama/llama_index/pull/20649))
+- fix(tests): update mock prompt type in mock_prompts.py ([#20661](https://github.com/run-llama/llama_index/pull/20661))
+- Feat multimodal template var formatting ([#20682](https://github.com/run-llama/llama_index/pull/20682))
+- Feat multimodal prompt templates ([#20683](https://github.com/run-llama/llama_index/pull/20683))
+- Feat multimodal chat prompt helper ([#20684](https://github.com/run-llama/llama_index/pull/20684))
+- Add retry and error handling to BaseExtractor ([#20693](https://github.com/run-llama/llama_index/pull/20693))
+- ensure at least one message/content block is returned by the old memory ([#20729](https://github.com/run-llama/llama_index/pull/20729))
+
+### llama-index-embeddings-ibm [0.6.0.post1]
+
+- chore: Remove persistent_connection parameter support, update ([#20714](https://github.com/run-llama/llama_index/pull/20714))
+- docs: Update IBM docs ([#20718](https://github.com/run-llama/llama_index/pull/20718))
+
+### llama-index-llms-anthropic [0.10.9]
+
+- Sonnet 4-6 addition ([#20723](https://github.com/run-llama/llama_index/pull/20723))
+
+### llama-index-llms-bedrock-converse [0.12.10]
+
+- fix(bedrock-converse): ensure thinking_delta is populated in all chat modes ([#20664](https://github.com/run-llama/llama_index/pull/20664))
+- feat(bedrock-converse): Add support for Claude Sonnet 4.6 ([#20726](https://github.com/run-llama/llama_index/pull/20726))
+
+### llama-index-llms-ibm [0.7.0.post1]
+
+- chore: Remove persistent_connection parameter support, update ([#20714](https://github.com/run-llama/llama_index/pull/20714))
+- docs: Update IBM docs ([#20718](https://github.com/run-llama/llama_index/pull/20718))
+
+### llama-index-llms-mistralai [0.10.0]
+
+- Rrubini/mistral azure sdk ([#20668](https://github.com/run-llama/llama_index/pull/20668))
+
+### llama-index-llms-oci-data-science [1.0.0]
+
+- Add support for new OCI DataScience endpoint /predictWithStream for streaming use case ([#20545](https://github.com/run-llama/llama_index/pull/20545))
+
+### llama-index-observability-otel [0.3.0]
+
+- improve otel data serialization by flattening dicts ([#20719](https://github.com/run-llama/llama_index/pull/20719))
+- feat: support custom span processor; refactor: use llama-index-instrumentation instead of llama-index-core ([#20732](https://github.com/run-llama/llama_index/pull/20732))
+
+### llama-index-program-evaporate [0.5.2]
+
+- Sandbox LLM-generated code execution in EvaporateExtractor ([#20676](https://github.com/run-llama/llama_index/pull/20676))
+
+### llama-index-readers-bitbucket [0.4.2]
+
+- fix: replace mutable default argument in load_all_file_paths ([#20698](https://github.com/run-llama/llama_index/pull/20698))
+
+### llama-index-readers-github [0.10.0]
+
+- feat: Enhance GitHubRepoReader with selective file fetching and deduplication (Issue #20471) ([#20550](https://github.com/run-llama/llama_index/pull/20550))
+
+### llama-index-readers-layoutir [0.1.1]
+
+- feat: Add LayoutIR reader integration ([#20708](https://github.com/run-llama/llama_index/pull/20708))
+- fix(layoutir): hotfix for output_dir crash and Block extraction (#20708 follow-up) ([#20715](https://github.com/run-llama/llama_index/pull/20715))
+- fix(layoutir): restrict requires-python to >=3.12 to match layoutir dependency ([#20733](https://github.com/run-llama/llama_index/pull/20733))
+
+### llama-index-readers-microsoft-sharepoint [0.8.0]
+
+- Add pagination support for Microsoft Graph API calls in SharePoint reader ([#20704](https://github.com/run-llama/llama_index/pull/20704))
+
+### llama-index-readers-whatsapp [0.4.2]
+
+- fix: Update WhatsAppChatLoader to retrieve DataFrame in pandas format ([#20722](https://github.com/run-llama/llama_index/pull/20722))
+
+### llama-index-tools-mcp [0.4.7]
+
+- feat: propagate partial_params to get_tools_from_mcp utils ([#20669](https://github.com/run-llama/llama_index/pull/20669))
+
+### llama-index-vector-stores-faiss [0.5.3]
+
+- Replace eval() with json.loads in FaissMapVectorStore persistence ([#20675](https://github.com/run-llama/llama_index/pull/20675))
+
+### llama-index-vector-stores-milvus [1.0.0]
+
+- Fix: remove ORM Collection mix-usage with MilvusClient in Milvus vector store ([#20687](https://github.com/run-llama/llama_index/pull/20687))
+
 ## [2026-02-10]
 
 ### llama-index-callbacks-wandb [0.4.2]
