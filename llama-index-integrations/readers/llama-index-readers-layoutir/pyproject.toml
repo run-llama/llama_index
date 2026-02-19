@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-readers-layoutir"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index readers LayoutIR integration"
 authors = [{name = "Rahul Patnaik", email = "rpatnaik2005@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.12,<4.0"
 readme = "README.md"
 license = "MIT"
 keywords = [
@@ -68,4 +68,4 @@ LayoutIRReader = "rahulpatnaik"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.10"
+python_version = "3.12"

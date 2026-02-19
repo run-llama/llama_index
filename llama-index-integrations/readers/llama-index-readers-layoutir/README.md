@@ -176,7 +176,7 @@ Each Document includes the following metadata:
 
 ## Requirements
 
-- Python >= 3.10
+- Python >= 3.12
 - llama-index-core >= 0.13.0
 - layoutir >= 1.0.3
 - Optional: PyTorch with CUDA for GPU acceleration
@@ -184,3 +184,11 @@ Each Document includes the following metadata:
 ## License
 
 MIT
+
+## Forcing CPU Mode
+
+If you encounter CUDA/GPU issues (e.g. cuBLAS version mismatches or missing CUDA drivers), set `CUDA_VISIBLE_DEVICES=""` before running to force CPU-only processing:
+
+```bash
+CUDA_VISIBLE_DEVICES="" python your_script.py
+```

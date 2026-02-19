@@ -155,3 +155,6 @@ pyrightconfig.json
 # Claude Code
 CLAUDE.md
 .claude/
+
+# Extras
+llama-index-integrations/readers/llama-index-readers-layoutir/sample_testing.pdf
