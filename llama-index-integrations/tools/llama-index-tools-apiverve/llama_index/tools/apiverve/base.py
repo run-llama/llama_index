@@ -266,7 +266,7 @@ class APIVerveToolSpec(BaseToolSpec):
             return None
 
         return {
-            "id": schema.get("apiId"),
+            "id": schema.get("apiId") or api_id,
             "title": schema.get("title"),
             "description": schema.get("description"),
             "category": schema.get("category"),
