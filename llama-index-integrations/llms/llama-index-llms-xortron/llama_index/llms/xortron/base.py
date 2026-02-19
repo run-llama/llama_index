@@ -6,17 +6,10 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Union,
 )
 
 import httpx
 
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
