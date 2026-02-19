@@ -10,7 +10,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class IGPTEmailToolSpec(BaseToolSpec):
-    """iGPT Email Intelligence tool spec.
+    """
+    iGPT Email Intelligence tool spec.
 
     Wraps the iGPT recall.ask() and recall.search() endpoints, giving agents
     structured, reasoning-ready context from connected email threads.
@@ -34,6 +35,7 @@ class IGPTEmailToolSpec(BaseToolSpec):
             )
 
             answer = await agent.run("What tasks were assigned to me this week?")
+
     """
 
     spec_functions = ["ask", "search"]
@@ -47,7 +49,8 @@ class IGPTEmailToolSpec(BaseToolSpec):
         question: str,
         output_format: str = "json",
     ) -> List[Document]:
-        """Ask a question about email context using iGPT's reasoning engine.
+        """
+        Ask a question about email context using iGPT's reasoning engine.
 
         Calls recall.ask() and returns structured context extracted from
         connected email threads, including tasks, decisions, owners, sentiment,
@@ -95,7 +98,8 @@ class IGPTEmailToolSpec(BaseToolSpec):
         date_to: Optional[str] = None,
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search email context for relevant messages and threads.
+        """
+        Search email context for relevant messages and threads.
 
         Calls recall.search() and returns matching email context as Documents,
         with thread metadata (subject, participants, date, thread ID) preserved
@@ -125,7 +129,9 @@ class IGPTEmailToolSpec(BaseToolSpec):
         if not response:
             return []
 
-        results = response if isinstance(response, list) else response.get("results", [])
+        results = (
+            response if isinstance(response, list) else response.get("results", [])
+        )
 
         documents = []
         for item in results:

@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class IGPTEmailReader(BaseReader):
-    """iGPT Email Intelligence Reader.
+    """
+    iGPT Email Intelligence Reader.
 
     Loads structured, reasoning-ready email context from the iGPT API as
     LlamaIndex Documents for indexing and retrieval.
@@ -30,6 +31,7 @@ class IGPTEmailReader(BaseReader):
                 query="project Alpha", date_from="2025-01-01"
             )
             index = VectorStoreIndex.from_documents(documents)
+
     """
 
     def __init__(self, api_key: str, user: str) -> None:
@@ -44,7 +46,8 @@ class IGPTEmailReader(BaseReader):
         date_to: Optional[str] = None,
         max_results: int = 50,
     ) -> List[Document]:
-        """Load email context as Documents from iGPT recall.search().
+        """
+        Load email context as Documents from iGPT recall.search().
 
         Each result from the iGPT API is returned as a separate Document.
         Thread metadata (subject, participants, date, thread ID) is preserved
@@ -75,7 +78,9 @@ class IGPTEmailReader(BaseReader):
         if not response:
             return []
 
-        results = response if isinstance(response, list) else response.get("results", [])
+        results = (
+            response if isinstance(response, list) else response.get("results", [])
+        )
 
         documents = []
         for item in results:

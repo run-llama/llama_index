@@ -23,9 +23,7 @@ from llama_index.readers.igpt_email import IGPTEmailReader
 from llama_index.core import VectorStoreIndex
 
 reader = IGPTEmailReader(api_key="your-key", user="user-id")
-documents = reader.load_data(
-    query="project Alpha", date_from="2025-01-01"
-)
+documents = reader.load_data(query="project Alpha", date_from="2025-01-01")
 index = VectorStoreIndex.from_documents(documents)
 ```
 
