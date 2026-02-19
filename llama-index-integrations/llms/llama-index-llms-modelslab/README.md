@@ -35,7 +35,10 @@ print(resp)
 from llama_index.core.llms import ChatMessage
 
 messages = [
-    ChatMessage(role="user", content="Write a Python function to merge two sorted lists."),
+    ChatMessage(
+        role="user",
+        content="Write a Python function to merge two sorted lists.",
+    ),
 ]
 resp = llm.chat(messages)
 print(resp)
@@ -68,21 +71,21 @@ for chunk in llm.stream_complete("Write a haiku about code:"):
 
 ## Models
 
-| Model | Context Window | Best for |
-|---|---|---|
-| `llama-3.1-8b-uncensored` | 128K | Fast completions, most tasks (default) |
-| `llama-3.1-70b-uncensored` | 128K | Complex reasoning, high quality output |
+| Model                      | Context Window | Best for                               |
+| -------------------------- | -------------- | -------------------------------------- |
+| `llama-3.1-8b-uncensored`  | 128K           | Fast completions, most tasks (default) |
+| `llama-3.1-70b-uncensored` | 128K           | Complex reasoning, high quality output |
 
 ## Configuration
 
 ```python
 llm = ModelsLabLLM(
     model="llama-3.1-8b-uncensored",
-    api_key="your-key",          # or MODELSLAB_API_KEY env var
-    context_window=131072,       # 128K (default)
-    temperature=0.7,             # sampling temperature
-    max_tokens=2048,             # max output tokens
-    is_chat_model=True,          # use chat endpoint (default)
+    api_key="your-key",  # or MODELSLAB_API_KEY env var
+    context_window=131072,  # 128K (default)
+    temperature=0.7,  # sampling temperature
+    max_tokens=2048,  # max output tokens
+    is_chat_model=True,  # use chat endpoint (default)
 )
 ```
 

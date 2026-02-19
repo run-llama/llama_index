@@ -52,6 +52,7 @@ class ModelsLabLLM(OpenAILike):
 
     Get your API key at: https://modelslab.com
     API docs: https://docs.modelslab.com/uncensored-chat
+
     """
 
     def __init__(

@@ -5,7 +5,7 @@ Run with: pytest tests/ -v
 """
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -72,10 +72,12 @@ class TestModelsLabLLMConstructor:
     def test_import_from_package(self):
         from llama_index.llms.modelslab import ModelsLabLLM as ML
         from llama_index.llms.modelslab.base import ModelsLabLLM as MLBase
+
         assert ML is MLBase
 
     def test_inherits_from_openai_like(self, llm):
         from llama_index.llms.openai_like import OpenAILike
+
         assert isinstance(llm, OpenAILike)
 
     @patch.dict(os.environ, {"MODELSLAB_API_KEY": "env-key"})
