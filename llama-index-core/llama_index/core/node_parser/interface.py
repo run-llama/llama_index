@@ -239,6 +239,10 @@ class MetadataAwareTextSplitter(TextSplitter):
         if user_init is None:
             return
 
+        # Safety: don't propagate pydantic-generated docs
+        if getattr(user_init, "__module__", "").startswith("pydantic"):
+            return
+
         doc = getattr(user_init, "__doc__", None)
         if not doc:
             return
@@ -247,7 +251,6 @@ class MetadataAwareTextSplitter(TextSplitter):
         try:
             cls.__init__.__doc__ = doc
         except (AttributeError, TypeError):
-            # Some environments expose a non-writable __doc__
             pass
 
     @abstractmethod
