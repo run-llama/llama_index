@@ -6,6 +6,10 @@ title: ChangeLog
 
 ## [2026-02-10]
 
+### llama-index-callbacks-wandb [0.4.2]
+
+- Fix potential crashes and improve security defaults in core components ([#20610](https://github.com/run-llama/llama_index/pull/20610))
+
 ### llama-index-core [0.14.14]
 
 - fix: catch pydantic ValidationError in VectorStoreQueryOutputParser ([#20450](https://github.com/run-llama/llama_index/pull/20450))
@@ -25,10 +29,6 @@ title: ChangeLog
 - fix: add show_progress parameter to run_transformations to prevent unexpected keyword argument error ([#20608](https://github.com/run-llama/llama_index/pull/20608))
 - Fix potential crashes and improve security defaults in core components ([#20610](https://github.com/run-llama/llama_index/pull/20610))
 - Add core 3.14 tests ([#20619](https://github.com/run-llama/llama_index/pull/20619))
-
-### llama-index-callbacks-wandb [0.4.2]
-
-- Fix potential crashes and improve security defaults in core components ([#20610](https://github.com/run-llama/llama_index/pull/20610))
 
 ### llama-index-embeddings-cohere [0.7.0]
 

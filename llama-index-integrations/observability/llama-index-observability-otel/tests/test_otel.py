@@ -1,10 +1,11 @@
 from llama_index.observability.otel import LlamaIndexOpenTelemetry
 from llama_index.observability.otel.base import (
-    Resource,
     SERVICE_NAME,
     ConsoleSpanExporter,
+    Resource,
 )
 from llama_index.observability.otel.utils import flatten_dict
+from opentelemetry.sdk.trace import SpanProcessor
 
 
 def test_initialization() -> None:
@@ -27,6 +28,22 @@ def test_diff_initialization() -> None:
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "simple"
+    assert instrumentor._tracer is None
+    assert instrumentor.debug
+
+
+def test_initialize_with_span_processor() -> None:
+    class CustomSpanProcessor(SpanProcessor):
+        pass
+
+    instrumentor = LlamaIndexOpenTelemetry(
+        service_name_or_resource="this.is.a.test",
+        span_processor=CustomSpanProcessor(),
+        debug=True,
+    )
+    assert instrumentor.service_name_or_resource == "this.is.a.test"
+    assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
+    assert isinstance(instrumentor.span_processor, CustomSpanProcessor)
     assert instrumentor._tracer is None
     assert instrumentor.debug
 
