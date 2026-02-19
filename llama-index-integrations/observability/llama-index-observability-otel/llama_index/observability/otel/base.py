@@ -258,9 +258,9 @@ class LlamaIndexOpenTelemetry(BaseModel):
             span_processor = SimpleSpanProcessor(self.span_exporter)
         else:
             span_processor = BatchSpanProcessor(self.span_exporter)
-        tracer_provider.add_span_processor(span_processor=span_processor)
         for extra_span_processor in self.extra_span_processors:
             tracer_provider.add_span_processor(extra_span_processor)
+        tracer_provider.add_span_processor(span_processor)
         trace.set_tracer_provider(tracer_provider)
         self._tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
 
