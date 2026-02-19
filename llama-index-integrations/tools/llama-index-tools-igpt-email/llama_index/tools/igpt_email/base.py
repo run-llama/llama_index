@@ -67,6 +67,9 @@ class IGPTEmailToolSpec(BaseToolSpec):
             output_format=output_format,
         )
 
+        if isinstance(response, dict) and "error" in response:
+            raise ValueError(f"iGPT API error: {response['error']}")
+
         if isinstance(response, dict):
             text = json.dumps(response)
             citations = response.get("citations", [])
@@ -115,6 +118,9 @@ class IGPTEmailToolSpec(BaseToolSpec):
             date_to=date_to,
             max_results=max_results,
         )
+
+        if isinstance(response, dict) and "error" in response:
+            raise ValueError(f"iGPT API error: {response['error']}")
 
         if not response:
             return []

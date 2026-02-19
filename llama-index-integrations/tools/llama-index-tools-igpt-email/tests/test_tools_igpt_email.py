@@ -3,8 +3,11 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.core.tools import FunctionTool
 from llama_index.tools.igpt_email import IGPTEmailToolSpec
 
 
@@ -16,6 +19,19 @@ def test_class():
 def test_spec_functions():
     assert "ask" in IGPTEmailToolSpec.spec_functions
     assert "search" in IGPTEmailToolSpec.spec_functions
+
+
+@patch("llama_index.tools.igpt_email.base.IGPT")
+def test_to_tool_list(mock_igpt_class):
+    """Test that to_tool_list() produces valid FunctionTool objects."""
+    tool_spec = IGPTEmailToolSpec(api_key="test-key", user="test-user")
+    tools = tool_spec.to_tool_list()
+
+    assert len(tools) == 2
+    assert all(isinstance(t, FunctionTool) for t in tools)
+
+    tool_names = {t.metadata.name for t in tools}
+    assert tool_names == {"ask", "search"}
 
 
 @patch("llama_index.tools.igpt_email.base.IGPT")
@@ -204,3 +220,49 @@ def test_search_default_parameters(mock_igpt_class):
         date_to=None,
         max_results=10,
     )
+
+
+@patch("llama_index.tools.igpt_email.base.IGPT")
+def test_ask_error_response(mock_igpt_class):
+    """Test ask() raises ValueError on API error response."""
+    mock_client = MagicMock()
+    mock_client.recall.ask.return_value = {"error": "auth"}
+    mock_igpt_class.return_value = mock_client
+
+    tool = IGPTEmailToolSpec(api_key="bad-key", user="test-user")
+    with pytest.raises(ValueError, match="iGPT API error: auth"):
+        tool.ask("test question")
+
+
+@patch("llama_index.tools.igpt_email.base.IGPT")
+def test_search_error_response(mock_igpt_class):
+    """Test search() raises ValueError on API error response."""
+    mock_client = MagicMock()
+    mock_client.recall.search.return_value = {"error": "params"}
+    mock_igpt_class.return_value = mock_client
+
+    tool = IGPTEmailToolSpec(api_key="test-key", user="test-user")
+    with pytest.raises(ValueError, match="iGPT API error: params"):
+        tool.search("bad query")
+
+
+@patch("llama_index.tools.igpt_email.base.IGPT")
+def test_search_item_without_content_or_body(mock_igpt_class):
+    """Test search() falls back to json.dumps when item has no content or body."""
+    mock_results = [
+        {
+            "id": "msg-1",
+            "subject": "Metadata only",
+            "from": "a@example.com",
+        }
+    ]
+
+    mock_client = MagicMock()
+    mock_client.recall.search.return_value = mock_results
+    mock_igpt_class.return_value = mock_client
+
+    tool = IGPTEmailToolSpec(api_key="test-key", user="test-user")
+    results = tool.search("metadata only")
+
+    assert len(results) == 1
+    assert results[0].text == json.dumps(mock_results[0])

@@ -1,6 +1,9 @@
 """Tests for IGPTEmailReader."""
 
+import json
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -182,3 +185,37 @@ def test_load_data_non_dict_items(mock_igpt_class):
     assert len(results) == 1
     assert results[0].text == "raw string result"
     assert results[0].metadata["source"] == "igpt_email"
+
+
+@patch("llama_index.readers.igpt_email.base.IGPT")
+def test_load_data_error_response(mock_igpt_class):
+    """Test load_data() raises ValueError on API error response."""
+    mock_client = MagicMock()
+    mock_client.recall.search.return_value = {"error": "auth"}
+    mock_igpt_class.return_value = mock_client
+
+    reader = IGPTEmailReader(api_key="bad-key", user="test-user")
+    with pytest.raises(ValueError, match="iGPT API error: auth"):
+        reader.load_data(query="test")
+
+
+@patch("llama_index.readers.igpt_email.base.IGPT")
+def test_load_data_item_without_content_or_body(mock_igpt_class):
+    """Test load_data() falls back to json.dumps when item has no content or body."""
+    mock_results = [
+        {
+            "id": "msg-5",
+            "subject": "Metadata only",
+            "from": "a@example.com",
+        }
+    ]
+
+    mock_client = MagicMock()
+    mock_client.recall.search.return_value = mock_results
+    mock_igpt_class.return_value = mock_client
+
+    reader = IGPTEmailReader(api_key="test-key", user="test-user")
+    results = reader.load_data(query="metadata only")
+
+    assert len(results) == 1
+    assert results[0].text == json.dumps(mock_results[0])

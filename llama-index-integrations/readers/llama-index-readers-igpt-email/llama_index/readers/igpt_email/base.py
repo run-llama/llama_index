@@ -69,6 +69,9 @@ class IGPTEmailReader(BaseReader):
             max_results=max_results,
         )
 
+        if isinstance(response, dict) and "error" in response:
+            raise ValueError(f"iGPT API error: {response['error']}")
+
         if not response:
             return []
 
