@@ -32,18 +32,24 @@ def test_diff_initialization() -> None:
     assert instrumentor.debug
 
 
-def test_initialize_with_span_processor() -> None:
+def test_initialize_with_extra_span_processors() -> None:
     class CustomSpanProcessor(SpanProcessor):
         pass
 
     instrumentor = LlamaIndexOpenTelemetry(
         service_name_or_resource="this.is.a.test",
-        span_processor=CustomSpanProcessor(),
+        span_processor="simple",
         debug=True,
+        extra_span_processors=[CustomSpanProcessor()],
     )
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
-    assert isinstance(instrumentor.span_processor, CustomSpanProcessor)
+    assert instrumentor.span_processor == "simple"
+    assert len(instrumentor.extra_span_processors) == 1
+    assert all(
+        isinstance(span_processor, CustomSpanProcessor)
+        for span_processor in instrumentor.extra_span_processors
+    )
     assert instrumentor._tracer is None
     assert instrumentor.debug
 
