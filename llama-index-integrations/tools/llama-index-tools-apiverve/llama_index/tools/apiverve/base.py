@@ -165,7 +165,8 @@ class APIVerveToolSpec(BaseToolSpec):
                 response = self._session.get(url, params=params, timeout=30)
 
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            return {"status": "ok", "error": None, "data": data}
 
         except requests.exceptions.HTTPError as e:
             error_msg = f"API request failed: {e}"
