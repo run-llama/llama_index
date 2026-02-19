@@ -1,13 +1,17 @@
-import inspect
+import pydoc
 from llama_index.core.node_parser.interface import MetadataAwareTextSplitter
 
 
-def test_metadataaware_docstring_preserved():
+def test_metadataaware_init_docstring_preserved_in_help():
     class MySplitter(MetadataAwareTextSplitter):
-        def __init__(self, *args, **kwargs):
-            """My custom doc"""
-            super().__init__(*args, **kwargs)
+        def __init__(self):
+            """my custom doc"""
+            super().__init__()
 
-    doc = inspect.getdoc(MySplitter.__init__) or ""
-    assert "My custom doc" in doc
-    assert "Create a new model by parsing and validating" not in doc
+        def split_text_metadata_aware(self, text: str, metadata_str: str):
+            return [text]
+
+    rendered = pydoc.render_doc(MySplitter.__init__)
+
+    assert "my custom doc" in rendered
+    assert "Create a new model by parsing and validating" not in rendered

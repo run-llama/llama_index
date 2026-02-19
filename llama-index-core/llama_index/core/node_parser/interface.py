@@ -231,27 +231,23 @@ class TextSplitter(NodeParser):
 
 
 class MetadataAwareTextSplitter(TextSplitter):
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init_subclass__(**kwargs)
+    def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
+        super().__init_subclass__(*args, **kwargs)
 
-        pydantic_init = getattr(cls, "__pydantic_init__", None)
-        if pydantic_init is None:
+        # Pydantic v2 keeps the user-defined init on __pydantic_init__
+        user_init = getattr(cls, "__pydantic_init__", None)
+        if user_init is None:
             return
 
-        doc = getattr(pydantic_init, "__doc__", None)
+        doc = getattr(user_init, "__doc__", None)
         if not doc:
             return
 
-        init = getattr(cls, "__init__", None)
-
-        # Avoid touching Pydantic wrappers / non-callables during model construction
-        if not callable(init) or getattr(init, "__module__", "").startswith("pydantic"):
-            return
-
+        # Patch the generated __init__ that help() will show
         try:
-            init.__doc__ = doc
+            cls.__init__.__doc__ = doc
         except (AttributeError, TypeError):
-            # Some Python builds may expose a non-writable __doc__
+            # Some environments expose a non-writable __doc__
             pass
 
     @abstractmethod
