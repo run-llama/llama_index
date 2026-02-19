@@ -1,1 +1,3 @@
-gradio==4.26.0
+gradio>=5.0.0
+huggingface_hub>=0.24.0
+Pillow>=10.0.0
