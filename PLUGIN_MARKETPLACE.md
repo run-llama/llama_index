@@ -17,6 +17,8 @@ The following marketplaces are registered by default:
 |------|-----------|-------------|
 | `llamaindex` | `run-llama/llama_index` | Official LlamaIndex packs repository |
 | `superpowers-marketplace` | `obra/superpowers-marketplace` | Curated Claude Code plugin marketplace by obra |
+| `llama-hub` | `run-llama/llama-hub` | LlamaHub community integrations and data loaders |
+| `llama-lab` | `run-llama/llama-lab` | Experimental LlamaIndex projects and tools |
 
 ## Quick Start
 
@@ -121,6 +123,20 @@ Example configuration:
     "branch": "main",
     "base_path": "",
     "description": "Curated Claude Code plugin marketplace by obra"
+  },
+  {
+    "name": "llama-hub",
+    "repository": "run-llama/llama-hub",
+    "branch": "main",
+    "base_path": "llama_hub",
+    "description": "LlamaHub community integrations and data loaders"
+  },
+  {
+    "name": "llama-lab",
+    "repository": "run-llama/llama-lab",
+    "branch": "main",
+    "base_path": "",
+    "description": "Experimental LlamaIndex projects and tools"
   }
 ]
 ```
