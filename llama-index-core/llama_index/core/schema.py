@@ -49,6 +49,7 @@ from llama_index.core.bridge.pydantic import (
     field_serializer,
     field_validator,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -278,13 +279,13 @@ class BaseNode(BaseComponent):
         default="default",
         description="Key in embeddings dict used for the default embedding.",
     )
-    embedding: Optional[List[float]] = Field(
-        default=None,
-        description="Default embedding of the node (same as embeddings[default_embedding_key] when set via set_embedding).",
-    )
     embeddings: Dict[str, Any] = Field(
         default_factory=dict,
         description="Named embeddings (e.g. dense, sparse). Use set_embedding/get_embedding(key) to keep in sync with embedding for the default key.",
+    )
+    embedding: Optional[List[float]] = Field(
+        default=None,
+        description="Default embedding of the node (same as embeddings[default_embedding_key] when set via set_embedding).",
     )
 
     """"
@@ -326,6 +327,13 @@ class BaseNode(BaseComponent):
         description="Separator between metadata fields when converting to string.",
         alias="metadata_seperator",
     )
+
+    @model_validator(mode="after")
+    def _sync_embedding_on_init(self) -> "BaseNode":
+        """Ensure embeddings[default_embedding_key] is populated when embedding is provided at construction."""
+        if self.embedding is not None:
+            self.embeddings[self.default_embedding_key] = self.embedding
+        return self
 
     @classmethod
     @abstractmethod

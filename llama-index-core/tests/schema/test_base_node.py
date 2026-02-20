@@ -211,6 +211,12 @@ def test_as_related_node_info(MyNode):
     assert n.as_related_node_info().node_id == "test_node"
 
 
+def test_construction_with_embedding_syncs_embeddings_dict(MyNode):
+    n = MyNode(embedding=[1.0, 2.0])
+    assert n.embeddings.get("default") == [1.0, 2.0]
+    assert n.get_embedding() == [1.0, 2.0]
+
+
 def test_direct_embedding_assignment_syncs_embeddings_dict(MyNode):
     n = MyNode()
     n.embedding = [1.0, 2.0, 3.0]
