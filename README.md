@@ -11,6 +11,7 @@
 LlamaIndex OSS (by [LlamaIndex](https://llamaindex.ai)) is an open-source framework to build agentic applications. **[LlamaCloud](https://cloud.llamaindex.ai)** is a separate platform for agentic OCR, parsing, extraction, indexing and more. You can use LlamaCloud with this framework or on its own; see [LlamaCloud](#llamacloud-document-agent-platform) below for signup and product links.
 
 > ### 📚 **Documentation:**
+>
 > - [LlamaParse](https://developers.llamaindex.ai/python/cloud/llamaparse/)
 > - [LlamaIndex OSS](https://developers.llamaindex.ai/python/framework/)
 > - [LlamaAgents](https://developers.llamaindex.ai/python/llamaagents/overview/)
