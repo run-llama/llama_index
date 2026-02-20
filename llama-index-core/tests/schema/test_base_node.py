@@ -209,3 +209,50 @@ def test_get_embeddings(MyNode):
 def test_as_related_node_info(MyNode):
     n = MyNode(id_="test_node")
     assert n.as_related_node_info().node_id == "test_node"
+
+
+def test_direct_embedding_assignment_syncs_embeddings_dict(MyNode):
+    n = MyNode()
+    n.embedding = [1.0, 2.0, 3.0]
+    assert n.embeddings.get("default") == [1.0, 2.0, 3.0]
+    assert n.get_embedding() == [1.0, 2.0, 3.0]
+    assert n.get_embedding("default") == [1.0, 2.0, 3.0]
+
+
+def test_direct_embedding_assignment_overwrites_embeddings_dict(MyNode):
+    n = MyNode()
+    n.set_embedding("default", [1.0, 2.0])
+    n.embedding = [3.0, 4.0]
+    assert n.embeddings.get("default") == [3.0, 4.0]
+    assert n.get_embedding() == [3.0, 4.0]
+
+
+def test_set_embeddings_with_kwargs(MyNode):
+    n = MyNode()
+    n.set_embeddings(dense=[1.0, 2.0], sparse=[0.1, 0.2])
+    assert n.get_embedding("dense") == [1.0, 2.0]
+    assert n.get_embedding("sparse") == [0.1, 0.2]
+
+
+def test_set_embedding_sparse_as_default_key(MyNode):
+    n = MyNode()
+    n.set_embedding("default", {"idx_0": 0.9, "idx_5": 0.3})
+    assert n.embeddings["default"] == {"idx_0": 0.9, "idx_5": 0.3}
+    assert n.embedding is None
+    result = n.get_embedding()
+    assert result == {"idx_0": 0.9, "idx_5": 0.3}
+
+
+def test_serialization_round_trip(MyNode):
+    from llama_index.core.schema import TextNode
+
+    n = TextNode(text="hello", id_="abc")
+    n.set_embedding("default", [1.0, 2.0])
+    n.set_embedding("sparse", {"a": 0.5})
+    d = n.to_dict()
+    assert d["embeddings"]["default"] == [1.0, 2.0]
+    assert d["embeddings"]["sparse"] == {"a": 0.5}
+    n2 = TextNode.from_dict(d)
+    assert n2.get_embedding("default") == [1.0, 2.0]
+    assert n2.get_embedding("sparse") == {"a": 0.5}
+    assert n2.embedding == [1.0, 2.0]

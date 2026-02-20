@@ -469,6 +469,14 @@ class BaseNode(BaseComponent):
         )
         return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if name == "embedding" and value is not None:
+            key = self.__dict__.get("default_embedding_key", "default")
+            embeddings = self.__dict__.get("embeddings")
+            if isinstance(embeddings, dict):
+                embeddings[key] = value
+
     def _get_default_embedding(self) -> Any:
         if self.embedding is not None:
             return self.embedding
