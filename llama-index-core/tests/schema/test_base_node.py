@@ -249,6 +249,45 @@ def test_set_embedding_sparse_as_default_key(MyNode):
     assert result == {"idx_0": 0.9, "idx_5": 0.3}
 
 
+def test_clearing_embedding_behavior(MyNode):
+    # Case 1: Dense embedding (Legacy behavior)
+    n = MyNode(embedding=[1.0, 2.0])
+    assert n.embeddings["default"] == [1.0, 2.0]
+
+    # Set to None - should clear it
+    n.embedding = None
+
+    assert "default" not in n.embeddings
+    with pytest.raises(ValueError, match="embedding not set."):
+        n.get_embedding()
+
+    # Case 2: Sparse embedding (New behavior)
+    n2 = MyNode()
+    n2.set_embedding("default", {"idx": 1})
+    # n2.embedding is None because it's a dict
+    assert n2.embedding is None
+
+    # Set to None - should NOT clear sparse embedding
+    n2.embedding = None
+
+    assert n2.embeddings.get("default") == {"idx": 1}
+
+
+def test_overwrite_dense_with_sparse_default(MyNode):
+    # Initial state: dense embedding
+    n = MyNode(embedding=[1.0, 2.0])
+    assert n.get_embedding() == [1.0, 2.0]
+
+    # Overwrite default with sparse
+    n.set_embedding("default", {"idx": 1})
+
+    # Expectation: get_embedding() returns the new sparse embedding
+    # and n.embedding is cleared (because it can't hold a dict)
+    assert n.embeddings["default"] == {"idx": 1}
+    assert n.embedding is None
+    assert n.get_embedding() == {"idx": 1}
+
+
 def test_serialization_round_trip(MyNode):
     from llama_index.core.schema import TextNode
 
