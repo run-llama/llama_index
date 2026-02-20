@@ -162,10 +162,12 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 Use this to narrow down where the problem is:
 
 1. **Check retrieval first:** Print retrieved nodes and verify they contain the answer manually.
+
    - If **retrieved nodes are wrong** → Focus on items 1-5, 7-8 above.
    - If **retrieved nodes are correct** → Focus on items 6, 9 above.
 
 2. **Check a known-good query:** Try a query where you know exactly which document contains the answer.
+
    - If it **fails** → Likely an indexing or embedding issue (items 3-5).
    - If it **works** → The issue is query-specific (items 1, 7-8).
 
