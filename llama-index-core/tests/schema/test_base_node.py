@@ -160,6 +160,52 @@ def test_get_embedding(MyNode):
     assert n.get_embedding() == [0.0, 0.0]
 
 
+def test_get_embedding_with_key(MyNode):
+    n = MyNode()
+    n.set_embedding("default", [1.0, 2.0, 3.0])
+    assert n.get_embedding() == [1.0, 2.0, 3.0]
+    assert n.get_embedding("default") == [1.0, 2.0, 3.0]
+    assert n.embedding == [1.0, 2.0, 3.0]
+    n.set_embedding("sparse", {"idx_1": 0.5, "idx_2": 0.3})
+    assert n.get_embedding("sparse") == {"idx_1": 0.5, "idx_2": 0.3}
+    with pytest.raises(ValueError, match="embedding 'missing' not set."):
+        n.get_embedding("missing")
+
+
+def test_set_embedding_syncs_default_to_embedding_field(MyNode):
+    n = MyNode()
+    n.set_embedding("default", [1.0, 2.0])
+    assert n.embedding == [1.0, 2.0]
+    assert n.get_embedding() == [1.0, 2.0]
+    n.set_embedding("default", [3.0, 4.0])
+    assert n.embedding == [3.0, 4.0]
+
+
+def test_set_embeddings(MyNode):
+    n = MyNode()
+    n.set_embeddings({"dense": [1.0, 2.0], "sparse": [0.1, 0.2]})
+    assert n.get_embedding("dense") == [1.0, 2.0]
+    assert n.get_embedding("sparse") == [0.1, 0.2]
+    n.set_embeddings({"extra": [9.0]})
+    assert n.get_embedding("extra") == [9.0]
+
+
+def test_get_embeddings(MyNode):
+    n = MyNode()
+    n.embedding = [0.0, 1.0]
+    all_emb = n.get_embeddings()
+    assert "default" in all_emb
+    assert all_emb["default"] == [0.0, 1.0]
+    n.set_embedding("sparse", [0.5])
+    all_emb = n.get_embeddings()
+    assert all_emb.get("sparse") == [0.5]
+    subset = n.get_embeddings(keys=["default", "sparse"])
+    assert subset["default"] == [0.0, 1.0]
+    assert subset["sparse"] == [0.5]
+    empty_subset = n.get_embeddings(keys=["nonexistent"])
+    assert empty_subset == {}
+
+
 def test_as_related_node_info(MyNode):
     n = MyNode(id_="test_node")
     assert n.as_related_node_info().node_id == "test_node"

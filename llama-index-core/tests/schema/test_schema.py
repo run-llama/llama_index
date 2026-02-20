@@ -251,7 +251,9 @@ def test_document_legacy_roundtrip():
     origin = Document(id_="test_id", text="this is a test")
     assert origin.model_dump() == {
         "id_": "test_id",
+        "default_embedding_key": "default",
         "embedding": None,
+        "embeddings": {},
         "metadata": {},
         "excluded_embed_metadata_keys": [],
         "excluded_llm_metadata_keys": [],
@@ -284,7 +286,9 @@ def test_document_model_dump_exclude():
     assert "relationships" not in model_dump
     assert model_dump == {
         "id_": "test_id",
+        "default_embedding_key": "default",
         "embedding": None,
+        "embeddings": {},
         "excluded_embed_metadata_keys": [],
         "excluded_llm_metadata_keys": [],
         "metadata_template": "{key}: {value}",

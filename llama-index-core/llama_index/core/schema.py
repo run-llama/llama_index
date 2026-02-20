@@ -274,8 +274,17 @@ class BaseNode(BaseComponent):
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
     )
+    default_embedding_key: str = Field(
+        default="default",
+        description="Key in embeddings dict used for the default embedding.",
+    )
     embedding: Optional[List[float]] = Field(
-        default=None, description="Embedding of the node."
+        default=None,
+        description="Default embedding of the node (same as embeddings[default_embedding_key] when set via set_embedding).",
+    )
+    embeddings: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Named embeddings (e.g. dense, sparse). Use set_embedding/get_embedding(key) to keep in sync with embedding for the default key.",
     )
 
     """"
@@ -460,16 +469,57 @@ class BaseNode(BaseComponent):
         )
         return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
-    def get_embedding(self) -> List[float]:
-        """
-        Get embedding.
+    def _get_default_embedding(self) -> Any:
+        if self.embedding is not None:
+            return self.embedding
+        if self.default_embedding_key in self.embeddings:
+            return self.embeddings[self.default_embedding_key]
+        raise ValueError("embedding not set.")
 
-        Errors if embedding is None.
-
+    def get_embedding(self, key: Optional[str] = None) -> Any:
         """
-        if self.embedding is None:
-            raise ValueError("embedding not set.")
-        return self.embedding
+        Get embedding by key. If key is None, returns the default embedding
+        (from embedding field or embeddings[default_embedding_key]).
+        """
+        if key is None or key == self.default_embedding_key:
+            return self._get_default_embedding()
+        if key not in self.embeddings:
+            raise ValueError(f"embedding '{key}' not set.")
+        return self.embeddings[key]
+
+    def set_embedding(self, key: str, value: Any) -> None:
+        """Set a named embedding. If key is default_embedding_key and value is a list, also sets the embedding field."""
+        self.embeddings[key] = value
+        if key == self.default_embedding_key and isinstance(value, list):
+            self.embedding = value
+
+    def set_embeddings(
+        self, mapping: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> None:
+        """Set multiple named embeddings. Pass a dict and/or keyword args."""
+        if mapping:
+            for k, v in mapping.items():
+                self.set_embedding(k, v)
+        for k, v in kwargs.items():
+            self.set_embedding(k, v)
+
+    def get_embeddings(self, keys: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Get embeddings. If keys is None, returns all; otherwise only the requested keys (may omit missing)."""
+        if keys is None:
+            result = dict(self.embeddings)
+            if self.embedding is not None and self.default_embedding_key not in result:
+                result[self.default_embedding_key] = self.embedding
+            return result
+        result: Dict[str, Any] = {}
+        for k in keys:
+            if k == self.default_embedding_key:
+                try:
+                    result[k] = self._get_default_embedding()
+                except ValueError:
+                    pass
+            elif k in self.embeddings:
+                result[k] = self.embeddings[k]
+        return result
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
@@ -976,8 +1026,8 @@ class NodeWithScore(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         return self.node.get_content(metadata_mode=metadata_mode)
 
-    def get_embedding(self) -> List[float]:
-        return self.node.get_embedding()
+    def get_embedding(self, key: Optional[str] = None) -> Any:
+        return self.node.get_embedding(key)
 
 
 # Document Classes for Readers

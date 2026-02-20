@@ -14,6 +14,7 @@ from llama_index.core.schema import (
     TextNode,
     ImageNode,
 )
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
 
 def test_simple_query(
@@ -99,13 +100,13 @@ def test_query(
 def test_query_image_node() -> None:
     """Test embedding query."""
     image_node = ImageNode(
-        image="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        image="potato", embedding=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     )
     text_node = TextNode(
-        text="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        text="potato", embedding=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     )
 
-    index = VectorStoreIndex.from_documents([])
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=9))
     index.insert_nodes([image_node, text_node])
 
     # test embedding query
