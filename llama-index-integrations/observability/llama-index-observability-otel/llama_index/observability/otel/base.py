@@ -225,9 +225,13 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default=ConsoleSpanExporter(),
         description="OpenTelemetry span exporter. Supports all SpanExporter-compatible interfaces, defaults to ConsoleSpanExporter.",
     )
-    span_processor: Union[Literal["simple", "batch"], SpanProcessor] = Field(
+    span_processor: Literal["simple", "batch"] = Field(
         default="batch",
-        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor), 'simple' (-> SimpleSpanProcessor) or a custom SpanProcessor subclass. Defaults to 'batch'",
+        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor), 'simple' (-> SimpleSpanProcessor). Defaults to 'batch'",
+    )
+    extra_span_processors: List[SpanProcessor] = Field(
+        default_factory=list,
+        description="List of OpenTelemetry Span Processors to add to the tracer provider.",
     )
     service_name_or_resource: Union[str, Resource] = Field(
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
@@ -247,17 +251,16 @@ class LlamaIndexOpenTelemetry(BaseModel):
                 attributes={SERVICE_NAME: self.service_name_or_resource}
             )
         tracer_provider = TracerProvider(resource=self.service_name_or_resource)
-        if isinstance(self.span_processor, str):
-            assert self.span_exporter is not None, (
-                "span_exporter has to be non-null to be used within simple or batch span processors"
-            )
-            if self.span_processor == "simple":
-                span_processor = SimpleSpanProcessor(self.span_exporter)
-            else:
-                span_processor = BatchSpanProcessor(self.span_exporter)
+        assert self.span_exporter is not None, (
+            "span_exporter has to be non-null to be used within simple or batch span processors"
+        )
+        if self.span_processor == "simple":
+            span_processor = SimpleSpanProcessor(self.span_exporter)
         else:
-            span_processor = self.span_processor
-        tracer_provider.add_span_processor(span_processor=span_processor)
+            span_processor = BatchSpanProcessor(self.span_exporter)
+        for extra_span_processor in self.extra_span_processors:
+            tracer_provider.add_span_processor(extra_span_processor)
+        tracer_provider.add_span_processor(span_processor)
         trace.set_tracer_provider(tracer_provider)
         self._tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
 
