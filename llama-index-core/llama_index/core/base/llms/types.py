@@ -7,6 +7,7 @@ from abc import ABC
 from enum import Enum
 from io import IOBase, BytesIO
 from pathlib import Path
+from types import NoneType
 from typing import (
     Annotated,
     Any,
@@ -306,10 +307,8 @@ class ImageBlock(BaseContentBlock):
     @classmethod
     def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as Anyurl."""
-        if isinstance(url, AnyUrl):
+        if isinstance(url, (AnyUrl, NoneType)):
             return url
-        if url is None:
-            return None
 
         return AnyUrl(url=url)
 
@@ -363,7 +362,12 @@ class ImageBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            self.image
+            resolve_binary(
+                raw_bytes=self.image.read(),
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
             if isinstance(self.image, IOBase)
             else resolve_binary(
                 raw_bytes=self.image,
@@ -422,9 +426,9 @@ class AudioBlock(BaseContentBlock):
 
     @field_validator("url", mode="after")
     @classmethod
-    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as Anyurl."""
-        if isinstance(url, AnyUrl):
+        if isinstance(url, (AnyUrl, NoneType)):
             return url
         return AnyUrl(url=url)
 
@@ -478,7 +482,12 @@ class AudioBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            self.audio
+            resolve_binary(
+                raw_bytes=self.audio.read(),
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
             if isinstance(self.audio, IOBase)
             else resolve_binary(
                 raw_bytes=self.audio,
@@ -555,10 +564,8 @@ class VideoBlock(BaseContentBlock):
     @classmethod
     def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as AnyUrl."""
-        if isinstance(url, AnyUrl):
+        if isinstance(url, (AnyUrl, NoneType)):
             return url
-        if url is None:
-            return None
         return AnyUrl(url=url)
 
     @field_serializer("video")
@@ -609,7 +616,12 @@ class VideoBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            self.video
+            resolve_binary(
+                raw_bytes=self.video.read(),
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=as_base64,
+            )
             if isinstance(self.video, IOBase)
             else resolve_binary(
                 raw_bytes=self.video,
