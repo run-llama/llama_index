@@ -4,6 +4,8 @@ title: RAG Failure Mode Checklist
 
 When your RAG pipeline isn't performing as expected, it can be difficult to pinpoint the root cause. This checklist covers the most common failure modes, their symptoms, and minimal fixes to get you back on track.
 
+The first nine sections focus on single-query behavior (retrieval, chunking, embeddings, query formulation, and synthesis). The later sections highlight system-level issues that often show up only in larger or longer-running deployments.
+
 ## 1. Retrieval Hallucination
 
 **What happens:** The retriever returns chunks that look superficially relevant but don't actually contain the answer. The LLM then "hallucinates" a plausible-sounding response from irrelevant context.
@@ -33,7 +35,7 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 **Fixes:**
 
-- Experiment with **chunk size and overlap** — try larger chunks (1024+ tokens) with 10-20% overlap
+- Experiment with **chunk size and overlap** (for example, larger chunks such as 1024+ tokens with 10-20% overlap)
 - Use `SentenceSplitter` instead of naive fixed-size splitting to preserve sentence boundaries
 - Try **hierarchical chunking** with `HierarchicalNodeParser` to capture both fine-grained and broad context
 - Consider `SentenceWindowNodeParser` to retrieve a sentence but synthesize with surrounding context
@@ -50,7 +52,7 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 **Fixes:**
 
-- Implement a **document management** strategy with `doc_id` tracking — use `index.refresh_ref_docs()` to update changed documents
+- Implement a **document management** strategy with `doc_id` tracking and use `index.refresh_ref_docs()` to update changed documents
 - Use `IngestionPipeline` with a `docstore` to deduplicate documents before indexing
 - Periodically rebuild your index from source rather than only appending
 - Add metadata (timestamps, version numbers) and filter on recency when relevant
@@ -67,9 +69,9 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 **Fixes:**
 
-- **Always store your embedding model name alongside your index** — log it in metadata or config
-- Pin your embedding model version (e.g., `text-embedding-ada-002` or a specific sentence-transformers version)
-- If you change the embedding model, **rebuild the entire index** — you cannot mix embeddings
+- Store your embedding model name alongside your index and log it in metadata or config
+- Pin your embedding model version (for example, `text-embedding-ada-002` or a specific sentence-transformers version)
+- If you change the embedding model, rebuild the entire index since you cannot mix embeddings
 - Use `Settings.embed_model` consistently in both indexing and querying code paths
 
 ## 5. Embedding Model Mismatch (Wrong Model for the Domain)
@@ -79,12 +81,12 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **Symptoms:**
 
 - Good results on general-knowledge questions but poor results on domain-specific ones
-- Synonyms or jargon in your domain aren't being matched
+- Synonyms or jargon in your domain are not matched well
 - Keyword search outperforms vector search on your dataset
 
 **Fixes:**
 
-- Try a **domain-adapted embedding model** (e.g., fine-tuned models for legal, medical, or code)
+- Try a **domain-adapted embedding model** (for example, fine-tuned models for legal, medical, or code)
 - Combine vector search with **keyword search** (hybrid mode) to capture exact terminology matches
 - Generate synthetic QA pairs from your corpus and evaluate embedding recall before deploying
 
@@ -108,11 +110,11 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 ## 7. Missing Metadata Filtering
 
-**What happens:** The retriever searches across all documents when it should be scoped to a specific subset (e.g., a particular date range, department, or document type).
+**What happens:** The retriever searches across all documents when it should be scoped to a specific subset (for example, a certain date range, department, or document type).
 
 **Symptoms:**
 
-- Answers pull from wrong documents (e.g., last year's report when the user asks about this year)
+- Answers pull from wrong documents (for example, last year's report when the user asks about this year)
 - Cross-contamination between document categories
 - Users report "the system knows too much" or returns unrelated content
 
@@ -130,12 +132,12 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **Symptoms:**
 
 - Simple rephrasing of the query dramatically changes results
-- Short queries (1-2 words) return poor results
+- Short queries (one or two words) return poor results
 - Users need to "know the right words" to get good answers
 
 **Fixes:**
 
-- Add a **query transformation** step — use `HyDEQueryTransform` to generate a hypothetical answer and search with that
+- Add a **query transformation** step and use `HyDEQueryTransform` to generate a hypothetical answer and search with that
 - Use `SubQuestionQueryEngine` to break complex queries into simpler sub-queries
 - Implement **query rewriting** with an LLM to expand or rephrase the query
 - Add a few-shot prompt with example queries to guide users
@@ -152,10 +154,80 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 
 **Fixes:**
 
-- Use a stronger LLM for synthesis (e.g., GPT-4o over GPT-4o-mini) or increase temperature slightly
+- Use a stronger LLM for synthesis (for example, GPT-4o over GPT-4o-mini) or adjust temperature slightly
 - Customize the **QA prompt template** to explicitly instruct the LLM to use only the provided context
 - Use `Refine` response mode to process each chunk sequentially rather than all at once
-- Add `system_prompt` reinforcing that the LLM should answer based on context only
+- Add a `system_prompt` reinforcing that the LLM should answer based on context only
+
+## 10. Embedding Metric Mismatch (Cosine Score ≠ True Meaning)
+
+**What happens:** The distance metric or normalization used for similarity does not line up with how meaning is distributed in your data. Very long or very generic chunks dominate similarity scores, while the truly relevant snippets sit lower in the ranking.
+
+**Symptoms:**
+
+- The top-1 result is clearly wrong, but relevant documents appear lower in the top-k list
+- Similarity scores for relevant and irrelevant chunks are tightly clustered together
+- Adding generic boilerplate text to documents changes retrieval behavior more than expected
+- Manual inspection shows that retrieval quality is sensitive to small preprocessing changes
+
+**Fixes:**
+
+- Inspect the full top-k list and check whether relevant chunks appear but are ranked too low
+- Normalize or trim overly long chunks so a few large nodes do not dominate similarity
+- Consider a reranking stage that uses a different scoring function from the base vector store
+- Evaluate retrieval with labeled queries before deploying (precision / recall on a small test set) and adjust `similarity_top_k` and thresholds based on results
+
+## 11. Session and Cache Memory Breaks
+
+**What happens:** Users expect the system to remember previous interactions or configuration, but the underlying indices, vector stores, or caches are stateless or keyed incorrectly. Retrieval appears flaky across sessions even though the data is present.
+
+**Symptoms:**
+
+- The same question asked on different days returns answers from different subsets of documents
+- After a redeploy or cache clear, previously stable queries start to drift
+- Manually hitting the vector store with the same query sometimes returns an empty or much smaller result set
+
+**Fixes:**
+
+- Define a clear strategy for **session and user keys** and ensure they are passed consistently through your application, retrievers, and stores
+- Separate long-term knowledge from short-lived scratch space so cache eviction does not remove critical data
+- Log index versions, cache keys, and retrieval parameters for problematic requests and compare across sessions
+- Add a regression test that replays a short conversation or query sequence after each deploy to verify stability
+
+## 12. Observability Gaps ("Black-Box Debugging")
+
+**What happens:** You know that answers are wrong, but you cannot see what the retriever or LLM actually did. Without basic traces it becomes impossible to tell whether the issue is retrieval, synthesis, or deployment.
+
+**Symptoms:**
+
+- Bugs are reported as "it sometimes answers strangely" without reproducible traces
+- You cannot easily inspect which nodes were retrieved for a given bad answer
+- Token counts, prompts, and index metadata are not logged, so production runs cannot be reconstructed
+
+**Fixes:**
+
+- Enable tracing and logging for retrieval, query transforms, prompts, and responses (either through LlamaIndex callbacks or your own logging stack)
+- For each failed answer, capture at least: the user query, retrieved nodes, similarity scores, index or snapshot identifiers, and the final LLM prompt
+- Add a "debug mode" in your application that prints or stores retrieval results and decisions for manual inspection
+- Before changing infrastructure, try to reproduce failures using only logs and traces; if you cannot, improve observability first
+
+## 13. Index Lifecycle and Deployment Ordering
+
+**What happens:** The pipeline works in local tests, but production behaves randomly because indices are empty, half-built, or misaligned with the running configuration. Services may start in the wrong order or point at the wrong storage.
+
+**Symptoms:**
+
+- Right after deployment, some queries return obviously incomplete or empty answers
+- Logs show that the vector store contains far fewer nodes than expected
+- Changing environment variables or secrets silently switches the index or embedding settings used at query time
+- Rolling back or redeploying changes answers again without any code changes
+
+**Fixes:**
+
+- Treat the index as a versioned artifact and track an **index version or snapshot id** in both ingestion and serving paths
+- Add a health check that runs a known-good query after deploy and fails if the index is empty, below a minimum size, or built with the wrong embedding config
+- Ensure ingestion or refresh jobs complete before routing production traffic to the new index
+- Avoid manual one-off ingestion steps; encode them in scripts or pipelines so they cannot be skipped accidentally
 
 ## Quick Diagnostic Flowchart
 
@@ -168,12 +240,17 @@ Use this to narrow down where the problem is:
 
 2. **Check a known-good query:** Try a query where you know exactly which document contains the answer.
 
-   - If it **fails** → Likely an indexing or embedding issue (items 3-5).
-   - If it **works** → The issue is query-specific (items 1, 7-8).
+   - If it **fails** → Likely an indexing or embedding issue (items 3-5, 10, 13).
+   - If it **works** → The issue is query-specific (items 1, 7-8, 11).
 
 3. **Check token counts:** Log the total tokens sent to the LLM.
+
    - If **near the limit** → Context window overflow (item 6).
-   - If **well within limits** → Synthesis or retrieval quality issue.
+   - If **well within limits** → Synthesis or retrieval quality issue (items 1-5, 8-10, 12).
+
+4. **If problems only appear in production or after deploys:**  
+
+   - Focus on system-level issues (items 11-13) and verify index versions, caches, and traces.
 
 ## Further Reading
 
