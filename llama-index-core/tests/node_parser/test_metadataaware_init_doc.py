@@ -6,7 +6,7 @@ from llama_index.core.node_parser.interface import MetadataAwareTextSplitter
 def test_metadataaware_init_docstring_preserved_in_help():
     class MySplitter(MetadataAwareTextSplitter):
         def __init__(self):
-            """my custom doc"""
+            """My custom doc"""
             super().__init__()
 
         def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
