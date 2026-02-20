@@ -12,6 +12,6 @@ def test_metadataaware_init_docstring_preserved_in_help():
         def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
             return [text]
 
-    rendered = pydoc.render_doc(MySplitter.__init__)
+    rendered = pydoc.render_doc(MySplitter.__init__).lower()
     assert "my custom doc" in rendered
     assert "Create a new model by parsing and validating" not in rendered
