@@ -979,6 +979,7 @@ class OpenAI(FunctionCallingLLM):
             "tool_choice": resolve_tool_choice(tool_choice, tool_required)
             if tool_specs
             else None,
+            "parallel_tool_calls": allow_parallel_tool_calls if tool_specs else None,
             **kwargs,
         }
 
