@@ -510,16 +510,16 @@ class BaseNode(BaseComponent):
             if self.embedding is not None and self.default_embedding_key not in result:
                 result[self.default_embedding_key] = self.embedding
             return result
-        result: Dict[str, Any] = {}
+        out: Dict[str, Any] = {}
         for k in keys:
             if k == self.default_embedding_key:
                 try:
-                    result[k] = self._get_default_embedding()
+                    out[k] = self._get_default_embedding()
                 except ValueError:
                     pass
             elif k in self.embeddings:
-                result[k] = self.embeddings[k]
-        return result
+                out[k] = self.embeddings[k]
+        return out
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
