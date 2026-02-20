@@ -9,11 +9,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The retriever returns chunks that look superficially relevant but don't actually contain the answer. The LLM then "hallucinates" a plausible-sounding response from irrelevant context.
 
 **Symptoms:**
+
 - Answers sound confident but are factually wrong
 - Retrieved chunks share keywords with the query but discuss a different topic
 - High similarity scores on irrelevant passages
 
 **Fixes:**
+
 - Add a **reranker** (e.g., `CohereRerank`, `SentenceTransformerRerank`) to filter out false positives after initial retrieval
 - Increase `similarity_top_k` and let the reranker prune, rather than relying on a small top-k from the vector store alone
 - Use **hybrid search** (combining vector + keyword retrieval) to reduce semantic false matches
@@ -24,11 +26,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** Your documents are split in a way that separates critical context across multiple chunks, so no single chunk has enough information to answer the query.
 
 **Symptoms:**
+
 - Partial or incomplete answers
 - The correct information exists in your corpus but the retrieved chunks don't contain it fully
 - Answers improve dramatically when you manually provide the right text
 
 **Fixes:**
+
 - Experiment with **chunk size and overlap** — try larger chunks (1024+ tokens) with 10-20% overlap
 - Use `SentenceSplitter` instead of naive fixed-size splitting to preserve sentence boundaries
 - Try **hierarchical chunking** with `HierarchicalNodeParser` to capture both fine-grained and broad context
@@ -39,11 +43,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** Your index contains duplicate, outdated, or conflicting versions of documents, leading to inconsistent or contradictory retrieval results.
 
 **Symptoms:**
+
 - Different answers for the same question across runs
 - Contradictory information in retrieved chunks
 - Stale data appearing even after you've updated source documents
 
 **Fixes:**
+
 - Implement a **document management** strategy with `doc_id` tracking — use `index.refresh_ref_docs()` to update changed documents
 - Use `IngestionPipeline` with a `docstore` to deduplicate documents before indexing
 - Periodically rebuild your index from source rather than only appending
@@ -54,11 +60,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The embedding model used at query time differs from the one used at index time, or settings like chunk size changed between indexing and querying.
 
 **Symptoms:**
+
 - Sudden drop in retrieval quality after a code change or dependency update
 - Similarity scores are abnormally low across all queries
 - Previously working queries now return irrelevant results
 
 **Fixes:**
+
 - **Always store your embedding model name alongside your index** — log it in metadata or config
 - Pin your embedding model version (e.g., `text-embedding-ada-002` or a specific sentence-transformers version)
 - If you change the embedding model, **rebuild the entire index** — you cannot mix embeddings
@@ -69,11 +77,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The embedding model doesn't understand your domain's terminology, leading to poor semantic similarity for domain-specific queries.
 
 **Symptoms:**
+
 - Good results on general-knowledge questions but poor results on domain-specific ones
 - Synonyms or jargon in your domain aren't being matched
 - Keyword search outperforms vector search on your dataset
 
 **Fixes:**
+
 - Try a **domain-adapted embedding model** (e.g., fine-tuned models for legal, medical, or code)
 - Combine vector search with **keyword search** (hybrid mode) to capture exact terminology matches
 - Generate synthetic QA pairs from your corpus and evaluate embedding recall before deploying
@@ -83,12 +93,14 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** Too many retrieved chunks are stuffed into the LLM's prompt, exceeding the context window or diluting the signal with noise.
 
 **Symptoms:**
+
 - Truncated or cut-off responses
 - API errors about token limits
 - Answers that ignore relevant retrieved content (especially content at the beginning or middle of the context)
 - Degraded quality as `similarity_top_k` increases
 
 **Fixes:**
+
 - Use a **response synthesizer** like `TreeSummarize` or `Refine` instead of `CompactAndRefine` to handle large amounts of context
 - Reduce `similarity_top_k` and rely on reranking to surface only the most relevant chunks
 - Set explicit `max_tokens` limits and monitor token counts with `callback_manager`
@@ -99,11 +111,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The retriever searches across all documents when it should be scoped to a specific subset (e.g., a particular date range, department, or document type).
 
 **Symptoms:**
+
 - Answers pull from wrong documents (e.g., last year's report when the user asks about this year)
 - Cross-contamination between document categories
 - Users report "the system knows too much" or returns unrelated content
 
 **Fixes:**
+
 - Add structured **metadata** (date, source, category, author) during ingestion
 - Use `MetadataFilters` at query time to scope retrieval
 - Implement **auto-retrieval** where the LLM extracts filter parameters from the user query
@@ -114,11 +128,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The user's query is ambiguous, too short, or phrased differently from how information is stored in your documents.
 
 **Symptoms:**
+
 - Simple rephrasing of the query dramatically changes results
 - Short queries (1-2 words) return poor results
 - Users need to "know the right words" to get good answers
 
 **Fixes:**
+
 - Add a **query transformation** step — use `HyDEQueryTransform` to generate a hypothetical answer and search with that
 - Use `SubQuestionQueryEngine` to break complex queries into simpler sub-queries
 - Implement **query rewriting** with an LLM to expand or rephrase the query
@@ -129,11 +145,13 @@ When your RAG pipeline isn't performing as expected, it can be difficult to pinp
 **What happens:** The retriever gets the right chunks, but the LLM fails to synthesize a good answer from them.
 
 **Symptoms:**
+
 - Retrieved chunks are correct (verified manually) but the answer is still wrong
 - The LLM ignores provided context and answers from its training data
 - Answers are overly generic despite specific context being available
 
 **Fixes:**
+
 - Use a stronger LLM for synthesis (e.g., GPT-4o over GPT-4o-mini) or increase temperature slightly
 - Customize the **QA prompt template** to explicitly instruct the LLM to use only the provided context
 - Use `Refine` response mode to process each chunk sequentially rather than all at once
