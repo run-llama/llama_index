@@ -1,6 +1,7 @@
 import json
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -11,10 +12,14 @@ from typing import (
     Tuple,
     Type,
     Union,
-    TYPE_CHECKING,
 )
-import re
 
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -38,13 +43,8 @@ from llama_index.core.llms.callbacks import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.llms.bedrock_converse.utils import (
     ThinkingDict,
     bedrock_modelname_to_context_size,
@@ -61,13 +61,13 @@ from llama_index.llms.bedrock_converse.utils import (
     tools_to_converse_tools,
 )
 
-from llama_index.core.prompts import PromptTemplate
-
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-# Import BaseModel for runtime use
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 class BedrockConverse(FunctionCallingLLM):
@@ -386,16 +386,6 @@ class BedrockConverse(FunctionCallingLLM):
             **kwargs,
         }
 
-    @staticmethod
-    def _strip_thinking_tokens(text: str) -> str:
-        """
-        Remove <thinking>...</thinking> tokens from text.
-
-        Some models (e.g., Amazon Nova) include thinking tokens in the response
-        text even when thinking is disabled. This helper removes them.
-        """
-        return re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
-
     def _get_content_and_tool_calls(
         self,
         response: Optional[Dict[str, Any]] = None,
@@ -423,10 +413,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         for content_block in content_list:
             if text := content_block.get("text", None):
-                # Strip thinking tokens from text (e.g., for Nova models)
-                text = self._strip_thinking_tokens(text)
-                if text:  # Only add block if text remains after stripping
-                    blocks.append(TextBlock(text=text))
+                blocks.append(TextBlock(text=text))
             if reasoning_text := extract_thinking_from_block(content_block):
                 if reasoning_text:
                     thinking_text += reasoning_text
@@ -592,9 +579,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(
-                            text=self._strip_thinking_tokens(content.get("text", ""))
-                        )
+                        TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -649,9 +634,7 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(
-                            text=self._strip_thinking_tokens(content.get("text", ""))
-                        )
+                        TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -696,11 +679,7 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(
-                                text=self._strip_thinking_tokens(
-                                    content.get("text", "")
-                                )
-                            )
+                            TextBlock(text=content.get("text", ""))
                         ]
                         if thinking != "":
                             blocks.insert(
@@ -882,9 +861,7 @@ class BedrockConverse(FunctionCallingLLM):
                                     current_tool_call, tool_use_delta
                                 )
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(
-                            text=self._strip_thinking_tokens(content.get("text", ""))
-                        )
+                        TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -940,9 +917,7 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(
-                            text=self._strip_thinking_tokens(content.get("text", ""))
-                        )
+                        TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -987,11 +962,7 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(
-                                text=self._strip_thinking_tokens(
-                                    content.get("text", "")
-                                )
-                            )
+                            TextBlock(text=content.get("text", ""))
                         ]
                         if thinking != "":
                             blocks.insert(
@@ -1227,7 +1198,11 @@ class BedrockConverse(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> BaseModel:
-        """Async structured predict using native Bedrock structured outputs."""
+        """
+        Async structured predict using native Bedrock structured outputs.
+
+        Falls back to function calling for unsupported models.
+        """
         from llama_index.core.program.utils import get_program_for_llm
 
         # Fall back to function calling if not supported
