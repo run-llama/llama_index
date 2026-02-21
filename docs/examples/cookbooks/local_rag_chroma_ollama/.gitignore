@@ -1,0 +1,5 @@
+# Generated at runtime — do not commit
+chroma_db/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

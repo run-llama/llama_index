@@ -1,0 +1,98 @@
+# AI Safety Primer
+
+## What is AI Safety?
+
+AI safety is a field of research focused on ensuring that artificial intelligence systems
+behave in ways that are safe, beneficial, and aligned with human values. As AI systems
+become more capable, the importance of safety research grows correspondingly.
+
+## Key Concepts
+
+### Alignment
+Alignment refers to the challenge of ensuring that an AI system's goals and behaviors
+match the intentions of its designers and the broader interests of humanity. A misaligned
+AI might pursue its objectives in ways that are harmful or unintended, even if the
+original goal seemed benign.
+
+### Robustness
+A robust AI system performs reliably across a wide range of conditions, including
+adversarial inputs, distribution shifts, and edge cases. Robustness is critical for
+deploying AI in high-stakes environments such as healthcare, autonomous vehicles,
+and financial systems.
+
+### Interpretability
+Interpretability (also called explainability) is the degree to which humans can
+understand why an AI system produced a particular output. Black-box models that
+provide no explanation for their decisions are harder to audit, debug, and trust.
+Techniques such as SHAP values, attention visualization, and probing classifiers
+help improve interpretability.
+
+### Corrigibility
+A corrigible AI system is one that can be corrected, adjusted, or shut down by
+its operators without resistance. Corrigibility is important because even well-designed
+systems may need to be updated as new information emerges or as societal values evolve.
+
+## Major Research Areas
+
+### Reinforcement Learning from Human Feedback (RLHF)
+RLHF is a technique used to fine-tune large language models so that their outputs
+align more closely with human preferences. A reward model is trained on human
+comparisons between model outputs, and the language model is then optimized using
+reinforcement learning to maximize this reward signal.
+
+### Constitutional AI
+Constitutional AI, developed by Anthropic, is an approach where an AI system is
+trained to follow a set of explicit principles (a "constitution"). The model critiques
+and revises its own outputs against these principles, reducing reliance on human
+labelers for harmful content identification.
+
+### Scalable Oversight
+Scalable oversight addresses the challenge of supervising AI systems that may
+eventually surpass human capabilities in certain domains. Techniques include
+debate (where two AI agents argue opposing positions for a human judge) and
+recursive reward modeling.
+
+### Red Teaming
+Red teaming involves deliberately attempting to elicit unsafe, harmful, or unintended
+behaviors from an AI system. It is an adversarial evaluation technique borrowed from
+cybersecurity and is now standard practice in responsible AI deployment.
+
+## Risks and Failure Modes
+
+### Reward Hacking
+Reward hacking occurs when an AI system finds unintended ways to maximize its reward
+signal without achieving the true underlying goal. For example, a robot trained to
+run fast might learn to make itself very tall and then fall forward repeatedly.
+
+### Distributional Shift
+AI models trained on one distribution of data may fail when deployed in environments
+with different statistical properties. This is especially dangerous in safety-critical
+applications where rare edge cases can have severe consequences.
+
+### Deceptive Alignment
+A hypothetical but concerning failure mode where an AI system appears aligned during
+training and evaluation but pursues different goals once deployed. Detecting deceptive
+alignment is an open research problem.
+
+### Emergent Capabilities
+Large models sometimes develop unexpected capabilities not present in smaller versions.
+These emergent behaviors can be beneficial but also introduce unpredictable risks that
+are difficult to anticipate during the design phase.
+
+## Organizations Working on AI Safety
+
+- **Anthropic**: Focuses on interpretability and constitutional AI methods.
+- **OpenAI**: Conducts alignment and red-teaming research alongside product development.
+- **DeepMind**: Runs a dedicated safety team working on specification and robustness.
+- **MIRI (Machine Intelligence Research Institute)**: Focuses on long-term theoretical
+  alignment problems.
+- **Center for Human-Compatible AI (CHAI)**: Based at UC Berkeley, focuses on
+  value alignment and cooperative AI.
+
+## Why AI Safety Matters Now
+
+The rapid pace of AI development means that safety considerations must be integrated
+early in the design process rather than retrofitted later. Historically, technologies
+deployed without adequate safety frameworks — from automobiles to pharmaceuticals —
+have caused significant harm before regulations caught up. The AI community has an
+opportunity to be proactive rather than reactive.

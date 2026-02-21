@@ -1,0 +1,32 @@
+# Model
+llm:
+  model: "llama3.2:3b"
+  base_url: "http://localhost:11434"
+  temperature: 0.0
+  request_timeout: 120.0
+
+embedding:
+  model: "nomic-embed-text"
+  base_url: "http://localhost:11434"
+
+# Chunking
+splitter:
+  chunk_size: 512
+  chunk_overlap: 50
+
+# vector store
+chroma:
+  persist_dir: "./chroma_db"
+  collection_name: "ai_safety_rag"
+
+#data
+data:
+  input_dir: "./data"
+
+# Retrieval
+retrieval:
+  similarity_top_k: 3
+
+# Evaluation
+eval:
+  gold_qa_path: "./eval/gold_qa.json"
