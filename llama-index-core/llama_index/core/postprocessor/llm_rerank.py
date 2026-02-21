@@ -5,13 +5,16 @@ from typing import Callable, List, Optional
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
+    default_format_node_batch_for_chat_fn,
     default_parse_choice_select_answer_fn,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts import BasePromptTemplate, SelectorPromptTemplate
+from llama_index.core.prompts.chat_prompts import CHAT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
+from llama_index.core.prompts.utils import is_chat_model
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 
@@ -38,7 +41,10 @@ class LLMRerank(BaseNodePostprocessor):
         parse_choice_select_answer_fn: Optional[Callable] = None,
         top_n: int = 10,
     ) -> None:
-        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
+        choice_select_prompt = choice_select_prompt or SelectorPromptTemplate(
+            default_template=DEFAULT_CHOICE_SELECT_PROMPT,
+            conditionals=[(is_chat_model, CHAT_CHOICE_SELECT_PROMPT)],
+        )
 
         llm = llm or Settings.llm
 
@@ -48,8 +54,10 @@ class LLMRerank(BaseNodePostprocessor):
             choice_batch_size=choice_batch_size,
             top_n=top_n,
         )
-        self._format_node_batch_fn = (
-            format_node_batch_fn or default_format_node_batch_fn
+        self._format_node_batch_fn = format_node_batch_fn or (
+            default_format_node_batch_for_chat_fn
+            if is_chat_model(llm)
+            else default_format_node_batch_fn
         )
         self._parse_choice_select_answer_fn = (
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
@@ -85,13 +93,15 @@ class LLMRerank(BaseNodePostprocessor):
             ]
 
             query_str = query_bundle.query_str
-            fmt_batch_str = self._format_node_batch_fn(nodes_batch)
+            # Don't include non text types for non-chat models
+            fmt_batch = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self.llm.predict(
-                self.choice_select_prompt,
-                context_str=fmt_batch_str,
-                query_str=query_str,
-            )
+            kwargs = {"query_str": query_str}
+            if is_chat_model(self.llm):
+                kwargs["context_messages"] = fmt_batch
+            else:
+                kwargs["context_str"] = fmt_batch
+            raw_response = self.llm.predict(self.choice_select_prompt, **kwargs)
 
             raw_choices, relevances = self._parse_choice_select_answer_fn(
                 raw_response, len(nodes_batch)
