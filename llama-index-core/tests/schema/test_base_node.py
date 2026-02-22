@@ -1,6 +1,8 @@
 from typing import Any
 
 import pytest
+
+from llama_index.core.base.llms.types import BaseContentBlock, TextBlock
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -22,6 +24,11 @@ def MyNode():
 
         def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
             return "Test content"
+
+        def get_content_blocks(
+            self, metadata_mode: MetadataMode = MetadataMode.ALL
+        ) -> list[BaseContentBlock]:
+            return [TextBlock(text="Test content")]
 
         def set_content(self, value: Any) -> None:
             return super().set_content(value)

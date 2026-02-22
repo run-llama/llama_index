@@ -59,6 +59,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
     from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
 
+    from llama_index.core.base.llms.types import BaseContentBlock
     from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
 
 
@@ -327,6 +328,12 @@ class BaseNode(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
 
+    @abstractmethod
+    def get_content_blocks(
+        self, metadata_mode: MetadataMode = MetadataMode.ALL
+    ) -> list[BaseContentBlock]:
+        """Get content blocks for the node."""
+
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
         """Metadata info string."""
         if mode == MetadataMode.NONE:
@@ -349,6 +356,19 @@ class BaseNode(BaseComponent):
                 if key in usable_metadata_keys
             ]
         )
+
+    def get_metadata_content_blocks(
+        self, metadata_mode: MetadataMode
+    ) -> list[BaseContentBlock]:
+        """Get metadata content block if metadata_mode is not NONE."""
+        from llama_index.core.base.llms.types import TextBlock
+
+        if metadata_mode == MetadataMode.NONE:
+            return []
+        metadata_str = self.get_metadata_str(mode=metadata_mode).strip()
+        if not metadata_str:
+            return []
+        return [TextBlock(text=metadata_str)]
 
     @abstractmethod
     def set_content(self, value: Any) -> None:
@@ -662,6 +682,54 @@ class Node(BaseNode):
             ).strip()
         return ""
 
+    def get_content_blocks(
+        self, metadata_mode: MetadataMode = MetadataMode.NONE
+    ) -> list[BaseContentBlock]:
+        """
+        Get content blocks for the node.
+        """
+        from llama_index.core.base.llms.types import (
+            TextBlock,
+            ImageBlock,
+            AudioBlock,
+            VideoBlock,
+        )
+
+        blocks: list[BaseContentBlock] = []
+        blocks.extend(self.get_metadata_content_blocks(metadata_mode))
+        if self.text_resource:
+            blocks.append(TextBlock(text=self.text_resource.text or ""))
+        if self.image_resource:
+            blocks.append(
+                ImageBlock(
+                    image=self.image_resource.data,
+                    url=self.image_resource.url,
+                    path=self.image_resource.path,
+                    image_mimetype=self.image_resource.mimetype,
+                )
+            )
+        if self.audio_resource:
+            guess = filetype.get_type(mime=self.audio_resource.mimetype)
+            blocks.append(
+                AudioBlock(
+                    audio=self.audio_resource.data,
+                    url=self.audio_resource.url,
+                    path=self.audio_resource.path,
+                    format=guess.extension if guess else None,
+                )
+            )
+        if self.video_resource:
+            blocks.append(
+                VideoBlock(
+                    video=self.video_resource.data,
+                    url=self.video_resource.url,
+                    path=self.video_resource.path,
+                    video_mimetype=self.video_resource.mimetype,
+                )
+            )
+
+        return blocks
+
     def set_content(self, value: str) -> None:
         """
         Set the text content of the node.
@@ -748,6 +816,17 @@ class TextNode(BaseNode):
         return self.text_template.format(
             content=self.text, metadata_str=metadata_str
         ).strip()
+
+    def get_content_blocks(
+        self, metadata_mode: MetadataMode = MetadataMode.NONE
+    ) -> list[BaseContentBlock]:
+        """Get content blocks for the node."""
+        from llama_index.core.base.llms.types import TextBlock
+
+        blocks: list[BaseContentBlock] = []
+        blocks.extend(self.get_metadata_content_blocks(metadata_mode))
+        blocks.append(TextBlock(text=self.text))
+        return blocks
 
     def set_content(self, value: str) -> None:
         """Set the content of the node."""
@@ -841,6 +920,29 @@ class ImageNode(TextNode):
         image_text = self.text or "None"
         doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+    def get_content_blocks(
+        self, metadata_mode: MetadataMode = MetadataMode.NONE
+    ) -> list[BaseContentBlock]:
+        """Get content blocks for the node."""
+        from llama_index.core.base.llms.types import ImageBlock
+
+        blocks: list[BaseContentBlock] = []
+        blocks.extend(self.get_metadata_content_blocks(metadata_mode))
+        resolved = self.resolve_image()
+        if isinstance(resolved, BytesIO):
+            image_data: bytes | None = resolved.read()
+        else:
+            image_data = None
+        blocks.append(
+            ImageBlock(
+                image=image_data,
+                url=self.image_url,
+                path=self.image_path,
+                image_mimetype=self.image_mimetype,
+            )
+        )
+        return blocks
 
 
 class IndexNode(TextNode):

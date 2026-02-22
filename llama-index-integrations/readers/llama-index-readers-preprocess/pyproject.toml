@@ -26,8 +26,8 @@ dev = [
 
 [project]
 name = "llama-index-readers-preprocess"
-version = "0.4.1"
-description = "llama-index readers preprocess integration"
+version = "0.5.0"
+description = "llama-index readers preprocess integration (discontinued)"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
@@ -39,8 +39,10 @@ keywords = [
     "documents",
     "preprocess",
 ]
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 dependencies = [
-    "pypreprocess>=1.4.3,<2",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
