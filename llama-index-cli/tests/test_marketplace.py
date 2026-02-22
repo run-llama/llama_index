@@ -417,3 +417,214 @@ class TestHandlePluginListWithCatalog:
         output = capsys.readouterr().out
         assert "superpowers-marketplace" in output
         # Should still show marketplace info even when catalog fetch fails
+
+    @mock.patch("llama_index.cli.command_line.MarketplaceManager")
+    @mock.patch("llama_index.cli.command_line.fetch_marketplace_catalog")
+    def test_list_handles_empty_plugins_list(self, mock_fetch, mock_mgr_cls, capsys):
+        mock_mgr = mock.Mock()
+        mock_mgr.list_marketplaces.return_value = [
+            Marketplace(
+                name="empty-mp",
+                repository="org/empty",
+                description="Empty catalog",
+            ),
+        ]
+        mock_mgr_cls.return_value = mock_mgr
+        mock_fetch.return_value = {"plugins": []}
+
+        handle_plugin_list()
+
+        output = capsys.readouterr().out
+        assert "empty-mp" in output
+        assert "Available plugins" in output
+
+    @mock.patch("llama_index.cli.command_line.MarketplaceManager")
+    @mock.patch("llama_index.cli.command_line.fetch_marketplace_catalog")
+    def test_list_handles_catalog_without_plugins_key(
+        self, mock_fetch, mock_mgr_cls, capsys
+    ):
+        mock_mgr = mock.Mock()
+        mock_mgr.list_marketplaces.return_value = [
+            Marketplace(
+                name="odd-mp",
+                repository="org/odd",
+            ),
+        ]
+        mock_mgr_cls.return_value = mock_mgr
+        mock_fetch.return_value = {"version": "1.0"}
+
+        handle_plugin_list()
+
+        output = capsys.readouterr().out
+        assert "odd-mp" in output
+        # Should not crash when "plugins" key is missing
+
+
+# --- Direct fetch_marketplace_catalog tests ---
+
+
+class TestFetchMarketplaceCatalog:
+    @mock.patch("requests.get")
+    def test_successful_fetch(self, mock_get):
+        mock_resp = mock.Mock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "plugins": [{"name": "example", "version": "1.0"}]
+        }
+        mock_get.return_value = mock_resp
+
+        result = fetch_marketplace_catalog("obra/superpowers-marketplace")
+
+        assert result is not None
+        assert "plugins" in result
+        assert result["plugins"][0]["name"] == "example"
+        mock_get.assert_called_once_with(
+            "https://raw.githubusercontent.com/obra/superpowers-marketplace"
+            "/main/.claude-plugin/marketplace.json",
+            timeout=10,
+        )
+
+    @mock.patch("requests.get")
+    def test_uses_default_catalog_path_for_unknown_repo(self, mock_get):
+        mock_resp = mock.Mock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"plugins": []}
+        mock_get.return_value = mock_resp
+
+        fetch_marketplace_catalog("some/other-repo", branch="dev")
+
+        mock_get.assert_called_once_with(
+            "https://raw.githubusercontent.com/some/other-repo"
+            "/dev/marketplace.json",
+            timeout=10,
+        )
+
+    @mock.patch("requests.get")
+    def test_returns_none_on_404(self, mock_get):
+        mock_resp = mock.Mock()
+        mock_resp.status_code = 404
+        mock_get.return_value = mock_resp
+
+        result = fetch_marketplace_catalog("org/missing")
+
+        assert result is None
+
+    @mock.patch("requests.get")
+    def test_returns_none_on_network_error(self, mock_get):
+        mock_get.side_effect = ConnectionError("Network unreachable")
+
+        result = fetch_marketplace_catalog("org/repo")
+
+        assert result is None
+
+    @mock.patch("requests.get")
+    def test_returns_none_on_timeout(self, mock_get):
+        import requests as real_requests
+
+        mock_get.side_effect = real_requests.exceptions.Timeout("timed out")
+
+        result = fetch_marketplace_catalog("org/repo")
+
+        assert result is None
+
+    @mock.patch("requests.get")
+    def test_returns_none_on_invalid_json(self, mock_get):
+        mock_resp = mock.Mock()
+        mock_resp.status_code = 200
+        mock_resp.json.side_effect = json.JSONDecodeError("bad json", "", 0)
+        mock_get.return_value = mock_resp
+
+        result = fetch_marketplace_catalog("org/repo")
+
+        assert result is None
+
+
+# --- CLI argparse integration tests ---
+
+
+class TestCLIArgParsing:
+    @mock.patch("llama_index.cli.command_line.handle_plugin_install")
+    def test_plugin_install_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", [
+            "llamaindex-cli", "plugin", "install",
+            "superpowers@superpowers-marketplace",
+            "-d", "./my_plugins",
+        ]):
+            main()
+
+        mock_handler.assert_called_once()
+        call_kwargs = mock_handler.call_args
+        # The handler is called via lambda that passes vars(args)
+        # so check the actual arguments
+        args = call_kwargs[1] if call_kwargs[1] else call_kwargs[0][0]
+        if isinstance(args, dict):
+            assert args["plugin_identifier"] == "superpowers@superpowers-marketplace"
+            assert args["download_dir"] == "./my_plugins"
+
+    @mock.patch("llama_index.cli.command_line.handle_plugin_list")
+    def test_plugin_list_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", ["llamaindex-cli", "plugin", "list"]):
+            main()
+
+        mock_handler.assert_called_once()
+
+    @mock.patch("llama_index.cli.command_line.handle_marketplace_add")
+    def test_plugin_marketplace_add_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", [
+            "llamaindex-cli", "plugin", "marketplace", "add",
+            "obra/superpowers-marketplace",
+            "--name", "superpowers",
+            "--branch", "dev",
+            "--description", "Test marketplace",
+        ]):
+            main()
+
+        mock_handler.assert_called_once()
+
+    @mock.patch("llama_index.cli.command_line.handle_marketplace_list")
+    def test_plugin_marketplace_list_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", [
+            "llamaindex-cli", "plugin", "marketplace", "list",
+        ]):
+            main()
+
+        mock_handler.assert_called_once()
+
+    @mock.patch("llama_index.cli.command_line.handle_marketplace_remove")
+    def test_plugin_marketplace_remove_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", [
+            "llamaindex-cli", "plugin", "marketplace", "remove", "old-mp",
+        ]):
+            main()
+
+        mock_handler.assert_called_once()
+
+    @mock.patch("llama_index.cli.command_line.handle_marketplace_add")
+    def test_legacy_marketplace_add_parsed(self, mock_handler):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", [
+            "llamaindex-cli", "marketplace", "add",
+            "org/repo", "--name", "my-mp",
+        ]):
+            main()
+
+        mock_handler.assert_called_once()
+
+    def test_plugin_install_missing_identifier_exits(self):
+        from llama_index.cli.command_line import main
+
+        with mock.patch("sys.argv", ["llamaindex-cli", "plugin", "install"]):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            assert exc_info.value.code == 2
