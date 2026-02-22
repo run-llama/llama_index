@@ -479,11 +479,18 @@ class BaseNode(BaseComponent):
 
     def __setattr__(self, name: str, value: Any) -> None:
         super().__setattr__(name, value)
-        if name == "embedding" and value is not None:
+        if name == "embedding":
             key = self.__dict__.get("default_embedding_key", "default")
             embeddings = self.__dict__.get("embeddings")
             if isinstance(embeddings, dict):
-                embeddings[key] = value
+                if value is not None:
+                    embeddings[key] = value
+                elif key in embeddings and isinstance(embeddings[key], list):
+                    # If setting embedding to None, clear the default embedding
+                    # from the dict ONLY if it was a list (dense).
+                    # If it's a dict (sparse), we preserve it since node.embedding
+                    # is expected to be None in that case anyway.
+                    del embeddings[key]
 
     def _get_default_embedding(self) -> Any:
         if self.embedding is not None:
@@ -506,8 +513,13 @@ class BaseNode(BaseComponent):
     def set_embedding(self, key: str, value: Any) -> None:
         """Set a named embedding. If key is default_embedding_key and value is a list, also sets the embedding field."""
         self.embeddings[key] = value
-        if key == self.default_embedding_key and isinstance(value, list):
-            self.embedding = value
+        if key == self.default_embedding_key:
+            if isinstance(value, list):
+                self.embedding = value
+            else:
+                # If we are setting the default embedding to something that isn't a list (e.g. sparse dict),
+                # we must clear the legacy embedding field so that _get_default_embedding uses the new value from embeddings dict.
+                self.embedding = None
 
     def set_embeddings(
         self, mapping: Optional[Dict[str, Any]] = None, **kwargs: Any
