@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-observability-otel"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index observability integration with OpenTelemetry"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"

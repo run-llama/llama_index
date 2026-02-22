@@ -3,6 +3,7 @@
 import logging
 import re
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.core.utils import globals_helper, truncate_text
@@ -96,6 +97,24 @@ def default_format_node_batch_fn(
             f"{summary_nodes[idx].get_content(metadata_mode=MetadataMode.LLM)}"
         )
     return "\n\n".join(fmt_node_txts)
+
+
+def default_format_node_batch_for_chat_fn(
+    summary_nodes: list[BaseNode],
+) -> list[ChatMessage]:
+    """
+    Default format node batch function.
+
+    Assign each summary node a number, and format the batch of nodes.
+
+    """
+    content_messages = []
+    for node in summary_nodes:
+        content_messages.append(
+            ChatMessage(blocks=node.get_content_blocks(metadata_mode=MetadataMode.LLM))
+        )
+
+    return content_messages
 
 
 def default_parse_choice_select_answer_fn(
