@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Generator, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -9,6 +10,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -161,16 +163,18 @@ class LangChainLLM(LLM):
 
             response_gen = handler.get_response_gen()
 
-            def gen() -> Generator[ChatResponse, None, None]:
+            def gen_cb() -> Generator[ChatResponse, None, None]:
                 text = ""
                 for delta in response_gen:
                     text += delta
                     yield ChatResponse(
-                        message=ChatMessage(text=text),
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=text
+                        ),
                         delta=delta,
                     )
 
-            return gen()
+            return gen_cb()
 
     @llm_completion_callback()
     def stream_complete(
@@ -179,6 +183,24 @@ class LangChainLLM(LLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
+        # Prefer native .stream() method available on modern LangChain models
+        if hasattr(self._llm, "stream"):
+
+            def gen() -> Generator[CompletionResponse, None, None]:
+                text = ""
+                for chunk in self._llm.stream(prompt, **kwargs):
+                    if isinstance(chunk, AIMessage):
+                        delta = chunk.content or ""
+                    elif hasattr(chunk, "content"):
+                        delta = chunk.content or ""
+                    else:
+                        delta = str(chunk)
+                    text += delta
+                    yield CompletionResponse(delta=delta, text=text)
+
+            return gen()
+
+        # Fallback to callback-based streaming for older LangChain models
         from llama_index.core.langchain_helpers.streaming import (
             StreamingGeneratorCallbackHandler,
         )
@@ -198,48 +220,116 @@ class LangChainLLM(LLM):
 
         response_gen = handler.get_response_gen()
 
-        def gen() -> Generator[CompletionResponse, None, None]:
+        def gen_fallback() -> Generator[CompletionResponse, None, None]:
             text = ""
             for delta in response_gen:
                 text += delta
                 yield CompletionResponse(delta=delta, text=text)
 
-        return gen()
+        return gen_fallback()
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        # TODO: Implement async chat
-        return self.chat(messages, **kwargs)
+        # Use LangChain's native ainvoke if available
+        if hasattr(self._llm, "ainvoke") and self.metadata.is_chat_model:
+            from llama_index.llms.langchain.utils import (
+                from_lc_messages,
+                to_lc_messages,
+            )
+
+            lc_messages = to_lc_messages(messages)
+            lc_message = await self._llm.ainvoke(input=lc_messages, **kwargs)
+            message = from_lc_messages([lc_message])[0]
+            return ChatResponse(message=message)
+
+        # Fall back to sync via thread pool
+        return await asyncio.to_thread(self.chat, messages, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        # TODO: Implement async complete
-        return self.complete(prompt, formatted=formatted, **kwargs)
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        # Use LangChain's native ainvoke if available
+        if hasattr(self._llm, "ainvoke"):
+            output_str = await self._llm.ainvoke(prompt, **kwargs)
+            if isinstance(output_str, AIMessage):
+                output_str = output_str.content
+            return CompletionResponse(text=output_str)
+
+        # Fall back to sync via thread pool
+        return await asyncio.to_thread(self.complete, prompt, formatted=True, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # TODO: Implement async stream_chat
+        # Use LangChain's native astream if available
+        if hasattr(self._llm, "astream") and self.metadata.is_chat_model:
 
-        async def gen() -> ChatResponseAsyncGen:
-            for message in self.stream_chat(messages, **kwargs):
+            async def gen_async() -> ChatResponseAsyncGen:
+                from llama_index.llms.langchain.utils import (
+                    from_lc_messages,
+                    to_lc_messages,
+                )
+
+                lc_messages = to_lc_messages(messages)
+                response_str = ""
+                async for chunk in self._llm.astream(lc_messages, **kwargs):
+                    message = from_lc_messages([chunk])[0]
+                    delta = message.content or ""
+                    response_str += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=message.role, content=response_str
+                        ),
+                        delta=delta,
+                    )
+
+            return gen_async()
+
+        # Fall back to sync stream in thread
+        async def gen_sync() -> ChatResponseAsyncGen:
+            for message in await asyncio.to_thread(
+                self.stream_chat, messages, **kwargs
+            ):
                 yield message
 
-        return gen()
+        return gen_sync()
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        # TODO: Implement async stream_complete
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
 
-        async def gen() -> CompletionResponseAsyncGen:
-            for response in self.stream_complete(prompt, formatted=formatted, **kwargs):
+        # Use LangChain's native astream if available
+        if hasattr(self._llm, "astream"):
+
+            async def gen_async() -> CompletionResponseAsyncGen:
+                text = ""
+                async for chunk in self._llm.astream(prompt, **kwargs):
+                    if isinstance(chunk, AIMessage):
+                        delta = chunk.content or ""
+                    elif hasattr(chunk, "content"):
+                        delta = chunk.content or ""
+                    else:
+                        delta = str(chunk)
+                    text += delta
+                    yield CompletionResponse(delta=delta, text=text)
+
+            return gen_async()
+
+        # Fall back to sync stream in thread
+        async def gen_sync() -> CompletionResponseAsyncGen:
+            for response in await asyncio.to_thread(
+                self.stream_complete, prompt, formatted=True, **kwargs
+            ):
                 yield response
 
-        return gen()
+        return gen_sync()
