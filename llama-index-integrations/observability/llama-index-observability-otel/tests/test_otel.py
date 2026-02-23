@@ -5,7 +5,7 @@ from llama_index.observability.otel.base import (
     Resource,
 )
 from llama_index.observability.otel.utils import flatten_dict
-from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 
 
 def test_initialization() -> None:
@@ -13,6 +13,7 @@ def test_initialization() -> None:
     assert instrumentor.service_name_or_resource == Resource(
         attributes={SERVICE_NAME: "llamaindex.opentelemetry"}
     )
+    assert instrumentor.tracer_provider is None
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "batch"
     assert instrumentor._tracer is None
@@ -25,6 +26,7 @@ def test_diff_initialization() -> None:
         span_processor="simple",
         debug=True,
     )
+    assert instrumentor.tracer_provider is None
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "simple"
@@ -42,6 +44,7 @@ def test_initialize_with_extra_span_processors() -> None:
         debug=True,
         extra_span_processors=[CustomSpanProcessor()],
     )
+    assert instrumentor.tracer_provider is None
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "simple"
@@ -52,6 +55,21 @@ def test_initialize_with_extra_span_processors() -> None:
     )
     assert instrumentor._tracer is None
     assert instrumentor.debug
+
+
+def test_init_with_custom_tracer_provider() -> None:
+    tracer_provider = TracerProvider(
+        resource=Resource(attributes={}, schema_url="test.schema.url")
+    )
+    instrumentor = LlamaIndexOpenTelemetry(
+        service_name_or_resource="this.is.a.test",
+        span_processor="simple",
+        debug=True,
+        tracer_provider=tracer_provider,
+    )
+    assert instrumentor.tracer_provider is not None
+    assert instrumentor.tracer_provider.resource is not None
+    assert instrumentor.tracer_provider.resource.schema_url == "test.schema.url"
 
 
 def test_flatten_dict() -> None:

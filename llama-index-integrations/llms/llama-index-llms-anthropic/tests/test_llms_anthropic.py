@@ -23,13 +23,37 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
-from llama_index.llms.anthropic.base import AnthropicChatResponse
+from llama_index.llms.anthropic.base import AnthropicChatResponse, _get_default_headers
 from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
 
 
 def test_text_inference_embedding_class():
     names_of_base_classes = [b.__name__ for b in Anthropic.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
+
+
+def test_get_default_headers_returns_user_agent():
+    """Test that _get_default_headers returns a User-Agent header."""
+    headers = _get_default_headers()
+    assert isinstance(headers, dict)
+    assert "User-Agent" in headers
+    assert headers["User-Agent"].startswith("llama-index/")
+
+
+def test_get_default_headers_merges_user_headers():
+    """Test that user-provided headers are merged and take precedence."""
+    user_headers = {"X-Custom": "value", "User-Agent": "my-app/1.0"}
+    headers = _get_default_headers(user_headers)
+    assert headers["X-Custom"] == "value"
+    assert headers["User-Agent"] == "my-app/1.0"
+
+
+def test_get_default_headers_preserves_default_when_no_conflict():
+    """Test that default User-Agent is preserved when user headers don't override it."""
+    user_headers = {"X-Custom": "value"}
+    headers = _get_default_headers(user_headers)
+    assert headers["X-Custom"] == "value"
+    assert headers["User-Agent"].startswith("llama-index/")
 
 
 @pytest.mark.skipif(

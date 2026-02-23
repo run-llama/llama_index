@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-weaviate"
-version = "1.4.1"
+version = "1.5.0"
 description = "llama-index vector_stores weaviate integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
