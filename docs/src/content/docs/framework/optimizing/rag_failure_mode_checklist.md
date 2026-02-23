@@ -234,14 +234,17 @@ The first nine sections focus on single-query behavior (retrieval, chunking, emb
 Use this to narrow down where the problem is:
 
 1. **Check retrieval first:** Print retrieved nodes and verify they contain the answer manually.
+
    - If **retrieved nodes are wrong** → Focus on items 1–5, 7–8 above.
    - If **retrieved nodes are correct** → Focus on items 6, 9 above.
 
 2. **Check a known-good query:** Try a query where you know exactly which document contains the answer.
+
    - If it **fails** → Likely an indexing or embedding issue (items 3–5, 10, 13).
    - If it **works** → The issue is query-specific (items 1, 7–8, 11).
 
 3. **Check token counts:** Log the total tokens sent to the LLM.
+
    - If **near the limit** → Context window overflow (item 6).
    - If **well within limits** → Synthesis or retrieval quality issue (items 1–5, 8–10, 12).
 
