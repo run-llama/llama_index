@@ -91,10 +91,10 @@ for r in resp:
     print(r.delta, end="")
 ```
 
-## Azure SDK Usage
+## Mistral Azure SDK Usage
 
-To use the Azure SDK implementation, pass the Azure endpoint and API key. When these
-are provided, the client automatically uses the Azure SDK instead of the public Mistral endpoint.
+To use the Mistral Azure SDK implementation, pass the Azure endpoint and API key. When these
+are provided, the client automatically uses the Mistral Azure SDK instead of the public Mistral endpoint.
 
 ```python
 from llama_index.llms.mistralai import MistralAI

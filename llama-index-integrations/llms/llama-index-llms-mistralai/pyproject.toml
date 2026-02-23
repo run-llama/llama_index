@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-mistralai"
-version = "0.10.0.post1"
+version = "0.10.0.post2"
 description = "llama-index llms mistral ai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
