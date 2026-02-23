@@ -8,8 +8,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.bridge.pydantic import BaseModel
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union, Any, Dict
 from llama_index.core.tools.types import BaseTool
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools import ToolOutput
@@ -68,6 +67,9 @@ def _get_mock_album_response(
 
 
 class MockLLM(MagicMock):
+    last_predict_kwargs: Optional[Dict[str, Any]] = None
+    last_apredict_kwargs: Optional[Dict[str, Any]] = None
+
     def predict_and_call(
         self,
         tools: List["BaseTool"],
@@ -78,6 +80,7 @@ class MockLLM(MagicMock):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
+        self.last_predict_kwargs = kwargs
         return _get_mock_album_response(
             allow_parallel_tool_calls=allow_parallel_tool_calls
         )
@@ -92,6 +95,7 @@ class MockLLM(MagicMock):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
+        self.last_apredict_kwargs = kwargs
         return _get_mock_album_response(
             allow_parallel_tool_calls=allow_parallel_tool_calls
         )
@@ -154,3 +158,32 @@ async def test_async_function_program() -> None:
     assert obj_output.artist == "world"
     assert obj_output.songs[0].title == "song1"
     assert obj_output.songs[1].title == "song2"
+
+
+def test_function_program_forwards_tool_choice() -> None:
+    """Test Function program passes tool_choice into predict_and_call."""
+    llm = MockLLM()
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=llm,
+        tool_choice={"type": "any"},
+    )
+    llm_program(topic="songs")
+    assert llm.last_predict_kwargs is not None
+    assert llm.last_predict_kwargs["tool_choice"] == {"type": "any"}
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_forwards_tool_choice() -> None:
+    """Test async Function program passes tool_choice into apredict_and_call."""
+    llm = MockLLM()
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=llm,
+        tool_choice={"type": "any"},
+    )
+    await llm_program.acall(topic="songs")
+    assert llm.last_apredict_kwargs is not None
+    assert llm.last_apredict_kwargs["tool_choice"] == {"type": "any"}
