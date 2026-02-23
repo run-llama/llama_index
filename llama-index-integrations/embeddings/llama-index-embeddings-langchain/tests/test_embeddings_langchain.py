@@ -25,6 +25,7 @@ for _key in list(sys.modules):
 
 # --- langchain_core stubs ---
 _langchain_core = ModuleType("langchain_core")
+_langchain_core.__path__ = []  # Mark as package
 _langchain_core_messages = ModuleType("langchain_core.messages")
 
 
@@ -74,9 +75,12 @@ sys.modules["langchain_core.messages"] = _langchain_core_messages
 
 # --- langchain stubs ---
 _langchain = ModuleType("langchain")
+_langchain.__path__ = []  # Mark as package
 _langchain_base_language = ModuleType("langchain.base_language")
 _langchain_schema = ModuleType("langchain.schema")
+_langchain_schema.__path__ = []  # Mark as package (has sub-modules)
 _langchain_chat_models = ModuleType("langchain.chat_models")
+_langchain_chat_models.__path__ = []  # Mark as package
 _langchain_chat_models_base = ModuleType("langchain.chat_models.base")
 
 
@@ -95,6 +99,10 @@ _langchain_schema.HumanMessage = _HumanMessage
 _langchain_schema.SystemMessage = _SystemMessage
 _langchain_schema.FunctionMessage = _FunctionMessage
 _langchain_schema.ChatMessage = _ChatMessage
+_langchain_schema.BaseMemory = type("BaseMemory", (), {})
+_langchain_schema.BaseOutputParser = type("BaseOutputParser", (), {})
+_langchain_schema.ChatGeneration = type("ChatGeneration", (), {})
+_langchain_schema.LLMResult = type("LLMResult", (), {})
 _langchain_chat_models_base.BaseChatModel = _BaseChatModel
 
 sys.modules["langchain"] = _langchain
@@ -105,6 +113,7 @@ sys.modules["langchain.chat_models.base"] = _langchain_chat_models_base
 
 # --- langchain_community stubs ---
 _langchain_community = ModuleType("langchain_community")
+_langchain_community.__path__ = []  # Mark as package
 _langchain_community_chat_models = ModuleType("langchain_community.chat_models")
 _langchain_community_llms = ModuleType("langchain_community.llms")
 _langchain_community_embeddings = ModuleType("langchain_community.embeddings")
@@ -193,6 +202,7 @@ for _mod_path in [
     "langchain.tools",
 ]:
     mod = ModuleType(_mod_path)
+    mod.__path__ = []  # Mark all as packages in case they have sub-modules
     mod.__dict__.setdefault("BaseCallbackHandler", type("BaseCallbackHandler", (), {}))
     mod.__dict__.setdefault("BaseCallbackManager", type("BaseCallbackManager", (), {}))
     mod.__dict__.setdefault("LLMResult", type("LLMResult", (), {}))
