@@ -94,7 +94,7 @@ for r in resp:
 ## Azure SDK Usage
 
 To use the Azure SDK implementation, pass the Azure endpoint and API key. When these
-are provided, the client uses the Azure SDK instead of the public Mistral endpoint.
+are provided, the client automatically uses the Azure SDK instead of the public Mistral endpoint.
 
 ```python
 from llama_index.llms.mistralai import MistralAI
