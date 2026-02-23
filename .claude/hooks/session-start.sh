@@ -6,6 +6,9 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+# Enable async mode so the session starts immediately while deps install
+echo '{"async": true, "asyncTimeout": 300000}'
+
 XORTRON_PKG_DIR="${CLAUDE_PROJECT_DIR}/llama-index-integrations/llms/llama-index-llms-xortron"
 
 # Install the Xortron package in editable mode with runtime deps
