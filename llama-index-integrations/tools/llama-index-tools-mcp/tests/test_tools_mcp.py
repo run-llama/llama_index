@@ -134,6 +134,58 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
     assert set(json_schema["required"]) == {"name", "method", "lst"}
 
 
+def test_union_of_literal_types_resolution(client: BasicMCPClient):
+    """Test that union of Literal types (enum in anyOf) are resolved correctly.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/20109
+    When Literal types appear inside a union (anyOf in JSON Schema),
+    _resolve_union_option should handle the enum case just like
+    _resolve_field_type already does.
+    """
+    from typing import get_args, Literal
+
+    tool_spec = McpToolSpec(client)
+
+    # Test 1: _resolve_union_option handles a single enum option
+    option_with_enum = {"enum": ["red", "green", "blue"]}
+    resolved = tool_spec._resolve_union_option(option_with_enum, {})
+    assert resolved == Literal["red", "green", "blue"]
+
+    # Test 2: _resolve_union_type handles anyOf with multiple enum options
+    union_schema = {
+        "anyOf": [
+            {"enum": ["red", "green", "blue"]},
+            {"enum": ["cyan", "magenta", "yellow"]},
+        ]
+    }
+    resolved_union = tool_spec._resolve_union_type(union_schema, {})
+    union_args = get_args(resolved_union)
+    assert len(union_args) == 2
+
+    # Test 3: Mixed union with enum and null (Optional[Literal[...]])
+    optional_enum_schema = {
+        "anyOf": [
+            {"enum": ["a", "b", "c"]},
+            {"type": "null"},
+        ]
+    }
+    resolved_optional = tool_spec._resolve_union_type(optional_enum_schema, {})
+    optional_args = get_args(resolved_optional)
+    assert len(optional_args) == 2
+    assert type(None) in optional_args
+
+    # Test 4: _resolve_field_type delegates anyOf with enums correctly
+    field_schema_with_anyof_enums = {
+        "anyOf": [
+            {"enum": ["x", "y"]},
+            {"enum": ["z"]},
+        ]
+    }
+    resolved_field = tool_spec._resolve_field_type(field_schema_with_anyof_enums, {})
+    field_args = get_args(resolved_field)
+    assert len(field_args) == 2
+
+
 def test_additional_properties_false_parsing(client: BasicMCPClient):
     """Test that schemas with additionalProperties: false are parsed correctly."""
     from typing import Dict, Any
