@@ -76,13 +76,13 @@ class CohereRerank(BaseNodePostprocessor):
                 "specify via COHERE_API_KEY environment variable "
             )
         try:
-            from cohere import Client
+            from cohere import ClientV2
         except ImportError:
             raise ImportError(
                 "Cannot import cohere package, please `pip install cohere`."
             )
 
-        self._client = Client(api_key=api_key, base_url=base_url)
+        self._client = ClientV2(api_key=api_key, base_url=base_url)
 
     @classmethod
     def class_name(cls) -> str:
