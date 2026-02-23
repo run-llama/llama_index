@@ -116,6 +116,12 @@ class SchemaLLMPathExtractor(TransformComponent):
             The maximum number of triplets to extract per chunk. Defaults to 10.
         num_workers (int, optional):
             The number of workers to use. Defaults to 4.
+        allow_additional_properties (bool, optional):
+            Whether to allow ``additionalProperties: true`` in auto-generated
+            JSON schemas for entity/relation models with Dict properties.
+            Set to ``False`` when using LLM providers that require strict
+            schemas (e.g. OpenAI structured outputs, Google Gemini).
+            Defaults to True (preserving existing behavior).
 
     """
 
@@ -144,6 +150,7 @@ class SchemaLLMPathExtractor(TransformComponent):
         kg_validation_schema: Optional[Union[Dict[str, str], List[Triple]]] = None,
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
+        allow_additional_properties: bool = True,
     ) -> None:
         """Init params."""
         if isinstance(extract_prompt, str):
@@ -159,7 +166,12 @@ class SchemaLLMPathExtractor(TransformComponent):
                 ]
             else:
                 entity_props = possible_entity_props  # type: ignore
-            entity_cls = get_entity_class(possible_entities, entity_props, strict)
+            entity_cls = get_entity_class(
+                possible_entities,
+                entity_props,
+                strict,
+                clean_additional_properties=not allow_additional_properties,
+            )
 
             possible_relations = possible_relations or DEFAULT_RELATIONS  # type: ignore
             if possible_relation_props and isinstance(
@@ -172,7 +184,10 @@ class SchemaLLMPathExtractor(TransformComponent):
             else:
                 relation_props = possible_relation_props  # type: ignore
             relation_cls = get_relation_class(
-                possible_relations, relation_props, strict
+                possible_relations,
+                relation_props,
+                strict,
+                clean_additional_properties=not allow_additional_properties,
             )
 
             triplet_cls = create_model(

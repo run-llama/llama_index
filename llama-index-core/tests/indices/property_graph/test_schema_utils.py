@@ -2,7 +2,8 @@
 Tests for property graph schema utility functions.
 
 Validates that auto-generated Entity/Relation Pydantic models produce
-JSON schemas compatible with OpenAI structured outputs and Google Gemini.
+JSON schemas compatible with OpenAI structured outputs and Google Gemini
+when ``clean_additional_properties=True`` is passed.
 """
 
 import json
@@ -76,22 +77,37 @@ def test_entity_class_without_props_has_no_additional_properties_true():
     assert not _schema_contains(schema, "additionalProperties", True)
 
 
-# -- get_entity_class (with props → fix applied) --------------------------
+# -- get_entity_class (default: additionalProperties preserved) ------------
 
 
-def test_entity_class_with_props_has_no_additional_properties_true():
+def test_entity_class_with_props_default_preserves_additional_properties():
+    """By default, additionalProperties: true is left as-is."""
     entities = Literal["PERSON", "LOCATION"]
     cls = get_entity_class(entities, ["age", "occupation"], strict=True)
     schema = cls.model_json_schema()
-    # The fix should have cleaned additionalProperties: true → false
+    assert _schema_contains(schema, "additionalProperties", True), (
+        f"Expected additionalProperties: true in default mode:\n"
+        f"{json.dumps(schema, indent=2)}"
+    )
+
+
+# -- get_entity_class (opt-in: fix applied) --------------------------------
+
+
+def test_entity_class_with_props_clean_removes_additional_properties():
+    entities = Literal["PERSON", "LOCATION"]
+    cls = get_entity_class(
+        entities, ["age", "occupation"], strict=True, clean_additional_properties=True
+    )
+    schema = cls.model_json_schema()
     assert not _schema_contains(schema, "additionalProperties", True), (
         f"Schema still contains additionalProperties: true:\n"
         f"{json.dumps(schema, indent=2)}"
     )
 
 
-def test_entity_class_with_props_non_strict():
-    cls = get_entity_class(str, ["age"], strict=False)
+def test_entity_class_with_props_non_strict_clean():
+    cls = get_entity_class(str, ["age"], strict=False, clean_additional_properties=True)
     schema = cls.model_json_schema()
     assert not _schema_contains(schema, "additionalProperties", True)
 
@@ -106,12 +122,28 @@ def test_relation_class_without_props_has_no_additional_properties_true():
     assert not _schema_contains(schema, "additionalProperties", True)
 
 
-# -- get_relation_class (with props → fix applied) ------------------------
+# -- get_relation_class (default: additionalProperties preserved) ----------
 
 
-def test_relation_class_with_props_has_no_additional_properties_true():
+def test_relation_class_with_props_default_preserves_additional_properties():
+    """By default, additionalProperties: true is left as-is."""
     relations = Literal["USED_BY", "PART_OF"]
     cls = get_relation_class(relations, ["weight", "source"], strict=True)
+    schema = cls.model_json_schema()
+    assert _schema_contains(schema, "additionalProperties", True), (
+        f"Expected additionalProperties: true in default mode:\n"
+        f"{json.dumps(schema, indent=2)}"
+    )
+
+
+# -- get_relation_class (opt-in: fix applied) ------------------------------
+
+
+def test_relation_class_with_props_clean_removes_additional_properties():
+    relations = Literal["USED_BY", "PART_OF"]
+    cls = get_relation_class(
+        relations, ["weight", "source"], strict=True, clean_additional_properties=True
+    )
     schema = cls.model_json_schema()
     assert not _schema_contains(schema, "additionalProperties", True), (
         f"Schema still contains additionalProperties: true:\n"
@@ -119,8 +151,10 @@ def test_relation_class_with_props_has_no_additional_properties_true():
     )
 
 
-def test_relation_class_with_props_non_strict():
-    cls = get_relation_class(str, ["weight"], strict=False)
+def test_relation_class_with_props_non_strict_clean():
+    cls = get_relation_class(
+        str, ["weight"], strict=False, clean_additional_properties=True
+    )
     schema = cls.model_json_schema()
     assert not _schema_contains(schema, "additionalProperties", True)
 
@@ -130,7 +164,9 @@ def test_relation_class_with_props_non_strict():
 
 def test_entity_model_with_props_roundtrips():
     entities = Literal["PERSON", "LOCATION"]
-    cls = get_entity_class(entities, ["age", "occupation"], strict=True)
+    cls = get_entity_class(
+        entities, ["age", "occupation"], strict=True, clean_additional_properties=True
+    )
     instance = cls(type="PERSON", name="Alice", properties={"age": 30})
     assert instance.type == "PERSON"
     assert instance.name == "Alice"
@@ -139,7 +175,9 @@ def test_entity_model_with_props_roundtrips():
 
 def test_relation_model_with_props_roundtrips():
     relations = Literal["USED_BY", "PART_OF"]
-    cls = get_relation_class(relations, ["weight"], strict=True)
+    cls = get_relation_class(
+        relations, ["weight"], strict=True, clean_additional_properties=True
+    )
     instance = cls(type="USED_BY", properties={"weight": 0.9})
     assert instance.type == "USED_BY"
     assert instance.properties == {"weight": 0.9}

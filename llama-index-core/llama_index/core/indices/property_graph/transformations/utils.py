@@ -32,6 +32,7 @@ def get_entity_class(
     possible_entities: TypeAlias,
     possible_entity_props: Optional[List[str]],
     strict: bool,
+    clean_additional_properties: bool = False,
 ) -> Any:
     """Get entity class."""
     if not possible_entity_props:
@@ -50,11 +51,14 @@ def get_entity_class(
             name=(str, ...),
         )
     else:
+        config_kwargs = {}
+        if clean_additional_properties:
+            config_kwargs["__config__"] = ConfigDict(
+                json_schema_extra=_clean_additional_properties
+            )
         return create_model(
             "Entity",
-            __config__=ConfigDict(
-                json_schema_extra=_clean_additional_properties
-            ),
+            **config_kwargs,
             type=(
                 possible_entities if strict else str,
                 Field(
@@ -83,6 +87,7 @@ def get_relation_class(
     possible_relations: TypeAlias,
     possible_relation_props: Optional[List[str]],
     strict: bool,
+    clean_additional_properties: bool = False,
 ) -> Any:
     """Get relation class."""
     if not possible_relation_props:
@@ -100,11 +105,14 @@ def get_relation_class(
             ),
         )
     else:
+        config_kwargs = {}
+        if clean_additional_properties:
+            config_kwargs["__config__"] = ConfigDict(
+                json_schema_extra=_clean_additional_properties
+            )
         return create_model(
             "Relation",
-            __config__=ConfigDict(
-                json_schema_extra=_clean_additional_properties
-            ),
+            **config_kwargs,
             type=(
                 possible_relations if strict else str,
                 Field(
