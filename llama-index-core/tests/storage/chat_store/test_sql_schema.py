@@ -100,6 +100,86 @@ class TestSQLAlchemyChatStoreSchema:
         assert len(messages) == 1
         assert messages[0].content == "Hello!"
 
+    def test_is_sqlite_database_with_custom_engine(self):
+        """Test that _is_sqlite_database checks the engine URL when a custom engine is provided.
+
+        Regression test for https://github.com/run-llama/llama_index/issues/20746
+        When a custom async_engine is passed without an explicit async_database_uri,
+        the URI defaults to SQLite. _is_sqlite_database() should check the actual
+        engine URL instead of the default URI.
+        """
+        # Simulate a PostgreSQL engine passed without explicit URI
+        mock_pg_engine = MagicMock()
+        mock_pg_engine.url = "postgresql+asyncpg://user:pass@host/db"
+
+        store = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_engine=mock_pg_engine,
+            db_schema="test_schema",
+        )
+
+        # The default URI is SQLite, but the engine is PostgreSQL
+        assert store.async_database_uri.startswith("sqlite")
+        # _is_sqlite_database should check the engine, not the default URI
+        assert not store._is_sqlite_database()
+
+    def test_is_sqlite_database_with_sqlite_engine(self):
+        """Test that _is_sqlite_database returns True for an actual SQLite engine."""
+        mock_sqlite_engine = MagicMock()
+        mock_sqlite_engine.url = "sqlite+aiosqlite:///:memory:"
+
+        store = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_engine=mock_sqlite_engine,
+            db_schema="test_schema",
+        )
+
+        assert store._is_sqlite_database()
+
+    def test_is_sqlite_database_without_engine(self):
+        """Test that _is_sqlite_database falls back to URI when no engine is provided."""
+        store = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_database_uri="postgresql+asyncpg://user:pass@host/db",
+        )
+        assert not store._is_sqlite_database()
+
+        store_sqlite = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_database_uri="sqlite+aiosqlite:///:memory:",
+        )
+        assert store_sqlite._is_sqlite_database()
+
+    @pytest.mark.asyncio
+    async def test_custom_engine_with_schema_creates_schema(self):
+        """Test that db_schema is respected when a custom non-SQLite engine is provided.
+
+        Regression test for https://github.com/run-llama/llama_index/issues/20746
+        """
+        mock_pg_engine = MagicMock()
+        mock_pg_engine.url = "postgresql+asyncpg://user:pass@host/db"
+        mock_pg_engine.begin.return_value.__aenter__ = AsyncMock()
+        mock_pg_engine.begin.return_value.__aexit__ = AsyncMock()
+
+        mock_conn = MagicMock()
+        mock_conn.execute = AsyncMock()
+        mock_conn.run_sync = AsyncMock()
+        mock_pg_engine.begin.return_value.__aenter__.return_value = mock_conn
+
+        store = SQLAlchemyChatStore(
+            table_name="test_messages",
+            async_engine=mock_pg_engine,
+            db_schema="my_schema",
+        )
+
+        await store._setup_tables(mock_pg_engine)
+
+        # Verify schema creation SQL was called
+        mock_conn.execute.assert_called()
+        call_args = mock_conn.execute.call_args_list[0][0][0]
+        assert 'CREATE SCHEMA IF NOT EXISTS "my_schema"' in str(call_args)
+        assert store._metadata.schema == "my_schema"
+
     @pytest.mark.asyncio
     async def test_basic_operations_with_schema(self):
         """Test that basic operations work with schema."""
