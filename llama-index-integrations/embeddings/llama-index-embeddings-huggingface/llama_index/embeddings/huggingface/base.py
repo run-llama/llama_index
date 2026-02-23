@@ -115,6 +115,15 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     show_progress_bar: bool = Field(
         description="Whether to show a progress bar.", default=False
     )
+    retry_max_attempts: int = Field(
+        default=3, description="Maximum retry attempts for embedding generation.", ge=1
+    )
+    retry_min_wait: int = Field(
+        default=4, description="Minimum wait time (seconds) between retries.", ge=1
+    )
+    retry_max_wait: int = Field(
+        default=10, description="Maximum wait time (seconds) between retries.", ge=1
+    )
     _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
     _parallel_process: bool = PrivateAttr()
@@ -194,56 +203,48 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        reraise=True,
-    )
     def _embed_with_retry(
         self,
         inputs: List[Union[str, BytesIO]],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """
-        Generates embeddings with retry mechanism.
+        """Generates embeddings with configurable retry mechanism."""
+        from tenacity import retry, stop_after_attempt, wait_exponential
 
-        Args:
-            inputs: List of texts or images to embed
-            prompt_name: Optional prompt type
+        @retry(
+            stop=stop_after_attempt(self.retry_max_attempts),
+            wait=wait_exponential(multiplier=1, min=self.retry_min_wait, max=self.retry_max_wait),
+            reraise=True,
+        )
+        def _do_embed():
+            try:
+                if self._parallel_process:
+                    pool = self._model.start_multi_process_pool(
+                        target_devices=self._target_devices
+                    )
+                    emb = self._model.encode_multi_process(
+                        inputs,
+                        pool=pool,
+                        batch_size=self.embed_batch_size,
+                        prompt_name=prompt_name,
+                        normalize_embeddings=self.normalize,
+                        show_progress_bar=self.show_progress_bar,
+                    )
+                    self._model.stop_multi_process_pool(pool=pool)
+                else:
+                    emb = self._model.encode(
+                        inputs,
+                        batch_size=self.embed_batch_size,
+                        prompt_name=prompt_name,
+                        normalize_embeddings=self.normalize,
+                        show_progress_bar=self.show_progress_bar,
+                    )
+                return emb.tolist()
+            except Exception as e:
+                logger.warning(f"Embedding attempt failed: {e!s}")
+                raise
 
-        Returns:
-            List of embedding vectors
-
-        Raises:
-            Exception: If embedding fails after retries
-
-        """
-        try:
-            if self._parallel_process:
-                pool = self._model.start_multi_process_pool(
-                    target_devices=self._target_devices
-                )
-                emb = self._model.encode_multi_process(
-                    inputs,
-                    pool=pool,
-                    batch_size=self.embed_batch_size,
-                    prompt_name=prompt_name,
-                    normalize_embeddings=self.normalize,
-                    show_progress_bar=self.show_progress_bar,
-                )
-                self._model.stop_multi_process_pool(pool=pool)
-            else:
-                emb = self._model.encode(
-                    inputs,
-                    batch_size=self.embed_batch_size,
-                    prompt_name=prompt_name,
-                    normalize_embeddings=self.normalize,
-                    show_progress_bar=self.show_progress_bar,
-                )
-            return emb.tolist()
-        except Exception as e:
-            logger.warning(f"Embedding attempt failed: {e!s}")
-            raise
+        return _do_embed()
 
     def _embed(
         self,
