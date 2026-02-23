@@ -87,3 +87,11 @@ class LangchainEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         return self._langchain_embedding.embed_documents(texts)
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get text embeddings asynchronously."""
+        try:
+            return await self._langchain_embedding.aembed_documents(texts)
+        except NotImplementedError:
+            self._async_not_implemented_warn_once()
+            return self._get_text_embeddings(texts)
