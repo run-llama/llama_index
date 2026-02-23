@@ -7,4 +7,3 @@ def test_chunker_init_docstring_is_present_in_help():
 
     assert "initialize with a chonkie chunker instance" in rendered
     assert "create a new model by parsing and validating" not in rendered
-    
