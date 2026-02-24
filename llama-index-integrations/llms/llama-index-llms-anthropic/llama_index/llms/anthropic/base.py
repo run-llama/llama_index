@@ -1,6 +1,7 @@
 import json
 import logging
 import llama_index.core.instrumentation as instrument
+from importlib.metadata import version as get_version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -86,6 +87,24 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
+
+
+def _get_default_headers(
+    user_headers: Optional[Dict[str, str]] = None,
+) -> Dict[str, str]:
+    """Merge default User-Agent header with user-provided headers."""
+    try:
+        package_version = get_version("llama-index-core")
+    except Exception:
+        package_version = "unknown"
+
+    default_headers = {"User-Agent": f"llama-index/{package_version}"}
+
+    if user_headers:
+        # Merge headers, with user-provided headers taking precedence
+        return {**default_headers, **user_headers}
+
+    return default_headers
 
 
 class AnthropicTokenizer:
@@ -248,13 +267,16 @@ class Anthropic(FunctionCallingLLM):
             mcp_servers=mcp_servers,
         )
 
+        # Merge default User-Agent header with user-provided headers
+        merged_headers = _get_default_headers(default_headers)
+
         if region and project_id and not aws_region:
             self._client = anthropic.AnthropicVertex(
                 region=region,
                 project_id=project_id,
                 timeout=timeout,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
             )
 
             self._aclient = anthropic.AsyncAnthropicVertex(
@@ -262,7 +284,7 @@ class Anthropic(FunctionCallingLLM):
                 project_id=project_id,
                 timeout=timeout,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
             )
         elif aws_region:
             self._client = anthropic.AnthropicBedrock(
@@ -270,7 +292,7 @@ class Anthropic(FunctionCallingLLM):
                 aws_access_key=aws_access_key_id,
                 aws_secret_key=aws_secret_access_key,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
                 timeout=timeout,
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
@@ -278,7 +300,7 @@ class Anthropic(FunctionCallingLLM):
                 aws_access_key=aws_access_key_id,
                 aws_secret_key=aws_secret_access_key,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
                 timeout=timeout,
             )
         else:
@@ -287,14 +309,14 @@ class Anthropic(FunctionCallingLLM):
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
             )
             self._aclient = anthropic.AsyncAnthropic(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=max_retries,
-                default_headers=default_headers,
+                default_headers=merged_headers,
             )
 
     @classmethod
