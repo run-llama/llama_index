@@ -32,7 +32,6 @@ def test_initialization() -> None:
     assert instrumentor.span_processor == "batch"
     assert instrumentor._tracer is None
     assert not instrumentor.debug
-    assert not instrumentor.inherit_current_context
 
 
 def test_diff_initialization() -> None:
@@ -40,7 +39,6 @@ def test_diff_initialization() -> None:
         service_name_or_resource="this.is.a.test",
         span_processor="simple",
         debug=True,
-        inherit_current_context=True,
     )
     assert instrumentor.tracer_provider is None
     assert instrumentor.service_name_or_resource == "this.is.a.test"
@@ -48,7 +46,6 @@ def test_diff_initialization() -> None:
     assert instrumentor.span_processor == "simple"
     assert instrumentor._tracer is None
     assert instrumentor.debug
-    assert instrumentor.inherit_current_context
 
 
 def test_initialize_with_extra_span_processors() -> None:
@@ -169,10 +166,7 @@ def test_content_inheritance() -> None:
     span_handler = OTelCompatibleSpanHandler(
         tracer=MockTracer(),
         debug=False,
-        inherit_current_context=True,
     )
-
-    assert span_handler.inherit_current_context
 
     context.attach(context.Context({"hello": "world"}))
 
@@ -199,17 +193,15 @@ def test_content_inheritance() -> None:
     assert span.dict_context.get("arg2") == 1
 
 
-def test_default_context_behavior() -> None:
+def test_context_inheritance_empty_context() -> None:
     span_handler = OTelCompatibleSpanHandler(
         tracer=MockTracer(),
         debug=False,
     )
 
-    assert not span_handler.inherit_current_context  # does not inherit context
+    context.attach(context.Context())  # attach empty context
 
-    context.attach(context.Context({"hello": "world"}))
-
-    assert context.get_current().get("hello") == "world"
+    assert len(list(context.get_current().keys())) == 0
 
     def instrumented_fn(arg1: str, arg2: int) -> str:
         return arg1 + str(arg2)

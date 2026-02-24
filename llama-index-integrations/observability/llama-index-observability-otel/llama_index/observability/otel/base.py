@@ -51,10 +51,6 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     all_spans: Dict[str, Union[trace.Span, _Span]] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
-    inherit_current_context: bool = Field(
-        default=False,
-        description="Inherit the context from the current observability setup instead of creating a new one.",
-    )
     debug: bool = Field(
         default=False,
         description="Debug the start and end of span and the recording of events",
@@ -64,7 +60,6 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         self,
         tracer: trace.Tracer,
         debug: bool = False,
-        inherit_current_context: bool = False,
         open_spans: Optional[Dict[str, SimpleSpan]] = None,
         completed_spans: Optional[List[SimpleSpan]] = None,
         dropped_spans: Optional[List[SimpleSpan]] = None,
@@ -79,7 +74,6 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         self._tracer = tracer
         self._events_by_span = {}
         self.debug = debug
-        self.inherit_current_context = inherit_current_context
 
     @classmethod
     def class_name(cls) -> str:  # type: ignore
@@ -101,11 +95,8 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if parent_span_id is not None:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
         else:
-            if self.inherit_current_context:
-                ctx = context.get_current()
-                ctx.update(bound_args.arguments)
-            else:
-                ctx = context.Context(bound_args.arguments)
+            ctx = context.get_current()
+            ctx.update(bound_args.arguments)
         otel_span = self._tracer.start_span(name=id_, context=ctx)
         self.all_spans.update({id_: otel_span})
         if self.debug:
@@ -251,10 +242,6 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
         description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name.",
     )
-    inherit_current_context: bool = Field(
-        default=False,
-        description="Inherit the context from the current observability setup instead of creating a new one.",
-    )
     debug: bool = Field(
         default=False,
         description="Debug the start and end of span and the recording of events",
@@ -297,7 +284,6 @@ class LlamaIndexOpenTelemetry(BaseModel):
         span_handler = OTelCompatibleSpanHandler(
             tracer=self._tracer,
             debug=self.debug,
-            inherit_current_context=self.inherit_current_context,
         )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(
