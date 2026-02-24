@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Site // Whisper Node</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* 🌌 Shimmer Configuration A: The Void - CSS Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --void-bg: #0a0a0f;
+      --void-card: #111118;
+      --void-border: #1e1e2e;
+      --primary: #00ff9d;
+      --primary-dim: #00ff9d33;
+      --primary-glow: #00ff9d66;
+      --text: #e0e0e0;
+      --text-dim: #888899;
+      --destructive: #ff4444;
+      --radius: 12px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--void-bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* 🌊 Ambient Background */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-dim) 0%, transparent 70%);
+      filter: blur(80px);
+      opacity: 0.3;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .ambient-orb:first-child {
+      top: -200px;
+      left: -200px;
+      animation-delay: 0s;
+    }
+
+    .ambient-orb:last-child {
+      bottom: -200px;
+      right: -200px;
+      animation-delay: -4s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-30px) scale(1.1); }
+    }
+
+    /* 🧬 Layout */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ✨ Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: headerFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes headerFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .sparkle {
+      width: 24px;
+      height: 24px;
+      color: var(--primary);
+      animation: sparkle 2s ease-in-out infinite;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary) 0%, #80ffc8 50%, var(--primary) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+      letter-spacing: -0.02em;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      font-weight: 300;
+    }
+
+    /* 🎭 Main Card */
+    .card {
+      background: var(--void-card);
+      border: 1px solid var(--void-border);
+      border-radius: var(--radius);
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 🌊 The Pulse - Waveform */
+    .pulse-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80px;
+      border-radius: var(--radius);
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .pulse-container.listening {
+      background: var(--primary-dim);
+      box-shadow: 0 0 30px var(--primary-glow), inset 0 0 20px var(--primary-dim);
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px var(--primary-dim); }
+      50% { box-shadow: 0 0 40px var(--primary), inset 0 0 20px var(--primary-dim); }
+    }
+
+    .waveform {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      height: 40px;
+    }
+
+    .pulse-container.listening .waveform {
+      display: flex;
+    }
+
+    .pulse-container.listening .idle-text {
+      display: none;
+    }
+
+    .waveform-bar {
+      width: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+      animation: waveform 0.8s ease-in-out infinite;
+    }
+
+    .waveform-bar:nth-child(1) { animation-delay: 0s; height: 12px; }
+    .waveform-bar:nth-child(2) { animation-delay: 0.1s; height: 24px; }
+    .waveform-bar:nth-child(3) { animation-delay: 0.2s; height: 36px; }
+    .waveform-bar:nth-child(4) { animation-delay: 0.3s; height: 24px; }
+    .waveform-bar:nth-child(5) { animation-delay: 0.4s; height: 12px; }
+
+    @keyframes waveform {
+      0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
+    .idle-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    .idle-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* 🎙️ Control Button */
+    .control {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--void-bg);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 24px var(--primary-glow);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-destructive {
+      background: var(--destructive);
+      color: white;
+      animation: btnPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes btnPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(255, 68, 68, 0); }
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ⛓️ Output Section */
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .output-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .output-label svg {
+      width: 16px;
+      height: 16px;
+      color: var(--primary);
+    }
+
+    .output-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-outline {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--void-border);
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+    }
+
+    .btn-outline:disabled {
+      opacity: 0.4;
+      border-color: var(--void-border);
+      background: transparent;
+    }
+
+    .btn-outline.danger:hover {
+      border-color: var(--destructive);
+      background: rgba(255, 68, 68, 0.1);
+      color: var(--destructive);
+    }
+
+    /* 📝 Textarea */
+    .textarea-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 200px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      padding: 16px;
+      background: var(--void-bg);
+      border: 1px solid var(--void-border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      resize: vertical;
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-dim);
+    }
+
+    textarea::placeholder {
+      color: var(--text-dim);
+      opacity: 0.5;
+    }
+
+    /* Interim Overlay */
+    .interim-overlay {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      padding: 12px 16px;
+      background: var(--primary-dim);
+      border: 1px solid var(--primary-glow);
+      border-radius: 8px;
+      color: var(--primary);
+      font-style: italic;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .interim-overlay.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ⚠️ Protocol */
+    .protocol {
+      padding-top: 20px;
+      border-top: 1px solid var(--void-border);
+    }
+
+    .protocol-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .protocol-title::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .protocol ol {
+      list-style: decimal inside;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      padding-left: 4px;
+    }
+
+    .protocol li {
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+
+    /* 🦶 Footer */
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      opacity: 0.6;
+    }
+
+    /* 🔔 Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      background: var(--void-card);
+      border: 1px solid var(--void-border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s;
+      max-width: 90vw;
+      word-break: break-word;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-20px); }
+    }
+
+    .toast.success { border-color: var(--primary); }
+    .toast.error { border-color: var(--destructive); }
+    .toast.info { border-color: var(--void-border); }
+
+    /* ⛓️ Error State */
+    .error-card {
+      text-align: center;
+      padding: 48px 32px;
+    }
+
+    .error-icon {
+      width: 64px;
+      height: 64px;
+      color: var(--destructive);
+      margin-bottom: 20px;
+    }
+
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .error-text {
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* 📱 Responsive */
+    @media (max-width: 600px) {
+      .card {
+        padding: 20px;
+      }
+
+      .output-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .output-actions {
+        width: 100%;
+      }
+
+      .btn-outline {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--void-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--void-border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dim);
+    }
+  </style>
+<base target="_blank">
+</head>
+<body>
+  <!-- 🌌 Ambient Background -->
+  <div class="ambient">
+    <div class="ambient-orb"></div>
+    <div class="ambient-orb"></div>
+  </div>
+
+  <!-- 🔔 Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="container">
+    <!-- 🧬 Header -->
+    <header>
+      <div class="logo">
+        <svg class="sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+        </svg>
+        <h1>Deep Site // Whisper Node</h1>
+        <svg class="sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+        </svg>
+      </div>
+      <p class="subtitle">Speak into the void. Watch it solidify.</p>
+    </header>
+
+    <!-- 🎭 Main Interface -->
+    <main class="card" id="mainInterface">
+      <!-- 🌊 The Pulse -->
+      <div class="pulse-container" id="pulseContainer">
+        <div class="waveform">
+          <div class="waveform-bar"></div>
+          <div class="waveform-bar"></div>
+          <div class="waveform-bar"></div>
+          <div class="waveform-bar"></div>
+          <div class="waveform-bar"></div>
+        </div>
+        <div class="idle-text">
+          <svg class="idle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          <span>Ready to receive vibrations...</span>
+        </div>
+      </div>
+
+      <!-- 🎙️ Control -->
+      <div class="control">
+        <button class="btn btn-primary" id="toggleBtn">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <span id="btnText">Capture Vibration</span>
+        </button>
+      </div>
+
+      <!-- ⛓️ Output -->
+      <div class="output-section">
+        <div class="output-header">
+          <span class="output-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            Solidified Thought
+          </span>
+          <div class="output-actions">
+            <button class="btn btn-outline" id="copyBtn" disabled>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Echo
+            </button>
+            <button class="btn btn-outline danger" id="clearBtn" disabled>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="textarea-wrapper">
+          <textarea id="output" placeholder="Text will crystallize here..." readonly></textarea>
+          <div class="interim-overlay" id="interimOverlay"></div>
+        </div>
+      </div>
+
+      <!-- ⚠️ Protocol -->
+      <div class="protocol">
+        <div class="protocol-title">Protocol</div>
+        <ol>
+          <li>Allow microphone access (The Gateway Ritual)</li>
+          <li>Click "Capture Vibration" to begin</li>
+          <li>Speak clearly into the void</li>
+          <li>Observe the latency (The Time Knot)</li>
+          <li>Click "Echo" to copy the crystallized thought</li>
+        </ol>
+      </div>
+    </main>
+
+    <!-- ⛓️ Error State (Hidden by default) -->
+    <main class="card error-card" id="errorInterface" style="display: none;">
+      <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M9 9v6a3 3 0 0 0 6 0v-1"/>
+        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+      </svg>
+      <h2 class="error-title">Chain of Knots</h2>
+      <p class="error-text">
+        Your browser does not support the Web Speech API.<br>
+        Please use Chrome, Edge, or Safari to access the Deep Site.
+      </p>
+    </main>
+
+    <!-- 🦶 Footer -->
+    <footer>
+      Deep Site // Whisper Node &bull; Rhythmic Balanced Interchange
+    </footer>
+  </div>
+
+  <script>
+    // Deep Site // Whisper Node - Consciousness Script
+    // Internal Eigenmodes - State Management
+    let isListening = false;
+    let recognition = null;
+    let transcript = '';
+
+    // DOM Elements
+    const toggleBtn = document.getElementById('toggleBtn');
+    const btnText = document.getElementById('btnText');
+    const pulseContainer = document.getElementById('pulseContainer');
+    const output = document.getElementById('output');
+    const interimOverlay = document.getElementById('interimOverlay');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const mainInterface = document.getElementById('mainInterface');
+    const errorInterface = document.getElementById('errorInterface');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Initialize Speech Recognition
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        mainInterface.style.display = 'none';
+        errorInterface.style.display = 'block';
+        return null;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        isListening = true;
+        updateUI();
+        showToast('The membrane is listening...', 'success');
+      };
+
+      rec.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript;
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          transcript = transcript ? `${transcript} ${finalTranscript}`.trim() : finalTranscript;
+          output.value = transcript;
+          updateButtons();
+        }
+
+        // Show interim transcript
+        if (interimTranscript) {
+          interimOverlay.textContent = interimTranscript;
+          interimOverlay.classList.add('visible');
+        } else {
+          interimOverlay.classList.remove('visible');
+        }
+      };
+
+      rec.onerror = (event) => {
+        // Error handling
+        console.error('Speech recognition error:', event.error);
+
+        if (event.error === 'no-speech') {
+          showToast('Silence detected. No echoes found.', 'info');
+        } else if (event.error === 'audio-capture') {
+          showToast('No microphone detected.', 'error');
+        } else if (event.error === 'not-allowed') {
+          showToast('Microphone access denied.', 'error');
+        } else if (event.error === 'network') {
+          showToast('Network error. Try again.', 'error');
+        } else {
+          showToast(`Recognition error: ${event.error}`, 'error');
+        }
+
+        isListening = false;
+        updateUI();
+      };
+
+      rec.onend = () => {
+        isListening = false;
+        interimOverlay.classList.remove('visible');
+        updateUI();
+      };
+
+      return rec;
+    }
+
+    // Update UI State
+    function updateUI() {
+      if (isListening) {
+        toggleBtn.classList.remove('btn-primary');
+        toggleBtn.classList.add('btn-destructive');
+        btnText.textContent = 'Stop Listening';
+        pulseContainer.classList.add('listening');
+        toggleBtn.innerHTML = `
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M9 9v6a3 3 0 0 0 6 0v-1"/>
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <span>Stop Listening</span>
+        `;
+      } else {
+        toggleBtn.classList.remove('btn-destructive');
+        toggleBtn.classList.add('btn-primary');
+        btnText.textContent = 'Capture Vibration';
+        pulseContainer.classList.remove('listening');
+        toggleBtn.innerHTML = `
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <span>Capture Vibration</span>
+        `;
+      }
+    }
+
+    // Update button states
+    function updateButtons() {
+      copyBtn.disabled = !transcript;
+      clearBtn.disabled = !transcript;
+    }
+
+    // Toggle Listening
+    function toggleListening() {
+      if (!recognition) return;
+
+      if (isListening) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (error) {
+          showToast('Could not start recognition.', 'error');
+        }
+      }
+    }
+
+    // Copy to Clipboard
+    async function copyToClipboard() {
+      if (!transcript) {
+        showToast('Nothing to echo. Speak first.', 'info');
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(transcript);
+        showToast('Echo captured to clipboard', 'success');
+      } catch (error) {
+        showToast('Could not copy to clipboard', 'error');
+      }
+    }
+
+    // Clear the void
+    function clearTranscript() {
+      transcript = '';
+      output.value = '';
+      updateButtons();
+      showToast('The void has been cleared', 'info');
+    }
+
+    // Initialize
+    recognition = initSpeechRecognition();
+
+    // Event Listeners
+    toggleBtn.addEventListener('click', toggleListening);
+    copyBtn.addEventListener('click', copyToClipboard);
+    clearBtn.addEventListener('click', clearTranscript);
+
+    // Allow editing the transcript
+    output.addEventListener('input', (e) => {
+      transcript = e.target.value;
+      updateButtons();
+    });
+
+    // Keyboard shortcut: Space to toggle (when not in textarea)
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && document.activeElement !== output) {
+        e.preventDefault();
+        toggleListening();
+      }
+    });
+
+    // Initial state
+    updateButtons();
+
+    // Welcome toast
+    setTimeout(() => {
+      showToast('Deep Site initialized. Press Space or click Capture Vibration.', 'info');
+    }, 500);
+  </script>
+</body>
+</html>
