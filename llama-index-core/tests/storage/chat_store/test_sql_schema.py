@@ -101,7 +101,8 @@ class TestSQLAlchemyChatStoreSchema:
         assert messages[0].content == "Hello!"
 
     def test_is_sqlite_database_with_custom_engine(self):
-        """Test that _is_sqlite_database checks the engine URL when a custom engine is provided.
+        """
+        Test that _is_sqlite_database checks the engine URL when a custom engine is provided.
 
         Regression test for https://github.com/run-llama/llama_index/issues/20746
         When a custom async_engine is passed without an explicit async_database_uri,
@@ -152,7 +153,8 @@ class TestSQLAlchemyChatStoreSchema:
 
     @pytest.mark.asyncio
     async def test_custom_engine_with_schema_creates_schema(self):
-        """Test that db_schema is respected when a custom non-SQLite engine is provided.
+        """
+        Test that db_schema is respected when a custom non-SQLite engine is provided.
 
         Regression test for https://github.com/run-llama/llama_index/issues/20746
         """
