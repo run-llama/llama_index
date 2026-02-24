@@ -251,6 +251,10 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
         description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name.",
     )
+    inherit_current_context: bool = Field(
+        default=False,
+        description="Inherit the context from the current observability setup instead of creating a new one.",
+    )
     debug: bool = Field(
         default=False,
         description="Debug the start and end of span and the recording of events",
@@ -290,7 +294,11 @@ class LlamaIndexOpenTelemetry(BaseModel):
         assert self._tracer is not None, (
             "The tracer has to be non-null to start observabiliy"
         )
-        span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
+        span_handler = OTelCompatibleSpanHandler(
+            tracer=self._tracer,
+            debug=self.debug,
+            inherit_current_context=self.inherit_current_context,
+        )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(
             OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug)

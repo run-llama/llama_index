@@ -32,6 +32,7 @@ def test_initialization() -> None:
     assert instrumentor.span_processor == "batch"
     assert instrumentor._tracer is None
     assert not instrumentor.debug
+    assert not instrumentor.inherit_current_context
 
 
 def test_diff_initialization() -> None:
@@ -39,6 +40,7 @@ def test_diff_initialization() -> None:
         service_name_or_resource="this.is.a.test",
         span_processor="simple",
         debug=True,
+        inherit_current_context=True,
     )
     assert instrumentor.tracer_provider is None
     assert instrumentor.service_name_or_resource == "this.is.a.test"
@@ -46,6 +48,7 @@ def test_diff_initialization() -> None:
     assert instrumentor.span_processor == "simple"
     assert instrumentor._tracer is None
     assert instrumentor.debug
+    assert instrumentor.inherit_current_context
 
 
 def test_initialize_with_extra_span_processors() -> None:
