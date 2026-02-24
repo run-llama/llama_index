@@ -95,7 +95,8 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if parent_span_id is not None:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
         else:
-            ctx = context.Context(bound_args.arguments)
+            ctx = context.get_current()
+            ctx.update(bound_args.arguments)
         otel_span = self._tracer.start_span(name=id_, context=ctx)
         self.all_spans.update({id_: otel_span})
         if self.debug:
@@ -280,7 +281,10 @@ class LlamaIndexOpenTelemetry(BaseModel):
         assert self._tracer is not None, (
             "The tracer has to be non-null to start observabiliy"
         )
-        span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
+        span_handler = OTelCompatibleSpanHandler(
+            tracer=self._tracer,
+            debug=self.debug,
+        )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(
             OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug)
