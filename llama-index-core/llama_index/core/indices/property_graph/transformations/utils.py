@@ -51,14 +51,14 @@ def get_entity_class(
             name=(str, ...),
         )
     else:
-        config_kwargs = {}
-        if clean_additional_properties:
-            config_kwargs["__config__"] = ConfigDict(
-                json_schema_extra=_clean_additional_properties
-            )
+        config = (
+            ConfigDict(json_schema_extra=_clean_additional_properties)
+            if clean_additional_properties
+            else None
+        )
         return create_model(
             "Entity",
-            **config_kwargs,
+            __config__=config,
             type=(
                 possible_entities if strict else str,
                 Field(
@@ -105,14 +105,14 @@ def get_relation_class(
             ),
         )
     else:
-        config_kwargs = {}
-        if clean_additional_properties:
-            config_kwargs["__config__"] = ConfigDict(
-                json_schema_extra=_clean_additional_properties
-            )
+        config = (
+            ConfigDict(json_schema_extra=_clean_additional_properties)
+            if clean_additional_properties
+            else None
+        )
         return create_model(
             "Relation",
-            **config_kwargs,
+            __config__=config,
             type=(
                 possible_relations if strict else str,
                 Field(
