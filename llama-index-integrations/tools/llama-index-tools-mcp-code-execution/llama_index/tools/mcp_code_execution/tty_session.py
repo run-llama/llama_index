@@ -16,9 +16,11 @@ from .print_style import log_command, log_error, log_info, log_output
 from .shell_local import spawn_shell
 from .strings import (
     clean_ansi,
+    clean_carriage_returns,
     detect_dialog,
     detect_ipython_prompt,
     detect_prompt,
+    strip_trailing_prompt,
     truncate_output,
 )
 
@@ -332,8 +334,10 @@ class TTYSession:
             self.process = None
 
     def _clean_terminal_output(self, output: str, command: str) -> str:
-        """Clean raw terminal output by removing echoed command and markers."""
+        """Clean raw terminal output by removing echoed command, markers,
+        carriage returns, and trailing prompts."""
         cleaned = clean_ansi(output)
+        cleaned = clean_carriage_returns(cleaned)
 
         lines = cleaned.split("\n")
         result_lines = []
@@ -352,11 +356,14 @@ class TTYSession:
                 continue
             result_lines.append(line)
 
-        return "\n".join(result_lines).strip()
+        result = "\n".join(result_lines).strip()
+        return strip_trailing_prompt(result)
 
     def _clean_python_output(self, output: str) -> str:
-        """Clean IPython output by removing prompts and ANSI codes."""
+        """Clean IPython output by removing prompts, ANSI codes,
+        and carriage returns."""
         cleaned = clean_ansi(output)
+        cleaned = clean_carriage_returns(cleaned)
         # Remove trailing IPython prompt
         cleaned = re.sub(r"\s*In\s*\[\d+\]:\s*$", "", cleaned)
         return cleaned.strip()

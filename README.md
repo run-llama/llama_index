@@ -1,3 +1,15 @@
+---
+title: UnfilteredAI-NSFW-gen-v2
+emoji: 👀
+colorFrom: purple
+colorTo: red
+sdk: gradio
+sdk_version: 4.26.0
+app_file: app.py
+pinned: true
+python_version: "3.12"
+---
+
 # 🗂️ LlamaIndex 🦙
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)

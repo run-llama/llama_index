@@ -6,7 +6,7 @@ biometric measurement engine, prompt generation, and drift detection
 into the LlamaIndex pack ecosystem.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
 
@@ -22,7 +22,8 @@ from .workflows import (
 
 
 class FaceLockBiometricPack(BaseLlamaPack):
-    """LlamaIndex pack for biometric character consistency in AI image generation.
+    """
+    LlamaIndex pack for biometric character consistency in AI image generation.
 
     Extracts precise facial measurements from reference images (or generates
     synthetic ones), converts them to structured prompts for AI image
@@ -62,7 +63,8 @@ class FaceLockBiometricPack(BaseLlamaPack):
         film_preset: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the Face Lock pack.
+        """
+        Initialize the Face Lock pack.
 
         Args:
             mode: "synthetic" or "real_face".
@@ -74,6 +76,7 @@ class FaceLockBiometricPack(BaseLlamaPack):
             platform: Target AI platform ("reve", "flux", "midjourney", "generic").
             include_technical: Include raw biometric values in prompts.
             film_preset: Optional film stock preset name.
+
         """
         self.mode = WorkflowMode(mode)
         self.image_path = image_path
@@ -146,7 +149,8 @@ class FaceLockBiometricPack(BaseLlamaPack):
         additional_context: str = "",
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Run the Face Lock pipeline.
+        """
+        Run the Face Lock pipeline.
 
         For synthetic mode: generates random measurements and prompts.
         For real_face mode: analyzes the reference image and generates prompts.
@@ -160,6 +164,7 @@ class FaceLockBiometricPack(BaseLlamaPack):
 
         Returns:
             Dict with measurements, prompts, and profile data.
+
         """
         # Override platform if specified
         prompt_gen = self._prompt_gen
@@ -214,7 +219,8 @@ class FaceLockBiometricPack(BaseLlamaPack):
         generated_images: List[Any],
         tolerances: Optional[Dict[str, float]] = None,
     ) -> List[Dict[str, Any]]:
-        """Check generated images for drift from locked measurements.
+        """
+        Check generated images for drift from locked measurements.
 
         Args:
             generated_images: List of image paths or arrays to check.
@@ -222,6 +228,7 @@ class FaceLockBiometricPack(BaseLlamaPack):
 
         Returns:
             List of drift report dicts.
+
         """
         if self._measurements is None:
             raise ValueError(
@@ -254,7 +261,8 @@ class FaceLockBiometricPack(BaseLlamaPack):
         image: Any,
         verify_measurements: bool = True,
     ) -> Dict[str, Any]:
-        """Apply analog film processing to an image.
+        """
+        Apply analog film processing to an image.
 
         Args:
             image: Image path or numpy array.
@@ -262,9 +270,9 @@ class FaceLockBiometricPack(BaseLlamaPack):
 
         Returns:
             Dict with processed image and optional drift report.
+
         """
         import cv2
-        import numpy as np
 
         if self._film_processor is None:
             raise ValueError(

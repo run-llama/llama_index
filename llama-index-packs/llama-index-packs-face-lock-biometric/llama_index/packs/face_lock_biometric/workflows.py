@@ -40,7 +40,8 @@ class WorkflowMode(Enum):
 
 @dataclass
 class CharacterProfile:
-    """A complete character identity with locked biometric parameters.
+    """
+    A complete character identity with locked biometric parameters.
 
     Can be saved and loaded as a "Character Bible" entry for consistent
     generation across sessions.
@@ -85,7 +86,8 @@ def generate_synthetic_measurements(
     seed: Optional[int] = None,
     overrides: Optional[Dict[str, float]] = None,
 ) -> FacialMeasurements:
-    """Generate biologically plausible random facial measurements.
+    """
+    Generate biologically plausible random facial measurements.
 
     This is the BIPA-safe path — no real face data is involved.
 
@@ -95,6 +97,7 @@ def generate_synthetic_measurements(
 
     Returns:
         FacialMeasurements with randomly generated but plausible values.
+
     """
     if seed is not None:
         random.seed(seed)
@@ -130,7 +133,8 @@ def generate_synthetic_measurements(
 
 
 class SyntheticWorkflow:
-    """BIPA-safe synthetic character generation workflow.
+    """
+    BIPA-safe synthetic character generation workflow.
 
     Generates characters from scratch with random but biologically
     plausible measurements. No photo uploads, no biometric privacy
@@ -148,7 +152,8 @@ class SyntheticWorkflow:
         tags: Optional[List[str]] = None,
         notes: str = "",
     ) -> CharacterProfile:
-        """Generate a new synthetic character.
+        """
+        Generate a new synthetic character.
 
         Args:
             name: Character name/identifier.
@@ -159,6 +164,7 @@ class SyntheticWorkflow:
 
         Returns:
             CharacterProfile with synthetic measurements.
+
         """
         measurements = generate_synthetic_measurements(
             seed=seed, overrides=overrides
@@ -190,7 +196,8 @@ class SyntheticWorkflow:
 
 
 class RealFaceWorkflow:
-    """BIPA-regulated workflow for real face reference analysis.
+    """
+    BIPA-regulated workflow for real face reference analysis.
 
     Requires explicit BIPA consent before any biometric data extraction.
     Enforces data retention limits and provides audit trails.
@@ -218,7 +225,8 @@ class RealFaceWorkflow:
         purpose: str = "AI character consistency",
         data_retention_days: int = 30,
     ) -> BIPAConsent:
-        """Create and store a BIPA consent record.
+        """
+        Create and store a BIPA consent record.
 
         This must be called BEFORE any biometric analysis.
 
@@ -230,6 +238,7 @@ class RealFaceWorkflow:
 
         Returns:
             BIPAConsent record (stored automatically).
+
         """
         consent = create_consent(
             subject_identifier=subject_identifier,
@@ -248,7 +257,8 @@ class RealFaceWorkflow:
         tags: Optional[List[str]] = None,
         notes: str = "",
     ) -> CharacterProfile:
-        """Analyze a real face image and create a character profile.
+        """
+        Analyze a real face image and create a character profile.
 
         Requires valid BIPA consent for the subject.
 
@@ -265,6 +275,7 @@ class RealFaceWorkflow:
         Raises:
             PermissionError: If no valid consent exists for the subject.
             ValueError: If no face is detected in the image.
+
         """
         if not self.consent_store.is_consented(subject_identifier):
             raise PermissionError(
@@ -306,5 +317,5 @@ class RealFaceWorkflow:
     def __enter__(self) -> "RealFaceWorkflow":
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()

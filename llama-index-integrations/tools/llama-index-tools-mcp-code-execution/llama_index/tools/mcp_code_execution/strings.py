@@ -64,6 +64,35 @@ def detect_dialog(text: str) -> bool:
     return False
 
 
+def strip_trailing_prompt(text: str) -> str:
+    """Remove trailing shell prompt line from output."""
+    if not text:
+        return text
+    lines = text.split("\n")
+    # Walk backwards stripping empty lines and prompt lines
+    while lines:
+        last = lines[-1].strip()
+        if not last:
+            lines.pop()
+            continue
+        cleaned_last = clean_ansi(last)
+        is_prompt = False
+        for pattern in _PROMPT_PATTERNS:
+            if pattern.search(cleaned_last):
+                is_prompt = True
+                break
+        if is_prompt:
+            lines.pop()
+        else:
+            break
+    return "\n".join(lines)
+
+
+def clean_carriage_returns(text: str) -> str:
+    """Normalize \\r\\n to \\n and remove bare \\r."""
+    return text.replace("\r\n", "\n").replace("\r", "")
+
+
 def truncate_output(text: str, max_chars: int = 50000) -> str:
     """Truncate output if it exceeds max characters, keeping start and end."""
     if len(text) <= max_chars:

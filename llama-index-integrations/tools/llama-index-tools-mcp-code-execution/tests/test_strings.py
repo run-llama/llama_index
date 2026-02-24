@@ -2,9 +2,11 @@
 
 from llama_index.tools.mcp_code_execution.strings import (
     clean_ansi,
+    clean_carriage_returns,
     detect_dialog,
     detect_ipython_prompt,
     detect_prompt,
+    strip_trailing_prompt,
     truncate_output,
 )
 
@@ -111,3 +113,55 @@ class TestTruncateOutput:
     def test_exact_limit_unchanged(self) -> None:
         text = "x" * 1000
         assert truncate_output(text, max_chars=1000) == text
+
+
+class TestStripTrailingPrompt:
+    def test_strips_dollar_prompt(self) -> None:
+        text = "hello\nuser@host:~$ "
+        assert strip_trailing_prompt(text) == "hello"
+
+    def test_strips_hash_prompt(self) -> None:
+        text = "output\nroot@host:/tmp# "
+        assert strip_trailing_prompt(text) == "output"
+
+    def test_strips_multiple_trailing_prompts(self) -> None:
+        text = "data\nuser@host:~$ \n"
+        assert strip_trailing_prompt(text) == "data"
+
+    def test_no_prompt_unchanged(self) -> None:
+        text = "just some output"
+        assert strip_trailing_prompt(text) == "just some output"
+
+    def test_empty_string(self) -> None:
+        assert strip_trailing_prompt("") == ""
+
+    def test_only_prompt(self) -> None:
+        text = "user@host:~$ "
+        assert strip_trailing_prompt(text) == ""
+
+    def test_preserves_content_before_prompt(self) -> None:
+        text = "line1\nline2\nline3\nroot@box:/home# "
+        result = strip_trailing_prompt(text)
+        assert "line1" in result
+        assert "line2" in result
+        assert "line3" in result
+        assert "root@box" not in result
+
+
+class TestCleanCarriageReturns:
+    def test_crlf_to_lf(self) -> None:
+        assert clean_carriage_returns("hello\r\nworld") == "hello\nworld"
+
+    def test_bare_cr_removed(self) -> None:
+        assert clean_carriage_returns("hello\rworld") == "helloworld"
+
+    def test_no_cr_unchanged(self) -> None:
+        assert clean_carriage_returns("hello\nworld") == "hello\nworld"
+
+    def test_empty(self) -> None:
+        assert clean_carriage_returns("") == ""
+
+    def test_mixed(self) -> None:
+        text = "a\r\nb\rc\nd"
+        # \r\n -> \n first, then bare \r removed: "a\nbc\nd"
+        assert clean_carriage_returns(text) == "a\nbc\nd"

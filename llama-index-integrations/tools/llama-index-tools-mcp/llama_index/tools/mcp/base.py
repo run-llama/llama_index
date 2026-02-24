@@ -4,8 +4,10 @@ from typing import Any, Callable, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.types import Resource
+from mcp import types as mcp_types
 from pydantic import BaseModel, create_model
 
+from llama_index.core.base.llms.types import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
@@ -97,13 +99,59 @@ class McpToolSpec(
         )
         return []
 
+    @staticmethod
+    def _process_call_result(result: mcp_types.CallToolResult) -> List:
+        """
+        Convert an MCP CallToolResult into a list of LlamaIndex content blocks.
+
+        This processes the raw MCP result so that FunctionTool can properly
+        handle text, image, and other content types returned by MCP tools.
+        """
+        blocks: List = []
+        for content in result.content:
+            if isinstance(content, mcp_types.TextContent):
+                blocks.append(TextBlock(text=content.text))
+            elif isinstance(content, mcp_types.ImageContent):
+                blocks.append(
+                    ImageBlock(
+                        image=content.data, image_mimetype=content.mimeType
+                    )
+                )
+            elif isinstance(content, mcp_types.EmbeddedResource):
+                resource = content.resource
+                if hasattr(resource, "text"):
+                    blocks.append(TextBlock(text=resource.text))
+                elif hasattr(resource, "blob"):
+                    blocks.append(
+                        TextBlock(text=f"[Binary resource: {resource.uri}]")
+                    )
+                else:
+                    blocks.append(TextBlock(text=str(content)))
+            else:
+                blocks.append(TextBlock(text=str(content)))
+
+        if not blocks:
+            blocks.append(TextBlock(text=""))
+
+        if result.isError:
+            error_text = "\n".join(
+                b.text for b in blocks if isinstance(b, TextBlock)
+            )
+            return [TextBlock(text=f"MCP tool error: {error_text}")]
+
+        return blocks
+
     def _create_tool_fn(self, tool_name: str) -> Callable:
         """
-        Create a tool call function for a specified MCP tool name. The function internally wraps the call_tool call to the MCP Client.
+        Create a tool call function for a specified MCP tool name. The function
+        internally wraps the call_tool call to the MCP Client and processes
+        the result into LlamaIndex content blocks.
         """
+        process_result = self._process_call_result
 
         async def async_tool_fn(**kwargs):
-            return await self.client.call_tool(tool_name, kwargs)
+            result = await self.client.call_tool(tool_name, kwargs)
+            return process_result(result)
 
         return async_tool_fn
 

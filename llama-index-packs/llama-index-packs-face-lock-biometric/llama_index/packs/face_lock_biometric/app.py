@@ -9,7 +9,6 @@ Provides a web UI for both synthetic and real-face workflows with:
 - Analog film post-processing
 """
 
-from typing import Optional
 
 
 def main() -> None:
@@ -24,19 +23,15 @@ def main() -> None:
 
     import json
     import tempfile
-    from pathlib import Path
 
     import numpy as np
 
-    from .analog_film import AnalogFilmProcessor, FilmPreset, FILM_PRESETS
-    from .bipa_consent import ConsentStatus
-    from .face_lock import FaceAnalyzer, FacialMeasurements
+    from .analog_film import AnalogFilmProcessor, FilmPreset
+    from .face_lock import FaceAnalyzer
     from .prompt_generators import Platform, PromptGenerator
     from .workflows import (
-        CharacterProfile,
         RealFaceWorkflow,
         SyntheticWorkflow,
-        WorkflowMode,
     )
 
     st.set_page_config(

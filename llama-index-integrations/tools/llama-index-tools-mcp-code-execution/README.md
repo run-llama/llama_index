@@ -110,6 +110,46 @@ Then configure your MCP client:
 }
 ```
 
+## Usage with LlamaIndex Agents (Anthropic Claude)
+
+Connect this MCP server to a LlamaIndex agent powered by Anthropic's Claude:
+
+```bash
+pip install llama-index-tools-mcp llama-index-tools-mcp-code-execution llama-index-llms-anthropic
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+```python
+import asyncio
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.anthropic import Anthropic
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+
+async def main():
+    # Connect to the code-execution MCP server via stdio
+    mcp_client = BasicMCPClient("code-execution-mcp", timeout=30)
+
+    # Convert MCP tools to LlamaIndex FunctionTool objects
+    tool_spec = McpToolSpec(client=mcp_client)
+    tools = await tool_spec.to_tool_list_async()
+
+    # Create an Anthropic-powered agent
+    agent = FunctionAgent(
+        name="CodeAgent",
+        description="An agent that can execute code.",
+        llm=Anthropic(model="claude-sonnet-4-20250514", max_tokens=4096),
+        tools=tools,
+        system_prompt="You are a coding assistant with terminal and Python execution tools.",
+    )
+
+    response = await agent.run("What Python version is installed? Run python3 --version.")
+    print(response)
+
+asyncio.run(main())
+```
+
+See [examples/](examples/) for more complete usage examples.
+
 ## Available Tools
 
 ### `execute_terminal`

@@ -10,6 +10,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -25,35 +26,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-packs-face-lock-biometric"
+name = "llama-index-llms-xortron"
 version = "0.1.0"
-description = "Face Lock: Biometric character consistency for AI image generation using parametric facial measurements"
+description = "llama-index llms xortron integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-keywords = [
-    "biometric",
-    "face-lock",
-    "character-consistency",
-    "mediapipe",
-    "facial-measurements",
-    "ai-image-generation",
-    "drift-detection",
-]
 dependencies = [
-    "llama-index-core>=0.13.0,<0.15",
-    "mediapipe>=0.10.0",
-    "opencv-python>=4.8.0",
-    "numpy>=1.24.0",
-    "Pillow>=10.0.0",
+    "httpx>=0.25.0",
+    "llama-index-core>=0.14.5,<0.15",
 ]
-
-[project.optional-dependencies]
-app = [
-    "streamlit>=1.28.0",
-]
-film = []
 
 [tool.codespell]
 check-filenames = true
@@ -70,16 +53,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.packs.face_lock_biometric"
+import_path = "llama_index.llms.xortron"
 
 [tool.llamahub.class_authors]
-FaceLockBiometricPack = "face-lock"
-
-[tool.ruff.lint]
-# RET504: assignment-before-return is intentional for readability in image processing pipelines
-# PYI034: Self return type requires typing_extensions, overkill for context managers
-# PYI036: star-args annotation with object is pedantic for __exit__
-ignore = ["RET504", "PYI034", "PYI036"]
+Xortron = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
