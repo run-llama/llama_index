@@ -213,8 +213,8 @@ def test_pagination(mock_get, reader: ScreenpipeReader) -> None:
 
 @patch("llama_index.readers.screenpipe.base.requests.get")
 def test_http_error_raised(mock_get, reader: ScreenpipeReader) -> None:
-    mock_get.return_value.raise_for_status.side_effect = (
-        requests.exceptions.HTTPError("500 Server Error")
+    mock_get.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        "500 Server Error"
     )
 
     with pytest.raises(requests.exceptions.HTTPError):

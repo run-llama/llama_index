@@ -47,7 +47,8 @@ class ScreenpipeReader(BasePydanticReader):
 
     @staticmethod
     def _to_utc_isoformat(dt: datetime) -> str:
-        """Convert a datetime to a UTC ISO 8601 string.
+        """
+        Convert a datetime to a UTC ISO 8601 string.
 
         Screenpipe requires UTC timestamps. Naive datetimes (no tzinfo) are
         assumed to be local time and converted to UTC.
