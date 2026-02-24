@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, ThinkingBlock, TextBlock
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import O1_MODELS
 
@@ -601,3 +601,227 @@ def test_reasoning_effort_none_default():
     llm = OpenAI(model=model_name, api_key="test-key")
     kwargs = llm._get_model_kwargs()
     assert "reasoning_effort" not in kwargs
+
+
+# ===== reasoning_content tests (OpenAI-compatible providers) =====
+
+
+def _make_chunk(
+    delta_kwargs: dict, finish_reason: Optional[str] = None
+) -> ChatCompletionChunk:
+    """Helper to create a single ChatCompletionChunk."""
+    extra = delta_kwargs.pop("__extra__", None)
+    chunk = ChatCompletionChunk(
+        id="chatcmpl-reasoning",
+        object="chat.completion.chunk",
+        created=1700000000,
+        model="qwen3-thinking",
+        choices=[
+            ChunkChoice(
+                delta=ChoiceDelta(**delta_kwargs),
+                finish_reason=finish_reason,
+                index=0,
+            )
+        ],
+    )
+    if extra:
+        chunk.choices[0].delta.__pydantic_extra__ = extra
+    return chunk
+
+
+def _make_reasoning_stream_chunks() -> list[ChatCompletionChunk]:
+    """Simulate an OpenAI-compatible API streaming reasoning_content then content."""
+    return [
+        _make_chunk({"role": "assistant"}),
+        _make_chunk(
+            {"content": None, "__extra__": {"reasoning_content": "Let me think"}}
+        ),
+        _make_chunk(
+            {"content": None, "__extra__": {"reasoning_content": " about this."}}
+        ),
+        _make_chunk({"content": "The answer"}),
+        _make_chunk({"content": " is 42."}),
+        _make_chunk({}, finish_reason="stop"),
+    ]
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
+    """Test that reasoning_content from streaming is captured as ThinkingBlock and thinking_delta."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = iter(
+            _make_reasoning_stream_chunks()
+        )
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+        final = responses[-1]
+        thinking_blocks = [
+            b for b in final.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        text_blocks = [b for b in final.message.blocks if isinstance(b, TextBlock)]
+
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].content == "Let me think about this."
+        assert len(text_blocks) == 1
+        assert text_blocks[0].text == "The answer is 42."
+
+        # Exactly 2 chunks carry thinking_delta (the two reasoning chunks)
+        reasoning_chunks = [
+            r for r in responses if r.additional_kwargs.get("thinking_delta")
+        ]
+        assert len(reasoning_chunks) == 2
+        assert reasoning_chunks[0].additional_kwargs["thinking_delta"] == "Let me think"
+        assert reasoning_chunks[1].additional_kwargs["thinking_delta"] == " about this."
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_astream_chat_reasoning_content(MockAsyncOpenAI: MagicMock) -> None:
+    """Test that reasoning_content from async streaming is captured as ThinkingBlock."""
+    mock_instance = MockAsyncOpenAI.return_value
+
+    async def mock_async_stream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+        for chunk in _make_reasoning_stream_chunks():
+            yield chunk
+
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_async_stream()
+    mock_instance.chat.completions.create = create_fn
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    response_gen = await llm.astream_chat([ChatMessage(role="user", content="test")])
+    responses = [r async for r in response_gen]
+
+    final = responses[-1]
+    thinking_blocks = [b for b in final.message.blocks if isinstance(b, ThinkingBlock)]
+    text_blocks = [b for b in final.message.blocks if isinstance(b, TextBlock)]
+
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].content == "Let me think about this."
+    assert len(text_blocks) == 1
+    assert text_blocks[0].text == "The answer is 42."
+
+    # Verify thinking_delta on async path too
+    reasoning_chunks = [
+        r for r in responses if r.additional_kwargs.get("thinking_delta")
+    ]
+    assert len(reasoning_chunks) == 2
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_chat_reasoning_content_non_streaming(MockSyncOpenAI: MagicMock) -> None:
+    """Test that reasoning_content in non-streaming responses is captured as ThinkingBlock."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        response = ChatCompletion(
+            id="chatcmpl-reasoning",
+            object="chat.completion",
+            created=1700000000,
+            model="qwen3-thinking",
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        role="assistant",
+                        content="The answer is 42.",
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+        )
+        response.choices[0].message.__pydantic_extra__ = {
+            "reasoning_content": "Let me think step by step..."
+        }
+
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = response
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        result = llm.chat([ChatMessage(role="user", content="test")])
+
+        thinking_blocks = [
+            b for b in result.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        text_blocks = [b for b in result.message.blocks if isinstance(b, TextBlock)]
+
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].content == "Let me think step by step..."
+        assert len(text_blocks) == 1
+        assert text_blocks[0].text == "The answer is 42."
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_no_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
+    """Test that streaming without reasoning_content produces no ThinkingBlock."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = (
+            mock_chat_completion_stream_v1()
+        )
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+        final = responses[-1]
+        thinking_blocks = [
+            b for b in final.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        assert len(thinking_blocks) == 0
+        assert final.message.content == "\n\n2"
+
+
+def test_to_openai_message_dict_skips_thinking_block() -> None:
+    """Test that ThinkingBlock is skipped when converting messages to OpenAI format."""
+    from llama_index.llms.openai.utils import to_openai_message_dict
+
+    message = ChatMessage(
+        role="assistant",
+        blocks=[
+            ThinkingBlock(content="internal reasoning"),
+            TextBlock(text="The answer is 42."),
+        ],
+    )
+
+    result = to_openai_message_dict(message)
+    assert result["role"] == "assistant"
+    assert result["content"] == "The answer is 42."
+
+
+def test_from_openai_message_with_reasoning_content() -> None:
+    """Test that from_openai_message extracts reasoning_content as ThinkingBlock."""
+    from llama_index.llms.openai.utils import from_openai_message
+
+    openai_msg = ChatCompletionMessage(
+        role="assistant",
+        content="The answer is 42.",
+    )
+    openai_msg.__pydantic_extra__ = {"reasoning_content": "Let me think..."}
+
+    result = from_openai_message(openai_msg, modalities=["text"])
+
+    thinking_blocks = [b for b in result.blocks if isinstance(b, ThinkingBlock)]
+    text_blocks = [b for b in result.blocks if isinstance(b, TextBlock)]
+
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].content == "Let me think..."
+    assert len(text_blocks) == 1
+    assert text_blocks[0].text == "The answer is 42."
+
+
+def test_from_openai_message_without_reasoning_content() -> None:
+    """Test that from_openai_message works normally without reasoning_content."""
+    from llama_index.llms.openai.utils import from_openai_message
+
+    openai_msg = ChatCompletionMessage(
+        role="assistant",
+        content="Hello!",
+    )
+
+    result = from_openai_message(openai_msg, modalities=["text"])
+
+    thinking_blocks = [b for b in result.blocks if isinstance(b, ThinkingBlock)]
+    assert len(thinking_blocks) == 0
+    assert len(result.blocks) == 1
+    assert result.blocks[0].text == "Hello!"

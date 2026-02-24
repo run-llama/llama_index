@@ -423,6 +423,10 @@ def to_openai_message_dict(
                     },
                 }
             )
+        elif isinstance(block, ThinkingBlock):
+            # ThinkingBlock is not supported in the Chat Completions API input;
+            # skip it when converting messages back (round-tripping).
+            continue
         elif isinstance(block, ToolCallBlock):
             try:
                 function_dict = {
@@ -736,11 +740,17 @@ def from_openai_message(
 ) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = openai_message.role
+    blocks: List[ContentBlock] = []
+
+    # Extract reasoning_content if present (used by many OpenAI-compatible
+    # providers for chain-of-thought responses)
+    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    if isinstance(reasoning_content, str) and reasoning_content:
+        blocks.append(ThinkingBlock(content=reasoning_content))
+
     # NOTE: Azure OpenAI returns function calling messages without a content key
     if "text" in modalities and openai_message.content:
-        blocks: List[ContentBlock] = [TextBlock(text=openai_message.content or "")]
-    else:
-        blocks: List[ContentBlock] = []
+        blocks.append(TextBlock(text=openai_message.content or ""))
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
