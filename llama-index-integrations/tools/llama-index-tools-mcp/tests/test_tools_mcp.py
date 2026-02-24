@@ -1,4 +1,6 @@
 import os
+from typing import Literal, get_args
+
 import pytest
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -134,56 +136,74 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
     assert set(json_schema["required"]) == {"name", "method", "lst"}
 
 
-def test_union_of_literal_types_resolution(client: BasicMCPClient):
-    """Test that union of Literal types (enum in anyOf) are resolved correctly.
-
-    Regression test for https://github.com/run-llama/llama_index/issues/20109
-    When Literal types appear inside a union (anyOf in JSON Schema),
-    _resolve_union_option should handle the enum case just like
-    _resolve_field_type already does.
+def test_resolve_union_option_with_enum(client: BasicMCPClient):
     """
-    from typing import get_args, Literal
+    Regression test for https://github.com/run-llama/llama_index/issues/20109
 
+    _resolve_union_option should handle enum entries in anyOf schemas,
+    resolving them to Literal types instead of falling through to str.
+    """
     tool_spec = McpToolSpec(client)
 
-    # Test 1: _resolve_union_option handles a single enum option
-    option_with_enum = {"enum": ["red", "green", "blue"]}
-    resolved = tool_spec._resolve_union_option(option_with_enum, {})
-    assert resolved == Literal["red", "green", "blue"]
+    result = tool_spec._resolve_union_option({"enum": ["red", "green", "blue"]}, {})
+    assert result == Literal["red", "green", "blue"]
 
-    # Test 2: _resolve_union_type handles anyOf with multiple enum options
-    union_schema = {
+
+def test_resolve_union_type_multiple_enums(client: BasicMCPClient):
+    """
+    Test that anyOf with multiple enum entries resolves to a Union of Literals.
+    """
+    tool_spec = McpToolSpec(client)
+
+    schema = {
         "anyOf": [
             {"enum": ["red", "green", "blue"]},
             {"enum": ["cyan", "magenta", "yellow"]},
         ]
     }
-    resolved_union = tool_spec._resolve_union_type(union_schema, {})
-    union_args = get_args(resolved_union)
-    assert len(union_args) == 2
+    resolved = tool_spec._resolve_union_type(schema, {})
+    args = get_args(resolved)
+    assert len(args) == 2
+    assert Literal["red", "green", "blue"] in args
+    assert Literal["cyan", "magenta", "yellow"] in args
 
-    # Test 3: Mixed union with enum and null (Optional[Literal[...]])
-    optional_enum_schema = {
+
+def test_resolve_optional_literal(client: BasicMCPClient):
+    """
+    Test that anyOf with enum + null resolves to Optional[Literal[...]].
+    """
+    tool_spec = McpToolSpec(client)
+
+    schema = {
         "anyOf": [
             {"enum": ["a", "b", "c"]},
             {"type": "null"},
         ]
     }
-    resolved_optional = tool_spec._resolve_union_type(optional_enum_schema, {})
-    optional_args = get_args(resolved_optional)
-    assert len(optional_args) == 2
-    assert type(None) in optional_args
+    resolved = tool_spec._resolve_union_type(schema, {})
+    args = get_args(resolved)
+    assert len(args) == 2
+    assert type(None) in args
+    assert Literal["a", "b", "c"] in args
 
-    # Test 4: _resolve_field_type delegates anyOf with enums correctly
-    field_schema_with_anyof_enums = {
+
+def test_resolve_field_type_delegates_anyof_enums(client: BasicMCPClient):
+    """
+    Test that _resolve_field_type correctly delegates anyOf with enum entries.
+    """
+    tool_spec = McpToolSpec(client)
+
+    schema = {
         "anyOf": [
             {"enum": ["x", "y"]},
             {"enum": ["z"]},
         ]
     }
-    resolved_field = tool_spec._resolve_field_type(field_schema_with_anyof_enums, {})
-    field_args = get_args(resolved_field)
-    assert len(field_args) == 2
+    resolved = tool_spec._resolve_field_type(schema, {})
+    args = get_args(resolved)
+    assert len(args) == 2
+    assert Literal["x", "y"] in args
+    assert Literal["z"] in args
 
 
 def test_additional_properties_false_parsing(client: BasicMCPClient):
