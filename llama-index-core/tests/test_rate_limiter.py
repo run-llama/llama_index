@@ -406,6 +406,50 @@ def test_sliding_window_tpm_blocks_when_exceeded() -> None:
         assert mock_sleep.call_args[0][0] >= 9.0
 
 
+def test_sliding_window_request_burst_allows_additional_requests() -> None:
+    """Configured request_burst should allow extra requests within the window."""
+    rl = SlidingWindowRateLimiter(requests_per_minute=3, request_burst=2)
+    now = 3000.0
+    rl._request_timestamps.clear()
+    rl._request_timestamps.extend([now - 5.0, now - 4.0, now - 3.0, now - 2.0])
+
+    with rl._lock:
+        rl._prune_request_timestamps(now)
+        wait = rl._wait_time(now, 0)
+    # 4 requests within a 3 rpm limit would normally block, but with
+    # request_burst=2 this should still be allowed without waiting.
+    assert wait == 0.0
+
+    # The 6th request should require waiting until at least one request
+    # falls out of the window.
+    rl._request_timestamps.append(now - 1.0)
+    with rl._lock:
+        rl._prune_request_timestamps(now)
+        wait_after = rl._wait_time(now, 0)
+    assert wait_after > 0.0
+
+
+def test_sliding_window_token_burst_allows_additional_tokens() -> None:
+    """Configured token_burst should allow extra token usage within the window."""
+    rl = SlidingWindowRateLimiter(tokens_per_minute=100, token_burst=50)
+    now = 4000.0
+    rl._token_usage.clear()
+    rl._token_usage.append((now - 5.0, 80.0))
+
+    with rl._lock:
+        rl._prune_token_usage(now)
+        wait = rl._wait_time(now, num_tokens=60)
+    # 80 + 60 = 140 tokens; with 100 TPM this would block, but with
+    # token_burst=50 the allowed total is 150 so no wait is required.
+    assert wait == 0.0
+
+    # Pushing beyond the burst should introduce a wait.
+    with rl._lock:
+        rl._prune_token_usage(now)
+        wait_after = rl._wait_time(now, num_tokens=80)
+    assert wait_after > 0.0
+
+
 @pytest.mark.asyncio
 async def test_sliding_window_async_acquire_burst() -> None:
     rl = SlidingWindowRateLimiter(requests_per_minute=15)

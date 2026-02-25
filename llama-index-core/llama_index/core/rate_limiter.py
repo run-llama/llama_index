@@ -221,14 +221,19 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
     specify hard limits per rolling minute.
 
     Supports both requests-per-minute (RPM) and tokens-per-minute (TPM)
-    limiting. Instances can be shared across multiple LLM and embedding
+    limiting, with optional burst headroom to better match provider
+    semantics. Instances can be shared across multiple LLM and embedding
     objects that hit the same API endpoint.
 
     Args:
         requests_per_minute: Maximum requests allowed in any sliding
             one-minute window. ``None`` disables request-rate limiting.
+        request_burst: Additional requests allowed as burst capacity
+            within the sliding window. Defaults to 0 (strict cap).
         tokens_per_minute: Maximum tokens allowed in any sliding
             one-minute window. ``None`` disables token-rate limiting.
+        token_burst: Additional tokens allowed as burst capacity
+            within the sliding window. Defaults to 0 (strict cap).
 
     Raises:
         ValueError: If both ``requests_per_minute`` and ``tokens_per_minute``
@@ -248,10 +253,26 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         description="Maximum number of requests in any sliding one-minute window.",
         gt=0,
     )
+    request_burst: float = Field(
+        default=0.0,
+        ge=0.0,
+        description=(
+            "Additional requests allowed as burst capacity within the sliding window. "
+            "Set to 0 for a strict cap."
+        ),
+    )
     tokens_per_minute: Optional[float] = Field(
         default=None,
         description="Maximum number of tokens in any sliding one-minute window.",
         gt=0,
+    )
+    token_burst: float = Field(
+        default=0.0,
+        ge=0.0,
+        description=(
+            "Additional tokens allowed as burst capacity within the sliding window. "
+            "Set to 0 for a strict cap."
+        ),
     )
 
     _request_timestamps: Deque[float] = PrivateAttr(default_factory=deque)
@@ -289,23 +310,24 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         Must be called while holding ``_lock`` and after pruning.
         """
         wait = 0.0
-        if self.requests_per_minute is not None and len(self._request_timestamps) >= self.requests_per_minute:
-            # Wait until the oldest request exits the window
-            wait = max(
-                wait,
-                self._request_timestamps[0] + _SLIDING_WINDOW_SECONDS - now,
-            )
-        if (
-            self.tokens_per_minute is not None
-            and num_tokens > 0
-        ):
+        if self.requests_per_minute is not None:
+            # Allow optional burst headroom in addition to the strict window cap.
+            allowed_requests = self.requests_per_minute + self.request_burst
+            if len(self._request_timestamps) >= allowed_requests:
+                # Wait until the oldest request exits the window
+                wait = max(
+                    wait,
+                    self._request_timestamps[0] + _SLIDING_WINDOW_SECONDS - now,
+                )
+        if self.tokens_per_minute is not None and num_tokens > 0:
             current = self._current_token_usage()
-            if current + num_tokens > self.tokens_per_minute:
+            allowed_tokens = self.tokens_per_minute + self.token_burst
+            if current + num_tokens > allowed_tokens:
                 # Must wait until enough token usage expires
                 if not self._token_usage:
                     return wait
                 # How long until we can fit num_tokens (current usage must drop)
-                needed = current + num_tokens - self.tokens_per_minute
+                needed = current + num_tokens - allowed_tokens
                 # Expire from oldest; approximate wait from oldest entry
                 remaining = needed
                 for ts, tokens in self._token_usage:
