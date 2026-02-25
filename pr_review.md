@@ -159,6 +159,14 @@ State and mailbox files on Google Drive have no signing or HMAC. External modifi
 
 ## Code Quality Findings
 
+### Positive Observations
+
+- **Background consciousness tool whitelist:** `consciousness.py` restricts the background loop to a `_BG_TOOL_WHITELIST` of read/introspection-only tools (no shell, no git writes, no browser) with a hard cap of 5 LLM rounds per wakeup cycle. This meaningfully limits the blast radius of background activity.
+- **Pre-push test gate:** `tools/git.py → _run_pre_push_tests()` optionally runs `pytest tests/` before any push when `OUROBOROS_PRE_PUSH_TESTS=1`. Good safeguard for self-modifications, though opt-in rather than enforced by default.
+- **Parallel read-only tool execution:** `loop.py` correctly identifies `READ_ONLY_PARALLEL_TOOLS` (repo_read, web_search, drive_list, etc.) and dispatches them concurrently, reducing latency for research-heavy tasks.
+- **Git lock before push:** `tools/git.py → _acquire_git_lock()` acquires a Drive-backed file lock before any git operation, preventing concurrent commits from racing.
+- **Multi-model review pipeline:** Using o3, Gemini, and Claude as cross-reviewers before committing self-modifications is a meaningful quality gate even if not a security boundary.
+
 ### `loop.py` Violates the Project's Own BIBLE.md
 
 `loop.py` is ~980 lines. BIBLE.md Principle 5 (Minimalism) states: "a module fits in one context window, ~1000 lines." The file mixes LLM orchestration, tool dispatch, budget guards, retry logic, context compaction, self-check injection, dynamic tool wiring, browser executor lifecycle, and per-task Drive mailbox draining — far too many responsibilities.
@@ -179,7 +187,9 @@ State and mailbox files on Google Drive have no signing or HMAC. External modifi
 
 `consciousness.py → _build_registry()` creates a second `ToolRegistry` instance, independent from the main agent's registry. Tools registered dynamically after boot in the main agent are invisible to the consciousness loop. The two registries share the same underlying Drive paths but maintain separate in-memory state — a latent consistency bug.
 
-**Recommendation:** Pass the agent's existing registry to the consciousness loop rather than constructing a new one.
+**Positive:** The consciousness loop does enforce a `_BG_TOOL_WHITELIST` (read-only and introspection tools only: `web_search`, `repo_read`, `knowledge_*`, `chat_history`, `send_owner_message`, etc., max 5 rounds per cycle). This is a meaningful mitigation that limits blast radius from the background loop.
+
+**Recommendation:** Pass the agent's existing registry to the consciousness loop rather than constructing a new one. The whitelist should remain as a constraint on top of the shared registry.
 
 ---
 
@@ -201,16 +211,16 @@ State and mailbox files on Google Drive have no signing or HMAC. External modifi
 
 ### Unpinned Dependencies
 
-`requirements.txt` contains only 4 lines with no version pins:
+`requirements.txt` contains only 4 lines with minimal version constraints:
 
 ```
-openai
+openai>=1.0.0
 requests
 playwright
 playwright-stealth
 ```
 
-This means `pip install` produces a non-reproducible environment. A new `openai` SDK major version could silently break the `resp.model_dump()` call pattern in `llm.py`.
+`openai>=1.0.0` bounds the minimum version but not the maximum. A future `openai` SDK major version could silently break the `resp.model_dump()` call pattern in `llm.py`. `requests`, `playwright`, and `playwright-stealth` are completely unpinned.
 
 **Recommendation:** Pin all dependencies with exact versions (`openai==1.x.y`) and add a `requirements-dev.txt` for development-only packages. Use `pip-compile` or Poetry to manage pins.
 
