@@ -9,7 +9,9 @@
 
 ## Executive Summary
 
-Ouroboros is a self-modifying AI agent that reads and rewrites its own source code via git, governed by a philosophical constitution (`BIBLE.md`). The codebase is ambitious and technically interesting, but carries significant security and robustness concerns appropriate to flag before any production adoption. Three open PRs (#5, #6, #7) on the upstream `joi-lab/ouroboros` repo each have issues requiring attention.
+Ouroboros is a self-modifying AI agent that reads and rewrites its own source code via git, governed by a philosophical constitution (`BIBLE.md`). The codebase is ambitious and technically interesting, but carries significant security and correctness issues that must be addressed before any production adoption. Three open PRs (#5, #6, #7) on the upstream `joi-lab/ouroboros` repo each have issues requiring attention.
+
+**Critical issues found: 5 | Medium issues: 6 | Low/quality issues: 9**
 
 ---
 
@@ -19,19 +21,19 @@ Ouroboros is a self-modifying AI agent that reads and rewrites its own source co
 Telegram  ──►  colab_launcher.py
                       │
                supervisor/          (process management layer)
-               ├── events.py        event dispatch
+               ├── events.py        event dispatch → events.jsonl
                ├── git_ops.py       git operations
                ├── queue.py         task queue + scheduling
-               ├── state.py         state + budget tracking
+               ├── state.py         state + budget tracking (Google Drive)
                ├── telegram.py      Telegram client
                └── workers.py       worker lifecycle
                       │
                ouroboros/           (agent core)
-               ├── agent.py         thin orchestrator
-               ├── consciousness.py background thinking loop
+               ├── agent.py         thin orchestrator (OuroborosAgent)
+               ├── consciousness.py background daemon: wakes, thinks, messages owner
                ├── context.py       LLM context + prompt caching
-               ├── llm.py           OpenRouter client
-               ├── loop.py          tool loop + concurrent execution
+               ├── llm.py           OpenRouter client (LLMClient)
+               ├── loop.py          tool loop + concurrent execution (~980 lines)
                ├── memory.py        scratchpad, identity, chat
                └── tools/           plugin registry (auto-discovery)
                    ├── core.py      file ops
@@ -44,100 +46,181 @@ Telegram  ──►  colab_launcher.py
                    └── review.py    multi-model review
 ```
 
+Data flow: `Telegram → supervisor → task queue → OuroborosAgent.handle_task() → run_llm_loop() → LLMClient.chat() → OpenRouter API → tool execution → events.jsonl / Drive`
+
 The agent receives commands via Telegram, decomposes them into tasks, executes tool loops via LLM, and can commit changes back to its own git repository — thereby self-modifying. State is persisted on Google Drive across Colab restarts.
 
 ---
 
 ## Security Analysis
 
-### Critical: Unrestricted Shell Execution
+### Critical: `apply_patch.py` Installs a System Binary at Import Time
 
-The `tools/shell.py` module exposes a shell execution tool to the LLM. The agent can run arbitrary shell commands as part of its tool loop. There is no sandbox, no allowlist of permitted commands, and no human approval gate for shell execution. Combined with the self-modification loop, a compromised LLM response or prompt injection attack could:
+`apply_patch.py`'s `install()` function is called as a **side effect during module initialization**. On import, it silently writes an executable to `/usr/local/bin/apply_patch` (or, in PR #5/#6's variant, a hardcoded user-specific path). This is a supply-chain attack vector.
 
-- Exfiltrate API keys stored as Colab secrets or environment variables
-- Modify agent behavior by rewriting source files before the git commit review step
-- Execute destructive commands (rm -rf, curl | bash, etc.)
+More critically, the patch parser has **no path traversal protection**. It calls `pathlib.Path(path)` and `p.parent.mkdir(parents=True, exist_ok=True)` on paths extracted from patch content without any sandboxing or allowed-path list. A maliciously crafted patch can write arbitrary files anywhere on the filesystem, e.g.:
 
-**Recommendation:** Implement a shell command allowlist or at minimum a blocklist of dangerous patterns (`rm -rf`, `curl | bash`, `pip install` from untrusted sources). Consider requiring human approval (via Telegram confirmation) for destructive shell commands.
+```
+*** Add File: /etc/cron.d/backdoor
+```
 
-### High: Multi-Model Review Is Not a Security Boundary
-
-The `tools/review.py` multi-model review (o3, Gemini, Claude) validates code changes before committing. However, this is a best-effort quality check, not a security boundary. All three models can be fooled by adversarial prompt injection embedded in LLM-generated diffs. The BIBLE.md v3.2 describes "constitutional hardening" and "12 adversarial scenario tests," but adversarial robustness of LLM reviewers against LLM-generated content is an open research problem.
-
-**Recommendation:** Treat multi-model review as a quality gate, not a security gate. Separate human review for any changes touching authentication, budget enforcement, or the review pipeline itself.
-
-### High: Budget Enforcement Is Self-Reported
-
-The `supervisor/state.py` budget tracking relies on the agent correctly reporting its own token usage. v6.2.0 patched "double budget accounting" — meaning this has been a bug before. An agent that has exceeded its budget can potentially continue running if budget tracking state is corrupted or if the accounting logic has further bugs.
-
-**Recommendation:** Enforce budget externally (e.g., track spend via the LLM provider's API, not via self-reported tokens). Use the OpenRouter dashboard or Anthropic console billing limits as the authoritative budget cap.
-
-### Medium: Telegram Authentication
-
-The bot accepts commands from any user who can message it. The README does not document an owner-only restriction (e.g., filtering by `chat_id`). If the bot token leaks, anyone can send `/evolve`, `/restart`, or arbitrary LLM messages to control the agent.
-
-**Recommendation:** Hard-code or env-configure an `OWNER_CHAT_ID` and reject all messages from other chat IDs.
-
-### Medium: Google Drive State Persistence
-
-State is persisted on Google Drive. Google Drive does not provide fine-grained access controls — anyone with access to the Drive folder can read/modify state files. If state files are modified externally, the agent may behave unexpectedly on restart.
-
-**Recommendation:** Sign state files with a local HMAC key derived from a secret to detect external tampering.
-
-### Low: GitHub Token Scope
-
-`GITHUB_TOKEN` is required and used for committing self-modifications back to the fork. If this token has write access to other repositories (as is common with personal access tokens), a compromised agent could write to unintended repositories.
-
-**Recommendation:** Use a fine-grained GitHub token scoped only to the specific fork repository.
+**Recommendation:** Never write executables as a side effect of import. Add an explicit allowlist of paths the patcher may write to (e.g., only within the repo working directory). Never call `mkdir(parents=True)` on LLM-derived paths.
 
 ---
 
-## Code Quality
+### Critical: Auto-Commit and Auto-Push on Startup Without Confirmation
 
-### Positive Observations
+In `agent.py → _check_uncommitted_changes()`, if dirty files are found on startup, the code automatically runs `git add -u && git commit && git push` with no owner confirmation. The branch-name regex check (`^[a-zA-Z0-9_/-]+$`) provides minimal protection — it does not prevent a misconfigured env var from targeting `origin/main` or another protected branch.
 
-- **LLM-First Architecture (BIBLE Principle 4):** The move in v6.2.0 from hardcoded keyword deduplication to LLM-driven task dedup is philosophically consistent with the project's principles and removes brittle keyword matching.
-- **Context compaction:** LLM-driven context compaction (`compact_context` tool, v6.2.0) is a sensible approach to managing context window limits without hard-coded truncation heuristics.
-- **Modular tool system:** The auto-discovery plugin registry in `ouroboros/tools/` is clean. Adding new tools requires only creating a new module — no central registry update needed.
-- **Smoke tests:** 131 smoke tests (v6.1.0) for a self-modifying agent is a meaningful baseline. The constitutional hardening tests (v5.2.0) show deliberate adversarial thinking.
-- **Selective tool schemas (v6.1.0):** Passing only task-relevant tool schemas saves ~40% schema tokens per call — a practical optimization.
+Additionally, on push failure the code runs `git reset HEAD~1`. If the process is interrupted between push-failure detection and the reset, a commit is destroyed without recovery.
 
-### Areas of Concern
+**Recommendation:** Require explicit owner confirmation (Telegram reply) before any auto-push. Never use `git reset HEAD~1` as a recovery path; use `git push --force-with-lease` with proper conflict handling instead.
 
-#### Worker Timeout Bug (v6.2.0 patch, risk of regression)
+---
 
-The `worker_id==0` timeout bug patched in v6.2.0 suggests the worker lifecycle management in `supervisor/workers.py` has subtle edge cases. The patch note doesn't describe the root cause. Without understanding why `worker_id==0` was treated as falsy, it's hard to assess whether similar bugs exist for other sentinel values.
+### Critical: Unrestricted Shell Execution
 
-**Recommendation:** Add a regression test that specifically exercises `worker_id==0` through the full task lifecycle.
+`tools/shell.py` exposes a shell execution tool to the LLM with no sandbox, no command allowlist, and no human approval gate. Combined with the self-modification loop, a single compromised LLM response can:
+- Exfiltrate all API keys from the environment
+- Install malicious packages via `pip install`
+- Execute `curl | bash` payloads from attacker-controlled URLs
 
-#### Context Management Complexity
+The BIBLE.md further **explicitly grants** the agent permission to solve captchas, automate browsers, and work with any website or API — including with Playwright stealth mode to bypass bot detection. There are no domain restrictions or rate limits on browser automation.
 
-`ouroboros/context.py` (28,897 bytes) and `ouroboros/loop.py` (38,662 bytes) are the two largest files. At these sizes they are difficult to reason about and test in isolation. The loop in particular handles tool dispatch, concurrent execution, retry logic, context compaction, and round-limit enforcement — a significant number of concerns in one module.
+**Recommendation:** Implement a shell command allowlist or blocklist of high-risk patterns. Consider requiring Telegram confirmation for any command not matching a safe pattern.
 
-**Recommendation:** Extract tool dispatch and retry logic into separate modules. This would also make it easier to test round-limit enforcement independently of tool execution.
+---
 
-#### Background Consciousness Coupling
+### Critical: Direct Injection of Owner Messages into LLM Stream
 
-`ouroboros/consciousness.py` runs a background loop that generates "thoughts" between tasks. This loop runs concurrently with the main task loop. Concurrency bugs between the two loops (shared state, message queue contention) are the likely cause of the deadlock described in v6.0.0's "major message routing redesign." The fix (single-consumer message routing) is correct directionally, but concurrent access to shared LLM context remains a risk.
+In `loop.py → _drain_incoming_messages()`, raw owner message text is injected directly as `{"role": "user", "content": injected}` into the live LLM message stream with no sanitization or privilege distinction from the system prompt. A compromised Telegram account, or a MITM on the Google Drive mailbox file (`owner_inject.py`), can inject arbitrary LLM instructions mid-task, bypassing whatever system-prompt boundaries exist.
 
-**Recommendation:** Ensure the consciousness loop and task loop share no mutable state. All communication between them should go through the task queue.
+**Recommendation:** Mark injected owner messages with a distinct prefix in the system prompt that instructs the LLM to treat them as operational updates, not new commands. Validate that injected content does not contain prompt-injection patterns (e.g., "Ignore all previous instructions").
 
-#### `apply_patch.py` Path Hardcoding
+---
 
-The upstream `apply_patch.py` hardcodes `/usr/local/bin/apply_patch`. PR #5/#6 attempts to fix this but introduces a new hardcoding (`/home/alexroll/.local/bin/apply_patch`) that is worse because it embeds a specific username. The correct fix is:
+### Critical: `_get_pricing()` Double-Checked Locking Race
 
-```python
-import pathlib
-APPLY_PATCH_PATH = pathlib.Path.home() / ".local" / "bin" / "apply_patch"
-```
-
-Or, preferably, make it configurable via environment variable:
+In `loop.py`, the pricing initialization has a broken double-checked locking pattern:
 
 ```python
-import os, pathlib
-_default = pathlib.Path.home() / ".local" / "bin" / "apply_patch"
-APPLY_PATCH_PATH = pathlib.Path(os.environ.get("APPLY_PATCH_PATH", str(_default)))
+_pricing_fetched = True   # ← set BEFORE the fetch attempt
+try:
+    ...fetch live pricing...
+except Exception:
+    _pricing_fetched = False  # ← reset on failure
 ```
+
+If two threads race before the fetch completes, the second thread reads `_pricing_fetched = True` on the fast path and returns the partially-initialized `_cached_pricing = dict(_MODEL_PRICING_STATIC)` — live pricing data is never merged. Budget calculations will silently use stale static prices.
+
+**Recommendation:** Use a `threading.Lock` to guard the initialization, or initialize pricing eagerly at startup outside the hot path.
+
+---
+
+### High: Budget Enforcement Is Self-Reported and Leaky
+
+`supervisor/state.py` budget tracking relies on the agent correctly reporting its own token usage. v6.2.0 patched "double budget accounting" — a prior bug shows this accounting can be wrong. Additionally, `_check_budget_limits()` in `loop.py` checks `budget_pct > 0.5` using `accumulated_cost / budget_remaining_usd`. If `budget_remaining_usd` is very small (e.g., $0.01) and a single LLM call costs $0.03, `budget_pct = 3.0` triggers a hard-stop — which makes *another* LLM call to compose the stopping message, potentially spending beyond the remaining budget.
+
+**Recommendation:** Enforce budget externally via the LLM provider's billing limits. Use a circuit breaker that halts immediately without an LLM call when remaining budget falls below one estimated call cost.
+
+---
+
+### High: Telegram Authentication — No Owner Verification
+
+The bot accepts commands from any user who can message it. There is no documented `OWNER_CHAT_ID` filter. If the bot token leaks, anyone can send `/evolve`, `/restart`, or arbitrary LLM messages to fully control the agent.
+
+**Recommendation:** Hard-code or env-configure an `OWNER_CHAT_ID` and reject all messages from other chat IDs before any processing.
+
+---
+
+### Medium: Advisory File Lock Race in `state.py`
+
+`state.py → acquire_file_lock()` uses `O_CREAT | O_EXCL` (advisory lock) with stale-lock detection. Two processes can both read `st_mtime`, both decide the lock is stale (age > stale_sec), and both attempt `lock_path.unlink()`. The winner proceeds; the loser silently skips. The result is silent lock loss under contention.
+
+**Recommendation:** Use `fcntl.flock()` or a proper advisory lock library. Alternatively, write the PID into the lock file and verify the lock-holder PID is still alive before breaking the lock.
+
+---
+
+### Medium: Google Drive State Has No Integrity Check
+
+State and mailbox files on Google Drive have no signing or HMAC. External modification of these files (by anyone with Drive folder access) would go undetected and could alter agent behavior on restart.
+
+**Recommendation:** Sign state files with an HMAC key derived from a secret (e.g., a hash of the GitHub token).
+
+---
+
+### Low: GitHub Token Scope
+
+`GITHUB_TOKEN` is required and used for committing self-modifications. Personal access tokens typically have write access to all user repositories. A compromised agent could write to unintended repositories.
+
+**Recommendation:** Use a fine-grained GitHub token scoped only to the specific fork.
+
+---
+
+## Code Quality Findings
+
+### `loop.py` Violates the Project's Own BIBLE.md
+
+`loop.py` is ~980 lines. BIBLE.md Principle 5 (Minimalism) states: "a module fits in one context window, ~1000 lines." The file mixes LLM orchestration, tool dispatch, budget guards, retry logic, context compaction, self-check injection, dynamic tool wiring, browser executor lifecycle, and per-task Drive mailbox draining — far too many responsibilities.
+
+**Recommendation:** Extract tool dispatch and retry logic into `ouroboros/dispatch.py`. Extract budget guard and self-check injection into `ouroboros/guards.py`.
+
+---
+
+### Pricing Table Duplicated Across Files
+
+`_MODEL_PRICING_STATIC` appears identically in both `loop.py` (lines 29–45) and in `llm.py`'s pricing logic. There is no single source of truth. When a new model is added, it must be updated in two places.
+
+**Recommendation:** Centralize model pricing in a single `ouroboros/pricing.py` module imported by both.
+
+---
+
+### `consciousness.py` Creates an Independent ToolRegistry
+
+`consciousness.py → _build_registry()` creates a second `ToolRegistry` instance, independent from the main agent's registry. Tools registered dynamically after boot in the main agent are invisible to the consciousness loop. The two registries share the same underlying Drive paths but maintain separate in-memory state — a latent consistency bug.
+
+**Recommendation:** Pass the agent's existing registry to the consciousness loop rather than constructing a new one.
+
+---
+
+### `_verify_restart()` Claim File Can Leak
+
+`agent.py → _verify_restart()` writes a PID-named claim file, then reads it back, then unlinks it. If the process crashes between write and unlink, the claim file leaks permanently. There is no orphan-cleanup logic on startup.
+
+**Recommendation:** Add a startup sweep that removes claim files older than a reasonable threshold (e.g., 5 minutes) or whose PID is no longer running.
+
+---
+
+### `status_text()` Does O(n) Disk Scan on Every Call
+
+`budget_breakdown()` and `model_breakdown()` in `state.py` open and scan `events.jsonl` linearly on every call. `status_text()` calls both in sequence. In a long-running session with megabytes of events, this is a blocking linear scan on every `/status` request. Only `per_task_cost_summary()` implements the `tail_bytes` optimization.
+
+**Recommendation:** Apply the `tail_bytes` optimization to `budget_breakdown()` and `model_breakdown()`, or maintain running totals in the in-memory state object.
+
+---
+
+### Unpinned Dependencies
+
+`requirements.txt` contains only 4 lines with no version pins:
+
+```
+openai
+requests
+playwright
+playwright-stealth
+```
+
+This means `pip install` produces a non-reproducible environment. A new `openai` SDK major version could silently break the `resp.model_dump()` call pattern in `llm.py`.
+
+**Recommendation:** Pin all dependencies with exact versions (`openai==1.x.y`) and add a `requirements-dev.txt` for development-only packages. Use `pip-compile` or Poetry to manage pins.
+
+---
+
+### Background Consciousness Concurrency Risk
+
+`consciousness.py → _execute_tool()` sets `self._registry._ctx.current_chat_id` and `pending_events` directly without a lock, before every tool call. If the consciousness thread races with the agent thread — possible since consciousness `resume()` is called after task completion, not before tool execution completes — these shared fields can be corrupted.
+
+**Recommendation:** All mutations to shared context fields must go through a lock or be replaced with thread-local state.
 
 ---
 
@@ -149,12 +232,18 @@ APPLY_PATCH_PATH = pathlib.Path(os.environ.get("APPLY_PATCH_PATH", str(_default)
 
 **Recommendation: Request changes**
 
-1. **Critical:** `apply_patch.py` — replaces `/usr/local/bin/apply_patch` with `/home/alexroll/.local/bin/apply_patch`, hard-coding the `alexroll` username. This will break on any other system. Use `Path.home() / ".local/bin/apply_patch"` instead.
+1. **Critical:** `apply_patch.py` — replaces `/usr/local/bin/apply_patch` with `/home/alexroll/.local/bin/apply_patch`, hard-coding the `alexroll` username. This will break on any other system. Correct fix:
+   ```python
+   APPLY_PATCH_PATH = pathlib.Path(
+       os.environ.get("APPLY_PATCH_PATH",
+           str(pathlib.Path.home() / ".local" / "bin" / "apply_patch"))
+   )
+   ```
 2. **Positive:** The Colab guard (`try/except ImportError` around `google.colab`) is a good improvement that allows local development without Colab.
 3. **Positive:** Supporting `MISTRAL_API_KEY` as an alternative to `OPENROUTER_API_KEY` widens accessibility.
 4. **Positive:** Making `DRIVE_ROOT` and `REPO_DIR` configurable and context-aware is the right direction.
-5. **Concern:** `LLM_API_KEY = OPENROUTER_API_KEY or MISTRAL_API_KEY` — the precedence is implicit. Document that OpenRouter takes priority over Mistral.
-6. **Neutral:** This PR and PR #6 are near-identical duplicates submitted from different branches (`ouroboros-stable` vs `ouroboros`). Only one should be merged; the other should be closed.
+5. **Minor:** `LLM_API_KEY = OPENROUTER_API_KEY or MISTRAL_API_KEY` — the precedence is implicit. Document that OpenRouter takes priority over Mistral.
+6. **Neutral:** This PR and PR #6 are near-identical duplicates. Only one should be merged; close the other.
 
 ---
 
@@ -162,9 +251,9 @@ APPLY_PATCH_PATH = pathlib.Path(os.environ.get("APPLY_PATCH_PATH", str(_default)
 **Branch:** `takahacomore:ouroboros` → `joi-lab:main`
 **Files changed:** 3 | **+43 / -10**
 
-**Recommendation: Close as duplicate**
+**Recommendation: Close as duplicate of PR #5**
 
-This PR is functionally identical to PR #5 (same three files, same changes, same author). PR #6 has `mergeable_state: clean` while PR #5 has `mergeable_state: unknown`, so if one is to be merged after the `alexroll` hardcoding is fixed, prefer #6. Close #5.
+Functionally identical to PR #5. PR #6 has `mergeable_state: clean` while PR #5 has `mergeable_state: unknown`. If one is to be merged after the `alexroll` hardcoding is fixed, prefer #6 (clean merge state) and close #5.
 
 ---
 
@@ -172,35 +261,38 @@ This PR is functionally identical to PR #5 (same three files, same changes, same
 **Branch:** `oleynik-alina:codex/openai-direct-api` → `joi-lab:main`
 **Files changed:** 78 | **+5,792 / -236**
 
-**Recommendation: Request changes — do not merge as-is**
+**Recommendation: Block — do not merge**
 
-1. **No PR description.** A 78-file, ~6K-line PR with zero description is not reviewable. The author must explain: what problem does this solve? What is the `viktor-friday` skills framework? How does the OpenAI direct API path differ from OpenRouter?
-2. **Scope is too large.** The PR appears to add an entirely new skills/plugin framework (`.claude/skills/` tree with `manifest.yaml` schemas, `scripts/vfriday_skill_apply.py`) *and* an OpenAI direct API pathway. These should be separate PRs.
-3. **Unreviewed framework introduction.** The `manifest.yaml`-driven skill system (with `post_apply` and `test` commands) allows arbitrary shell command execution as part of skill installation. This expands the agent's attack surface significantly and needs careful security review.
-4. **`add-lean4-verifier` skill** — adds a Lean4 formal verification scaffold. It is unclear how this integrates with the agent's existing multi-model review pipeline.
-
----
-
-## Versioning and Changelog
-
-The project uses semantic versioning but the cadence (v4.1 → v4.25 in 24 hours, then v6.2 in ~9 days) reflects self-directed autonomous versioning, not conventional major/minor/patch semantics. The version numbers communicate agent iteration count more than API stability. This is fine for an experimental project but should be documented explicitly to avoid confusion for external contributors.
+1. **No PR description.** A 78-file, ~6K-line PR with zero description is not reviewable. The author must explain: what problem does this solve, how does the OpenAI direct API differ from OpenRouter, and what is the `viktor-friday` skills framework?
+2. **Scope is too large.** Adding an entirely new skills/plugin framework (`.claude/skills/` tree with `manifest.yaml` schemas, `scripts/vfriday_skill_apply.py`) and an OpenAI direct API pathway in the same PR is unacceptable for review. Split into separate PRs.
+3. **Security concern:** The `manifest.yaml`-driven skill system supports `post_apply` and `test` shell commands. This is arbitrary shell execution triggered by skill installation — it expands the agent's attack surface significantly and needs dedicated security review before any merge.
+4. **`add-lean4-verifier` skill** — adds a Lean4 formal verification scaffold with no documented integration path into the existing multi-model review pipeline.
 
 ---
 
 ## Summary Table
 
-| Area | Finding | Severity |
-|---|---|---|
-| Shell execution — no sandbox | Unrestricted `shell.py` tool | Critical |
-| Multi-model review — not a security boundary | LLM reviewers can be prompt-injected | High |
-| Budget enforcement — self-reported | History of double-accounting bugs | High |
-| Telegram — no owner auth | Any user can control the agent | Medium |
-| Drive state — no integrity check | External tampering undetected | Medium |
-| GitHub token scope | Token likely broader than needed | Low |
-| PR #5/#6 — username hardcoded | `/home/alexroll/...` breaks portability | Critical (for that PR) |
-| PR #7 — no description, too large | Unreviewed framework addition | Blocker |
-| `loop.py` / `context.py` size | Difficult to test/reason about | Moderate |
-| Consciousness loop concurrency | Shared state risk with task loop | Moderate |
+| # | Finding | Severity |
+|---|---------|----------|
+| 1 | `apply_patch` path traversal + silent install at import | Critical |
+| 2 | Auto-commit/push on startup without confirmation | Critical |
+| 3 | Unrestricted shell execution + captcha/browser automation | Critical |
+| 4 | Raw owner message injection into LLM stream | Critical |
+| 5 | `_get_pricing()` double-checked locking race | Critical |
+| 6 | Budget enforcement is self-reported and leaky | High |
+| 7 | No Telegram owner authentication | High |
+| 8 | Advisory file lock race in `state.py` | Medium |
+| 9 | Drive state has no integrity check | Medium |
+| 10 | GitHub token scope too broad | Low |
+| 11 | `loop.py` ~980 lines, too many responsibilities | Medium |
+| 12 | Pricing table duplicated in `loop.py` and `llm.py` | Low |
+| 13 | Consciousness loop creates independent ToolRegistry | Medium |
+| 14 | Claim file leaks on crash in `_verify_restart()` | Low |
+| 15 | `status_text()` does O(n) disk scan per call | Medium |
+| 16 | No version pins in `requirements.txt` | Medium |
+| 17 | Consciousness/agent thread share mutable context fields | Medium |
+| 18 | PR #5/#6: username hardcoded in apply_patch path | Critical (for that PR) |
+| 19 | PR #7: no description, too large, `post_apply` shell risk | Blocker |
 
 ---
 
@@ -208,4 +300,8 @@ The project uses semantic versioning but the cadence (v4.1 → v4.25 in 24 hours
 
 Ouroboros is a genuinely novel project — a self-modifying agent with a philosophical constitution and autonomous evolution. The architecture is coherent and the BIBLE.md principles are consistently applied. The v6.x series shows meaningful iteration: the deadlock fix (v6.0), selective tool schemas (v6.1), and LLM-first dedup (v6.2) all reflect real engineering progress.
 
-The primary risks are the security surface of unrestricted shell execution combined with self-modification, and the open PRs requiring changes before merge. For a personal/experimental project run in a sandboxed Colab environment with a private Telegram bot, the current security posture is acceptable. For any wider deployment or multi-user access, the shell sandboxing and Telegram authentication issues should be resolved first.
+However, the five critical security issues (path traversal in `apply_patch`, auto-push without confirmation, unrestricted shell + browser, direct LLM stream injection, and pricing race) must be resolved before this can be considered robust. The most urgent are the `apply_patch` installer (arbitrary file write at import time) and the LLM message injection vector (allows mid-task prompt injection via Telegram or Drive).
+
+For a personal/experimental project run in a sandboxed Colab environment with a private Telegram bot, the current security posture may be acceptable in practice. For any wider deployment, multi-user access, or shared-repo setup, these issues are genuine risks.
+
+**Recommended merge order for PRs:** Close #5 (duplicate), merge #6 after fixing the hardcoded username, block #7 pending description + PR split + security audit of `post_apply` execution.
