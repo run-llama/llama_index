@@ -16,7 +16,6 @@ from typing import (
     cast,
 )
 import typing
-
 import google.genai.types as types
 import google.genai
 import httpx
@@ -447,16 +446,38 @@ async def chat_message_to_gemini(
     ), file_api_names
 
 
+def _validation_for_additional_properties_from_schema(
+    schema: Dict[str, Any],
+):
+    def _validate(obj: Dict[str, Any], path="") -> bool:
+        if isinstance(obj, dict):
+            if "additionalProperties" in obj:
+                raise ValueError(
+                    f"The Gemini API does not support 'additionalProperties' in schemas.\n"
+                    f"Found at path: {path or 'root'}\n"
+                    f"Current value: {obj['additionalProperties']}\n"
+                    f"Solution: Remove the 'additionalProperties' key from your Pydantic model's schema."
+                )
+            for key, value in obj.items():
+                new_path = f"{path}.{key}" if path else key
+                _validate(value, new_path)
+        elif isinstance(obj, list):
+            for index, item in enumerate(obj):
+                new_path = f"{path}[{index}]"
+                _validate(item, new_path)
+
+    _validate(schema)
+
+
 def convert_schema_to_function_declaration(
     client: google.genai.client, tool: "BaseTool"
 ):
     if not tool.metadata.fn_schema:
         raise ValueError("fn_schema is missing")
 
-    # Get the JSON schema
     root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
-
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
+
     if len(description_parts) > 1:
         description = description_parts[-1]
     elif len(description_parts) == 1:

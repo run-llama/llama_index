@@ -346,6 +346,50 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old and not is_o1_beta
 
 
+def _validate_additional_properties_false(schema: Dict[str, Any]):
+    """Fix additionalProperties in anyOf schemas for OpenAI API compatibility.
+
+    OpenAI GPT-4o-mini and newer models require 'additionalProperties' to be
+    explicitly set to false for all object types in anyOf schemas.
+
+    Args:
+        schema: The JSON schema dict to fix (modified in place)
+
+    Returns:
+        The fixed schema dict
+    """
+
+    def _validate(obj, path=""):
+        if isinstance(obj, dict):
+            # Fix anyOf schemas with object types
+            if "anyOf" in obj:
+                for i, alt in enumerate(obj["anyOf"]):
+                    if isinstance(alt, dict) and alt.get("type") == "object":
+                        if (
+                            "additionalProperties" in alt
+                            and alt["additionalProperties"] is not False
+                        ):
+                            location = f"{path}.anyOf[{i}]" if path else f"anyOf[{i}]"
+                            raise ValueError(
+                                f"OpenAI API requires 'additionalProperties' to be set to false (or omitted) "
+                                f"for object types in anyOf schemas.\n"
+                                f"Found at path: {location}\n"
+                                f"Current value: {alt.get('additionalProperties')}\n"
+                                f"Solution: Either remove 'additionalProperties' from the schema or set it to false."
+                            )
+
+            # Recursively validate nested objects
+            for key, val in obj.items():
+                new_path = f"{path}.{key}" if path else key
+                _validate(val, new_path)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                new_path = f"{path}[{i}]"
+                _validate(item, new_path)
+
+    _validate(schema)
+
+
 def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,

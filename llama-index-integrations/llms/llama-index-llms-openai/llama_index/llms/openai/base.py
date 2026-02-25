@@ -80,6 +80,7 @@ from llama_index.llms.openai.utils import (
     update_tool_calls,
     is_json_schema_supported,
     is_chatcomp_api_supported,
+    _validate_additional_properties_false,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -1086,6 +1087,8 @@ class OpenAI(FunctionCallingLLM):
         llm_kwargs["response_format"] = response_format
         if "tool_choice" in llm_kwargs:
             del llm_kwargs["tool_choice"]
+
+        _validate_additional_properties_false(output_cls.model_json_schema())
         return llm_kwargs
 
     def _should_use_structure_outputs(self) -> bool:

@@ -24,6 +24,7 @@ from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
     chat_from_gemini_response,
+    _validation_for_additional_properties_from_schema,
 )
 
 
@@ -1939,3 +1940,86 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+# Validation function tests for _validation_for_additional_properties_from_schema
+
+
+def test_validation_valid_schema_without_additional_properties():
+    """Test validation passes for clean schema without additionalProperties."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+    }
+    # Should not raise ValueError
+    _validation_for_additional_properties_from_schema(schema)
+
+
+def test_validation_invalid_schema_with_additional_properties_at_root():
+    """Test validation raises error for additionalProperties at root level."""
+    schema = {
+        "type": "object",
+        "properties": {"name": {"type": "string"}},
+        "additionalProperties": False,
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "root" in str(exc_info.value)
+
+
+def test_validation_invalid_schema_with_additional_properties_nested():
+    """Test validation raises error for additionalProperties in nested properties."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "additionalProperties": True,
+            }
+        },
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "properties.user" in str(exc_info.value)
+
+
+def test_validation_invalid_schema_with_additional_properties_in_anyof():
+    """Test validation raises error for additionalProperties in anyOf."""
+    schema = {
+        "anyOf": [
+            {
+                "type": "object",
+                "properties": {"value": {"type": "string"}},
+                "additionalProperties": False,
+            },
+            {"type": "null"},
+        ]
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+
+
+def test_validation_invalid_schema_with_additional_properties_in_defs():
+    """Test validation raises error for additionalProperties in $defs."""
+    schema = {
+        "type": "object",
+        "properties": {"item": {"$ref": "#/$defs/Item"}},
+        "$defs": {
+            "Item": {
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+                "additionalProperties": {},
+            }
+        },
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validation_for_additional_properties_from_schema(schema)
+    assert "Gemini API does not support 'additionalProperties'" in str(exc_info.value)
+    assert "$defs.Item" in str(exc_info.value)

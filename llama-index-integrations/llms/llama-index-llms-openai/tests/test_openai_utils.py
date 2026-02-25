@@ -39,6 +39,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     is_chatcomp_api_supported,
+    _validate_additional_properties_false,
 )
 
 
@@ -477,3 +478,82 @@ def test_gpt_5_chat_latest_model_support() -> None:
 def test_is_chatcomp_api_supported() -> None:
     assert is_chatcomp_api_supported("gpt-5.2")
     assert not is_chatcomp_api_supported("gpt-5.2-pro")
+
+
+# Validation function tests for _validate_additional_properties_false
+
+
+def test_validate_valid_anyof_with_additional_properties_false():
+    """Test validation passes for anyOf with additionalProperties=false."""
+    schema = {
+        "anyOf": [
+            {"type": "object", "additionalProperties": False},
+            {"type": "string"},
+        ]
+    }
+    # Should not raise ValueError
+    _validate_additional_properties_false(schema)
+
+
+def test_validate_valid_anyof_without_additional_properties():
+    """Test validation passes for anyOf without additionalProperties."""
+    schema = {
+        "anyOf": [
+            {"type": "object", "properties": {"name": {"type": "string"}}},
+            {"type": "null"},
+        ]
+    }
+    # Should not raise ValueError
+    _validate_additional_properties_false(schema)
+
+
+def test_validate_invalid_anyof_with_additional_properties_true():
+    """Test validation raises error for anyOf with additionalProperties=true."""
+    schema = {
+        "anyOf": [
+            {"type": "object", "additionalProperties": True},
+            {"type": "string"},
+        ]
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validate_additional_properties_false(schema)
+    assert "OpenAI API requires 'additionalProperties' to be set to false" in str(
+        exc_info.value
+    )
+
+
+def test_validate_invalid_nested_anyof_with_wrong_additional_properties():
+    """Test validation raises error for nested anyOf with wrong additionalProperties."""
+    schema = {
+        "properties": {
+            "data": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {"value": {"type": "number"}},
+                        "additionalProperties": {},
+                    },
+                    {"type": "null"},
+                ]
+            }
+        }
+    }
+    with pytest.raises(ValueError) as exc_info:
+        _validate_additional_properties_false(schema)
+    assert "OpenAI API requires 'additionalProperties' to be set to false" in str(
+        exc_info.value
+    )
+
+
+def test_validate_valid_schema_without_anyof():
+    """Test validation passes for schema without anyOf."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+        "additionalProperties": True,
+    }
+    # Should not raise ValueError since there's no anyOf
+    _validate_additional_properties_false(schema)
