@@ -2,6 +2,8 @@ import os
 from typing import Dict, List, Generator
 
 import pytest
+from unittest import mock
+from llama_index.vector_stores.chroma.base import MAX_CHUNK_SIZE
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core.vector_stores.types import (
@@ -284,3 +286,47 @@ def test_clear(
         ]
     )
     assert len(res) == 0
+
+
+class SimpleCollection:
+    """Minimal collection stub without _client attribute for testing fallback behavior."""
+
+
+@mock.patch("llama_index.vector_stores.chroma.base.chromadb.HttpClient")
+def test_max_chunk_size_new_client(mock_client_cls: mock.Mock) -> None:
+    # Case 1: New client created (mocked)
+    mock_client = mock.Mock()
+    mock_client.get_max_batch_size.return_value = 100
+    mock_client.get_or_create_collection.return_value = mock.Mock()
+    mock_client_cls.return_value = mock_client
+
+    store = ChromaVectorStore(
+        chroma_collection=None,
+        host="localhost",
+        port=8000,
+        collection_name="test_collection",
+    )
+    assert store._collection is not None
+    assert store.max_chunk_size == 100
+
+
+def test_max_chunk_size_collection_with_client() -> None:
+    # Case 2: Collection passed, has _client
+    mock_collection = mock.Mock()
+    mock_collection._client.get_max_batch_size.return_value = 200
+    store = ChromaVectorStore(chroma_collection=mock_collection)
+    assert store.max_chunk_size == 200
+
+
+def test_max_chunk_size_collection_no_client() -> None:
+    # Case 3: Collection passed, no _client (fallback)
+    store = ChromaVectorStore(chroma_collection=SimpleCollection())
+    assert store.max_chunk_size == MAX_CHUNK_SIZE
+
+
+def test_max_chunk_size_exception() -> None:
+    # Case 4: Exception during get_max_batch_size (fallback)
+    mock_collection_error = mock.Mock()
+    mock_collection_error._client.get_max_batch_size.side_effect = Exception("Error")
+    store = ChromaVectorStore(chroma_collection=mock_collection_error)
+    assert store.max_chunk_size == MAX_CHUNK_SIZE

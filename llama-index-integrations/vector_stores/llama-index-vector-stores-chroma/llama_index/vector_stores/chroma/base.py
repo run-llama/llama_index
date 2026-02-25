@@ -168,6 +168,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Collection = PrivateAttr()
+    _max_chunk_size: int = PrivateAttr()
 
     def __init__(
         self,
@@ -193,13 +194,55 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        self._max_chunk_size = MAX_CHUNK_SIZE
+
         if chroma_collection is None:
             client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
             self._collection = client.get_or_create_collection(
                 name=collection_name, **collection_kwargs
             )
+            try:
+                self._max_chunk_size = client.get_max_batch_size()
+            except Exception:
+                logger.warning(
+                    "Failed to get max batch size from client, using default"
+                )
+                self._max_chunk_size = MAX_CHUNK_SIZE
         else:
             self._collection = cast(Collection, chroma_collection)
+            # NOTE: Accessing private _client attribute is a workaround for ChromaDB.
+            # This may break in future ChromaDB versions. Tested with ChromaDB 0.4.x+.
+            # If a public API becomes available, this should be updated.
+            if hasattr(self._collection, "_client"):
+                try:
+                    self._max_chunk_size = self._collection._client.get_max_batch_size()
+                except Exception:
+                    logger.warning(
+                        "Could not access _client.get_max_batch_size; falling back to default MAX_CHUNK_SIZE."
+                    )
+                    self._max_chunk_size = MAX_CHUNK_SIZE
+            else:
+                logger.warning(
+                    "Collection does not have a _client attribute; cannot determine dynamic batch size. Falling back to default MAX_CHUNK_SIZE."
+                )
+                self._max_chunk_size = MAX_CHUNK_SIZE
+
+    @property
+    def max_chunk_size(self) -> int:
+        """
+        Return the maximum chunk size for batch operations.
+
+        This value represents the maximum number of nodes that can be added to ChromaDB
+        in a single batch operation. It is dynamically determined from the ChromaDB client's
+        `get_max_batch_size()` method when available, ensuring compatibility with different
+        ChromaDB configurations. If the dynamic value cannot be retrieved, it falls back to
+        a static default value of 41665.
+
+        Returns:
+            int: Maximum number of nodes that can be added in a single batch.
+
+        """
+        return self._max_chunk_size
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -292,7 +335,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        max_chunk_size = MAX_CHUNK_SIZE
+        max_chunk_size = self._max_chunk_size
         node_chunks = chunk_list(nodes, max_chunk_size)
 
         all_ids = []
