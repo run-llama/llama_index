@@ -350,6 +350,7 @@ def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
+    kwargs: Optional[Dict[str, Any]] = None,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -527,6 +528,7 @@ def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
+    kwargs: Optional[Dict[str, Any]] = None,
 ) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -575,17 +577,22 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+
+        # Omit reasoning items when store is set to False
         elif isinstance(block, ThinkingBlock):
-            if block.content and "id" in block.additional_information:
-                reasoning.append(
-                    {
-                        "type": "reasoning",
-                        "id": block.additional_information["id"],
-                        "summary": [
-                            {"type": "summary_text", "text": block.content or ""}
-                        ],
-                    }
-                )
+            if kwargs is None:
+                continue
+            elif kwargs["store"]:
+                if block.content and "id" in block.additional_information:
+                    reasoning.append(
+                        {
+                            "type": "reasoning",
+                            "id": block.additional_information["id"],
+                            "summary": [
+                                {"type": "summary_text", "text": block.content or ""}
+                            ],
+                        }
+                    )
         elif isinstance(block, ToolCallBlock):
             tool_calls.extend(
                 [
@@ -692,6 +699,7 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
+    kwargs: Optional[Dict[str, Any]] = None,
 ) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
@@ -701,6 +709,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model="o3-mini",  # hardcode to ensure developer messages are used
+                kwargs=kwargs,
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
@@ -724,6 +733,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model=model,
+                kwargs=kwargs,
             )
             for message in messages
         ]
