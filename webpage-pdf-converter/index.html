@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL to Any - Convert Webpages to PDF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { motion, AnimatePresence } = window.Motion;
+
+    // Icons as SVG components
+    const DownloadIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+    );
+
+    const Share2Icon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+    );
+
+    const MoonIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    );
+
+    const MenuIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+    );
+
+    const LinkIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    );
+
+    const FileTextIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+    );
+
+    const CheckCircleIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    );
+
+    const Loader2Icon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    );
+
+    const ArrowRightIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    );
+
+    const ShieldCheckIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+    );
+
+    const ZapIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    );
+
+    const PREVIEW_IMAGE_URL = "https://image.qwenlm.ai/public_source/e54f4b8d-a909-4f5f-8b25-70193ea89466/1b0a5b677-de2e-4c9b-b9c7-ac6ad63124e0.png";
+
+    function FeatureCard({ icon, title, desc }) {
+      return (
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mb-4">
+            {icon}
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
+          <p className="text-slate-500 leading-relaxed text-sm">{desc}</p>
+        </div>
+      );
+    }
+
+    function URLToPDFConverter() {
+      const [url, setUrl] = useState('');
+      const [status, setStatus] = useState('idle');
+      const [progress, setProgress] = useState(0);
+      const [loadingStep, setLoadingStep] = useState('');
+
+      const handleConvert = () => {
+        if (!url) return;
+        setStatus('processing');
+        setProgress(0);
+
+        const steps = [
+          { pct: 10, msg: 'Connecting to server...' },
+          { pct: 30, msg: 'Bypassing security checks...' },
+          { pct: 50, msg: 'Waiting for full page load...' },
+          { pct: 75, msg: 'Rendering high-quality PDF...' },
+          { pct: 100, msg: 'Finalizing...' }
+        ];
+
+        let currentStep = 0;
+
+        const interval = setInterval(() => {
+          if (currentStep >= steps.length) {
+            clearInterval(interval);
+            setStatus('complete');
+            return;
+          }
+
+          const step = steps[currentStep];
+          setProgress(step.pct);
+          setLoadingStep(step.msg);
+          currentStep++;
+        }, 800);
+      };
+
+      const reset = () => {
+        setStatus('idle');
+        setUrl('');
+        setProgress(0);
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100">
+          <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+            <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                  <FileTextIcon />
+                </div>
+                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+                  URL to Any
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <button className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600">
+                  <MoonIcon />
+                </button>
+                <button className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600">
+                  <MenuIcon />
+                </button>
+              </div>
+            </div>
+          </nav>
+
+          <main className="max-w-3xl mx-auto px-4 py-12 flex flex-col items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-10"
+            >
+              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+                Convert Webpages to <span className="text-indigo-600">PDF</span>
+              </h1>
+              <p className="text-lg text-slate-500 max-w-lg mx-auto">
+                Generate high-quality PDFs from any URL instantly. We wait for the page to fully load before capturing, ensuring no broken images or loading spinners.
+              </p>
+            </motion.div>
+
+            <AnimatePresence mode="wait">
+              {status === 'idle' && (
+                <motion.div
+                  key="input-form"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                  className="w-full bg-white p-2 rounded-2xl shadow-xl shadow-indigo-100 border border-slate-100 flex flex-col md:flex-row gap-2"
+                >
+                  <div className="flex-1 relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <LinkIcon />
+                    </div>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/article"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-700 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <button
+                    onClick={handleConvert}
+                    disabled={!url}
+                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
+                  >
+                    Convert <ArrowRightIcon />
+                  </button>
+                </motion.div>
+              )}
+
+              {status === 'processing' && (
+                <motion.div
+                  key="processing"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center"
+                >
+                  <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Loader2Icon />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Processing URL</h3>
+                  <p className="text-slate-500 mb-8">{loadingStep}</p>
+
+                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-indigo-600 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ type: "spring", stiffness: 50 }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-slate-400 font-medium">
+                    <span>Waiting for content...</span>
+                    <span>{progress}%</span>
+                  </div>
+                </motion.div>
+              )}
+
+              {status === 'complete' && (
+                <motion.div
+                  key="result"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full flex flex-col gap-6"
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-slate-800">Conversion Complete</h2>
+                    <button onClick={reset} className="text-indigo-600 font-medium hover:underline">Convert Another</button>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <button className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-xl font-semibold transition-all shadow-lg shadow-indigo-200">
+                      <DownloadIcon /> Download PDF
+                    </button>
+                    <button className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-6 rounded-xl font-semibold transition-all">
+                      <Share2Icon /> Share Link
+                    </button>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                          <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                        </div>
+                        <span className="text-xs text-slate-500 font-mono ml-2">preview.pdf</span>
+                      </div>
+                      <div className="text-xs text-slate-400">1.2 MB</div>
+                    </div>
+                    <div className="p-8 bg-slate-100 flex justify-center">
+                      <div className="bg-white shadow-sm w-full max-w-md aspect-[1/1.414] relative overflow-hidden group cursor-pointer">
+                        <img
+                          src={PREVIEW_IMAGE_URL}
+                          alt="PDF Preview"
+                          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="bg-white/90 backdrop-blur text-indigo-600 px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                            <ZapIcon /> View Full Page
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {status === 'idle' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 w-full"
+              >
+                <FeatureCard
+                  icon={<ShieldCheckIcon />}
+                  title="Smart Rendering"
+                  desc="We wait for JavaScript to execute and images to load, ensuring the PDF matches what you see on screen."
+                />
+                <FeatureCard
+                  icon={<ZapIcon />}
+                  title="Lightning Fast"
+                  desc="Cloud-based processing converts even heavy pages in seconds, not minutes."
+                />
+                <FeatureCard
+                  icon={<CheckCircleIcon />}
+                  title="High Fidelity"
+                  desc="Vector-based text and high-resolution images. No pixelation or blurry text."
+                />
+              </motion.div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<URLToPDFConverter />);
+  </script>
+</body>
+</html>
