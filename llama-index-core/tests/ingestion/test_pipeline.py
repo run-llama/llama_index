@@ -5,6 +5,7 @@ from typing import Sequence, Any
 import pytest
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
+from llama_index.core.ingestion.cache import IngestionCache
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
@@ -111,10 +112,10 @@ def test_save_load_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     pipeline2.load("./test_pipeline")
 
     # dedup will catch the last node
-    nodes = pipeline.run(documents=[documents[-1]])
+    nodes = pipeline2.run(documents=[documents[-1]])
     assert len(nodes) == 0
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
+    assert pipeline2.docstore is not None
+    assert len(pipeline2.docstore.docs) == 2
 
 
 def test_save_load_pipeline_without_docstore(
@@ -155,9 +156,9 @@ def test_save_load_pipeline_without_docstore(
     pipeline2.load("./test_pipeline")
 
     # dedup will not catch the last node if the document store is not set
-    nodes = pipeline.run(documents=[documents[-1]])
+    nodes = pipeline2.run(documents=[documents[-1]])
     assert len(nodes) == 1
-    assert pipeline.docstore is None
+    assert pipeline2.docstore is None
 
 
 def test_pipeline_update_text_content() -> None:
@@ -286,6 +287,49 @@ def test_pipeline_with_transform_error() -> None:
         pipeline.run(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
+
+
+def test_pipeline_with_preload_from_persist_dir() -> None:
+    documents = [
+        Document(text="one", doc_id="1"),
+        Document(text="two", doc_id="2"),
+        Document(text="one", doc_id="1"),
+    ]
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        cache=IngestionCache(),
+        docstore=SimpleDocumentStore(),
+    )
+
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 2
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 2
+    assert pipeline.cache is not None
+
+    # save
+    pipeline.persist("./test_pipeline")
+
+    # preload cache & docstore
+    cache = IngestionCache.from_persist_dir("./test_pipeline")
+    docstore = SimpleDocumentStore.from_persist_dir("./test_pipeline")
+    pipeline2 = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        cache=cache,
+        docstore=docstore,
+    )
+
+    # dedup will catch the last node
+    nodes = pipeline2.run(documents=[documents[-1]])
+    assert len(nodes) == 0
+    assert pipeline2.docstore is not None
+    assert len(pipeline2.docstore.docs) == 2
+    assert pipeline2.cache is not None
 
 
 @pytest.mark.asyncio
