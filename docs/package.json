@@ -34,7 +34,8 @@
     "starlight-auto-sidebar": "^0.1.2",
     "typedoc": "^0.28.4",
     "typedoc-plugin-markdown": "^4.6.3",
-    "typedoc-plugin-merge-modules": "^7.0.0"
+    "typedoc-plugin-merge-modules": "^7.0.0",
+    "unist-util-visit": "^5.1.0"
   },
   "packageManager": "pnpm@10.8.1"
 }
