@@ -3,6 +3,7 @@
 import pickle
 from typing import Any, List, cast
 
+import pytest
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import Document
@@ -240,3 +241,79 @@ def test_simple_pickle(
     all_ref_doc_info = new_index.ref_doc_info
     for idx, ref_doc_id in enumerate(all_ref_doc_info.keys()):
         assert documents[idx].node_id == ref_doc_id
+
+
+def test_from_vector_store_without_storage_context_raises(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+    documents: List[Document],
+) -> None:
+    """Reproduce issue 20504: from_vector_store without storage_context raises for default store."""
+    index = VectorStoreIndex.from_documents(
+        documents=documents, embed_model=mock_embed_model
+    )
+    assert not index.vector_store.stores_text
+
+    with pytest.raises(ValueError) as exc_info:
+        VectorStoreIndex.from_vector_store(index.vector_store)
+
+    assert "storage_context" in str(exc_info.value).lower()
+    assert "does not store text" in str(exc_info.value).lower()
+
+
+def test_from_vector_store_with_storage_context(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+    documents: List[Document],
+) -> None:
+    """Fix for issue 20504: from_vector_store with storage_context works for default store."""
+    storage_context = StorageContext.from_defaults()
+    index0 = VectorStoreIndex.from_documents(
+        documents=documents,
+        embed_model=mock_embed_model,
+        storage_context=storage_context,
+    )
+
+    index1 = VectorStoreIndex.from_vector_store(
+        index0.vector_store,
+        embed_model=mock_embed_model,
+        storage_context=storage_context,
+    )
+
+    assert index1.index_struct.nodes_dict == index0.index_struct.nodes_dict
+    assert len(index1.index_struct.nodes_dict) > 0
+
+    query_engine = index1.as_query_engine()
+    response = query_engine.query("What is the test about?")
+    assert response.response is not None
+    assert len(response.response.strip()) > 0
+
+
+def test_from_vector_store_with_storage_context_and_index_struct(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+    documents: List[Document],
+) -> None:
+    """from_vector_store with explicit index_struct uses it instead of loading from store."""
+    storage_context = StorageContext.from_defaults()
+    index0 = VectorStoreIndex.from_documents(
+        documents=documents,
+        embed_model=mock_embed_model,
+        storage_context=storage_context,
+    )
+
+    index1 = VectorStoreIndex.from_vector_store(
+        index0.vector_store,
+        embed_model=mock_embed_model,
+        storage_context=storage_context,
+        index_struct=index0.index_struct,
+    )
+
+    assert index1.index_struct is index0.index_struct
+    query_engine = index1.as_query_engine()
+    response = query_engine.query("What is the test about?")
+    assert response.response is not None
+    assert len(response.response.strip()) > 0

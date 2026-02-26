@@ -28,6 +28,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
+from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
@@ -88,20 +89,63 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
+        storage_context: Optional[StorageContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        index_id: Optional[str] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
-        if not vector_store.stores_text:
-            raise ValueError(
-                "Cannot initialize from a vector store that does not store text."
+        kwargs.pop("storage_context", None)
+
+        if vector_store.stores_text:
+            storage_context = StorageContext.from_defaults(vector_store=vector_store)
+            return cls(
+                nodes=[],
+                embed_model=embed_model,
+                storage_context=storage_context,
+                **kwargs,
             )
 
-        kwargs.pop("storage_context", None)
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        if storage_context is None:
+            raise ValueError(
+                "Cannot initialize from a vector store that does not store text "
+                "without providing storage_context (with docstore and index store). "
+                "Use VectorStoreIndex.from_vector_store(vector_store, storage_context=ctx) "
+                "passing the same storage context used when building the index."
+            )
+
+        resolved_index_struct: Optional[IndexDict] = index_struct
+        if resolved_index_struct is None:
+            resolved_index_struct = storage_context.index_store.get_index_struct(
+                index_id
+            )
+            if resolved_index_struct is None:
+                raise ValueError(
+                    "No index struct found in storage context. "
+                    "Provide index_struct or ensure index_store contains the index."
+                )
+            if not isinstance(resolved_index_struct, IndexDict):
+                raise ValueError(
+                    f"Index struct in store is not a VectorStoreIndex struct: "
+                    f"{type(resolved_index_struct).__name__}"
+                )
+
+        vector_stores = {
+            **storage_context.vector_stores,
+            DEFAULT_VECTOR_STORE: vector_store,
+        }
+        new_storage_context = StorageContext(
+            docstore=storage_context.docstore,
+            index_store=storage_context.index_store,
+            graph_store=storage_context.graph_store,
+            vector_stores=vector_stores,
+            property_graph_store=storage_context.property_graph_store,
+        )
 
         return cls(
             nodes=[],
             embed_model=embed_model,
-            storage_context=storage_context,
+            storage_context=new_storage_context,
+            index_struct=resolved_index_struct,
             **kwargs,
         )
 
