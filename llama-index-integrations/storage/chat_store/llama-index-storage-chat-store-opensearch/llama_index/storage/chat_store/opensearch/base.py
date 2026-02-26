@@ -5,11 +5,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-
-IMPORT_ERROR_MSG = (
-    "Could not import opensearch-py. "
-    "Please install it with `pip install opensearch-py`."
-)
+from opensearchpy import AsyncOpenSearch, OpenSearch
 
 DEFAULT_INDEX_NAME = "llama_index_chat_store"
 
@@ -33,28 +29,6 @@ def _message_to_str(message: ChatMessage) -> str:
 def _str_to_message(s: str) -> ChatMessage:
     """Deserialize a JSON string from storage to a ChatMessage."""
     return ChatMessage.model_validate_json(s)
-
-
-def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> "OpenSearch":
-    """Get an OpenSearch client from URL."""
-    try:
-        from opensearchpy import OpenSearch
-    except ImportError:
-        raise ImportError(IMPORT_ERROR_MSG)
-
-    return OpenSearch(opensearch_url, **kwargs)
-
-
-def _get_async_opensearch_client(
-    opensearch_url: str, **kwargs: Any
-) -> "AsyncOpenSearch":
-    """Get an async OpenSearch client from URL."""
-    try:
-        from opensearchpy import AsyncOpenSearch
-    except ImportError:
-        raise ImportError(IMPORT_ERROR_MSG)
-
-    return AsyncOpenSearch(opensearch_url, **kwargs)
 
 
 class OpensearchChatStore(BaseChatStore):
@@ -96,8 +70,8 @@ class OpensearchChatStore(BaseChatStore):
         """Initialize OpensearchChatStore."""
         super().__init__(opensearch_url=opensearch_url, index=index)
 
-        self._os_client = os_client or _get_opensearch_client(opensearch_url, **kwargs)
-        self._os_async_client = os_async_client or _get_async_opensearch_client(
+        self._os_client = os_client or OpenSearch(opensearch_url, **kwargs)
+        self._os_async_client = os_async_client or AsyncOpenSearch(
             opensearch_url, **kwargs
         )
 

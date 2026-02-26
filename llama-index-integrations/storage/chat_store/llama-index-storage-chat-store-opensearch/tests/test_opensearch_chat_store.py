@@ -60,11 +60,11 @@ def chat_store(
 ) -> OpensearchChatStore:
     with (
         patch(
-            "llama_index.storage.chat_store.opensearch.base._get_opensearch_client",
+            "llama_index.storage.chat_store.opensearch.base.OpenSearch",
             return_value=mock_os_client,
         ),
         patch(
-            "llama_index.storage.chat_store.opensearch.base._get_async_opensearch_client",
+            "llama_index.storage.chat_store.opensearch.base.AsyncOpenSearch",
             return_value=mock_async_client,
         ),
     ):
