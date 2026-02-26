@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Deque, Optional, Tuple
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -279,15 +279,13 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
     _token_usage: Deque[Tuple[float, float]] = PrivateAttr(default_factory=deque)
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
-        if (
-            self.requests_per_minute is None
-            and self.tokens_per_minute is None
-        ):
+    @model_validator(mode="after")
+    def _check_limits(self) -> "SlidingWindowRateLimiter":
+        if self.requests_per_minute is None and self.tokens_per_minute is None:
             raise ValueError(
                 "At least one of requests_per_minute or tokens_per_minute must be set."
             )
+        return self
 
     def _prune_request_timestamps(self, now: float) -> None:
         """Remove request timestamps outside the sliding window. Hold _lock."""

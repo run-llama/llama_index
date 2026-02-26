@@ -291,11 +291,6 @@ def test_sliding_window_is_subclass_of_base() -> None:
     assert issubclass(SlidingWindowRateLimiter, BaseRateLimiter)
 
 
-def test_sliding_window_instance_is_base_rate_limiter() -> None:
-    rl = SlidingWindowRateLimiter(requests_per_minute=60)
-    assert isinstance(rl, BaseRateLimiter)
-
-
 def test_sliding_window_creation_rpm_only() -> None:
     rl = SlidingWindowRateLimiter(requests_per_minute=60)
     assert rl.requests_per_minute == 60
