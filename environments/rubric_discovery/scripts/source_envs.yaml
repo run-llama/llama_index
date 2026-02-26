@@ -1,0 +1,70 @@
+# Source environment configuration for dataset generation.
+#
+# Each entry defines a source environment whose rubric is used to score
+# generated responses, producing labeled (input, response, score) examples
+# for the rubric-discovery training set.
+#
+# Fields:
+#   name:        Unique identifier for the source environment.
+#   env_id:      Prime Hub environment ID (install with `prime env install <env_id>`).
+#   weight:      Relative sampling weight during dataset generation.
+#   description: Human-readable description of the scoring rule.
+
+source_environments:
+  - name: factual_qa
+    env_id: primeintellect/factual-qa
+    weight: 1.0
+    description: >
+      Scores responses on factual correctness and completeness.
+      Full marks for correct + well-explained; partial for correct but terse;
+      zero for incorrect or irrelevant.
+
+  - name: math_correctness
+    env_id: primeintellect/gsm8k
+    weight: 1.0
+    description: >
+      Binary correctness scoring for arithmetic and math word problems.
+      1.0 if the final numerical answer matches; 0.0 otherwise.
+
+  - name: summarization
+    env_id: primeintellect/summarization
+    weight: 0.8
+    description: >
+      Scores summaries on conciseness and coverage. High scores for
+      brief, complete summaries; low for verbose or copied text.
+
+  - name: poetry_format
+    env_id: primeintellect/haiku-checker
+    weight: 0.6
+    description: >
+      Checks haiku format (5-7-5 syllable structure). 1.0 for correct
+      format, partial credit for close attempts, 0.0 for non-haiku.
+
+  - name: formality
+    env_id: primeintellect/tone-classifier
+    weight: 0.7
+    description: >
+      Scores the formality level of responses on a continuous scale.
+      1.0 for highly formal; 0.0 for very informal/casual.
+
+  - name: instruction_following
+    env_id: primeintellect/instruction-following
+    weight: 0.9
+    description: >
+      Measures how well a response follows specific formatting and
+      content constraints from the input instruction.
+
+  - name: code_correctness
+    env_id: primeintellect/code-eval
+    weight: 0.8
+    description: >
+      Evaluates code responses for correctness (passes test cases),
+      with partial credit for partially correct solutions.
+
+# Generation defaults (overridable via CLI flags)
+defaults:
+  model_name: gpt-4.1-mini
+  responses_per_example: 4
+  temperatures: [0.0, 0.5, 1.0, 1.5]
+  train_test_split: 0.7
+  seed: 42
