@@ -170,7 +170,7 @@ class Anthropic(FunctionCallingLLM):
         default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", ge=0
+        default=15, description="The maximum number of API retries.", ge=0
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the anthropic API."
@@ -221,7 +221,7 @@ class Anthropic(FunctionCallingLLM):
         max_tokens: int = DEFAULT_ANTHROPIC_MAX_TOKENS,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
-        max_retries: int = 10,
+        max_retries: int = 15,
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
