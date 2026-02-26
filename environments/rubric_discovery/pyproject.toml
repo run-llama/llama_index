@@ -1,0 +1,38 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+name = "rubric-discovery"
+version = "0.1.0"
+description = "Rubric discovery environment: learn to synthesize rubric_fn from labeled examples"
+license = "MIT"
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+generate = [
+    "openai>=1.0",
+]
+sandbox = [
+    "prime-sandbox>=0.1",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.14.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["environments"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "environments.rubric_discovery"
+
+[tool.llamahub.class_authors]
+RubricDiscoveryEnvironment = "morongosteve"
