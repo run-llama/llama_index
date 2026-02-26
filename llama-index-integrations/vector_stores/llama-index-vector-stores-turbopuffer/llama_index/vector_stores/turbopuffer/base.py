@@ -303,7 +303,6 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             rank_by=("vector", "ANN", query_embedding),
             top_k=query.similarity_top_k,
             filters=tpuf_filter if tpuf_filter is not None else omit,
-            include_attributes=True,
             exclude_attributes=["vector"],
         )
         return self._parse_query_result(result)
