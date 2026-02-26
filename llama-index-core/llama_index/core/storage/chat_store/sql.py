@@ -86,6 +86,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     def _is_sqlite_database(self) -> bool:
         """Check if the database is SQLite (which doesn't support schemas)."""
+        if self._async_engine is not None:
+            return str(self._async_engine.url).startswith("sqlite")
         return self.async_database_uri.startswith("sqlite")
 
     async def _initialize(self) -> Tuple[sessionmaker, Table]:

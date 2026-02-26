@@ -328,7 +328,7 @@ async def aretry_on_exceptions_with_backoff(
             check_fn = error_checks.get(e.__class__)
             if check_fn and not check_fn(e):
                 raise
-            time.sleep(backoff_secs)
+            await asyncio.sleep(backoff_secs)
             backoff_secs = min(backoff_secs * 2, max_backoff_secs)
 
 

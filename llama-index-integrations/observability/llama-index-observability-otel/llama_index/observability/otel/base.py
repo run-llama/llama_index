@@ -95,7 +95,8 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if parent_span_id is not None:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
         else:
-            ctx = context.Context(bound_args.arguments)
+            ctx = context.get_current()
+            ctx.update(bound_args.arguments)
         otel_span = self._tracer.start_span(name=id_, context=ctx)
         self.all_spans.update({id_: otel_span})
         if self.debug:
@@ -233,6 +234,10 @@ class LlamaIndexOpenTelemetry(BaseModel):
         default_factory=list,
         description="List of OpenTelemetry Span Processors to add to the tracer provider.",
     )
+    tracer_provider: Optional[TracerProvider] = Field(
+        default=None,
+        description="Tracer Provider to inherint from the existing observability context. Defaults to None.",
+    )
     service_name_or_resource: Union[str, Resource] = Field(
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
         description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name.",
@@ -250,7 +255,10 @@ class LlamaIndexOpenTelemetry(BaseModel):
             self.service_name_or_resource = Resource(
                 attributes={SERVICE_NAME: self.service_name_or_resource}
             )
-        tracer_provider = TracerProvider(resource=self.service_name_or_resource)
+        if self.tracer_provider is None:
+            tracer_provider = TracerProvider(resource=self.service_name_or_resource)
+        else:
+            tracer_provider = self.tracer_provider
         assert self.span_exporter is not None, (
             "span_exporter has to be non-null to be used within simple or batch span processors"
         )
@@ -273,7 +281,10 @@ class LlamaIndexOpenTelemetry(BaseModel):
         assert self._tracer is not None, (
             "The tracer has to be non-null to start observabiliy"
         )
-        span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
+        span_handler = OTelCompatibleSpanHandler(
+            tracer=self._tracer,
+            debug=self.debug,
+        )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(
             OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug)
