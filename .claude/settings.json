@@ -3,6 +3,9 @@
     "hf-mcp-server": {
       "type": "http",
       "url": "https://huggingface.co/mcp?login"
+    },
+    "notebooklm-mcp": {
+      "command": "/root/.local/bin/notebooklm-mcp"
     }
   }
 }
