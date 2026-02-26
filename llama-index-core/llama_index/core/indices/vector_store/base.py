@@ -115,19 +115,18 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         resolved_index_struct: Optional[IndexDict] = index_struct
         if resolved_index_struct is None:
-            resolved_index_struct = storage_context.index_store.get_index_struct(
-                index_id
-            )
-            if resolved_index_struct is None:
+            struct_from_store = storage_context.index_store.get_index_struct(index_id)
+            if struct_from_store is None:
                 raise ValueError(
                     "No index struct found in storage context. "
                     "Provide index_struct or ensure index_store contains the index."
                 )
-            if not isinstance(resolved_index_struct, IndexDict):
+            if not isinstance(struct_from_store, IndexDict):
                 raise ValueError(
                     f"Index struct in store is not a VectorStoreIndex struct: "
-                    f"{type(resolved_index_struct).__name__}"
+                    f"{type(struct_from_store).__name__}"
                 )
+            resolved_index_struct = struct_from_store
 
         vector_stores = {
             **storage_context.vector_stores,

@@ -203,6 +203,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
+        storage_context: Optional[StorageContext] = None,
+        index_struct: Optional[IndexDict] = None,
+        index_id: Optional[str] = None,
         # Image-related kwargs
         image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
@@ -213,6 +216,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 "Cannot initialize from a vector store that does not store text."
             )
 
+        kwargs.pop("storage_context", None)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
             nodes=[],
