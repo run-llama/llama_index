@@ -88,6 +88,47 @@ def from_lc_messages(lc_messages: Sequence[LC.BaseMessage]) -> List[ChatMessage]
     return messages
 
 
+def _extract_model_name(llm: "LC.BaseLanguageModel") -> str:
+    """Extract model name from various LangChain LLM types."""
+    for attr in ("model_name", "model", "repo_id", "model_id"):
+        name = getattr(llm, attr, None)
+        if name and isinstance(name, str):
+            return name
+    return type(llm).__name__
+
+
+def _extract_max_tokens(llm: "LC.BaseLanguageModel") -> int:
+    """Extract max output tokens from various LangChain LLM types."""
+    for attr in ("max_tokens", "max_new_tokens", "maxTokens", "max_output_tokens"):
+        val = getattr(llm, attr, None)
+        if val is not None and isinstance(val, int) and val > 0:
+            return val
+    return -1
+
+
+def _extract_context_window(llm: "LC.BaseLanguageModel") -> int:
+    """Extract context window from LangChain model config if available."""
+    # Check for HuggingFace models with pipeline config
+    pipeline = getattr(llm, "pipeline", None)
+    if pipeline is not None:
+        model = getattr(pipeline, "model", None)
+        if model is not None:
+            config = getattr(model, "config", None)
+            if config is not None:
+                config_dict = config.to_dict() if hasattr(config, "to_dict") else {}
+                for key in ("max_position_embeddings", "n_positions", "max_seq_len"):
+                    if key in config_dict and isinstance(config_dict[key], int):
+                        return config_dict[key]
+
+    # Check direct attributes
+    for attr in ("n_ctx", "context_window", "max_seq_length"):
+        val = getattr(llm, attr, None)
+        if val is not None and isinstance(val, int) and val > 0:
+            return val
+
+    return 3900  # sensible default
+
+
 def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
     """Get LLM metadata from llm."""
     if not isinstance(llm, LC.BaseLanguageModel):
@@ -176,4 +217,11 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             model_name=llm.model,
         )
     else:
-        return LLMMetadata(is_chat_model=is_chat_model_)
+        # Generic fallback: extract metadata from any LangChain model
+        # Handles HuggingFace, custom models, and other providers
+        return LLMMetadata(
+            context_window=_extract_context_window(llm),
+            num_output=_extract_max_tokens(llm),
+            is_chat_model=is_chat_model_,
+            model_name=_extract_model_name(llm),
+        )

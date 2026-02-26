@@ -1,5 +1,38 @@
 # ChangeLog
 
+## LangChain LLM Integration (llama-index-llms-langchain) v0.7.2
+
+### Fixed
+- Implemented native async for achat, acomplete, astream_chat, astream_complete
+- stream_complete now prefers native .stream() over legacy callback handler
+- Fixed ChatMessage construction bug (missing role field)
+- get_llm_metadata now extracts metadata from HuggingFace pipeline configs
+
+### Added
+- Generic model name/context window/max tokens extraction helpers
+
+## LangChain Embeddings (llama-index-embeddings-langchain) v0.4.2
+
+### Added
+- Batch async _aget_text_embeddings with graceful fallback
+
+## HuggingFace LLM (llama-index-llms-huggingface) v0.6.2
+
+### Added
+- count_tokens() method using model tokenizer
+- Proper async implementations (acomplete, achat, astream_complete, astream_chat)
+
+### Fixed
+- Removed stale TODO comment about streaming token counting
+
+## HuggingFace Embeddings (llama-index-embeddings-huggingface) v0.6.2
+
+### Added
+- Configurable retry parameters (retry_max_attempts, retry_min_wait, retry_max_wait)
+
+### Changed
+- Retry mechanism is now dynamically configured instead of hardcoded
+
 <!--- generated changelog --->
 
 ## [2025-11-10]

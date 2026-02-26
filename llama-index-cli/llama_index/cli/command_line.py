@@ -1,5 +1,6 @@
 import argparse
-from typing import Any, Optional
+import logging
+from typing import Any, Dict, Optional
 
 from llama_index.cli.rag import RagCLI, default_ragcli_persist_dir
 from llama_index.cli.upgrade import upgrade_dir, upgrade_file
@@ -19,6 +20,44 @@ from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
 
 from llama_index.cli.new_package.base import init_new_package
+
+logger = logging.getLogger(__name__)
+
+# Known catalog paths for marketplace repositories.
+# Maps repository "owner/repo" to the path of the catalog JSON file.
+MARKETPLACE_CATALOG_PATHS: Dict[str, str] = {
+    "obra/superpowers-marketplace": ".claude-plugin/marketplace.json",
+}
+
+
+def fetch_marketplace_catalog(
+    repository: str, branch: str = "main"
+) -> Optional[Dict]:
+    """
+    Fetch the plugin catalog JSON from a marketplace repository.
+
+    Args:
+        repository: GitHub repository in format 'owner/repo'
+        branch: Git branch to use
+
+    Returns:
+        Parsed JSON dict or None if fetch fails
+    """
+    import requests
+
+    catalog_path = MARKETPLACE_CATALOG_PATHS.get(repository, "marketplace.json")
+    url = (
+        f"https://raw.githubusercontent.com/{repository}/{branch}/{catalog_path}"
+    )
+
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        logger.debug(f"Failed to fetch catalog from {url}: {e}")
+
+    return None
 
 
 def handle_init_package(
@@ -137,8 +176,6 @@ def handle_plugin_install(
     **kwargs: Any,
 ) -> None:
     """Install a plugin from a marketplace."""
-    from llama_index.core.llama_pack.download import download_llama_pack
-
     if "@" not in plugin_identifier:
         print(
             f"Error: Plugin identifier must include a marketplace specifier "
@@ -195,39 +232,27 @@ def handle_plugin_list(**kwargs: Any) -> None:
         print(f"    Repository: {marketplace.repository}")
         if marketplace.description:
             print(f"    Description: {marketplace.description}")
+
+        # Try to fetch live catalog
+        catalog = fetch_marketplace_catalog(
+            marketplace.repository, marketplace.branch
+        )
+        if catalog and "plugins" in catalog:
+            print(f"    Available plugins:")
+            for plugin in catalog["plugins"]:
+                version = plugin.get("version", "")
+                desc = plugin.get("description", "")
+                name = plugin.get("name", "unknown")
+                version_str = f" (v{version})" if version else ""
+                print(f"      - {name}{version_str}")
+                if desc:
+                    print(f"        {desc}")
+
         print(f"    Install: llamaindex-cli plugin install <PluginName>@{marketplace.name}")
         print()
 
 
-def default_rag_cli() -> RagCLI:
-    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-
-    try:
-        import chromadb  # pants: no-infer-dep
-        from llama_index.vector_stores.chroma import (
-            ChromaVectorStore,
-        )  # pants: no-infer-dep
-    except ImportError:
-        raise ImportError(
-            "Default RAG pipeline uses chromadb. "
-            "Install with `pip install llama-index-vector-stores-chroma "
-            "or customize to use a different vector store."
-        )
-
-    persist_dir = default_ragcli_persist_dir()
-    chroma_client = chromadb.PersistentClient(path=persist_dir)
-    chroma_collection = chroma_client.create_collection("default", get_or_create=True)
-    vector_store = ChromaVectorStore(
-        chroma_collection=chroma_collection, persist_dir=persist_dir
-    )
-    docstore = SimpleDocumentStore()
-
-    ingestion_pipeline = IngestionPipeline(
-        transformations=[SentenceSplitter(), OpenAIEmbedding()],
-        vector_store=vector_store,
-        docstore=docstore,
-        cache=IngestionCache(),
-    )
+def default_rag_cli() -> Optional[RagCLI]:
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
     except ImportError:

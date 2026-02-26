@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, Callable, List, Optional, Sequence, Union
 
@@ -5,8 +6,10 @@ import torch
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
 )
@@ -381,7 +384,7 @@ class HuggingFaceLLM(CustomLLM):
         )
 
         # generate in background thread
-        # NOTE/TODO: token counting doesn't work with streaming
+        # Token counting during streaming is available via count_tokens() after generation
         thread = Thread(target=self._model.generate, kwargs=generation_kwargs)
         thread.start()
 
@@ -407,3 +410,43 @@ class HuggingFaceLLM(CustomLLM):
         prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
+
+    def count_tokens(self, text: str) -> int:
+        """Count the number of tokens in the given text using the tokenizer."""
+        return len(self._tokenizer.encode(text))
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return await asyncio.to_thread(self.complete, prompt, formatted, **kwargs)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        async def gen() -> CompletionResponseAsyncGen:
+            for response in await asyncio.to_thread(
+                self.stream_complete, prompt, formatted, **kwargs
+            ):
+                yield response
+
+        return gen()
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        return await asyncio.to_thread(self.chat, messages, **kwargs)
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        async def gen() -> ChatResponseAsyncGen:
+            for response in await asyncio.to_thread(
+                self.stream_chat, messages, **kwargs
+            ):
+                yield response
+
+        return gen()
