@@ -477,3 +477,27 @@ def test_gpt_5_chat_latest_model_support() -> None:
 def test_is_chatcomp_api_supported() -> None:
     assert is_chatcomp_api_supported("gpt-5.2")
     assert not is_chatcomp_api_supported("gpt-5.2-pro")
+
+
+def test_gpt_5_chat_model_support() -> None:
+    """Test that gpt-5-chat is properly supported."""
+    model_name = "gpt-5-chat"
+
+    assert model_name in ALL_AVAILABLE_MODELS, (
+        f"{model_name} should be in ALL_AVAILABLE_MODELS"
+    )
+
+    assert is_chat_model(model_name) is True, (
+        f"{model_name} should be recognized as a chat model"
+    )
+
+    assert is_function_calling_model(model_name) is True, (
+        f"{model_name} should support function calling"
+    )
+
+    context_size = openai_modelname_to_contextsize(model_name)
+    assert context_size == 128000, (
+        f"{model_name} should have 128000 tokens context, got {context_size}"
+    )
+
+    assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"
