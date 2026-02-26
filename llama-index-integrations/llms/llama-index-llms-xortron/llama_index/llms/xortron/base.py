@@ -1,3 +1,5 @@
+import json
+import time
 from typing import (
     Any,
     AsyncGenerator,
@@ -6,17 +8,10 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Union,
 )
 
 import httpx
 
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -36,6 +31,7 @@ from llama_index.core.llms.custom import CustomLLM
 
 DEFAULT_XORTRON_BASE_URL = "http://localhost:8000"
 DEFAULT_REQUEST_TIMEOUT = 60.0
+DEFAULT_MAX_RETRIES = 3
 
 
 class Xortron(CustomLLM):
@@ -90,6 +86,10 @@ class Xortron(CustomLLM):
         default=DEFAULT_REQUEST_TIMEOUT,
         description="The timeout for HTTP requests to the Xortron server.",
     )
+    max_retries: int = Field(
+        default=DEFAULT_MAX_RETRIES,
+        description="Maximum number of retries for transient HTTP errors (5xx, timeouts).",
+    )
 
     _client: Optional[httpx.Client] = PrivateAttr(default=None)
     _async_client: Optional[httpx.AsyncClient] = PrivateAttr(default=None)
@@ -104,6 +104,7 @@ class Xortron(CustomLLM):
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
+        max_retries: int = DEFAULT_MAX_RETRIES,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -115,6 +116,7 @@ class Xortron(CustomLLM):
             api_key=api_key,
             additional_kwargs=additional_kwargs or {},
             request_timeout=request_timeout,
+            max_retries=max_retries,
             **kwargs,
         )
         self._client = None
@@ -190,6 +192,59 @@ class Xortron(CustomLLM):
             converted.append({"role": message.role.value, "content": content})
         return converted
 
+    @staticmethod
+    def _is_retryable(exc: Exception) -> bool:
+        """Check if an exception is transient and worth retrying."""
+        if isinstance(exc, httpx.TimeoutException):
+            return True
+        if isinstance(exc, httpx.HTTPStatusError):
+            return exc.response.status_code >= 500
+        return isinstance(exc, (httpx.ConnectError, httpx.RemoteProtocolError))
+
+    def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Execute an HTTP request with exponential-backoff retry for transient errors."""
+        last_exc: Optional[Exception] = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self.client.request(method, url, **kwargs)
+                response.raise_for_status()
+                return response
+            except Exception as exc:
+                last_exc = exc
+                if attempt < self.max_retries and self._is_retryable(exc):
+                    time.sleep(2**attempt * 0.5)
+                    continue
+                raise
+        raise last_exc  # type: ignore[misc]
+
+    async def _arequest_with_retry(
+        self,
+        method: str,
+        url: str,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Execute an async HTTP request with exponential-backoff retry."""
+        import asyncio
+
+        last_exc: Optional[Exception] = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = await self.async_client.request(method, url, **kwargs)
+                response.raise_for_status()
+                return response
+            except Exception as exc:
+                last_exc = exc
+                if attempt < self.max_retries and self._is_retryable(exc):
+                    await asyncio.sleep(2**attempt * 0.5)
+                    continue
+                raise
+        raise last_exc  # type: ignore[misc]
+
     def _parse_completion_response(self, data: Dict[str, Any]) -> CompletionResponse:
         text = data.get("text", data.get("output", data.get("completion", "")))
         return CompletionResponse(
@@ -212,13 +267,28 @@ class Xortron(CustomLLM):
             raw=data,
         )
 
+    @staticmethod
+    def _parse_sse_line(line: str) -> Optional[Dict[str, Any]]:
+        """Parse a single SSE line, returning the JSON chunk or None."""
+        if not line or line.startswith("data: [DONE]"):
+            return None
+        if line.startswith("data: "):
+            line = line[6:]
+        try:
+            return json.loads(line)
+        except (ValueError, KeyError):
+            return None
+
+    @staticmethod
+    def _extract_delta(chunk: Dict[str, Any]) -> str:
+        return chunk.get("text", chunk.get("delta", chunk.get("token", "")))
+
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         payload = self._build_payload(prompt=prompt, **kwargs)
-        response = self.client.post("/v1/completions", json=payload)
-        response.raise_for_status()
+        response = self._request_with_retry("POST", "/v1/completions", json=payload)
         return self._parse_completion_response(response.json())
 
     @llm_completion_callback()
@@ -226,8 +296,9 @@ class Xortron(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         payload = self._build_payload(prompt=prompt, **kwargs)
-        response = await self.async_client.post("/v1/completions", json=payload)
-        response.raise_for_status()
+        response = await self._arequest_with_retry(
+            "POST", "/v1/completions", json=payload
+        )
         return self._parse_completion_response(response.json())
 
     @llm_completion_callback()
@@ -241,25 +312,16 @@ class Xortron(CustomLLM):
                 resp.raise_for_status()
                 full_text = ""
                 for line in resp.iter_lines():
-                    if not line or line.startswith("data: [DONE]"):
+                    chunk = self._parse_sse_line(line)
+                    if chunk is None:
                         continue
-                    if line.startswith("data: "):
-                        line = line[6:]
-                    try:
-                        import json
-
-                        chunk = json.loads(line)
-                        delta = chunk.get(
-                            "text", chunk.get("delta", chunk.get("token", ""))
-                        )
-                        full_text += delta
-                        yield CompletionResponse(
-                            text=full_text,
-                            delta=delta,
-                            raw=chunk,
-                        )
-                    except (ValueError, KeyError):
-                        continue
+                    delta = self._extract_delta(chunk)
+                    full_text += delta
+                    yield CompletionResponse(
+                        text=full_text,
+                        delta=delta,
+                        raw=chunk,
+                    )
 
         return gen()
 
@@ -276,25 +338,16 @@ class Xortron(CustomLLM):
                 resp.raise_for_status()
                 full_text = ""
                 async for line in resp.aiter_lines():
-                    if not line or line.startswith("data: [DONE]"):
+                    chunk = self._parse_sse_line(line)
+                    if chunk is None:
                         continue
-                    if line.startswith("data: "):
-                        line = line[6:]
-                    try:
-                        import json
-
-                        chunk = json.loads(line)
-                        delta = chunk.get(
-                            "text", chunk.get("delta", chunk.get("token", ""))
-                        )
-                        full_text += delta
-                        yield CompletionResponse(
-                            text=full_text,
-                            delta=delta,
-                            raw=chunk,
-                        )
-                    except (ValueError, KeyError):
-                        continue
+                    delta = self._extract_delta(chunk)
+                    full_text += delta
+                    yield CompletionResponse(
+                        text=full_text,
+                        delta=delta,
+                        raw=chunk,
+                    )
 
         return gen()
 
@@ -302,8 +355,7 @@ class Xortron(CustomLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         converted = self._convert_messages(messages)
         payload = self._build_payload(messages=converted, **kwargs)
-        response = self.client.post("/v1/chat", json=payload)
-        response.raise_for_status()
+        response = self._request_with_retry("POST", "/v1/chat", json=payload)
         return self._parse_chat_response(response.json())
 
     @llm_chat_callback()
@@ -312,8 +364,7 @@ class Xortron(CustomLLM):
     ) -> ChatResponse:
         converted = self._convert_messages(messages)
         payload = self._build_payload(messages=converted, **kwargs)
-        response = await self.async_client.post("/v1/chat", json=payload)
-        response.raise_for_status()
+        response = await self._arequest_with_retry("POST", "/v1/chat", json=payload)
         return self._parse_chat_response(response.json())
 
     @llm_chat_callback()
@@ -328,28 +379,19 @@ class Xortron(CustomLLM):
                 resp.raise_for_status()
                 full_text = ""
                 for line in resp.iter_lines():
-                    if not line or line.startswith("data: [DONE]"):
+                    chunk = self._parse_sse_line(line)
+                    if chunk is None:
                         continue
-                    if line.startswith("data: "):
-                        line = line[6:]
-                    try:
-                        import json
-
-                        chunk = json.loads(line)
-                        delta = chunk.get(
-                            "text", chunk.get("delta", chunk.get("token", ""))
-                        )
-                        full_text += delta
-                        yield ChatResponse(
-                            message=ChatMessage(
-                                role=MessageRole.ASSISTANT,
-                                blocks=[TextBlock(text=full_text)],
-                            ),
-                            delta=delta,
-                            raw=chunk,
-                        )
-                    except (ValueError, KeyError):
-                        continue
+                    delta = self._extract_delta(chunk)
+                    full_text += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            blocks=[TextBlock(text=full_text)],
+                        ),
+                        delta=delta,
+                        raw=chunk,
+                    )
 
         return gen()
 
@@ -367,27 +409,18 @@ class Xortron(CustomLLM):
                 resp.raise_for_status()
                 full_text = ""
                 async for line in resp.aiter_lines():
-                    if not line or line.startswith("data: [DONE]"):
+                    chunk = self._parse_sse_line(line)
+                    if chunk is None:
                         continue
-                    if line.startswith("data: "):
-                        line = line[6:]
-                    try:
-                        import json
-
-                        chunk = json.loads(line)
-                        delta = chunk.get(
-                            "text", chunk.get("delta", chunk.get("token", ""))
-                        )
-                        full_text += delta
-                        yield ChatResponse(
-                            message=ChatMessage(
-                                role=MessageRole.ASSISTANT,
-                                blocks=[TextBlock(text=full_text)],
-                            ),
-                            delta=delta,
-                            raw=chunk,
-                        )
-                    except (ValueError, KeyError):
-                        continue
+                    delta = self._extract_delta(chunk)
+                    full_text += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            blocks=[TextBlock(text=full_text)],
+                        ),
+                        delta=delta,
+                        raw=chunk,
+                    )
 
         return gen()
