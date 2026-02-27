@@ -45,6 +45,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     """OpenTelemetry-compatible span handler."""
 
     _tracer: trace.Tracer = PrivateAttr()
+    _tracer_provider: Optional[TracerProvider] = PrivateAttr(default=None)
     _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
         default_factory=dict,
     )
@@ -64,6 +65,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         completed_spans: Optional[List[SimpleSpan]] = None,
         dropped_spans: Optional[List[SimpleSpan]] = None,
         current_span_ids: Optional[Dict[Any, str]] = None,
+        tracer_provider: Optional[TracerProvider] = None,
     ):
         super().__init__(
             open_spans=open_spans or {},
@@ -72,8 +74,27 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             current_span_ids=cast(Dict[str, Any], current_span_ids or {}),
         )
         self._tracer = tracer
+        self._tracer_provider = tracer_provider
         self._events_by_span = {}
         self.debug = debug
+
+    def close(self) -> None:
+        """Flush and shut down the OTel tracer provider."""
+        provider = self._tracer_provider
+        if provider is None:
+            # Fall back to the global tracer provider
+            global_provider = trace.get_tracer_provider()
+            if isinstance(global_provider, TracerProvider):
+                provider = global_provider
+        if provider is not None:
+            try:
+                provider.force_flush()
+            except BaseException:
+                pass
+            try:
+                provider.shutdown()
+            except BaseException:
+                pass
 
     @classmethod
     def class_name(cls) -> str:  # type: ignore
@@ -301,6 +322,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
         description="Debug the start and end of span and the recording of events",
     )
     _tracer: Optional[trace.Tracer] = PrivateAttr(default=None)
+    _tracer_provider_instance: Optional[TracerProvider] = PrivateAttr(default=None)
 
     def _start_otel(
         self,
@@ -324,6 +346,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
             tracer_provider.add_span_processor(extra_span_processor)
         tracer_provider.add_span_processor(span_processor)
         trace.set_tracer_provider(tracer_provider)
+        self._tracer_provider_instance = tracer_provider
         self._tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
 
     def start_registering(
@@ -338,6 +361,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
         span_handler = OTelCompatibleSpanHandler(
             tracer=self._tracer,
             debug=self.debug,
+            tracer_provider=self._tracer_provider_instance,
         )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(

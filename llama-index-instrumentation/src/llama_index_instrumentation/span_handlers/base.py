@@ -141,6 +141,14 @@ class BaseSpanHandler(BaseModel, Generic[T]):
             with self.lock:
                 del self.open_spans[id_]
 
+    def close(self) -> None:
+        """
+        Optional cleanup hook called during dispatcher shutdown.
+
+        Subclasses can override to flush buffers, release resources, etc.
+        Default is a no-op.
+        """
+
     @abstractmethod
     def new_span(
         self,
