@@ -66,7 +66,9 @@ def test_parse_retry_after_missing_header():
 
 
 def test_parse_retry_after_non_numeric():
-    exc = _make_rate_limit_error(headers={"Retry-After": "Wed, 21 Oct 2025 07:28:00 GMT"})
+    exc = _make_rate_limit_error(
+        headers={"Retry-After": "Wed, 21 Oct 2025 07:28:00 GMT"}
+    )
     assert _parse_retry_after(exc) is None
 
 
@@ -126,7 +128,9 @@ def test_wait_retry_after_falls_back_for_non_rate_limit_error():
     fallback = MagicMock(return_value=7.0)
     strategy = _WaitRetryAfter(fallback)
 
-    exc = openai.APITimeoutError(request=httpx.Request("POST", "https://api.openai.com"))
+    exc = openai.APITimeoutError(
+        request=httpx.Request("POST", "https://api.openai.com")
+    )
     rs = _make_retry_state(exc)
     assert strategy(rs) == 7.0
     fallback.assert_called_once_with(rs)

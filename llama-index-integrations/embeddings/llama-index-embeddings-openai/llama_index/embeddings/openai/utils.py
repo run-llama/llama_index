@@ -40,7 +40,8 @@ _MAX_RETRY_AFTER_SECONDS = 120.0
 
 
 class _WaitRetryAfter(wait_base):
-    """Wait strategy that respects the Retry-After header on RateLimitError.
+    """
+    Wait strategy that respects the Retry-After header on RateLimitError.
 
     When the last exception is an ``openai.RateLimitError`` whose HTTP response
     contains a ``Retry-After`` header, the wait time is taken from that header
@@ -61,7 +62,8 @@ class _WaitRetryAfter(wait_base):
 
 
 def _parse_retry_after(exc: openai.RateLimitError) -> Optional[float]:
-    """Extract the Retry-After value (in seconds) from a RateLimitError.
+    """
+    Extract the Retry-After value (in seconds) from a RateLimitError.
 
     Returns ``None`` when the header is missing or cannot be parsed.
     """
