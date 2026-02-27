@@ -142,12 +142,26 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         )
         self._database = database or os.environ.get("ARCADEDB_DATABASE", "")
         self.sanitize_query_output = sanitize_query_output
+        self._refresh_schema_on_init = refresh_schema
 
-        config = driver_config or {}
+        self._driver_config = driver_config or {}
+        self._driver: Any = None
+        self._initialized = False
+        self.structured_schema: dict[str, Any] = {}
+
+    def _lazy_init(self) -> None:
+        """Lazily initialise the driver, verify connectivity, and create types.
+
+        Called automatically before the first database operation so that the
+        constructor stays free of network I/O and side-effects.
+        """
+        if self._initialized:
+            return
+
         self._driver = GraphDatabase.driver(
             self._url,
             auth=(self._username, self._password),
-            **config,
+            **self._driver_config,
         )
 
         try:
@@ -157,14 +171,15 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             raise ConnectionError(msg) from e
 
         self._ensure_types()
+        self._initialized = True
 
-        self.structured_schema: dict[str, Any] = {}
-        if refresh_schema:
+        if self._refresh_schema_on_init:
             self.refresh_schema()
 
     @property
     def client(self) -> Any:
         """Return the underlying Neo4j driver instance."""
+        self._lazy_init()
         return self._driver
 
     # ------------------------------------------------------------------
@@ -175,6 +190,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         self, query: str, params: dict[str, Any] | None = None
     ) -> list[dict[str, Any]]:
         """Execute a Cypher (or ArcadeDB SQL) query and return dicts."""
+        self._lazy_init()
         params = params or {}
         try:
             if self._database:
@@ -776,11 +792,13 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def close(self) -> None:
         """Close the Bolt driver connection."""
-        self._driver.close()
+        if self._driver is not None:
+            self._driver.close()
 
     def __del__(self) -> None:
         try:
-            self._driver.close()
+            if self._driver is not None:
+                self._driver.close()
         except Exception:  # noqa: BLE001, S110
             pass
 
