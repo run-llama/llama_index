@@ -10,7 +10,7 @@ from llama_index_instrumentation.span import SimpleSpan, active_span_id
 from llama_index_instrumentation.span_handlers.simple import SimpleSpanHandler
 from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import SpanProcessor, TracerProvider, _Span
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
@@ -49,7 +49,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
         default_factory=dict,
     )
-    all_spans: Dict[str, Union[trace.Span, _Span]] = Field(
+    all_spans: Dict[str, trace.Span] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
     debug: bool = Field(
@@ -101,8 +101,22 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         """Class name."""
         return "OTelCompatibleSpanHandler"
 
-    # Keys in the tags dict that are internal and should not be recorded as attributes
-    _INTERNAL_TAG_KEYS = frozenset({"parent_span_id", "_otel_traceparent"})
+    _PROPAGATION_KEY = "otel"
+
+    def capture_propagation_context(self) -> Dict[str, Any]:
+        """Serialize the current OTel trace context for cross-process propagation."""
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            return {self._PROPAGATION_KEY: carrier}
+        return {}
+
+    def restore_propagation_context(self, ctx: Dict[str, Any]) -> None:
+        """Restore OTel trace context from a serialized carrier dict."""
+        carrier = ctx.get(self._PROPAGATION_KEY)
+        if carrier:
+            restored = propagate.extract(carrier)
+            context.attach(restored)
 
     def new_span(
         self,
@@ -117,48 +131,27 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             id_, bound_args, instance, parent_span_id, tags, **kwargs
         )
 
-        # Phase 1: Strip UUID suffix from span name for clean grouping
+        # Strip UUID suffix from span name for clean grouping
         span_name = id_.partition("-")[0]
 
-        # Phase 1: Resolve parent context with graceful fallback
-        is_root_like = True
+        # Resolve parent context:
+        # 1. Same-process parent found in all_spans → use it
+        # 2. Otherwise → use ambient OTel context (set by restore_propagation_context
+        #    for cross-process, or inherited naturally for same-process roots)
         if parent_span_id is not None and parent_span_id in self.all_spans:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
-            is_root_like = False
-        elif (
-            parent_span_id is not None
-            and tags is not None
-            and "_otel_traceparent" in tags
-        ):
-            # Phase 3: Recovery case — restore trace context from serialized traceparent
-            carrier = {"traceparent": tags["_otel_traceparent"]}
-            ctx = propagate.extract(carrier)
-        elif parent_span_id is None:
-            ctx = context.get_current()
-            ctx.update(bound_args.arguments)
         else:
-            # Parent referenced but not found and no traceparent — use ambient context
-            ctx = None
+            ctx = context.get_current()
 
         otel_span = self._tracer.start_span(name=span_name, context=ctx)
         self.all_spans.update({id_: otel_span})
 
-        # Phase 2: Record instrument_tags as span attributes
+        # Record instrument_tags as span attributes
         if tags is not None:
             for key, value in tags.items():
-                if key in self._INTERNAL_TAG_KEYS:
-                    continue
                 if isinstance(value, (str, int, float, bool)):
                     attr_key = key if "." in key else f"llamaindex.{key}"
                     otel_span.set_attribute(attr_key, value)
-
-        # Phase 3: Capture traceparent on root-like spans for recovery
-        if is_root_like and isinstance(otel_span, _Span):
-            inject_carrier: Dict[str, str] = {}
-            ctx_with_span = set_span_in_context(otel_span)
-            propagate.inject(inject_carrier, context=ctx_with_span)
-            if "traceparent" in inject_carrier and tags is not None:
-                tags["_otel_traceparent"] = inject_carrier["traceparent"]
 
         if self.debug:
             cprint(
