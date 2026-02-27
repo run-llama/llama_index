@@ -129,11 +129,14 @@ async def test_list_indexes(mock_client):
     output = await spec.list_indexes()
 
     mock_client.list_indexes.assert_awaited_once()
+    # Verify all indexes are in output
     assert "index_a" in output
     assert "index_b" in output
     assert "5" in output
     assert "12" in output
     assert "ready" in output
+    # Verify formatting
+    assert "Available indexes:" in output
 
 
 @pytest.mark.asyncio
@@ -144,6 +147,25 @@ async def test_list_indexes_empty(mock_client):
     output = await spec.list_indexes()
 
     assert output == "No indexes found."
+
+
+@pytest.mark.asyncio
+async def test_list_indexes_formatting(mock_client):
+    """Verify list_indexes returns properly formatted output with all index details."""
+    spec = MossToolSpec(client=mock_client, index_name="test")
+
+    output = await spec.list_indexes()
+
+    # Verify header
+    assert "Available indexes:" in output
+    # Verify each index appears with its details
+    assert "index_a" in output
+    assert "docs: 5" in output
+    assert "status: ready" in output
+    assert "index_b" in output
+    assert "docs: 12" in output
+    # Verify output is multi-line
+    assert "\n" in output
 
 
 @pytest.mark.asyncio
@@ -163,9 +185,13 @@ async def test_delete_current_index_resets_loaded_state(mock_client):
     spec = MossToolSpec(client=mock_client, index_name="test")
     spec._index_loaded = True
 
-    await spec.delete_index("test")
+    output = await spec.delete_index("test")
 
+    # Verify reset happened
     assert not spec._index_loaded
+    # Verify deletion message
+    assert "test" in output
+    assert "deleted" in output
 
 
 def test_query_options_application():
@@ -190,3 +216,15 @@ def test_initialization_validation():
     opt2 = QueryOptions(top_k=-2)
     with pytest.raises(ValueError, match="top_k must be greater than 0"):
         MossToolSpec(client, "test", query_options=opt2)
+
+
+@pytest.mark.asyncio
+async def test_delete_index_return_message(mock_client):
+    """Verify delete_index returns the correct confirmation message."""
+    spec = MossToolSpec(client=mock_client, index_name="test")
+
+    output = await spec.delete_index("remove_me")
+
+    # Verify the exact message format
+    assert output == "Index 'remove_me' has been deleted."
+    mock_client.delete_index.assert_awaited_once_with("remove_me")
