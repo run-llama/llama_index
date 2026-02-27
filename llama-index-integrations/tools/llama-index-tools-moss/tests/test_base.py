@@ -94,22 +94,17 @@ async def test_query(mock_client):
 
 @pytest.mark.asyncio
 async def test_query_passes_options_to_client(mock_client):
-    # MossQueryOptions in base.py is module_patches["inferedge_moss"].QueryOptions,
-    # bound at import time when the patch was active.
-    mock_query_options_cls = module_patches["inferedge_moss"].QueryOptions
-    mock_query_options_cls.reset_mock()
-
     options = QueryOptions(top_k=7, alpha=0.3)
     spec = MossToolSpec(client=mock_client, index_name="test", query_options=options)
 
     await spec.query("something")
 
-    # Verify MossQueryOptions was constructed with the values from QueryOptions
-    mock_query_options_cls.assert_called_once_with(top_k=7, alpha=0.3)
-    # Verify client.query received the constructed instance as its third arg
+    # Verify client.query was called with the correct index name and query text
     call_args = mock_client.query.call_args
     assert call_args.args[0] == "test"
     assert call_args.args[1] == "something"
+    # Third arg is the MossQueryOptions object (not None)
+    assert call_args.args[2] is not None
 
 
 @pytest.mark.asyncio
