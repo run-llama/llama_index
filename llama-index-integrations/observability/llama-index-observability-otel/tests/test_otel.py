@@ -224,6 +224,173 @@ def test_context_inheritance_empty_context() -> None:
     assert span.dict_context.get("arg2") == 1
 
 
+## ---------------------------------------------------------------------------
+# Integration tests using InMemorySpanExporter
+# ---------------------------------------------------------------------------
+
+from opentelemetry.sdk.trace.export import (
+    SimpleSpanProcessor as _SimpleSpanProcessor,
+    SpanExporter,
+    SpanExportResult,
+)
+
+
+class InMemorySpanExporter(SpanExporter):
+    """Minimal in-memory exporter for testing."""
+
+    def __init__(self):
+        self._spans = []
+
+    def export(self, spans):
+        self._spans.extend(spans)
+        return SpanExportResult.SUCCESS
+
+    def get_finished_spans(self):
+        return list(self._spans)
+
+    def shutdown(self):
+        pass
+
+
+def _fn(arg1: str = "hello") -> str:
+    return arg1
+
+
+_bound = inspect.BoundArguments(
+    signature=inspect.signature(_fn),
+    arguments=OrderedDict({"arg1": "hello"}),
+)
+
+
+def make_handler():
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(_SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer("test")
+    handler = OTelCompatibleSpanHandler(tracer=tracer)
+    return exporter, handler, provider
+
+
+def test_span_name_strips_uuid() -> None:
+    exporter, handler, provider = make_handler()
+    handler.span_enter(id_="MyWorkflow.run-abc123-def", bound_args=_bound)
+    handler.span_exit(id_="MyWorkflow.run-abc123-def", bound_args=_bound)
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    assert spans[0].name == "MyWorkflow.run"
+
+
+def test_missing_parent_no_crash() -> None:
+    exporter, handler, provider = make_handler()
+    handler.span_enter(
+        id_="span1-uuid",
+        bound_args=_bound,
+        parent_id="nonexistent-123",
+    )
+    handler.span_exit(id_="span1-uuid", bound_args=_bound)
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+
+
+def test_error_records_exception() -> None:
+    exporter, handler, provider = make_handler()
+    handler.span_enter(id_="err-span-uuid", bound_args=_bound)
+    err = ValueError("boom")
+    handler.span_drop(id_="err-span-uuid", bound_args=_bound, err=err)
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    events = spans[0].events
+    exception_events = [e for e in events if e.name == "exception"]
+    assert len(exception_events) >= 1
+    assert exception_events[0].attributes["exception.message"] == "boom"
+
+
+def test_tags_recorded_as_attributes() -> None:
+    exporter, handler, provider = make_handler()
+    handler.span_enter(
+        id_="tag-span-uuid",
+        bound_args=_bound,
+        tags={
+            "handler_id": "h1",
+            "run_id": "r1",
+            "myapp.custom": "user_val",
+            "parent_span_id": "skip_me",
+            "_otel_traceparent": "skip_too",
+        },
+    )
+    handler.span_exit(id_="tag-span-uuid", bound_args=_bound)
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    attrs = dict(spans[0].attributes)
+    assert attrs["llamaindex.handler_id"] == "h1"
+    assert attrs["llamaindex.run_id"] == "r1"
+    # Dotted keys pass through without prefix
+    assert attrs["myapp.custom"] == "user_val"
+    assert "llamaindex.parent_span_id" not in attrs
+    assert "llamaindex._otel_traceparent" not in attrs
+
+
+def test_non_otel_types_skipped_in_tags() -> None:
+    exporter, handler, provider = make_handler()
+    handler.span_enter(
+        id_="type-span-uuid",
+        bound_args=_bound,
+        tags={
+            "good": "yes",
+            "bad_dict": {"nested": True},
+            "bad_none": None,
+        },
+    )
+    handler.span_exit(id_="type-span-uuid", bound_args=_bound)
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    assert len(spans) == 1
+    attrs = dict(spans[0].attributes)
+    assert attrs["llamaindex.good"] == "yes"
+    assert "llamaindex.bad_dict" not in attrs
+    assert "llamaindex.bad_none" not in attrs
+
+
+def test_traceparent_injected_on_root_span() -> None:
+    exporter, handler, provider = make_handler()
+    tags: dict = {}
+    handler.span_enter(id_="root-span-uuid", bound_args=_bound, tags=tags)
+    assert "_otel_traceparent" in tags
+    assert tags["_otel_traceparent"].startswith("00-")
+    handler.span_exit(id_="root-span-uuid", bound_args=_bound)
+    provider.force_flush()
+
+
+def test_traceparent_restored_on_recovery() -> None:
+    # Create first handler + root span to get a traceparent
+    exporter1, handler1, provider1 = make_handler()
+    tags: dict = {}
+    handler1.span_enter(id_="root-uuid", bound_args=_bound, tags=tags)
+    captured_tp = tags["_otel_traceparent"]
+    handler1.span_exit(id_="root-uuid", bound_args=_bound)
+    provider1.force_flush()
+    root_trace_id = exporter1.get_finished_spans()[0].context.trace_id
+
+    # New handler — simulates recovery in a different process/context
+    exporter2, handler2, provider2 = make_handler()
+    handler2.span_enter(
+        id_="child-uuid",
+        bound_args=_bound,
+        parent_id="gone-span",
+        tags={"_otel_traceparent": captured_tp},
+    )
+    handler2.span_exit(id_="child-uuid", bound_args=_bound)
+    provider2.force_flush()
+    child_spans = exporter2.get_finished_spans()
+    assert len(child_spans) == 1
+    # The child span should belong to the same trace as the root
+    assert child_spans[0].context.trace_id == root_trace_id
+
+
 def test_flatten_dict() -> None:
     nested_dict = {"a": 1, "b": {"c": 2, "d": {"e": 3}}}
     flattened = flatten_dict(nested_dict)
