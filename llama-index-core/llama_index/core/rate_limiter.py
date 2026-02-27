@@ -8,7 +8,12 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Deque, Optional, Tuple
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, model_validator
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+    model_validator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +251,7 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
 
             limiter = SlidingWindowRateLimiter(requests_per_minute=60)
             llm = SomeLLM(rate_limiter=limiter)
+
     """
 
     requests_per_minute: Optional[float] = Field(
@@ -289,12 +295,18 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
 
     def _prune_request_timestamps(self, now: float) -> None:
         """Remove request timestamps outside the sliding window. Hold _lock."""
-        while self._request_timestamps and self._request_timestamps[0] < now - _SLIDING_WINDOW_SECONDS:
+        while (
+            self._request_timestamps
+            and self._request_timestamps[0] < now - _SLIDING_WINDOW_SECONDS
+        ):
             self._request_timestamps.popleft()
 
     def _prune_token_usage(self, now: float) -> None:
         """Remove token usage entries outside the sliding window. Hold _lock."""
-        while self._token_usage and self._token_usage[0][0] < now - _SLIDING_WINDOW_SECONDS:
+        while (
+            self._token_usage
+            and self._token_usage[0][0] < now - _SLIDING_WINDOW_SECONDS
+        ):
             self._token_usage.popleft()
 
     def _current_token_usage(self) -> float:
