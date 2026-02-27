@@ -109,6 +109,7 @@ class ToolCallResult(Event):
     tool_id: str
     tool_output: ToolOutput
     return_direct: bool
+    preliminary: bool = Field(default=False)
 
 
 class AgentWorkflowStartEvent(StartEvent):
