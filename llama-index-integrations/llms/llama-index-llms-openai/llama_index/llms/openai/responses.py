@@ -982,9 +982,7 @@ class OpenAIResponses(FunctionCallingLLM):
         )
         if response.output_parsed is not None:
             return response.output_parsed
-        raise ValueError(
-            "Failed to produce a structured response from the model."
-        )
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     async def astructured_predict(
@@ -1013,9 +1011,7 @@ class OpenAIResponses(FunctionCallingLLM):
         )
         if response.output_parsed is not None:
             return response.output_parsed
-        raise ValueError(
-            "Failed to produce a structured response from the model."
-        )
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     def stream_structured_predict(
