@@ -10,14 +10,21 @@ class TestBrowserSessionManager:
     def test_init(self):
         manager = BrowserSessionManager(region="us-east-1")
         assert manager.region == "us-east-1"
+        assert manager._identifier is None
         assert manager._async_sessions == {}
         assert manager._sync_sessions == {}
 
     def test_init_default_region(self):
         manager = BrowserSessionManager()
         assert manager.region == "us-west-2"
+        assert manager._identifier is None
         assert manager._async_sessions == {}
         assert manager._sync_sessions == {}
+
+    def test_init_custom_identifier(self):
+        manager = BrowserSessionManager(region="us-east-1", identifier="my-browser")
+        assert manager.region == "us-east-1"
+        assert manager._identifier == "my-browser"
 
     @patch(
         "llama_index.tools.aws_bedrock_agentcore.browser.browser_session_manager.BrowserClient"
@@ -95,6 +102,29 @@ class TestBrowserSessionManager:
         manager = BrowserSessionManager()
         # Should not raise an exception
         manager.close_sync_browser("test-thread")
+
+    def test_get_browser_client_sync(self):
+        manager = BrowserSessionManager()
+        mock_client = MagicMock()
+        mock_browser = MagicMock()
+        manager._sync_sessions = {"test-thread": (mock_client, mock_browser, False)}
+
+        client = manager.get_browser_client("test-thread")
+        assert client == mock_client
+
+    def test_get_browser_client_async(self):
+        manager = BrowserSessionManager()
+        mock_client = MagicMock()
+        mock_browser = MagicMock()
+        manager._async_sessions = {"test-thread": (mock_client, mock_browser, False)}
+
+        client = manager.get_browser_client("test-thread")
+        assert client == mock_client
+
+    def test_get_browser_client_not_found(self):
+        manager = BrowserSessionManager()
+        client = manager.get_browser_client("nonexistent")
+        assert client is None
 
     def test_close_sync_browser_with_errors(self):
         manager = BrowserSessionManager()

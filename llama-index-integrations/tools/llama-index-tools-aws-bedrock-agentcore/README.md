@@ -31,6 +31,22 @@ Included tools:
 - `get_elements`: Get elements matching a CSS selector
 - `navigate_back`: Navigate to the previous page
 - `current_webpage`: Get information about the current webpage
+- `generate_live_view_url`: Generate a presigned URL for human oversight of a browser session
+- `list_browsers`: List all browsers in the account (system and custom)
+- `create_browser`: Create a custom browser with specific configuration
+- `delete_browser`: Delete a custom browser
+- `get_browser`: Get detailed information about a browser
+- `take_control`: Take manual control of a browser session (disables automation)
+- `release_control`: Release manual control (re-enables automation)
+
+You can optionally pass a custom `identifier` for VPC-enabled browser resources:
+
+```python
+tool_spec = AgentCoreBrowserToolSpec(
+    region="us-west-2",
+    identifier="my-custom-browser-id",
+)
+```
 
 Example usage:
 
@@ -86,6 +102,25 @@ Included tools:
 - `start_command`: Start long-running commands asynchronously
 - `get_task`: Check status of async tasks
 - `stop_task`: Stop running tasks
+- `upload_file`: Upload a file with an optional semantic description
+- `upload_files`: Upload multiple files at once
+- `install_packages`: Install Python packages via pip
+- `download_file`: Download a file from the sandbox
+- `download_files`: Download multiple files from the sandbox
+- `list_code_interpreters`: List all code interpreters in the account
+- `create_code_interpreter`: Create a custom code interpreter with specific configuration
+- `delete_code_interpreter`: Delete a custom code interpreter
+- `get_code_interpreter`: Get detailed information about a code interpreter
+- `clear_context`: Clear all variable state in the Python execution context
+
+You can optionally pass a custom `identifier` for VPC-enabled code interpreter resources:
+
+```python
+tool_spec = AgentCoreCodeInterpreterToolSpec(
+    region="us-west-2",
+    identifier="my-custom-interpreter-id",
+)
+```
 
 Example usage:
 
