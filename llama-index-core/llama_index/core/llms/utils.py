@@ -174,8 +174,13 @@ def parse_partial_json(s: str) -> Dict:
 
     # If we're still inside a string at the end of processing and no colon was found after the opening quote,
     # this is an incomplete key - remove it
-    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
-        new_s = new_s[: new_s.rindex('"')]
+    if is_inside_string and '"' in new_s:
+        last_quote = new_s.rindex('"')
+        # Check if this string is a key or a value
+        if ":" not in new_s[:last_quote]:
+            new_s = new_s[:last_quote]
+        else:
+            new_s += '"'
     elif is_inside_string:
         new_s += '"'
 
