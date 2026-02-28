@@ -1,4 +1,5 @@
 import inspect
+import re
 
 import llama_index.graph_stores.neo4j.neo4j_property_graph as neo4j_pg
 
@@ -13,6 +14,22 @@ def test_no_legacy_call_syntax():
     assert "CALL (" not in source, (
         "Legacy CALL (vars) syntax detected. Neo4j 5 requires CALL { WITH vars ... }"
     )
+
+
+def test_no_deprecated_cypher_patterns():
+    """Guard against other Cypher patterns removed in Neo4j 5."""
+    source = inspect.getsource(neo4j_pg)
+
+    forbidden_patterns = {
+        r"USING\s+PERIODIC\s+COMMIT": "USING PERIODIC COMMIT was removed; use CALL { ... } IN TRANSACTIONS",
+        r"CALL\s+db\.index(?:es)?\b(?!\.vector)": "db.index* procedures (except vector) are deprecated; use SHOW INDEXES",
+        r"CALL\s+db\.constraints\b": "db.constraints was removed; use SHOW CONSTRAINTS",
+    }
+
+    for pattern, reason in forbidden_patterns.items():
+        assert not re.search(pattern, source, flags=re.IGNORECASE), (
+            f"Deprecated Neo4j pattern detected: '{pattern}' ({reason})"
+        )
 
 
 # this test is primarily to ensure that the embedding subquery executes without CypherSyntaxError.
