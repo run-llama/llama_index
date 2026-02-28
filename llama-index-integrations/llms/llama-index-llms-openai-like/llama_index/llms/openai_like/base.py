@@ -176,11 +176,25 @@ class OpenAILike(OpenAI):
 
         return super().stream_complete(prompt, **kwargs)
 
+    # Chat-only kwargs that the text completions API does not accept.
+    _CHAT_ONLY_KWARGS = (
+        "tool_choice",
+        "tools",
+        "response_format",
+        "parallel_tool_calls",
+    )
+
+    def _strip_chat_kwargs(self, kwargs: dict) -> dict:
+        """Remove chat-only keyword arguments before falling back to completions."""
+        return {k: v for k, v in kwargs.items() if k not in self._CHAT_ONLY_KWARGS}
+
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat with the model."""
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
-            completion_response = self.complete(prompt, formatted=True, **kwargs)
+            completion_response = self.complete(
+                prompt, formatted=True, **self._strip_chat_kwargs(kwargs)
+            )
             return completion_response_to_chat_response(completion_response)
 
         return super().chat(messages, **kwargs)
@@ -190,7 +204,9 @@ class OpenAILike(OpenAI):
     ) -> ChatResponseGen:
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
-            completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+            completion_response = self.stream_complete(
+                prompt, formatted=True, **self._strip_chat_kwargs(kwargs)
+            )
             return stream_completion_response_to_chat_response(completion_response)
 
         return super().stream_chat(messages, **kwargs)
@@ -221,7 +237,9 @@ class OpenAILike(OpenAI):
         """Chat with the model."""
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
-            completion_response = await self.acomplete(prompt, formatted=True, **kwargs)
+            completion_response = await self.acomplete(
+                prompt, formatted=True, **self._strip_chat_kwargs(kwargs)
+            )
             return completion_response_to_chat_response(completion_response)
 
         return await super().achat(messages, **kwargs)
@@ -232,7 +250,7 @@ class OpenAILike(OpenAI):
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
             completion_response = await self.astream_complete(
-                prompt, formatted=True, **kwargs
+                prompt, formatted=True, **self._strip_chat_kwargs(kwargs)
             )
             return async_stream_completion_response_to_chat_response(
                 completion_response
