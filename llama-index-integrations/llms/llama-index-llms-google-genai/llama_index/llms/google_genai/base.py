@@ -24,6 +24,7 @@ from typing import (
 
 
 import llama_index.core.instrumentation as instrument
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     achat_to_completion_decorator,
@@ -345,7 +346,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
+        next_msg, chat_kwargs, file_api_names = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.file_mode, self._client, **params
             )
@@ -400,7 +401,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
+        next_msg, chat_kwargs, file_api_names = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.file_mode, self._client, **params
             )
@@ -611,7 +612,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
         messages = prompt.format_messages(**prompt_args)
         contents_and_names = [
-            asyncio.run(chat_message_to_gemini(message, self.file_mode, self._client))
+            asyncio_run(chat_message_to_gemini(message, self.file_mode, self._client))
             for message in messages
         ]
         contents = [it[0] for it in contents_and_names]
@@ -662,7 +663,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
@@ -764,7 +765,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
