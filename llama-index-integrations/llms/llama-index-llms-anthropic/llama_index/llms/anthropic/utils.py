@@ -66,6 +66,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-opus-4-6-v1:0": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -80,6 +81,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-haiku-4-5@20251001": 200000,
     "claude-opus-4-5@20251101": 200000,
     "claude-opus-4-6": 200000,
+    "claude-sonnet-4-6": 1000000,
 }
 
 # Anthropic API/SDK identifiers
@@ -105,6 +107,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-5": 200000,
     "claude-opus-4-5-20251101": 200000,
     "claude-opus-4-6": 200000,
+    "claude-sonnet-4-6": 1000000,
 }
 
 # All provider Anthropic identifiers

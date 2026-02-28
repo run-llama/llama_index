@@ -67,10 +67,12 @@ class BitbucketReader(BaseReader):
         slugs.append(self.repository)
         return slugs
 
-    def load_all_file_paths(self, slug, branch, directory_path="", paths=[]):
+    def load_all_file_paths(self, slug, branch, directory_path="", paths=None):
         """
         Go inside every file that is present in the repository and get the paths for each file.
         """
+        if paths is None:
+            paths = []
         content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse/{directory_path}"
 
         query_params = {

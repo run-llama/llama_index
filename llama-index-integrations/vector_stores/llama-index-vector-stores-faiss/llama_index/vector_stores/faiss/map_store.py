@@ -5,6 +5,8 @@ An index that is built on top of an existing vector store.
 
 """
 
+import ast
+import json
 import os
 from typing import Any, List, Optional, cast
 
@@ -237,10 +239,10 @@ class FaissMapVectorStore(FaissVectorStore):
         id_map = {}
         id_map["node_id_to_faiss_id_map"] = self._node_id_to_faiss_id_map
         id_map["faiss_id_to_node_id_map"] = self._faiss_id_to_node_id_map
-        # save the id map
+        # save the id map as JSON for safe deserialization
         id_map_path = os.path.join(dirpath, DEFAULT_ID_MAP_NAME)
         with open(id_map_path, "w") as f:
-            f.write(str(id_map))
+            json.dump(id_map, f)
 
     @classmethod
     def from_persist_dir(
@@ -280,9 +282,18 @@ class FaissMapVectorStore(FaissVectorStore):
 
         faiss_index = faiss.read_index(persist_path)
         with open(id_map_path, "r") as f:
-            id_map = eval(f.read())
+            raw = f.read()
+        try:
+            id_map = json.loads(raw)
+        except json.JSONDecodeError:
+            # Fallback for files persisted with the old str() format
+            id_map = ast.literal_eval(raw)
 
         map_vs = cls(faiss_index=faiss_index)
-        map_vs._node_id_to_faiss_id_map = id_map["node_id_to_faiss_id_map"]
-        map_vs._faiss_id_to_node_id_map = id_map["faiss_id_to_node_id_map"]
+        map_vs._node_id_to_faiss_id_map = {
+            k: int(v) for k, v in id_map["node_id_to_faiss_id_map"].items()
+        }
+        map_vs._faiss_id_to_node_id_map = {
+            int(k): v for k, v in id_map["faiss_id_to_node_id_map"].items()
+        }
         return map_vs

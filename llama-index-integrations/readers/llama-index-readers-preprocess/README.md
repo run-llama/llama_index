@@ -1,5 +1,9 @@
 # Preprocess Loader
 
+> **This package has been discontinued.** The Preprocess service is no longer available and will not receive updates or support. Please remove this dependency from your projects.
+
+---
+
 ```bash
 pip install llama-index-readers-preprocess
 ```

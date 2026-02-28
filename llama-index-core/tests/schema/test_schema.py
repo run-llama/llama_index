@@ -11,6 +11,7 @@ from llama_index.core.schema import (
     ImageDocument,
     ImageNode,
     MediaResource,
+    MetadataMode,
     NodeWithScore,
     ObjectType,
     TextNode,
@@ -83,6 +84,75 @@ def test_text_node_with_text_resource():
     tr_dict = tr.model_dump()
     text_node = TextNode(text_resource=tr_dict)
     assert text_node.text == "This is a test"
+
+
+def test_text_node_metadata_separator_consistency() -> None:
+    """
+    Test that metadata_separator works consistently on TextNode.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/20645.
+    Previously, TextNode defined its own `metadata_seperator` field that
+    shadowed the parent BaseNode's `metadata_separator` (with alias
+    `metadata_seperator`), causing the correctly-spelled kwarg to be ignored
+    when generating content.
+    """
+    metadata = {"name": "Foo", "uuid": "Bar"}
+
+    # Using the correctly-spelled kwarg should work on TextNode
+    node_correct = TextNode(
+        text="content",
+        metadata=metadata,
+        metadata_separator="::SEP::",
+    )
+    # Using the alias (typo) kwarg should also work
+    node_alias = TextNode(
+        text="content",
+        metadata=metadata,
+        metadata_seperator="::SEP::",
+    )
+
+    content_correct = node_correct.get_content(MetadataMode.LLM)
+    content_alias = node_alias.get_content(MetadataMode.LLM)
+
+    # Both should produce identical output with the custom separator
+    assert "::SEP::" in content_correct, (
+        f"metadata_separator='::SEP::' was ignored: {content_correct!r}"
+    )
+    assert content_correct == content_alias
+
+    # Verify the separator attribute is accessible and consistent
+    assert node_correct.metadata_separator == "::SEP::"
+    assert node_alias.metadata_separator == "::SEP::"
+
+    # Also verify Document and TextNode behave the same way
+    doc = Document(
+        text="content",
+        metadata=metadata,
+        metadata_separator="::SEP::",
+    )
+    doc_content = doc.get_content(MetadataMode.LLM)
+    assert content_correct == doc_content
+
+
+def test_text_node_metadata_separator_roundtrip() -> None:
+    """Test that TextNode with custom metadata_separator survives serialization roundtrip."""
+    node = TextNode(
+        text="hello",
+        metadata={"key": "value"},
+        metadata_separator=" | ",
+    )
+    assert node.metadata_separator == " | "
+
+    # Roundtrip through model_dump
+    dumped = node.model_dump()
+    restored = TextNode(**dumped)
+    assert restored.metadata_separator == " | "
+    assert restored.get_content(MetadataMode.LLM) == node.get_content(MetadataMode.LLM)
+
+    # Roundtrip through JSON
+    json_str = node.model_dump_json()
+    restored_json = TextNode.model_validate_json(json_str)
+    assert restored_json.metadata_separator == " | "
 
 
 def test_image_node_hash() -> None:

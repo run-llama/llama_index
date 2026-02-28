@@ -214,6 +214,30 @@ class SharePointReader(
         )
         return self._send_request_with_retry(request)
 
+    def _get_all_items_with_pagination(self, endpoint: str) -> List[Dict[str, Any]]:
+        """
+        Generic helper to fetch all items from a Graph API endpoint with pagination support.
+        Automatically follows @odata.nextLink to retrieve all pages.
+
+        Args:
+            endpoint (str): The initial Graph API endpoint URL
+
+        Returns:
+            List[Dict[str, Any]]: All items from all pages combined
+
+        """
+        all_items = []
+        next_link = endpoint
+
+        while next_link:
+            response = self._send_get_with_retry(next_link)
+            response_json = response.json()
+            items = response_json.get("value", [])
+            all_items.extend(items)
+            next_link = response_json.get("@odata.nextLink")
+
+        return all_items
+
     def _get_site_id_with_host_name(
         self, access_token, sharepoint_site_name: Optional[str]
     ) -> str:
@@ -296,28 +320,25 @@ class SharePointReader(
 
         self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
-        response = self._send_get_with_retry(self._drive_id_endpoint)
-        json_response = response.json()
+        # Use generic pagination helper to get all drives
+        drives = self._get_all_items_with_pagination(self._drive_id_endpoint)
 
-        if response.status_code == 200 and "value" in json_response:
-            if len(json_response["value"]) > 0 and self.drive_name is not None:
-                for drive in json_response["value"]:
+        if drives:
+            if self.drive_name is not None:
+                for drive in drives:
                     if drive["name"].lower() == self.drive_name.lower():
                         return drive["id"]
                 raise ValueError(f"The specified drive {self.drive_name} is not found.")
 
-            if len(json_response["value"]) > 0 and "id" in json_response["value"][0]:
-                return json_response["value"][0]["id"]
+            if len(drives) > 0 and "id" in drives[0]:
+                return drives[0]["id"]
             else:
                 raise ValueError(
                     "Error occurred while fetching the drives for the sharepoint site."
                 )
         else:
-            error_message = json_response.get("error_description") or json_response.get(
-                "error"
-            )
-            logger.error("Error retrieving drive ID: %s", json_response["error"])
-            raise ValueError(f"Error retrieving drive ID: {error_message}")
+            logger.error("No drives found for the SharePoint site.")
+            raise ValueError("No drives found for the SharePoint site.")
 
     def _get_sharepoint_folder_id(self, folder_path: str) -> str:
         """
@@ -709,8 +730,8 @@ class SharePointReader(
         folder_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
         )
-        response = self._send_get_with_retry(folder_contents_endpoint)
-        items = response.json().get("value", [])
+        # Use generic pagination helper to get all items
+        items = self._get_all_items_with_pagination(folder_contents_endpoint)
         file_paths = []
         for item in items:
             if "folder" in item and recursive:
@@ -738,10 +759,11 @@ class SharePointReader(
         drive_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
         )
-        response = self._send_get_with_retry(drive_contents_endpoint)
-        items = response.json().get("value", [])
-
         file_paths = []
+
+        # Use generic pagination helper to get all items
+        items = self._get_all_items_with_pagination(drive_contents_endpoint)
+
         for item in items:
             if "folder" in item:
                 # Append folder path
@@ -959,8 +981,8 @@ class SharePointReader(
         """
         endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists?$filter=displayName eq 'Site Pages'"
         try:
-            response = self._send_get_with_retry(endpoint)
-            lists = response.json().get("value", [])
+            # Use generic pagination helper to get all lists
+            lists = self._get_all_items_with_pagination(endpoint)
             if not lists:
                 logger.error("Site Pages list not found for site %s", site_id)
                 raise ValueError("Site Pages list not found")
@@ -983,9 +1005,12 @@ class SharePointReader(
         try:
             list_id = self.get_site_pages_list_id(site_id)
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields(select=FileLeafRef,CanvasContent1)"
-            response = self._send_get_with_retry(endpoint)
-            items = response.json().get("value", [])
+
             pages = []
+
+            # Use generic pagination helper to get all items
+            items = self._get_all_items_with_pagination(endpoint)
+
             for item in items:
                 fields = item.get("fields", {})
                 page_id = item.get("id")
@@ -1019,8 +1044,11 @@ class SharePointReader(
         try:
             list_id = self.get_site_pages_list_id(site_id)
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields"
-            response = self._send_get_with_retry(endpoint)
-            items = response.json().get("value", [])
+
+            # Use generic pagination helper to get all items
+            items = self._get_all_items_with_pagination(endpoint)
+
+            # Search for matching page
             matches = [
                 item
                 for item in items
@@ -1028,6 +1056,7 @@ class SharePointReader(
             ]
             if matches:
                 return matches[0].get("id")
+
             return None
         except Exception as e:
             logger.error(

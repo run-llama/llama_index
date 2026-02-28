@@ -47,7 +47,9 @@ from llama_index.llms.bedrock_converse.utils import (
     bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
+    extract_thinking_from_block,
     force_single_tool_call,
+    is_bedrock_adaptive_thinking_supported_model,
     is_bedrock_function_calling_model,
     is_reasoning,
     join_two_dicts,
@@ -245,6 +247,18 @@ class BedrockConverse(FunctionCallingLLM):
                 UserWarning,
             )
 
+        if (
+            thinking is not None
+            and thinking.get("type") == "adaptive"
+            and not is_bedrock_adaptive_thinking_supported_model(model)
+        ):
+            thinking = None
+            warnings.warn(
+                f"Model {model} does not support adaptive thinking mode. "
+                "Thinking will be disabled.",
+                UserWarning,
+            )
+
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
@@ -368,7 +382,10 @@ class BedrockConverse(FunctionCallingLLM):
         response: Optional[Dict[str, Any]] = None,
         content: Optional[Dict[str, Any]] = None,
     ) -> Tuple[
-        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]], List[str], List[str]
+        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]],
+        List[str],
+        List[str],
+        Optional[str],
     ]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
@@ -378,6 +395,7 @@ class BedrockConverse(FunctionCallingLLM):
         )
         tool_call_ids = []
         status = []
+        thinking_text = ""
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         if content is not None:
             content_list = [content]
@@ -387,14 +405,16 @@ class BedrockConverse(FunctionCallingLLM):
         for content_block in content_list:
             if text := content_block.get("text", None):
                 blocks.append(TextBlock(text=text))
-            if thinking := content_block.get("reasoningContent", None):
+            if reasoning_text := extract_thinking_from_block(content_block):
+                if reasoning_text:
+                    thinking_text += reasoning_text
                 blocks.append(
                     ThinkingBlock(
-                        content=thinking.get("reasoningText", {}).get("text", None),
+                        content=reasoning_text,
                         additional_information={
-                            "signature": thinking.get("reasoningText", {}).get(
-                                "signature", None
-                            )
+                            "signature": content_block.get("reasoningContent", {})
+                            .get("reasoningText", {})
+                            .get("signature", None)
                         },
                     )
                 )
@@ -413,11 +433,12 @@ class BedrockConverse(FunctionCallingLLM):
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
                     if text := tool_result_content.get("text", None):
-                        text_content += text
-                tool_call_ids.append(tool_result_content.get("toolUseId", ""))
+                        # Use first text block as content for compatibility
+                        pass
+                tool_call_ids.append(tool_result.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return blocks, tool_call_ids, status
+        return blocks, tool_call_ids, status, (thinking_text or None)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -444,7 +465,11 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
+        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
+            response
+        )
+
+        additional_kwargs = self._get_response_token_counts(dict(response))
 
         return ChatResponse(
             message=ChatMessage(
@@ -456,7 +481,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
-            additional_kwargs=self._get_response_token_counts(dict(response)),
+            additional_kwargs=additional_kwargs,
         )
 
     @llm_completion_callback()
@@ -507,13 +532,9 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
-                        reasoning_text = content_delta.get("reasoningContent", {}).get(
-                            "text", ""
-                        )
-                        thinking += reasoning_text
-                        thinking_delta_value = reasoning_text
+                    thinking_delta_value = extract_thinking_from_block(content_delta)
+                    if thinking_delta_value:
+                        thinking += thinking_delta_value
                         thinking_signature += content_delta.get(
                             "reasoningContent", {}
                         ).get("signature", "")
@@ -725,7 +746,11 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
+        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
+            response
+        )
+
+        additional_kwargs = self._get_response_token_counts(dict(response))
 
         return ChatResponse(
             message=ChatMessage(
@@ -737,7 +762,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
-            additional_kwargs=self._get_response_token_counts(dict(response)),
+            additional_kwargs=additional_kwargs,
         )
 
     @llm_completion_callback()
@@ -790,13 +815,9 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
-                        reasoning_text = content_delta.get("reasoningContent", {}).get(
-                            "text", ""
-                        )
-                        thinking += reasoning_text
-                        thinking_delta_value = reasoning_text
+                    thinking_delta_value = extract_thinking_from_block(content_delta)
+                    if thinking_delta_value:
+                        thinking += thinking_delta_value
                         thinking_signature += content_delta.get(
                             "reasoningContent", {}
                         ).get("signature", "")

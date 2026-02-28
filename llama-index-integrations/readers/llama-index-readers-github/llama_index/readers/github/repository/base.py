@@ -374,7 +374,182 @@ class GithubRepositoryReader(BaseReader):
 
         return True
 
-    def _load_data_from_commit(self, commit_sha: str) -> List[Document]:
+    async def _load_files_by_path(
+        self,
+        ref: str,
+        file_paths: List[str],
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
+    ) -> List[Document]:
+        """
+        Load specific files by path.
+        """
+        documents = []
+
+        sem = asyncio.Semaphore(self._concurrent_requests)
+
+        async def fetch_and_process(path: str) -> Optional[Document]:
+            async with sem:
+                try:
+                    content_data = await self._github_client.get_content(
+                        self._owner,
+                        self._repo,
+                        path,
+                        ref=ref,
+                        timeout=self._timeout,
+                        retries=self._retries,
+                    )
+                except Exception as e:
+                    if self.fail_on_error:
+                        raise
+                    self.logger.warning(f"Failed to fetch {path}: {e}")
+                    return None
+
+            if file_exists_callback and file_exists_callback(content_data.sha):
+                return None
+
+            return self._create_and_process_document(
+                full_path=path,
+                sha=content_data.sha,
+                content=content_data.content,
+                encoding=content_data.encoding,
+                url=content_data.html_url,  # Use html_url for consistency
+            )
+
+        # Using asyncio.gather to fetch files concurrently
+        tasks = [fetch_and_process(path) for path in file_paths]
+        results = await asyncio.gather(*tasks)
+
+        for result in results:
+            if result:
+                documents.append(result)
+
+        return documents
+
+    def _create_and_process_document(
+        self,
+        full_path: str,
+        sha: str,
+        content: str,
+        encoding: str,
+        url: str,
+    ) -> Optional[Document]:
+        """
+        Helper to decode content and create a Document.
+        """
+        assert encoding == "base64", f"blob encoding {encoding} not supported"
+
+        file_extension = get_file_extension(full_path)
+
+        # Notify file processing started
+        self.dispatcher.event(
+            GitHubFileProcessingStartedEvent(
+                file_path=full_path, file_type=file_extension
+            )
+        )
+
+        decoded_bytes = None
+        try:
+            decoded_bytes = base64.b64decode(content)
+        except binascii.Error:
+            print_if_verbose(self._verbose, f"could not decode {full_path} as base64")
+            self.dispatcher.event(
+                GitHubFileFailedEvent(
+                    file_path=full_path,
+                    file_type=file_extension,
+                    error="Could not decode as base64",
+                )
+            )
+            return None
+
+        try:
+            if self._use_parser or file_extension in self._file_readers:
+                document = self._parse_supported_file(
+                    file_path=full_path,
+                    file_content=decoded_bytes,
+                    tree_sha=sha,
+                    tree_path=full_path,
+                )
+                if document is not None:
+                    self.dispatcher.event(
+                        GitHubFileProcessedEvent(
+                            file_path=full_path,
+                            file_type=file_extension,
+                            file_size=len(decoded_bytes) if decoded_bytes else 0,
+                            document=document,
+                        )
+                    )
+                    return document
+                print_if_verbose(
+                    self._verbose,
+                    f"could not parse {full_path} as a supported file type"
+                    + " - falling back to decoding as utf-8 raw text",
+                )
+        except Exception as e:
+            self.logger.error(f"Error processing file {full_path}: {e}")
+            self.dispatcher.event(
+                GitHubFileFailedEvent(
+                    file_path=full_path,
+                    file_type=file_extension,
+                    error=str(e),
+                )
+            )
+            if self.fail_on_error:
+                raise
+            else:
+                self.logger.warning(
+                    f"Failed to process file {full_path}: {e}. Skipping this file."
+                )
+                return None
+
+        try:
+            if decoded_bytes is None:
+                raise ValueError("decoded_bytes is None")
+            decoded_text = decoded_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            print_if_verbose(self._verbose, f"could not decode {full_path} as utf-8")
+            self.dispatcher.event(
+                GitHubFileFailedEvent(
+                    file_path=full_path,
+                    file_type=file_extension,
+                    error="Could not decode as UTF-8",
+                )
+            )
+            return None
+
+        print_if_verbose(
+            self._verbose,
+            f"got {len(decoded_text)} characters - adding to documents - {full_path}",
+        )
+
+        document = Document(
+            text=decoded_text,
+            doc_id=sha,
+            metadata={
+                "file_path": full_path,
+                "file_name": full_path.split("/")[-1],
+                "url": url,
+            },
+        )
+        self.dispatcher.event(
+            GitHubFileProcessedEvent(
+                file_path=full_path,
+                file_type=file_extension,
+                file_size=len(decoded_text.encode("utf-8")),
+                document=document,
+            )
+        )
+        return document
+
+        return documents
+
+    def _load_data_from_commit(
+        self,
+        commit_sha: str,
+        file_path: Optional[str] = None,
+        file_paths: Optional[List[str]] = None,
+        ignore_file_paths: Optional[List[str]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
+    ) -> List[Document]:
         """
         Load data from a commit.
 
@@ -385,6 +560,18 @@ class GithubRepositoryReader(BaseReader):
         :return: list of documents
         """
         repo_name = f"{self._owner}/{self._repo}"
+
+        if file_paths is None and file_path is not None:
+            file_paths = [file_path]
+
+        if file_paths is not None:
+            return self._loop.run_until_complete(
+                self._load_files_by_path(
+                    ref=commit_sha,
+                    file_paths=file_paths,
+                    file_exists_callback=file_exists_callback,
+                )
+            )
 
         # Notify repository processing started
         self.dispatcher.event(
@@ -405,6 +592,22 @@ class GithubRepositoryReader(BaseReader):
 
         tree_sha = commit_response.commit.tree.sha
         blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
+
+        # Filter ignoring file paths
+        if ignore_file_paths:
+            blobs_and_paths = [
+                (blob, path)
+                for blob, path in blobs_and_paths
+                if path not in ignore_file_paths
+            ]
+
+        # Filter based on file_exists_callback
+        if file_exists_callback:
+            blobs_and_paths = [
+                (blob, path)
+                for blob, path in blobs_and_paths
+                if not file_exists_callback(blob.sha)
+            ]
 
         print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
 
@@ -435,10 +638,15 @@ class GithubRepositoryReader(BaseReader):
 
         return documents
 
+        return documents
+
     def _load_data_from_branch(
         self,
         branch: str,
         file_path: Optional[str] = None,
+        file_paths: Optional[List[str]] = None,
+        ignore_file_paths: Optional[List[str]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load data from a branch.
@@ -451,6 +659,18 @@ class GithubRepositoryReader(BaseReader):
         :return: list of documents
         """
         repo_name = f"{self._owner}/{self._repo}"
+
+        if file_paths is None and file_path is not None:
+            file_paths = [file_path]
+
+        if file_paths is not None:
+            return self._loop.run_until_complete(
+                self._load_files_by_path(
+                    ref=branch,
+                    file_paths=file_paths,
+                    file_exists_callback=file_exists_callback,
+                )
+            )
 
         # Notify repository processing started
         self.dispatcher.event(
@@ -471,6 +691,22 @@ class GithubRepositoryReader(BaseReader):
 
         tree_sha = branch_data.commit.commit.tree.sha
         blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
+
+        # Filter ignoring file paths
+        if ignore_file_paths:
+            blobs_and_paths = [
+                (blob, path)
+                for blob, path in blobs_and_paths
+                if path not in ignore_file_paths
+            ]
+
+        # Filter based on file_exists_callback
+        if file_exists_callback:
+            blobs_and_paths = [
+                (blob, path)
+                for blob, path in blobs_and_paths
+                if not file_exists_callback(blob.sha)
+            ]
 
         print_if_verbose(self._verbose, f"got {len(blobs_and_paths)} blobs")
 
@@ -506,6 +742,9 @@ class GithubRepositoryReader(BaseReader):
         commit_sha: Optional[str] = None,
         branch: Optional[str] = None,
         file_path: Optional[str] = None,
+        file_paths: Optional[List[str]] = None,
+        ignore_file_paths: Optional[List[str]] = None,
+        file_exists_callback: Optional[Callable[[str], bool]] = None,
     ) -> List[Document]:
         """
         Load data from a commit or a branch.
@@ -515,6 +754,9 @@ class GithubRepositoryReader(BaseReader):
         :param `commit_sha`: commit sha
         :param `branch`: branch name
         :param `file_path`: the full path to a specific file in the repo
+        :param `file_paths`: list of full paths to specific files in the repo
+        :param `ignore_file_paths`: list of full paths to ignore
+        :param `file_exists_callback`: callback to check if a file exists (by SHA)
 
         :return: list of documents
         """
@@ -525,10 +767,22 @@ class GithubRepositoryReader(BaseReader):
             raise ValueError("You must specify one of commit or branch.")
 
         if commit_sha is not None:
-            return self._load_data_from_commit(commit_sha)
+            return self._load_data_from_commit(
+                commit_sha,
+                file_path=file_path,
+                file_paths=file_paths,
+                ignore_file_paths=ignore_file_paths,
+                file_exists_callback=file_exists_callback,
+            )
 
         if branch is not None:
-            return self._load_data_from_branch(branch, file_path=file_path)
+            return self._load_data_from_branch(
+                branch,
+                file_path=file_path,
+                file_paths=file_paths,
+                ignore_file_paths=ignore_file_paths,
+                file_exists_callback=file_exists_callback,
+            )
 
         raise ValueError("You must specify one of commit or branch.")
 
@@ -651,97 +905,15 @@ class GithubRepositoryReader(BaseReader):
         documents = []
         async for blob_data, full_path in buffered_iterator:
             print_if_verbose(self._verbose, f"generating document for {full_path}")
-            assert blob_data.encoding == "base64", (
-                f"blob encoding {blob_data.encoding} not supported"
-            )
 
-            # Notify file processing started
-            file_extension = get_file_extension(full_path)
-            self.dispatcher.event(
-                GitHubFileProcessingStartedEvent(
-                    file_path=full_path, file_type=file_extension
-                )
-            )
+            # Construct URL for the document (mimicking what was there before)
+            # The original code constructed URL manually at the end.
+            # My helper _create_and_process_document takes a URL.
+            # blob_data.url is the API URL. The original code constructed a blob URL.
 
-            decoded_bytes = None
-            try:
-                decoded_bytes = base64.b64decode(blob_data.content)
-                del blob_data.content
-            except binascii.Error:
-                print_if_verbose(
-                    self._verbose, f"could not decode {full_path} as base64"
-                )
-                self.dispatcher.event(
-                    GitHubFileFailedEvent(
-                        file_path=full_path,
-                        file_type=file_extension,
-                        error="Could not decode as base64",
-                    )
-                )
-                continue
+            # Original URL construction:
+            # url = os.path.join(self._get_base_url(blob_data.url), self._owner, self._repo, "blob/", id, full_path)
 
-            try:
-                if self._use_parser or file_extension in self._file_readers:
-                    document = self._parse_supported_file(
-                        file_path=full_path,
-                        file_content=decoded_bytes,
-                        tree_sha=blob_data.sha,
-                        tree_path=full_path,
-                    )
-                    if document is not None:
-                        documents.append(document)
-                        self.dispatcher.event(
-                            GitHubFileProcessedEvent(
-                                file_path=full_path,
-                                file_type=file_extension,
-                                file_size=len(decoded_bytes) if decoded_bytes else 0,
-                                document=document,
-                            )
-                        )
-                        continue
-                    print_if_verbose(
-                        self._verbose,
-                        f"could not parse {full_path} as a supported file type"
-                        + " - falling back to decoding as utf-8 raw text",
-                    )
-            except Exception as e:
-                self.logger.error(f"Error processing file {full_path}: {e}")
-                self.dispatcher.event(
-                    GitHubFileFailedEvent(
-                        file_path=full_path,
-                        file_type=get_file_extension(full_path),
-                        error=str(e),
-                    )
-                )
-                if self.fail_on_error:
-                    raise
-                else:
-                    self.logger.warning(
-                        f"Failed to process file {full_path}: {e}. Skipping this file."
-                    )
-                    continue
-
-            try:
-                if decoded_bytes is None:
-                    raise ValueError("decoded_bytes is None")
-                decoded_text = decoded_bytes.decode("utf-8")
-            except UnicodeDecodeError:
-                print_if_verbose(
-                    self._verbose, f"could not decode {full_path} as utf-8"
-                )
-                self.dispatcher.event(
-                    GitHubFileFailedEvent(
-                        file_path=full_path,
-                        file_type=file_extension,
-                        error="Could not decode as UTF-8",
-                    )
-                )
-                continue
-            print_if_verbose(
-                self._verbose,
-                f"got {len(decoded_text)} characters"
-                + f"- adding to documents - {full_path}",
-            )
             url = os.path.join(
                 self._get_base_url(blob_data.url),
                 self._owner,
@@ -750,24 +922,17 @@ class GithubRepositoryReader(BaseReader):
                 id,
                 full_path,
             )
-            document = Document(
-                text=decoded_text,
-                doc_id=blob_data.sha,
-                metadata={
-                    "file_path": full_path,
-                    "file_name": full_path.split("/")[-1],
-                    "url": url,
-                },
+
+            document = self._create_and_process_document(
+                full_path=full_path,
+                sha=blob_data.sha,
+                content=blob_data.content,
+                encoding=blob_data.encoding,
+                url=url,
             )
-            documents.append(document)
-            self.dispatcher.event(
-                GitHubFileProcessedEvent(
-                    file_path=full_path,
-                    file_type=file_extension,
-                    file_size=len(decoded_text.encode("utf-8")),
-                    document=document,
-                )
-            )
+
+            if document:
+                documents.append(document)
 
         return documents
 

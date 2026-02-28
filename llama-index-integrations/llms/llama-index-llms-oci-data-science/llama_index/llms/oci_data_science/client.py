@@ -31,6 +31,7 @@ from tenacity import (
     wait_exponential,
     wait_random_exponential,
 )
+from llama_index.llms.oci_data_science.utils import _resolve_invoke_url
 
 DEFAULT_RETRIES = 3
 DEFAULT_BACKOFF_FACTOR = 3
@@ -421,9 +422,10 @@ class Client(BaseClient):
 
         """
         logger.debug(f"Starting synchronous request with payload: {payload}")
+        url = _resolve_invoke_url(self.endpoint, stream=False)
         try:
             response = self._client.post(
-                self.endpoint,
+                url,
                 headers=self._prepare_headers(stream=False, headers=headers),
                 auth=self.auth,
                 json=payload,
@@ -468,10 +470,11 @@ class Client(BaseClient):
 
         for attempt in range(1, self.retries + 2):  # retries + initial attempt
             logger.debug(f"Attempt {attempt} for synchronous streaming request.")
+            url = _resolve_invoke_url(self.endpoint, stream=True)
             try:
                 with self._client.stream(
                     "POST",
-                    self.endpoint,
+                    url,
                     headers=self._prepare_headers(stream=True, headers=headers),
                     auth=self.auth,
                     json={**payload, "stream": True},
@@ -641,9 +644,10 @@ class AsyncClient(BaseClient):
 
         """
         logger.debug(f"Starting asynchronous request with payload: {payload}")
+        url = _resolve_invoke_url(self.endpoint, stream=False)
         try:
             response = await self._client.post(
-                self.endpoint,
+                url,
                 headers=self._prepare_headers(stream=False, headers=headers),
                 auth=self.auth,
                 json=payload,
@@ -687,10 +691,11 @@ class AsyncClient(BaseClient):
         last_exception_text = None
         for attempt in range(1, self.retries + 2):  # retries + initial attempt
             logger.debug(f"Attempt {attempt} for asynchronous streaming request.")
+            url = _resolve_invoke_url(self.endpoint, stream=True)
             try:
                 async with self._client.stream(
                     "POST",
-                    self.endpoint,
+                    url,
                     headers=self._prepare_headers(stream=True, headers=headers),
                     auth=self.auth,
                     json={**payload, "stream": True},
