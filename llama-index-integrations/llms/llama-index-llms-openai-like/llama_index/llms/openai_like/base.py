@@ -35,7 +35,7 @@ class OpenAILike(OpenAI):
             Defaults to "https://api.openai.com/v1".
         is_chat_model (bool):
             Whether the model uses the chat or completion endpoint.
-            Defaults to False.
+            Defaults to True.
         is_function_calling_model (bool):
             Whether the model supports OpenAI function calling/tools over the API.
             Defaults to False.
@@ -98,7 +98,7 @@ class OpenAILike(OpenAI):
         description=LLMMetadata.model_fields["context_window"].description,
     )
     is_chat_model: bool = Field(
-        default=False,
+        default=True,
         description=LLMMetadata.model_fields["is_chat_model"].description,
     )
     is_function_calling_model: bool = Field(
