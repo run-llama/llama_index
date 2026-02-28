@@ -123,9 +123,9 @@ def test_prepare_chat_with_tools_no_tools():
     )
 
     assert "messages" in result
-    assert result["tools"] is None
-    assert result["tool_choice"] is None
-    assert result["parallel_tool_calls"] is None
+    assert "tools" not in result
+    assert "tool_choice" not in result
+    assert "parallel_tool_calls" not in result
 
 
 def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
