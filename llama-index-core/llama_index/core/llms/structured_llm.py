@@ -1,7 +1,10 @@
-from typing import Any, Type, Sequence
+import logging
+from typing import Any, Optional, Sequence, Type
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.llms.llm import LLM
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -16,16 +19,22 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     SerializeAsAny,
+    ValidationError,
 )
-from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.base import ChatPromptTemplate
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    chat_to_completion_decorator,
+
+logger = logging.getLogger(__name__)
+
+
+_CORRECTION_PROMPT = (
+    "Your previous response could not be parsed into the required structured "
+    "format. Please respond ONLY with valid JSON matching the schema, "
+    "with no extra text."
 )
 
 
@@ -40,6 +49,11 @@ class StructuredLLM(LLM):
     output_cls: Type[BaseModel] = Field(
         ..., description="Output class for the structured LLM.", exclude=True
     )
+    max_retries: int = Field(
+        default=1,
+        description="Maximum number of retries when the LLM fails to produce "
+        "valid structured output.",
+    )
 
     @classmethod
     def class_name(cls) -> str:
@@ -49,28 +63,62 @@ class StructuredLLM(LLM):
     def metadata(self) -> LLMMetadata:
         return self.llm.metadata
 
+    def _coerce_output(self, output: Any) -> BaseModel:
+        """Coerce a potentially non-model output into the expected class."""
+        if isinstance(output, self.output_cls):
+            return output
+        if isinstance(output, str):
+            return self.output_cls.model_validate_json(output)
+        raise TypeError(
+            f"structured_predict returned unexpected type {type(output).__name__}; "
+            f"expected {self.output_cls.__name__} or JSON string"
+        )
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
-        # TODO:
-
-        # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
-        # make this work with our FunctionCallingProgram, even though
-        # the messages don't technically have any variables (they are already formatted)
-
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
-        output = self.llm.structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
-        )
-        if isinstance(output, str):
-            output = self.output_cls.model_validate_json(output)
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=output.model_dump_json()
-            ),
-            raw=output,
-        )
+        last_error: Optional[Exception] = None
+        for attempt in range(1 + self.max_retries):
+            output = self.llm.structured_predict(
+                output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
+            )
+            try:
+                parsed = self._coerce_output(output)
+                return ChatResponse(
+                    message=ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=parsed.model_dump_json(),
+                    ),
+                    raw=parsed,
+                )
+            except (ValidationError, TypeError, ValueError) as exc:
+                last_error = exc
+                logger.warning(
+                    "Structured output attempt %d/%d failed: %s",
+                    attempt + 1,
+                    1 + self.max_retries,
+                    exc,
+                )
+                # Append a correction hint for the next attempt
+                chat_prompt = ChatPromptTemplate(
+                    message_templates=[
+                        *messages,
+                        ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            content=str(output),
+                        ),
+                        ChatMessage(
+                            role=MessageRole.USER,
+                            content=_CORRECTION_PROMPT,
+                        ),
+                    ]
+                )
+        raise ValueError(
+            f"LLM failed to produce valid {self.output_cls.__name__} output "
+            f"after {1 + self.max_retries} attempts"
+        ) from last_error
 
     @llm_chat_callback()
     def stream_chat(
@@ -110,23 +158,47 @@ class StructuredLLM(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
-        # make this work with our FunctionCallingProgram, even though
-        # the messages don't technically have any variables (they are already formatted)
-
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
-        output = await self.llm.astructured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
-        )
-        if isinstance(output, str):
-            output = self.output_cls.model_validate_json(output)
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=output.model_dump_json()
-            ),
-            raw=output,
-        )
+        last_error: Optional[Exception] = None
+        for attempt in range(1 + self.max_retries):
+            output = await self.llm.astructured_predict(
+                output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
+            )
+            try:
+                parsed = self._coerce_output(output)
+                return ChatResponse(
+                    message=ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=parsed.model_dump_json(),
+                    ),
+                    raw=parsed,
+                )
+            except (ValidationError, TypeError, ValueError) as exc:
+                last_error = exc
+                logger.warning(
+                    "Structured output attempt %d/%d failed: %s",
+                    attempt + 1,
+                    1 + self.max_retries,
+                    exc,
+                )
+                chat_prompt = ChatPromptTemplate(
+                    message_templates=[
+                        *messages,
+                        ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            content=str(output),
+                        ),
+                        ChatMessage(
+                            role=MessageRole.USER,
+                            content=_CORRECTION_PROMPT,
+                        ),
+                    ]
+                )
+        raise ValueError(
+            f"LLM failed to produce valid {self.output_cls.__name__} output "
+            f"after {1 + self.max_retries} attempts"
+        ) from last_error
 
     @llm_chat_callback()
     async def astream_chat(
