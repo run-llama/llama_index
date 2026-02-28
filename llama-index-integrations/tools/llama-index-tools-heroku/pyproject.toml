@@ -1,0 +1,39 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-heroku"
+version = "0.1.0"
+description = "LlamaIndex tools for Heroku Agents API integration"
+authors = ["Heroku"]
+readme = "README.md"
+license = "MIT"
+keywords = ["llama-index", "tools", "heroku", "agents", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = ">=0.11.0,<1.0.0"
+httpx = ">=0.25.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.21.0"
+pytest-httpx = ">=0.30.0"
+
+[[tool.poetry.packages]]
+include = "llama_index"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
