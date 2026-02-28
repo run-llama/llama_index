@@ -373,7 +373,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     CALL apoc.create.addLabels(e, [row.label])
                     YIELD node
                     WITH e, row
-                    CALL (e, row) {{
+                    CALL {{
+                        WITH e, row
                         WITH e, row
                         WHERE row.embedding IS NOT NULL
                         CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
@@ -494,7 +495,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return_statement = f"""
         WITH e
-        CALL (e) {{
+        CALL {{
+            WITH e
             WITH e
             MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:`{BASE_ENTITY_LABEL}`)
             RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
