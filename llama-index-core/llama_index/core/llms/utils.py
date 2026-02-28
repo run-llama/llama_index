@@ -172,12 +172,28 @@ def parse_partial_json(s: str) -> Dict:
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing and no colon was found after the opening quote,
-    # this is an incomplete key - remove it
-    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
-        new_s = new_s[: new_s.rindex('"')]
-    elif is_inside_string:
-        new_s += '"'
+    # If we're still inside a string at the end of processing, determine whether
+    # the unfinished string is an incomplete key or an incomplete value.
+    #
+    # Strategy: look at the content between the last entry delimiter ({, [, or ,)
+    # and the opening quote of the current string.  If that segment contains a
+    # colon, a key has already been established and this is an incomplete *value*
+    # (close it).  Otherwise this is an incomplete *key* (remove it).
+    if is_inside_string:
+        opening_quote_pos = new_s.rindex('"')
+        before_quote = new_s[:opening_quote_pos]
+        last_delimiter = max(
+            before_quote.rfind("{"),
+            before_quote.rfind("["),
+            before_quote.rfind(","),
+        )
+        current_entry = before_quote[last_delimiter + 1 :]
+        if ":" not in current_entry:
+            # No colon before the opening quote → this is an incomplete key; remove it.
+            new_s = new_s[:opening_quote_pos]
+        else:
+            # A colon exists before the opening quote → this is an incomplete value; close it.
+            new_s += '"'
 
     # Check if we have an incomplete key-value pair
     new_s = new_s.rstrip()
