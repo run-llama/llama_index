@@ -63,6 +63,8 @@ class StructuredLLM(LLM):
         output = self.llm.structured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
+        if isinstance(output, str):
+            output = self.output_cls.model_validate_json(output)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
@@ -117,6 +119,8 @@ class StructuredLLM(LLM):
         output = await self.llm.astructured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
+        if isinstance(output, str):
+            output = self.output_cls.model_validate_json(output)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
