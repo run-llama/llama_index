@@ -1,5 +1,7 @@
 from typing import Any, List, Dict, Optional, Tuple
 
+import logging
+
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -17,6 +19,8 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 
 import redis
 from falkordb import FalkorDB
+
+logger = logging.getLogger(__name__)
 
 
 def remove_empty_values(input_dict):
@@ -478,14 +482,18 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
     ) -> Any:
         param_map = param_map or {}
 
-        result = self._graph.query(query, param_map)
-        full_result = [
-            {h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set
-        ]
+        try:
+            result = self._graph.query(query, param_map)
+            full_result = [
+                {h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set
+            ]
 
-        if self.sanitize_query_output:
-            return [value_sanitize(el) for el in full_result]
-        return full_result
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
+        except Exception as e:
+            logger.error("FalkorDB query failed: %s\nQuery: %s", e, query)
+            raise
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
