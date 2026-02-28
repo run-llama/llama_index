@@ -261,6 +261,91 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
+    def capture_propagation_context(self) -> Dict[str, Any]:
+        """
+        Capture trace propagation context from all registered span handlers.
+
+        Each span handler namespaces its data under its own key. The Dispatcher
+        also captures active instrument_tags. The returned dict can be serialized
+        and passed to restore_propagation_context() in another process.
+        """
+        result: Dict[str, Any] = {}
+        c: Optional[Dispatcher] = self
+        while c:
+            for h in c.span_handlers:
+                try:
+                    result.update(h.capture_propagation_context())
+                except BaseException:
+                    pass
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
+        tags = active_instrument_tags.get()
+        if tags:
+            result["instrument_tags"] = dict(tags)
+        return result
+
+    def restore_propagation_context(self, context: Dict[str, Any]) -> None:
+        """
+        Restore trace propagation context on all registered span handlers.
+
+        Also restores instrument_tags so that subsequent spans see them.
+        """
+        c: Optional[Dispatcher] = self
+        while c:
+            for h in c.span_handlers:
+                try:
+                    h.restore_propagation_context(context)
+                except BaseException:
+                    pass
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
+        tags = context.get("instrument_tags")
+        if tags:
+            active_instrument_tags.set(dict(tags))
+
+    def shutdown(self) -> None:
+        """
+        Drop all open spans and close all handlers.
+
+        Walks the dispatcher parent chain (same as other span methods),
+        drops every open span on every handler, then calls close() on
+        each handler. Exceptions are swallowed to match existing convention.
+        """
+        _synthetic_bound_args = inspect.signature(lambda: None).bind()
+        _shutdown_err = RuntimeError("dispatcher shutdown")
+
+        seen_handlers: set = set()
+        c: Optional[Dispatcher] = self
+        while c:
+            for h in c.span_handlers:
+                if id(h) in seen_handlers:
+                    continue
+                seen_handlers.add(id(h))
+                # Drop all open spans — snapshot keys since span_drop mutates the dict
+                for span_id in list(h.open_spans.keys()):
+                    try:
+                        h.span_drop(
+                            id_=span_id,
+                            bound_args=_synthetic_bound_args,
+                            instance=None,
+                            err=_shutdown_err,
+                        )
+                    except BaseException:
+                        pass
+                # Close the handler
+                try:
+                    h.close()
+                except BaseException:
+                    pass
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
+
     def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.
         try:

@@ -1223,7 +1223,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-observability-otel"
-version = "0.2.2"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-instrumentation" },
@@ -1258,7 +1258,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-instrumentation", specifier = ">=0.4.2" },
+    { name = "llama-index-instrumentation", specifier = ">=0.4.2,<0.5" },
     { name = "opentelemetry-api", specifier = ">=1.33.0,<2" },
     { name = "opentelemetry-sdk", specifier = ">=1.33.0,<2" },
     { name = "opentelemetry-semantic-conventions", specifier = ">=0.54b0,<1" },
