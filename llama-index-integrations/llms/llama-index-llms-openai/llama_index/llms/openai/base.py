@@ -620,6 +620,10 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
+        # The completions endpoint does not support chat-only parameters
+        for _chat_only in ("tools", "tool_choice", "parallel_tool_calls"):
+            all_kwargs.pop(_chat_only, None)
+
         if self.reuse_client:
             response = client.completions.create(
                 prompt=prompt,
@@ -652,6 +656,10 @@ class OpenAI(FunctionCallingLLM):
         client = self._get_client()
         all_kwargs = self._get_model_kwargs(stream=True, **kwargs)
         self._update_max_tokens(all_kwargs, prompt)
+
+        # The completions endpoint does not support chat-only parameters
+        for _chat_only in ("tools", "tool_choice", "parallel_tool_calls"):
+            all_kwargs.pop(_chat_only, None)
 
         def gen() -> CompletionResponseGen:
             text = ""
