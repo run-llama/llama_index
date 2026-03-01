@@ -218,7 +218,7 @@ plugins:
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-flag-embedding-reranker
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-neo4j
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-falkordb
-            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-kuzu
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-ladybug
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-nebula
             - ../../llama-index-integrations/agent/llama-index-agent-openai
             - ../../llama-index-integrations/agent/llama-index-agent-openai-legacy
