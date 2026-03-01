@@ -5,13 +5,14 @@ import warnings
 from dataclasses import dataclass
 from typing import List, Optional
 
+import numpy as np
+from tqdm.auto import tqdm
+
 from llama_index.core import VectorStoreIndex, get_tokenizer
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import Document, MetadataMode
-from llama_index.llms.openai import OpenAI
-from tqdm.auto import tqdm
 
 
 @dataclass
@@ -40,6 +41,9 @@ def generate_synthetic_queries_over_documents(
     llm: Optional[LLM] = None,
     qa_generate_system_msg: str = DEFAULT_QUERY_GEN_SYSTEM_PROMPT,
     qa_generate_user_msg: str = DEFAULT_QUERY_GEN_USER_PROMPT,
+    enable_deduplication: bool = False,
+    similarity_threshold: float = 0.92,
+    embedding_model_name: str = "all-MiniLM-L6-v2",
 ) -> List[str]:
     questions = []
     node_parser = TokenTextSplitter(
@@ -49,6 +53,8 @@ def generate_synthetic_queries_over_documents(
         backup_separators=["\n"],
         tokenizer=get_tokenizer(),
     )
+
+    from llama_index.llms.openai import OpenAI
 
     llm = llm or OpenAI(model="gpt-3.5-turbo-16k", temperature=0.3)
     nodes = node_parser.get_nodes_from_documents(documents, show_progress=False)
@@ -75,7 +81,6 @@ def generate_synthetic_queries_over_documents(
         )
         response_questions = re.split(";|\n", response_content)
         response_questions = response_questions[:num_questions_per_chunk]
-
         num_questions_generated = len(response_questions)
         if num_questions_generated < num_questions_per_chunk:
             warnings.warn(
@@ -85,7 +90,124 @@ def generate_synthetic_queries_over_documents(
 
         questions.extend(response_questions)
 
+    if enable_deduplication:
+        original_count = len(questions)
+        questions = deduplicate_questions(
+            questions,
+            similarity_threshold=similarity_threshold,
+            embedding_model_name=embedding_model_name,
+        )
+
     return questions
+
+
+def deduplicate_questions(
+    questions: List[str],
+    similarity_threshold: float = 0.92,
+    embedding_model_name: str = "all-MiniLM-L6-v2",
+) -> List[str]:
+    """
+    Remove duplicate and near-duplicate questions using semantic similarity.
+
+    Args:
+        questions: List of questions to deduplicate
+        similarity_threshold: Cosine similarity threshold (0-1). Higher = stricter matching.
+            Default 0.92 optimized for training data diversity.
+        embedding_model_name: Sentence-transformers model name
+
+    Returns:
+        Deduplicated questions, preserving order of first occurrence
+
+    """
+    if not questions:
+        return []
+
+    cleaned_questions = [q.strip() for q in questions if q.strip()]
+
+    if len(cleaned_questions) == 0:
+        return []
+
+    seen_normalized = {}
+    unique_questions = []
+    for i, question in enumerate(cleaned_questions):
+        normalized = question.lower()
+        if normalized not in seen_normalized:
+            seen_normalized[normalized] = i
+            unique_questions.append(question)
+
+    if len(unique_questions) <= 1:
+        return unique_questions
+
+    try:
+        from sentence_transformers import SentenceTransformer
+        import faiss
+
+        model = SentenceTransformer(embedding_model_name)
+
+        # Show progress bar for large datasets (>100 questions)
+        embeddings = model.encode(
+            unique_questions,
+            convert_to_numpy=True,
+            show_progress_bar=len(unique_questions) > 100,
+        )
+        embeddings = np.array(embeddings, dtype=np.float32)
+
+        # Normalize embeddings for cosine similarity using inner product
+        faiss.normalize_L2(embeddings)
+
+        # Create FAISS index for efficient similarity search
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatIP(
+            dimension
+        )  # Inner Product = cosine similarity for normalized vectors
+        index.add(embeddings)
+
+        # Track which questions to keep
+        keep_indices = []
+        removed_indices = set()
+
+        for i in range(len(unique_questions)):
+            if i in removed_indices:
+                continue
+
+            keep_indices.append(i)
+
+            query_embedding = embeddings[i : i + 1]
+            similarities, indices = index.search(
+                query_embedding, k=len(unique_questions)
+            )
+
+            # Mark similar questions as duplicates
+            for j in range(len(indices[0])):
+                match_idx = indices[0][j]
+                similarity_score = similarities[0][j]
+
+                # Stop if similarity is below threshold (all subsequent will be lower)
+                if similarity_score < similarity_threshold:
+                    break
+
+                # Skip self-match and already removed items
+                if match_idx == i or match_idx in removed_indices:
+                    continue
+
+                removed_indices.add(match_idx)
+
+        # Return questions in original order
+        return [unique_questions[i] for i in keep_indices]
+
+    except ImportError as e:
+        warnings.warn(
+            f"Semantic deduplication requires 'sentence-transformers' and 'faiss-cpu'. "
+            f"Install with: pip install sentence-transformers faiss-cpu. "
+            f"Returning questions with only exact-match deduplication."
+        )
+        return unique_questions
+    except Exception as e:
+        warnings.warn(
+            f"Semantic deduplication failed with error: {e}. "
+            "Returning questions with only exact-match deduplication."
+        )
+        return unique_questions
 
 
 # Query-Doc relevance prompt taken from OpenAI cookbook:-
@@ -138,6 +260,8 @@ def generate_ce_fine_tuning_dataset(
 
     # Use logit bias in case of OpenAI for the tokens for Yes and No
     # to decrease the likelihood of any other tokens occurring
+    from llama_index.llms.openai import OpenAI
+
     llm = llm or OpenAI(
         model="gpt-3.5-turbo-16k", temperature=0.1, logit_bias={9642: 1, 2822: 1}
     )
