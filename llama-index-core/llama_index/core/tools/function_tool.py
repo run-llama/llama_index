@@ -28,7 +28,12 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
-from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.core.tools.types import (
+    AsyncBaseTool,
+    ToolMetadata,
+    ToolMiddleware,
+    ToolOutput,
+)
 from llama_index.core.tools.utils import create_schema_from_function
 from llama_index.core.schema import BaseNode, Document
 from llama_index.core.workflow.context import Context
@@ -81,6 +86,7 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[..., Any]] = None,
         async_callback: Optional[Callable[..., Any]] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        middlewares: Optional[List[ToolMiddleware]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -134,6 +140,7 @@ class FunctionTool(AsyncBaseTool):
             self._async_callback = sync_to_async(self._callback)
 
         self.partial_params = partial_params or {}
+        self._middlewares = middlewares or []
 
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
         """
@@ -168,6 +175,7 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[[Any], Any]] = None,
         async_callback: Optional[AsyncCallable] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        middlewares: Optional[List[ToolMiddleware]] = None,
     ) -> "FunctionTool":
         partial_params = partial_params or {}
 
@@ -250,6 +258,7 @@ class FunctionTool(AsyncBaseTool):
             callback=callback,
             async_callback=async_callback,
             partial_params=partial_params,
+            middlewares=middlewares,
         )
 
     @property
@@ -298,17 +307,31 @@ class FunctionTool(AsyncBaseTool):
             return [TextBlock(text=str(raw_output))]
 
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        # NOTE: partial_params are merged here and again inside call().
+        # This is a pre-existing quirk — middleware in call() sees the merged
+        # kwargs when invoked via __call__, but only explicit kwargs when
+        # call() is used directly.  Kept for backward compatibility; consider
+        # consolidating the merge in a future refactor.
         all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        # Apply input middlewares (in order)
+        processed_kwargs = kwargs
+        for mw in self._middlewares:
+            processed_kwargs = mw.process_input(self, processed_kwargs)
+
+        all_kwargs = {**self.partial_params, **processed_kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
         raw_output = self._fn(*args, **all_kwargs)
+
+        # Apply output middlewares (in reverse order)
+        for mw in reversed(self._middlewares):
+            raw_output = mw.process_output(self, raw_output)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
@@ -342,12 +365,21 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        # Apply input middlewares (in order) — async versions
+        processed_kwargs = kwargs
+        for mw in self._middlewares:
+            processed_kwargs = await mw.aprocess_input(self, processed_kwargs)
+
+        all_kwargs = {**self.partial_params, **processed_kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
+
+        # Apply output middlewares (in reverse order) — async versions
+        for mw in reversed(self._middlewares):
+            raw_output = await mw.aprocess_output(self, raw_output)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
