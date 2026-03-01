@@ -864,23 +864,8 @@ def test_messages_to_openai_responses_messages_with_store():
         ),
     ]
 
-    kwargs = {
-        "model": "fake-model",
-        "include": None,
-        "instructions": None,
-        "max_output_tokens": 100,
-        "metadata": {},
-        "previous_response_id": None,
-        "store": True,
-        "temperature": 0.0,
-        "tools": [],
-        "top_p": 1.0,
-        "truncation": None,
-        "user": None,
-    }
-
     openai_messages = to_openai_message_dicts(
-        messages, is_responses_api=True, kwargs=kwargs
+        messages, is_responses_api=True, store=True
     )
     assert len(openai_messages) == 8
     assert openai_messages[0]["role"] == "developer"
