@@ -1010,15 +1010,17 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        return {
+        result = {
             "messages": messages,
             "tools": tool_specs or None,
             "tool_choice": resolve_tool_choice(tool_choice, tool_required)
             if tool_specs
             else None,
-            "parallel_tool_calls": allow_parallel_tool_calls if tool_specs else None,
             **kwargs,
         }
+        if tool_specs:
+            result["parallel_tool_calls"] = allow_parallel_tool_calls
+        return result
 
     def _validate_chat_with_tools_response(
         self,
