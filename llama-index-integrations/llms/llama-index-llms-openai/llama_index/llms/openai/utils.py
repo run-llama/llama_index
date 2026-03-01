@@ -352,7 +352,7 @@ def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-    kwargs: Optional[Dict[str, Any]] = None,
+    store: bool = False,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -534,7 +534,7 @@ def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-    kwargs: Optional[Dict[str, Any]] = None,
+    store: bool = False,
 ) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -586,9 +586,7 @@ def to_openai_responses_message_dict(
 
         # Omit reasoning items when store is set to False
         elif isinstance(block, ThinkingBlock):
-            if kwargs is None:
-                continue
-            elif kwargs["store"]:
+            if store:
                 if block.content and "id" in block.additional_information:
                     reasoning.append(
                         {
@@ -705,7 +703,7 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
-    kwargs: Optional[Dict[str, Any]] = None,
+    store: bool = False,
 ) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
@@ -715,7 +713,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model="o3-mini",  # hardcode to ensure developer messages are used
-                kwargs=kwargs,
+                store=store,
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
@@ -739,7 +737,7 @@ def to_openai_message_dicts(
                 message,
                 drop_none=drop_none,
                 model=model,
-                kwargs=kwargs,
+                store=store,
             )
             for message in messages
         ]
