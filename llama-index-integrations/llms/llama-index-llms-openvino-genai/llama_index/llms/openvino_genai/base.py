@@ -216,6 +216,43 @@ class OpenVINOGenAILLM(CustomLLM):
                     return True
                 else:
                     return False
+                    
+            def write(self, token_id: int | list[int]) -> openvino_genai.StreamingStatus:
+                """
+                Processes a token and manages the decoding buffer.
+                Adds decoded text to the queue.
+
+                Args:
+                    token_id (int): The token_id to process.
+
+                Returns:
+                    bool: True if generation should be stopped, False otherwise.
+
+                """
+                if type(token_id) == list:
+                    self.tokens_cache += token_id
+                else:
+                    self.tokens_cache.append(token)
+                text = self.tokenizer.decode(
+                    self.tokens_cache, skip_special_tokens=True
+                )
+                word = ""
+                if len(text) > self.print_len and text[-1] == "\n":
+                    word = text[self.print_len :]
+                    self.tokens_cache = []
+                    self.print_len = 0
+                elif len(text) >= 3 and text[-3:] == chr(65533):
+                    pass
+                elif len(text) > self.print_len:
+                    word = text[self.print_len :]
+                    self.print_len = len(text)
+                self.put_word(word)
+
+                if self.get_stop_flag():
+                    self.end()
+                    return openvino_genai.StreamingStatus.STOP
+                else:
+                    return openvino_genai.StreamingStatus.RUNNING
 
             def end(self) -> None:
                 """
@@ -250,6 +287,15 @@ class OpenVINOGenAILLM(CustomLLM):
                     self.tokens_cache.append(token_id)
                     return False
                 return super().put(token_id)
+                
+            def write(self, token_id: int | list[int]) -> openvino_genai.StreamingStatus:
+                if (len(self.tokens_cache) + 1) % self.tokens_len != 0:
+                    if type(token_id) == list:
+                        self.tokens_cache += token_id
+                    else:
+                        self.tokens_cache.append(token)
+                    return openvino_genai.StreamingStatus.RUNNING
+                return super().write(token_id)
 
         """Initialize params."""
         pipe = openvino_genai.LLMPipeline(model_path, device, config, **kwargs)
