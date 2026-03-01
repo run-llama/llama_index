@@ -825,7 +825,7 @@ class SharePointReader(
             )
             self._drive_id = self._get_drive_id()
 
-            if sharepoint_folder_path:
+            if sharepoint_folder_path or sharepoint_folder_id:
                 if not sharepoint_folder_id:
                     sharepoint_folder_id = self._get_sharepoint_folder_id(
                         sharepoint_folder_path
@@ -834,7 +834,7 @@ class SharePointReader(
                 folder_contents = self._list_folder_contents(
                     sharepoint_folder_id,
                     recursive,
-                    os.path.join(sharepoint_site_name, sharepoint_folder_path),
+                    os.path.join(sharepoint_site_name, sharepoint_folder_path or ""),
                 )
                 file_paths.extend(folder_contents)
             else:
