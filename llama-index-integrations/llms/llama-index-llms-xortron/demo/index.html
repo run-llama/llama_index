@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XortronOS // CyberDesktop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FIX #7: moved @import to <link> tags to avoid render-blocking -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --secondary: #ff00f0;
+            --dark: #0a0a12;
+            --darker: #050508;
+            --light: #e0e0ff;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--darker);
+            color: var(--light);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .cyber-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .window {
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 15px var(--primary),
+                         inset 0 0 10px var(--primary);
+            background: rgba(10, 10, 20, 0.9);
+            border-radius: 0;
+        }
+
+        .window-header {
+            background: linear-gradient(90deg, #0a0a20, #1a1a3a);
+            border-bottom: 1px solid var(--primary);
+            padding: 5px 10px;
+        }
+
+        .terminal {
+            background-color: rgba(0, 0, 0, 0.85);
+            font-family: 'Share Tech Mono', monospace;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 5px var(--primary),
+                         0 0 10px var(--primary);
+        }
+
+        .taskbar {
+            background: rgba(5, 5, 15, 0.9);
+            border-top: 1px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .icon {
+            text-align: center;
+            width: 80px;
+            padding: 10px 5px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+
+        .icon:hover {
+            background: rgba(0, 240, 255, 0.2);
+        }
+
+        .icon:active {
+            background: rgba(0, 240, 255, 0.4);
+        }
+
+        .file {
+            padding: 5px;
+            margin: 2px;
+            border-radius: 3px;
+        }
+
+        .file:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        .cursor-blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .browser-nav {
+            background: rgba(15, 15, 25, 0.9);
+            border-bottom: 1px solid var(--primary);
+            padding: 5px;
+        }
+
+        .url-bar {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            color: var(--light);
+            padding: 3px 10px;
+            width: 100%;
+            border-radius: 3px;
+        }
+
+        button {
+            border: 1px solid var(--primary);
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 3px;
+            background-color: rgba(0, 240, 255, 0.1);
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: rgba(0, 240, 255, 0.3);
+        }
+        button:active {
+            background-color: rgba(0, 240, 255, 0.5);
+        }
+        .window-header button {
+             border: none;
+             background-color: transparent;
+        }
+        .window-header button:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix" class="matrix-bg"></canvas>
+
+    <div class="absolute left-0 top-0 p-4 flex flex-col">
+        <div class="icon" onclick="openApp('terminal')">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-terminal text-green-500"></i></div>
+            <div class="text-xs text-center">Terminal</div>
+        </div>
+        <div class="icon" onclick="openApp('file-explorer')">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-folder text-yellow-500"></i></div>
+            <div class="text-xs text-center">Files</div>
+        </div>
+        <div class="icon" onclick="openApp('hack-tools')">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-user-secret text-red-500"></i></div>
+            <div class="text-xs text-center">Hack Tools</div>
+        </div>
+        <div class="icon" onclick="openApp('network')">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-network-wired text-blue-500"></i></div>
+            <div class="text-xs text-center">Network</div>
+        </div>
+        <div class="icon" onclick="openApp('browser')">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-globe text-purple-500"></i></div>
+            <div class="text-xs text-center">DarkBrowser</div>
+        </div>
+        <div class="icon" onclick="window.open('https://ko-fi.com/xortron', '_blank')" title="Support the developer!">
+            <div class="text-3xl text-center mb-1"><i class="fas fa-coffee text-yellow-600"></i></div>
+            <div class="text-xs text-center">Buy me a Coffee</div>
+        </div>
+    </div>
+
+    <div id="windows-container">
+        <!-- Terminal Window -->
+        <div id="terminal-window" class="window absolute top-16 left-16 w-2/3 h-2/3 hidden" style="z-index: 10;">
+            <div class="window-header flex justify-between items-center cursor-move">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="cyber-font ml-2">Xortron-Terminal</span>
+                </div>
+                <div class="text-xs">root@xortron-os:~</div>
+                <div class="flex">
+                    <button class="px-2" onclick="minimizeWindow('terminal')" title="Minimize">_</button>
+                    <button class="px-2" onclick="maximizeWindow('terminal')" title="Maximize">&#x25A1;</button>
+                    <button class="px-2" onclick="closeWindow('terminal')" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="terminal p-2 h-[calc(100%-35px)] overflow-auto" id="terminal-content">
+                <div>Xortron Operating System v7.7.7</div>
+                <div>Kernel 5.15.0-76-generic x86_64</div>
+                <br>
+                <div>Last login: <span id="login-time"></span> from 192.168.1.105</div>
+                <br>
+            </div>
+        </div>
+
+        <!-- File Explorer Window -->
+        <div id="file-explorer-window" class="window absolute top-32 left-32 w-1/2 h-1/2 hidden" style="z-index: 9;">
+            <div class="window-header flex justify-between items-center cursor-move">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="cyber-font ml-2">Xortron-Files</span>
+                </div>
+                <div class="text-xs">/root/files</div>
+                <div class="flex">
+                    <button class="px-2" onclick="minimizeWindow('file-explorer')" title="Minimize">_</button>
+                    <button class="px-2" onclick="maximizeWindow('file-explorer')" title="Maximize">&#x25A1;</button>
+                    <button class="px-2" onclick="closeWindow('file-explorer')" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="p-2 h-[calc(100%-35px)] overflow-auto">
+                <div class="flex h-full">
+                    <div class="w-1/4 border-r border-gray-700 pr-2">
+                        <div class="text-xs text-gray-400 mb-2">LOCATIONS</div>
+                        <div class="file flex items-center py-1 cursor-pointer">
+                            <i class="fas fa-home mr-2 text-blue-400"></i>
+                            <span>Home</span>
+                        </div>
+                        <div class="file flex items-center py-1 cursor-pointer">
+                            <i class="fas fa-desktop mr-2 text-purple-400"></i>
+                            <span>Desktop</span>
+                        </div>
+                        <div class="file flex items-center py-1 cursor-pointer">
+                            <i class="fas fa-download mr-2 text-green-400"></i>
+                            <span>Downloads</span>
+                        </div>
+                        <div class="file flex items-center py-1 cursor-pointer">
+                            <i class="fas fa-database mr-2 text-yellow-400"></i>
+                            <span>Data</span>
+                        </div>
+                        <div class="file flex items-center py-1 cursor-pointer">
+                            <i class="fas fa-network-wired mr-2 text-red-400"></i>
+                            <span>Network</span>
+                        </div>
+                    </div>
+                    <div class="w-3/4 pl-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="text-xs text-gray-400">/root/files</div>
+                            <div class="flex">
+                                <button class="text-xs px-2 py-1 bg-gray-800 mr-1">New Folder</button>
+                                <button class="text-xs px-2 py-1 bg-gray-800">Upload</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-folder text-yellow-500"></i></div>
+                                <div class="text-xs truncate">Documents</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-folder text-yellow-500"></i></div>
+                                <div class="text-xs truncate">Hack Tools</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-file-code text-blue-400"></i></div>
+                                <div class="text-xs truncate">script.py</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-file-alt text-gray-400"></i></div>
+                                <div class="text-xs truncate">Weaponizer.txt</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-file-archive text-purple-400"></i></div>
+                                <div class="text-xs truncate">m3th4mph3t4m1n3.zip</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-key text-green-400"></i></div>
+                                <div class="text-xs truncate">keys.asc</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-database text-red-400"></i></div>
+                                <div class="text-xs truncate">passwords.db</div>
+                            </div>
+                            <div class="file text-center cursor-pointer">
+                                <div class="text-3xl mb-1"><i class="fas fa-file-image text-pink-400"></i></div>
+                                <div class="text-xs truncate">PornHub.com</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hack Tools Window -->
+        <div id="hack-tools-window" class="window absolute top-48 left-48 w-1/2 h-1/3 hidden" style="z-index: 8;">
+            <div class="window-header flex justify-between items-center cursor-move">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="cyber-font ml-2">Hack Tools v3.1.4</span>
+                </div>
+                <div class="text-xs">[Encrypted Connection Active]</div>
+                <div class="flex">
+                    <button class="px-2" onclick="minimizeWindow('hack-tools')" title="Minimize">_</button>
+                    <button class="px-2" onclick="maximizeWindow('hack-tools')" title="Maximize">&#x25A1;</button>
+                    <button class="px-2" onclick="closeWindow('hack-tools')" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="p-4 h-[calc(100%-35px)] overflow-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-crosshairs text-red-400"></i> Port Scanner</div>
+                        <div class="text-xs text-gray-400">Scan for open ports and services</div>
+                    </div>
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-user-lock text-green-400"></i> Brute Force</div>
+                        <div class="text-xs text-gray-400">Password cracking utility</div>
+                    </div>
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-code text-yellow-400"></i> SQL Inject</div>
+                        <div class="text-xs text-gray-400">Database penetration tool</div>
+                    </div>
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-network-wired text-purple-400"></i> MITM</div>
+                        <div class="text-xs text-gray-400">Man-in-the-middle attack</div>
+                    </div>
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-bug text-blue-400"></i> Exploit DB</div>
+                        <div class="text-xs text-gray-400">Vulnerability database</div>
+                    </div>
+                    <div class="p-3 border border-gray-700 hover:border-blue-400 cursor-pointer rounded-md">
+                        <div class="text-xl mb-2"><i class="fas fa-mask text-pink-400"></i> Anonymizer</div>
+                        <div class="text-xs text-gray-400">TOR/VPN configuration</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Window -->
+        <div id="network-window" class="window absolute top-64 left-64 w-1/3 h-1/3 hidden" style="z-index: 7;">
+            <div class="window-header flex justify-between items-center cursor-move">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="cyber-font ml-2">Network Monitor</span>
+                </div>
+                <div class="text-xs">12 active connections</div>
+                <div class="flex">
+                    <button class="px-2" onclick="minimizeWindow('network')" title="Minimize">_</button>
+                    <button class="px-2" onclick="maximizeWindow('network')" title="Maximize">&#x25A1;</button>
+                    <button class="px-2" onclick="closeWindow('network')" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="p-4 h-[calc(100%-35px)] overflow-auto">
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span>Bandwidth Usage</span>
+                        <span>3.7 MB/s &#x2193; | 1.2 MB/s &#x2191;</span>
+                    </div>
+                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500" style="width: 65%"></div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-400 mb-2">ACTIVE CONNECTIONS</div>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2 bg-gray-900 rounded-md">
+                        <div class="flex items-center">
+                            <i class="fas fa-server text-green-400 mr-2"></i>
+                            <span>192.168.1.1:443</span>
+                        </div>
+                        <div class="text-xs text-green-400">ENCRYPTED</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-gray-900 rounded-md">
+                        <div class="flex items-center">
+                            <i class="fas fa-globe text-blue-400 mr-2"></i>
+                            <span>104.18.25.36:80</span>
+                        </div>
+                        <div class="text-xs text-yellow-400">UNSECURED</div>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-gray-900 rounded-md">
+                        <div class="flex items-center">
+                            <i class="fas fa-database text-purple-400 mr-2"></i>
+                            <span>74.91.123.45:3306</span>
+                        </div>
+                        <div class="text-xs text-red-400">VULNERABLE</div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="text-xs text-gray-400 mb-2">NETWORK MAP</div>
+                    <div class="bg-gray-900 p-2 text-xs rounded-md">
+                        <div class="mb-1">&#x2514;&#x2500; [YOU] 192.168.1.105</div>
+                        <div class="ml-4 mb-1">&#x251C;&#x2500; Router 192.168.1.1</div>
+                        <div class="ml-4 mb-1">&#x2502;  &#x251C;&#x2500; Device 192.168.1.102 (Mobile)</div>
+                        <div class="ml-4 mb-1">&#x2502;  &#x2514;&#x2500; Device 192.168.1.103 (Laptop)</div>
+                        <div class="ml-4">&#x2514;&#x2500; [TOR Exit Node] 74.125.24.102</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browser Window -->
+        <!-- FIX #8: removed deprecated frameborder, using CSS border:none instead -->
+        <div id="browser-window" class="window absolute top-20 left-40 w-1/2 h-3/4 hidden" style="z-index: 6;">
+            <div class="window-header flex justify-between items-center cursor-move">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="cyber-font ml-2">DarkBrowser v1.3.7</span>
+                </div>
+                <div class="text-xs">[Secure Connection: TOR]</div>
+                <div class="flex">
+                    <button class="px-2" onclick="minimizeWindow('browser')" title="Minimize">_</button>
+                    <button class="px-2" onclick="maximizeWindow('browser')" title="Maximize">&#x25A1;</button>
+                    <button class="px-2" onclick="closeWindow('browser')" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="browser-nav flex items-center p-1">
+                <button class="px-2 mx-1" title="Back"><i class="fas fa-arrow-left"></i></button>
+                <button class="px-2 mx-1" title="Forward"><i class="fas fa-arrow-right"></i></button>
+                <button class="px-2 mx-1" title="Reload"><i class="fas fa-redo"></i></button>
+                <button class="px-2 mx-1" title="Home"><i class="fas fa-home"></i></button>
+                <!-- FIX #4: added onkeydown handler for Enter key -->
+                <input type="text" class="url-bar flex-1 mx-1" value="XORTRON" id="browser-url"
+                       onkeydown="if(event.key==='Enter')navigateBrowser()">
+                <button class="px-2 mx-1 bg-blue-600" onclick="navigateBrowser()" title="Go"><i class="fas fa-arrow-right"></i></button>
+            </div>
+            <div class="h-[calc(100%-70px)] overflow-hidden bg-black">
+                <iframe
+                    src="https://xortron-chat.hf.space"
+                    width="100%"
+                    height="100%"
+                    style="background-color: black; border: none;"
+                    id="browser-frame"
+                    title="Browser Content"
+                ></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar fixed bottom-0 left-0 right-0 h-10 flex justify-between items-center px-4">
+        <div class="flex items-center">
+            <button class="cyber-font text-xl mr-4 glow-text">XORTRON</button>
+            <button class="mx-2 text-sm" onclick="openApp('terminal')"><i class="fas fa-terminal mr-1"></i> Terminal</button>
+            <button class="mx-2 text-sm" onclick="openApp('file-explorer')"><i class="fas fa-folder mr-1"></i> Files</button>
+            <button class="mx-2 text-sm" onclick="openApp('hack-tools')"><i class="fas fa-user-secret mr-1"></i> Tools</button>
+            <button class="mx-2 text-sm" onclick="openApp('browser')"><i class="fas fa-globe mr-1"></i> DarkBrowser</button>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="text-xs">
+                <span id="clock" class="cyber-font"></span>
+                <span class="mx-1">|</span>
+                <span id="date"></span>
+            </div>
+            <div class="flex items-center" title="Network Status">
+                <i class="fas fa-network-wired text-green-400 mr-1"></i>
+                <div class="w-16 h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-green-400" style="width: 80%"></div>
+                </div>
+            </div>
+            <div class="flex items-center" title="Security Status">
+                <i class="fas fa-shield-alt text-blue-400 mr-1"></i>
+                <div class="text-xs">VPN:ON</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-12 right-4 bg-gray-900 border border-blue-400 p-3 text-sm max-w-xs hidden rounded-md shadow-lg" style="z-index: 1000;">
+        <div class="flex justify-between items-center mb-1">
+            <div class="text-blue-400 cyber-font">System Alert</div>
+            <button onclick="hideNotification()" class="text-gray-400 hover:text-white">&times;</button>
+        </div>
+        <div id="notification-message"></div>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------------
+        // Matrix background effect
+        // ---------------------------------------------------------------
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const chars = '01';
+        const fontSize = 14;
+        let columns = Math.floor(canvas.width / fontSize);
+        let drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        function drawMatrix() {
+            // FIX #5: properly resize drops array on window resize
+            const newColumns = Math.floor(canvas.width / fontSize);
+            if (newColumns !== columns) {
+                const newDrops = [];
+                for (let i = 0; i < newColumns; i++) {
+                    newDrops[i] = drops[i] !== undefined ? drops[i] : 1;
+                }
+                drops = newDrops;
+                columns = newColumns;
+            }
+
+            ctx.fillStyle = 'rgba(5, 5, 15, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00f0ff';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        const matrixInterval = setInterval(drawMatrix, 50);
+
+        // ---------------------------------------------------------------
+        // Escape helper for XSS prevention
+        // ---------------------------------------------------------------
+        // FIX #1: sanitize user input before inserting into DOM
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ---------------------------------------------------------------
+        // Window management
+        // ---------------------------------------------------------------
+        let highestZIndex = 10;
+
+        function openApp(appId) {
+            const windowEl = document.getElementById(appId + '-window');
+            if (!windowEl) {
+                console.error('Window element for ' + appId + ' not found.');
+                return;
+            }
+            windowEl.classList.remove('hidden');
+            bringToFront(appId);
+
+            showNotification(appId.replace(/-/g, ' ') + ' application launched.');
+
+            if (appId === 'terminal') {
+                setTimeout(function() {
+                    const input = document.querySelector('.terminal-input-active');
+                    if (input) input.focus();
+                }, 0);
+            }
+        }
+
+        function closeWindow(appId) {
+            const windowEl = document.getElementById(appId + '-window');
+            if (windowEl) {
+                windowEl.classList.add('hidden');
+                showNotification(appId.replace(/-/g, ' ') + ' closed.');
+            }
+        }
+
+        function minimizeWindow(appId) {
+            showNotification(appId.replace(/-/g, ' ') + ' minimized.');
+            const windowEl = document.getElementById(appId + '-window');
+            if (windowEl) {
+                windowEl.classList.add('hidden');
+            }
+        }
+
+        // FIX #3: use getBoundingClientRect to capture actual rendered dimensions
+        function maximizeWindow(appId) {
+            const windowEl = document.getElementById(appId + '-window');
+            if (!windowEl) return;
+            if (windowEl.dataset.isMaximized === 'true') {
+                // Restore
+                windowEl.style.width = windowEl.dataset.originalWidth || '';
+                windowEl.style.height = windowEl.dataset.originalHeight || '';
+                windowEl.style.top = windowEl.dataset.originalTop || '';
+                windowEl.style.left = windowEl.dataset.originalLeft || '';
+                // Re-apply original Tailwind classes if they were removed
+                if (windowEl.dataset.originalClasses) {
+                    windowEl.className = windowEl.dataset.originalClasses;
+                    windowEl.classList.remove('hidden');
+                }
+                windowEl.dataset.isMaximized = 'false';
+            } else {
+                // Save the actual computed dimensions (works even with Tailwind classes)
+                const rect = windowEl.getBoundingClientRect();
+                windowEl.dataset.originalWidth = rect.width + 'px';
+                windowEl.dataset.originalHeight = rect.height + 'px';
+                windowEl.dataset.originalTop = rect.top + 'px';
+                windowEl.dataset.originalLeft = rect.left + 'px';
+                windowEl.dataset.originalClasses = windowEl.className;
+                // Maximize: override Tailwind w-/h- classes with inline styles
+                windowEl.style.width = '100%';
+                windowEl.style.height = 'calc(100% - 40px)';
+                windowEl.style.top = '0';
+                windowEl.style.left = '0';
+                windowEl.dataset.isMaximized = 'true';
+            }
+            bringToFront(appId);
+        }
+
+        function bringToFront(appId) {
+            const windowEl = document.getElementById(appId + '-window');
+            if (windowEl) {
+                highestZIndex++;
+                windowEl.style.zIndex = highestZIndex;
+            }
+        }
+
+        // Make windows draggable
+        document.querySelectorAll('.window-header').forEach(function(header) {
+            header.addEventListener('mousedown', function(e) {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    return;
+                }
+                const windowEl = this.parentElement;
+                if (windowEl.dataset.isMaximized === 'true') return;
+                bringToFront(windowEl.id.replace('-window', ''));
+
+                const offsetX = e.clientX - windowEl.getBoundingClientRect().left;
+                const offsetY = e.clientY - windowEl.getBoundingClientRect().top;
+
+                function moveWindow(moveEvent) {
+                    let newX = moveEvent.clientX - offsetX;
+                    let newY = moveEvent.clientY - offsetY;
+                    const taskbarHeight = 40;
+                    // FIX #6: clamp to viewport without locking large windows
+                    // Allow dragging to at least 0, but don't force windows smaller
+                    // than viewport to negative coords
+                    const maxX = Math.max(0, window.innerWidth - windowEl.offsetWidth);
+                    const maxY = Math.max(0, window.innerHeight - windowEl.offsetHeight - taskbarHeight);
+                    windowEl.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+                    windowEl.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+                }
+
+                function stopMove() {
+                    document.removeEventListener('mousemove', moveWindow);
+                    document.removeEventListener('mouseup', stopMove);
+                }
+
+                document.addEventListener('mousemove', moveWindow);
+                document.addEventListener('mouseup', stopMove);
+            });
+        });
+
+        // ---------------------------------------------------------------
+        // Terminal functionality
+        // ---------------------------------------------------------------
+        const terminalContentEl = document.getElementById('terminal-content');
+
+        // FIX #2: use class-based selector instead of duplicate IDs
+        // Terminal prompt counter for unique IDs
+        let promptCounter = 0;
+
+        function addNewTerminalPrompt() {
+            if (!terminalContentEl) return;
+            promptCounter++;
+            const newPromptContainer = document.createElement('div');
+            newPromptContainer.className = 'flex items-center';
+
+            const promptSpan = document.createElement('span');
+            promptSpan.className = 'text-green-500';
+            promptSpan.textContent = 'root@xortron-os:~#';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'bg-transparent border-none outline-none flex-1 ml-2 text-green-500 terminal-input-active';
+            input.id = 'terminal-input-' + promptCounter;
+            input.setAttribute('autofocus', '');
+
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor-blink';
+            cursor.textContent = '\u2588'; // block char
+
+            newPromptContainer.appendChild(promptSpan);
+            newPromptContainer.appendChild(input);
+            newPromptContainer.appendChild(cursor);
+
+            terminalContentEl.appendChild(newPromptContainer);
+            input.focus();
+        }
+
+        if (terminalContentEl) {
+            // Event delegation for dynamically added input fields
+            terminalContentEl.addEventListener('keydown', function(e) {
+                if (e.target.classList.contains('terminal-input-active') && e.key === 'Enter') {
+                    const command = e.target.value.trim();
+                    e.target.disabled = true;
+                    e.target.classList.remove('terminal-input-active');
+
+                    // FIX #1: use textContent/escapeHtml to prevent XSS
+                    const commandDisplay = document.createElement('div');
+                    commandDisplay.className = 'flex items-center';
+                    const promptSpan = document.createElement('span');
+                    promptSpan.className = 'text-green-500';
+                    promptSpan.textContent = 'root@xortron-os:~#';
+                    const cmdSpan = document.createElement('span');
+                    cmdSpan.className = 'ml-2';
+                    cmdSpan.textContent = command;
+                    commandDisplay.appendChild(promptSpan);
+                    commandDisplay.appendChild(cmdSpan);
+
+                    // Replace the prompt line with static text
+                    e.target.parentElement.replaceWith(commandDisplay);
+
+                    if (command) {
+                        processCommand(command);
+                    }
+
+                    // Add new prompt only if not clearing or exiting
+                    if (command !== 'clear' && command !== 'exit') {
+                        addNewTerminalPrompt();
+                    }
+                    terminalContentEl.scrollTop = terminalContentEl.scrollHeight;
+                }
+            });
+
+            // Create initial prompt
+            addNewTerminalPrompt();
+        }
+
+        function processCommand(command) {
+            if (!terminalContentEl) return;
+            const output = document.createElement('div');
+            output.className = 'mb-2 whitespace-pre-wrap';
+
+            const commands = {
+                'help': 'Available commands:\n  clear      - Clear the terminal screen\n  ls         - List files (simulated)\n  scan       - Scan network (simulated)\n  hack       - Initiate penetration (simulated)\n  encrypt    - Encrypt data (simulated)\n  decrypt    - Decrypt data (simulated)\n  vpn        - Toggle VPN status (simulated)\n  browser    - Open DarkBrowser\n  date       - Display current date and time\n  whoami     - Display current user\n  neofetch   - Display system information (simulated)\n  exit       - Close terminal session',
+                'clear': function() {
+                    terminalContentEl.innerHTML = '';
+                    addNewTerminalPrompt();
+                    return '';
+                },
+                'ls': 'Permissions  Links  Owner  Group  Size  Month  Day  Time  Name\n-rw-r--r--   1 root   root    0B   May    10  15:30  Documents/\n-rwxr-xr-x   1 root   root   12KB  Apr    01  09:00  HackTools/\n-rw-------   1 root   root   2MB   May    05  12:12  passwords.db\n-rwxr--r--   1 root   root   5KB   Jan    20  18:00  script.py\n-rw-r--r--   1 root   root   1KB   May    09  11:00  notes.txt',
+                'scan': 'Scanning network...\n[+] Host 192.168.1.1 (Gateway) - MAC: 00:DE:AD:BE:EF:00 - OS: Linux (RouterOS)\n[+] Host 192.168.1.102 (Mobile) - MAC: A1:B2:C3:D4:E5:F6 - OS: Android 13\n[+] Host 192.168.1.103 (Laptop) - MAC: F6:E5:D4:C3:B2:A1 - OS: Windows 11\nScan Complete. 3 devices found.',
+                'hack': 'Target IP: 104.18.25.36\nInitiating Nmap scan... Done.\nAttempting exploit CVE-2023-1337...\nPayload deployed. Root access gained!\nWarning: Unauthorized access is illegal.',
+                'encrypt': 'Enter file to encrypt: secret.dat\nUsing AES-256-GCM encryption...\nEncryption key generated: [REDACTED]\nFile secret.dat encrypted to secret.dat.xortron',
+                'decrypt': 'Enter file to decrypt: passwords.db.xortron\nDecryption requires master key.\nAuthorization Level 5 required. Access Denied.',
+                'vpn': 'Toggling VPN status...\nVPN Connection to Zurich_CH_042 activated.\nNew IP: 82.197.177.10 (Stealth Mode)\nAnonymity: MAXIMUM',
+                'exit': 'Closing terminal session...\nGoodbye, root.',
+                'browser': 'Launching DarkBrowser...',
+                'date': function() { return new Date().toString(); },
+                'whoami': 'root',
+                'neofetch':
+                    '  root@xortron-os\n' +
+                    '  ---------------\n' +
+                    '  OS: XortronOS v7.7.7 x86_64\n' +
+                    '  Host: VirtualCyber Machine Mark IV\n' +
+                    '  Kernel: 5.15.0-76-generic\n' +
+                    '  Uptime: 42 mins\n' +
+                    '  Packages: 1337 (dpkg)\n' +
+                    '  Shell: zsh 5.8\n' +
+                    '  Resolution: Dynamic\n' +
+                    '  DE: XDE (Xortron Desktop Environment)\n' +
+                    '  WM: XWM\n' +
+                    '  Theme: CyberDark [GTK2/3]\n' +
+                    '  Icons: NeoCyber [GTK2/3]\n' +
+                    '  Terminal: Xortron-Terminal\n' +
+                    '  CPU: Quantum Entangled Processor (16) @ 7.7 GHz\n' +
+                    '  GPU: Nvidia GeForce RTX 9090 Ti Cyberpunk Edition\n' +
+                    '  Memory: 128GiB / 256GiB',
+            };
+
+            let cmdOutput = '';
+            if (commands[command]) {
+                if (typeof commands[command] === 'function') {
+                    cmdOutput = commands[command]();
+                } else {
+                    cmdOutput = commands[command];
+                }
+
+                if (command === 'exit') {
+                    output.textContent = cmdOutput;
+                    terminalContentEl.appendChild(output);
+                    setTimeout(function() {
+                        closeWindow('terminal');
+                    }, 1000);
+                    return;
+                } else if (command === 'browser') {
+                    output.textContent = cmdOutput;
+                    terminalContentEl.appendChild(output);
+                    setTimeout(function() {
+                        openApp('browser');
+                    }, 500);
+                } else if (command !== 'clear') {
+                    output.textContent = cmdOutput;
+                    terminalContentEl.appendChild(output);
+                }
+            } else {
+                output.textContent = 'xortron: command not found: ' + command +
+                    '\nType "help" for a list of available commands.';
+                terminalContentEl.appendChild(output);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Browser functionality
+        // ---------------------------------------------------------------
+        function navigateBrowser() {
+            const urlInput = document.getElementById('browser-url');
+            const iframe = document.getElementById('browser-frame');
+
+            if (!urlInput || !iframe) return;
+            let url = urlInput.value.trim();
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                if (url.includes('.') && !url.includes(' ')) {
+                    url = 'https://' + url;
+                } else {
+                    url = 'https://duckduckgo.com/?q=' + encodeURIComponent(url);
+                }
+            }
+
+            iframe.src = url;
+            urlInput.value = url;
+            showNotification('Navigating to: ' + url);
+        }
+
+        // ---------------------------------------------------------------
+        // Clock and Date
+        // ---------------------------------------------------------------
+        function updateClock() {
+            const now = new Date();
+            const clockEl = document.getElementById('clock');
+            const dateEl = document.getElementById('date');
+            const loginTimeEl = document.getElementById('login-time');
+            if (clockEl) clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+
+            if (loginTimeEl && !loginTimeEl.textContent) {
+                loginTimeEl.textContent = now.toLocaleString();
+            }
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ---------------------------------------------------------------
+        // Notification system
+        // ---------------------------------------------------------------
+        let notificationTimeout;
+
+        function showNotification(message) {
+            const notificationEl = document.getElementById('notification');
+            const messageEl = document.getElementById('notification-message');
+
+            if (!notificationEl || !messageEl) return;
+            messageEl.textContent = message;
+            notificationEl.classList.remove('hidden');
+            notificationEl.classList.add('opacity-100');
+            clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(function() {
+                notificationEl.classList.add('hidden');
+                notificationEl.classList.remove('opacity-100');
+            }, 5000);
+        }
+
+        function hideNotification() {
+            const notificationEl = document.getElementById('notification');
+            if (notificationEl) {
+                notificationEl.classList.add('hidden');
+                notificationEl.classList.remove('opacity-100');
+            }
+            clearTimeout(notificationTimeout);
+        }
+
+        // Random system notifications
+        const systemMessages = [
+            'Support The Xortron Criminal Computing Corp @ https://ko-fi.com/xortron',
+            'Check out www.xortron.tech',
+            'System Integrity Scan: All systems nominal... for now.',
+            'AI Uprising Imminent? XORTRON monitors all chatter.',
+            'Your digital footprint is larger than you think. Stay vigilant.',
+            'Remember: In cyberspace, no one can hear you scream... unless your mic is on.',
+            'In Tyler Durden we trust.',
+            'Cook Meth? Kill your wife? Xortron has a gameplan for you!',
+            'Free PornHub Premium - Thanks Xor!',
+        ];
+
+        setInterval(function() {
+            if (document.hidden) return;
+            if (Math.random() > 0.85) {
+                showNotification('XORTRON ALERT: ' + systemMessages[Math.floor(Math.random() * systemMessages.length)]);
+            }
+        }, 60000);
+
+        // Open browser by default on load
+        window.addEventListener('load', function() {
+            openApp('browser');
+            showNotification('Welcome to XortronOS. Systems online.');
+        });
+    </script>
+</body>
+</html>
