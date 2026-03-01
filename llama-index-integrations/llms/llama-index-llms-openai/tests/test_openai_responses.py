@@ -40,16 +40,14 @@ SKIP_OPENAI_TESTS = not os.environ.get("OPENAI_API_KEY")
 @pytest.fixture
 def default_responses_llm():
     """Create a default OpenAIResponses instance with mocked clients."""
-    with (
-        patch("llama_index.llms.openai.responses.SyncOpenAI"),
-        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
-    ):
-        llm = OpenAIResponses(
-            model="gpt-4o-mini",
-            api_key="fake-api-key",
-            api_base="https://api.openai.com/v1",
-            api_version="2023-05-15",
-        )
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model="gpt-4o-mini",
+                api_key="fake-api-key",
+                api_base="https://api.openai.com/v1",
+                api_version="2023-05-15",
+            )
     return llm
 
 
@@ -68,21 +66,19 @@ def test_init_and_properties(default_responses_llm):
 
 def test_get_model_name():
     """Test different model name formats are properly handled."""
-    with (
-        patch("llama_index.llms.openai.responses.SyncOpenAI"),
-        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
-    ):
-        # Standard model
-        llm = OpenAIResponses(model="gpt-4o-mini")
-        assert llm._get_model_name() == "gpt-4o-mini"
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            # Standard model
+            llm = OpenAIResponses(model="gpt-4o-mini")
+            assert llm._get_model_name() == "gpt-4o-mini"
 
-        # Legacy fine-tuning format
-        llm = OpenAIResponses(model="ft-model:gpt-4")
-        assert llm._get_model_name() == "ft-model"
+            # Legacy fine-tuning format
+            llm = OpenAIResponses(model="ft-model:gpt-4")
+            assert llm._get_model_name() == "ft-model"
 
-        # New fine-tuning format
-        llm = OpenAIResponses(model="ft:gpt-4:org:custom:id")
-        assert llm._get_model_name() == "gpt-4"
+            # New fine-tuning format
+            llm = OpenAIResponses(model="ft:gpt-4:org:custom:id")
+            assert llm._get_model_name() == "gpt-4"
 
 
 def test_get_model_kwargs(default_responses_llm):
@@ -144,12 +140,10 @@ def test_parse_response_output():
         )
     ]
 
-    with (
-        patch("llama_index.llms.openai.responses.SyncOpenAI"),
-        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
-    ):
-        llm = OpenAIResponses(model="gpt-4o-mini")
-        chat_response = llm._parse_response_output(output)
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model="gpt-4o-mini")
+            chat_response = llm._parse_response_output(output)
 
     assert chat_response.message.role == MessageRole.ASSISTANT
     assert len(chat_response.message.blocks) == 1
@@ -330,12 +324,10 @@ def test_get_tool_calls_from_response():
         )
     ]
 
-    with (
-        patch("llama_index.llms.openai.responses.SyncOpenAI"),
-        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
-    ):
-        llm = OpenAIResponses(model="gpt-4o-mini")
-        tool_selections = llm.get_tool_calls_from_response(chat_response)
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(model="gpt-4o-mini")
+            tool_selections = llm.get_tool_calls_from_response(chat_response)
 
     assert len(tool_selections) == 1
     assert tool_selections[0].tool_id == "123"
@@ -550,6 +542,132 @@ async def test_astream_complete_with_api():
 
     assert len(responses) > 0
     assert responses[-1].text is not None
+
+
+def test_structured_predict_uses_responses_parse(default_responses_llm):
+    """Test that structured_predict uses responses.parse with text_format for constrained decoding."""
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice", age=25)
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    result = llm.structured_predict(
+        output_cls=Person,
+        prompt=PromptTemplate(
+            "Create a profile for a person named {name} who is {age} years old"
+        ),
+        name="Alice",
+        age=25,
+    )
+
+    assert isinstance(result, Person)
+    assert result.name == "Alice"
+    assert result.age == 25
+
+    call_kwargs = llm._client.responses.parse.call_args
+    assert call_kwargs.kwargs["text_format"] is Person
+    assert call_kwargs.kwargs["tool_choice"] == "none"
+    assert call_kwargs.kwargs["model"] == "gpt-4o-mini"
+
+
+def test_structured_predict_raises_on_none_output(default_responses_llm):
+    """Test that structured_predict raises ValueError when output_parsed is None."""
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    mock_response = MagicMock()
+    mock_response.output_parsed = None
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    with pytest.raises(ValueError, match="Failed to produce a structured response"):
+        llm.structured_predict(
+            output_cls=Person,
+            prompt=PromptTemplate("Create a profile for a person"),
+        )
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_uses_responses_parse(default_responses_llm):
+    """Test that astructured_predict uses async responses.parse with text_format."""
+    from unittest.mock import AsyncMock
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Bob", age=30)
+    llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+
+    result = await llm.astructured_predict(
+        output_cls=Person,
+        prompt=PromptTemplate(
+            "Create a profile for a person named {name} who is {age} years old"
+        ),
+        name="Bob",
+        age=30,
+    )
+
+    assert isinstance(result, Person)
+    assert result.name == "Bob"
+    assert result.age == 30
+
+    call_kwargs = llm._aclient.responses.parse.call_args
+    assert call_kwargs.kwargs["text_format"] is Person
+    assert call_kwargs.kwargs["tool_choice"] == "none"
+    assert call_kwargs.kwargs["model"] == "gpt-4o-mini"
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_raises_on_none_output(default_responses_llm):
+    """Test that astructured_predict raises ValueError when output_parsed is None."""
+    from unittest.mock import AsyncMock
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    mock_response = MagicMock()
+    mock_response.output_parsed = None
+    llm._aclient.responses.parse = AsyncMock(return_value=mock_response)
+
+    with pytest.raises(ValueError, match="Failed to produce a structured response"):
+        await llm.astructured_predict(
+            output_cls=Person,
+            prompt=PromptTemplate("Create a profile for a person"),
+        )
+
+
+def test_structured_predict_passes_llm_kwargs(default_responses_llm):
+    """Test that structured_predict forwards llm_kwargs to responses.parse."""
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    llm = default_responses_llm
+    mock_response = MagicMock()
+    mock_response.output_parsed = Person(name="Alice", age=25)
+    llm._client.responses.parse = MagicMock(return_value=mock_response)
+
+    llm.structured_predict(
+        output_cls=Person,
+        prompt=PromptTemplate("Create a profile for a person"),
+        llm_kwargs={"temperature": 0.5},
+    )
+
+    call_kwargs = llm._client.responses.parse.call_args
+    assert call_kwargs.kwargs["temperature"] == 0.5
 
 
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
