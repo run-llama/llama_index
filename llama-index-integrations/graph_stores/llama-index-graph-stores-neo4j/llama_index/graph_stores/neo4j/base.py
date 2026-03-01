@@ -46,10 +46,13 @@ class Neo4jGraphStore(GraphStore):
         node_label: str = "Entity",
         refresh_schema: bool = True,
         timeout: Optional[float] = None,
+        user_agent: str = "LLAMAINDEX-GRAPH",
         **kwargs: Any,
     ) -> None:
         self.node_label = node_label
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password), user_agent=user_agent
+        )
         self._database = database
         self._timeout = timeout
         self.schema = ""
