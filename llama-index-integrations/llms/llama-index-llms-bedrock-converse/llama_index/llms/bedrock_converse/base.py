@@ -1,6 +1,6 @@
+import json
 import warnings
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -9,15 +9,12 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     Union,
+    TYPE_CHECKING,
 )
+import re
 
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -42,6 +39,12 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.llms.bedrock_converse.utils import (
     ThinkingDict,
     bedrock_modelname_to_context_size,
@@ -51,14 +54,20 @@ from llama_index.llms.bedrock_converse.utils import (
     force_single_tool_call,
     is_bedrock_adaptive_thinking_supported_model,
     is_bedrock_function_calling_model,
+    is_bedrock_structured_output_supported,
     is_reasoning,
     join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
 )
 
+from llama_index.core.prompts import PromptTemplate
+
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+# Import BaseModel for runtime use
+from pydantic import BaseModel
 
 
 class BedrockConverse(FunctionCallingLLM):
@@ -377,6 +386,16 @@ class BedrockConverse(FunctionCallingLLM):
             **kwargs,
         }
 
+    @staticmethod
+    def _strip_thinking_tokens(text: str) -> str:
+        """
+        Remove <thinking>...</thinking> tokens from text.
+
+        Some models (e.g., Amazon Nova) include thinking tokens in the response
+        text even when thinking is disabled. This helper removes them.
+        """
+        return re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL).strip()
+
     def _get_content_and_tool_calls(
         self,
         response: Optional[Dict[str, Any]] = None,
@@ -404,7 +423,10 @@ class BedrockConverse(FunctionCallingLLM):
 
         for content_block in content_list:
             if text := content_block.get("text", None):
-                blocks.append(TextBlock(text=text))
+                # Strip thinking tokens from text (e.g., for Nova models)
+                text = self._strip_thinking_tokens(text)
+                if text:  # Only add block if text remains after stripping
+                    blocks.append(TextBlock(text=text))
             if reasoning_text := extract_thinking_from_block(content_block):
                 if reasoning_text:
                     thinking_text += reasoning_text
@@ -570,7 +592,9 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(
+                            text=self._strip_thinking_tokens(content.get("text", ""))
+                        )
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -625,7 +649,9 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(
+                            text=self._strip_thinking_tokens(content.get("text", ""))
+                        )
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -670,7 +696,11 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
+                            TextBlock(
+                                text=self._strip_thinking_tokens(
+                                    content.get("text", "")
+                                )
+                            )
                         ]
                         if thinking != "":
                             blocks.insert(
@@ -852,7 +882,9 @@ class BedrockConverse(FunctionCallingLLM):
                                     current_tool_call, tool_use_delta
                                 )
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(
+                            text=self._strip_thinking_tokens(content.get("text", ""))
+                        )
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -908,7 +940,9 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(
+                            text=self._strip_thinking_tokens(content.get("text", ""))
+                        )
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -953,7 +987,11 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
+                            TextBlock(
+                                text=self._strip_thinking_tokens(
+                                    content.get("text", "")
+                                )
+                            )
                         ]
                         if thinking != "":
                             blocks.insert(
@@ -1116,3 +1154,129 @@ class BedrockConverse(FunctionCallingLLM):
             "cache_read_input_tokens": usage.get("cacheReadInputTokens", 0),
             "cache_creation_input_tokens": usage.get("cacheWriteInputTokens", 0),
         }
+
+    def structured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        """
+        Structured predict using native Bedrock structured outputs if supported.
+
+        Falls back to function calling for unsupported models.
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        # Fall back to function calling if not supported
+        if (
+            self.pydantic_program_mode != PydanticProgramMode.DEFAULT
+            or not is_bedrock_structured_output_supported(self.model)
+        ):
+            program = get_program_for_llm(
+                output_cls,
+                prompt,
+                self,
+                pydantic_program_mode=self.pydantic_program_mode,
+            )
+            return program(**prompt_args)
+
+        # Use native structured outputs
+        messages = prompt.format_messages(**prompt_args)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
+
+        all_kwargs = self._get_all_kwargs(**(llm_kwargs or {}))
+        json_schema = output_cls.model_json_schema()
+
+        all_kwargs["outputConfig"] = {
+            "textFormat": {
+                "type": "json_schema",
+                "structure": {
+                    "jsonSchema": {
+                        "schema": json.dumps(json_schema),
+                        "name": output_cls.__name__,
+                        "description": output_cls.__doc__
+                        or f"Schema for {output_cls.__name__}",
+                    }
+                },
+            }
+        }
+
+        response = converse_with_retry(
+            client=self._client,
+            messages=converse_messages,
+            system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            max_retries=self.max_retries,
+            stream=False,
+            **all_kwargs,
+        )
+
+        blocks, _, _, _ = self._get_content_and_tool_calls(response)
+        text_content = next((b.text for b in blocks if isinstance(b, TextBlock)), "")
+
+        return output_cls.model_validate_json(text_content)
+
+    async def astructured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        """Async structured predict using native Bedrock structured outputs."""
+        from llama_index.core.program.utils import get_program_for_llm
+
+        # Fall back to function calling if not supported
+        if (
+            self.pydantic_program_mode != PydanticProgramMode.DEFAULT
+            or not is_bedrock_structured_output_supported(self.model)
+        ):
+            program = get_program_for_llm(
+                output_cls,
+                prompt,
+                self,
+                pydantic_program_mode=self.pydantic_program_mode,
+            )
+            return await program.acall(**prompt_args)
+
+        # Use native structured outputs
+        messages = prompt.format_messages(**prompt_args)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
+
+        all_kwargs = self._get_all_kwargs(**(llm_kwargs or {}))
+        json_schema = output_cls.model_json_schema()
+
+        all_kwargs["outputConfig"] = {
+            "textFormat": {
+                "type": "json_schema",
+                "structure": {
+                    "jsonSchema": {
+                        "schema": json.dumps(json_schema),
+                        "name": output_cls.__name__,
+                        "description": output_cls.__doc__
+                        or f"Schema for {output_cls.__name__}",
+                    }
+                },
+            }
+        }
+
+        response = await converse_with_retry_async(
+            client=self._client,
+            messages=converse_messages,
+            system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            max_retries=self.max_retries,
+            stream=False,
+            **all_kwargs,
+        )
+
+        blocks, _, _, _ = self._get_content_and_tool_calls(response)
+        text_content = next((b.text for b in blocks if isinstance(b, TextBlock)), "")
+
+        return output_cls.model_validate_json(text_content)

@@ -906,6 +906,40 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
     return new_dict
 
 
+# Models that support native structured outputs via outputConfig.textFormat
+# https://docs.aws.amazon.com/bedrock/latest/userguide/structured-output.html#structured-output-models
+BEDROCK_STRUCTURED_OUTPUT_SUPPORTED_MODELS = (
+    # Claude 4.5+
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
+    # Amazon Nova
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
+    # DeepSeek
+    "deepseek.r1-v1:0",
+    # Mistral
+    "mistral.mistral-large-2411-v1:0",
+    "mistral.mistral-large-2407-v1:0",
+)
+
+
+def is_bedrock_structured_output_supported(model_name: str) -> bool:
+    """
+    Check if a model supports native structured outputs.
+
+    Args:
+        model_name: The Bedrock model name (can include region prefix like "us.")
+
+    Returns:
+        True if the model supports structured outputs, False otherwise.
+
+    """
+    return get_model_name(model_name) in BEDROCK_STRUCTURED_OUTPUT_SUPPORTED_MODELS
+
+
 class ThinkingDict(TypedDict):
     type: Literal["enabled", "adaptive"]
     budget_tokens: NotRequired[int]

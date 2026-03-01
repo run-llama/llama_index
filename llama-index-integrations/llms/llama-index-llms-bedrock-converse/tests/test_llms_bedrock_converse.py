@@ -1297,3 +1297,62 @@ async def test_tool_call_input_output(
         for block in ablocks
         if isinstance(block, ToolCallBlock)
     )
+
+
+# --- Tests for _strip_thinking_tokens ---
+
+
+# --- Tests for _strip_thinking_tokens ---
+
+
+def test_strip_thinking_tokens_no_thinking():
+    """Test that text without thinking tokens is unchanged."""
+    text = "Hello world"
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_basic():
+    """Test that thinking tokens are removed."""
+    text = "<thinking>reasoning</thinking>Hello world"
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_multiline():
+    """Test that multiline thinking tokens are removed."""
+    text = (
+        "<thinking>Step 1: Analyze\n"
+        "Step 2: Decide\n"
+        "Step 3: Output</thinking>Hello world"
+    )
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_at_end():
+    """Test that thinking tokens at the end are removed."""
+    text = "Hello world<thinking>some reasoning</thinking>"
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_multiple():
+    """Test that multiple thinking tokens are removed."""
+    text = "<thinking>first</thinking>Hello<thinking>second</thinking> world"
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_empty():
+    """Test that empty thinking tokens are handled."""
+    text = "<thinking></thinking>Hello world"
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == "Hello world"
+
+
+def test_strip_thinking_tokens_whitespace_only():
+    """Test that text with only whitespace after stripping is handled."""
+    text = "   <thinking>reasoning</thinking>   "
+    result = BedrockConverse._strip_thinking_tokens(text)
+    assert result == ""
