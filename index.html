@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deep Site // Whisper Node</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --panel:    #111118;
+      --border:   #1e1e2e;
+      --green:    #00ff9d;
+      --green-dim:#00cc7a;
+      --cyan:     #00e5ff;
+      --purple:   #9b59ff;
+      --red:      #ff4466;
+      --text:     #c8d0e0;
+      --muted:    #555570;
+      --radius:   10px;
+      --font:     'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── header ── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      color: var(--green);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 18px #00ff9d55;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 6px;
+      letter-spacing: 0.12em;
+    }
+
+    /* ── main card ── */
+    .card {
+      width: 100%;
+      max-width: 760px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    /* ── token row ── */
+    .token-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+      align-items: center;
+    }
+    .token-row label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      letter-spacing: 0.08em;
+    }
+    .token-row input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .token-row input:focus { border-color: var(--green); }
+
+    /* ── controls row ── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 22px;
+      align-items: center;
+    }
+    select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.78rem;
+      padding: 8px 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    select:focus { border-color: var(--cyan); }
+
+    /* ── buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      border-radius: 6px;
+      border: 1px solid;
+      font-family: var(--font);
+      font-size: 0.8rem;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: background .15s, box-shadow .15s, opacity .15s;
+    }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    .btn-record {
+      background: transparent;
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .btn-record:not(:disabled):hover {
+      background: #00ff9d18;
+      box-shadow: 0 0 12px #00ff9d33;
+    }
+    .btn-record.recording {
+      background: #ff446618;
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .btn-upload {
+      background: transparent;
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .btn-upload:not(:disabled):hover {
+      background: #00e5ff18;
+      box-shadow: 0 0 12px #00e5ff33;
+    }
+
+    .btn-copy {
+      background: transparent;
+      border-color: var(--purple);
+      color: var(--purple);
+      font-size: 0.72rem;
+      padding: 6px 14px;
+    }
+    .btn-copy:not(:disabled):hover { background: #9b59ff18; }
+
+    .btn-clear {
+      background: transparent;
+      border-color: var(--muted);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 6px 14px;
+    }
+    .btn-clear:not(:disabled):hover { border-color: var(--text); color: var(--text); }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 #ff446633; }
+      50%       { box-shadow: 0 0 0 8px #ff446600; }
+    }
+
+    /* ── status bar ── */
+    #status {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 18px;
+      min-height: 1.4em;
+    }
+    #status.ok    { color: var(--green); }
+    #status.err   { color: var(--red); }
+    #status.busy  { color: var(--cyan); }
+
+    /* ── waveform canvas ── */
+    #waveform {
+      display: none;
+      width: 100%;
+      height: 56px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 18px;
+      background: var(--bg);
+    }
+
+    /* ── transcript area ── */
+    .transcript-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .transcript-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+    .transcript-actions { display: flex; gap: 8px; }
+
+    #transcript {
+      width: 100%;
+      min-height: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.88rem;
+      line-height: 1.7;
+      padding: 14px 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #transcript:focus { border-color: var(--green-dim); }
+
+    /* ── meta info ── */
+    #meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 10px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* ── SRT download ── */
+    .export-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .export-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .btn-export {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 6px 14px;
+    }
+    .btn-export:not(:disabled):hover { border-color: var(--text); color: var(--text); }
+
+    /* ── footer ── */
+    footer {
+      margin-top: 40px;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--green); }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DEEP SITE // WHISPER NODE</h1>
+  <p>GPU-ACCELERATED SPEECH TRANSCRIPTION &mdash; openai/whisper-large-v3</p>
+</header>
+
+<div class="card">
+
+  <!-- HF Token -->
+  <div class="token-row">
+    <label>HF TOKEN</label>
+    <input type="password" id="hfToken" placeholder="hf_... (optional — rate-limited without token)" autocomplete="off" />
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-record" id="recordBtn" onclick="toggleRecord()">
+      <span id="recIcon">&#9679;</span> <span id="recLabel">RECORD</span>
+    </button>
+
+    <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+      &#8679; UPLOAD AUDIO
+    </button>
+    <input type="file" id="fileInput" accept="audio/*,video/*" onchange="handleFile(event)" />
+
+    <select id="modelSel">
+      <option value="openai/whisper-large-v3">whisper-large-v3</option>
+      <option value="openai/whisper-large-v2">whisper-large-v2</option>
+      <option value="openai/whisper-medium">whisper-medium</option>
+      <option value="openai/whisper-base">whisper-base</option>
+      <option value="openai/whisper-tiny">whisper-tiny</option>
+    </select>
+
+    <select id="taskSel">
+      <option value="transcribe">transcribe</option>
+      <option value="translate">translate → EN</option>
+    </select>
+  </div>
+
+  <!-- Status -->
+  <div id="status">READY &mdash; record or upload an audio file</div>
+
+  <!-- Waveform -->
+  <canvas id="waveform"></canvas>
+
+  <!-- Transcript -->
+  <div class="transcript-header">
+    <span class="transcript-label">TRANSCRIPT</span>
+    <div class="transcript-actions">
+      <button class="btn btn-copy" onclick="copyText()">&#9113; COPY</button>
+      <button class="btn btn-clear" onclick="clearAll()">&#10005; CLEAR</button>
+    </div>
+  </div>
+  <textarea id="transcript" placeholder="Transcript will appear here..."></textarea>
+  <div id="meta"></div>
+
+  <hr class="divider" />
+
+  <!-- Export -->
+  <div class="export-row">
+    <span class="export-label">EXPORT</span>
+    <button class="btn btn-export" onclick="downloadTxt()">&#8675; TXT</button>
+    <button class="btn btn-export" onclick="downloadSrt()">&#8675; SRT</button>
+  </div>
+
+</div>
+
+<footer>
+  <p>
+    WHISPER NODE &mdash; RHYTHMIC BALANCED INTERCHANGE &nbsp;|&nbsp;
+    <a href="https://huggingface.co/openai/whisper-large-v3" target="_blank">MODEL</a>
+    &nbsp;|&nbsp;
+    <a href="https://huggingface.co/docs/api-inference" target="_blank">HF INFERENCE API</a>
+  </p>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────────
+   State
+───────────────────────────────────────────── */
+let mediaRecorder = null;
+let audioChunks   = [];
+let isRecording   = false;
+let lastResult    = null;   // {text, segments, language, duration}
+let animCtx       = null;
+let animId        = null;
+let analyser      = null;
+
+/* ─────────────────────────────────────────────
+   Recording
+───────────────────────────────────────────── */
+async function toggleRecord() {
+  if (isRecording) {
+    mediaRecorder.stop();
+    return;
+  }
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    setStatus('Microphone access denied.', 'err');
+    return;
+  }
+
+  // Waveform visualiser
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const actx = new AudioCtx();
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 512;
+  actx.createMediaStreamSource(stream).connect(analyser);
+  startWaveform();
+
+  audioChunks = [];
+  mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMime() });
+
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+  mediaRecorder.onstop = async () => {
+    stopWaveform();
+    stream.getTracks().forEach(t => t.stop());
+    actx.close();
+    const blob = new Blob(audioChunks, { type: audioChunks[0]?.type || 'audio/webm' });
+    await transcribe(blob);
+  };
+
+  mediaRecorder.start(250);
+  isRecording = true;
+  document.getElementById('recordBtn').classList.add('recording');
+  document.getElementById('recLabel').textContent = 'STOP';
+  document.getElementById('recIcon').textContent  = '\u25a0';
+  setStatus('Recording… click STOP when done.', 'busy');
+}
+
+function getSupportedMime() {
+  const types = [
+    'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus',
+    'audio/mp4', 'audio/ogg'
+  ];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+
+/* ─────────────────────────────────────────────
+   File upload
+───────────────────────────────────────────── */
+async function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  setStatus(`Loaded: ${file.name} (${(file.size/1024).toFixed(1)} KB) — transcribing…`, 'busy');
+  await transcribe(file);
+}
+
+/* ─────────────────────────────────────────────
+   HF Inference API call
+───────────────────────────────────────────── */
+async function transcribe(blob) {
+  const model = document.getElementById('modelSel').value;
+  const task  = document.getElementById('taskSel').value;
+  const token = document.getElementById('hfToken').value.trim();
+
+  setStatus('Sending to Whisper…', 'busy');
+
+  const headers = { 'Content-Type': blob.type || 'audio/webm' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  // Pass task as query param (supported by HF Inference API)
+  const url = `https://api-inference.huggingface.co/models/${model}`;
+
+  const t0 = Date.now();
+  let res;
+  try {
+    res = await fetch(url, { method: 'POST', headers, body: blob });
+  } catch (e) {
+    setStatus(`Network error: ${e.message}`, 'err');
+    resetRecordBtn();
+    return;
+  }
+
+  if (res.status === 503) {
+    setStatus('Model loading on HF servers — retry in ~20s.', 'err');
+    resetRecordBtn();
+    return;
+  }
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    setStatus(`API error ${res.status}: ${msg.slice(0, 120)}`, 'err');
+    resetRecordBtn();
+    return;
+  }
+
+  let data;
+  try { data = await res.json(); }
+  catch { setStatus('Bad response from API.', 'err'); resetRecordBtn(); return; }
+
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+  // The API returns { text, chunks } — chunks have timestamps when available
+  const text     = (data.text || '').trim();
+  const segments = data.chunks || [];
+  const lang     = data.language || '—';
+
+  lastResult = { text, segments, language: lang, elapsed };
+
+  document.getElementById('transcript').value = text;
+  document.getElementById('meta').textContent =
+    `language: ${lang}  |  segments: ${segments.length}  |  api: ${elapsed}s  |  model: ${model}`;
+
+  setStatus('Done.', 'ok');
+  resetRecordBtn();
+}
+
+/* ─────────────────────────────────────────────
+   UI helpers
+───────────────────────────────────────────── */
+function setStatus(msg, cls = '') {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className   = cls;
+}
+
+function resetRecordBtn() {
+  isRecording = false;
+  const btn = document.getElementById('recordBtn');
+  btn.classList.remove('recording');
+  document.getElementById('recLabel').textContent = 'RECORD';
+  document.getElementById('recIcon').textContent  = '\u25cf';
+}
+
+function copyText() {
+  const t = document.getElementById('transcript').value;
+  if (!t) return;
+  navigator.clipboard.writeText(t).then(() => setStatus('Copied to clipboard.', 'ok'));
+}
+
+function clearAll() {
+  document.getElementById('transcript').value = '';
+  document.getElementById('meta').textContent = '';
+  lastResult = null;
+  setStatus('Cleared.', '');
+}
+
+/* ─────────────────────────────────────────────
+   Exports
+───────────────────────────────────────────── */
+function downloadTxt() {
+  const text = document.getElementById('transcript').value;
+  if (!text) return;
+  trigger('transcript.txt', text, 'text/plain');
+}
+
+function downloadSrt() {
+  if (!lastResult?.segments?.length) {
+    downloadTxt();   // fallback: no timestamps available
+    return;
+  }
+  const lines = [];
+  lastResult.segments.forEach((seg, i) => {
+    const ts = seg.timestamp || [];
+    const s  = ts[0] ?? 0;
+    const e  = ts[1] ?? s + 2;
+    lines.push(String(i + 1));
+    lines.push(`${srtTs(s)} --> ${srtTs(e)}`);
+    lines.push((seg.text || '').trim());
+    lines.push('');
+  });
+  trigger('transcript.srt', lines.join('\n'), 'text/plain');
+}
+
+function srtTs(sec) {
+  const h  = Math.floor(sec / 3600);
+  const m  = Math.floor((sec % 3600) / 60);
+  const s  = Math.floor(sec % 60);
+  const ms = Math.round((sec % 1) * 1000);
+  return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+}
+function pad(n, w = 2) { return String(n).padStart(w, '0'); }
+
+function trigger(name, content, type) {
+  const a = document.createElement('a');
+  a.href  = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+}
+
+/* ─────────────────────────────────────────────
+   Waveform visualiser
+───────────────────────────────────────────── */
+function startWaveform() {
+  const canvas = document.getElementById('waveform');
+  canvas.style.display = 'block';
+  animCtx = canvas.getContext('2d');
+  drawWave();
+}
+
+function stopWaveform() {
+  cancelAnimationFrame(animId);
+  document.getElementById('waveform').style.display = 'none';
+  analyser = null;
+}
+
+function drawWave() {
+  if (!analyser) return;
+  const canvas = document.getElementById('waveform');
+  const w = canvas.width  = canvas.offsetWidth;
+  const h = canvas.height = canvas.offsetHeight;
+  const buf = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteTimeDomainData(buf);
+
+  animCtx.clearRect(0, 0, w, h);
+  animCtx.strokeStyle = '#00ff9d';
+  animCtx.lineWidth   = 1.5;
+  animCtx.beginPath();
+
+  const step = w / buf.length;
+  buf.forEach((v, i) => {
+    const x = i * step;
+    const y = (v / 128) * (h / 2);
+    i === 0 ? animCtx.moveTo(x, y) : animCtx.lineTo(x, y);
+  });
+  animCtx.stroke();
+  animId = requestAnimationFrame(drawWave);
+}
+</script>
+</body>
+</html>

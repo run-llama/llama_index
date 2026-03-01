@@ -1,6 +1,5 @@
 import argparse
-import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from llama_index.cli.rag import RagCLI, default_ragcli_persist_dir
 from llama_index.cli.upgrade import upgrade_dir, upgrade_file
@@ -20,44 +19,6 @@ from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
 
 from llama_index.cli.new_package.base import init_new_package
-
-logger = logging.getLogger(__name__)
-
-# Known catalog paths for marketplace repositories.
-# Maps repository "owner/repo" to the path of the catalog JSON file.
-MARKETPLACE_CATALOG_PATHS: Dict[str, str] = {
-    "obra/superpowers-marketplace": ".claude-plugin/marketplace.json",
-}
-
-
-def fetch_marketplace_catalog(
-    repository: str, branch: str = "main"
-) -> Optional[Dict]:
-    """
-    Fetch the plugin catalog JSON from a marketplace repository.
-
-    Args:
-        repository: GitHub repository in format 'owner/repo'
-        branch: Git branch to use
-
-    Returns:
-        Parsed JSON dict or None if fetch fails
-    """
-    import requests
-
-    catalog_path = MARKETPLACE_CATALOG_PATHS.get(repository, "marketplace.json")
-    url = (
-        f"https://raw.githubusercontent.com/{repository}/{branch}/{catalog_path}"
-    )
-
-    try:
-        resp = requests.get(url, timeout=10)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        logger.debug(f"Failed to fetch catalog from {url}: {e}")
-
-    return None
 
 
 def handle_init_package(
@@ -131,8 +92,8 @@ def handle_marketplace_add(
         print(f"Branch: {branch}")
         if base_path:
             print(f"Base path: {base_path}")
-        print(f"\nTo install a plugin, run:")
-        print(f"  llamaindex-cli plugin install <PackName>@{name} --download-dir ./path")
+        print(f"\nTo install a skill, run:")
+        print(f"  llamaindex-cli download-llamapack <PackName>@{name} --download-dir ./path")
     else:
         print(f"Error: Marketplace '{name}' already exists")
 
@@ -170,89 +131,35 @@ def handle_marketplace_remove(name: str, **kwargs: Any) -> None:
         print(f"Error: Marketplace '{name}' not found or cannot be removed")
 
 
-def handle_plugin_install(
-    plugin_identifier: str,
-    download_dir: Optional[str] = None,
-    **kwargs: Any,
-) -> None:
-    """Install a plugin from a marketplace."""
-    if "@" not in plugin_identifier:
-        print(
-            f"Error: Plugin identifier must include a marketplace specifier "
-            f"in the format '<PluginName>@<marketplace-name>'.\n"
-            f"Example: llamaindex-cli plugin install superpowers@superpowers-marketplace"
-        )
-        return
-
-    pack_name, marketplace_name = plugin_identifier.split("@", 1)
-
-    # Verify marketplace exists
-    manager = MarketplaceManager()
-    marketplace = manager.get_marketplace(marketplace_name)
-    if marketplace is None:
-        print(f"Error: Marketplace '{marketplace_name}' not found.")
-        print(f"Register it first with:")
-        print(
-            f"  llamaindex-cli plugin marketplace add {marketplace_name} "
-            f"--name {marketplace_name}"
-        )
-        return
-
-    target_dir = download_dir or f"./plugins/{pack_name.lower()}"
-
-    print(f"Installing plugin '{pack_name}' from marketplace '{marketplace_name}'...")
-    print(f"  Repository: {marketplace.repository}")
-    print(f"  Branch: {marketplace.branch}")
-    print(f"  Download dir: {target_dir}")
-    print()
+def default_rag_cli() -> RagCLI:
+    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
 
     try:
-        download_llama_pack(
-            llama_pack_class=plugin_identifier,
-            download_dir=target_dir,
+        import chromadb  # pants: no-infer-dep
+        from llama_index.vector_stores.chroma import (
+            ChromaVectorStore,
+        )  # pants: no-infer-dep
+    except ImportError:
+        raise ImportError(
+            "Default RAG pipeline uses chromadb. "
+            "Install with `pip install llama-index-vector-stores-chroma "
+            "or customize to use a different vector store."
         )
-        print(f"Successfully installed '{pack_name}' from '{marketplace_name}'")
-    except Exception as e:
-        print(f"Error installing plugin: {e}")
 
+    persist_dir = default_ragcli_persist_dir()
+    chroma_client = chromadb.PersistentClient(path=persist_dir)
+    chroma_collection = chroma_client.create_collection("default", get_or_create=True)
+    vector_store = ChromaVectorStore(
+        chroma_collection=chroma_collection, persist_dir=persist_dir
+    )
+    docstore = SimpleDocumentStore()
 
-def handle_plugin_list(**kwargs: Any) -> None:
-    """List available plugins from all registered marketplaces."""
-    manager = MarketplaceManager()
-    marketplaces = manager.list_marketplaces()
-
-    if not marketplaces:
-        print("No marketplaces registered")
-        return
-
-    print("Registered marketplaces and available plugins:")
-    print()
-    for marketplace in marketplaces:
-        print(f"  {marketplace.name}")
-        print(f"    Repository: {marketplace.repository}")
-        if marketplace.description:
-            print(f"    Description: {marketplace.description}")
-
-        # Try to fetch live catalog
-        catalog = fetch_marketplace_catalog(
-            marketplace.repository, marketplace.branch
-        )
-        if catalog and "plugins" in catalog:
-            print(f"    Available plugins:")
-            for plugin in catalog["plugins"]:
-                version = plugin.get("version", "")
-                desc = plugin.get("description", "")
-                name = plugin.get("name", "unknown")
-                version_str = f" (v{version})" if version else ""
-                print(f"      - {name}{version_str}")
-                if desc:
-                    print(f"        {desc}")
-
-        print(f"    Install: llamaindex-cli plugin install <PluginName>@{marketplace.name}")
-        print()
-
-
-def default_rag_cli() -> Optional[RagCLI]:
+    ingestion_pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(), OpenAIEmbedding()],
+        vector_store=vector_store,
+        docstore=docstore,
+        cache=IngestionCache(),
+    )
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
     except ImportError:
@@ -426,7 +333,7 @@ def main() -> None:
     )
     new_package_parser.set_defaults(func=lambda args: handle_init_package(**vars(args)))
 
-    # marketplace commands (legacy, kept for backwards compatibility)
+    # marketplace commands
     marketplace_parser = subparsers.add_parser(
         "marketplace", help="Manage plugin marketplaces"
     )
@@ -493,117 +400,6 @@ def main() -> None:
         help="Name of the marketplace to remove",
     )
     marketplace_remove_parser.set_defaults(
-        func=lambda args: handle_marketplace_remove(**vars(args))
-    )
-
-    # plugin commands (unified plugin management interface)
-    plugin_parser = subparsers.add_parser(
-        "plugin", help="Manage plugins and plugin marketplaces"
-    )
-    plugin_subparsers = plugin_parser.add_subparsers(
-        title="plugin commands", dest="plugin_command", required=True
-    )
-
-    # plugin install command
-    plugin_install_parser = plugin_subparsers.add_parser(
-        "install", help="Install a plugin from a marketplace"
-    )
-    plugin_install_parser.add_argument(
-        "plugin_identifier",
-        type=str,
-        help=(
-            "Plugin identifier in format '<PluginName>@<marketplace-name>' "
-            "(e.g., 'superpowers@superpowers-marketplace')"
-        ),
-    )
-    plugin_install_parser.add_argument(
-        "-d",
-        "--download-dir",
-        type=str,
-        default=None,
-        help="Custom directory to download the plugin into.",
-    )
-    plugin_install_parser.set_defaults(
-        func=lambda args: handle_plugin_install(**vars(args))
-    )
-
-    # plugin list command
-    plugin_list_parser = plugin_subparsers.add_parser(
-        "list", help="List available plugins from registered marketplaces"
-    )
-    plugin_list_parser.set_defaults(
-        func=lambda args: handle_plugin_list(**vars(args))
-    )
-
-    # plugin marketplace sub-commands
-    plugin_marketplace_parser = plugin_subparsers.add_parser(
-        "marketplace", help="Manage plugin marketplaces"
-    )
-    plugin_marketplace_subparsers = plugin_marketplace_parser.add_subparsers(
-        title="plugin marketplace commands",
-        dest="plugin_marketplace_command",
-        required=True,
-    )
-
-    # plugin marketplace add
-    plugin_mp_add_parser = plugin_marketplace_subparsers.add_parser(
-        "add", help="Add a new plugin marketplace"
-    )
-    plugin_mp_add_parser.add_argument(
-        "repository",
-        type=str,
-        help="GitHub repository in format 'owner/repo' (e.g., 'obra/superpowers-marketplace')",
-    )
-    plugin_mp_add_parser.add_argument(
-        "-n",
-        "--name",
-        type=str,
-        required=True,
-        help="Short name for the marketplace (used in install commands)",
-    )
-    plugin_mp_add_parser.add_argument(
-        "-b",
-        "--branch",
-        type=str,
-        default="main",
-        help="Git branch to use (default: 'main')",
-    )
-    plugin_mp_add_parser.add_argument(
-        "-p",
-        "--base-path",
-        type=str,
-        default="",
-        help="Base path within the repository for packs",
-    )
-    plugin_mp_add_parser.add_argument(
-        "-d",
-        "--description",
-        type=str,
-        default="",
-        help="Human-readable description of the marketplace",
-    )
-    plugin_mp_add_parser.set_defaults(
-        func=lambda args: handle_marketplace_add(**vars(args))
-    )
-
-    # plugin marketplace list
-    plugin_mp_list_parser = plugin_marketplace_subparsers.add_parser(
-        "list", help="List all registered marketplaces"
-    )
-    plugin_mp_list_parser.set_defaults(
-        func=lambda args: handle_marketplace_list(**vars(args))
-    )
-
-    # plugin marketplace remove
-    plugin_mp_remove_parser = plugin_marketplace_subparsers.add_parser(
-        "remove", help="Remove a marketplace"
-    )
-    plugin_mp_remove_parser.add_argument(
-        "name",
-        type=str,
-        help="Name of the marketplace to remove",
-    )
-    plugin_mp_remove_parser.set_defaults(
         func=lambda args: handle_marketplace_remove(**vars(args))
     )
 

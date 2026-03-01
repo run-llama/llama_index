@@ -4,8 +4,6 @@ sidebar:
 title: Welcome to LlamaIndex 🦙 !
 ---
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
 LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](/python/framework/understanding/workflows).
 
 <div class="grid cards" markdown>
@@ -149,9 +147,9 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
 
 We are open-source and always welcome contributions to the project! Check out our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
 
-## LlamaIndex Ecosystem
+## Related projects
 
-There's more to the LlamaIndex universe! Check out some of our other projects:
+Check out some of our other projects:
 
 - [llama_deploy](https://github.com/run-llama/llama_deploy) | Deploy your agentic workflows as production microservices
 - [LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors

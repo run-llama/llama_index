@@ -3,6 +3,21 @@
     "hf-mcp-server": {
       "type": "http",
       "url": "https://huggingface.co/mcp?login"
+    },
+    "notebooklm-mcp": {
+      "command": "/root/.local/bin/notebooklm-mcp"
     }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -1,14 +1,3 @@
----
-title: UnfilteredAI-NSFW-gen-v2
-emoji: 👀
-colorFrom: purple
-colorTo: red
-sdk: gradio
-sdk_version: 5.0.0
-app_file: app.py
-pinned: true
----
-
 # 🗂️ LlamaIndex 🦙
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
@@ -65,8 +54,6 @@ LlamaIndex.TS [(Typescript/Javascript)](https://github.com/run-llama/LlamaIndexT
 - LlamaLab [(cutting-edge AGI projects using LlamaIndex)](https://github.com/run-llama/llama-lab)
 
 ## 🚀 Overview
-
-**NOTE**: This README is not updated as frequently as the documentation. Please check out the documentation above for the latest updates!
 
 ### Context
 
@@ -189,14 +176,13 @@ index = load_index_from_storage(storage_context)
 
 ## 🔧 Dependencies
 
-We use poetry as the package manager for all Python packages. As a result, the
+We use `uv` as the package manager for all Python packages. As a result, the
 dependencies of each Python package can be found by referencing the `pyproject.toml`
 file in each of the package's folders.
 
 ```bash
 cd <desired-package-folder>
-pip install poetry
-poetry install --with dev
+uv sync
 ```
 
 ## A note on Verification of Build Assets

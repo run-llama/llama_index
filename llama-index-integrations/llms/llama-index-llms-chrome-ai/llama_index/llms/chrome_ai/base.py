@@ -419,14 +419,18 @@ class ChromeAI(CustomLLM):
             queue.put_nowait(delta)
 
         async def run_streaming() -> None:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(**self._launch_options())
-                page = await browser.new_page()
-                await page.expose_function("chromePyChunk", on_chunk)
-                try:
-                    await page.evaluate(_JS_STREAM, params)
-                finally:
-                    await browser.close()
+            try:
+                async with async_playwright() as p:
+                    browser = await p.chromium.launch(**self._launch_options())
+                    page = await browser.new_page()
+                    await page.expose_function("chromePyChunk", on_chunk)
+                    try:
+                        await page.evaluate(_JS_STREAM, params)
+                    finally:
+                        await browser.close()
+            except Exception:
+                queue.put_nowait(None)  # ensure consumer unblocks on error
+                raise
 
         task = asyncio.create_task(run_streaming())
 
