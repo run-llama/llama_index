@@ -1,21 +1,19 @@
+import asyncio
+import base64
 import json
-import os
 import logging
-from typing import Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 from bedrock_agentcore.tools.code_interpreter_client import CodeInterpreter
 
+from llama_index.tools.aws_bedrock_agentcore.utils import get_aws_region
+
 DEFAULT_CODE_INTERPRETER_IDENTIFIER = "aws.codeinterpreter.v1"
 DEFAULT_CODE_INTERPRETER_TIMEOUT = 900
 
 logger = logging.getLogger(__name__)
-
-
-def get_aws_region() -> str:
-    """Get the AWS region from environment variables or use default."""
-    return os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-west-2"
 
 
 def extract_output_from_stream(response):
@@ -30,23 +28,19 @@ def extract_output_from_stream(response):
 
     """
     output = []
-    for event in response["stream"]:
-        if "result" in event:
-            result = event["result"]
-            if "content" in result:
-                for content_item in result["content"]:
-                    if content_item["type"] == "text":
-                        output.append(content_item["text"])
-                    if content_item["type"] == "resource":
-                        resource = content_item["resource"]
-                        if "text" in resource:
-                            file_path = resource["uri"].replace("file://", "")
-                            file_content = resource["text"]
-                            output.append(
-                                f"==== File: {file_path} ====\n{file_content}\n"
-                            )
-                        else:
-                            output.append(json.dumps(resource))
+    for event in response.get("stream", []):
+        result = event.get("result", {})
+        for content_item in result.get("content", []):
+            if content_item.get("type") == "text":
+                output.append(content_item.get("text", ""))
+            if content_item.get("type") == "resource":
+                resource = content_item.get("resource", {})
+                if "text" in resource:
+                    file_path = resource.get("uri", "").replace("file://", "")
+                    file_content = resource["text"]
+                    output.append(f"==== File: {file_path} ====\n{file_content}\n")
+                else:
+                    output.append(json.dumps(resource))
 
     return "\n".join(output)
 
@@ -81,19 +75,37 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
         ("start_command", "astart_command"),
         ("get_task", "aget_task"),
         ("stop_task", "astop_task"),
+        ("upload_file", "aupload_file"),
+        ("upload_files", "aupload_files"),
+        ("install_packages", "ainstall_packages"),
+        ("download_file", "adownload_file"),
+        ("download_files", "adownload_files"),
+        ("list_code_interpreters", "alist_code_interpreters"),
+        ("create_code_interpreter", "acreate_code_interpreter"),
+        ("delete_code_interpreter", "adelete_code_interpreter"),
+        ("get_code_interpreter", "aget_code_interpreter"),
+        ("clear_context", "aclear_context"),
     ]
 
-    def __init__(self, region: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        region: Optional[str] = None,
+        identifier: Optional[str] = None,
+    ) -> None:
         """
         Initialize the AWS Bedrock AgentCore Code Interpreter Tool Spec.
 
         Args:
             region (Optional[str]): AWS region to use for Bedrock AgentCore services.
                 If not provided, will try to get it from environment variables.
+            identifier (Optional[str]): Custom code interpreter identifier for
+                VPC-enabled resources. If not provided, uses the default identifier.
 
         """
         self.region = region if region is not None else get_aws_region()
+        self._identifier = identifier
         self._code_interpreters: Dict[str, CodeInterpreter] = {}
+        self._cp_ci_client: Optional[CodeInterpreter] = None
 
     def _get_or_create_interpreter(self, thread_id: str = "default") -> CodeInterpreter:
         """
@@ -110,8 +122,13 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             return self._code_interpreters[thread_id]
 
         # Create a new code interpreter for this thread
-        code_interpreter = CodeInterpreter(region=self.region)
-        code_interpreter.start()
+        code_interpreter = CodeInterpreter(
+            region=self.region, integration_source="llamaindex"
+        )
+        start_kwargs = {}
+        if self._identifier is not None:
+            start_kwargs["identifier"] = self._identifier
+        code_interpreter.start(**start_kwargs)
         logger.info(
             f"Started code interpreter with session_id:{code_interpreter.session_id} for thread:{thread_id}"
         )
@@ -119,6 +136,19 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
         # Store the interpreter
         self._code_interpreters[thread_id] = code_interpreter
         return code_interpreter
+
+    def _get_control_plane_client(self) -> CodeInterpreter:
+        """
+        Get or create a code interpreter client for control-plane operations only.
+
+        This client is used for account-level operations (list, create, delete, get)
+        that do not require starting a session.
+        """
+        if self._cp_ci_client is None:
+            self._cp_ci_client = CodeInterpreter(
+                region=self.region, integration_source="llamaindex"
+            )
+        return self._cp_ci_client
 
     def execute_code(
         self,
@@ -178,8 +208,8 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The result of the code execution.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.execute_code(
+        return await asyncio.to_thread(
+            self.execute_code,
             code=code,
             language=language,
             clear_context=clear_context,
@@ -231,8 +261,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The result of the command execution.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.execute_command(command=command, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.execute_command, command=command, thread_id=thread_id
+        )
 
     def read_files(
         self,
@@ -279,8 +310,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The content of the files.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.read_files(paths=paths, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.read_files, paths=paths, thread_id=thread_id
+        )
 
     def list_files(
         self,
@@ -327,8 +359,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The list of files.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.list_files(directory_path=directory_path, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.list_files, directory_path=directory_path, thread_id=thread_id
+        )
 
     def delete_files(
         self,
@@ -375,8 +408,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The result of the delete operation.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.delete_files(paths=paths, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.delete_files, paths=paths, thread_id=thread_id
+        )
 
     def write_files(
         self,
@@ -423,8 +457,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The result of the write operation.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.write_files(files=files, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.write_files, files=files, thread_id=thread_id
+        )
 
     def start_command(
         self,
@@ -471,8 +506,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The task ID and status.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.start_command(command=command, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.start_command, command=command, thread_id=thread_id
+        )
 
     def get_task(
         self,
@@ -519,8 +555,9 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The task status.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.get_task(task_id=task_id, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.get_task, task_id=task_id, thread_id=thread_id
+        )
 
     def stop_task(
         self,
@@ -567,8 +604,557 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
             str: The result of the stop operation.
 
         """
-        # Use the synchronous version as the underlying API is thread-safe
-        return self.stop_task(task_id=task_id, thread_id=thread_id)
+        return await asyncio.to_thread(
+            self.stop_task, task_id=task_id, thread_id=thread_id
+        )
+
+    def upload_file(
+        self,
+        path: str,
+        content: str,
+        description: str = "",
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Upload a file to the code interpreter sandbox (synchronous version).
+
+        Args:
+            path (str): Relative file path in the sandbox.
+            content (str): File content as a string.
+            description (str): Semantic description of the file. Default is "".
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation message with the uploaded file path.
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            code_interpreter.upload_file(
+                path=path, content=content, description=description
+            )
+            return f"Uploaded file to {path}"
+        except Exception as e:
+            return f"Error uploading file: {e!s}"
+
+    async def aupload_file(
+        self,
+        path: str,
+        content: str,
+        description: str = "",
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Upload a file to the code interpreter sandbox (asynchronous version).
+
+        Args:
+            path (str): Relative file path in the sandbox.
+            content (str): File content as a string.
+            description (str): Semantic description of the file. Default is "".
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation message with the uploaded file path.
+
+        """
+        return await asyncio.to_thread(
+            self.upload_file,
+            path=path,
+            content=content,
+            description=description,
+            thread_id=thread_id,
+        )
+
+    def upload_files(
+        self,
+        files: List[Dict[str, str]],
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Upload multiple files to the code interpreter sandbox (synchronous version).
+
+        Args:
+            files (List[Dict[str, str]]): List of file specifications, each with
+                'path', 'content', and optional 'description' keys.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation message with the number of files uploaded.
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            code_interpreter.upload_files(files=files)
+            return f"Uploaded {len(files)} file(s)"
+        except Exception as e:
+            return f"Error uploading files: {e!s}"
+
+    async def aupload_files(
+        self,
+        files: List[Dict[str, str]],
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Upload multiple files to the code interpreter sandbox (asynchronous version).
+
+        Args:
+            files (List[Dict[str, str]]): List of file specifications, each with
+                'path', 'content', and optional 'description' keys.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation message with the number of files uploaded.
+
+        """
+        return await asyncio.to_thread(
+            self.upload_files, files=files, thread_id=thread_id
+        )
+
+    def install_packages(
+        self,
+        packages: List[str],
+        upgrade: bool = False,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Install Python packages in the code interpreter sandbox (synchronous version).
+
+        Args:
+            packages (List[str]): List of package names to install. Can include version
+                specifiers (e.g., 'pandas>=2.0').
+            upgrade (bool): Whether to upgrade existing packages. Default is False.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: The pip install output (stdout/stderr).
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            result = code_interpreter.install_packages(
+                packages=packages, upgrade=upgrade
+            )
+            return str(result)
+        except Exception as e:
+            return f"Error installing packages: {e!s}"
+
+    async def ainstall_packages(
+        self,
+        packages: List[str],
+        upgrade: bool = False,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Install Python packages in the code interpreter sandbox (asynchronous version).
+
+        Args:
+            packages (List[str]): List of package names to install. Can include version
+                specifiers (e.g., 'pandas>=2.0').
+            upgrade (bool): Whether to upgrade existing packages. Default is False.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: The pip install output (stdout/stderr).
+
+        """
+        return await asyncio.to_thread(
+            self.install_packages,
+            packages=packages,
+            upgrade=upgrade,
+            thread_id=thread_id,
+        )
+
+    def download_file(
+        self,
+        path: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Download a file from the code interpreter sandbox (synchronous version).
+
+        Args:
+            path (str): Path to the file in the sandbox.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: The file content as text, or base64-encoded string for binary files.
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            content = code_interpreter.download_file(path=path)
+            if isinstance(content, bytes):
+                encoded = base64.b64encode(content).decode("utf-8")
+                return f"[base64 encoded binary file: {path}]\n{encoded}"
+            return content
+        except Exception as e:
+            return f"Error downloading file: {e!s}"
+
+    async def adownload_file(
+        self,
+        path: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Download a file from the code interpreter sandbox (asynchronous version).
+
+        Args:
+            path (str): Path to the file in the sandbox.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: The file content as text, or base64-encoded string for binary files.
+
+        """
+        return await asyncio.to_thread(
+            self.download_file, path=path, thread_id=thread_id
+        )
+
+    def download_files(
+        self,
+        paths: List[str],
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Download multiple files from the code interpreter sandbox (synchronous version).
+
+        Args:
+            paths (List[str]): List of file paths in the sandbox.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Formatted output with each file's content.
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            results = code_interpreter.download_files(paths=paths)
+            output = []
+            for file_path, content in results.items():
+                if isinstance(content, bytes):
+                    encoded = base64.b64encode(content).decode("utf-8")
+                    output.append(
+                        f"==== File: {file_path} (binary, base64) ====\n{encoded}"
+                    )
+                else:
+                    output.append(f"==== File: {file_path} ====\n{content}")
+            return "\n\n".join(output)
+        except Exception as e:
+            return f"Error downloading files: {e!s}"
+
+    async def adownload_files(
+        self,
+        paths: List[str],
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Download multiple files from the code interpreter sandbox (asynchronous version).
+
+        Args:
+            paths (List[str]): List of file paths in the sandbox.
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Formatted output with each file's content.
+
+        """
+        return await asyncio.to_thread(
+            self.download_files, paths=paths, thread_id=thread_id
+        )
+
+    def list_code_interpreters(
+        self,
+        interpreter_type: Optional[str] = None,
+        max_results: int = 10,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        List all code interpreters in the account (synchronous version).
+
+        Args:
+            interpreter_type (Optional[str]): Filter by type: "SYSTEM" or "CUSTOM".
+            max_results (int): Maximum results to return (1-100). Default is 10.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Formatted list of code interpreter summaries.
+
+        """
+        try:
+            code_interpreter = self._get_control_plane_client()
+            response = code_interpreter.list_code_interpreters(
+                interpreter_type=interpreter_type, max_results=max_results
+            )
+            summaries = response.get("codeInterpreterSummaries", [])
+            if not summaries:
+                return "No code interpreters found."
+            lines = []
+            for ci in summaries:
+                lines.append(
+                    f"- {ci.get('name', 'N/A')} (ID: {ci.get('codeInterpreterId', 'N/A')}, "
+                    f"Status: {ci.get('status', 'N/A')}, Type: {ci.get('type', 'N/A')})"
+                )
+            return f"Found {len(summaries)} code interpreter(s):\n" + "\n".join(lines)
+        except Exception as e:
+            return f"Error listing code interpreters: {e!s}"
+
+    async def alist_code_interpreters(
+        self,
+        interpreter_type: Optional[str] = None,
+        max_results: int = 10,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        List all code interpreters in the account (asynchronous version).
+
+        Args:
+            interpreter_type (Optional[str]): Filter by type: "SYSTEM" or "CUSTOM".
+            max_results (int): Maximum results to return (1-100). Default is 10.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Formatted list of code interpreter summaries.
+
+        """
+        return await asyncio.to_thread(
+            self.list_code_interpreters,
+            interpreter_type=interpreter_type,
+            max_results=max_results,
+            thread_id=thread_id,
+        )
+
+    def create_code_interpreter(
+        self,
+        name: str,
+        execution_role_arn: str,
+        network_mode: str = "PUBLIC",
+        description: str = "",
+        subnet_ids: Optional[List[str]] = None,
+        security_group_ids: Optional[List[str]] = None,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Create a custom code interpreter with specific configuration (synchronous version).
+
+        Args:
+            name (str): Name for the interpreter. Must match pattern [a-zA-Z][a-zA-Z0-9_]{0,47}.
+            execution_role_arn (str): IAM role ARN with permissions for interpreter operations.
+            network_mode (str): Network mode: "PUBLIC" or "VPC". Default is "PUBLIC".
+            description (str): Description of the interpreter. Default is "".
+            subnet_ids (Optional[List[str]]): Subnet IDs for VPC mode.
+            security_group_ids (Optional[List[str]]): Security group IDs for VPC mode.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Confirmation with interpreter ID and status.
+
+        """
+        try:
+            code_interpreter = self._get_control_plane_client()
+            network_config: Dict[str, Any] = {"networkMode": network_mode}
+            if subnet_ids or security_group_ids:
+                vpc_config: Dict[str, Any] = {}
+                if subnet_ids:
+                    vpc_config["subnets"] = subnet_ids
+                if security_group_ids:
+                    vpc_config["securityGroups"] = security_group_ids
+                network_config["vpcConfig"] = vpc_config
+            kwargs: Dict[str, Any] = {
+                "name": name,
+                "execution_role_arn": execution_role_arn,
+                "network_configuration": network_config,
+            }
+            if description:
+                kwargs["description"] = description
+            response = code_interpreter.create_code_interpreter(**kwargs)
+            interpreter_id = response.get("codeInterpreterId", "unknown")
+            status = response.get("status", "unknown")
+            return f"Code interpreter created (ID: {interpreter_id}, Status: {status})"
+        except Exception as e:
+            return f"Error creating code interpreter: {e!s}"
+
+    async def acreate_code_interpreter(
+        self,
+        name: str,
+        execution_role_arn: str,
+        network_mode: str = "PUBLIC",
+        description: str = "",
+        subnet_ids: Optional[List[str]] = None,
+        security_group_ids: Optional[List[str]] = None,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Create a custom code interpreter with specific configuration (asynchronous version).
+
+        Args:
+            name (str): Name for the interpreter. Must match pattern [a-zA-Z][a-zA-Z0-9_]{0,47}.
+            execution_role_arn (str): IAM role ARN with permissions for interpreter operations.
+            network_mode (str): Network mode: "PUBLIC" or "VPC". Default is "PUBLIC".
+            description (str): Description of the interpreter. Default is "".
+            subnet_ids (Optional[List[str]]): Subnet IDs for VPC mode.
+            security_group_ids (Optional[List[str]]): Security group IDs for VPC mode.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Confirmation with interpreter ID and status.
+
+        """
+        return await asyncio.to_thread(
+            self.create_code_interpreter,
+            name=name,
+            execution_role_arn=execution_role_arn,
+            network_mode=network_mode,
+            description=description,
+            subnet_ids=subnet_ids,
+            security_group_ids=security_group_ids,
+            thread_id=thread_id,
+        )
+
+    def delete_code_interpreter(
+        self,
+        interpreter_id: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Delete a custom code interpreter (synchronous version).
+
+        Args:
+            interpreter_id (str): The code interpreter identifier to delete.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Confirmation of deletion.
+
+        """
+        try:
+            code_interpreter = self._get_control_plane_client()
+            response = code_interpreter.delete_code_interpreter(
+                interpreter_id=interpreter_id
+            )
+            status = response.get("status", "unknown")
+            return f"Code interpreter '{interpreter_id}' deleted (Status: {status})"
+        except Exception as e:
+            return f"Error deleting code interpreter: {e!s}"
+
+    async def adelete_code_interpreter(
+        self,
+        interpreter_id: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Delete a custom code interpreter (asynchronous version).
+
+        Args:
+            interpreter_id (str): The code interpreter identifier to delete.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Confirmation of deletion.
+
+        """
+        return await asyncio.to_thread(
+            self.delete_code_interpreter,
+            interpreter_id=interpreter_id,
+            thread_id=thread_id,
+        )
+
+    def get_code_interpreter(
+        self,
+        interpreter_id: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Get detailed information about a code interpreter (synchronous version).
+
+        Args:
+            interpreter_id (str): The code interpreter identifier.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Interpreter details including name, status, and configuration.
+
+        """
+        try:
+            code_interpreter = self._get_control_plane_client()
+            response = code_interpreter.get_code_interpreter(
+                interpreter_id=interpreter_id
+            )
+            name = response.get("name", "N/A")
+            status = response.get("status", "N/A")
+            desc = response.get("description", "")
+            result = f"Code interpreter '{interpreter_id}':\n"
+            result += f"  Name: {name}\n"
+            result += f"  Status: {status}\n"
+            if desc:
+                result += f"  Description: {desc}\n"
+            network = response.get("networkConfiguration", {})
+            if network:
+                result += f"  Network mode: {network.get('networkMode', 'N/A')}"
+            return result
+        except Exception as e:
+            return f"Error getting code interpreter: {e!s}"
+
+    async def aget_code_interpreter(
+        self,
+        interpreter_id: str,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Get detailed information about a code interpreter (asynchronous version).
+
+        Args:
+            interpreter_id (str): The code interpreter identifier.
+            thread_id (str): Deprecated. Ignored. Kept for backward compatibility.
+
+        Returns:
+            str: Interpreter details including name, status, and configuration.
+
+        """
+        return await asyncio.to_thread(
+            self.get_code_interpreter,
+            interpreter_id=interpreter_id,
+            thread_id=thread_id,
+        )
+
+    def clear_context(
+        self,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Clear all variable state in the Python execution context (synchronous version).
+
+        This resets the interpreter to a fresh state, removing all previously defined
+        variables, imports, and function definitions.
+
+        Args:
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation that the context was cleared.
+
+        """
+        try:
+            code_interpreter = self._get_or_create_interpreter(thread_id=thread_id)
+            code_interpreter.clear_context()
+            return "Python execution context cleared successfully."
+        except Exception as e:
+            return f"Error clearing context: {e!s}"
+
+    async def aclear_context(
+        self,
+        thread_id: str = "default",
+    ) -> str:
+        """
+        Clear all variable state in the Python execution context (asynchronous version).
+
+        Args:
+            thread_id (str): Thread ID for the code interpreter session. Default is "default".
+
+        Returns:
+            str: Confirmation that the context was cleared.
+
+        """
+        return await asyncio.to_thread(self.clear_context, thread_id=thread_id)
 
     async def cleanup(self, thread_id: Optional[str] = None) -> None:
         """
