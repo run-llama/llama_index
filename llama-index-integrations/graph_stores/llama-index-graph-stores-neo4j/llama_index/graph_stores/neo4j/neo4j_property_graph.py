@@ -163,6 +163,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         enhanced_schema: bool = False,
         create_indexes: bool = True,
         timeout: Optional[float] = None,
+        user_agent: str = "LLAMAINDEX-PROPERTYGRAPH",
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
@@ -171,12 +172,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             url,
             auth=(username, password),
             notifications_min_severity="OFF",
+            user_agent=user_agent,
             **neo4j_kwargs,
         )
         self._async_driver = neo4j.AsyncGraphDatabase.driver(
             url,
             auth=(username, password),
             notifications_min_severity="OFF",
+            user_agent=user_agent,
             **neo4j_kwargs,
         )
         self._database = database
