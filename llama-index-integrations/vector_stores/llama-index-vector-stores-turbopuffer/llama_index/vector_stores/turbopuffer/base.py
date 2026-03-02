@@ -22,7 +22,7 @@ from llama_index.core.vector_stores.utils import (
 )
 from turbopuffer import omit
 from turbopuffer.lib.namespace import Namespace
-from turbopuffer.types import DistanceMetric, NamespaceQueryResponse, Row
+from turbopuffer.types import DistanceMetric, NamespaceQueryResponse
 from turbopuffer.types.namespace_multi_query_response import (
     Result as MultiQueryResult,
 )
@@ -110,8 +110,14 @@ def _to_turbopuffer_filter(
     if len(filters_list) == 0:
         return None
     elif len(filters_list) == 1:
+        if tpuf_condition == "Not":
+            # turbopuffer Not takes a single operand: ("Not", filter).
+            return ("Not", filters_list[0])
         return filters_list[0]
     else:
+        if tpuf_condition == "Not":
+            # turbopuffer Not takes a single operand; wrap multiples in And.
+            return ("Not", ("And", filters_list))
         return (tpuf_condition, filters_list)
 
 
@@ -137,7 +143,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
 
     Examples:
         >>> from turbopuffer import Turbopuffer
-        >>> client = Turbopuffer(api_key="...")
+        >>> client = Turbopuffer(api_key="...", region="gcp-us-central1")
         >>> ns = client.namespace("my-namespace")
         >>> store = TurbopufferVectorStore(namespace=ns)
 
@@ -218,8 +224,9 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         top_k_scores: list[float] = []
 
         for row in result.rows or []:
-            row_id = str(row.id)
-            dist: float = getattr(row, "$dist", 0.0)
+            row_dict = row.to_dict()
+            row_id = str(row_dict.get("id", ""))
+            dist = float(row_dict.get("$dist", 0.0))
 
             if is_bm25:
                 # BM25 $dist is a relevance score (higher = better).
@@ -229,7 +236,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             else:
                 similarity = 1.0 / (1.0 + dist)
 
-            node = self._row_to_node(row, row_id)
+            node = self._row_to_node(row_dict, row_id)
 
             top_k_nodes.append(node)
             top_k_ids.append(row_id)
@@ -286,9 +293,8 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             ids=[x[1].node_id for x in fused],
         )
 
-    def _row_to_node(self, row: Row, row_id: str) -> BaseNode:
-        """Convert a turbopuffer Row to a llama_index BaseNode."""
-        row_dict = row.to_dict()
+    def _row_to_node(self, row_dict: dict[str, object], row_id: str) -> BaseNode:
+        """Convert a turbopuffer row dict to a llama_index BaseNode."""
         reserved = _RESERVED_KEYS | {self.text_key}
         attributes: dict[str, object] = {}
         for k, v in row_dict.items():
@@ -392,13 +398,13 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
                         "rank_by": ("vector", "ANN", list(query.query_embedding)),
                         "top_k": query.similarity_top_k,
                         "filters": filter_arg,
-                        "include_attributes": True,
+                        "exclude_attributes": ["vector"],
                     },
                     {
                         "rank_by": (self.text_key, "BM25", query.query_str),
                         "top_k": sparse_top_k,
                         "filters": filter_arg,
-                        "include_attributes": True,
+                        "exclude_attributes": ["vector"],
                     },
                 ],
             )

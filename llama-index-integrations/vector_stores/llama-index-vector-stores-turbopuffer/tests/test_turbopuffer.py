@@ -7,7 +7,6 @@ import uuid
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.core.schema import TextNode as CoreTextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterCondition,
@@ -18,8 +17,13 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from unittest.mock import MagicMock
+
 from llama_index.vector_stores.turbopuffer import TurbopufferVectorStore
-from llama_index.vector_stores.turbopuffer.base import _to_turbopuffer_filter
+from llama_index.vector_stores.turbopuffer.base import (
+    _METADATA_PREFIX,
+    _to_turbopuffer_filter,
+)
 
 skip_integration = pytest.mark.skipif(
     not os.environ.get("TURBOPUFFER_API_KEY"),
@@ -75,6 +79,13 @@ def store():
 
     yield s
     s.clear()
+
+
+@pytest.fixture()
+def mock_store() -> TurbopufferVectorStore:
+    """TurbopufferVectorStore with a mock namespace for unit tests."""
+    mock_ns = MagicMock()
+    return TurbopufferVectorStore(namespace=mock_ns)
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +308,109 @@ def test_filter_transform_nested_empty_child() -> None:
 
 
 # ---------------------------------------------------------------------------
+# NOT filter tests
+# ---------------------------------------------------------------------------
+
+
+def test_filter_transform_not_single() -> None:
+    """NOT with a single filter produces ("Not", filter)."""
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="status", value="archived", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.NOT,
+    )
+    result = _to_turbopuffer_filter(filters)
+    assert result == ("Not", ("status", "Eq", "archived"))
+
+
+def test_filter_transform_not_multiple() -> None:
+    """NOT with multiple filters wraps them in And."""
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="a", value="1", operator=FilterOperator.EQ),
+            MetadataFilter(key="b", value="2", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.NOT,
+    )
+    result = _to_turbopuffer_filter(filters)
+    assert result == ("Not", ("And", [("a", "Eq", "1"), ("b", "Eq", "2")]))
+
+
+def test_filter_transform_not_empty() -> None:
+    """NOT with no filters returns None."""
+    filters = MetadataFilters(filters=[], condition=FilterCondition.NOT)
+    result = _to_turbopuffer_filter(filters)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# _build_rows / _row_to_node unit tests (no API key needed)
+# ---------------------------------------------------------------------------
+
+
+def test_build_rows_prefixes_reserved_keys(mock_store: TurbopufferVectorStore) -> None:
+    """Metadata keys that collide with reserved columns get prefixed."""
+    node = TextNode(
+        text="hello",
+        id_="node-1",
+        metadata={"id": "user-id-value", "vector": "user-vector-value"},
+        embedding=[1.0, 0.0],
+    )
+    rows = mock_store._build_rows([node])
+    assert len(rows) == 1
+    row = rows[0]
+    # Reserved keys should be prefixed with _meta_
+    assert row[f"{_METADATA_PREFIX}id"] == "user-id-value"
+    assert row[f"{_METADATA_PREFIX}vector"] == "user-vector-value"
+    # Actual id and vector should be the node's values
+    assert row["id"] == "node-1"
+    assert row["vector"] == [1.0, 0.0]
+
+
+def test_row_to_node_round_trip(mock_store: TurbopufferVectorStore) -> None:
+    """A node serialized via _build_rows can be deserialized via _row_to_node."""
+    node = TextNode(
+        text="round trip text",
+        id_="rt-1",
+        relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc-1")},
+        metadata={"author": "Test Author", "year": 2024},
+        embedding=[0.5, 0.5],
+    )
+    rows = mock_store._build_rows([node])
+    row_dict = rows[0]
+
+    # Simulate what turbopuffer returns (no vector in query response).
+    row_dict.pop("vector", None)
+    row_dict["$dist"] = 0.1
+
+    restored = mock_store._row_to_node(row_dict, str(row_dict["id"]))
+    assert restored.node_id == "rt-1"
+    assert restored.get_content() == "round trip text"
+    assert restored.metadata.get("author") == "Test Author"
+    assert restored.metadata.get("year") == 2024
+
+
+def test_row_to_node_restores_prefixed_metadata(
+    mock_store: TurbopufferVectorStore,
+) -> None:
+    """Metadata that was prefixed during _build_rows gets restored on read."""
+    node = TextNode(
+        text="prefixed",
+        id_="pf-1",
+        metadata={"id": "my-custom-id"},
+        embedding=[1.0],
+    )
+    rows = mock_store._build_rows([node])
+    row_dict = rows[0]
+    row_dict.pop("vector", None)
+
+    restored = mock_store._row_to_node(row_dict, str(row_dict["id"]))
+    # The prefixed "_meta_id" should be restored back to "id" in metadata
+    assert restored.metadata.get("id") == "my-custom-id"
+
+
+# ---------------------------------------------------------------------------
 # E2E tests (require TURBOPUFFER_API_KEY)
 # ---------------------------------------------------------------------------
 
@@ -367,7 +481,7 @@ def test_metadata_filters(
 
 def _make_result(ids: list[str], scores: list[float]) -> VectorStoreQueryResult:
     """Helper to build a VectorStoreQueryResult with stub TextNodes."""
-    nodes = [CoreTextNode(text=f"text-{i}", id_=i) for i in ids]
+    nodes = [TextNode(text=f"text-{i}", id_=i) for i in ids]
     return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
 
 
