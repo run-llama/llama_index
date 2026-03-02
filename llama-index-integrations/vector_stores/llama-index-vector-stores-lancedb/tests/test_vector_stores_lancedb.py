@@ -190,6 +190,39 @@ def test_table_exists(tmp_path: Path) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
+def test_table_exists_when_target_table_is_not_in_first_page(tmp_path: Path) -> None:
+    # given
+    connection = lancedb.connect(str(tmp_path / "test_lancedb_paged_tables"))
+    created_table_names = []
+    for i in range(15):
+        table_name = f"test_table_{i:02d}"
+        connection.create_table(name=table_name, schema=TestModel)
+        created_table_names.append(table_name)
+
+    first_page = set(connection.table_names())  # table_names() defaults to 10 items.
+    paged_candidates = [
+        table_name for table_name in created_table_names if table_name not in first_page
+    ]
+    if not paged_candidates:
+        pytest.skip("table_names() is not paginated in this lancedb version.")
+
+    target_table_name = paged_candidates[0]
+
+    # when
+    vector_store = LanceDBVectorStore(
+        mode="append", table_name=target_table_name, connection=connection
+    )
+
+    # then
+    assert vector_store._table is not None
+    assert vector_store._table.name == target_table_name
+    assert vector_store._table_exists(tbl_name=target_table_name)
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
 def test_create_index_pass(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
