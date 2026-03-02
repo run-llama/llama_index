@@ -1,4 +1,3 @@
-import inspect
 from typing import Any, Dict
 
 from llama_index_instrumentation.dispatcher import (
@@ -7,10 +6,6 @@ from llama_index_instrumentation.dispatcher import (
     active_instrument_tags,
 )
 from llama_index_instrumentation.span_handlers.simple import SimpleSpanHandler
-
-
-def _make_bound_args():
-    return inspect.signature(lambda: None).bind()
 
 
 class PropagatingHandler(SimpleSpanHandler):

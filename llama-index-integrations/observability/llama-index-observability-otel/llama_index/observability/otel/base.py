@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
 import llama_index_instrumentation as instrument
-from llama_index.observability.otel.utils import flatten_dict
+from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
 from llama_index_instrumentation.span import SimpleSpan, active_span_id
@@ -88,10 +88,6 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
                 provider = global_provider
         if provider is not None:
             try:
-                provider.force_flush()
-            except BaseException:
-                pass
-            try:
                 provider.shutdown()
             except BaseException:
                 pass
@@ -149,7 +145,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         # Record instrument_tags as span attributes
         if tags is not None:
             for key, value in tags.items():
-                if isinstance(value, (str, int, float, bool)):
+                if _is_otel_supported_type(value):
                     attr_key = key if "." in key else f"llamaindex.{key}"
                     otel_span.set_attribute(attr_key, value)
 
