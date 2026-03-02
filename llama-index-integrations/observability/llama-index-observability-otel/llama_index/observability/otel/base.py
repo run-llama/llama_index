@@ -4,8 +4,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
 import llama_index_instrumentation as instrument
-
-_logger = logging.getLogger(__name__)
 from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
@@ -23,6 +21,8 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.trace import set_span_in_context
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from termcolor.termcolor import cprint
+
+_logger = logging.getLogger(__name__)
 
 
 class OTelEventAttributes(BaseModel):
@@ -177,10 +177,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
         span = self.all_spans.pop(id_, None)
         if span is None:
-            cprint(
-                f"WARNING: no OTel span found for {id_} in prepare_to_exit_span",
-                color="red",
-            )
+            _logger.warning("No OTel span found for %s in prepare_to_exit_span", id_)
             return sp
 
         # Get and process events specific to this span
@@ -209,10 +206,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         sp = super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
         span = self.all_spans.pop(id_, None)
         if span is None:
-            cprint(
-                f"WARNING: no OTel span found for {id_} in prepare_to_drop_span",
-                color="red",
-            )
+            _logger.warning("No OTel span found for %s in prepare_to_drop_span", id_)
             return sp
 
         # Get and process events specific to this span
