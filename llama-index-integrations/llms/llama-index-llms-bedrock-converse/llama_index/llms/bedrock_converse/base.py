@@ -533,11 +533,14 @@ class BedrockConverse(FunctionCallingLLM):
                     content = join_two_dicts(content, content_delta)
 
                     thinking_delta_value = extract_thinking_from_block(content_delta)
+                    # Capture signature from any reasoningContent delta, even when
+                    # the chunk carries only a signature and no text (which makes
+                    # thinking_delta_value None and would otherwise skip this line).
+                    thinking_signature += (
+                        content_delta.get("reasoningContent", {}).get("signature", "")
+                    )
                     if thinking_delta_value:
                         thinking += thinking_delta_value
-                        thinking_signature += content_delta.get(
-                            "reasoningContent", {}
-                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -816,11 +819,14 @@ class BedrockConverse(FunctionCallingLLM):
                     content = join_two_dicts(content, content_delta)
 
                     thinking_delta_value = extract_thinking_from_block(content_delta)
+                    # Capture signature from any reasoningContent delta, even when
+                    # the chunk carries only a signature and no text (which makes
+                    # thinking_delta_value None and would otherwise skip this line).
+                    thinking_signature += (
+                        content_delta.get("reasoningContent", {}).get("signature", "")
+                    )
                     if thinking_delta_value:
                         thinking += thinking_delta_value
-                        thinking_signature += content_delta.get(
-                            "reasoningContent", {}
-                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
