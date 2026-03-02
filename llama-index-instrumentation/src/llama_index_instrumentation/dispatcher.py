@@ -315,11 +315,7 @@ class Dispatcher(BaseModel):
         _synthetic_bound_args = inspect.signature(lambda: None).bind()
         _shutdown_err = RuntimeError("dispatcher shutdown")
 
-        seen_handlers: set = set()
         for h in self._walk_span_handlers():
-            if id(h) in seen_handlers:
-                continue
-            seen_handlers.add(id(h))
             # Drop all open spans — snapshot keys since span_drop mutates the dict
             for span_id in list(h.open_spans.keys()):
                 try:
