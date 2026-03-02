@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llama-index-tools-moss"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index tools moss integration"
 authors = [{name = "Roaim Khan", email = "roaimkhan459@gmail.com"}]
 requires-python = ">=3.9,<4.0"
