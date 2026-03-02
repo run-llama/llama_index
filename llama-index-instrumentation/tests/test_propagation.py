@@ -3,6 +3,7 @@ from typing import Any, Dict
 from llama_index_instrumentation.dispatcher import (
     Dispatcher,
     Manager,
+    _INSTRUMENT_TAGS_KEY,
     active_instrument_tags,
 )
 from llama_index_instrumentation.span_handlers.simple import SimpleSpanHandler
@@ -38,7 +39,7 @@ def test_capture_includes_instrument_tags():
     finally:
         active_instrument_tags.reset(token)
 
-    assert ctx["instrument_tags"] == {"user_id": "u1", "session": "s1"}
+    assert ctx[_INSTRUMENT_TAGS_KEY] == {"user_id": "u1", "session": "s1"}
 
 
 def test_capture_omits_instrument_tags_when_empty():
@@ -47,7 +48,7 @@ def test_capture_omits_instrument_tags_when_empty():
 
     ctx = d.capture_propagation_context()
 
-    assert "instrument_tags" not in ctx
+    assert _INSTRUMENT_TAGS_KEY not in ctx
 
 
 def test_restore_propagation_context_basic():
@@ -64,7 +65,7 @@ def test_restore_sets_instrument_tags():
     handler = SimpleSpanHandler()
     d = Dispatcher(span_handlers=[handler], propagate=False)
 
-    d.restore_propagation_context({"instrument_tags": {"user_id": "u1"}})
+    d.restore_propagation_context({_INSTRUMENT_TAGS_KEY: {"user_id": "u1"}})
 
     assert active_instrument_tags.get() == {"user_id": "u1"}
     # cleanup

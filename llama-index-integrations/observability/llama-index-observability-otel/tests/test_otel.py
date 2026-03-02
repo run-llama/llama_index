@@ -482,6 +482,7 @@ def test_dispatcher_propagation_roundtrip_with_tags() -> None:
     from llama_index_instrumentation.dispatcher import (
         Dispatcher,
         Manager,
+        _INSTRUMENT_TAGS_KEY,
         active_instrument_tags,
         instrument_tags,
     )
@@ -515,9 +516,9 @@ def test_dispatcher_propagation_roundtrip_with_tags() -> None:
 
     # Verify captured structure has both namespaces
     assert "otel" in captured
-    assert "instrument_tags" in captured
-    assert captured["instrument_tags"]["run_id"] == "run-123"
-    assert captured["instrument_tags"]["handler_id"] == "wf-abc"
+    assert _INSTRUMENT_TAGS_KEY in captured
+    assert captured[_INSTRUMENT_TAGS_KEY]["run_id"] == "run-123"
+    assert captured[_INSTRUMENT_TAGS_KEY]["handler_id"] == "wf-abc"
 
     dispatcher_a.span_exit(id_="root-uuid", bound_args=_bound)
     provider_a.force_flush()

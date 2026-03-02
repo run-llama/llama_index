@@ -1,8 +1,11 @@
 import inspect
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
 import llama_index_instrumentation as instrument
+
+_logger = logging.getLogger(__name__)
 from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
@@ -90,7 +93,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             try:
                 provider.shutdown()
             except BaseException:
-                pass
+                _logger.warning("Error shutting down tracer provider", exc_info=True)
 
     @classmethod
     def class_name(cls) -> str:  # type: ignore

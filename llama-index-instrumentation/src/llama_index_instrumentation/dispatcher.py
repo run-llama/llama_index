@@ -24,6 +24,8 @@ DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
 _logger = logging.getLogger(__name__)
 
+_INSTRUMENT_TAGS_KEY = "instrument_tags"
+
 # ContextVar for managing active instrument tags
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
     "instrument_tags", default={}
@@ -283,10 +285,10 @@ class Dispatcher(BaseModel):
             try:
                 result.update(h.capture_propagation_context())
             except BaseException:
-                pass
+                _logger.warning("Error capturing propagation context", exc_info=True)
         tags = active_instrument_tags.get()
         if tags:
-            result["instrument_tags"] = dict(tags)
+            result[_INSTRUMENT_TAGS_KEY] = dict(tags)
         return result
 
     def restore_propagation_context(self, context: Dict[str, Any]) -> None:
@@ -299,8 +301,8 @@ class Dispatcher(BaseModel):
             try:
                 h.restore_propagation_context(context)
             except BaseException:
-                pass
-        tags = context.get("instrument_tags")
+                _logger.warning("Error restoring propagation context", exc_info=True)
+        tags = context.get(_INSTRUMENT_TAGS_KEY)
         if tags:
             active_instrument_tags.set(dict(tags))
 
@@ -326,12 +328,16 @@ class Dispatcher(BaseModel):
                         err=_shutdown_err,
                     )
                 except BaseException:
-                    pass
+                    _logger.debug(
+                        "Error dropping span %s during shutdown",
+                        span_id,
+                        exc_info=True,
+                    )
             # Close the handler
             try:
                 h.close()
             except BaseException:
-                pass
+                _logger.warning("Error closing handler %s", h, exc_info=True)
 
     def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.
