@@ -38,9 +38,10 @@ class OpensearchVectorClient:
     """
     Object encapsulating an Opensearch index that has vector search enabled.
 
-    If the index does not yet exist, it is created during init.
-    Therefore, the underlying index is assumed to either:
-    1) not exist yet or 2) be created due to previous usage of this class.
+    Index creation is deferred until first use (e.g., query, add, delete) rather
+    than during construction. This avoids making network calls in __init__, which
+    prevents ``RuntimeError: This event loop is already running`` in environments
+    like Jupyter notebooks and FastAPI that already have a running event loop.
 
     Args:
         endpoint (str): URL (http/https) of elasticsearch endpoint
@@ -129,39 +130,15 @@ class OpensearchVectorClient:
                     }
                 },
             }
+        self._idx_conf = idx_conf
         self._os_client = os_client or self._get_opensearch_client(
             self._endpoint, **kwargs
         )
         self._os_async_client = os_async_client or self._get_async_opensearch_client(
             self._endpoint, **kwargs
         )
-        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled()
-        not_found_error = self._import_not_found_error()
-
-        try:
-            self._os_client.indices.get(index=self._index)
-        except TypeError:
-            # Probably using async so switch to async client
-            try:
-                asyncio_run(self._os_async_client.indices.get(index=self._index))
-            except not_found_error:
-                asyncio_run(
-                    self._os_async_client.indices.create(
-                        index=self._index, body=idx_conf
-                    )
-                )
-                if self.is_aoss:
-                    asyncio_run(self._os_async_client.indices.exists(index=self._index))
-                else:
-                    asyncio_run(
-                        self._os_async_client.indices.refresh(index=self._index)
-                    )
-        except not_found_error:
-            self._os_client.indices.create(index=self._index, body=idx_conf)
-            if self.is_aoss:
-                self._os_client.indices.exists(index=self._index)
-            else:
-                self._os_client.indices.refresh(index=self._index)
+        self._initialized = False
+        self._efficient_filtering_enabled = False
 
     def _import_opensearch(self) -> Any:
         """Import OpenSearch if available, otherwise raise error."""
@@ -231,6 +208,46 @@ class OpensearchVectorClient:
     def _get_opensearch_version(self) -> str:
         info = self._os_client.info()
         return info["version"]["number"]
+
+    async def _aget_opensearch_version(self) -> str:
+        info = await self._os_async_client.info()
+        return info["version"]["number"]
+
+    def _ensure_initialized(self) -> None:
+        """Lazily initialize the index on first use (sync)."""
+        if self._initialized:
+            return
+        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled()
+        not_found_error = self._import_not_found_error()
+        try:
+            self._os_client.indices.get(index=self._index)
+        except not_found_error:
+            self._os_client.indices.create(index=self._index, body=self._idx_conf)
+            if self.is_aoss:
+                self._os_client.indices.exists(index=self._index)
+            else:
+                self._os_client.indices.refresh(index=self._index)
+        self._initialized = True
+
+    async def _aensure_initialized(self) -> None:
+        """Lazily initialize the index on first use (async)."""
+        if self._initialized:
+            return
+        self._efficient_filtering_enabled = (
+            await self._ais_efficient_filtering_enabled()
+        )
+        not_found_error = self._import_not_found_error()
+        try:
+            await self._os_async_client.indices.get(index=self._index)
+        except not_found_error:
+            await self._os_async_client.indices.create(
+                index=self._index, body=self._idx_conf
+            )
+            if self.is_aoss:
+                await self._os_async_client.indices.exists(index=self._index)
+            else:
+                await self._os_async_client.indices.refresh(index=self._index)
+        self._initialized = True
 
     def _bulk_ingest_embeddings(
         self,
@@ -671,21 +688,32 @@ class OpensearchVectorClient:
             and http_auth.service == "aoss"
         )
 
+    @staticmethod
+    def _version_supports_efficient_filtering(version: str) -> bool:
+        """Return True if the OpenSearch version supports efficient kNN filtering."""
+        major, minor, _patch = version.split(".")
+        return int(major) > 2 or (int(major) == 2 and int(minor) >= 9)
+
     def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""
         # Technically, AOSS supports efficient filtering,
         # but we can't check the version number using .info(); AOSS doesn't support 'GET /'
         #  so we must skip and disable by default.
         if self.is_aoss:
-            ef_enabled = False
-        else:
-            self._os_version = self._get_opensearch_version()
-            major, minor, patch = self._os_version.split(".")
-            ef_enabled = int(major) > 2 or (int(major) == 2 and int(minor) >= 9)
-        return ef_enabled
+            return False
+        self._os_version = self._get_opensearch_version()
+        return self._version_supports_efficient_filtering(self._os_version)
+
+    async def _ais_efficient_filtering_enabled(self) -> bool:
+        """Async check if kNN with efficient filtering is enabled."""
+        if self.is_aoss:
+            return False
+        self._os_version = await self._aget_opensearch_version()
+        return self._version_supports_efficient_filtering(self._os_version)
 
     def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
+        self._ensure_initialized()
         embeddings: List[List[float]] = []
         texts: List[str] = []
         metadatas: List[dict] = []
@@ -712,6 +740,7 @@ class OpensearchVectorClient:
 
     async def aindex_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
+        await self._aensure_initialized()
         embeddings: List[List[float]] = []
         texts: List[str] = []
         metadatas: List[dict] = []
@@ -744,6 +773,7 @@ class OpensearchVectorClient:
             doc_id (str): a LlamaIndex `Document` id
 
         """
+        self._ensure_initialized()
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
@@ -759,6 +789,7 @@ class OpensearchVectorClient:
             doc_id (str): a LlamaIndex `Document` id
 
         """
+        await self._aensure_initialized()
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
@@ -780,6 +811,7 @@ class OpensearchVectorClient:
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
+        self._ensure_initialized()
         if not node_ids and not filters:
             return
 
@@ -806,6 +838,7 @@ class OpensearchVectorClient:
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
+        await self._aensure_initialized()
         if not node_ids and not filters:
             return
 
@@ -822,11 +855,13 @@ class OpensearchVectorClient:
 
     def clear(self) -> None:
         """Clears index."""
+        self._ensure_initialized()
         query = {"query": {"bool": {"filter": []}}}
         self._os_client.delete_by_query(index=self._index, body=query, refresh=True)
 
     async def aclear(self) -> None:
         """Clears index."""
+        await self._aensure_initialized()
         query = {"query": {"bool": {"filter": []}}}
         await self._os_async_client.delete_by_query(
             index=self._index, body=query, refresh=True
@@ -850,6 +885,7 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
+        self._ensure_initialized()
         if query_mode == VectorStoreQueryMode.HYBRID:
             if query_str is None or self._search_pipeline is None:
                 raise ValueError(INVALID_HYBRID_QUERY_ERROR)
@@ -898,6 +934,7 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
+        await self._aensure_initialized()
         if query_mode == VectorStoreQueryMode.HYBRID:
             if query_str is None or self._search_pipeline is None:
                 raise ValueError(INVALID_HYBRID_QUERY_ERROR)
