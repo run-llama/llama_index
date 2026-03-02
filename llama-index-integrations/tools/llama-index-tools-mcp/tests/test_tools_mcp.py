@@ -1,4 +1,6 @@
 import os
+from typing import Any, Literal, get_args
+
 import pytest
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -520,3 +522,33 @@ def test_by_tool_all_global_params_removed_with_none(client: BasicMCPClient):
     assert "b" in schema["properties"]
     # partial_params should be None (empty dict is converted to None)
     assert tools[0].partial_params is None or tools[0].partial_params == {}
+
+
+# --- Tests for boolean JSON Schema handling (regression for #19899) ---
+
+
+def test_resolve_field_type_handles_bool_schema(client: BasicMCPClient):
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/19899
+
+    JSON Schema allows boolean schemas (true = accept all, false = reject all).
+    _resolve_field_type must handle them before attempting dict-like operations,
+    otherwise 'if "$ref" in field_schema' raises TypeError on bool.
+    """
+    tool_spec = McpToolSpec(client)
+
+    assert tool_spec._resolve_field_type(True, {}) is Any
+    assert tool_spec._resolve_field_type(False, {}) is Any
+
+
+def test_resolve_union_option_handles_bool(client: BasicMCPClient):
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/19899
+
+    _resolve_union_option must handle boolean schemas that can appear as
+    items in anyOf arrays, returning Any instead of crashing.
+    """
+    tool_spec = McpToolSpec(client)
+
+    assert tool_spec._resolve_union_option(True, {}) is Any
+    assert tool_spec._resolve_union_option(False, {}) is Any
