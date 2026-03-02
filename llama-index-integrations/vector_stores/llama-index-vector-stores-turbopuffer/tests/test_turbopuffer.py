@@ -35,27 +35,21 @@ def node_embeddings() -> list[TextNode]:
         TextNode(
             text="lorem ipsum",
             id_="aaa-111",
-            relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")
-            },
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
             metadata={"author": "Stephen King", "theme": "Friendship"},
             embedding=[1.0, 0.0, 0.0],
         ),
         TextNode(
             text="dolor sit amet",
             id_="bbb-222",
-            relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")
-            },
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
             metadata={"director": "Francis Ford Coppola", "theme": "Mafia"},
             embedding=[0.0, 1.0, 0.0],
         ),
         TextNode(
             text="consectetur adipiscing",
             id_="ccc-333",
-            relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")
-            },
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
             metadata={"director": "Christopher Nolan"},
             embedding=[0.0, 0.0, 1.0],
         ),
@@ -96,7 +90,7 @@ def test_class() -> None:
 
 
 @pytest.mark.parametrize(
-    "operator, expected_op",
+    ("operator", "expected_op"),
     [
         (FilterOperator.EQ, "Eq"),
         (FilterOperator.NE, "NotEq"),
@@ -112,9 +106,7 @@ def test_class() -> None:
         (FilterOperator.TEXT_MATCH_INSENSITIVE, "IGlob"),
     ],
 )
-def test_filter_transform_operators(
-    operator: FilterOperator, expected_op: str
-) -> None:
+def test_filter_transform_operators(operator: FilterOperator, expected_op: str) -> None:
     filters = MetadataFilters(
         filters=[MetadataFilter(key="field", value="val", operator=operator)]
     )
@@ -150,9 +142,7 @@ def test_filter_transform_multiple_and() -> None:
 def test_filter_transform_is_empty() -> None:
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(
-                key="field", value=None, operator=FilterOperator.IS_EMPTY
-            )
+            MetadataFilter(key="field", value=None, operator=FilterOperator.IS_EMPTY)
         ]
     )
     result = _to_turbopuffer_filter(filters)
@@ -161,9 +151,7 @@ def test_filter_transform_is_empty() -> None:
 
 def test_filter_transform_all_single() -> None:
     filters = MetadataFilters(
-        filters=[
-            MetadataFilter(key="tags", value=["a"], operator=FilterOperator.ALL)
-        ]
+        filters=[MetadataFilter(key="tags", value=["a"], operator=FilterOperator.ALL)]
     )
     result = _to_turbopuffer_filter(filters)
     assert result == ("tags", "Contains", "a")
@@ -172,9 +160,7 @@ def test_filter_transform_all_single() -> None:
 def test_filter_transform_all_multiple() -> None:
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(
-                key="tags", value=["a", "b"], operator=FilterOperator.ALL
-            )
+            MetadataFilter(key="tags", value=["a", "b"], operator=FilterOperator.ALL)
         ]
     )
     result = _to_turbopuffer_filter(filters)
@@ -212,9 +198,7 @@ def test_filter_transform_nested_and_with_or() -> None:
     """AND at top level with an OR sub-group."""
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(
-                key="author", value="King", operator=FilterOperator.EQ
-            ),
+            MetadataFilter(key="author", value="King", operator=FilterOperator.EQ),
             MetadataFilters(
                 filters=[
                     MetadataFilter(
@@ -250,9 +234,7 @@ def test_filter_transform_nested_or_with_and() -> None:
                     MetadataFilter(
                         key="author", value="King", operator=FilterOperator.EQ
                     ),
-                    MetadataFilter(
-                        key="year", value=2000, operator=FilterOperator.GT
-                    ),
+                    MetadataFilter(key="year", value=2000, operator=FilterOperator.GT),
                 ],
                 condition=FilterCondition.AND,
             ),
@@ -263,9 +245,7 @@ def test_filter_transform_nested_or_with_and() -> None:
                         value="Tolkien",
                         operator=FilterOperator.EQ,
                     ),
-                    MetadataFilter(
-                        key="year", value=1950, operator=FilterOperator.GT
-                    ),
+                    MetadataFilter(key="year", value=1950, operator=FilterOperator.GT),
                 ],
                 condition=FilterCondition.AND,
             ),
@@ -289,9 +269,7 @@ def test_filter_transform_nested_single_child() -> None:
             MetadataFilter(key="a", value="1", operator=FilterOperator.EQ),
             MetadataFilters(
                 filters=[
-                    MetadataFilter(
-                        key="b", value="2", operator=FilterOperator.EQ
-                    ),
+                    MetadataFilter(key="b", value="2", operator=FilterOperator.EQ),
                 ],
                 condition=FilterCondition.OR,
             ),
@@ -321,13 +299,13 @@ def test_filter_transform_nested_empty_child() -> None:
 
 
 @skip_integration
-def test_add_and_query(store: TurbopufferVectorStore, node_embeddings: list[TextNode]) -> None:
+def test_add_and_query(
+    store: TurbopufferVectorStore, node_embeddings: list[TextNode]
+) -> None:
     ids = store.add(node_embeddings)
     assert len(ids) == 3
 
-    query = VectorStoreQuery(
-        query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1
-    )
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
     result = store.query(query)
     assert result.nodes
     assert result.nodes[0].get_content() == "lorem ipsum"
@@ -348,16 +326,16 @@ def test_delete(store: TurbopufferVectorStore, node_embeddings: list[TextNode]) 
     store.add(node_embeddings)
     store.delete_nodes(node_ids=["aaa-111"])
 
-    query = VectorStoreQuery(
-        query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10
-    )
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
     result = store.query(query)
     result_ids = result.ids or []
     assert "aaa-111" not in result_ids
 
 
 @skip_integration
-def test_metadata_filters(store: TurbopufferVectorStore, node_embeddings: list[TextNode]) -> None:
+def test_metadata_filters(
+    store: TurbopufferVectorStore, node_embeddings: list[TextNode]
+) -> None:
     store.add(node_embeddings)
 
     filters = MetadataFilters(
@@ -376,6 +354,4 @@ def test_metadata_filters(store: TurbopufferVectorStore, node_embeddings: list[T
     )
     result = store.query(query)
     assert result.nodes
-    assert all(
-        n.metadata.get("author") == "Stephen King" for n in result.nodes
-    )
+    assert all(n.metadata.get("author") == "Stephen King" for n in result.nodes)

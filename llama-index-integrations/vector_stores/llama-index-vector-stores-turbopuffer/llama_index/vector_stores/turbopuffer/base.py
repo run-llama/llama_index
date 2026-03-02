@@ -11,7 +11,6 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterCondition,
     FilterOperator,
-    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -62,7 +61,8 @@ _CONDITION_MAP: dict[str, str] = {
 def _to_turbopuffer_filter(
     standard_filters: MetadataFilters,
 ) -> Filter | None:
-    """Convert MetadataFilters to turbopuffer tuple-based filter format.
+    """
+    Convert MetadataFilters to turbopuffer tuple-based filter format.
 
     Single condition example: ("field", "Eq", value)
     Composed example: ("And", [("field", "Eq", v1), ("field2", "Gt", 5)])
@@ -85,9 +85,7 @@ def _to_turbopuffer_filter(
             filters_list.append((f.key, "Eq", None))
         elif f.operator == FilterOperator.ALL:
             if isinstance(f.value, list):
-                sub: list[Filter] = [
-                    (f.key, "Contains", v) for v in f.value
-                ]
+                sub: list[Filter] = [(f.key, "Contains", v) for v in f.value]
                 if len(sub) == 1:
                     filters_list.append(sub[0])
                 else:
@@ -112,7 +110,8 @@ def _to_turbopuffer_filter(
 
 
 class TurbopufferVectorStore(BasePydanticVectorStore):
-    """Turbopuffer Vector Store.
+    """
+    Turbopuffer Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     turbopuffer namespace.
@@ -133,6 +132,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         >>> client = Turbopuffer(api_key="...")
         >>> ns = client.namespace("my-namespace")
         >>> store = TurbopufferVectorStore(namespace=ns)
+
     """
 
     stores_text: bool = True
@@ -167,9 +167,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         """Return the turbopuffer namespace handle."""
         return self._namespace
 
-    def _build_rows(
-        self, nodes: Sequence[BaseNode]
-    ) -> list[dict[str, Any]]:
+    def _build_rows(self, nodes: Sequence[BaseNode]) -> list[dict[str, Any]]:
         """Convert BaseNode list to turbopuffer row dicts."""
         rows: list[dict[str, Any]] = []
         for node in nodes:
@@ -227,17 +225,11 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             node = metadata_dict_to_node(attributes)
             node.id_ = row_id
         except Exception:
-            logger.debug(
-                "Failed to parse node metadata, creating basic TextNode."
-            )
+            logger.debug("Failed to parse node metadata, creating basic TextNode.")
             node = TextNode(
                 text=str(attributes.pop("_node_content", "")),
                 id_=row_id,
-                metadata={
-                    k: v
-                    for k, v in attributes.items()
-                    if not k.startswith("_")
-                },
+                metadata={k: v for k, v in attributes.items() if not k.startswith("_")},
             )
         return node
 
@@ -306,4 +298,3 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             exclude_attributes=["vector"],
         )
         return self._parse_query_result(result)
-
