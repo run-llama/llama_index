@@ -1,18 +1,19 @@
-"""Turbopuffer vector store."""
+"""turbopuffer vector store."""
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterCondition,
     FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
@@ -22,6 +23,9 @@ from llama_index.core.vector_stores.utils import (
 from turbopuffer import omit
 from turbopuffer.lib.namespace import Namespace
 from turbopuffer.types import DistanceMetric, NamespaceQueryResponse, Row
+from turbopuffer.types.namespace_multi_query_response import (
+    Result as MultiQueryResult,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,8 +36,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 100
 
-# Keys added by turbopuffer in query results that are not user attributes.
-_RESERVED_RESULT_KEYS = frozenset({"$dist", "vector"})
+# Keys managed by the integration that must not be overwritten by user metadata.
+# text_key is dynamic so it's added at call sites via `_RESERVED_KEYS | {self.text_key}`.
+_RESERVED_KEYS = frozenset({"id", "vector", "$dist"})
+_METADATA_PREFIX = "_meta_"
 
 # Mapping from llama_index FilterOperator values to turbopuffer operator strings.
 _OPERATOR_MAP: dict[str, str] = {
@@ -111,7 +117,7 @@ def _to_turbopuffer_filter(
 
 class TurbopufferVectorStore(BasePydanticVectorStore):
     """
-    Turbopuffer Vector Store.
+    turbopuffer Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     turbopuffer namespace.
@@ -126,6 +132,8 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             One of "cosine_distance" or "euclidean_squared".
             Defaults to "cosine_distance".
         batch_size: Batch size for write operations. Defaults to 100.
+        text_key: Name of the attribute used to store plain text for
+            BM25 full-text search. Defaults to "text".
 
     Examples:
         >>> from turbopuffer import Turbopuffer
@@ -140,6 +148,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
 
     distance_metric: DistanceMetric = "cosine_distance"
     batch_size: int = DEFAULT_BATCH_SIZE
+    text_key: str = "text"
 
     _namespace: Namespace = PrivateAttr()
 
@@ -148,11 +157,13 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         namespace: Namespace,
         distance_metric: DistanceMetric = "cosine_distance",
         batch_size: int = DEFAULT_BATCH_SIZE,
-        **kwargs: Any,
+        text_key: str = "text",
+        **kwargs: object,
     ) -> None:
         super().__init__(
             distance_metric=distance_metric,
             batch_size=batch_size,
+            text_key=text_key,
             **kwargs,
         )
 
@@ -167,23 +178,39 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         """Return the turbopuffer namespace handle."""
         return self._namespace
 
-    def _build_rows(self, nodes: Sequence[BaseNode]) -> list[dict[str, Any]]:
+    def _build_rows(self, nodes: Sequence[BaseNode]) -> list[dict[str, object]]:
         """Convert BaseNode list to turbopuffer row dicts."""
-        rows: list[dict[str, Any]] = []
+        reserved = _RESERVED_KEYS | {self.text_key}
+        rows: list[dict[str, object]] = []
         for node in nodes:
             metadata = node_to_metadata_dict(
-                node, remove_text=False, flat_metadata=self.flat_metadata
+                node, remove_text=True, flat_metadata=self.flat_metadata
             )
-            row: dict[str, Any] = {
-                "id": node.node_id,
-                "vector": node.get_embedding(),
-            }
-            row.update(metadata)
+
+            row: dict[str, object] = {}
+            for key, value in metadata.items():
+                if key in reserved:
+                    logger.warning(
+                        "Metadata key %r conflicts with a reserved "
+                        "turbopuffer column. Storing as %r.",
+                        key,
+                        f"{_METADATA_PREFIX}{key}",
+                    )
+                    row[f"{_METADATA_PREFIX}{key}"] = value
+                else:
+                    row[key] = value
+
+            row["id"] = node.node_id
+            row["vector"] = node.get_embedding()
+            row[self.text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
             rows.append(row)
         return rows
 
     def _parse_query_result(
-        self, result: NamespaceQueryResponse
+        self,
+        result: NamespaceQueryResponse | MultiQueryResult,
+        *,
+        is_bm25: bool = False,
     ) -> VectorStoreQueryResult:
         """Parse a turbopuffer query response into VectorStoreQueryResult."""
         top_k_nodes: list[BaseNode] = []
@@ -194,13 +221,14 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
             row_id = str(row.id)
             dist: float = getattr(row, "$dist", 0.0)
 
-            # Convert distance to similarity score.
-            if self.distance_metric == "cosine_distance":
+            if is_bm25:
+                # BM25 $dist is a relevance score (higher = better).
+                similarity = dist
+            elif self.distance_metric == "cosine_distance":
                 similarity = 1.0 - dist
             else:
                 similarity = 1.0 / (1.0 + dist)
 
-            # Reconstruct node from stored metadata attributes.
             node = self._row_to_node(row, row_id)
 
             top_k_nodes.append(node)
@@ -212,31 +240,88 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         )
 
     @staticmethod
-    def _row_to_node(row: Row, row_id: str) -> BaseNode:
+    def _reciprocal_rank_fusion(
+        dense_result: VectorStoreQueryResult,
+        sparse_result: VectorStoreQueryResult,
+        top_k: int = 10,
+        rrf_k: int = 60,
+    ) -> VectorStoreQueryResult:
+        """
+        Fuse dense and sparse results using Reciprocal Rank Fusion.
+
+        Each document's score is the sum of ``1 / (k + rank)`` across
+        result lists. This is position-based and avoids score
+        normalization issues across different ranking methods.
+        """
+        dense_nodes = dense_result.nodes or []
+        sparse_nodes = sparse_result.nodes or []
+
+        if not dense_nodes and not sparse_nodes:
+            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+        if not sparse_nodes:
+            return dense_result
+        if not dense_nodes:
+            return sparse_result
+
+        all_nodes: dict[str, BaseNode] = {}
+        scores: dict[str, float] = {}
+
+        for result_nodes in [dense_nodes, sparse_nodes]:
+            for rank, node in enumerate(result_nodes, start=1):
+                scores[node.node_id] = scores.get(node.node_id, 0.0) + 1.0 / (
+                    rrf_k + rank
+                )
+                if node.node_id not in all_nodes:
+                    all_nodes[node.node_id] = node
+
+        fused = sorted(
+            [(scores[nid], all_nodes[nid]) for nid in all_nodes],
+            key=lambda x: x[0],
+            reverse=True,
+        )[:top_k]
+
+        return VectorStoreQueryResult(
+            nodes=[x[1] for x in fused],
+            similarities=[x[0] for x in fused],
+            ids=[x[1].node_id for x in fused],
+        )
+
+    def _row_to_node(self, row: Row, row_id: str) -> BaseNode:
         """Convert a turbopuffer Row to a llama_index BaseNode."""
         row_dict = row.to_dict()
-        attributes = {
-            k: v
-            for k, v in row_dict.items()
-            if k not in _RESERVED_RESULT_KEYS and k != "id"
-        }
+        reserved = _RESERVED_KEYS | {self.text_key}
+        attributes: dict[str, object] = {}
+        for k, v in row_dict.items():
+            if k in reserved:
+                continue
+            if k.startswith(_METADATA_PREFIX):
+                attributes[k[len(_METADATA_PREFIX) :]] = v
+            else:
+                attributes[k] = v
+
+        text = str(row_dict.get(self.text_key, "") or "")
 
         try:
             node = metadata_dict_to_node(attributes)
             node.id_ = row_id
         except Exception:
             logger.debug("Failed to parse node metadata, creating basic TextNode.")
-            node = TextNode(
-                text=str(attributes.pop("_node_content", "")),
+            return TextNode(
+                text=text,
                 id_=row_id,
                 metadata={k: v for k, v in attributes.items() if not k.startswith("_")},
             )
+
+        # Restore the plain text that was stripped by remove_text=True
+        # during _build_rows.
+        if hasattr(node, "text"):
+            node.text = text
         return node
 
     def add(
         self,
         nodes: Sequence[BaseNode],
-        **add_kwargs: Any,
+        **add_kwargs: object,
     ) -> list[str]:
         """Add nodes to turbopuffer namespace."""
         if not nodes:
@@ -246,15 +331,21 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         for batch_start in range(0, len(nodes), self.batch_size):
             batch_nodes = nodes[batch_start : batch_start + self.batch_size]
             rows = self._build_rows(batch_nodes)
-            ids.extend(row["id"] for row in rows)
+            ids.extend(str(row["id"]) for row in rows)
             self._namespace.write(
                 upsert_rows=rows,
                 distance_metric=self.distance_metric,
+                schema={
+                    self.text_key: {
+                        "type": "string",
+                        "full_text_search": True,
+                    }
+                },
             )
 
         return ids
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: object) -> None:
         """Delete nodes by ref_doc_id."""
         self._namespace.write(
             delete_by_filter=("doc_id", "Eq", ref_doc_id),
@@ -264,7 +355,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         self,
         node_ids: list[str] | None = None,
         filters: MetadataFilters | None = None,
-        **delete_kwargs: Any,
+        **delete_kwargs: object,
     ) -> None:
         """Delete nodes by IDs or metadata filters."""
         if node_ids:
@@ -281,20 +372,64 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
     def query(
         self,
         query: VectorStoreQuery,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> VectorStoreQueryResult:
         """Query for top k most similar nodes."""
+        tpuf_filter = _to_turbopuffer_filter(query.filters) if query.filters else None
+        filter_arg = tpuf_filter if tpuf_filter is not None else omit
+
+        mode = query.mode
+
+        if mode == VectorStoreQueryMode.HYBRID:
+            if query.query_embedding is None or query.query_str is None:
+                raise ValueError(
+                    "Hybrid search requires both query_embedding and query_str."
+                )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+            response = self._namespace.multi_query(
+                queries=[
+                    {
+                        "rank_by": ("vector", "ANN", list(query.query_embedding)),
+                        "top_k": query.similarity_top_k,
+                        "filters": filter_arg,
+                        "include_attributes": True,
+                    },
+                    {
+                        "rank_by": (self.text_key, "BM25", query.query_str),
+                        "top_k": sparse_top_k,
+                        "filters": filter_arg,
+                        "include_attributes": True,
+                    },
+                ],
+            )
+            dense_result = self._parse_query_result(response.results[0])
+            sparse_result = self._parse_query_result(response.results[1], is_bm25=True)
+            return self._reciprocal_rank_fusion(
+                dense_result,
+                sparse_result,
+                top_k=query.hybrid_top_k or query.similarity_top_k,
+            )
+
+        if mode in (VectorStoreQueryMode.TEXT_SEARCH, VectorStoreQueryMode.SPARSE):
+            if query.query_str is None:
+                raise ValueError("Text search requires query_str.")
+            top_k = query.sparse_top_k or query.similarity_top_k
+            result = self._namespace.query(
+                rank_by=(self.text_key, "BM25", query.query_str),
+                top_k=top_k,
+                filters=filter_arg,
+                exclude_attributes=["vector"],
+            )
+            return self._parse_query_result(result, is_bm25=True)
+
+        # Default: dense vector ANN search.
         if query.query_embedding is None:
             return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
-        query_embedding = list(query.query_embedding)
-
-        tpuf_filter = _to_turbopuffer_filter(query.filters) if query.filters else None
-
         result = self._namespace.query(
-            rank_by=("vector", "ANN", query_embedding),
+            rank_by=("vector", "ANN", list(query.query_embedding)),
             top_k=query.similarity_top_k,
-            filters=tpuf_filter if tpuf_filter is not None else omit,
+            filters=filter_arg,
             exclude_attributes=["vector"],
         )
         return self._parse_query_result(result)

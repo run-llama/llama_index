@@ -1,4 +1,4 @@
-"""Tests for the Turbopuffer vector store integration."""
+"""Tests for the turbopuffer vector store integration."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import uuid
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.schema import TextNode as CoreTextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterCondition,
@@ -14,6 +15,8 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
 from llama_index.vector_stores.turbopuffer import TurbopufferVectorStore
 from llama_index.vector_stores.turbopuffer.base import _to_turbopuffer_filter
@@ -355,3 +358,99 @@ def test_metadata_filters(
     result = store.query(query)
     assert result.nodes
     assert all(n.metadata.get("author") == "Stephen King" for n in result.nodes)
+
+
+# ---------------------------------------------------------------------------
+# Relative score fusion tests (pure logic, no API key needed)
+# ---------------------------------------------------------------------------
+
+
+def _make_result(ids: list[str], scores: list[float]) -> VectorStoreQueryResult:
+    """Helper to build a VectorStoreQueryResult with stub TextNodes."""
+    nodes = [CoreTextNode(text=f"text-{i}", id_=i) for i in ids]
+    return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
+
+
+def test_rrf_both_empty() -> None:
+    empty = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(empty, empty)
+    assert result.nodes == []
+
+
+def test_rrf_sparse_empty() -> None:
+    dense = _make_result(["a"], [0.9])
+    empty = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(dense, empty)
+    assert result.ids == ["a"]
+
+
+def test_rrf_dense_empty() -> None:
+    empty = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+    sparse = _make_result(["a"], [0.9])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(empty, sparse)
+    assert result.ids == ["a"]
+
+
+def test_rrf_overlapping_results() -> None:
+    dense = _make_result(["a", "b"], [0.8, 0.9])
+    sparse = _make_result(["b", "c"], [1.0, 0.5])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(dense, sparse, top_k=10)
+    # "b" appears in both lists, so gets RRF score from both ranks
+    assert result.ids is not None
+    assert result.ids[0] == "b"
+
+
+def test_rrf_respects_top_k() -> None:
+    dense = _make_result(["a", "b", "c"], [1.0, 0.8, 0.6])
+    sparse = _make_result(["d", "e"], [1.0, 0.5])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(dense, sparse, top_k=2)
+    assert len(result.nodes or []) == 2
+
+
+def test_rrf_disjoint_results() -> None:
+    dense = _make_result(["a"], [1.0])
+    sparse = _make_result(["b"], [1.0])
+    result = TurbopufferVectorStore._reciprocal_rank_fusion(dense, sparse, top_k=2)
+    # Both appear at rank 1 in their respective lists, so equal RRF scores.
+    # Either order is valid, just check both are present.
+    assert result.ids is not None
+    assert set(result.ids) == {"a", "b"}
+
+
+# ---------------------------------------------------------------------------
+# E2E hybrid/BM25 tests (require TURBOPUFFER_API_KEY)
+# ---------------------------------------------------------------------------
+
+
+@skip_integration
+def test_text_search(
+    store: TurbopufferVectorStore, node_embeddings: list[TextNode]
+) -> None:
+    store.add(node_embeddings)
+
+    query = VectorStoreQuery(
+        query_str="lorem ipsum",
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+    )
+    result = store.query(query)
+    assert result.nodes
+    assert result.nodes[0].get_content() == "lorem ipsum"
+
+
+@skip_integration
+def test_hybrid_search(
+    store: TurbopufferVectorStore, node_embeddings: list[TextNode]
+) -> None:
+    store.add(node_embeddings)
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        query_str="lorem ipsum",
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.HYBRID,
+        alpha=0.5,
+    )
+    result = store.query(query)
+    assert result.nodes
+    assert len(result.nodes) > 0

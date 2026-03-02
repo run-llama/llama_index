@@ -1,1 +1,1 @@
-# LlamaIndex Vector_Stores Integration: Turbopuffer
+# LlamaIndex Vector_Stores Integration: turbopuffer
