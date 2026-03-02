@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from time import sleep
 from typing import List
 
@@ -10,11 +11,11 @@ import pytest
 try:
     from azure.cosmos import CosmosClient, PartitionKey
 
-    URL = "AZURE_COSMOSDB_URI"
-    KEY = "AZURE_COSMOSDB_KEY"
+    URI = os.environ.get("AZURE_COSMOSDB_URI", "")
+    KEY = os.environ.get("AZURE_COSMOSDB_KEY", "")
     database_name = "test_database"
     container_name = "test_container"
-    test_client = CosmosClient(URL, credential=KEY)
+    test_client = CosmosClient(URI, credential=KEY)
 
     indexing_policy = {
         "indexingMode": "consistent",
@@ -177,7 +178,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         self, node_embeddings: List[TextNode]
     ) -> None:
         vector_store = AzureCosmosDBNoSqlVectorSearch.from_host_and_key(
-            host=URL,
+            host=URI,
             key=KEY,
             vector_embedding_policy=vector_embedding_policy,
             indexing_policy=indexing_policy,
@@ -197,7 +198,7 @@ class TestAzureCosmosNoSqlVectorSearch:
     def test_cosmos_client_with_connection_string(
         self, node_embeddings: List[TextNode]
     ) -> None:
-        connection_string = "ACCOUNT_ENDPOINT=" + URL + ";" + "ACCOUNT_KEY=" + KEY + ";"
+        connection_string = "AccountEndpoint=" + URI + ";" + "AccountKey=" + KEY + ";"
         vector_store = AzureCosmosDBNoSqlVectorSearch.from_connection_string(
             connection_string=connection_string,
             vector_embedding_policy=vector_embedding_policy,
