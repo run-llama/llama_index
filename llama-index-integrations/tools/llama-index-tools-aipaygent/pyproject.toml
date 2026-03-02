@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-aipaygent"
+version = "1.0.0"
+description = "LlamaIndex tool spec for AiPayGent — AI agent marketplace with 123 endpoints via x402 micropayments"
+authors = [{name = "AiPayGent"}]
+requires-python = ">=3.9"
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "requests>=2.28.0",
+]
+
+[project.urls]
+Homepage = "https://api.aipaygent.xyz"
+OpenAPI = "https://api.aipaygent.xyz/openapi.json"
+
+[tool.hatch.build.targets.sdist]
+exclude = [".gitignore", "uv.lock"]
