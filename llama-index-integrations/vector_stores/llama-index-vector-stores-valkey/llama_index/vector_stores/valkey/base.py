@@ -1,7 +1,5 @@
 """
-Valkey Vector store index.
-
-An index that is built on top of an existing vector store.
+Valkey Vector store.
 """
 
 import logging
@@ -82,7 +80,7 @@ class TokenEscaper:
     Escape punctuation within an input string. Taken from RedisOM Python.
     """
 
-    # Characters that RediSearch requires us to escape during queries.
+    # Keep for compatibility. Characters that RediSearch requires us to escape during queries.
     # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
     DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
 
@@ -413,9 +411,6 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             logger.info(
                 f"Creating index {self.index_name} with {len(self._schema.fields)} fields"
             )
-            logger.debug(
-                f"Index prefix: {self._schema.index.prefix}, storage: {self._schema.index.storage_type}"
-            )
             result = await ft.create(
                 self._valkey_client_async, self.index_name, self._schema.fields, options
             )
@@ -673,22 +668,13 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                     logger.info(f"No documents found with doc_id {ref_doc_id}")
                     return
 
-                # Extract keys and delete
+                # Extract keys and delete (valkey-glide always returns dict format)
                 node_keys = []
-                if len(result) > 1 and isinstance(result[1], dict):
-                    # Dictionary format
+                if len(result) > 1:
                     for key in result[1]:
                         if isinstance(key, bytes):
                             key = key.decode()
                         node_keys.append(key)
-                else:
-                    # List format
-                    for i in range(1, len(result), 2):
-                        if i < len(result):
-                            key = result[i]
-                            if isinstance(key, bytes):
-                                key = key.decode()
-                            node_keys.append(key)
 
                 if node_keys:
                     result = self._valkey_client.delete(node_keys)
@@ -709,11 +695,6 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         # Search for all nodes with this doc_id
         query = f"@{DOC_ID_FIELD_NAME}:{{{ref_doc_id}}}"
-        logger.info(f"DEBUG: Searching for documents with query: {query}")
-        logger.info(f"DEBUG: Index name: {self.index_name}")
-        logger.info(f"DEBUG: DOC_ID_FIELD_NAME: {DOC_ID_FIELD_NAME}")
-        logger.info(f"DEBUG: ref_doc_id: {ref_doc_id}")
-
         options = FtSearchOptions(
             limit=FtSearchLimit(offset=0, count=10000),
             return_fields=[
@@ -726,51 +707,27 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             result = await ft.search(
                 self._valkey_client_async, self.index_name, query, options
             )
-            logger.info(f"DEBUG: Search result type: {type(result)}")
-            logger.info(f"DEBUG: Search result: {result}")
 
             if isinstance(result, list) and len(result) > 0:
                 count = result[0]
-                logger.info(f"DEBUG: Found {count} documents matching query")
 
-                # Extract keys and delete
+                # Extract keys and delete (valkey-glide always returns dict format)
                 node_keys = []
-                if len(result) > 1 and isinstance(result[1], dict):
-                    # Dictionary format
-                    logger.info(f"DEBUG: Result format is dictionary")
-                    for key, doc in result[1].items():
+                if len(result) > 1:
+                    for key in result[1]:
                         if isinstance(key, bytes):
                             key = key.decode()
-                        logger.info(f"DEBUG: Found key: {key}, doc: {doc}")
                         node_keys.append(key)
-                else:
-                    # List format
-                    logger.info(f"DEBUG: Result format is list")
-                    for i in range(1, len(result), 2):
-                        if i < len(result):
-                            key = result[i]
-                            if isinstance(key, bytes):
-                                key = key.decode()
-                            logger.info(f"DEBUG: Found key: {key}")
-                            node_keys.append(key)
-
-                logger.info(f"DEBUG: Total keys to delete: {len(node_keys)}")
-                logger.info(f"DEBUG: Keys: {node_keys}")
 
                 if node_keys:
                     result = await self._valkey_client_async.delete(node_keys)
                     logger.info(f"Deleted {result} documents with doc_id {ref_doc_id}")
                 else:
-                    logger.warning(
-                        f"DEBUG: No keys found to delete for doc_id {ref_doc_id}"
-                    )
+                    logger.debug(f"No keys found to delete for doc_id {ref_doc_id}")
             else:
-                logger.warning(f"DEBUG: No results or invalid result format")
+                logger.debug(f"No results or invalid result format")
         except Exception as e:
             logger.error(f"Failed to delete documents: {e}")
-            import traceback
-
-            logger.error(f"DEBUG: Traceback: {traceback.format_exc()}")
 
     # Aliases for compatibility
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -1011,7 +968,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         score = None
         if has_vector:
-            # Look for score field - Valkey/Redis returns it as __vector_score
+            # Look for score field - Valkey returns it as __vector_score
             score_field = "__vector_score"
             if score_field in doc:
                 try:
@@ -1040,9 +997,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         count = result[0]
         logger.info(f"Processing {count} search results")
 
-        # Check if result is in dictionary format (Valkey/Glide returns dict)
-        if len(result) > 1 and isinstance(result[1], dict):
-            # Dictionary format: [count, {key: {field: value, ...}, ...}]
+        if len(result) > 1:
             results_dict = result[1]
 
             for key, doc in results_dict.items():
@@ -1065,68 +1020,6 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                             pass
                         doc_dict[field_name] = field_value
                     else:
-                        doc_dict[field_name] = field_value
-
-                logger.debug(
-                    f"Processing document with key {key}: {list(doc_dict.keys())}"
-                )
-                logger.debug(f"Document fields: {doc_dict.keys()}")
-
-                try:
-                    node, score = self._extract_node_and_score(doc_dict, has_vector)
-                    nodes.append(node)
-                    ids.append(doc_dict.get(NODE_ID_FIELD_NAME, ""))
-                    if score is not None:
-                        similarities.append(score)
-
-                    logger.debug(
-                        f"Successfully parsed node {doc_dict.get(NODE_ID_FIELD_NAME)}"
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to parse node: {e}, fields: {list(doc_dict.keys())}"
-                    )
-                    import traceback
-
-                    logger.warning(f"Traceback: {traceback.format_exc()}")
-                    continue
-        else:
-            # List format: [count, key1, fields1, key2, fields2, ...]
-            # This format is less common but we support it for compatibility
-            i = 1
-            while i < len(result):
-                if i >= len(result):
-                    break
-
-                # Get key
-                key = result[i]
-                if isinstance(key, bytes):
-                    key = key.decode()
-
-                i += 1
-
-                # Get fields
-                if i >= len(result):
-                    break
-
-                fields_data = result[i]
-                i += 1
-
-                if not isinstance(fields_data, list):
-                    continue
-
-                # Parse fields from list format
-                doc_dict = {}
-                for j in range(0, len(fields_data), 2):
-                    if j + 1 < len(fields_data):
-                        field_name = fields_data[j]
-                        field_value = fields_data[j + 1]
-
-                        if isinstance(field_name, bytes):
-                            field_name = field_name.decode()
-                        if isinstance(field_value, bytes):
-                            field_value = field_value.decode()
-
                         doc_dict[field_name] = field_value
 
                 logger.debug(

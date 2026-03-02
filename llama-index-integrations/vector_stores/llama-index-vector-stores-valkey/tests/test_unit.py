@@ -149,7 +149,6 @@ class TestInitialization:
     def test_set_return_fields(self, valkey_client):
         vector_store = ValkeyVectorStore(valkey_client=valkey_client)
         vector_store.set_return_fields(["field1", "field2"])
-        # Just verify it doesn't raise an error
 
 
 class TestEmbeddingValidation:
@@ -182,7 +181,6 @@ class TestEmbeddingValidation:
             # Result should be list of IDs
             assert isinstance(result, list)
         except Exception as e:
-            # If it fails due to actual Valkey operations, that's ok for unit test
             if "Attempting to index embeddings" in str(e):
                 pytest.fail("Embedding dimension validation failed incorrectly")
 
