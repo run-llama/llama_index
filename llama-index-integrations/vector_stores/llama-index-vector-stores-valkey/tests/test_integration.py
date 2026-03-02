@@ -25,7 +25,6 @@ from llama_index.vector_stores.valkey.schema import ValkeyVectorStoreSchema
 @pytest.fixture(autouse=True)
 async def cleanup_indexes(valkey_client_async):
     """Clean up all indexes before and after each test."""
-    # Cleanup before test
     try:
         result = await valkey_client_async.custom_command(["FT._LIST"])
         if result:
@@ -41,7 +40,6 @@ async def cleanup_indexes(valkey_client_async):
 
     yield
 
-    # Cleanup after test
     try:
         result = await valkey_client_async.custom_command(["FT._LIST"])
         if result:
@@ -118,9 +116,7 @@ class TestBasicConnection:
 
 @pytest.mark.integration
 class TestSyncOperations:
-    """
-    Test all use cases using sync operations only.
-    """
+    """Test all use cases using sync operations only."""
 
     def test_index_management(self):
         """Test index creation, existence check, and deletion."""

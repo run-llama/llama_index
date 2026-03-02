@@ -3,9 +3,6 @@ from typing import List
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.node_parser import SentenceSplitter
 
-# Using existing Valkey/Redis container instead of creating a new one
-# Make sure Valkey or Redis Stack is running on localhost:6379
-
 
 @pytest.fixture()
 def dummy_embedding() -> List:
@@ -63,8 +60,6 @@ def valkey_client():
         )
         client = SyncGlideClient.create(config)
         yield client
-        # Don't call close() as it may not be properly initialized
-        # The client will be garbage collected
     except ImportError:
         pytest.skip("valkey-glide not installed")
     except Exception as e:
