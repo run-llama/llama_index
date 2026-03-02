@@ -2,6 +2,10 @@
 
 from llama_index.core.tools.download import download_tool
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.middleware import (
+    OutputFilterMiddleware,
+    ParameterInjectionMiddleware,
+)
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.tools.query_plan import QueryPlanTool
 from llama_index.core.tools.retriever_tool import RetrieverTool
@@ -9,6 +13,7 @@ from llama_index.core.tools.types import (
     AsyncBaseTool,
     BaseTool,
     ToolMetadata,
+    ToolMiddleware,
     ToolOutput,
     adapt_to_async_tool,
 )
@@ -25,6 +30,7 @@ __all__ = [
     "QueryEngineTool",
     "RetrieverTool",
     "ToolMetadata",
+    "ToolMiddleware",
     "ToolOutput",
     "FunctionTool",
     "QueryPlanTool",
@@ -32,4 +38,6 @@ __all__ = [
     "ToolSelection",
     "call_tool_with_selection",
     "acall_tool_with_selection",
+    "ParameterInjectionMiddleware",
+    "OutputFilterMiddleware",
 ]
