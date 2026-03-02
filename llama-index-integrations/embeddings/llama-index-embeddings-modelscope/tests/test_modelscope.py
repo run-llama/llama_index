@@ -4,11 +4,7 @@ from llama_index.embeddings.modelscope.base import ModelScopeEmbedding
 
 @pytest.fixture()
 def modelscope_embedding():
-    """Return a ModelScopeEmbedding instance or skip if backend is unavailable."""
-    try:
-        return ModelScopeEmbedding()
-    except Exception as exc:  # pragma: no cover - environment dependent
-        pytest.skip(f"ModelScopeEmbedding backend unavailable: {exc}")
+    return ModelScopeEmbedding()
 
 
 @pytest.fixture()

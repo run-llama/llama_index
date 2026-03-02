@@ -1,4 +1,3 @@
-import copy
 import json
 
 from llama_index.core.schema import BaseNode
@@ -299,17 +298,6 @@ out_parse_nodes = {
 }
 
 
-def _normalize_relationship_hashes(nodes_dict: dict) -> dict:
-    """Normalize relationship hashes so tests don't depend on hash implementation."""
-    normalized = copy.deepcopy(nodes_dict)
-    for node in normalized.get("root", []):
-        relationships = node.get("relationships", {})
-        for rel in relationships.values():
-            if "hash" in rel:
-                rel["hash"] = "<normalized>"
-    return normalized
-
-
 def _deterministic_id_func(i: int, node: BaseNode) -> str:
     return f"{node.node_id}_{i}"
 
@@ -321,9 +309,7 @@ def test_parse_nodes():
     )
     nodes = node_parser._parse_nodes(nodes=[li_doc])
     act_data = {"root": [n.model_dump() for n in nodes]}
-    assert _normalize_relationship_hashes(act_data) == _normalize_relationship_hashes(
-        out_parse_nodes
-    )
+    assert act_data == out_parse_nodes
 
 
 def test_get_nodes_from_docs():
@@ -333,6 +319,4 @@ def test_get_nodes_from_docs():
     )
     nodes = node_parser.get_nodes_from_documents(documents=[li_doc])
     act_data = {"root": [n.model_dump() for n in nodes]}
-    assert _normalize_relationship_hashes(act_data) == _normalize_relationship_hashes(
-        out_get_nodes
-    )
+    assert act_data == out_get_nodes

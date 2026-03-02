@@ -20,10 +20,12 @@ from typing import (
     cast,
 )
 
-# NOTE:
-# Python 3.9 does not expose `types.NoneType`, so we define a local alias that
-# works across all supported versions instead of importing it from `types`.
-NoneType = type(None)
+try:
+    # Python 3.10+
+    from types import NoneType  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Python 3.9 and below
+    NoneType = type(None)  # type: ignore[misc,assignment]
 
 import filetype
 from tinytag import TinyTag, UnsupportedFormatError
