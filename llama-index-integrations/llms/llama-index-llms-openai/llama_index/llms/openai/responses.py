@@ -963,17 +963,26 @@ class OpenAIResponses(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        """Structured predict using constrained decoding via responses.parse.
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
+        adherence at the API level, rather than best-effort function calling.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        response = self._client.responses.parse(
+            model=self.model,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
         )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     async def astructured_predict(
@@ -983,17 +992,26 @@ class OpenAIResponses(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        """Async structured predict using constrained decoding via responses.parse.
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
+        adherence at the API level, rather than best-effort function calling.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        response = await self._aclient.responses.parse(
+            model=self.model,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
         )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     def stream_structured_predict(
