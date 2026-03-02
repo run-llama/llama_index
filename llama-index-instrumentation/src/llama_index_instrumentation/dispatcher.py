@@ -115,6 +115,15 @@ class Dispatcher(BaseModel):
         assert self.manager is not None
         return self.manager.dispatchers[self.root_name]
 
+    def _walk_span_handlers(self) -> Generator[BaseSpanHandler, None, None]:
+        """Yield every span handler reachable via the propagation chain."""
+        c: Optional[Dispatcher] = self
+        while c:
+            yield from c.span_handlers
+            if not c.propagate:
+                break
+            c = c.parent
+
     def add_event_handler(self, handler: BaseEventHandler) -> None:
         """Add handler to set of handlers."""
         self.event_handlers += [handler]
@@ -270,17 +279,11 @@ class Dispatcher(BaseModel):
         and passed to restore_propagation_context() in another process.
         """
         result: Dict[str, Any] = {}
-        c: Optional[Dispatcher] = self
-        while c:
-            for h in c.span_handlers:
-                try:
-                    result.update(h.capture_propagation_context())
-                except BaseException:
-                    pass
-            if not c.propagate:
-                c = None
-            else:
-                c = c.parent
+        for h in self._walk_span_handlers():
+            try:
+                result.update(h.capture_propagation_context())
+            except BaseException:
+                pass
         tags = active_instrument_tags.get()
         if tags:
             result["instrument_tags"] = dict(tags)
@@ -292,17 +295,11 @@ class Dispatcher(BaseModel):
 
         Also restores instrument_tags so that subsequent spans see them.
         """
-        c: Optional[Dispatcher] = self
-        while c:
-            for h in c.span_handlers:
-                try:
-                    h.restore_propagation_context(context)
-                except BaseException:
-                    pass
-            if not c.propagate:
-                c = None
-            else:
-                c = c.parent
+        for h in self._walk_span_handlers():
+            try:
+                h.restore_propagation_context(context)
+            except BaseException:
+                pass
         tags = context.get("instrument_tags")
         if tags:
             active_instrument_tags.set(dict(tags))
@@ -319,32 +316,26 @@ class Dispatcher(BaseModel):
         _shutdown_err = RuntimeError("dispatcher shutdown")
 
         seen_handlers: set = set()
-        c: Optional[Dispatcher] = self
-        while c:
-            for h in c.span_handlers:
-                if id(h) in seen_handlers:
-                    continue
-                seen_handlers.add(id(h))
-                # Drop all open spans — snapshot keys since span_drop mutates the dict
-                for span_id in list(h.open_spans.keys()):
-                    try:
-                        h.span_drop(
-                            id_=span_id,
-                            bound_args=_synthetic_bound_args,
-                            instance=None,
-                            err=_shutdown_err,
-                        )
-                    except BaseException:
-                        pass
-                # Close the handler
+        for h in self._walk_span_handlers():
+            if id(h) in seen_handlers:
+                continue
+            seen_handlers.add(id(h))
+            # Drop all open spans — snapshot keys since span_drop mutates the dict
+            for span_id in list(h.open_spans.keys()):
                 try:
-                    h.close()
+                    h.span_drop(
+                        id_=span_id,
+                        bound_args=_synthetic_bound_args,
+                        instance=None,
+                        err=_shutdown_err,
+                    )
                 except BaseException:
                     pass
-            if not c.propagate:
-                c = None
-            else:
-                c = c.parent
+            # Close the handler
+            try:
+                h.close()
+            except BaseException:
+                pass
 
     def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.
