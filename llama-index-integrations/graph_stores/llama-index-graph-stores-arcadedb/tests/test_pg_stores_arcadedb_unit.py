@@ -5,14 +5,12 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from llama_index.core.graph_stores.types import (
     ChunkNode,
     EntityNode,
     Relation,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -43,6 +41,9 @@ def _make_store(**kwargs):
             refresh_schema=False,
             **kwargs,
         )
+        # Trigger lazy initialisation while the patch is still active so
+        # that _lazy_init() uses the mocked GraphDatabase.driver().
+        store._lazy_init()
         return store, mock_driver
 
 
@@ -53,15 +54,18 @@ def _make_store(**kwargs):
 
 class TestConstruction:
     def test_creates_driver_and_verifies_connectivity(self):
-        store, driver = _make_store()
+        _store, driver = _make_store()
         driver.verify_connectivity.assert_called_once()
 
     def test_ensure_types_called(self):
-        store, driver = _make_store()
+        _store, driver = _make_store()
         # _ensure_types runs 4 statements: 2 CREATE TYPE + 2 CREATE INDEX
         calls = driver.execute_query.call_args_list
         type_calls = [
-            c for c in calls if "CREATE VERTEX TYPE" in str(c) or "CREATE INDEX" in str(c)
+            c
+            for c in calls
+            if "CREATE VERTEX TYPE" in str(c)
+            or "CREATE INDEX" in str(c)
         ]
         assert len(type_calls) == 4
 
@@ -357,7 +361,9 @@ class TestStructuredQuery:
         mock_record.keys.return_value = ["name", "embedding"]
         driver.execute_query.return_value = ([mock_record], None, [])
 
-        result = store.structured_query("MATCH (n) RETURN n.name AS name, n.embedding AS embedding")
+        result = store.structured_query(
+            "MATCH (n) RETURN n.name AS name, n.embedding AS embedding"
+        )
         # value_sanitize should remove embedding
         assert len(result) == 1
 

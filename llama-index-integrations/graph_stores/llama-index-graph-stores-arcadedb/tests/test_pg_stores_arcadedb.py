@@ -11,13 +11,13 @@ from __future__ import annotations
 import os
 
 import pytest
-
 from llama_index.core.graph_stores.types import (
     ChunkNode,
     EntityNode,
     Relation,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
+
 from llama_index.graph_stores.arcadedb import ArcadeDBPropertyGraphStore
 
 BOLT_URL = os.environ.get("ARCADEDB_BOLT_URL")
@@ -121,7 +121,7 @@ class TestRelations:
         assert len(triplets) >= 1
 
         found = False
-        for src, r, tgt in triplets:
+        for _src, r, _tgt in triplets:
             if r.label == "KNOWS":
                 found = True
                 break
@@ -229,7 +229,7 @@ class TestVectorQuery:
             query_embedding=[1.0, 0.0, 0.0],
             similarity_top_k=2,
         )
-        nodes, scores = store.vector_query(query)
+        nodes, _scores = store.vector_query(query)
         # At minimum the brute-force fallback should work
         assert len(nodes) >= 1
         assert nodes[0].name == "vec1"

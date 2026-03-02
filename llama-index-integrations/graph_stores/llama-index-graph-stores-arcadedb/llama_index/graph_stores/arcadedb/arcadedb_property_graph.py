@@ -13,7 +13,8 @@ from __future__ import annotations
 import logging
 import math
 import os
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
@@ -83,7 +84,7 @@ def _strip_meta(props: dict) -> dict:
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
     """Compute cosine similarity between two vectors."""
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(x * x for x in b))
     if norm_a == 0 or norm_b == 0:
@@ -135,6 +136,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         refresh_schema: bool = True,
         driver_config: dict[str, Any] | None = None,
     ) -> None:
+        """Initialise the store (no network I/O; connection is deferred)."""
         self._url = url or os.environ.get("ARCADEDB_BOLT_URL", _DEFAULT_URI)
         self._username = username or os.environ.get("ARCADEDB_USERNAME", "root")
         self._password = password or os.environ.get(
@@ -170,8 +172,9 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             msg = f"Could not connect to ArcadeDB at {self._url}: {e}"
             raise ConnectionError(msg) from e
 
-        self._ensure_types()
         self._initialized = True
+
+        self._ensure_types()
 
         if self._refresh_schema_on_init:
             self.refresh_schema()
@@ -212,7 +215,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         ):
             try:
                 self._execute(stmt)
-            except Exception:
+            except Exception:  # noqa: BLE001, PERF203
                 logger.debug("Type creation skipped: %s", stmt)
 
         for stmt in (
@@ -221,7 +224,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         ):
             try:
                 self._execute(stmt)
-            except Exception:
+            except Exception:  # noqa: BLE001, PERF203
                 logger.debug("Index creation skipped: %s", stmt)
 
     # ------------------------------------------------------------------
@@ -239,7 +242,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                 )
                 if r.get("label")
             ]
-        except Exception:
+        except Exception:  # noqa: BLE001
             labels = []
 
         # Node properties per label
@@ -247,7 +250,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         for label in labels:
             try:
                 records = self._execute(
-                    f"MATCH (n:`{label}`) RETURN n LIMIT 25"  # noqa: S608
+                    f"MATCH (n:`{label}`) RETURN n LIMIT 25"
                 )
                 props: dict[str, str] = {}
                 for record in records:
@@ -261,7 +264,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                 node_props[label] = [
                     {"property": k, "type": v} for k, v in props.items()
                 ]
-            except Exception:
+            except Exception:  # noqa: BLE001, PERF203
                 logger.debug("Schema: failed to get props for %s", label)
 
         # Relationship types
@@ -273,7 +276,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                 )
                 if r.get("type")
             ]
-        except Exception:
+        except Exception:  # noqa: BLE001
             rel_types = []
 
         # Relationship properties per type
@@ -281,7 +284,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         for rel_type in rel_types:
             try:
                 records = self._execute(
-                    f"MATCH ()-[r:`{rel_type}`]->() RETURN r LIMIT 25"  # noqa: S608
+                    f"MATCH ()-[r:`{rel_type}`]->() RETURN r LIMIT 25"
                 )
                 props = {}
                 for record in records:
@@ -295,7 +298,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                 rel_props[rel_type] = [
                     {"property": k, "type": v} for k, v in props.items()
                 ]
-            except Exception:
+            except Exception:  # noqa: BLE001, PERF203
                 logger.debug("Schema: failed to get props for rel %s", rel_type)
 
         # Relationship patterns
@@ -309,7 +312,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                 )
                 if r.get("start") and r.get("end")
             ]
-        except Exception:
+        except Exception:  # noqa: BLE001
             relationships = []
 
         self.structured_schema = {
@@ -319,13 +322,13 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             "metadata": {"constraint": [], "index": []},
         }
 
-    def get_schema(self, refresh: bool = False) -> Any:
+    def get_schema(self, refresh: bool = False) -> Any:  # noqa: FBT001, FBT002
         """Return the structured schema dictionary."""
         if refresh:
             self.refresh_schema()
         return self.structured_schema
 
-    def get_schema_str(self, refresh: bool = False) -> str:
+    def get_schema_str(self, refresh: bool = False) -> str:  # noqa: FBT001, FBT002
         """Return a human-readable schema string for LLM context."""
         schema = self.get_schema(refresh=refresh)
         lines: list[str] = ["Node properties:"]
@@ -339,10 +342,10 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             lines.append(f"  {rel_type} {{{', '.join(prop_strs)}}}")
 
         lines.append("Relationships:")
-        for rel in schema.get("relationships", []):
-            lines.append(
-                f"  (:{rel['start']})-[:{rel['type']}]->(:{rel['end']})"
-            )
+        lines.extend(
+            f"  (:{rel['start']})-[:{rel['type']}]->(:{rel['end']})"
+            for rel in schema.get("relationships", [])
+        )
 
         return "\n".join(lines)
 
@@ -418,12 +421,12 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
                     },
                 )
 
-    def upsert_relations(self, relations: List[Relation]) -> None:
+    def upsert_relations(self, relations: list[Relation]) -> None:
         """Upsert relations into ArcadeDB."""
         for rel in relations:
             props = _clean_properties(rel.properties)
             cypher = (
-                f"MATCH (source {{id: $source_id}}) "  # noqa: S608
+                f"MATCH (source {{id: $source_id}}) "
                 f"MATCH (target {{id: $target_id}}) "
                 f"MERGE (source)-[r:`{rel.label}`]->(target) "
                 f"SET r += $properties"
@@ -443,9 +446,9 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def get(
         self,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None,
-    ) -> List[LabelledNode]:
+        properties: dict | None = None,
+        ids: list[str] | None = None,
+    ) -> list[LabelledNode]:
         """Get nodes matching the given properties or IDs."""
         cypher = "MATCH (e) "
         params: dict[str, Any] = {}
@@ -499,11 +502,11 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def get_triplets(
         self,
-        entity_names: Optional[List[str]] = None,
-        relation_names: Optional[List[str]] = None,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None,
-    ) -> List[Triplet]:
+        entity_names: list[str] | None = None,
+        relation_names: list[str] | None = None,
+        properties: dict | None = None,
+        ids: list[str] | None = None,
+    ) -> list[Triplet]:
         """Get triplets matching the given criteria.
 
         Runs two queries (outgoing + incoming) because ArcadeDB may not
@@ -538,13 +541,13 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         )
 
         q_out = (
-            f"MATCH (e:Entity) {where} "  # noqa: S608
+            f"MATCH (e:Entity) {where} "
             f"MATCH (e)-[r{rel_filter}]->(t:Entity) "
             f"{return_clause}"
         )
 
         q_in = (
-            f"MATCH (e:Entity) {where} "  # noqa: S608
+            f"MATCH (e:Entity) {where} "
             f"MATCH (e)<-[r{rel_filter}]-(t:Entity) "
             "RETURN t.name AS source_id, t.label AS source_type, t AS source_props, "
             "type(r) AS rel_type, "
@@ -598,18 +601,18 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def get_rel_map(
         self,
-        graph_nodes: List[LabelledNode],
+        graph_nodes: list[LabelledNode],
         depth: int = 2,
         limit: int = 30,
-        ignore_rels: Optional[List[str]] = None,
-    ) -> List[Triplet]:
+        ignore_rels: list[str] | None = None,
+    ) -> list[Triplet]:
         """Get depth-aware relationship map (replaces ``apoc.path.expand``)."""
         triples: list[Triplet] = []
         ignore_rels = ignore_rels or []
         ids = [node.id for node in graph_nodes]
 
         cypher = (
-            f"MATCH (e:Entity) WHERE e.id IN $ids "  # noqa: S608
+            f"MATCH (e:Entity) WHERE e.id IN $ids "
             f"MATCH (e)-[r*1..{depth}]-(other) "
             "UNWIND r AS rel "
             "WITH DISTINCT rel "
@@ -659,7 +662,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
         return triples
 
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = None
+        self, query: str, param_map: dict[str, Any] | None = None
     ) -> Any:
         """Execute a Cypher query and return sanitised results."""
         param_map = param_map or {}
@@ -670,7 +673,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[List[LabelledNode], List[float]]:
+    ) -> tuple[list[LabelledNode], list[float]]:
         """Vector similarity search using ArcadeDB's native HNSW index.
 
         Falls back to Python-side cosine similarity when native search is
@@ -699,10 +702,11 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             sql = (
                 f"SELECT *, $similarity AS score FROM Entity "  # noqa: S608
                 f"WHERE embedding NEAR [{embedding_str}] "
+                f"AND {filters} "
                 f"LIMIT {limit}"
             )
             data = self._execute(sql)
-        except Exception:
+        except Exception:  # noqa: BLE001
             logger.debug(
                 "Native vector search unavailable, falling back to brute-force"
             )
@@ -753,10 +757,10 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
 
     def delete(
         self,
-        entity_names: Optional[List[str]] = None,
-        relation_names: Optional[List[str]] = None,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None,
+        entity_names: list[str] | None = None,
+        relation_names: list[str] | None = None,
+        properties: dict | None = None,
+        ids: list[str] | None = None,
     ) -> None:
         """Delete matching nodes and/or relations."""
         if entity_names:
@@ -796,6 +800,7 @@ class ArcadeDBPropertyGraphStore(PropertyGraphStore):
             self._driver.close()
 
     def __del__(self) -> None:
+        """Close the driver on garbage collection."""
         try:
             if self._driver is not None:
                 self._driver.close()
