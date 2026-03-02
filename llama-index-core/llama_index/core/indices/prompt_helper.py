@@ -9,6 +9,8 @@ make use of the available context window (and thereby reducing the number of LLM
 needed), or truncating them so that they fit in a single LLM call.
 """
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, cast
