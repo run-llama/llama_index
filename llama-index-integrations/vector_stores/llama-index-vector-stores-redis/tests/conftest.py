@@ -1,32 +1,12 @@
-import time
 import pytest
 from typing import List
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.node_parser import SentenceSplitter
 from redis import Redis
 from redis.asyncio import Redis as RedisAsync
-import docker
 
-docker_client = docker.from_env()
-docker_client.ping()
-
-container = docker_client.containers.run(
-    "redis/redis-stack:latest",
-    detach=True,
-    name="redis",
-    ports={"6379/tcp": 6379, "8001/tcp": 8001},
-)
-
-# wait for redis to be ready
-time.sleep(2)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def docker_setup():
-    yield container
-
-    container.stop()
-    container.remove()
+# Using existing Redis container instead of creating a new one
+# Make sure Redis is running on localhost:6379
 
 
 @pytest.fixture()
