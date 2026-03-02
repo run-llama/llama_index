@@ -870,7 +870,10 @@ class OpensearchVectorClient:
     def close(self) -> None:
         """Close the OpenSearch clients and release resources."""
         self._os_client.close()
-        asyncio_run(self._os_async_client.close())
+        try:
+            asyncio_run(self._os_async_client.close())
+        except RuntimeError:
+            pass
 
     async def aclose(self) -> None:
         """Asynchronously close the OpenSearch clients and release resources."""

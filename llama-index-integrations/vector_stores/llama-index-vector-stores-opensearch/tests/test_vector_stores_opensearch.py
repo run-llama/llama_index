@@ -240,3 +240,38 @@ async def test_aensure_initialized_idempotent():
 
     client._os_async_client.info.assert_not_called()
     client._os_async_client.indices.get.assert_not_called()
+
+
+def test_ensure_initialized_aoss_calls_exists():
+    """Verify AOSS path calls indices.exists() instead of indices.refresh()."""
+    from opensearchpy.exceptions import NotFoundError
+
+    mock_http_auth = MagicMock()
+    mock_http_auth.service = "aoss"
+
+    client = _make_client_no_network(http_auth=mock_http_auth)
+    assert client.is_aoss is True
+
+    client._os_client.indices.get.side_effect = NotFoundError(
+        404, "index_not_found_exception"
+    )
+
+    client._ensure_initialized()
+
+    client._os_client.indices.create.assert_called_once()
+    client._os_client.indices.exists.assert_called_once_with(index="test-index")
+    client._os_client.indices.refresh.assert_not_called()
+    assert client._efficient_filtering_enabled is False
+
+
+def test_close_does_not_raise_in_running_event_loop():
+    """Verify close() does not raise RuntimeError when event loop is running."""
+    client = _make_client_no_network()
+
+    with patch(
+        "llama_index.vector_stores.opensearch.base.asyncio_run",
+        side_effect=RuntimeError("This event loop is already running"),
+    ):
+        client.close()
+
+    client._os_client.close.assert_called_once()
