@@ -2181,3 +2181,240 @@ async def test_custom_sparse_query(
         assert "custom_fields" in node.metadata
         assert "field1" in node.metadata["custom_fields"]
         assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]
+
+
+# ================== MMR (Maximal Marginal Relevance) Tests ==================
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_basic(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test basic MMR query functionality."""
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+
+    assert isinstance(pg_fixture, PGVectorStore)
+
+    # Query with MMR mode
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+
+    assert res.nodes is not None
+    assert len(res.nodes) <= 3
+    assert res.similarities is not None
+    assert res.ids is not None
+    # Check that we got valid results
+    assert all(node.node_id in ["aaa", "bbb", "ccc", "ddd"] for node in res.nodes)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_with_threshold(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test MMR query with different mmr_threshold values."""
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+
+    # High threshold (favor relevance)
+    q_high = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.9,
+    )
+
+    if use_async:
+        res_high = await pg_fixture.aquery(q_high)
+    else:
+        res_high = pg_fixture.query(q_high)
+
+    assert res_high.nodes is not None
+    assert len(res_high.nodes) <= 2
+
+    # Low threshold (favor diversity)
+    q_low = VectorStoreQuery(
+        query_embedding=_get_sample_vector(1.0),
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.1,
+    )
+
+    if use_async:
+        res_low = await pg_fixture.aquery(q_low)
+    else:
+        res_low = pg_fixture.query(q_low)
+
+    assert res_low.nodes is not None
+    assert len(res_low.nodes) <= 2
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_with_prefetch_kwargs(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test MMR query with prefetch configuration kwargs."""
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+
+    # Test with mmr_prefetch_factor
+    q1 = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    if use_async:
+        res1 = await pg_fixture.aquery(q1, mmr_prefetch_factor=2)
+    else:
+        res1 = pg_fixture.query(q1, mmr_prefetch_factor=2)
+
+    assert res1.nodes is not None
+    assert len(res1.nodes) <= 2
+
+    # Test with mmr_prefetch_k
+    q2 = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    if use_async:
+        res2 = await pg_fixture.aquery(q2, mmr_prefetch_k=8)
+    else:
+        res2 = pg_fixture.query(q2, mmr_prefetch_k=8)
+
+    assert res2.nodes is not None
+    assert len(res2.nodes) <= 2
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_with_filters(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test MMR query with metadata filters."""
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="test_key", value="test_value")]
+    )
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+        filters=filters,
+    )
+
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+
+    assert res.nodes is not None
+    # Should only return nodes that match the filter
+    for node in res.nodes:
+        assert node.metadata.get("test_key") == "test_value"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_empty_result(pg: PGVectorStore, use_async: bool) -> None:
+    """Test MMR query when no nodes match."""
+    # Query without adding any nodes
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+
+    assert res.nodes is not None
+    assert len(res.nodes) == 0
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_requires_embedding(
+    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test that MMR query raises error without query_embedding."""
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=None,  # Missing required embedding
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    with pytest.raises(ValueError, match="MMR query requires query_embedding"):
+        if use_async:
+            await pg.aquery(q)
+        else:
+            pg.query(q)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_prefetch_params_coexistence(
+    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    """Test that MMR query raises error when both prefetch params are provided."""
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="'mmr_prefetch_factor' and 'mmr_prefetch_k' cannot coexist",
+    ):
+        if use_async:
+            await pg.aquery(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
+        else:
+            pg.query(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
