@@ -69,6 +69,19 @@ class TestNeo4jGraphStoreApocSample:
         )
         assert store._apoc_meta_config == {"sample": 1000}
 
+    def test_apoc_sample_zero_is_valid(self, mock_neo4j_driver):
+        """apoc_sample=0 should produce {"sample": 0}, not be treated as falsy."""
+        from llama_index.graph_stores.neo4j import Neo4jGraphStore
+
+        store = Neo4jGraphStore(
+            username="neo4j",
+            password="password",
+            url="bolt://localhost:7687",
+            refresh_schema=False,
+            apoc_sample=0,
+        )
+        assert store._apoc_meta_config == {"sample": 0}
+
     def test_refresh_schema_passes_config(self, mock_neo4j_driver):
         """refresh_schema should pass _apoc_meta_config to all three queries."""
         from llama_index.graph_stores.neo4j import Neo4jGraphStore

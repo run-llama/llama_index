@@ -51,7 +51,9 @@ class Neo4jGraphStore(GraphStore):
         **kwargs: Any,
     ) -> None:
         self.node_label = node_label
-        self._apoc_meta_config = {"sample": apoc_sample} if apoc_sample else {}
+        self._apoc_meta_config = (
+            {"sample": apoc_sample} if apoc_sample is not None else {}
+        )
         self._driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password), user_agent=user_agent
         )

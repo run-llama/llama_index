@@ -120,6 +120,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         timeout (Optional[float]): The timeout for transactions in seconds.
         Useful for terminating long-running queries.
         By default, there is no timeout set.
+        apoc_sample (Optional[int]): The number of nodes/rels to sample when calling
+        apoc.meta.data(). Useful for large databases where schema introspection
+        is slow. When None (default), no sampling config is passed.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -169,7 +172,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhanced_schema = enhanced_schema
-        self._apoc_meta_config = {"sample": apoc_sample} if apoc_sample else {}
+        self._apoc_meta_config = (
+            {"sample": apoc_sample} if apoc_sample is not None else {}
+        )
         self._driver = neo4j.GraphDatabase.driver(
             url,
             auth=(username, password),
