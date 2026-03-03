@@ -10,6 +10,7 @@ from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
 from openai.types.completion_choice import Logprobs
 from tenacity import (
+    RetryCallState,
     before_sleep_log,
     retry,
     retry_if_exception_type,
@@ -19,6 +20,7 @@ from tenacity import (
     wait_random_exponential,
 )
 from tenacity.stop import stop_base
+from tenacity.wait import wait_base
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
@@ -251,6 +253,56 @@ logger = logging.getLogger(__name__)
 
 OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
+# Maximum wait time (seconds) to accept from a Retry-After header.
+# Prevents a misbehaving server from stalling the client indefinitely.
+_MAX_RETRY_AFTER_SECONDS = 120.0
+
+
+class _WaitRetryAfter(wait_base):
+    """
+    Wait strategy that respects the Retry-After header on RateLimitError.
+
+    When the last exception is an ``openai.RateLimitError`` whose HTTP response
+    contains a ``Retry-After`` header, the wait time is taken from that header
+    (capped at ``_MAX_RETRY_AFTER_SECONDS``).  For all other exceptions the
+    ``fallback`` strategy decides the sleep duration.
+    """
+
+    def __init__(self, fallback: wait_base) -> None:
+        self.fallback = fallback
+
+    def __call__(self, retry_state: RetryCallState) -> float:
+        exc = retry_state.outcome.exception() if retry_state.outcome else None
+        if isinstance(exc, openai.RateLimitError):
+            retry_after = _parse_retry_after(exc)
+            if retry_after is not None:
+                return min(retry_after, _MAX_RETRY_AFTER_SECONDS)
+        return self.fallback(retry_state)
+
+
+def _parse_retry_after(exc: openai.RateLimitError) -> Optional[float]:
+    """
+    Extract the Retry-After value (in seconds) from a RateLimitError.
+
+    Returns ``None`` when the header is missing or cannot be parsed.
+    """
+    response = getattr(exc, "response", None)
+    if response is None:
+        return None
+    headers = getattr(response, "headers", None)
+    if headers is None:
+        return None
+    raw = headers.get("retry-after")  # httpx.Headers is case-insensitive
+    if raw is None:
+        return None
+    try:
+        value = float(raw)
+    except (ValueError, TypeError):
+        return None
+    if value < 0:
+        return None
+    return value
+
 
 def create_retry_decorator(
     max_retries: int,
@@ -259,11 +311,12 @@ def create_retry_decorator(
     min_seconds: float = 4,
     max_seconds: float = 60,
 ) -> Callable[[Any], Any]:
-    wait_strategy = (
+    fallback = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
         if random_exponential
         else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
     )
+    wait_strategy = _WaitRetryAfter(fallback)
 
     stop_strategy: stop_base = stop_after_attempt(max_retries)
     if stop_after_delay_seconds is not None:
