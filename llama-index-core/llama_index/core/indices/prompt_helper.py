@@ -555,8 +555,8 @@ class ChatPromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         messages: Sequence[ChatMessage],
         padding: int = DEFAULT_PADDING,
-        llm: Optional[LLM] = None,
-        tools: Optional[List["BaseTool"]] = None,
+        llm: LLM | None = None,
+        tools: list["BaseTool"] | None = None,
         strict: bool = False,
     ) -> list[ChatMessage]:
         """
@@ -582,8 +582,8 @@ class ChatPromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         messages: Sequence[ChatMessage],
         padding: int = DEFAULT_PADDING,
-        llm: Optional[LLM] = None,
-        tools: Optional[List["BaseTool"]] = None,
+        llm: LLM | None = None,
+        tools: list["BaseTool"] | None = None,
     ) -> list[ChatMessage]:
         """
         Async repack text chunks to fit available context window.
@@ -622,8 +622,8 @@ class ChatPromptHelper(BaseComponent):
         prompt: BasePromptTemplate,
         messages: Sequence[ChatMessage],
         padding: int = DEFAULT_PADDING,
-        llm: Optional[LLM] = None,
-        tools: Optional[List["BaseTool"]] = None,
+        llm: LLM | None = None,
+        tools: list["BaseTool"] | None = None,
     ) -> list[ChatMessage]:
         """
         Repack text chunks to fit available context window.
