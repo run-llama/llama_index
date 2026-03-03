@@ -113,8 +113,10 @@ def build_metadata_filter_fn(
         def _process_filter_match(
             operator: FilterOperator, value: Any, metadata_value: Any
         ) -> bool:
+            """Evaluate a single filter operator against a metadata value."""
             if metadata_value is None:
                 return False
+
             if operator == FilterOperator.EQ:
                 return metadata_value == value
             if operator == FilterOperator.NE:
@@ -133,12 +135,17 @@ def build_metadata_filter_fn(
                 return metadata_value not in value
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
-            if operator == FilterOperator.TEXT_MATCH:
-                return value.lower() in metadata_value.lower()
+            if operator in (
+                FilterOperator.TEXT_MATCH,
+                FilterOperator.TEXT_MATCH_INSENSITIVE,
+            ):
+                # Normalize both sides to strings and compare case-insensitively.
+                return str(value).lower() in str(metadata_value).lower()
             if operator == FilterOperator.ALL:
                 return all(val in metadata_value for val in value)
             if operator == FilterOperator.ANY:
                 return any(val in metadata_value for val in value)
+
             raise ValueError(f"Invalid operator: {operator}")
 
         metadata = metadata_lookup_fn(node_id)
@@ -167,10 +174,13 @@ def build_metadata_filter_fn(
 
         if filter_condition == FilterCondition.AND:
             return all(filter_matches_list)
-        elif filter_condition == FilterCondition.OR:
+        if filter_condition == FilterCondition.OR:
             return any(filter_matches_list)
-        else:
-            raise ValueError(f"Invalid filter condition: {filter_condition}")
+        if filter_condition == FilterCondition.NOT:
+            # Match when none of the filters match.
+            return not any(filter_matches_list)
+
+        raise ValueError(f"Invalid filter condition: {filter_condition}")
 
     return filter_fn
 
