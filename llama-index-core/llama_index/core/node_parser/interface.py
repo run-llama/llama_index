@@ -231,6 +231,28 @@ class TextSplitter(NodeParser):
 
 
 class MetadataAwareTextSplitter(TextSplitter):
+    def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
+        super().__init_subclass__(*args, **kwargs)
+
+        # Pydantic v2 keeps the user-defined init on __pydantic_init__
+        user_init = getattr(cls, "__pydantic_init__", None)
+        if user_init is None:
+            return
+
+        # Safety: don't propagate pydantic-generated docs
+        if getattr(user_init, "__module__", "").startswith("pydantic"):
+            return
+
+        doc = getattr(user_init, "__doc__", None)
+        if not doc:
+            return
+
+        # Patch the generated __init__ that help() will show
+        try:
+            cls.__init__.__doc__ = doc
+        except (AttributeError, TypeError):
+            pass
+
     @abstractmethod
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]: ...
 
