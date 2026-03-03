@@ -1,5 +1,7 @@
 from typing import Any, Dict, Mapping
 
+import pytest
+
 from llama_index.core.vector_stores.types import (
     FilterCondition,
     FilterOperator,
@@ -133,9 +135,7 @@ def test_nested_metadata_filters_raise_error() -> None:
 
     # Nested MetadataFilters are not supported and should raise an error
     # when the filter function is evaluated.
-    try:
+    with pytest.raises(
+        ValueError, match="Nested MetadataFilters are not supported"
+    ):
         fn("n1")
-        assert False, "Expected ValueError for nested MetadataFilters"
-    except ValueError as exc:
-        assert "Nested MetadataFilters are not supported" in str(exc)
-
