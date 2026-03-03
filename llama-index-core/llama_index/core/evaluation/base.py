@@ -94,6 +94,7 @@ class BaseEvaluator(PromptMixin):
         self,
         query: Optional[str] = None,
         response: Optional[Response] = None,
+        response_field: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """
@@ -101,11 +102,23 @@ class BaseEvaluator(PromptMixin):
 
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
+
+        Args:
+            query: Query string.
+            response: Response object.
+            response_field: If set, use response.metadata[response_field]
+                instead of response.response as the response string sent to
+                the evaluator.  Useful when the full response.response is very
+                large (e.g. raw SQL result sets) and a compact representation
+                is available in metadata.
         """
         response_str: Optional[str] = None
         contexts: Optional[Sequence[str]] = None
         if response is not None:
-            response_str = response.response
+            if response_field is not None:
+                response_str = (response.metadata or {}).get(response_field)
+            else:
+                response_str = response.response
             contexts = [node.get_content() for node in response.source_nodes]
 
         return self.evaluate(
@@ -116,6 +129,7 @@ class BaseEvaluator(PromptMixin):
         self,
         query: Optional[str] = None,
         response: Optional[Response] = None,
+        response_field: Optional[str] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """
@@ -123,11 +137,23 @@ class BaseEvaluator(PromptMixin):
 
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
+
+        Args:
+            query: Query string.
+            response: Response object.
+            response_field: If set, use response.metadata[response_field]
+                instead of response.response as the response string sent to
+                the evaluator.  Useful when the full response.response is very
+                large (e.g. raw SQL result sets) and a compact representation
+                is available in metadata.
         """
         response_str: Optional[str] = None
         contexts: Optional[Sequence[str]] = None
         if response is not None:
-            response_str = response.response
+            if response_field is not None:
+                response_str = (response.metadata or {}).get(response_field)
+            else:
+                response_str = response.response
             contexts = [node.get_content() for node in response.source_nodes]
 
         return await self.aevaluate(
