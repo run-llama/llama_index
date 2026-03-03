@@ -3,7 +3,16 @@ import json
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Type,
+    AsyncIterator,
+    Iterator,
+)
 
 from llama_index.core.base.llms.types import ContentBlock, TextBlock
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -175,6 +184,10 @@ class BaseTool(DispatcherSpanMixin):
     def __call__(self, input: Any) -> ToolOutput:
         pass
 
+    def call_stream(self, *args: Any, **kwargs: Any) -> Iterator[ToolOutput]:
+        """Stream tool outputs. Default behavior yields a single ToolOutput."""
+        yield self.__call__(*args, **kwargs)
+
     def _process_langchain_tool_kwargs(
         self,
         langchain_tool_kwargs: Any,
@@ -249,6 +262,14 @@ class AsyncBaseTool(BaseTool):
         async-compatible implementation.
         """
 
+    async def acall_stream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ToolOutput]:
+        """
+        Stream tool outputs. Default behavior yields a single ToolOutput from acall.
+        """
+        yield await self.acall(*args, **kwargs)
+
 
 class BaseToolAsyncAdapter(AsyncBaseTool):
     """
@@ -265,8 +286,32 @@ class BaseToolAsyncAdapter(AsyncBaseTool):
     def call(self, input: Any) -> ToolOutput:
         return self.base_tool(input)
 
+    def call_stream(self, *args: Any, **kwargs: Any) -> Iterator[ToolOutput]:
+        if hasattr(self.base_tool, "call_stream"):
+            return self.base_tool.call_stream(*args, **kwargs)  # type: ignore[no-any-return]
+
+        def _single() -> Iterator[ToolOutput]:
+            yield self.base_tool(*args, **kwargs)
+
+        return _single()
+
     async def acall(self, input: Any) -> ToolOutput:
         return await asyncio.to_thread(self.call, input)
+
+    async def acall_stream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ToolOutput]:
+        if hasattr(self.base_tool, "call_stream"):
+            iterator = iter(self.base_tool.call_stream(*args, **kwargs))
+            while True:
+                try:
+                    item = await asyncio.to_thread(next, iterator)
+                except StopIteration:
+                    break
+                yield item
+            return
+
+        yield await self.acall(*args, **kwargs)
 
 
 def adapt_to_async_tool(tool: BaseTool) -> AsyncBaseTool:
