@@ -12,6 +12,13 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
+from llama_index.graph_stores.arcadedb.arcadedb_property_graph import (
+    _clean_properties,
+    _cosine_similarity,
+    _infer_type,
+    _strip_embedding,
+)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -20,7 +27,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 def _make_store(**kwargs):
     """Create a store with a mocked driver (no real ArcadeDB needed)."""
     with patch(
-        "llama_index.graph_stores.arcadedb.arcadedb_property_graph.GraphDatabase"
+        "llama_index.graph_stores.arcadedb.arcadedb_property_graph.GraphDatabase",
     ) as mock_gd:
         mock_driver = MagicMock()
         mock_gd.driver.return_value = mock_driver
@@ -81,10 +88,6 @@ class TestConstruction:
 
 class TestHelpers:
     def test_clean_properties(self):
-        from llama_index.graph_stores.arcadedb.arcadedb_property_graph import (
-            _clean_properties,
-        )
-
         props = {
             "@rid": "#1:0",
             "@type": "Entity",
@@ -104,20 +107,12 @@ class TestHelpers:
         assert cleaned["age"] == 30
 
     def test_strip_embedding(self):
-        from llama_index.graph_stores.arcadedb.arcadedb_property_graph import (
-            _strip_embedding,
-        )
-
         props = {"name": "Alice", "embedding": [0.1, 0.2]}
         stripped = _strip_embedding(props)
         assert "embedding" not in stripped
         assert stripped["name"] == "Alice"
 
     def test_infer_type(self):
-        from llama_index.graph_stores.arcadedb.arcadedb_property_graph import (
-            _infer_type,
-        )
-
         assert _infer_type(42) == "INTEGER"
         assert _infer_type(3.14) == "FLOAT"
         assert _infer_type("hello") == "STRING"
@@ -126,10 +121,6 @@ class TestHelpers:
         assert _infer_type(object()) == "STRING"
 
     def test_cosine_similarity(self):
-        from llama_index.graph_stores.arcadedb.arcadedb_property_graph import (
-            _cosine_similarity,
-        )
-
         assert _cosine_similarity([1, 0], [1, 0]) == pytest.approx(1.0)
         assert _cosine_similarity([1, 0], [0, 1]) == pytest.approx(0.0)
         assert _cosine_similarity([0, 0], [1, 0]) == pytest.approx(0.0)
@@ -169,7 +160,7 @@ class TestUpsertNodes:
         driver.execute_query.reset_mock()
 
         entity = EntityNode(
-            name="Alice", label="PERSON", embedding=[0.1, 0.2, 0.3]
+            name="Alice", label="PERSON", embedding=[0.1, 0.2, 0.3],
         )
         store.upsert_nodes([entity])
 
@@ -346,7 +337,7 @@ class TestStructuredQuery:
         driver.execute_query.return_value = ([mock_record], None, [])
 
         result = store.structured_query(
-            "MATCH (n) RETURN count(n) AS count"
+            "MATCH (n) RETURN count(n) AS count",
         )
         assert len(result) == 1
 
@@ -362,7 +353,7 @@ class TestStructuredQuery:
         driver.execute_query.return_value = ([mock_record], None, [])
 
         result = store.structured_query(
-            "MATCH (n) RETURN n.name AS name, n.embedding AS embedding"
+            "MATCH (n) RETURN n.name AS name, n.embedding AS embedding",
         )
         # value_sanitize should remove embedding
         assert len(result) == 1
@@ -416,7 +407,7 @@ class TestVectorQuery:
         driver.execute_query.side_effect = side_effect
 
         query = VectorStoreQuery(
-            query_embedding=[1.0, 0.0, 0.0], similarity_top_k=5
+            query_embedding=[1.0, 0.0, 0.0], similarity_top_k=5,
         )
         nodes, scores = store.vector_query(query)
         assert len(nodes) == 1

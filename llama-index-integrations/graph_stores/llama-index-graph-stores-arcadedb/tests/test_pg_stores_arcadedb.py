@@ -160,7 +160,7 @@ class TestTriplets:
         ])
 
         triplets = store.get_triplets(
-            entity_names=["Alice"], relation_names=["KNOWS"]
+            entity_names=["Alice"], relation_names=["KNOWS"],
         )
         labels = {t[1].label for t in triplets}
         assert "KNOWS" in labels

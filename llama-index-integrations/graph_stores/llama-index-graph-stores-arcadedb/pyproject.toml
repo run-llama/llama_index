@@ -39,9 +39,7 @@ test = [
     "pytest>=7.3.0,<8.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
 ]
-dev = [
-    "llama-index-core",
-]
+dev = []
 
 [tool.llamahub]
 contains_example = false
@@ -59,23 +57,15 @@ markers = [
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "COM812",
-    "PLC0415",
-    "FIX002",
-    "TD002",
-    "TD003",
-    "PLR0912",
-    "PLR0913",
-    "C901",
-    "ANN204",
-    "ANN401",
-    "TRY201",
-    "ARG002",
-    "N803",
-    "TC002",
-    "TC003",
-    "TRY300",
-    "N806",
+    "PLR0912",  # too many branches (schema introspection)
+    "PLR0913",  # too many arguments (constructor API)
+    "C901",     # too complex (schema introspection)
+    "ANN401",   # Any type needed for dynamic DB results
+    "BLE001",   # blind exception needed for DB driver errors
+    "PERF203",  # try-except in loop needed for DB operations
+    "FBT001",   # bool positional arg in overridden methods
+    "FBT002",   # bool default in overridden methods
+    "S608",     # SQL string (ArcadeDB SQL, not user input)
 ]
 
 [tool.ruff.lint.pydocstyle]
