@@ -38,7 +38,6 @@ dependencies = [
     "valkey-glide>=2.2.7",
     "valkey-glide-sync>=2.1.0",
     "llama-index-core>=0.13.0,<0.15",
-    "llama-index-embeddings-openai>=0.5.1",
 ]
 
 [tool.codespell]

@@ -9,9 +9,13 @@ Tests are organized into three groups:
 
 import pytest
 from glide import ft
+from glide_shared.commands.server_modules.ft_options.ft_create_options import (
+    TagField,
+    NumericField,
+)
 
 from llama_index.core import MockEmbedding, StorageContext, VectorStoreIndex
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
@@ -246,10 +250,6 @@ class TestSyncOperations:
 
     def test_query_with_filters(self, valkey_client):
         """Test querying with metadata filters synchronously."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_filter_query"
         schema.index.prefix = "test_sync_filter_query"
@@ -299,10 +299,6 @@ class TestSyncOperations:
 
     def test_filter_only_query_sync(self, valkey_client):
         """Test filter-only query synchronously."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_filter_only"
         schema.index.prefix = "test_sync_filter_only"
@@ -403,10 +399,6 @@ class TestAsyncOperations:
         self, documents, turtle_test, valkey_client_async
     ):
         """Test filtering with custom metadata fields."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_async_custom_filter"
         schema.index.prefix = "test_async_custom_filter"
@@ -456,10 +448,6 @@ class TestAsyncOperations:
     @pytest.mark.asyncio
     async def test_numeric_field_filtering(self, valkey_client_async):
         """Test filtering with numeric fields."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            NumericField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_async_numeric_filter"
         schema.index.prefix = "test_async_numeric_filter"
@@ -513,10 +501,6 @@ class TestAsyncOperations:
     @pytest.mark.asyncio
     async def test_filter_only_query(self, documents, valkey_client_async):
         """Test querying with filters only, no embedding."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_async_filter_only"
         schema.index.prefix = "test_async_filter_only"
@@ -526,8 +510,10 @@ class TestAsyncOperations:
             valkey_url="valkey://localhost:6379",
             valkey_client_async=valkey_client_async,
             schema=schema,
-            overwrite=False,
+            overwrite=True,
         )
+
+        await vector_store.async_create_index()
 
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         index = VectorStoreIndex.from_documents(
@@ -535,10 +521,6 @@ class TestAsyncOperations:
             embed_model=MockEmbedding(embed_dim=1536),
             storage_context=storage_context,
         )
-
-        # Ensure async client is initialized
-        await vector_store._ensure_async_client()
-        vector_store.created_async_index = True
 
         filters = MetadataFilters(
             filters=[
@@ -559,11 +541,6 @@ class TestAsyncOperations:
     @pytest.mark.asyncio
     async def test_multiple_filter_conditions(self, valkey_client_async):
         """Test filter-only query with multiple conditions."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-            NumericField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_async_multi_filter"
         schema.index.prefix = "test_async_multi_filter"
@@ -575,12 +552,12 @@ class TestAsyncOperations:
             valkey_url="valkey://localhost:6379",
             valkey_client_async=valkey_client_async,
             schema=schema,
-            overwrite=False,
+            overwrite=True,
         )
 
-        embed_model = MockEmbedding(embed_dim=1536)
-        from llama_index.core.schema import Document
+        await vector_store.async_create_index()
 
+        embed_model = MockEmbedding(embed_dim=1536)
         docs = [
             Document(
                 text="good book",
@@ -603,10 +580,6 @@ class TestAsyncOperations:
         index = VectorStoreIndex.from_documents(
             docs, embed_model=embed_model, storage_context=storage_context
         )
-
-        # Ensure async client is initialized
-        await vector_store._ensure_async_client()
-        vector_store.created_async_index = True
 
         filters = MetadataFilters(
             filters=[
@@ -873,10 +846,6 @@ class TestAsyncOperations:
     @pytest.mark.asyncio
     async def test_process_results_without_vector_score(self, valkey_client_async):
         """Test processing filter-only query results (no vector scores)."""
-        from glide_shared.commands.server_modules.ft_options.ft_create_options import (
-            TagField,
-        )
-
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_async_filter_result"
         schema.index.prefix = "test_async_filter_result"
