@@ -7,7 +7,7 @@ def test_embedding_class():
     names_of_base_classes = [b.__name__ for b in OpenVINOGenAILLM.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
 
-def test_streaming_completion()
+def test_streaming_completion():
     model_id = "OpenVINO/qwen3-0.6b-int4-ov"
     model_path = "qwen3-0.6b-int4-ov"
     hf_hub.snapshot_download(model_id, local_dir=model_path)
