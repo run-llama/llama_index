@@ -184,7 +184,7 @@ def test_ensure_initialized_existing_index():
 
 
 @pytest.mark.asyncio
-async def test_aensure_initialized_creates_index():
+async def test_async_ensure_initialized_creates_index():
     """Verify async lazy init creates the index when it does not exist."""
     from opensearchpy.exceptions import NotFoundError
 
@@ -198,7 +198,7 @@ async def test_aensure_initialized_creates_index():
         return_value={"version": {"number": "2.11.0"}}
     )
 
-    await client._aensure_initialized()
+    await client._async_ensure_initialized()
 
     client._os_async_client.indices.get.assert_called_once_with(index="test-index")
     client._os_async_client.indices.create.assert_called_once_with(
@@ -224,19 +224,19 @@ def test_ensure_initialized_idempotent():
 
 
 @pytest.mark.asyncio
-async def test_aensure_initialized_idempotent():
-    """Verify that calling _aensure_initialized() a second time is a no-op."""
+async def test_async_ensure_initialized_idempotent():
+    """Verify that calling _async_ensure_initialized() a second time is a no-op."""
     client = _make_client_no_network()
     client._os_async_client.info = AsyncMock(
         return_value={"version": {"number": "2.11.0"}}
     )
     client._os_async_client.indices.get = AsyncMock()
 
-    await client._aensure_initialized()
+    await client._async_ensure_initialized()
     assert client._initialized is True
 
     client._os_async_client.reset_mock()
-    await client._aensure_initialized()
+    await client._async_ensure_initialized()
 
     client._os_async_client.info.assert_not_called()
     client._os_async_client.indices.get.assert_not_called()

@@ -229,12 +229,12 @@ class OpensearchVectorClient:
                 self._os_client.indices.refresh(index=self._index)
         self._initialized = True
 
-    async def _aensure_initialized(self) -> None:
+    async def _async_ensure_initialized(self) -> None:
         """Lazily initialize the index on first use (async)."""
         if self._initialized:
             return
         self._efficient_filtering_enabled = (
-            await self._ais_efficient_filtering_enabled()
+            await self._async_is_efficient_filtering_enabled()
         )
         not_found_error = self._import_not_found_error()
         try:
@@ -704,7 +704,7 @@ class OpensearchVectorClient:
         self._os_version = self._get_opensearch_version()
         return self._version_supports_efficient_filtering(self._os_version)
 
-    async def _ais_efficient_filtering_enabled(self) -> bool:
+    async def _async_is_efficient_filtering_enabled(self) -> bool:
         """Async check if kNN with efficient filtering is enabled."""
         if self.is_aoss:
             return False
@@ -740,7 +740,7 @@ class OpensearchVectorClient:
 
     async def aindex_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
-        await self._aensure_initialized()
+        await self._async_ensure_initialized()
         embeddings: List[List[float]] = []
         texts: List[str] = []
         metadatas: List[dict] = []
@@ -789,7 +789,7 @@ class OpensearchVectorClient:
             doc_id (str): a LlamaIndex `Document` id
 
         """
-        await self._aensure_initialized()
+        await self._async_ensure_initialized()
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
@@ -838,7 +838,7 @@ class OpensearchVectorClient:
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
 
         """
-        await self._aensure_initialized()
+        await self._async_ensure_initialized()
         if not node_ids and not filters:
             return
 
@@ -861,7 +861,7 @@ class OpensearchVectorClient:
 
     async def aclear(self) -> None:
         """Clears index."""
-        await self._aensure_initialized()
+        await self._async_ensure_initialized()
         query = {"query": {"bool": {"filter": []}}}
         await self._os_async_client.delete_by_query(
             index=self._index, body=query, refresh=True
@@ -937,7 +937,7 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
-        await self._aensure_initialized()
+        await self._async_ensure_initialized()
         if query_mode == VectorStoreQueryMode.HYBRID:
             if query_str is None or self._search_pipeline is None:
                 raise ValueError(INVALID_HYBRID_QUERY_ERROR)
