@@ -1,5 +1,6 @@
 """Base object types."""
 
+import logging
 import os
 import pickle
 from abc import abstractmethod
@@ -9,7 +10,45 @@ from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.storage.storage_context import DEFAULT_PERSIST_DIR
 from llama_index.core.utils import concat_dirs
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
+
+# Classes allowed during deserialization of object node mappings.
+# Restricting unpickling to this set prevents arbitrary code execution
+# via crafted pickle payloads placed in the persist directory (CWE-502).
+_SAFE_PICKLE_CLASSES: frozenset[tuple[str, str]] = frozenset({
+    ("builtins", "dict"),
+    ("builtins", "list"),
+    ("builtins", "set"),
+    ("builtins", "frozenset"),
+    ("builtins", "tuple"),
+    ("builtins", "str"),
+    ("builtins", "bytes"),
+    ("builtins", "int"),
+    ("builtins", "float"),
+    ("builtins", "complex"),
+    ("builtins", "bool"),
+    ("builtins", "NoneType"),
+    (__name__, "SimpleObjectNodeMapping"),
+})
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that restricts class instantiation to an allowlist.
+
+    Prevents arbitrary code execution when loading from untrusted or
+    user-configurable persist directories.
+    """
+
+    def find_class(self, module: str, name: str) -> type:
+        if (module, name) in _SAFE_PICKLE_CLASSES:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Refusing to unpickle '{module}.{name}': class not in allowlist. "
+            f"If you need to load custom object types, use a purpose-built "
+            f"serialization format instead of pickle."
+        )
 
 OT = TypeVar("OT")
 
@@ -175,7 +214,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
         try:
             with open(obj_node_mapping_path, "rb") as f:
-                simple_object_node_mapping = pickle.load(f)
+                simple_object_node_mapping = _RestrictedUnpickler(f).load()
         except pickle.PickleError as err:
             raise ValueError("Objs cannot be loaded.") from err
         return simple_object_node_mapping
