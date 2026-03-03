@@ -536,6 +536,7 @@ class OpenAIResponses(FunctionCallingLLM):
             messages,
             model=self.model,
             is_responses_api=True,
+            store=kwargs_dict.get("store"),
         )
 
         response: Response = self._client.responses.create(
