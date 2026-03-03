@@ -577,3 +577,29 @@ def test_get_all_items_with_pagination_empty_result():
         )
 
     assert len(items) == 0
+
+
+def test_list_resources_with_folder_id_only():
+    """Test that list_resources uses sharepoint_folder_id when folder_path is None."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        drive_name="dummy_drive_name",
+        # No sharepoint_folder_path set
+    )
+    reader._drive_id_endpoint = (
+        "https://graph.microsoft.com/v1.0/sites/dummy_site_id/drives"
+    )
+    reader._authorization_headers = {"Authorization": "Bearer dummy_token"}
+
+    file_paths = reader.list_resources(
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_id="dummy_folder_id",
+        recursive=False,
+    )
+    # Should list folder contents (2 files), not drive root
+    assert len(file_paths) == 2
+    assert file_paths[0] == Path("dummy_site_name/file1.txt")
+    assert file_paths[1] == Path("dummy_site_name/file2.txt")
