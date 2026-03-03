@@ -40,7 +40,7 @@ keywords = [
 ]
 dependencies = [
     "neo4j>=5.16.0,<6",
-    "llama-index-graph-stores-neo4j>=0.5.0,<0.7",
+    "llama-index-graph-stores-neo4j>=0.5.0,<0.6",
     "llama-index-llms-openai>=0.5.0,<0.6",
     "llama-index-core>=0.13.0,<0.15",
 ]
