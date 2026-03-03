@@ -135,7 +135,5 @@ def test_nested_metadata_filters_raise_error() -> None:
 
     # Nested MetadataFilters are not supported and should raise an error
     # when the filter function is evaluated.
-    with pytest.raises(
-        ValueError, match="Nested MetadataFilters are not supported"
-    ):
+    with pytest.raises(ValueError, match="Nested MetadataFilters are not supported"):
         fn("n1")
