@@ -2,11 +2,11 @@
 Valkey Vector store.
 """
 
+import json
 import logging
-from typing import Any, Dict, List, Optional, Pattern
 import re
 import struct
-import json
+from typing import Any, Dict, List, Optional, Pattern
 
 from glide import (
     GlideClient,
@@ -27,13 +27,19 @@ from glide_shared.commands.server_modules.ft_options.ft_search_options import (
 )
 from glide_sync import (
     GlideClient as SyncGlideClient,
-    GlideClusterClient as SyncGlideClusterClient,
-    ft as sync_ft,
 )
 from glide_sync import (
     GlideClusterClient as SyncGlideClusterClient,
 )
 from glide_sync import ft as sync_ft
+from llama_index.vector_stores.valkey.schema import (
+    DOC_ID_FIELD_NAME,
+    NODE_CONTENT_FIELD_NAME,
+    NODE_ID_FIELD_NAME,
+    TEXT_FIELD_NAME,
+    VECTOR_FIELD_NAME,
+    ValkeyVectorStoreSchema,
+)
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
@@ -54,14 +60,6 @@ from llama_index.core.vector_stores.types import (
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
-)
-from llama_index.vector_stores.valkey.schema import (
-    DOC_ID_FIELD_NAME,
-    NODE_CONTENT_FIELD_NAME,
-    NODE_ID_FIELD_NAME,
-    TEXT_FIELD_NAME,
-    VECTOR_FIELD_NAME,
-    ValkeyVectorStoreSchema,
 )
 
 logger = logging.getLogger(__name__)
@@ -322,8 +320,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             bool: True or False.
 
         """
-        if not self.created_async_index:
-            await self.async_create_index()
+        await self._ensure_async_client()
         try:
             await ft.info(self._valkey_client_async, self.index_name)
             return True
@@ -448,24 +445,14 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             logger.error(f"Failed to delete index: {e}")
             raise
 
-    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+    def _prepare_node_data(self, nodes: List[BaseNode]) -> List[tuple[str, dict, str]]:
         """
-        Add nodes to the index.
-
-        Args:
-            nodes (List[BaseNode]): List of nodes with embeddings
+        Prepare node data for insertion.
 
         Returns:
-            List[str]: List of ids of the documents added to the index.
+            List of (key, fields, node_id) tuples
 
         """
-        self._ensure_sync_client()
-
-        # Create index if it doesn't exist
-        if not self.index_exists():
-            self.create_index()
-
-        # Check to see if empty document list was passed
         if len(nodes) == 0:
             return []
 
@@ -483,7 +470,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         else:
             expected_dims = 1536  # Default
 
-        # Now check for the scenario where user is trying to index embeddings that don't align with schema
+        # Check embedding dimensions
         embedding_len = len(nodes[0].get_embedding())
         if expected_dims != embedding_len:
             raise ValueError(
@@ -491,8 +478,8 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 f"which doesn't match the index schema expectation of {expected_dims}."
             )
 
-        node_ids: List[str] = []
-
+        # Prepare all nodes
+        prepared_nodes = []
         for node in nodes:
             embedding = node.get_embedding()
             node_id = node.node_id
@@ -515,11 +502,29 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             # Add additional metadata fields
             for meta_key, meta_value in additional_metadata.items():
                 if meta_key not in fields and meta_key != "sub_dicts":
-                    # Convert to string for storage
                     fields[meta_key] = str(meta_value) if meta_value is not None else ""
 
-            # Use HSET to store the hash
-            logger.info(f"Storing node with key: {key}, fields: {list(fields.keys())}")
+            prepared_nodes.append((key, fields, node_id))
+
+        return prepared_nodes
+
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """
+        Add nodes to the index.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes with embeddings
+
+        Returns:
+            List[str]: List of ids of the documents added to the index.
+
+        """
+        self._ensure_sync_client()
+
+        prepared_nodes = self._prepare_node_data(nodes)
+        node_ids = []
+
+        for key, fields, node_id in prepared_nodes:
             self._valkey_client.hset(key, fields)
             node_ids.append(node_id)
 
@@ -538,62 +543,11 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         """
         await self._ensure_async_client()
-        await self.async_index_exists()
 
-        # Check to see if empty document list was passed
-        if len(nodes) == 0:
-            return []
+        prepared_nodes = self._prepare_node_data(nodes)
+        node_ids = []
 
-        # Get vector dimensions from schema
-        vector_field = next(
-            (
-                f
-                for f in self._schema.fields
-                if hasattr(f, "name") and f.name == VECTOR_FIELD_NAME
-            ),
-            None,
-        )
-        if vector_field and hasattr(vector_field, "attributes"):
-            expected_dims = vector_field.attributes.dimensions
-        else:
-            expected_dims = 1536  # Default
-
-        # Now check for the scenario where user is trying to index embeddings that don't align with schema
-        embedding_len = len(nodes[0].get_embedding())
-        if expected_dims != embedding_len:
-            raise ValueError(
-                f"Attempting to index embeddings of dim {embedding_len} "
-                f"which doesn't match the index schema expectation of {expected_dims}."
-            )
-
-        node_ids: List[str] = []
-
-        for node in nodes:
-            embedding = node.get_embedding()
-            node_id = node.node_id
-            key = f"{self._schema.index.prefix}{self._schema.index.key_separator}{node_id}"
-
-            # Prepare hash fields
-            fields = {
-                NODE_ID_FIELD_NAME: node_id,
-                DOC_ID_FIELD_NAME: node.ref_doc_id or "",
-                TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
-            }
-
-            # Add node content as JSON
-            additional_metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
-            )
-            fields[NODE_CONTENT_FIELD_NAME] = json.dumps(additional_metadata)
-
-            # Add additional metadata fields
-            for meta_key, meta_value in additional_metadata.items():
-                if meta_key not in fields and meta_key != "sub_dicts":
-                    # Convert to string for storage
-                    fields[meta_key] = str(meta_value) if meta_value is not None else ""
-
-            # Use HSET to store the hash
+        for key, fields, node_id in prepared_nodes:
             await self._valkey_client_async.hset(key, fields)
             node_ids.append(node_id)
 
@@ -738,26 +692,21 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         """Alias for async_delete_nodes."""
         await self.async_delete_nodes(node_ids)
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def _build_query_and_options(
+        self, query: VectorStoreQuery
+    ) -> tuple[str, FtSearchOptions]:
         """
-        Query the index.
-
-        Args:
-            query (VectorStoreQuery): query object
+        Build query string and search options.
 
         Returns:
-            VectorStoreQueryResult: query result
+            Tuple of (query_string, search_options)
 
         """
-        self._ensure_sync_client()
-        self.index_exists()
-
         if query.query_embedding is None and not query.filters:
             raise ValueError(
                 "Either query_embedding or metadata filters are required for querying."
             )
 
-        # Build FT.SEARCH using sync_ft module
         if query.query_embedding is not None:
             # Vector search
             query_vec_bytes = array_to_buffer(query.query_embedding)
@@ -796,6 +745,24 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             logger.info(
                 f"Executing filter query on index {self.index_name}: {filter_str}"
             )
+
+        return knn_query, options
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """
+        Query the index.
+
+        Args:
+            query (VectorStoreQuery): query object
+
+        Returns:
+            VectorStoreQueryResult: query result
+
+        """
+        self._ensure_sync_client()
+        self.index_exists()
+
+        knn_query, options = self._build_query_and_options(query)
 
         try:
             result = sync_ft.search(
@@ -826,55 +793,8 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         """
         await self._ensure_async_client()
-        await self.async_index_exists()
 
-        if query.query_embedding is None and not query.filters:
-            raise ValueError(
-                "Either query_embedding or metadata filters are required for querying."
-            )
-
-        # Build FT.SEARCH using ft module
-        if query.query_embedding is not None:
-            # Vector search
-            query_vec_bytes = array_to_buffer(query.query_embedding)
-
-            # Build KNN query with optional filters
-            if query.filters:
-                filter_str = self._build_filter_string(query.filters)
-                knn_query = f"({filter_str})=>[KNN {query.similarity_top_k} @{VECTOR_FIELD_NAME} $query_vector]"
-            else:
-                knn_query = f"*=>[KNN {query.similarity_top_k} @{VECTOR_FIELD_NAME} $query_vector]"
-
-            # Build search options
-            options = FtSearchOptions(
-                limit=FtSearchLimit(offset=0, count=query.similarity_top_k),
-                params={"query_vector": query_vec_bytes},
-            )
-
-            # Don't restrict return fields for vector queries to ensure __vector_score is included
-            # The score field is automatically added by Valkey for KNN queries
-
-            logger.info(
-                f"Executing KNN query on index {self.index_name}, top_k={query.similarity_top_k}"
-            )
-            logger.debug(f"Query: {knn_query}")
-        else:
-            # Filter-only query
-            filter_str = self._build_filter_string(query.filters)
-            knn_query = filter_str
-
-            options = FtSearchOptions(
-                limit=FtSearchLimit(offset=0, count=query.similarity_top_k),
-            )
-
-            if self._return_fields:
-                options.return_fields = [
-                    ReturnField(field) for field in self._return_fields
-                ]
-
-            logger.info(
-                f"Executing filter query on index {self.index_name}: {filter_str}"
-            )
+        knn_query, options = self._build_query_and_options(query)
 
         try:
             result = await ft.search(

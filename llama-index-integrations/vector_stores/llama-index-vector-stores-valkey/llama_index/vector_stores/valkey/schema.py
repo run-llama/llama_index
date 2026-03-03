@@ -1,4 +1,5 @@
 from typing import Any, List
+
 from glide_shared.commands.server_modules.ft_options.ft_create_options import (
     DataType,
     DistanceMetricType,
