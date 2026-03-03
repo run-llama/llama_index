@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 
 from llama_index.core.constants import DATA_KEY, TYPE_KEY
@@ -5,7 +7,7 @@ from llama_index.core.schema import Document, TextNode, ImageNode, IndexNode
 from llama_index.core.storage.docstore.utils import legacy_json_to_doc
 
 
-def _make_legacy_dict(node_cls, doc_id: str, *, extra: dict | None = None) -> dict:
+def _make_legacy_dict(node_cls, doc_id: str, *, extra: Optional[dict] = None) -> dict:
     data = {
         "text": "hello",
         "extra_info": {},
