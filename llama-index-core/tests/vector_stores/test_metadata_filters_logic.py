@@ -109,7 +109,7 @@ def test_text_match_insensitive_uses_case_insensitive_search() -> None:
             )
         ]
     )
-    fn = build_metadata_filter_fn(_lookup, filters)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
 
     # Both identifiers contain "abc" ignoring case.
     assert fn("n1")
