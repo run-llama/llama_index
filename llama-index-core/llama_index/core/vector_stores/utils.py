@@ -135,12 +135,20 @@ def build_metadata_filter_fn(
                 return metadata_value not in value
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
-            if operator in (
-                FilterOperator.TEXT_MATCH,
-                FilterOperator.TEXT_MATCH_INSENSITIVE,
-            ):
-                # Normalize both sides to strings and compare case-insensitively.
-                return str(value).lower() in str(metadata_value).lower()
+            if operator == FilterOperator.TEXT_MATCH:
+                if isinstance(value, str) and isinstance(metadata_value, str):
+                    return value in metadata_value
+                raise TypeError(
+                    "Both metadata_value and value should be strings to be used with a "
+                    "TEXT_MATCH filter"
+                )
+            if operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+                if isinstance(value, str) and isinstance(metadata_value, str):
+                    return value.lower() in metadata_value.lower()
+                raise TypeError(
+                    "Both metadata_value and value should be strings to be used with a "
+                    "TEXT_MATCH_INSENSITIVE filter"
+                )
             if operator == FilterOperator.ALL:
                 return all(val in metadata_value for val in value)
             if operator == FilterOperator.ANY:

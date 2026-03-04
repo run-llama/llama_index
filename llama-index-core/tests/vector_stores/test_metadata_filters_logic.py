@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping
+from typing import Any, Dict
 
 import pytest
 
@@ -33,10 +33,6 @@ _METADATA_BY_ID: Dict[str, Dict[str, Any]] = {
 }
 
 
-def _lookup(node_id: str) -> Mapping[str, Any]:
-    return _METADATA_BY_ID[node_id]
-
-
 def test_and_condition_matches_expected_nodes() -> None:
     filters = MetadataFilters(
         filters=[
@@ -49,7 +45,7 @@ def test_and_condition_matches_expected_nodes() -> None:
         ],
         condition=FilterCondition.AND,
     )
-    fn = build_metadata_filter_fn(_lookup, filters)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
 
     assert not fn("n1")
     assert fn("n2")
@@ -64,7 +60,7 @@ def test_or_condition_matches_expected_nodes() -> None:
         ],
         condition=FilterCondition.OR,
     )
-    fn = build_metadata_filter_fn(_lookup, filters)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
 
     assert fn("n1")
     assert not fn("n2")
@@ -78,7 +74,7 @@ def test_not_condition_negates_filters() -> None:
         ],
         condition=FilterCondition.NOT,
     )
-    fn = build_metadata_filter_fn(_lookup, filters)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
 
     assert not fn("n1")
     assert fn("n2")
@@ -95,7 +91,7 @@ def test_is_empty_matches_missing_and_empty_values() -> None:
             )
         ]
     )
-    fn = build_metadata_filter_fn(_lookup, filters)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
 
     # All nodes are missing the "missing" key, so they should all match.
     assert fn("n1")
@@ -131,7 +127,7 @@ def test_nested_metadata_filters_raise_error() -> None:
         filters=[inner],
         condition=FilterCondition.AND,
     )
-    fn = build_metadata_filter_fn(_lookup, outer)
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, outer)
 
     # Nested MetadataFilters are not supported and should raise an error
     # when the filter function is evaluated.
