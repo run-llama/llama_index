@@ -1,25 +1,48 @@
 # Azure Cosmos DB for NoSQL Vector Store
 
-This integration makes possible to use [Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/)
-as a vector store in LlamaIndex.
+This integration enables [Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/)
+as a vector store in LlamaIndex, with support for vector search, full text search, and hybrid (RRF) search.
 
-## Quick start
-
-Install the integration with:
+## Installation
 
 ```sh
 pip install llama-index-vector-stores-azurecosmosnosql
 ```
 
-Create the CosmosDB client:
+## Quick Start
+
+### Create the client
 
 ```python
-URI = "AZURE_COSMOSDB_URI"
-KEY = "AZURE_COSMOSDB_KEY"
+from azure.cosmos import CosmosClient, PartitionKey
+
+URI = "https://<account>.documents.azure.com:443/"
+KEY = "<your-key>"
 client = CosmosClient(URI, credential=KEY)
 ```
 
-Specify the vector store properties:
+Alternatively, use the built-in factory methods:
+
+```python
+from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
+
+# From host + key
+store = AzureCosmosDBNoSqlVectorSearch.from_host_and_key(
+    host=URI, key=KEY, ...
+)
+
+# From connection string
+store = AzureCosmosDBNoSqlVectorSearch.from_connection_string(
+    connection_string="AccountEndpoint=...;AccountKey=...;", ...
+)
+
+# From managed identity
+store = AzureCosmosDBNoSqlVectorSearch.from_uri_and_managed_identity(
+    cosmos_uri=URI, ...
+)
+```
+
+### Define policies
 
 ```python
 indexing_policy = {
@@ -41,25 +64,212 @@ vector_embedding_policy = {
 }
 ```
 
-Create the vector store:
+### Create the vector store
 
 ```python
+from azure.cosmos import PartitionKey
+
 store = AzureCosmosDBNoSqlVectorSearch(
     cosmos_client=client,
     vector_embedding_policy=vector_embedding_policy,
     indexing_policy=indexing_policy,
     cosmos_container_properties={"partition_key": PartitionKey(path="/id")},
     cosmos_database_properties={},
-    create_container=True,
+    database_name="myDB",
+    container_name="myContainer",
 )
 ```
 
-Finally, create the index from a list containing documents:
+### Build an index
 
 ```python
-storage_context = StorageContext.from_defaults(vector_store=store)
+from llama_index.core import VectorStoreIndex, StorageContext
 
-index = VectorStoreIndex.from_documents(
-    documents, storage_context=storage_context
+storage_context = StorageContext.from_defaults(vector_store=store)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+```
+
+---
+
+## Search Types
+
+All search types are available via the `search_type` kwarg on `store.query()`.
+
+### Vector Search
+
+Standard nearest-neighbour search ranked by `VectorDistance`.
+
+```python
+from llama_index.core.vector_stores.types import VectorStoreQuery
+
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="vector",
+)
+```
+
+### Vector Search with Score Threshold
+
+Returns only nodes whose cosine similarity exceeds `threshold`.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=10),
+    search_type="vector_score_threshold",
+    threshold=0.8,
+)
+```
+
+### Full Text Search
+
+Filters nodes using a `FullTextContains` predicate. Requires `full_text_search_enabled=True`
+and a container created with a `full_text_policy` and `fullTextIndexes`.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=10),
+    search_type="full_text_search",
+    where="FullTextContains(c.text, 'neural network')",
+)
+```
+
+### Full Text Ranking
+
+Ranks nodes by `FullTextScore` using `ORDER BY RANK`. Multiple `full_text_rank_filter`
+entries are fused with `ORDER BY RANK RRF(...)`.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="full_text_ranking",
+    full_text_rank_filter=[
+        {"search_field": "text", "search_text": "neural network"},
+    ],
+)
+```
+
+### Hybrid Search (RRF)
+
+Fuses `FullTextScore` and `VectorDistance` rankings using Reciprocal Rank Fusion.
+Uses `OFFSET 0 LIMIT k` instead of `TOP k` as required by CosmosDB.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="hybrid",
+    full_text_rank_filter=[
+        {"search_field": "text", "search_text": "neural network"},
+    ],
+)
+```
+
+### Hybrid Search with Score Threshold
+
+Same as hybrid but with client-side score filtering.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="hybrid_score_threshold",
+    full_text_rank_filter=[
+        {"search_field": "text", "search_text": "neural network"},
+    ],
+    threshold=0.5,
+)
+```
+
+---
+
+## Query Options
+
+### WHERE filter
+
+Apply a CosmosDB SQL predicate to restrict results.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="vector",
+    where="c.metadata.author = 'Stephen King'",
+)
+```
+
+### Pagination (OFFSET / LIMIT)
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=10),
+    search_type="vector",
+    offset_limit="OFFSET 10 LIMIT 5",
+)
+```
+
+### Projection mapping
+
+Return only specific fields, surfaced as node metadata keys.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=3),
+    search_type="vector",
+    projection_mapping={"id": "id", "text": "body"},
+)
+```
+
+### Return vector embeddings
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=3),
+    search_type="vector",
+    return_with_vectors=True,
+)
+```
+
+### Backward-compatible `pre_filter`
+
+The legacy `pre_filter` dict is still supported for existing callers.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    pre_filter={
+        "where_clause": "WHERE c.metadata.year = 2024",
+        "limit_offset_clause": "OFFSET 0 LIMIT 5",
+    },
+)
+```
+
+---
+
+## Full Text Search Setup
+
+To enable full text search or hybrid search, create the container with a
+`full_text_policy` and include `fullTextIndexes` in the indexing policy:
+
+```python
+full_text_indexing_policy = {
+    "indexingMode": "consistent",
+    "includedPaths": [{"path": "/*"}],
+    "excludedPaths": [{"path": '/"_etag"/?'}],
+    "vectorIndexes": [{"path": "/embedding", "type": "quantizedFlat"}],
+    "fullTextIndexes": [{"path": "/text"}],
+}
+
+full_text_policy = {
+    "defaultLanguage": "en-US",
+    "fullTextPaths": [{"path": "/text", "language": "en-US"}],
+}
+
+store = AzureCosmosDBNoSqlVectorSearch(
+    cosmos_client=client,
+    vector_embedding_policy=vector_embedding_policy,
+    indexing_policy=full_text_indexing_policy,
+    cosmos_container_properties={
+        "partition_key": PartitionKey(path="/id"),
+        "full_text_policy": full_text_policy,
+    },
+    cosmos_database_properties={},
+    full_text_search_enabled=True,
 )
 ```
