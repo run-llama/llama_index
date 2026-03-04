@@ -1,4 +1,5 @@
 # LlamaIndex Vector_Stores Integration: Postgres
+
 This integration allows you to use PostgreSQL with the `pgvector` extension as a vector store for LlamaIndex.
 
 ## Installation
@@ -51,7 +52,7 @@ query_engine = index.as_query_engine(
     similarity_top_k=5,
     vector_store_kwargs={
         "mmr_threshold": 0.5,  # 0=max diversity, 1=max similarity
-    }
+    },
 )
 response = query_engine.query("Your question here")
 
@@ -62,15 +63,15 @@ retriever = index.as_retriever(
     vector_store_kwargs={
         "mmr_threshold": 0.3,  # Lower = more diverse results
         "mmr_prefetch_factor": 4.0,  # Prefetch multiplier (default: 4.0)
-    }
+    },
 )
 nodes = retriever.retrieve("Your query here")
 ```
 
 #### MMR Parameters
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `mmr_threshold` | Balance between relevance (1.0) and diversity (0.0) | 0.5 |
-| `mmr_prefetch_factor` | Multiplier for candidate pool size | 4.0 |
-| `mmr_prefetch_k` | Exact candidate pool size (overrides factor) | None |
+| Parameter             | Description                                         | Default |
+| --------------------- | --------------------------------------------------- | ------- |
+| `mmr_threshold`       | Balance between relevance (1.0) and diversity (0.0) | 0.5     |
+| `mmr_prefetch_factor` | Multiplier for candidate pool size                  | 4.0     |
+| `mmr_prefetch_k`      | Exact candidate pool size (overrides factor)        | None    |

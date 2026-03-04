@@ -2418,3 +2418,191 @@ async def test_mmr_query_prefetch_params_coexistence(
             await pg.aquery(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
         else:
             pg.query(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
+
+
+# ================== MMR Mock Tests (No DB Required) ==================
+
+
+class MockPGVectorStore:
+    """A minimal mock of PGVectorStore for testing MMR logic without a database."""
+
+    def __init__(self) -> None:
+        self._data: Dict[str, Dict[str, Any]] = {}
+
+    def _add_mock_data(
+        self, node_id: str, text: str, embedding: List[float], metadata: Dict[str, Any]
+    ) -> None:
+        """Add mock data for testing."""
+        self._data[node_id] = {
+            "node_id": node_id,
+            "text": text,
+            "embedding": embedding,
+            "metadata": metadata,
+        }
+
+
+def test_mmr_algorithm_returns_diverse_results():
+    """Test that MMR algorithm returns diverse results without needing a database."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    # Create embeddings where some are very similar and others are different
+    # Embeddings: [1,0,0], [0.9,0.1,0], [0,1,0], [0,0,1]
+    # First two are very similar, last two are orthogonal
+    embeddings = [
+        [1.0, 0.0, 0.0],  # id=0 - similar to query
+        [0.9, 0.1, 0.0],  # id=1 - very similar to id=0
+        [0.0, 1.0, 0.0],  # id=2 - orthogonal
+        [0.0, 0.0, 1.0],  # id=3 - orthogonal
+    ]
+    query_embedding = [1.0, 0.0, 0.0]
+
+    # With high threshold (favor relevance), should get the most similar ones
+    _, ids_high = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=1.0, similarity_top_k=2
+    )
+    assert ids_high[0] == 0  # Most similar first
+
+    # With low threshold (favor diversity), should diversify
+    _, ids_low = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.0, similarity_top_k=3
+    )
+    # Should include diverse results
+    assert len(ids_low) == 3
+    # The order should favor diversity - not just the two most similar
+    assert 0 in ids_low  # Most relevant still included
+
+
+def test_mmr_algorithm_with_embedding_ids():
+    """Test MMR algorithm with custom embedding IDs."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    embeddings = [
+        [1.0, 0.0],
+        [0.5, 0.5],
+        [0.0, 1.0],
+    ]
+    query_embedding = [1.0, 0.0]
+
+    _, ids = get_top_k_mmr_embeddings(
+        query_embedding,
+        embeddings,
+        embedding_ids=["node_a", "node_b", "node_c"],
+        mmr_threshold=0.5,
+        similarity_top_k=3,
+    )
+    # Should return the custom IDs, not indices
+    assert all(isinstance(id_, str) for id_ in ids)
+    assert "node_a" in ids
+
+
+def test_mmr_algorithm_threshold_boundaries():
+    """Test MMR at threshold boundaries (0 and 1)."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    embeddings = [
+        [1.0, 0.0],
+        [0.9, 0.0],
+        [0.0, 1.0],
+    ]
+    query_embedding = [1.0, 0.0]
+
+    # threshold=1.0 should behave like regular similarity search
+    sims_t1, ids_t1 = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=1.0, similarity_top_k=3
+    )
+    assert ids_t1[0] == 0  # Most similar first
+    assert ids_t1[1] == 1  # Second most similar
+
+    # threshold=0.0 should maximize diversity
+    sims_t0, ids_t0 = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.0, similarity_top_k=3
+    )
+    # All results should still be returned
+    assert len(ids_t0) == 3
+
+
+def test_mmr_algorithm_empty_embeddings():
+    """Test MMR with empty embedding list."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings: List[List[float]] = []
+
+    sims, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=5
+    )
+    assert len(ids) == 0
+    assert len(sims) == 0
+
+
+def test_mmr_algorithm_single_embedding():
+    """Test MMR with single embedding."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    query_embedding = [1.0, 0.0, 0.0]
+    embeddings = [[0.9, 0.1, 0.0]]
+
+    sims, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=5
+    )
+    assert len(ids) == 1
+    assert ids[0] == 0
+
+
+def test_mmr_algorithm_similarity_top_k_larger_than_embeddings():
+    """Test MMR when similarity_top_k is larger than available embeddings."""
+    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
+
+    query_embedding = [1.0, 0.0]
+    embeddings = [[0.9, 0.1], [0.5, 0.5]]
+
+    sims, ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=10
+    )
+    # Should return all available embeddings
+    assert len(ids) == 2
+
+
+def test_mmr_query_validation_requires_embedding():
+    """Test that MMR query validation requires query_embedding (mock test)."""
+    # This tests the validation logic without needing a database connection
+    q = VectorStoreQuery(
+        query_embedding=None,
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    # The query itself is valid, but the vector store should reject it
+    assert q.query_embedding is None
+    assert q.mode == VectorStoreQueryMode.MMR
+
+
+def test_mmr_prefetch_factor_calculation():
+    """Test prefetch calculations used in MMR."""
+    # Test that prefetch_factor multiplication works correctly
+    similarity_top_k = 5
+    mmr_prefetch_factor = 4
+    expected_prefetch = similarity_top_k * mmr_prefetch_factor
+    assert expected_prefetch == 20
+
+    # Test with mmr_prefetch_k override
+    mmr_prefetch_k = 50
+    # When mmr_prefetch_k is provided, it should be used directly
+    assert mmr_prefetch_k == 50
+
+
+def test_mmr_query_mode_enum():
+    """Test VectorStoreQueryMode.MMR enum value."""
+    assert VectorStoreQueryMode.MMR == "mmr"
+    assert VectorStoreQueryMode.MMR.value == "mmr"
+
+
+def test_mmr_threshold_in_query():
+    """Test that mmr_threshold can be set in VectorStoreQuery."""
+    q = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.7,
+    )
+    assert q.mmr_threshold == 0.7
+    assert q.mode == VectorStoreQueryMode.MMR

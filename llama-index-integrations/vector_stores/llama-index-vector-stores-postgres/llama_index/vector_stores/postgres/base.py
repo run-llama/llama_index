@@ -39,6 +39,7 @@ from llama_index.core.vector_stores.utils import (
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4
 
+from sqlalchemy import text, select
 from sqlalchemy.sql.selectable import Select
 
 PGType = Literal[
@@ -687,8 +688,6 @@ class PGVectorStore(BasePydanticVectorStore):
             return "="
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
-        from sqlalchemy import text
-
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
 
@@ -799,8 +798,6 @@ class PGVectorStore(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> Any:
-        from sqlalchemy import text, select
-
         stmt = select(  # type: ignore
             self._table_class.id,
             self._table_class.node_id,
@@ -823,8 +820,6 @@ class PGVectorStore(BasePydanticVectorStore):
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters, **kwargs)
         with self._session() as session, session.begin():
-            from sqlalchemy import text
-
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
                 session.execute(
@@ -869,8 +864,6 @@ class PGVectorStore(BasePydanticVectorStore):
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters, **kwargs)
         async with self._async_session() as async_session, async_session.begin():
-            from sqlalchemy import text
-
             if self.hnsw_kwargs:
                 hnsw_ef_search = (
                     kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
@@ -1060,8 +1053,6 @@ class PGVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> Any:
         """Build a query that also returns embeddings (needed for MMR)."""
-        from sqlalchemy import text, select
-
         stmt = select(
             self._table_class.id,
             self._table_class.node_id,
@@ -1088,8 +1079,6 @@ class PGVectorStore(BasePydanticVectorStore):
             embedding, limit, metadata_filters, **kwargs
         )
         with self._session() as session, session.begin():
-            from sqlalchemy import text
-
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
                 session.execute(
@@ -1148,8 +1137,6 @@ class PGVectorStore(BasePydanticVectorStore):
             embedding, limit, metadata_filters, **kwargs
         )
         async with self._async_session() as async_session, async_session.begin():
-            from sqlalchemy import text
-
             if self.hnsw_kwargs:
                 hnsw_ef_search = (
                     kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
@@ -1679,7 +1666,6 @@ class PGVectorStore(BasePydanticVectorStore):
         )
 
         self._initialize()
-        from sqlalchemy import select
 
         stmt = select(
             self._table_class.node_id,
@@ -1735,7 +1721,6 @@ class PGVectorStore(BasePydanticVectorStore):
         )
 
         self._initialize()
-        from sqlalchemy import select
 
         stmt = select(
             self._table_class.node_id,
