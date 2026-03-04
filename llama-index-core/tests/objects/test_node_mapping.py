@@ -122,7 +122,8 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
 def test_simple_object_node_mapping_persist_rejects_unsafe_pickle(
     tmp_path,
 ) -> None:
-    """Test that loading a malicious pickle payload is blocked.
+    """
+    Test that loading a malicious pickle payload is blocked.
 
     A crafted pickle file in the persist directory could execute arbitrary
     code (e.g., os.system, eval) when loaded with unrestricted pickle.load().

@@ -14,25 +14,28 @@ DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
 # Classes allowed during deserialization of object node mappings.
 # Restricting unpickling to this set prevents arbitrary code execution
 # via crafted pickle payloads placed in the persist directory (CWE-502).
-_SAFE_PICKLE_CLASSES: frozenset[tuple[str, str]] = frozenset({
-    ("builtins", "dict"),
-    ("builtins", "list"),
-    ("builtins", "set"),
-    ("builtins", "frozenset"),
-    ("builtins", "tuple"),
-    ("builtins", "str"),
-    ("builtins", "bytes"),
-    ("builtins", "int"),
-    ("builtins", "float"),
-    ("builtins", "complex"),
-    ("builtins", "bool"),
-    ("builtins", "NoneType"),
-    (__name__, "SimpleObjectNodeMapping"),
-})
+_SAFE_PICKLE_CLASSES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("builtins", "dict"),
+        ("builtins", "list"),
+        ("builtins", "set"),
+        ("builtins", "frozenset"),
+        ("builtins", "tuple"),
+        ("builtins", "str"),
+        ("builtins", "bytes"),
+        ("builtins", "int"),
+        ("builtins", "float"),
+        ("builtins", "complex"),
+        ("builtins", "bool"),
+        ("builtins", "NoneType"),
+        (__name__, "SimpleObjectNodeMapping"),
+    }
+)
 
 
 class _RestrictedUnpickler(pickle.Unpickler):
-    """Unpickler that restricts class instantiation to an allowlist.
+    """
+    Unpickler that restricts class instantiation to an allowlist.
 
     Prevents arbitrary code execution when loading from untrusted or
     user-configurable persist directories.
@@ -46,6 +49,7 @@ class _RestrictedUnpickler(pickle.Unpickler):
             f"If you need to load custom object types, use a purpose-built "
             f"serialization format instead of pickle."
         )
+
 
 OT = TypeVar("OT")
 
