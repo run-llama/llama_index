@@ -269,6 +269,7 @@ class TestIsHelpers:
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             assert self.store._is_full_text_search_type(st), f"{st} should be full text"
 
@@ -285,6 +286,7 @@ class TestIsHelpers:
             AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             assert self.store._is_vector_search_type(st), f"{st} should be vector"
 
@@ -497,6 +499,55 @@ class TestGenerateOrderByClause:
             search_type="full_text_search", param_mapping=pm
         )
         assert result.strip() == ""
+
+    def test_weighted_hybrid_emits_weight_clause(self) -> None:
+        """WEIGHTED_HYBRID_SEARCH uses the same RRF query as hybrid; weights are client-side."""
+        pm = ParamMapping(table="c")
+        result = self.store._generate_order_by_clause(
+            search_type="weighted_hybrid_search",
+            param_mapping=pm,
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=[0.3, 0.7],
+        )
+        assert "ORDER BY RANK RRF(" in result
+        assert "FullTextScore" in result
+        assert "VectorDistance" in result
+        # Weights are applied client-side — must NOT appear in the SQL clause
+        assert "weight=" not in result
+        assert "weights=" not in result
+        # Vector must still be inlined
+        assert "[1.0, 0.0, 0.0]" in result
+        assert "@vector" not in result
+
+    def test_weighted_hybrid_without_weights_omits_weight_clause(self) -> None:
+        pm = ParamMapping(table="c")
+        result = self.store._generate_order_by_clause(
+            search_type="weighted_hybrid_search",
+            param_mapping=pm,
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=None,
+        )
+        assert "ORDER BY RANK RRF(" in result
+        assert "weight=" not in result
+
+    def test_weighted_hybrid_multiple_text_components(self) -> None:
+        pm = ParamMapping(table="c")
+        result = self.store._generate_order_by_clause(
+            search_type="weighted_hybrid_search",
+            param_mapping=pm,
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[
+                {"search_field": "text", "search_text": "lorem"},
+                {"search_field": "text", "search_text": "ipsum"},
+            ],
+            weights=[0.2, 0.3, 0.5],
+        )
+        assert "ORDER BY RANK RRF(" in result
+        assert result.count("FullTextScore") == 2
+        # Weights are client-side — not in SQL
+        assert "weight=" not in result
 
 
 # ===========================================================================
@@ -720,6 +771,49 @@ class TestConstructSearchQuery:
             limit=5, search_type="vector", vector=[1.0, 0.0, 0.0]
         )
         assert len(params) > 0
+
+    def test_weighted_hybrid_uses_offset_limit_not_top(self) -> None:
+        query, _ = self.store._construct_search_query(
+            limit=3,
+            search_type="weighted_hybrid_search",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=[0.3, 0.7],
+        )
+        assert "TOP" not in query
+        assert "OFFSET 0 LIMIT 3" in query
+
+    def test_weighted_hybrid_emits_rrf_without_weight_in_sql(self) -> None:
+        """Weights are applied client-side; the SQL query is identical to hybrid."""
+        query, _ = self.store._construct_search_query(
+            limit=3,
+            search_type="weighted_hybrid_search",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=[0.3, 0.7],
+        )
+        assert "ORDER BY RANK RRF(" in query
+        assert "weight=" not in query
+        assert "weights=" not in query
+        assert "FullTextScore" in query
+        assert "VectorDistance(c.embedding, [1.0, 0.0, 0.0])" in query
+
+    def test_weighted_hybrid_no_weights_same_as_with_weights(self) -> None:
+        """SQL output is identical whether weights are provided or not."""
+        q_with, _ = self.store._construct_search_query(
+            limit=3,
+            search_type="weighted_hybrid_search",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=[0.3, 0.7],
+        )
+        q_without, _ = self.store._construct_search_query(
+            limit=3,
+            search_type="weighted_hybrid_search",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+        )
+        assert q_with == q_without
 
     def test_hybrid_vector_inline_not_parameterized(self) -> None:
         query, params = self.store._construct_search_query(

@@ -178,6 +178,48 @@ result = store.query(
 )
 ```
 
+### Weighted Hybrid Search
+
+Runs the same RRF query as `hybrid` but applies **client-side per-component
+weights** when re-ranking the returned results. This lets you tune the relative
+influence of each ranking component without changing the CosmosDB query.
+
+`weights` is a list of floats whose length equals the number of
+`full_text_rank_filter` entries **plus one** (the final entry is the weight for
+the vector component). The values do not need to sum to 1.
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="weighted_hybrid_search",
+    full_text_rank_filter=[
+        {"search_field": "text", "search_text": "neural network"},
+    ],
+    # weights=[text_weight, vector_weight]
+    # 30 % text relevance, 70 % vector similarity
+    weights=[0.3, 0.7],
+)
+```
+
+With two full-text components and one vector component:
+
+```python
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="weighted_hybrid_search",
+    full_text_rank_filter=[
+        {"search_field": "title",   "search_text": "neural network"},
+        {"search_field": "summary", "search_text": "deep learning"},
+    ],
+    # weights=[title_weight, summary_weight, vector_weight]
+    weights=[0.2, 0.3, 0.5],
+)
+```
+
+> **Note:** The CosmosDB NoSQL API does not expose a `weight=` parameter inside
+> `ORDER BY RANK RRF(...)`. The weighted re-ranking is therefore performed
+> client-side using position-based RRF scores after the server returns results.
+
 ---
 
 ## Query Options

@@ -355,6 +355,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         )
 
     def _is_vector_search_type(self, search_type: str) -> bool:
@@ -364,6 +365,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         )
 
     def _validate_search_args(
@@ -422,6 +424,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             if search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING and not full_text_rank_filter:
                 raise ValueError(f"'full_text_rank_filter' required for {search_type}.")
@@ -452,6 +455,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             is_hybrid = search_type in (
                 AzureCosmosDBNoSqlVectorSearchType.HYBRID,
                 AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+                AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
             )
             if return_with_vectors:
                 projection_fields.append(
@@ -499,6 +503,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         param_mapping: ParamMapping,
         vector: Optional[List[float]] = None,
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
+        weights: Optional[List[float]] = None,
     ) -> str:
         order_by_clause = ""
         if search_type in (
@@ -513,6 +518,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
                 AzureCosmosDBNoSqlVectorSearchType.HYBRID,
                 AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+                AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             if not full_text_rank_filter:
                 raise ValueError(f"'full_text_rank_filter' required for {search_type} search.")
@@ -528,11 +534,11 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                         vector_field=self._embedding_key, vector=vector
                     )
                 )
-            order_by_clause = (
-                f"ORDER BY RANK {components[0]}"
-                if len(components) == 1
-                else f"ORDER BY RANK RRF({', '.join(components)})"
-            )
+            if len(components) == 1:
+                order_by_clause = f"ORDER BY RANK {components[0]}"
+            else:
+                rrf_args = ", ".join(components)
+                order_by_clause = f"ORDER BY RANK RRF({rrf_args})"
         return f" {order_by_clause}"
 
     def _construct_search_query(
@@ -545,6 +551,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         projection_mapping: Optional[Dict[str, Any]] = None,
         return_with_vectors: bool = False,
         where: Optional[str] = None,
+        weights: Optional[List[float]] = None,
     ) -> Tuple[str, List[Dict[str, Any]]]:
         """Construct the search query and parameters."""
         query = "SELECT"
@@ -553,6 +560,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         is_hybrid = search_type in (
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         )
 
         # ORDER BY RANK RRF does not support TOP — use OFFSET/LIMIT for hybrid types.
@@ -579,6 +587,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 param_mapping=param_mapping,
                 vector=vector,
                 full_text_rank_filter=full_text_rank_filter,
+                weights=weights,
             )
             query += order_by_clause
 
@@ -598,6 +607,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         return_with_vectors: bool = False,
         projection_mapping: Optional[Dict[str, Any]] = None,
         threshold: Optional[float] = 0.0,
+        weights: Optional[List[float]] = None,
     ) -> VectorStoreQueryResult:
         """Execute the search query and return results."""
         parameters = parameters if parameters else []
@@ -619,6 +629,31 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ]
         else:
             filtered_items = list(items)
+
+        # Client-side weighted re-ranking for WEIGHTED_HYBRID_SEARCH.
+        # CosmosDB does not support weight= inside ORDER BY RANK RRF syntax,
+        # so we compute a weighted RRF score and re-sort the returned items.
+        if (
+            search_type == AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH
+            and weights
+        ):
+            # Assign position-based RRF scores per component weight.
+            # Each item's rank (1-based position) contributes: weight / (k + rank).
+            k = 60  # standard RRF constant
+            n_components = len(weights)
+            weighted_scores: List[float] = []
+            for rank, _ in enumerate(filtered_items, start=1):
+                score = sum(
+                    weights[i] / (k + rank) for i in range(n_components)
+                )
+                weighted_scores.append(score)
+            # Re-sort by descending weighted score
+            paired = sorted(
+                zip(weighted_scores, filtered_items),
+                key=lambda x: x[0],
+                reverse=True,
+            )
+            filtered_items = [item for _, item in paired]
 
         # Build VectorStoreQueryResult
         top_k_nodes = []
@@ -669,6 +704,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         projection_mapping: Optional[Dict[str, Any]] = None,
         where: Optional[str] = None,
         threshold: Optional[float] = 0.5,
+        weights: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -678,7 +714,8 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             vectors: Query embedding vector.
             limit: Maximum number of results to return.
             search_type: The type of search to perform. Valid options are:
-                [vector, vector_score_threshold, full_text_search, full_text_ranking, hybrid, hybrid_score_threshold].
+                [vector, vector_score_threshold, full_text_search, full_text_ranking,
+                hybrid, hybrid_score_threshold, weighted_hybrid_search].
             return_with_vectors: Set to True to include vector embeddings in the search results.
                 Only applicable for vector and hybrid search types.
             offset_limit: Optional OFFSET and LIMIT clause for pagination.
@@ -686,6 +723,11 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             projection_mapping: Optional mapping for projecting specific fields.
             where: Optional WHERE clause for filtering results.
             threshold: Similarity score threshold for filtering results.
+            weights: Optional list of per-component RRF weights for
+                ``weighted_hybrid_search``. Length must match the number of
+                components (full_text_rank_filter entries + 1 for the vector
+                component). E.g. ``[0.3, 0.7]`` gives more weight to the vector
+                component.
 
         Backward compatibility:
             pre_filter (dict): Legacy kwarg accepted by the old ``_query`` method.
@@ -720,6 +762,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             projection_mapping=projection_mapping,
             return_with_vectors=return_with_vectors,
             where=where,
+            weights=weights,
         )
 
         # Execute query and get results
@@ -730,6 +773,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             return_with_vectors=return_with_vectors,
             projection_mapping=projection_mapping,
             threshold=threshold,
+            weights=weights,
         )
 
 

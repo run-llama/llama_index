@@ -645,6 +645,56 @@ class TestAzureCosmosNoSqlVectorSearch:
         # No duplicate IDs
         assert len(res.ids) == len(set(res.ids))
 
+    def test_query_weighted_hybrid_search(
+        self, node_embeddings_with_description: List[TextNode]
+    ) -> None:
+        """Weighted hybrid RRF assigns per-component weights via weight=[...].
+
+        weights=[0.3, 0.7] gives 30 % to FullTextScore and 70 % to VectorDistance.
+        Node fts-node-1 has the exact query vector AND contains the search terms,
+        so it must still rank first regardless of weight direction.
+        """
+        vector_store = AzureCosmosDBNoSqlVectorSearch(
+            cosmos_client=test_client,
+            vector_embedding_policy=vector_embedding_policy,
+            indexing_policy=full_text_indexing_policy,
+            cosmos_database_properties=cosmos_database_properties_test,
+            cosmos_container_properties=cosmos_container_properties_full_text,
+            database_name=database_name,
+            container_name="full_text_container",
+            full_text_search_enabled=True,
+        )
+        vector_store.add(node_embeddings_with_description)  # type: ignore
+        sleep(1)
+
+        res = vector_store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            search_type="weighted_hybrid_search",
+            full_text_rank_filter=[
+                {"search_field": "text", "search_text": "lorem ipsum"},
+            ],
+            # 30 % text, 70 % vector — vector component gets higher weight
+            weights=[0.3, 0.7],
+        )
+
+        assert len(res.nodes) >= 1
+        assert len(res.ids) == len(res.nodes)
+        assert len(res.similarities) == len(res.nodes)
+
+        # fts-node-1 must still rank first: perfect vector match [1,0,0] + text match
+        assert res.ids[0] == "fts-node-1"
+        assert "lorem" in res.nodes[0].get_content()
+        assert res.nodes[0].metadata.get("author") == "Stephen King"
+
+        # All returned nodes are valid TextNode instances with non-empty content
+        for node in res.nodes:
+            assert isinstance(node, TextNode)
+            assert node.node_id
+            assert node.get_content()
+
+        # No duplicate IDs
+        assert len(res.ids) == len(set(res.ids))
+
     def test_cosmos_client_with_host_and_key(
         self, node_embeddings: List[TextNode]
     ) -> None:
