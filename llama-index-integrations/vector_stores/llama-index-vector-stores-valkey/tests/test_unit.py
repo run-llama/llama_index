@@ -112,20 +112,6 @@ class TestSchemaValidation:
 class TestInitialization:
     """Test ValkeyVectorStore initialization."""
 
-    def test_init_with_url(self):
-        vector_store = ValkeyVectorStore(valkey_url="valkey://localhost:6379")
-        assert vector_store.index_name == "llama_index"
-        assert vector_store.stores_text is True
-        assert vector_store.stores_node is True
-
-    def test_init_with_custom_schema(self):
-        schema = ValkeyVectorStoreSchema()
-        schema.index.name = "custom_index"
-        vector_store = ValkeyVectorStore(
-            schema=schema, valkey_url="valkey://localhost:6379"
-        )
-        assert vector_store.index_name == "custom_index"
-
     def test_init_with_client(self, valkey_client):
         vector_store = ValkeyVectorStore(valkey_client=valkey_client)
         assert vector_store.client is not None

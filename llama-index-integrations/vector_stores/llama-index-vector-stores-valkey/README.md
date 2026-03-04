@@ -97,6 +97,24 @@ result = await vector_store.aquery(query)
 - **Custom schemas** for flexible index configuration
 - **Sync and async operations** for different use cases
 
+## Exception Handling
+
+All operations raise `ValkeyVectorStoreError` with descriptive messages:
+
+```python
+from llama_index.vector_stores.valkey import (
+    ValkeyVectorStore,
+    ValkeyVectorStoreError,
+)
+
+try:
+    vector_store = ValkeyVectorStore(valkey_url="valkey://localhost:6379")
+    vector_store.create_index()
+    vector_store.add(nodes)
+except ValkeyVectorStoreError as e:
+    print(f"Operation failed: {e}")
+```
+
 ## Requirements
 
 - Valkey server with search module enabled

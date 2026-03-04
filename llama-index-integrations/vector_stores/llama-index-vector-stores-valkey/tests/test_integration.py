@@ -22,26 +22,21 @@ from llama_index.core.vector_stores.types import (
     FilterOperator,
     VectorStoreQuery,
 )
-from llama_index.vector_stores.valkey import ValkeyVectorStore
+from llama_index.vector_stores.valkey import ValkeyVectorStore, ValkeyVectorStoreError
 from llama_index.vector_stores.valkey.schema import ValkeyVectorStoreSchema
 
 
-@pytest.fixture(autouse=True)
-async def cleanup_indexes(valkey_client_async):
-    """Clean up all indexes before and after each test."""
-    try:
-        result = await valkey_client_async.custom_command(["FT._LIST"])
-        if result:
-            for index_name in result:
-                if isinstance(index_name, bytes):
-                    index_name = index_name.decode()
-                try:
-                    await ft.dropindex(valkey_client_async, index_name)
-                except Exception:
-                    pass
-    except Exception:
-        pass
+@pytest.fixture
+def clean_valkey(valkey_client):
+    """Clean Valkey database before and after each test."""
+    valkey_client.flushdb()
+    yield
+    valkey_client.flushdb()
 
+
+@pytest.fixture
+async def cleanup_indexes(valkey_client_async):
+    """Clean up all indexes after test."""
     yield
 
     try:
@@ -122,7 +117,7 @@ class TestBasicConnection:
 class TestSyncOperations:
     """Test all use cases using sync operations only."""
 
-    def test_index_management(self):
+    def test_index_management(self, clean_valkey):
         """Test index creation, existence check, and deletion."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_index_mgmt"
@@ -140,7 +135,7 @@ class TestSyncOperations:
         exists = vector_store.index_exists()
         assert exists is False
 
-    def test_index_overwrite(self):
+    def test_index_overwrite(self, clean_valkey):
         """Test creating index with overwrite=True."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_overwrite"
@@ -158,7 +153,7 @@ class TestSyncOperations:
 
         vector_store.delete_index()
 
-    def test_add_and_query_nodes(self, valkey_client):
+    def test_add_and_query_nodes(self, valkey_client, clean_valkey):
         """Test adding nodes and querying them synchronously."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_add_query"
@@ -196,7 +191,7 @@ class TestSyncOperations:
 
         vector_store.delete_index()
 
-    def test_delete_nodes_by_id(self, valkey_client):
+    def test_delete_nodes_by_id(self, valkey_client, clean_valkey):
         """Test deleting specific nodes by ID synchronously."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_delete_nodes"
@@ -232,23 +227,23 @@ class TestSyncOperations:
         assert node_ids[0] not in result.ids
         vector_store.delete_index()
 
-    def test_persist_operations(self, valkey_client):
+    def test_persist_operations(self, valkey_client, clean_valkey):
         """Test persist operations synchronously."""
         vector_store = ValkeyVectorStore(valkey_client=valkey_client)
 
         try:
             vector_store.persist(in_background=True)
-        except Exception as e:
+        except ValkeyVectorStoreError as e:
             if "BGSAVE" not in str(e):
                 raise
 
         try:
             vector_store.persist(in_background=False)
-        except Exception as e:
+        except ValkeyVectorStoreError as e:
             if "SAVE" not in str(e) and "Background save" not in str(e):
                 raise
 
-    def test_query_with_filters(self, valkey_client):
+    def test_query_with_filters(self, valkey_client, clean_valkey):
         """Test querying with metadata filters synchronously."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_filter_query"
@@ -259,45 +254,51 @@ class TestSyncOperations:
             valkey_client=valkey_client, schema=schema, overwrite=True
         )
 
-        vector_store.create_index()
+        try:
+            vector_store.create_index()
 
-        embed_model = MockEmbedding(embed_dim=1536)
-        nodes = [
-            TextNode(
-                text="book content",
-                id_="node_1",
-                metadata={"category": "book"},
-                embedding=embed_model.get_text_embedding("book content"),
-            ),
-            TextNode(
-                text="movie content",
-                id_="node_2",
-                metadata={"category": "movie"},
-                embedding=embed_model.get_text_embedding("movie content"),
-            ),
-        ]
-
-        vector_store.add(nodes)
-
-        filters = MetadataFilters(
-            filters=[
-                MetadataFilter(key="category", value="book", operator=FilterOperator.EQ)
+            embed_model = MockEmbedding(embed_dim=1536)
+            nodes = [
+                TextNode(
+                    text="book content",
+                    id_="node_1",
+                    metadata={"category": "book"},
+                    embedding=embed_model.get_text_embedding("book content"),
+                ),
+                TextNode(
+                    text="movie content",
+                    id_="node_2",
+                    metadata={"category": "movie"},
+                    embedding=embed_model.get_text_embedding("movie content"),
+                ),
             ]
-        )
-        query_embedding = embed_model.get_query_embedding("content")
-        query = VectorStoreQuery(
-            query_embedding=query_embedding, filters=filters, similarity_top_k=5
-        )
 
-        result = vector_store.query(query)
+            vector_store.add(nodes)
 
-        assert len(result.nodes) >= 1
-        for node in result.nodes:
-            assert node.metadata.get("category") == "book"
+            filters = MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="category", value="book", operator=FilterOperator.EQ
+                    )
+                ]
+            )
+            query_embedding = embed_model.get_query_embedding("content")
+            query = VectorStoreQuery(
+                query_embedding=query_embedding, filters=filters, similarity_top_k=5
+            )
 
-        vector_store.delete_index()
+            result = vector_store.query(query)
 
-    def test_filter_only_query_sync(self, valkey_client):
+            assert len(result.nodes) >= 1
+            for node in result.nodes:
+                assert node.metadata.get("category") == "book"
+        finally:
+            try:
+                vector_store.delete_index()
+            except Exception:
+                pass
+
+    def test_filter_only_query_sync(self, valkey_client, clean_valkey):
         """Test filter-only query synchronously."""
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_sync_filter_only"
@@ -721,7 +722,7 @@ class TestAsyncOperations:
 
         try:
             await vector_store.async_delete_index()
-        except Exception:
+        except ValkeyVectorStoreError:
             pass
 
         await vector_store.async_create_index()
@@ -783,7 +784,7 @@ class TestAsyncOperations:
 
         try:
             await vector_store.async_create_index(overwrite=False)
-        except Exception:
+        except ValkeyVectorStoreError:
             pass
 
         await vector_store.async_delete_index()
@@ -795,7 +796,7 @@ class TestAsyncOperations:
 
         try:
             await vector_store.apersist(in_background=True)
-        except Exception as e:
+        except ValkeyVectorStoreError as e:
             if "BGSAVE" not in str(e):
                 raise
 
@@ -806,7 +807,7 @@ class TestAsyncOperations:
 
         try:
             await vector_store.apersist(in_background=False)
-        except Exception as e:
+        except ValkeyVectorStoreError as e:
             if "SAVE" not in str(e) and "Background save" not in str(e):
                 raise
 
