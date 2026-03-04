@@ -9,7 +9,8 @@ def get_numbered_text_from_nodes(
     node_list: List[BaseNode],
     text_splitter: Optional[TokenTextSplitter] = None,
 ) -> str:
-    """Get text from nodes in the format of a numbered list.
+    """
+    Get text from nodes in the format of a numbered list.
 
     Used by tree-structured indices.
 

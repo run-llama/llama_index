@@ -10,7 +10,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class PGRetriever(BaseRetriever):
-    """A retriever that uses multiple sub-retrievers to retrieve nodes from a property graph.
+    """
+    A retriever that uses multiple sub-retrievers to retrieve nodes from a property graph.
 
     Args:
         sub_retrievers (List[BasePGRetriever]):
@@ -21,6 +22,7 @@ class PGRetriever(BaseRetriever):
             Whether to use async retrieval. Defaults to True.
         show_progress (bool, optional):
             Whether to show progress bars. Defaults to False.
+
     """
 
     def __init__(

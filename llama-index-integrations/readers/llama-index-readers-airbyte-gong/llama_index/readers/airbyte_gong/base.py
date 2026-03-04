@@ -4,12 +4,14 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteGongReader(AirbyteCDKReader):
-    """AirbyteGongReader reader.
+    """
+    AirbyteGongReader reader.
 
     Retrieve documents from Gong
 
     Args:
         config: The config object for the gong source.
+
     """
 
     def __init__(

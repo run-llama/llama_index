@@ -9,7 +9,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 class OpenWeatherMapToolSpec(BaseToolSpec):
     """Open Weather tool spec."""
 
-    spec_functions = ["weather_at_location", "forecast_tommorrow_at_location"]
+    spec_functions = ["weather_at_location", "forecast_tomorrow_at_location"]
 
     def __init__(self, key: str, temp_units: str = "celsius") -> None:
         """Initialize with parameters."""
@@ -37,7 +37,8 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
     def _format_weather(
         self, place: str, temp_str: str, w: Any, time_str: str = "now"
     ) -> str:
-        """Format weather response from OpenWeatherMap.
+        """
+        Format weather response from OpenWeatherMap.
 
         Function thanks to
         langchain/utilities/openweathermap.py
@@ -69,6 +70,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             place (str):
                 The place to find the weather at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
 
@@ -87,7 +89,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
 
         return [Document(text=weather_text, metadata={"weather from": location})]
 
-    def forecast_tommorrow_at_location(self, location: str) -> List[Document]:
+    def forecast_tomorrow_at_location(self, location: str) -> List[Document]:
         """
         Finds the weather forecast for tomorrow at a location.
 
@@ -95,6 +97,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             location (str):
                 The location to find the weather tomorrow at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
         from pyowm.utils import timestamps

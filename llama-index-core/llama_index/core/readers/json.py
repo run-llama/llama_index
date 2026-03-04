@@ -2,6 +2,7 @@
 
 import json
 import re
+import warnings
 from typing import Any, Dict, Generator, List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -15,7 +16,8 @@ def _depth_first_yield(
     path: List[str],
     ensure_ascii: bool = False,
 ) -> Generator[str, None, None]:
-    """Do depth first yield of all of the leaf nodes of a JSON.
+    """
+    Do depth first yield of all of the leaf nodes of a JSON.
 
     Combines keys in the JSON tree using spaces.
 
@@ -49,7 +51,8 @@ def _depth_first_yield(
 
 
 class JSONReader(BaseReader):
-    """JSON reader.
+    """
+    JSON reader.
 
     Reads JSON documents with options to help suss out relationships between nodes.
 
@@ -72,6 +75,7 @@ class JSONReader(BaseReader):
         This removes lines that are not as useful. If False, no lines are removed and the document maintains a valid JSON object structure.
         If levels_back is set the json is not cleaned and this option is ignored.
         Defaults to True.
+
     """
 
     def __init__(
@@ -94,49 +98,57 @@ class JSONReader(BaseReader):
         self, input_file: str, extra_info: Optional[Dict] = {}
     ) -> List[Document]:
         """Load data from the input file."""
-        with open(input_file, encoding="utf-8") as f:
-            load_data = []
-            if self.is_jsonl:
-                for line in f:
-                    load_data.append(json.loads(line.strip()))
-            else:
-                load_data = [json.load(f)]
+        try:
+            with open(input_file, encoding="utf-8") as f:
+                load_data = []
+                if self.is_jsonl:
+                    for line in f:
+                        load_data.append(json.loads(line.strip()))
+                else:
+                    load_data = [json.load(f)]
 
-            documents = []
-            for data in load_data:
-                if self.levels_back is None and self.clean_json is True:
-                    # If levels_back isn't set and clean json is set,
-                    # remove lines containing only formatting, we just format and make each
-                    # line an embedding
-                    json_output = json.dumps(
-                        data, indent=0, ensure_ascii=self.ensure_ascii
-                    )
-                    lines = json_output.split("\n")
-                    useful_lines = [
-                        line for line in lines if not re.match(r"^[{}\[\],]*$", line)
-                    ]
-                    documents.append(
-                        Document(text="\n".join(useful_lines), metadata=extra_info)
-                    )
-
-                elif self.levels_back is None and self.clean_json is False:
-                    # If levels_back isn't set  and clean json is False, create documents without cleaning
-                    json_output = json.dumps(data, ensure_ascii=self.ensure_ascii)
-                    documents.append(Document(text=json_output, metadata=extra_info))
-
-                elif self.levels_back is not None:
-                    # If levels_back is set, we make the embeddings contain the labels
-                    # from further up the JSON tree
-                    lines = [
-                        *_depth_first_yield(
-                            data,
-                            self.levels_back,
-                            self.collapse_length,
-                            [],
-                            self.ensure_ascii,
+                documents = []
+                for data in load_data:
+                    if self.levels_back is None and self.clean_json is True:
+                        # If levels_back isn't set and clean json is set,
+                        # remove lines containing only formatting, we just format and make each
+                        # line an embedding
+                        json_output = json.dumps(
+                            data, indent=0, ensure_ascii=self.ensure_ascii
                         )
-                    ]
-                    documents.append(
-                        Document(text="\n".join(lines), metadata=extra_info)
-                    )
+                        lines = json_output.split("\n")
+                        useful_lines = [
+                            line
+                            for line in lines
+                            if not re.match(r"^[{}\[\],]*$", line)
+                        ]
+                        documents.append(
+                            Document(text="\n".join(useful_lines), metadata=extra_info)
+                        )
+
+                    elif self.levels_back is None and self.clean_json is False:
+                        # If levels_back isn't set  and clean json is False, create documents without cleaning
+                        json_output = json.dumps(data, ensure_ascii=self.ensure_ascii)
+                        documents.append(
+                            Document(text=json_output, metadata=extra_info)
+                        )
+
+                    elif self.levels_back is not None:
+                        # If levels_back is set, we make the embeddings contain the labels
+                        # from further up the JSON tree
+                        lines = [
+                            *_depth_first_yield(
+                                data,
+                                self.levels_back,
+                                self.collapse_length,
+                                [],
+                                self.ensure_ascii,
+                            )
+                        ]
+                        documents.append(
+                            Document(text="\n".join(lines), metadata=extra_info)
+                        )
             return documents
+        except RecursionError:
+            warnings.warn("Recursion error occurred while processing JSON data.")
+            return []

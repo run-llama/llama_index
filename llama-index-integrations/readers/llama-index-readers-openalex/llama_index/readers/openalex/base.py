@@ -22,7 +22,7 @@ class OpenAlexReader(BaseReader):
     email : str
         Email address to use for OpenAlex API
 
-    Attributes:
+    Attributes
     ----------
     Works : pyalex.Works
         pyalex.Works object

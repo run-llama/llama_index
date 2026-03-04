@@ -1,4 +1,5 @@
-"""AwaDB vector store index.
+"""
+AwaDB vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class AwaDBVectorStore(BasePydanticVectorStore):
-    """AwaDB vector store.
+    """
+    AwaDB vector store.
 
     In this vector store, embeddings are stored within a AwaDB table.
 
@@ -60,7 +62,8 @@ class AwaDBVectorStore(BasePydanticVectorStore):
         log_and_data_dir: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with AwaDB client.
+        """
+        Initialize with AwaDB client.
            If table_name is not specified,
            a random table name of `DEFAULT_TABLE_NAME + last segment of uuid`
            would be created automatically.
@@ -72,6 +75,7 @@ class AwaDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             None.
+
         """
         super().__init__()
 
@@ -100,13 +104,15 @@ class AwaDBVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to AwaDB.
+        """
+        Add nodes to AwaDB.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         Returns:
             Added node ids
+
         """
         if not self._awadb_client:
             raise ValueError("AwaDB client not initialized")
@@ -138,13 +144,15 @@ class AwaDBVectorStore(BasePydanticVectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
 
         Returns:
             None
+
         """
         if len(ref_doc_id) == 0:
             return
@@ -153,13 +161,15 @@ class AwaDBVectorStore(BasePydanticVectorStore):
         self._awadb_client.Delete(ids)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query : vector store query
 
         Returns:
             VectorStoreQueryResult: Query results
+
         """
         meta_filters = {}
         if query.filters is not None:

@@ -36,7 +36,7 @@ class GigaChatLLM(CustomLLM):
     GigaChat LLM Implementation.
 
     Examples:
-        `pip install llama-index-llms-gigachat`
+        `pip install llama-index-llms-gigachat-ru`
 
         ```python
         from llama_index.llms.gigachat import GigaChatLLM
@@ -48,6 +48,7 @@ class GigaChatLLM(CustomLLM):
         resp = llm.complete("What is the capital of France?")
         print(resp)
         ```
+
     """
 
     model: GigaChatModel = Field(default=GigaChatModel.GIGACHAT)

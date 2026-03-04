@@ -40,7 +40,8 @@ def yi_modelname_to_context_size(modelname: str) -> int:
 
 
 class Yi(OpenAI):
-    """Yi LLM.
+    """
+    Yi LLM.
 
     Examples:
         `pip install llama-index-llms-yi`
@@ -54,6 +55,7 @@ class Yi(OpenAI):
         response = llm.complete("Hi, who are you?")
         print(response)
         ```
+
     """
 
     model: str = Field(default=DEFAULT_YI_MODEL, description="The Yi model to use.")

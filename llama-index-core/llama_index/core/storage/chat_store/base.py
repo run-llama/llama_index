@@ -1,4 +1,6 @@
 """Base interface class for storing chat history per user."""
+
+import asyncio
 from abc import abstractmethod
 from typing import List, Optional
 
@@ -49,28 +51,28 @@ class BaseChatStore(BaseComponent):
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Async version of Get messages for a key."""
-        self.set_messages(key, messages)
+        await asyncio.to_thread(self.set_messages, key, messages)
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
         """Async version of Get messages for a key."""
-        return self.get_messages(key)
+        return await asyncio.to_thread(self.get_messages, key)
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
         """Async version of Add a message for a key."""
-        self.add_message(key, message)
+        await asyncio.to_thread(self.add_message, key, message)
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Async version of Delete messages for a key."""
-        return self.delete_messages(key)
+        return await asyncio.to_thread(self.delete_messages, key)
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
-        return self.delete_message(key, idx)
+        return await asyncio.to_thread(self.delete_message, key, idx)
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async version of Delete last message for a key."""
-        return self.delete_last_message(key)
+        return await asyncio.to_thread(self.delete_last_message, key)
 
     async def aget_keys(self) -> List[str]:
         """Async version of Get all keys."""
-        return self.get_keys()
+        return await asyncio.to_thread(self.get_keys)

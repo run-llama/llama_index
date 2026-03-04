@@ -1,4 +1,5 @@
 """Multion tool spec."""
+
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
@@ -23,5 +24,6 @@ class MultionToolSpec(BaseToolSpec):
 
         Args:
             cmd (str): The detailed and specific natural language instructrion for web browsing
+
         """
         return self.multion.browse(cmd=cmd, local=True)

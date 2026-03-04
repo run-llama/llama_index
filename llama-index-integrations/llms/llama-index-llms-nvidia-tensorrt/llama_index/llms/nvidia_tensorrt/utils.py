@@ -96,6 +96,7 @@ def generate_completion_dict(
 
     Returns:
     dict: A dictionary containing completion details.
+
     """
     completion_id: str = f"cmpl-{uuid.uuid4()!s}"
     created: int = int(time.time())

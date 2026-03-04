@@ -17,6 +17,7 @@ Each collaborator is converted to a document by doing the following:
         - permissions: str, the permissions of the user, if available
 
 """
+
 import asyncio
 import enum
 import logging
@@ -80,6 +81,7 @@ class GitHubRepositoryCollaboratorsReader(BaseReader):
         Raises:
             - `ValueError`: If the github_token is not provided and
                 the GITHUB_TOKEN environment variable is not set.
+
         """
         super().__init__()
 

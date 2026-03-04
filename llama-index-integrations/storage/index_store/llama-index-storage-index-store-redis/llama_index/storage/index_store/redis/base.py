@@ -8,7 +8,8 @@ from llama_index.storage.kvstore.redis import RedisKVStore
 
 
 class RedisIndexStore(KVIndexStore):
-    """Redis Index store.
+    """
+    Redis Index store.
 
     Args:
         redis_kvstore (RedisKVStore): Redis key-value store

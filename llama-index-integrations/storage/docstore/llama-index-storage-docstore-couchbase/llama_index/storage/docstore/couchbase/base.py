@@ -29,6 +29,7 @@ class CouchbaseDocumentStore(KVDocumentStore):
             node_collection_suffix (str): suffix for the node collection
             ref_doc_collection_suffix (str): suffix for the  Refdoc collection
             metadata_collection_suffix (str): suffix for the metadata collection
+
         """
         super().__init__(
             couchbase_kvstore,

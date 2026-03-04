@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class BitbucketReader(BaseReader):
-    """Bitbucket reader.
+    """
+    Bitbucket reader.
 
     Reads the content of files in Bitbucket repositories.
 
@@ -66,10 +67,12 @@ class BitbucketReader(BaseReader):
         slugs.append(self.repository)
         return slugs
 
-    def load_all_file_paths(self, slug, branch, directory_path="", paths=[]):
+    def load_all_file_paths(self, slug, branch, directory_path="", paths=None):
         """
         Go inside every file that is present in the repository and get the paths for each file.
         """
+        if paths is None:
+            paths = []
         content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse/{directory_path}"
 
         query_params = {
@@ -87,14 +90,14 @@ class BitbucketReader(BaseReader):
                     paths.append(
                         {
                             "slug": slug,
-                            "path": f'{directory_path}/{value["path"]["toString"]}',
+                            "path": f"{directory_path}/{value['path']['toString']}",
                         }
                     )
             elif value["type"] == "DIRECTORY":
                 self.load_all_file_paths(
                     slug=slug,
                     branch=branch,
-                    directory_path=f'{directory_path}/{value["path"]["toString"]}',
+                    directory_path=f"{directory_path}/{value['path']['toString']}",
                     paths=paths,
                 )
 

@@ -9,7 +9,8 @@ from llama_index.core.node_parser.relational.utils import md_to_df
 
 
 class LlamaParseJsonNodeParser(BaseElementNodeParser):
-    """Llama Parse Json format element node parser.
+    """
+    Llama Parse Json format element node parser.
 
     Splits a json format document from LlamaParse into Text Nodes and Index Nodes
     corresponding to embedded objects (e.g. tables).
@@ -28,9 +29,10 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
             node_id=node.id_,
             node_metadata=node.metadata,
         )
-        table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
-        self.extract_table_summaries(table_elements)
+        # Pass all elements so that extract_table_summaries can access
+        # surrounding context (e.g., table titles) for better summarization
+        self.extract_table_summaries(elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         return self.get_nodes_from_elements(
@@ -45,9 +47,10 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
             node_id=node.id_,
             node_metadata=node.metadata,
         )
-        table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
-        await self.aextract_table_summaries(table_elements)
+        # Pass all elements so that extract_table_summaries can access
+        # surrounding context (e.g., table titles) for better summarization
+        await self.aextract_table_summaries(elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         return self.get_nodes_from_elements(
@@ -64,7 +67,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         **kwargs: Any,
     ) -> List[Element]:
         # get node id for each node so that we can avoid using the same id for different nodes
-        """Extract elements from json based nodes.
+        """
+        Extract elements from json based nodes.
 
         Args:
             text: node's text content

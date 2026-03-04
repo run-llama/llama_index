@@ -2,6 +2,8 @@ from typing import Dict, List, Optional
 import re
 
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ContentBlock, TextBlock
+from llama_index.core.utils import resolve_binary
 
 
 class SafeFormatter:
@@ -14,17 +16,38 @@ class SafeFormatter:
         return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
 
     def parse(self, format_string: str) -> List[str]:
-        return re.findall(r"\{([^{}]+)\}", format_string)
+        return re.findall(
+            r"\{([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\}", format_string
+        )
 
     def _replace_match(self, match: re.Match) -> str:
         key = match.group(1)
-        return str(self.format_dict.get(key, match.group(0)))
+        value = self.format_dict.get(key, match.group(0))
+        if isinstance(value, bytes):
+            return resolve_binary(value, as_base64=True).read().decode("utf-8")
+
+        return str(value)
 
 
 def format_string(string_to_format: str, **kwargs: str) -> str:
     """Format a string with kwargs."""
     formatter = SafeFormatter(format_dict=kwargs)
     return formatter.format(string_to_format)
+
+
+def format_content_blocks(
+    content_blocks: List[ContentBlock], **kwargs: str
+) -> List[ContentBlock]:
+    """Format content blocks with kwargs."""
+    formatter = SafeFormatter(format_dict=kwargs)
+    formatted_blocks: List[ContentBlock] = []
+    for block in content_blocks:
+        if isinstance(block, TextBlock):
+            formatted_blocks.append(TextBlock(text=formatter.format(block.text)))
+        else:
+            formatted_blocks.append(block)
+
+    return formatted_blocks
 
 
 def get_template_vars(template_str: str) -> List[str]:

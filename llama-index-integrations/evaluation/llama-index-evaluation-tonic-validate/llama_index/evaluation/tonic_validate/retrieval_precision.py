@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class RetrievalPrecisionEvaluator(BaseEvaluator):
-    """Tonic Validate's retrieval precision metric.
+    """
+    Tonic Validate's retrieval precision metric.
 
     The output score is a float between 0.0 and 1.0.
 
@@ -19,6 +20,7 @@ class RetrievalPrecisionEvaluator(BaseEvaluator):
     Args:
         openai_service(OpenAIService): The OpenAI service to use. Specifies the chat
             completion model to use as the LLM evaluator. Defaults to "gpt-4".
+
     """
 
     def __init__(self, openai_service: Optional[Any] = None):
@@ -32,7 +34,7 @@ class RetrievalPrecisionEvaluator(BaseEvaluator):
         query: Optional[str] = None,
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> EvaluationResult:
         from tonic_validate.classes.benchmark import BenchmarkItem
         from tonic_validate.classes.llm_response import LLMResponse

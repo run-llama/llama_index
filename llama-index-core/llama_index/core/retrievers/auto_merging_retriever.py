@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class AutoMergingRetriever(BaseRetriever):
-    """This retriever will try to merge context into parent context.
+    """
+    This retriever will try to merge context into parent context.
 
     The retriever first retrieves chunks from a vector store.
     Then, it will try to merge the chunks into a single context.
@@ -173,7 +174,8 @@ class AutoMergingRetriever(BaseRetriever):
         return nodes, is_changed_0 or is_changed_1
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Implemented by the user.
 

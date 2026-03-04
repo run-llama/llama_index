@@ -1,4 +1,5 @@
 """Query for KeywordTableIndex."""
+
 import logging
 from abc import abstractmethod
 from collections import defaultdict
@@ -28,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseKeywordTableRetriever(BaseRetriever):
-    """Base Keyword Table Retriever.
+    """
+    Base Keyword Table Retriever.
 
     Arguments are shared among subclasses.
 
@@ -115,7 +117,8 @@ class BaseKeywordTableRetriever(BaseRetriever):
 
 
 class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
-    """Keyword Table Index GPT Retriever.
+    """
+    Keyword Table Index GPT Retriever.
 
     Extracts keywords using GPT. Set when using `retriever_mode="default"`.
 
@@ -162,7 +165,8 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
 
 
 class KeywordTableSimpleRetriever(BaseKeywordTableRetriever):
-    """Keyword Table Index Simple Retriever.
+    """
+    Keyword Table Index Simple Retriever.
 
     Extracts keywords using simple regex-based keyword extractor.
     Set when `retriever_mode="simple"`.
@@ -179,7 +183,8 @@ class KeywordTableSimpleRetriever(BaseKeywordTableRetriever):
 
 
 class KeywordTableRAKERetriever(BaseKeywordTableRetriever):
-    """Keyword Table Index RAKE Retriever.
+    """
+    Keyword Table Index RAKE Retriever.
 
     Extracts keywords using RAKE keyword extractor.
     Set when `retriever_mode="rake"`.

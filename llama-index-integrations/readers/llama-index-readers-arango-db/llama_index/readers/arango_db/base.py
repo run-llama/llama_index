@@ -7,12 +7,14 @@ from llama_index.core.schema import Document
 
 
 class SimpleArangoDBReader(BaseReader):
-    """Simple arangodb reader.
+    """
+    Simple arangodb reader.
     Concatenates each ArangoDB doc into Document used by LlamaIndex.
 
     Args:
         host: (Union[str, List[str]]) list of urls or url for connecting to the db
         client: (Any) ArangoDB client
+
     """
 
     def __init__(
@@ -48,7 +50,8 @@ class SimpleArangoDBReader(BaseReader):
         max_docs: int = None,
         metadata_names: Optional[List[str]] = None,
     ) -> Iterator[Document]:
-        """Lazy load data from ArangoDB.
+        """
+        Lazy load data from ArangoDB.
 
         Args:
             username (str): for credentials.
@@ -68,6 +71,7 @@ class SimpleArangoDBReader(BaseReader):
                 to the metadata attribute of the Document. Defaults to None
         Returns:
             List[Document]: A list of documents.
+
         """
         db = self.client.db(name=db_name, username=username, password=password)
         collection = db.collection(collection_name)
@@ -105,7 +109,8 @@ class SimpleArangoDBReader(BaseReader):
         max_docs: int = None,
         metadata_names: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from the ArangoDB.
+        """
+        Load data from the ArangoDB.
 
         Args:
             username (str): for credentials.
@@ -125,6 +130,7 @@ class SimpleArangoDBReader(BaseReader):
                 to the metadata attribute of the Document. Defaults to None
         Returns:
             List[Document]: A list of documents.
+
         """
         return list(
             self.lazy_load(

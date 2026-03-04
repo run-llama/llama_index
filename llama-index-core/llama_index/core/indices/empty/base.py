@@ -1,4 +1,5 @@
-"""Empty index.
+"""
+Empty index.
 
 An index that doesn't contain any documents. Can only be used for
 pure LLM calls.
@@ -17,7 +18,8 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 
 
 class EmptyIndex(BaseIndex[EmptyIndexStruct]):
-    """Empty Index.
+    """
+    Empty Index.
 
     An index that doesn't contain any documents. Used for
     pure LLM calls.
@@ -61,13 +63,15 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **build_kwargs: Any
     ) -> EmptyIndexStruct:
-        """Build the index from documents.
+        """
+        Build the index from documents.
 
         Args:
             documents (List[BaseDocument]): A list of documents.
 
         Returns:
             IndexList: The created summary index.
+
         """
         del nodes  # Unused
         return EmptyIndexStruct()

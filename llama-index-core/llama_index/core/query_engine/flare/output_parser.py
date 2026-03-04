@@ -42,7 +42,8 @@ class IsDoneOutputParser(BaseOutputParser):
 
 
 class QueryTaskOutputParser(BaseOutputParser):
-    """QueryTask output parser.
+    """
+    QueryTask output parser.
 
     By default, parses output that contains "[Search(query)]" tags.
 

@@ -1,6 +1,5 @@
 """DeepLake multimodal Retrieval Pack."""
 
-
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.indices.multi_modal import MultiModalVectorStoreIndex

@@ -13,7 +13,8 @@ PYTORCH_IMPORT_ERROR_MSG = "Pytorch is not installed. Please install it with 'pi
 
 
 class Nudge:
-    """The algorithm implemented here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
+    """
+    The algorithm implemented here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
     If a validation dataset is provided, the best model is evaluated and saved based on the validation loss at the end of every epoch.
 
     Args:
@@ -22,6 +23,7 @@ class Nudge:
         val_dataset (EmbeddingQAFinetuneDataset): Validation dataset.
         use_nudge_n (bool): Whether to use NUDGE-N or NUDGE-M. Defaults to True.
         device (Optional[str]): Device to use. Defaults to None.
+
     """
 
     def __init__(
@@ -67,6 +69,7 @@ class Nudge:
 
         Args:
             dataset (EmbeddingQAFinetuneDataset): Dataset to convert.
+
         """
         try:
             import numpy as np

@@ -28,7 +28,8 @@ class SQLQueryMode(str, Enum):
 
 
 class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
-    """SQL Struct Store Index.
+    """
+    SQL Struct Store Index.
 
     The SQLStructStoreIndex is an index that uses a SQL database
     under the hood. During index construction, the data can be inferred

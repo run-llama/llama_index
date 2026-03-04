@@ -49,6 +49,7 @@ def anyscale_modelname_to_contextsize(modelname: str) -> int:
         .. code-block:: python
 
             max_tokens = anyscale_modelname_to_contextsize(model_name)
+
     """
     # handling finetuned models
     # TO BE FILLED
@@ -59,7 +60,7 @@ def anyscale_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
 
     if context_size is None:
         raise ValueError(

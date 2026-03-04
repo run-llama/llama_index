@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class HWPReader(BaseReader):
-    """Hwp Reader. Reads contents from Hwp file.
+    """
+    Hwp Reader. Reads contents from Hwp file.
     Args: None.
     """
 
@@ -23,7 +24,8 @@ class HWPReader(BaseReader):
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Load data and extract table from Hwp file.
+        """
+        Load data and extract table from Hwp file.
 
         Args:
             file (Path): Path for the Hwp file.
@@ -31,6 +33,7 @@ class HWPReader(BaseReader):
 
         Returns:
             List[Document].
+
         """
         import olefile
 

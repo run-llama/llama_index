@@ -19,15 +19,21 @@ Here's an example usage of the MetaphorToolSpec.
 
 ```python
 from llama_index.tools.metaphor import MetaphorToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 metaphor_tool = MetaphorToolSpec(
     api_key="your-key",
 )
-agent = OpenAIAgent.from_tools(metaphor_tool.to_tool_list())
+agent = FunctionAgent(
+    tools=metaphor_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat(
-    "Can you summarize the news published in the last month on superconductors"
+print(
+    await agent.run(
+        "Can you summarize the news published in the last month on superconductors"
+    )
 )
 ```
 

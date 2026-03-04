@@ -67,7 +67,8 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
 
 
 class CorrectnessEvaluator(BaseEvaluator):
-    """Correctness evaluator.
+    """
+    Correctness evaluator.
 
     Evaluates the correctness of a question answering system.
     This evaluator depends on `reference` answer to be provided, in addition to the
@@ -82,6 +83,7 @@ class CorrectnessEvaluator(BaseEvaluator):
             Template for the evaluation prompt.
         score_threshold (float): Numerical threshold for passing the evaluation,
             defaults to 4.0.
+
     """
 
     def __init__(

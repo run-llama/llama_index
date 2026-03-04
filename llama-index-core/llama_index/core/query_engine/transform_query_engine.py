@@ -9,7 +9,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class TransformQueryEngine(BaseQueryEngine):
-    """Transform query engine.
+    """
+    Transform query engine.
 
     Applies a query transform to a query bundle before passing
         it to a query engine.

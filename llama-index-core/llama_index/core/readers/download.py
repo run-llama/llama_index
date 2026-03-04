@@ -1,4 +1,5 @@
-"""Download loader from Llama Hub.
+"""
+Download loader from Llama Hub.
 
 NOTE: using `download_loader` is now deprecated.
 Please do `pip install llama-index-reader-<reader_name>` instead.
@@ -25,8 +26,9 @@ def download_loader(
     refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     custom_path: Optional[str] = None,
-) -> Type[BaseReader]:
-    """Download a single loader from the Loader Hub.
+) -> Type[BaseReader]:  # pragma: no cover
+    """
+    Download a single loader from the Loader Hub.
 
     Args:
         loader_class: The name of the loader class you want to download,
@@ -42,6 +44,7 @@ def download_loader(
 
     Returns:
         A Loader.
+
     """
     # maintain during deprecation period
     del loader_hub_url

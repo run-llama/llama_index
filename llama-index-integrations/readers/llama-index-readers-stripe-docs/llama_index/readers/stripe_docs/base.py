@@ -1,7 +1,7 @@
 import urllib.request
-import xml.etree.ElementTree as ET
 from typing import List
 
+from defusedxml.ElementTree import fromstring
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.readers.web import AsyncWebPageReader
@@ -13,13 +13,15 @@ DEFAULT_FILTERS = ["/docs"]
 
 
 class StripeDocsReader(BaseReader):
-    """Asynchronous Stripe documentation reader.
+    """
+    Asynchronous Stripe documentation reader.
 
     Reads pages from the Stripe documentation based on the sitemap.xml.
 
     Args:
         html_to_text (bool): Whether to convert HTML to text.
         limit (int): Maximum number of concurrent requests.
+
     """
 
     def __init__(self, html_to_text: bool = False, limit: int = 10) -> None:
@@ -36,7 +38,7 @@ class StripeDocsReader(BaseReader):
     def _parse_sitemap(
         self, raw_sitemap: str, filters: List[str] = DEFAULT_FILTERS
     ) -> List:
-        root_sitemap = ET.fromstring(raw_sitemap)
+        root_sitemap = fromstring(raw_sitemap)
         sitemap_partition_urls = []
         sitemap_urls = []
 
@@ -45,7 +47,7 @@ class StripeDocsReader(BaseReader):
             sitemap_partition_urls.append(loc)
 
         for sitemap_partition_url in sitemap_partition_urls:
-            sitemap_partition = ET.fromstring(self._load_url(sitemap_partition_url))
+            sitemap_partition = fromstring(self._load_url(sitemap_partition_url))
 
             # Find all <url /> and iterate through them
             for url in sitemap_partition.findall(f"{{{XML_SITEMAP_SCHEMA}}}url"):

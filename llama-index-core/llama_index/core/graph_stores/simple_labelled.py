@@ -12,18 +12,20 @@ from llama_index.core.graph_stores.types import (
     LabelledPropertyGraph,
     Relation,
     DEFAULT_PERSIST_DIR,
-    DEFUALT_PG_PERSIST_FNAME,
+    DEFAULT_PG_PERSIST_FNAME,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
 class SimplePropertyGraphStore(PropertyGraphStore):
-    """Simple Labelled Property Graph Store.
+    """
+    Simple Labelled Property Graph Store.
 
     This class implements a simple in-memory labelled property graph store.
 
     Args:
         graph (Optional[LabelledPropertyGraph]): Labelled property graph to initialize the store.
+
     """
 
     supports_structured_queries: bool = False
@@ -190,7 +192,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimplePropertyGraphStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFUALT_PG_PERSIST_FNAME)
+        persist_path = os.path.join(persist_dir, DEFAULT_PG_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @classmethod
@@ -275,7 +277,8 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         net.write_html(name)
 
     def show_jupyter_graph(self) -> None:
-        """Visualizes the graph structure of the graph store.
+        """
+        Visualizes the graph structure of the graph store.
 
         NOTE: This function requires yfiles_jupyter_graphs to be installed.
         NOTE: This method exclusively works in jupyter environments.

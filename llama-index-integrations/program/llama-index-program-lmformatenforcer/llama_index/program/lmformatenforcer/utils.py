@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 def build_lm_format_enforcer_function(
     llm: LLM, character_level_parser: "CharacterLevelParser"
 ) -> Callable:
-    """Prepare for using the LM format enforcer.
+    """
+    Prepare for using the LM format enforcer.
     This builds the processing function that will be injected into the LLM to
     activate the LM Format Enforcer.
     """
@@ -41,7 +42,8 @@ def build_lm_format_enforcer_function(
 def activate_lm_format_enforcer(
     llm: LLM, lm_format_enforcer_fn: Callable
 ) -> Iterator[None]:
-    """Activate the LM Format Enforcer for the given LLM.
+    """
+    Activate the LM Format Enforcer for the given LLM.
 
     with activate_lm_format_enforcer(llm, lm_format_enforcer_fn):
         llm.complete(...)

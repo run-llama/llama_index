@@ -106,7 +106,8 @@ class OracleDocReader:
 
     @staticmethod
     def read_file(conn: Connection, file_path: str, params: dict) -> Document:
-        """Read a file using OracleReader
+        """
+        Read a file using OracleReader
         Args:
             conn: Oracle Connection,
             file_path: Oracle Directory,
@@ -114,6 +115,7 @@ class OracleDocReader:
 
         Returns:
             Plain text and metadata as Document.
+
         """
         metadata = {}
 
@@ -182,7 +184,8 @@ class OracleDocReader:
 
 
 class OracleReader(BaseReader):
-    """Read documents using OracleDocLoader
+    """
+    Read documents using OracleDocLoader
     Args:
         conn: Oracle Connection,
         params: Loader parameters.

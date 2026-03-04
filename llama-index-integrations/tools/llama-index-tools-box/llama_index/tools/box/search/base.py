@@ -44,6 +44,7 @@ class BoxSearchOptions:
             types to filter by.
         limit (Optional[int]): The maximum number of search results to return.
         offset (Optional[int]): The offset to start results from (for pagination).
+
     """
 
     scope: Optional[SearchForContentScope] = None
@@ -103,6 +104,7 @@ class BoxSearchToolSpec(BaseToolSpec):
         box_search(query: str) -> List[Document]:
             Performs a search for Box resources based on the provided query and configured
             search options. Returns a list of `Document` objects representing the found resources.
+
     """
 
     spec_functions = ["box_search"]
@@ -120,6 +122,7 @@ class BoxSearchToolSpec(BaseToolSpec):
             box_client (BoxClient): An authenticated Box API client.
             options (BoxSearchOptions, optional): An instance of `BoxSearchOptions` containing search options.
                 Defaults to `BoxSearchOptions()`.
+
         """
         self._box_client = add_extra_header_to_box_client(box_client)
         self._options = options
@@ -140,6 +143,7 @@ class BoxSearchToolSpec(BaseToolSpec):
 
         Returns:
             List[Document]: A list of `Document` objects representing the found Box resources.
+
         """
         box_check_connection(self._box_client)
 

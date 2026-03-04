@@ -1,4 +1,5 @@
-"""PostgresML index.
+"""
+PostgresML index.
 An index that is built on top of PostgresML.
 """
 
@@ -15,10 +16,12 @@ _logger = logging.getLogger(__name__)
 
 
 class PostgresMLRetriever(BaseRetriever):
-    """PostgresML Retriever.
+    """
+    PostgresML Retriever.
 
     Args:
         index (PostgresMLIndex): the PostgresML Index
+
     """
 
     def __init__(

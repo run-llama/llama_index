@@ -1,4 +1,5 @@
 """Athena Reader."""
+
 import warnings
 from typing import Optional
 
@@ -8,7 +9,8 @@ from sqlalchemy.engine import create_engine
 
 
 class AthenaReader(BaseReader):
-    """Athena reader.
+    """
+    Athena reader.
 
     Follow AWS best practices for security.
     AWS discourages hardcoding credentials in code.
@@ -40,6 +42,7 @@ class AthenaReader(BaseReader):
         s3_staging_dir is the S3 staging (result bucket) directory
         database is the Athena database name
         workgroup is the Athena workgroup name.
+
         """
         if not aws_access_key or not aws_secret_key:
             conn_str = (

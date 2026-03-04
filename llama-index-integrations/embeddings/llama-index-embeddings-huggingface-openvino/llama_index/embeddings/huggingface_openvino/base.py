@@ -153,6 +153,8 @@ class OpenVINOEmbedding(BaseEmbedding):
         try:
             from optimum.intel.openvino import OVModelForFeatureExtraction
             from transformers import AutoTokenizer
+            from optimum.exporters.openvino.convert import export_tokenizer
+
         except ImportError:
             raise ImportError(
                 "OpenVINO Embedding requires transformers and optimum to be installed.\n"
@@ -168,6 +170,7 @@ class OpenVINOEmbedding(BaseEmbedding):
 
         model.save_pretrained(output_path)
         tokenizer.save_pretrained(output_path)
+        export_tokenizer(tokenizer, output_path)
         print(
             f"Saved OpenVINO model to {output_path}. Use it with "
             f"`embed_model = OpenVINOEmbedding(model_id_or_path='{output_path}')`."

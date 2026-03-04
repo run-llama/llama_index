@@ -49,7 +49,8 @@ class ModelInfo:
 
 
 class Konko(LLM):
-    """Konko LLM.
+    """
+    Konko LLM.
 
     Examples:
         `pip install llama-index-llms-konko`
@@ -74,6 +75,7 @@ class Konko(LLM):
         # Print the response
         print(response)
         ```
+
     """
 
     model: str = Field(
@@ -210,6 +212,7 @@ class Konko(LLM):
 
         Raises:
         - ValueError: If the model_id is not found in the list of models.
+
         """
         model_info = self._get_model_info()
         return model_info.is_chat_model

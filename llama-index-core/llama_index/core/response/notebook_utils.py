@@ -1,4 +1,5 @@
 """Utils for jupyter notebook."""
+
 import os
 from io import BytesIO
 from typing import Any, Dict, List, Tuple
@@ -124,7 +125,7 @@ def display_query_and_multimodal_response(
         img_node = scored_img_node.node
         image = None
         if img_node.image_url:
-            img_response = requests.get(img_node.image_url)
+            img_response = requests.get(img_node.image_url, timeout=(60, 60))
             image = Image.open(BytesIO(img_response.content)).convert("RGB")
         elif img_node.image_path:
             image = Image.open(img_node.image_path).convert("RGB")

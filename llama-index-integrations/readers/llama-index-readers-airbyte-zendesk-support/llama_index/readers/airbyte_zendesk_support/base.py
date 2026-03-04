@@ -4,12 +4,14 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteZendeskSupportReader(AirbyteCDKReader):
-    """AirbyteZendeskSupportReader reader.
+    """
+    AirbyteZendeskSupportReader reader.
 
     Retrieve documents from ZendeskSupport
 
     Args:
         config: The config object for the zendesk_support source.
+
     """
 
     def __init__(

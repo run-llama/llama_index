@@ -25,7 +25,8 @@ class PyMuPDFReader(BaseReader):
         metadata: bool = True,
         extra_info: Optional[Dict] = None,
     ) -> List[Document]:
-        """Loads list of documents from PDF file and also accepts extra information in dict format.
+        """
+        Loads list of documents from PDF file and also accepts extra information in dict format.
 
         Args:
             file_path (Union[Path, str]): file path of PDF file (accepts string or Path).
@@ -38,6 +39,7 @@ class PyMuPDFReader(BaseReader):
 
         Returns:
             List[Document]: list of documents.
+
         """
         import fitz
 
@@ -67,7 +69,7 @@ class PyMuPDFReader(BaseReader):
                     extra_info=dict(
                         extra_info,
                         **{
-                            "source": f"{page.number+1}",
+                            "source": f"{page.number + 1}",
                         },
                     ),
                 )

@@ -1,4 +1,5 @@
-"""Docs parser.
+"""
+Docs parser.
 
 Contains parsers for docx, pdf files.
 
@@ -8,8 +9,8 @@ import io
 import logging
 import struct
 import zlib
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from pathlib import Path, PurePosixPath
+from typing import Any, Dict, List, Optional, Union
 
 from tenacity import retry, stop_after_attempt
 
@@ -38,13 +39,15 @@ class PDFReader(BaseReader):
     )
     def load_data(
         self,
-        file: Path,
+        file: Union[Path, PurePosixPath],
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
-        if not isinstance(file, Path):
-            file = Path(file)
+        fs = fs or get_default_fs()
+        _Path = Path if is_default_fs(fs) else PurePosixPath
+        if not isinstance(file, (Path, PurePosixPath)):
+            file = _Path(file)
 
         try:
             import pypdf
@@ -52,7 +55,7 @@ class PDFReader(BaseReader):
             raise ImportError(
                 "pypdf is required to read PDF files: `pip install pypdf`"
             )
-        fs = fs or get_default_fs()
+
         with fs.open(str(file), "rb") as fp:
             # Load the file in memory if the filesystem is not the default one to avoid
             # issues with pypdf
@@ -148,13 +151,15 @@ class HWPReader(BaseReader):
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data and extract table from Hwp file.
+        """
+        Load data and extract table from Hwp file.
 
         Args:
             file (Path): Path for the Hwp file.
 
         Returns:
             List[Document]
+
         """
         import olefile
 

@@ -42,7 +42,8 @@ SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions"
 def get_filing(
     cik: Union[str, int], accession_number: Union[str, int], company: str, email: str
 ) -> str:
-    """Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
+    """
+    Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
     limits specified on the SEC website.
     ref: https://www.sec.gov/os/accessing-edgar-data.
     """
@@ -89,7 +90,8 @@ def get_forms_by_cik(session: requests.Session, cik: Union[str, int]) -> dict:
 def _get_recent_acc_num_by_cik(
     session: requests.Session, cik: Union[str, int], form_types: List[str]
 ) -> Tuple[str, str]:
-    """Returns accession number and form type for the most recent filing for one of the
+    """
+    Returns accession number and form type for the most recent filing for one of the
     given form_types (AKA filing types) for a given cik.
     """
     retrieved_form_types = get_forms_by_cik(session, cik)
@@ -105,7 +107,8 @@ def get_recent_acc_by_cik(
     company: Optional[str] = None,
     email: Optional[str] = None,
 ) -> Tuple[str, str]:
-    """Returns (accession_number, retrieved_form_type) for the given cik and form_type.
+    """
+    Returns (accession_number, retrieved_form_type) for the given cik and form_type.
     The retrieved_form_type may be an amended version of requested form_type, e.g. 10-Q/A for 10-Q.
     """
     session = _get_session(company, email)
@@ -118,7 +121,8 @@ def get_recent_cik_and_acc_by_ticker(
     company: Optional[str] = None,
     email: Optional[str] = None,
 ) -> Tuple[str, str, str]:
-    """Returns (cik, accession_number, retrieved_form_type) for the given ticker and form_type.
+    """
+    Returns (cik, accession_number, retrieved_form_type) for the given ticker and form_type.
     The retrieved_form_type may be an amended version of requested form_type, e.g. 10-Q/A for 10-Q.
     """
     session = _get_session(company, email)
@@ -149,7 +153,8 @@ def get_form_by_ticker(
 
 
 def _form_types(form_type: str, allow_amended_filing: Optional[bool] = True):
-    """Potentially expand to include amended filing, e.g.:
+    """
+    Potentially expand to include amended filing, e.g.:
     "10-Q" -> "10-Q/A".
     """
     assert form_type in VALID_FILING_TYPES
@@ -166,7 +171,8 @@ def get_form_by_cik(
     company: Optional[str] = None,
     email: Optional[str] = None,
 ) -> str:
-    """For a given CIK, returns the most recent form of a given form_type. By default
+    """
+    For a given CIK, returns the most recent form of a given form_type. By default
     an amended version of the form_type may be retrieved (allow_amended_filing=True).
     E.g., if form_type is "10-Q", the retrieved form could be a 10-Q or 10-Q/A.
     """
@@ -178,7 +184,8 @@ def get_form_by_cik(
 
 
 def open_form(cik, acc_num):
-    """For a given cik and accession number, opens the index page in default browser for the
+    """
+    For a given cik and accession number, opens the index page in default browser for the
     associated SEC form.
     """
     acc_num = _drop_dashes(acc_num)
@@ -194,7 +201,8 @@ def open_form_by_ticker(
     company: Optional[str] = None,
     email: Optional[str] = None,
 ):
-    """For a given ticker, opens the index page in default browser for the most recent form of a
+    """
+    For a given ticker, opens the index page in default browser for the most recent form of a
     given form_type.
     """
     session = _get_session(company, email)
@@ -206,7 +214,8 @@ def open_form_by_ticker(
 
 
 def archive_url(cik: Union[str, int], accession_number: Union[str, int]) -> str:
-    """Builds the archive URL for the SEC accession number. Looks for the .txt file for the
+    """
+    Builds the archive URL for the SEC accession number. Looks for the .txt file for the
     filing, while follows a {accession_number}.txt format.
     """
     filename = f"{_add_dashes(accession_number)}.txt"
@@ -234,7 +243,8 @@ def _drop_dashes(accession_number: Union[str, int]) -> str:
 def _get_session(
     company: Optional[str] = None, email: Optional[str] = None
 ) -> requests.Session:
-    """Creates a requests sessions with the appropriate headers set. If these headers are not
+    """
+    Creates a requests sessions with the appropriate headers set. If these headers are not
     set, SEC will reject your request.
     ref: https://www.sec.gov/os/accessing-edgar-data.
     """

@@ -1,11 +1,16 @@
 import time
 from typing import Dict, Generator, Union
+
 import pytest
 import docker
 from docker.models.containers import Container
-from llama_index.core.llms import ChatMessage
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import declarative_base
+
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.postgres import PostgresChatStore
+from llama_index.storage.chat_store.postgres.base import get_data_model
 
 try:
     import asyncpg  # noqa
@@ -22,7 +27,7 @@ def test_class():
     assert BaseChatStore.__name__ in names_of_base_classes
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
     # Define PostgreSQL settings
     postgres_image = "postgres:latest"
@@ -54,7 +59,7 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
         # Return connection information
         yield {
             "container": container,
-            "connection_string": f"postgresql://testuser:testpassword@0.0.0.0:5432/testdb",
+            "connection_string": f"postgresql+psycopg://testuser:testpassword@0.0.0.0:5432/testdb",
             "async_connection_string": f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:5432/testdb",
         }
     finally:
@@ -66,7 +71,7 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
 
 @pytest.fixture()
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def postgres_chat_store(
     postgres_container: Dict[str, Union[str, Container]],
 ) -> Generator[PostgresChatStore, None, None]:
@@ -84,7 +89,7 @@ def postgres_chat_store(
                 chat_store.delete_messages(key)
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_postgres_add_message(postgres_chat_store: PostgresChatStore):
     key = "test_add_key"
 
@@ -96,7 +101,7 @@ def test_postgres_add_message(postgres_chat_store: PostgresChatStore):
     assert result[0].content == "add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_set_and_retrieve_messages(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="First message", role="user"),
@@ -121,7 +126,7 @@ def test_delete_messages(postgres_chat_store: PostgresChatStore):
     assert retrieved_messages == []
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_delete_specific_message(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="Keep me", role="user"),
@@ -136,7 +141,8 @@ def test_delete_specific_message(postgres_chat_store: PostgresChatStore):
     assert retrieved_messages[0].content == "Keep me"
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_get_keys(postgres_chat_store: PostgresChatStore):
     # Add some test data
     postgres_chat_store.set_messages(
@@ -151,7 +157,8 @@ async def test_get_keys(postgres_chat_store: PostgresChatStore):
     assert "key2" in keys
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_delete_last_message(postgres_chat_store: PostgresChatStore):
     key = "test_delete_last_message"
     messages = [
@@ -170,70 +177,70 @@ async def test_delete_last_message(postgres_chat_store: PostgresChatStore):
     assert remaining_messages[0].content == "First message"
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_async_postgres_add_message(postgres_chat_store: PostgresChatStore):
     key = "test_async_add_key"
 
     message = ChatMessage(content="async_add_message_test", role="user")
     await postgres_chat_store.async_add_message(key, message=message)
 
-    result = await postgres_chat_store.async_get_messages(key)
+    result = await postgres_chat_store.aget_messages(key)
 
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
         ChatMessage(content="Second async message", role="user"),
     ]
     key = "test_async_set_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert len(retrieved_messages) == 2
     assert retrieved_messages[0].content == "First async message"
     assert retrieved_messages[1].content == "Second async message"
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
-async def test_async_delete_messages(postgres_chat_store: PostgresChatStore):
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
+async def test_adelete_messages(postgres_chat_store: PostgresChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    await postgres_chat_store.async_delete_messages(key)
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    await postgres_chat_store.adelete_messages(key)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert retrieved_messages == []
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
         ChatMessage(content="Async delete me", role="user"),
     ]
-    key = "test_async_delete_message_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    key = "test_adelete_message_key"
+    await postgres_chat_store.aset_messages(key, messages)
 
-    await postgres_chat_store.async_delete_message(key, 1)
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    await postgres_chat_store.adelete_message(key, 1)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Async keep me"
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_async_get_keys(postgres_chat_store: PostgresChatStore):
     # Add some test data
-    await postgres_chat_store.async_set_messages(
+    await postgres_chat_store.aset_messages(
         "async_key1", [ChatMessage(content="Test1", role="user")]
     )
-    await postgres_chat_store.async_set_messages(
+    await postgres_chat_store.aset_messages(
         "async_key2", [ChatMessage(content="Test2", role="user")]
     )
 
@@ -242,21 +249,147 @@ async def test_async_get_keys(postgres_chat_store: PostgresChatStore):
     assert "async_key2" in keys
 
 
-@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
 async def test_async_delete_last_message(postgres_chat_store: PostgresChatStore):
     key = "test_async_delete_last_message"
     messages = [
         ChatMessage(content="First async message", role="user"),
         ChatMessage(content="Last async message", role="user"),
     ]
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    deleted_message = await postgres_chat_store.async_delete_last_message(key)
+    deleted_message = await postgres_chat_store.adelete_last_message(key)
 
     assert deleted_message.content == "Last async message"
 
-    remaining_messages = await postgres_chat_store.async_get_messages(key)
+    remaining_messages = await postgres_chat_store.aget_messages(key)
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+@pytest.mark.asyncio
+async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore):
+    key = "test_async_multimodal"
+    image_url = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"
+
+    messages = [
+        ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="describe the image."),
+                ImageBlock(url=image_url),
+            ],
+        )
+    ]
+
+    await postgres_chat_store.aset_messages(key, messages)
+
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
+
+    assert len(retrieved_messages) == 1
+    assert retrieved_messages[0].role == "user"
+    assert len(retrieved_messages[0].blocks) == 2
+    assert isinstance(retrieved_messages[0].blocks[0], TextBlock)
+    assert retrieved_messages[0].blocks[0].text == "describe the image."
+    assert isinstance(retrieved_messages[0].blocks[1], ImageBlock)
+    assert str(retrieved_messages[0].blocks[1].url) == image_url
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_table_name_without_prefix(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    table_name = "custom_chat_store"
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        table_name=table_name,
+    )
+
+    try:
+        assert chat_store._table_class.__tablename__ == table_name
+
+        with chat_store._session() as session:
+            inspector = inspect(session.connection())
+            tables = inspector.get_table_names(schema=chat_store.schema_name)
+            assert table_name in tables
+            assert f"data_{table_name}" not in tables
+    finally:
+        with chat_store._session() as session, session.begin():
+            session.execute(
+                text(
+                    f'DROP TABLE IF EXISTS "{chat_store.schema_name}"."{table_name}" CASCADE'
+                )
+            )
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_legacy_table_name_detection(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    table_name = "legacy_chat_store"
+
+    # Pre-create the legacy table using the legacy naming convention
+    base = declarative_base()
+    get_data_model(
+        base,
+        table_name,
+        "public",
+        use_jsonb=False,
+        use_legacy_table_name=True,
+    )
+
+    engine = create_engine(postgres_container["connection_string"])
+    base.metadata.create_all(engine)
+
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        table_name=table_name,
+    )
+
+    try:
+        assert chat_store._table_class.__tablename__ == f"data_{table_name}"
+
+        with chat_store._session() as session:
+            inspector = inspect(session.connection())
+            tables = inspector.get_table_names(schema=chat_store.schema_name)
+            assert f"data_{table_name}" in tables
+            assert table_name not in tables
+    finally:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    f'DROP TABLE IF EXISTS "{chat_store.schema_name}"."data_{table_name}" CASCADE'
+                )
+            )
+        engine.dispose()
+
+
+@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
+def test_empty_table_name_defaults_to_chatstore(
+    postgres_container: Dict[str, Union[str, Container]],
+):
+    table_name = ""
+    default_table_name = "chatstore"
+    chat_store = PostgresChatStore.from_uri(
+        uri=postgres_container["connection_string"],
+        table_name=table_name,
+    )
+
+    try:
+        assert chat_store._table_class.__tablename__ == default_table_name
+
+        with chat_store._session() as session:
+            inspector = inspect(session.connection())
+            tables = inspector.get_table_names(schema=chat_store.schema_name)
+            assert default_table_name in tables
+            # Verify that the default table name was used (not an empty string table)
+    finally:
+        with chat_store._session() as session, session.begin():
+            session.execute(
+                text(
+                    f'DROP TABLE IF EXISTS "{chat_store.schema_name}"."{default_table_name}" CASCADE'
+                )
+            )

@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.9.6]
+
+### Changed
+
+- Changed the partition parameter to `milvus_partition_name` in add/delete.
+
+## [v0.8.0]
+
+### Changed
+
+- Changed the default sparse embedding function from `BGEM3SparseEmbeddingFunction` to `BM25BuiltInFunction`.
+
 ## [v0.2.1]
 
 ### Changed

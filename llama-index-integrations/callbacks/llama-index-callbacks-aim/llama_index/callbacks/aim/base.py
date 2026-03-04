@@ -34,6 +34,7 @@ class AimCallback(BaseCallbackHandler):
             list of event types to ignore when tracking event starts.
         event_ends_to_ignore (Optional[List[CBEventType]]):
             list of event types to ignore when tracking event ends.
+
     """
 
     def __init__(
@@ -87,6 +88,7 @@ class AimCallback(BaseCallbackHandler):
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
             parent_id (str): parent event id.
+
         """
         return ""
 
@@ -102,6 +104,7 @@ class AimCallback(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+
         """
         if not self._run:
             raise ValueError("AimCallback failed to init properly.")

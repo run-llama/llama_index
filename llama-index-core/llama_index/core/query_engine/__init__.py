@@ -15,7 +15,7 @@ from llama_index.core.query_engine.flare.base import FLAREInstructQueryEngine
 from llama_index.core.query_engine.graph_query_engine import (
     ComposableGraphQueryEngine,
 )
-from llama_index.core.query_engine.jsonalyze_query_engine import (
+from llama_index.core.query_engine.jsonalyze import (
     JSONalyzeQueryEngine,
 )
 from llama_index.core.query_engine.knowledge_graph_query_engine import (

@@ -89,7 +89,8 @@ def _to_upstash_filters(filters: MetadataFilters) -> str:
 
 
 class UpstashVectorStore(BasePydanticVectorStore):
-    """Upstash Vector Store.
+    """
+    Upstash Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-upstash`
@@ -103,6 +104,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
             token="your_upstash_vector_token",
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -140,6 +142,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
 
         Raises:
             ImportError: If the upstash-vector python package is not installed.
+
         """
         super().__init__(batch_size=batch_size, namespace=namespace)
         self._index = Index(url=url, token=token)
@@ -154,6 +157,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
 
         Returns:
             List of ids of the added nodes.
+
         """
         ids = []
         vectors = []
@@ -174,6 +178,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id: Reference doc id of the node to delete.
             delete_kwargs: Additional arguments to pass to the delete method.
+
         """
         raise NotImplementedError(
             "Delete is not currently supported, but will be in the future."
@@ -189,6 +194,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
 
         Returns:
             Query result.
+
         """
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise ValueError(f"Query mode {query.mode} not supported")

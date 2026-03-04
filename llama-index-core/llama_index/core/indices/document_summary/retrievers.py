@@ -1,4 +1,5 @@
-"""Document summary retrievers.
+"""
+Document summary retrievers.
 
 This module contains retrievers for document summary indices.
 
@@ -26,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentSummaryIndexLLMRetriever(BaseRetriever):
-    """Document Summary Index LLM Retriever.
+    """
+    Document Summary Index LLM Retriever.
 
     By default, select relevant summaries from index using LLM calls.
 
@@ -38,6 +40,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         format_node_batch_fn (Callable): Function to format a batch of nodes for LLM.
         parse_choice_select_answer_fn (Callable): Function to parse LLM response.
         llm (LLM): The llm to use.
+
     """
 
     def __init__(
@@ -119,7 +122,8 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
 
 
 class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
-    """Document Summary Index Embedding Retriever.
+    """
+    Document Summary Index Embedding Retriever.
 
     Args:
         index (DocumentSummaryIndex): The index to retrieve from.
@@ -176,8 +180,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             top_k_summary_ids = [n.node_id for n in query_result.nodes]
         else:
             raise ValueError(
-                "Vector store query result should return "
-                "at least one of nodes or ids."
+                "Vector store query result should return at least one of nodes or ids."
             )
 
         results = []

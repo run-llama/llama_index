@@ -1,6 +1,5 @@
 """Document summary index."""
 
-
 from llama_index.core.indices.document_summary.base import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,

@@ -10,7 +10,8 @@ from llama_index.core.settings import Settings
 
 
 class CypherTemplateRetriever(BasePGRetriever):
-    """A Cypher retriever that fills in params for a cypher query using an LLM.
+    """
+    A Cypher retriever that fills in params for a cypher query using an LLM.
 
     Args:
         graph_store (PropertyGraphStore):
@@ -22,6 +23,7 @@ class CypherTemplateRetriever(BasePGRetriever):
             The cypher query to use, with templated params.
         llm (Optional[LLM], optional):
             The language model to use. Defaults to Settings.llm.
+
     """
 
     def __init__(

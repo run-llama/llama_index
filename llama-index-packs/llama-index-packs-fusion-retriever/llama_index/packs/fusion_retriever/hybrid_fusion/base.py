@@ -13,7 +13,8 @@ from llama_index.retrievers.bm25 import BM25Retriever
 
 
 class HybridFusionRetrieverPack(BaseLlamaPack):
-    """Hybrid fusion retriever pack.
+    """
+    Hybrid fusion retriever pack.
 
     Ensembles vector and bm25 retrievers using fusion.
 

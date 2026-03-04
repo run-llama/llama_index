@@ -1,4 +1,5 @@
 """RTF (Rich Text Format) reader."""
+
 from pathlib import Path
 from typing import List, Union, Any, Dict, Optional
 
@@ -13,9 +14,10 @@ class RTFReader(BaseReader):
         self,
         input_file: Union[Path, str],
         extra_info: Optional[Dict[str, Any]] = None,
-        **load_kwargs: Any
+        **load_kwargs: Any,
     ) -> List[Document]:
-        """Load data from RTF file.
+        """
+        Load data from RTF file.
 
         Args:
             input_file (Path | str): Path for the RTF file.
@@ -23,6 +25,7 @@ class RTFReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         try:
             from striprtf.striprtf import rtf_to_text

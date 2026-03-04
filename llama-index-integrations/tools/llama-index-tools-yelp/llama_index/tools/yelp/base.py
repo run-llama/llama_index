@@ -55,10 +55,11 @@ class YelpToolSpec(BaseToolSpec):
 
     def business_reviews(self, id: str):
         """
-        Make a query to Yelp to find a business uising an id from business_search.
+        Make a query to Yelp to find a business using an id from business_search.
 
         Args:
             # The id
+
         """
         response = self.client.reviews_query(id=id)
         return [Document(text=str(response))]

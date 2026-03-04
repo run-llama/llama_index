@@ -3,11 +3,9 @@ import shutil
 from typing import Sequence
 
 import pytest
-from llama_index.core.schema import TextNode, BaseNode
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores import VectorStoreQuery
-
 from llama_index.vector_stores.objectbox import ObjectBoxVectorStore
-
 
 EMBEDDING_DIM = 3
 
@@ -16,13 +14,13 @@ EMBEDDING_DIM = 3
 def vectorstore():
     obx = ObjectBoxVectorStore(embedding_dimensions=EMBEDDING_DIM)
     db_default_path = "objectbox"
-    assert os.path.exists(
-        db_default_path
-    ), f"Directory '{db_default_path}' does not exist."
+    assert os.path.exists(db_default_path), (
+        f"Directory '{db_default_path}' does not exist."
+    )
     filepath = os.path.join(db_default_path, "data.mdb")
-    assert os.path.isfile(
-        filepath
-    ), f"File '{db_default_path}' not found in '{db_default_path}'"
+    assert os.path.isfile(filepath), (
+        f"File '{db_default_path}' not found in '{db_default_path}'"
+    )
     return obx
 
 
@@ -103,7 +101,5 @@ def remove_test_dir(test_dir: str):
 def auto_cleanup(vectorstore: ObjectBoxVectorStore):
     yield  # run the test function
     vectorstore.close()
-    os.remove(
-        "llama-index-integrations/vector_stores/llama-index-vector-stores-objectbox/llama_index/vector_stores/objectbox/objectbox-model.json"
-    )
+    os.remove("llama_index/vector_stores/objectbox/objectbox-model.json")
     remove_test_dir("objectbox")

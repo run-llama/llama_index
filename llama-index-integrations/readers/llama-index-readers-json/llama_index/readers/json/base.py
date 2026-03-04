@@ -15,7 +15,8 @@ def _depth_first_yield(
     path: List[str],
     ensure_ascii: bool = False,
 ) -> Generator[str, None, None]:
-    """Do depth first yield of all of the leaf nodes of a JSON.
+    """
+    Do depth first yield of all of the leaf nodes of a JSON.
 
     Combines keys in the JSON tree using spaces.
 
@@ -49,7 +50,8 @@ def _depth_first_yield(
 
 
 class JSONReader(BaseReader):
-    """JSON reader.
+    """
+    JSON reader.
 
     Reads JSON documents with options to help us out relationships between nodes.
 
@@ -72,6 +74,7 @@ class JSONReader(BaseReader):
         This removes lines that are not as useful. If False, no lines are removed and the document maintains a valid JSON object structure.
         If levels_back is set the json is not cleaned and this option is ignored.
         Defaults to True.
+
     """
 
     def __init__(

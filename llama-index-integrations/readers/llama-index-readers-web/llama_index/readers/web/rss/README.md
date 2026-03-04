@@ -6,6 +6,7 @@ pip install llama-index-readers-web
 
 This loader allows fetching text from an RSS feed. It uses the `feedparser` module
 to fetch the feed and optionally the `html2text` module to sanitize it.
+allow modify feedparser's useragent
 
 ## Usage
 

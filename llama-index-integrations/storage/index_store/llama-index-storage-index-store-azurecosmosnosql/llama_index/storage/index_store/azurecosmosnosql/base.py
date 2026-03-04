@@ -1,13 +1,13 @@
 from typing import Any, Dict, Optional
 
-from llama_index.core.storage.index_store.keyval_index_store import KVIndexStore
+from llama_index.core.storage.kvstore.types import BaseKVStore
 from llama_index.storage.kvstore.azurecosmosnosql import AzureCosmosNoSqlKVStore
 
 DEFAULT_INDEX_DATABASE = "IndexStoreDB"
 DEFAULT_INDEX_CONTAINER = "IndexStoreContainer"
 
 
-class AzureCosmosNoSqlIndexStore(KVIndexStore):
+class AzureCosmosNoSqlIndexStore(BaseKVStore):
     """Creates an Azure Cosmos DB NoSql Index Store."""
 
     def __init__(

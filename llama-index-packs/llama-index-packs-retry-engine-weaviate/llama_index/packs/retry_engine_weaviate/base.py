@@ -1,6 +1,5 @@
 """Weaviate Retry query engine pack."""
 
-
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.evaluation.guideline import DEFAULT_GUIDELINES, GuidelineEvaluator

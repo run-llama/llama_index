@@ -90,7 +90,8 @@ class EvaluationSource(str, Enum):
 
 
 class PairwiseComparisonEvaluator(BaseEvaluator):
-    """Pairwise comparison evaluator.
+    """
+    Pairwise comparison evaluator.
 
     Evaluates the quality of a response vs. a "reference" response given a question by
     having an LLM judge which response is better.
@@ -177,7 +178,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         eval_result: EvaluationResult,
         flipped_eval_result: EvaluationResult,
     ) -> EvaluationResult:
-        """Resolve eval results from evaluation + flipped evaluation.
+        """
+        Resolve eval results from evaluation + flipped evaluation.
 
         Args:
             eval_result (EvaluationResult): Result when answer_1 is shown first
@@ -185,6 +187,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
 
         Returns:
             EvaluationResult: The final evaluation result
+
         """
         # add pairwise_source to eval_result and flipped_eval_result
         eval_result.pairwise_source = EvaluationSource.ORIGINAL

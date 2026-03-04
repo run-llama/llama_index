@@ -108,7 +108,7 @@ To configure the model for more specific behavior:
 ```python
 from llama_index.llms.fireworks import Fireworks
 
-llm = Fireworks(model="accounts/fireworks/models/firefunction-v1")
+llm = Fireworks(model="accounts/fireworks/models/kimi-k2-instruct-0905")
 resp = llm.complete("Paul Graham is ")
 print(resp)
 ```
@@ -119,6 +119,8 @@ Example output:
 Paul Graham is an English-American computer scientist, entrepreneur, venture capitalist, and blogger.
 ```
 
+For a full list of models, check the [Fireworks website](https://app.fireworks.ai/models).
+
 ### API Key Configuration
 
 To use separate API keys for different instances:
@@ -127,7 +129,8 @@ To use separate API keys for different instances:
 from llama_index.llms.fireworks import Fireworks
 
 llm = Fireworks(
-    model="accounts/fireworks/models/firefunction-v1", api_key="YOUR_API_KEY"
+    model="accounts/fireworks/models/kimi-k2-instruct-0905",
+    api_key="YOUR_API_KEY",
 )
 resp = llm.complete("Paul Graham is ")
 print(resp)

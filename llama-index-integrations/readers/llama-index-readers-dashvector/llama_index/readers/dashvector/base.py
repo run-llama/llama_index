@@ -7,11 +7,13 @@ from llama_index.core.schema import Document
 
 
 class DashVectorReader(BaseReader):
-    """DashVector reader.
+    """
+    DashVector reader.
 
     Args:
         api_key (str): DashVector API key.
         endpoint (str): DashVector cluster endpoint.
+
     """
 
     def __init__(self, api_key: str, endpoint: str):
@@ -38,7 +40,8 @@ class DashVectorReader(BaseReader):
         output_fields: Optional[List[str]] = None,
         sparse_vector: Optional[Dict[int, float]] = None,
     ) -> List[Document]:
-        """Load data from DashVector.
+        """
+        Load data from DashVector.
 
         Args:
             collection_name (str): Name of the collection.
@@ -56,11 +59,12 @@ class DashVectorReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         collection = self._client.get(collection_name)
         if not collection:
             raise ValueError(
-                f"Failed to get collection: {collection_name}," f"Error: {collection}"
+                f"Failed to get collection: {collection_name},Error: {collection}"
             )
 
         ret = collection.query(
@@ -73,7 +77,7 @@ class DashVectorReader(BaseReader):
             sparse_vector=sparse_vector,
         )
         if not ret:
-            raise Exception(f"Failed to query document," f"Error: {ret}")
+            raise Exception(f"Failed to query document,Error: {ret}")
 
         doc_metas = ret.output
         documents = []

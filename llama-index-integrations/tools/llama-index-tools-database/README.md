@@ -10,7 +10,8 @@ Here's an example usage of the DatabaseToolSpec.
 
 ```python
 from llama_index.tools.database import DatabaseToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 db_tools = DatabaseToolSpec(
     scheme="postgresql",  # Database Scheme
@@ -20,11 +21,14 @@ db_tools = DatabaseToolSpec(
     password="FakeExamplePassword",  # Database Password
     dbname="postgres",  # Database Name
 )
-agent = OpenAIAgent.from_tools(db_tools.to_tool_list())
+agent = FunctionAgent(
+    tools=db_tools.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("What tables does this database contain")
-agent.chat("Describe the first table")
-agent.chat("Retrieve the first row of that table")
+print(await agent.run("What tables does this database contain"))
+print(await agent.run("Describe the first table"))
+print(await agent.run("Retrieve the first row of that table"))
 ```
 
 The tools available are:

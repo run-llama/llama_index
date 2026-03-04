@@ -16,7 +16,8 @@ from pandasai import SmartDataframe
 
 
 class PandasAIReader(BaseReader):
-    r"""Pandas AI reader.
+    r"""
+    Pandas AI reader.
 
     Light wrapper around https://github.com/gventuri/pandas-ai.
 

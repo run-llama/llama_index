@@ -1,10 +1,12 @@
-"""Vertex AI Search Retriever.
+"""
+Vertex AI Search Retriever.
 
 Vertex AI Search helps developers build secure, Google-quality search experiences for websites,
 intranet and RAG systems for generative AI agents and apps.
 Vertex AI Search is a part of Vertex AI Agent Builder.
 
 """
+
 from __future__ import annotations
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
@@ -26,7 +28,8 @@ if TYPE_CHECKING:
 
 
 class VertexAISearchRetriever(BaseRetriever):
-    """`Vertex AI Search` retrieval.
+    """
+    `Vertex AI Search` retrieval.
 
     For a detailed explanation of the Vertex AI Search concepts
     and configuration parameters, refer to the product documentation.
@@ -63,6 +66,7 @@ class VertexAISearchRetriever(BaseRetriever):
             location_id=LOCATION_ID,
             engine_data_type=0
         )
+
     """
 
     """

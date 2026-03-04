@@ -40,6 +40,7 @@ class DeepInfraClient:
 
         Returns:
                 Dict[str, Any]: The API response.
+
         """
 
         def perform_request():
@@ -69,6 +70,7 @@ class DeepInfraClient:
 
         Yields:
             str: The streaming response from the API.
+
         """
 
         def perform_request():
@@ -101,6 +103,7 @@ class DeepInfraClient:
 
         Returns:
             Dict[str, Any]: The API response.
+
         """
 
         async def perform_request():
@@ -131,6 +134,7 @@ class DeepInfraClient:
 
         Yields:
             str: The streaming response from the API.
+
         """
 
         async def perform_request():
@@ -166,6 +170,7 @@ class DeepInfraClient:
 
         Returns:
             requests.Response: The API response.
+
         """
         request_url = self.get_url(f"models/{model_name}")
         return requests.get(request_url, headers=self._get_headers())
@@ -176,6 +181,7 @@ class DeepInfraClient:
 
         Returns:
             bool: True if the model is a function calling model, False otherwise.
+
         """
         response = self.get_model_details(model_name)
         if response.status_code == 404:

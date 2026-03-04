@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.firestore import FirestoreKVStore
 
 
 class FirestoreIndexStore(KVIndexStore):
-    """Firestore Index store.
+    """
+    Firestore Index store.
 
     Args:
         firestore_kvstore (FirestoreKVStore): Firestore key-value store
@@ -40,6 +41,7 @@ class FirestoreIndexStore(KVIndexStore):
             database (str): The database name that the client targets.
             namespace (str): namespace for the docstore.
             collection_suffix (str): suffix for the collection name
+
         """
         firestore_kvstore = FirestoreKVStore(project=project, database=database)
         return cls(firestore_kvstore, namespace, collection_suffix)

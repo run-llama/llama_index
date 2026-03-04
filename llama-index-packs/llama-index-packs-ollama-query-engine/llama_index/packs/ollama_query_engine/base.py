@@ -40,12 +40,14 @@ class OllamaQueryEnginePack(BaseLlamaPack):
 
 
 class OllamaEmbedding(BaseEmbedding):
-    """Class for Ollama embeddings.
+    """
+    Class for Ollama embeddings.
 
     Args:
         model_name (str): Model for embedding.
 
         base_url (str): Ollama url. Defaults to http://localhost:11434.
+
     """
 
     _base_url: str = PrivateAttr()

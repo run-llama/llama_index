@@ -2705,3 +2705,53 @@ def test_start_end_char_idx():
 | 2021 | 10,000   |
 | 2022 | 130,000  |"""
     )
+
+
+def test_extract_html_table():
+    test_document = Document(
+        text="""
+<table>
+  <tr>
+    <th>Month</th>
+    <th>Savings</th>
+  </tr>
+  <tr>
+    <td>January</td>
+    <td>$100</td>
+  </tr>
+</table>
+# HTML table in one line
+<table><tr><th rowspan="2">Metric</th><th colspan="2">Performance</th></tr><tr><th>Document Store</th><th>Vector Store</th></tr><tr><td>Write Speed</td><td>Fast (μs scale)</td><td>Slow (ms scale)</td></tr></table>
+"""
+    )
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+    nodes = node_parser.get_nodes_from_documents([test_document])
+    assert len(nodes) == 5
+    assert type(nodes[0]) is IndexNode
+    table1 = """<table>
+  <tr>
+    <th>Month</th>
+    <th>Savings</th>
+  </tr>
+  <tr>
+    <td>January</td>
+    <td>$100</td>
+  </tr>
+</table>"""
+    assert test_document.text[nodes[0].start_char_idx : nodes[0].end_char_idx] == table1
+    assert type(nodes[1]) is TextNode
+    assert test_document.text[nodes[1].start_char_idx : nodes[1].end_char_idx] == table1
+    assert type(nodes[2]) is TextNode
+    assert (
+        test_document.text[nodes[2].start_char_idx : nodes[2].end_char_idx]
+        == """HTML table in one line"""
+    )
+
+    table2 = (
+        '<table><tr><th rowspan="2">Metric</th><th colspan="2">Performance</th></tr><tr><th>Document Store</th>'
+        "<th>Vector Store</th></tr><tr><td>Write Speed</td><td>Fast (μs scale)</td><td>Slow (ms scale)</td></tr></table>"
+    )
+    assert type(nodes[3]) is IndexNode
+    assert test_document.text[nodes[3].start_char_idx : nodes[3].end_char_idx] == table2
+    assert type(nodes[4]) is TextNode
+    assert test_document.text[nodes[4].start_char_idx : nodes[4].end_char_idx] == table2

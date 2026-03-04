@@ -135,7 +135,8 @@ def _to_neo4j_operator(operator: FilterOperator) -> str:
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
 ) -> Tuple[List[str], Dict[str, Any]]:
-    """Transform the input data into the desired format.
+    """
+    Transform the input data into the desired format.
 
     Args:
     - input_data (list of tuples): Input data to transform.
@@ -143,6 +144,7 @@ def collect_params(
 
     Returns:
     - tuple: A tuple containing a list of strings and a dictionary.
+
     """
     # Initialize variables to hold the output parts
     query_parts = []
@@ -180,7 +182,8 @@ def construct_metadata_filter(filters: MetadataFilters):
 
 
 class Neo4jVectorStore(BasePydanticVectorStore):
-    """Neo4j Vector Store.
+    """
+    Neo4j Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-neo4jvector`
@@ -196,6 +199,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
 
         neo4j_vector = Neo4jVectorStore(username, password, url, embed_dim)
         ```
+
     """
 
     stores_text: bool = True
@@ -231,6 +235,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         distance_strategy: str = "cosine",
         hybrid_search: bool = False,
         retrieval_query: str = "",
+        user_agent: str = "LLAMAINDEX-VECTOR",
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -248,7 +253,9 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         if distance_strategy not in ["cosine", "euclidean"]:
             raise ValueError("distance_strategy must be either 'euclidean' or 'cosine'")
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password), user_agent=user_agent
+        )
         self._database = database
 
         # Verify connection
@@ -328,6 +335,12 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             self._support_metadata_filter = True
         # Flag for enterprise
         self._is_enterprise = db_data[0]["edition"] == "enterprise"
+        # Flag for call parameter
+        call_param_required_version = (5, 23, 0)
+        if version_tuple < call_param_required_version:
+            self._call_param_required = False
+        else:
+            self._call_param_required = True
 
     def create_new_index(self) -> None:
         """
@@ -335,18 +348,17 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         to create a new vector index in Neo4j.
         """
         index_query = (
-            "CALL db.index.vector.createNodeIndex("
-            "$index_name,"
-            "$node_label,"
-            "$embedding_node_property,"
-            "toInteger($embedding_dimension),"
-            "$similarity_metric )"
+            f"CREATE VECTOR INDEX {self.index_name} "
+            f"FOR (n:{self.node_label}) "
+            f"ON n.{self.embedding_node_property} "
+            "OPTIONS { indexConfig: {"
+            "`vector.dimensions`: toInteger($embedding_dimension), "
+            "`vector.similarity_function`: $similarity_metric"
+            "}"
+            "}"
         )
 
         parameters = {
-            "index_name": self.index_name,
-            "node_label": self.node_label,
-            "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
             "similarity_metric": self.distance_strategy,
         }
@@ -364,6 +376,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
 
         Returns:
             int or None: The embedding dimension of the existing index if found.
+
         """
         index_information = self.database_query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
@@ -392,13 +405,15 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             return False
 
     def retrieve_existing_fts_index(self) -> Optional[str]:
-        """Check if the fulltext index exists in the Neo4j database.
+        """
+        Check if the fulltext index exists in the Neo4j database.
 
         This method queries the Neo4j database for existing fts indexes
         with the specified name.
 
         Returns:
             (Tuple): keyword index information
+
         """
         index_information = self.database_query(
             "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
@@ -473,12 +488,11 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "
-            "CALL { WITH row "
+            f"{'CALL (row) { ' if self._call_param_required else 'CALL { WITH row '}"
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
             "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
         )
@@ -554,6 +568,11 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
         for record in results:
+            # Handle missing metadata
+            metadata = record.setdefault("metadata", {})
+            metadata.setdefault("_node_type", "TextNode")
+            metadata.setdefault("_node_content", "{}")
+
             node = metadata_dict_to_node(record["metadata"])
             node.set_content(str(record["text"]))
             nodes.append(node)

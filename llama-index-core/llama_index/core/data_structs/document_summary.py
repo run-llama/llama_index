@@ -10,7 +10,8 @@ from llama_index.core.schema import BaseNode
 
 @dataclass
 class IndexDocumentSummary(IndexStruct):
-    """A simple struct containing a mapping from summary node_id to doc node_ids.
+    """
+    A simple struct containing a mapping from summary node_id to doc node_ids.
 
     Also mapping vice versa.
 

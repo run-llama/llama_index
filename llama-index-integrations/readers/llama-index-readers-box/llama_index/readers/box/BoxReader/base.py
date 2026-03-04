@@ -67,6 +67,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[Document]: A list of documents loaded from the resource.
+
         """
         return self.load_data(file_ids=[box_file_id])
 
@@ -79,6 +80,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             Dict: A dictionary of information about the resource.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)
@@ -113,6 +115,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[str]: A list containing the IDs of the retrieved Box files.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)
@@ -186,6 +189,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[str]: A list of Box resource IDs matching the search criteria.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)
@@ -238,6 +242,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[str]: A list of Box resource IDs matching the search criteria.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)
@@ -270,6 +275,7 @@ class BoxReader(BoxReaderBase):
             A dictionary mapping file extensions or mimetypes to either a string
             specifying a custom extractor function or another BaseReader subclass
             for handling specific file formats. Defaults to None.
+
     """
 
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
@@ -312,6 +318,7 @@ class BoxReader(BoxReaderBase):
 
         Raises:
             BoxAPIError: If an error occurs while interacting with the Box API.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)
@@ -368,6 +375,7 @@ class BoxReader(BoxReaderBase):
         Returns:
             List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
                 with the downloaded_file_path attribute set for each payload.
+
         """
         box_files_with_path: List[File] = []
 

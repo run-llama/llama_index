@@ -17,7 +17,8 @@ from llama_index.core.bridge.pydantic import Field
 
 
 class MyMagicAI(LLM):
-    """MyMagicAI LLM.
+    """
+    MyMagicAI LLM.
 
     Examples:
         `pip install llama-index-llms-mymagic`
@@ -47,6 +48,7 @@ class MyMagicAI(LLM):
 
         print(resp)
         ```
+
     """
 
     base_url_template: str = "https://fastapi.mymagic.ai"

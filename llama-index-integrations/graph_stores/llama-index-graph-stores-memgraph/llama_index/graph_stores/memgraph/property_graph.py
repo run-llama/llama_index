@@ -1,4 +1,9 @@
 from typing import Any, List, Dict, Optional, Tuple
+import logging
+import json
+import ast
+import neo4j
+
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -13,10 +18,8 @@ from llama_index.core.graph_stores.utils import (
     value_sanitize,
     LIST_LIMIT,
 )
-
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
-import neo4j
 
 
 def remove_empty_values(input_dict):
@@ -26,37 +29,41 @@ def remove_empty_values(input_dict):
     return {key: value for key, value in input_dict.items() if value}
 
 
+logger = logging.getLogger(__name__)
+
 BASE_ENTITY_LABEL = "__Entity__"
 BASE_NODE_LABEL = "__Node__"
-EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
-EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 CHUNK_SIZE = 1000
+VECTOR_INDEX_NAME = "entity"
 # Threshold for max number of returned triplets
 LIMIT = 100
 
-node_properties_query = """
+SHOW_SCHEMA_INFO = "SHOW SCHEMA INFO;"
+
+NODE_PROPERTIES_QUERY = """
 MATCH (n)
-UNWIND labels(n) AS label
-WITH label, COUNT(n) AS count
-CALL schema.node_type_properties()
-YIELD propertyName, nodeLabels, propertyTypes
-WITH label, nodeLabels, count, collect({property: propertyName, type: propertyTypes[0]}) AS properties
+UNWIND labels(n) AS label WITH label,
+COUNT(n) AS count
+CALL schema.node_type_properties() YIELD propertyName, nodeLabels,
+propertyTypes
+WITH label, nodeLabels, count, collect({property: propertyName, type:
+propertyTypes[0]}) AS properties
 WHERE label IN nodeLabels
 RETURN {labels: label, count: count, properties: properties} AS output
 ORDER BY count DESC
 """
 
-rel_properties_query = """
+REL_PROPERTIES_QUERY = """
 CALL schema.rel_type_properties()
 YIELD relType AS label, propertyName AS property, propertyTypes AS type
 WITH label, collect({property: property, type: type}) AS properties
 RETURN {type: label, properties: properties} AS output
 """
 
-rel_query = """
+REL_QUERY = """
 MATCH (start_node)-[r]->(end_node)
 WITH DISTINCT labels(start_node) AS start_labels, type(r) AS relationship_type, labels(end_node) AS end_labels, keys(r) AS relationship_properties
 UNWIND start_labels AS start_label
@@ -99,9 +106,11 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         # Close the Memgraph connection explicitly.
         graph_store.close()
         ```
+
     """
 
     supports_structured_queries: bool = True
+    supports_vector_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
 
     def __init__(
@@ -113,6 +122,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         refresh_schema: bool = True,
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
+        create_indexes: bool = True,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
@@ -124,17 +134,81 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
-
-        # Create index for faster imports and retrieval
-        self.structured_query(f"""CREATE INDEX ON :{BASE_NODE_LABEL}(id);""")
-        self.structured_query(f"""CREATE INDEX ON :{BASE_ENTITY_LABEL}(id);""")
+        # Check if we can use vector index
+        self.verify_vector_support()
+        if create_indexes:
+            # Create index for faster imports and retrieval
+            self.structured_query(f"""CREATE INDEX ON :{BASE_NODE_LABEL}(id);""")
+            self.structured_query(f"""CREATE INDEX ON :{BASE_ENTITY_LABEL}(id);""")
 
     @property
     def client(self):
         return self._driver
 
     def close(self) -> None:
+        """Close the database driver connection."""
         self._driver.close()
+
+    def get_schema_subset(self, schema_result: Dict[str, Any]) -> None:
+        """Refresh the schema using the SHOW SCHEMA INFO."""
+        # Parse the 'schema' field for each entry
+        parsed_data = []
+        for entry in schema_result:
+            schema_str = entry.get("schema", "{}")
+            try:
+                parsed_schema = json.loads(schema_str)
+                parsed_data.append(parsed_schema)
+            except json.JSONDecodeError as decode_error:
+                print(f"Failed to parse schema: {decode_error}")
+                continue
+        node_properties = []
+        rel_properties = []
+        relationships = []
+
+        for schema in parsed_data:
+            # Extract node properties
+            for node in schema.get("nodes", []):
+                node_label = node.get("labels", [None])[0]
+                if node_label in [
+                    BASE_ENTITY_LABEL,
+                    BASE_NODE_LABEL,
+                ]:
+                    continue
+                properties = [
+                    {
+                        "property": prop.get("key"),
+                        "type": prop.get("types", [{}])[0].get("type"),
+                    }
+                    for prop in node.get("properties", [])
+                ]
+                if node_label and properties:
+                    node_properties.append(
+                        {"labels": node_label, "properties": properties}
+                    )
+            # Extract relationship properties, types & count
+            for edge in schema.get("edges", []):
+                rel_type = edge.get("type")
+                properties = [
+                    {
+                        "property": prop.get("key"),
+                        "type": prop.get("types", [{}])[0].get("type"),
+                    }
+                    for prop in edge.get("properties", [])
+                ]
+                if rel_type and properties:
+                    rel_properties.append(
+                        {"properties": properties, "type": f":`{rel_type}`"}
+                    )
+
+                start = edge.get("start_node_labels", [None])[0]
+                end = edge.get("end_node_labels", [None])[0]
+                if start and end and rel_type:
+                    relationships.append({"start": start, "end": end, "type": rel_type})
+        self.structured_schema = {
+            "node_props": {el["labels"]: el["properties"] for el in node_properties},
+            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
+            "relationships": relationships,
+        }
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
@@ -142,27 +216,58 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         if self.structured_query("MATCH (n) RETURN n LIMIT 1") == []:
             return
 
+        # First try with SHOW SCHEMA INFO
+        try:
+            node_query_results = self.structured_query(
+                SHOW_SCHEMA_INFO,
+                param_map={
+                    "EXCLUDED_LABELS": [
+                        BASE_ENTITY_LABEL,
+                        BASE_NODE_LABEL,
+                    ]
+                },
+            )
+            if node_query_results is not None and isinstance(
+                node_query_results, (str, ast.AST)
+            ):
+                schema_result = ast.literal_eval(node_query_results)
+            else:
+                schema_result = node_query_results
+            assert schema_result is not None
+
+            self.get_schema_subset(schema_result)
+            return
+        except neo4j.exceptions.Neo4jError as decode_error:
+            if (
+                decode_error.code == "Memgraph.ClientError.MemgraphError.MemgraphError"
+                and "SchemaInfo disabled" in decode_error.message
+            ):
+                logger.info(
+                    "Schema generation with SHOW SCHEMA INFO query failed. "
+                    "Set --schema-info-enabled=true to use SHOW SCHEMA INFO query. "
+                    "Falling back to alternative queries."
+                )
+
+        # fallback on Cypher without SHOW SCHEMA INFO
         node_query_results = self.structured_query(
-            node_properties_query,
+            NODE_PROPERTIES_QUERY,
             param_map={
                 "EXCLUDED_LABELS": [
-                    *EXCLUDED_LABELS,
                     BASE_ENTITY_LABEL,
                     BASE_NODE_LABEL,
                 ]
             },
         )
         node_properties = {}
-        for el in node_query_results:
-            if el["output"]["labels"] in [
-                *EXCLUDED_LABELS,
+        for result in node_query_results:
+            if result["output"]["labels"] in [
                 BASE_ENTITY_LABEL,
                 BASE_NODE_LABEL,
             ]:
                 continue
 
-            label = el["output"]["labels"]
-            properties = el["output"]["properties"]
+            label = result["output"]["labels"]
+            properties = result["output"]["properties"]
             if label in node_properties:
                 node_properties[label]["properties"].extend(
                     prop
@@ -175,23 +280,22 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         node_properties = [
             {"labels": label, **value} for label, value in node_properties.items()
         ]
-        rels_query_result = self.structured_query(
-            rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
-        )
+        rels_query_result = self.structured_query(REL_PROPERTIES_QUERY)
         rel_properties = (
             [
-                el["output"]
-                for el in rels_query_result
-                if any(prop["property"] for prop in el["output"].get("properties", []))
+                result["output"]
+                for result in rels_query_result
+                if any(
+                    prop["property"] for prop in result["output"].get("properties", [])
+                )
             ]
             if rels_query_result
             else []
         )
         rel_objs_query_result = self.structured_query(
-            rel_query,
+            REL_QUERY,
             param_map={
                 "EXCLUDED_LABELS": [
-                    *EXCLUDED_LABELS,
                     BASE_ENTITY_LABEL,
                     BASE_NODE_LABEL,
                 ]
@@ -201,72 +305,14 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             el["output"]
             for el in rel_objs_query_result
             if rel_objs_query_result
-            and el["output"]["start"]
-            not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]
-            and el["output"]["end"]
-            not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            and el["output"]["start"] not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            and el["output"]["end"] not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
         ]
         self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
             "rel_props": {el["type"]: el["properties"] for el in rel_properties},
             "relationships": relationships,
         }
-        schema_nodes = self.structured_query(
-            "MATCH (n) UNWIND labels(n) AS label RETURN label AS node, COUNT(n) AS count ORDER BY count DESC"
-        )
-        schema_rels = self.structured_query(
-            "MATCH ()-[r]->() RETURN TYPE(r) AS relationship_type, COUNT(r) AS count"
-        )
-        schema_counts = [
-            {
-                "nodes": [
-                    {"name": item["node"], "count": item["count"]}
-                    for item in schema_nodes
-                ],
-                "relationships": [
-                    {"name": item["relationship_type"], "count": item["count"]}
-                    for item in schema_rels
-                ],
-            }
-        ]
-        # Update node info
-        for node in schema_counts[0].get("nodes", []):
-            # Skip bloom labels
-            if node["name"] in EXCLUDED_LABELS:
-                continue
-            node_props = self.structured_schema["node_props"].get(node["name"])
-            if not node_props:  # The node has no properties
-                continue
-
-            enhanced_cypher = self._enhanced_schema_cypher(
-                node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
-            )
-            output = self.structured_query(enhanced_cypher)
-            enhanced_info = output[0]["output"]
-            for prop in node_props:
-                if prop["property"] in enhanced_info:
-                    prop.update(enhanced_info[prop["property"]])
-
-        # Update rel info
-        for rel in schema_counts[0].get("relationships", []):
-            if rel["name"] in EXCLUDED_RELS:
-                continue
-            rel_props = self.structured_schema["rel_props"].get(f":`{rel['name']}`")
-            if not rel_props:  # The rel has no properties
-                continue
-            enhanced_cypher = self._enhanced_schema_cypher(
-                rel["name"],
-                rel_props,
-                rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
-                is_relationship=True,
-            )
-            try:
-                enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
-                for prop in rel_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
-            except neo4j.exceptions.ClientError:
-                pass
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
@@ -284,73 +330,64 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         if chunk_dicts:
             for index in range(0, len(chunk_dicts), CHUNK_SIZE):
                 chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
-                for param in chunked_params:
-                    formatted_properties = ", ".join(
-                        [
-                            f"{key}: {value!r}"
-                            for key, value in param["properties"].items()
-                        ]
-                    )
-                    self.structured_query(
-                        f"""
-                        MERGE (c:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
-                        SET c.`text` = '{param["text"]}', c:Chunk
-                        WITH c
-                        SET c += {{{formatted_properties}}}
-                        RETURN count(*)
-                        """
-                    )
+                self.structured_query(
+                    f"""
+                    UNWIND $data AS row
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.id}})
+                    SET c.`text` = row.text, c:Chunk
+                    WITH c, row
+                    SET c += row.properties
+                    WITH c, row.embedding as embedding
+                    WHERE embedding IS NOT NULL
+                    SET c.embedding = embedding
+                    RETURN count(*)
+                    """,
+                    param_map={"data": chunked_params},
+                )
+
         if entity_dicts:
             for index in range(0, len(entity_dicts), CHUNK_SIZE):
                 chunked_params = entity_dicts[index : index + CHUNK_SIZE]
-                for param in chunked_params:
-                    formatted_properties = ", ".join(
-                        [
-                            f"{key}: {value!r}"
-                            for key, value in param["properties"].items()
-                        ]
-                    )
-                    self.structured_query(
-                        f"""
-                        MERGE (e:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
-                        SET e += {{{formatted_properties}}}
-                        SET e.name = '{param["name"]}', e:`{BASE_ENTITY_LABEL}`
-                        WITH e
-                        SET e :{param["label"]}
-                        """
-                    )
-                    triplet_source_id = param["properties"].get("triplet_source_id")
-                    if triplet_source_id:
-                        self.structured_query(
-                            f"""
-                            MERGE (e:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
-                            MERGE (c:{BASE_NODE_LABEL} {{id: '{triplet_source_id}'}})
-                            MERGE (e)<-[:MENTIONS]-(c)
-                            """
-                        )
+                self.structured_query(
+                    f"""
+                    UNWIND $data AS row
+                    MERGE (e:{BASE_NODE_LABEL} {{id: row.id}})
+                    SET e += CASE WHEN row.properties IS NOT NULL THEN row.properties ELSE e END
+                    SET e.name = CASE WHEN row.name IS NOT NULL THEN row.name ELSE e.name END,
+                        e:{BASE_ENTITY_LABEL}
+                    WITH e, row
+                    SET e:row.label
+                    WITH e, row
+                    WHERE row.embedding IS NOT NULL
+                    SET e.embedding = row.embedding
+                    WITH e, row
+                    WHERE row.properties.triplet_source_id IS NOT NULL
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.properties.triplet_source_id}})
+                    MERGE (e)<-[:MENTIONS]-(c)
+                    """,
+                    param_map={"data": chunked_params},
+                )
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
         for index in range(0, len(params), CHUNK_SIZE):
             chunked_params = params[index : index + CHUNK_SIZE]
-            for param in chunked_params:
-                formatted_properties = ", ".join(
-                    [f"{key}: {value!r}" for key, value in param["properties"].items()]
-                )
 
-                self.structured_query(
-                    f"""
-                    MERGE (source: {BASE_NODE_LABEL} {{id: '{param["source_id"]}'}})
-                    ON CREATE SET source:Chunk
-                    MERGE (target: {BASE_NODE_LABEL} {{id: '{param["target_id"]}'}})
-                    ON CREATE SET target:Chunk
-                    WITH source, target
-                    MERGE (source)-[r:{param["label"]}]->(target)
-                    SET r += {{{formatted_properties}}}
-                    RETURN count(*)
-                    """
-                )
+            self.structured_query(
+                f"""
+                UNWIND $data AS row
+                MERGE (source: {BASE_NODE_LABEL} {{id: row.source_id}})
+                ON CREATE SET source:Chunk
+                MERGE (target: {BASE_NODE_LABEL} {{id: row.target_id}})
+                ON CREATE SET target:Chunk
+                WITH source, target, row
+                CREATE (source)-[r:row.label]->(target)
+                SET r += row.properties
+                RETURN count(*)
+                """,
+                param_map={"data": chunked_params},
+            )
 
     def get(
         self,
@@ -432,11 +469,11 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             params["entity_names"] = entity_names
 
         if relation_names and entity_names:
-            cypher_statement += f"AND "
+            cypher_statement += "AND "
 
         if relation_names:
             cypher_statement += "type(r) in $relation_names "
-            params[f"relation_names"] = relation_names
+            params["relation_names"] = relation_names
 
         if ids:
             cypher_statement += "e.id in $ids "
@@ -624,9 +661,43 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
-        raise NotImplementedError(
-            "Vector query is not currently implemented for MemgraphPropertyGraphStore."
-        )
+        """Query the graph store with a vector store query."""
+        if self._supports_vector_index:
+            data = self.structured_query(
+                f"""CALL vector_search.search('{VECTOR_INDEX_NAME}', $limit, $embedding)
+                    YIELD node, similarity
+                    WITH node, similarity, labels(node) AS all_labels
+                    UNWIND all_labels AS label
+                    WITH node, similarity, label
+                    WHERE NOT label IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}']
+                    WITH node, similarity, label, properties(node) AS originalProperties
+                    RETURN
+                        node.id AS name,
+                        label AS type,
+                        node{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                        similarity
+                """,
+                param_map={
+                    "embedding": query.query_embedding,
+                    "limit": query.similarity_top_k,
+                },
+            )
+        else:
+            data = []
+        data = data if data else []
+
+        nodes = []
+        scores = []
+        for record in data:
+            node = EntityNode(
+                name=record["name"],
+                label=record["type"],
+                properties=remove_empty_values(record["properties"]),
+            )
+            nodes.append(node)
+            scores.append(record["similarity"])
+
+        return (nodes, scores)
 
     def delete(
         self,
@@ -695,8 +766,10 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         f" distinct_count: size(`{prop_name}_values`)"
                     )
                 elif prop_type in [
+                    "Integer",
                     "Int",
                     "Double",
+                    "Float",
                     "Date",
                     "LocalTime",
                     "LocalDateTime",
@@ -732,7 +805,6 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             for prop in properties:
                 prop_name = prop["property"]
                 prop_type = prop["type"]
-
                 # Check if indexed property, we can still do exhaustive
                 prop_index = [
                     el
@@ -752,7 +824,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             RETURN DISTINCT n.`{prop_name}` AS value
                             LIMIT {DISTINCT_VALUE_LIMIT}
                         """
-                        distinct_values = self.query(distinct_values_query)
+                        distinct_values = self.structured_query(distinct_values_query)
 
                         # Extract values from the result set
                         distinct_values = [
@@ -770,6 +842,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
                 elif prop_type in [
+                    "Integer",
                     "Int",
                     "Double",
                     "Float",
@@ -853,13 +926,14 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop["values"]
                                 else ""
                             )
 
                     elif prop["type"] in [
+                        "Integer",
                         "Int",
                         "Double",
                         "Float",
@@ -868,7 +942,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min") is not None:
-                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max: {prop['max']}"
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -879,7 +953,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_node_props.append(
                         f"  - `{prop['property']}`: {prop['type']} {example}"
                     )
@@ -900,12 +974,13 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop.get("values")
                                 else ""
                             )
                     elif prop["type"] in [
+                        "Integer",
                         "Int",
                         "Double",
                         "Float",
@@ -914,7 +989,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -925,7 +1000,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )
@@ -938,11 +1013,11 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 formatted_node_props.append(f"{label} {{{props_str}}}")
 
             # Format relationship properties using structured_schema
-            for type, props in schema["rel_props"].items():
+            for label, props in schema["rel_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
-                formatted_rel_props.append(f"{type} {{{props_str}}}")
+                formatted_rel_props.append(f"{label} {{{props_str}}}")
 
         # Format relationships
         formatted_rels = [
@@ -960,3 +1035,54 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def verify_vector_support(self) -> None:
+        """
+        Check if the connected Memgraph database supports vector indices.
+
+        Compares the current version with the required version (2.22.0) that
+        supports vector indexing.
+        """
+        response = self.structured_query("SHOW VERSION;")
+        current_version = response[0]["version"]
+        current_version = tuple(map(int, current_version.split(".")))
+        required_version = "2.22"
+        required_version = tuple(map(int, required_version.split(".")))
+
+        # Check if the version is equal to or larger than the required version
+        if current_version >= required_version:
+            # Check if vector index is configured
+            try:
+                self.structured_query(
+                    f"""
+                    CREATE VECTOR INDEX {VECTOR_INDEX_NAME} ON :{BASE_ENTITY_LABEL}(embedding) WITH CONFIG {{"dimension": 1536, "capacity": 1000}};
+                    """
+                )
+                self._supports_vector_index = True
+                logger.info(
+                    "Vector index %s was created with a fixed embedding dimension of 1536. "
+                    "If your chosen LLM model uses a different dimension, manually create the vector index with the following query:\n"
+                    'CREATE VECTOR INDEX %s ON :%s(embedding) WITH CONFIG {"dimension": <INSERT_DIMENSION>, "capacity": 1000};',
+                    VECTOR_INDEX_NAME,
+                    VECTOR_INDEX_NAME,
+                    BASE_ENTITY_LABEL,
+                )
+            except neo4j.exceptions.Neo4jError as decode_error:
+                self._supports_vector_index = False
+                if (
+                    decode_error.code
+                    == "Memgraph.ClientError.MemgraphError.MemgraphError"
+                    and "vector_search.show_index_info" in decode_error.message
+                ):
+                    logger.info(
+                        """Failed to create vector index entity:
+                        Given vector index already exists."""
+                    )
+        else:
+            self._supports_vector_index = False
+            logger.info(
+                """Vector indexing is not supported by your current Memgraph
+                version (%s). Please upgrade to version 2.22.0 or newer to use
+                vector indices.""",
+                ".".join(map(str, current_version)),
+            )

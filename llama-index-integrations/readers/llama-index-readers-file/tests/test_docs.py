@@ -37,7 +37,7 @@ def test_pdfreader_loads_data_into_full_document(multi_page_pdf: FPDF) -> None:
 
     assert len(docs) == 1
     assert docs[0].text == "\n".join(
-        f"Page {page+1} Content" for page in range(multi_page_pdf.pages_count)
+        f"Page {page + 1} Content" for page in range(multi_page_pdf.pages_count)
     )
 
     os.remove(temp_file.name)
@@ -55,7 +55,7 @@ def test_pdfreader_loads_data_into_multiple_documents(multi_page_pdf: FPDF) -> N
 
     assert len(docs) == multi_page_pdf.pages_count
     for page in range(multi_page_pdf.pages_count):
-        assert docs[page].text == f"Page {page+1} Content"
+        assert docs[page].text == f"Page {page + 1} Content"
 
     os.remove(temp_file.name)
 

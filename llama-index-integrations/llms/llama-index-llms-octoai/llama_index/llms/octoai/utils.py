@@ -37,7 +37,8 @@ logger = logging.getLogger(__name__)
 
 
 def octoai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -50,6 +51,7 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
 
             max_tokens = octoai.modelname_to_contextsize(TextModel.CODELLAMA_13B_INSTRUCT)
             max_tokens = octoai.modelname_to_contextsize("llama-2-13b-chat")
+
     """
     if modelname not in ALL_AVAILABLE_MODELS:
         print(

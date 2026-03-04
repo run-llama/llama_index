@@ -1,4 +1,5 @@
-"""Simple keyword-table based index.
+"""
+Simple keyword-table based index.
 
 Similar to KeywordTableIndex, but uses a simpler keyword extraction
 technique that doesn't involve GPT - just uses regex.
@@ -21,7 +22,8 @@ DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 
 class SimpleKeywordTableIndex(BaseKeywordTableIndex):
-    """Simple Keyword Table Index.
+    """
+    Simple Keyword Table Index.
 
     This index uses a simple regex extractor to extract keywords from the text.
 

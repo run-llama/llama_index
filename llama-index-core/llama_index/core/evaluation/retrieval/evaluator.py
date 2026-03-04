@@ -14,7 +14,8 @@ from llama_index.core.schema import ImageNode, TextNode
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):
-    """Retriever evaluator.
+    """
+    Retriever evaluator.
 
     This module will evaluate a retriever using a set of metrics.
 
@@ -45,12 +46,13 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
 
         return (
             [node.node.node_id for node in retrieved_nodes],
-            [node.node.text for node in retrieved_nodes],
+            [node.text for node in retrieved_nodes],
         )
 
 
 class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
-    """Retriever evaluator.
+    """
+    Retriever evaluator.
 
     This module will evaluate a retriever using a set of metrics.
 
@@ -84,7 +86,7 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
             node = scored_node.node
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if isinstance(node, TextNode):
                 text_nodes.append(node)
 
         if mode == "text":

@@ -51,9 +51,9 @@ class SearChainPack(BaseLlamaPack):
     def __init__(
         self,
         data_path: str,
-        dprtokenizer_path: str = "/dpr_reader_multi",
-        dprmodel_path: str = "/dpr_reader_multi",
-        crossencoder_name_or_path: str = "/Quora_cross_encoder",
+        dprtokenizer_path: str = "facebook/dpr-reader-multiset-base",  # download from https://huggingface.co/facebook/dpr-reader-multiset-base,
+        dprmodel_path: str = "facebook/dpr-reader-multiset-base",  # download from https://huggingface.co/facebook/dpr-reader-multiset-base,
+        crossencoder_name_or_path: str = "microsoft/MiniLM-L12-H384-uncased",  # down load from https://huggingface.co/microsoft/MiniLM-L12-H384-uncased,
         device: str = "cuda",
         **kwargs: Any,
     ) -> None:
@@ -199,9 +199,7 @@ class SearChainPack(BaseLlamaPack):
                         [Query 2]: When was First for Women started?
                         [Answer 2]: 1989
                         [Final Content]: Arthur’s Magazine started in 1844 [1]. First for Women started in 1989 [2]. So Arthur’s Magazine was started first. So the answer is Arthur’s Magazi
-                        [Question]: {}""".format(
-                        q, q
-                    ),
+                        [Question]: {}""".format(q, q),
                 )
             ]
             feedback_answer = "continue"

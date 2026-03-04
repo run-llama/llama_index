@@ -1,8 +1,10 @@
-"""Opendal file and directory reader.
+"""
+Opendal file and directory reader.
 
 A loader that fetches a file or iterates through a directory on AWS S3 or other compatible service.
 
 """
+
 import asyncio
 import tempfile
 from pathlib import Path
@@ -23,7 +25,8 @@ class OpendalReader(BaseReader):
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs,
     ) -> None:
-        """Initialize opendal operator, along with credentials if needed.
+        """
+        Initialize opendal operator, along with credentials if needed.
 
 
         Args:
@@ -33,6 +36,7 @@ class OpendalReader(BaseReader):
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
             to text. See `SimpleDirectoryReader` for more details.
+
         """
         import opendal
 

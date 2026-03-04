@@ -12,7 +12,7 @@ python_version = sys.version
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api keyset"
 )
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_upload_eval_dataset() -> None:
     from llama_cloud.client import LlamaCloud
 

@@ -128,12 +128,14 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
         )
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         self._container.create_item(
             body={
@@ -145,17 +147,20 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -172,16 +177,19 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -195,10 +203,12 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
+
         """
         raise NotImplementedError
 
@@ -211,11 +221,13 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
             return False
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         raise NotImplementedError
 

@@ -1,6 +1,10 @@
 """Test utils."""
 
+from pathlib import Path
 from typing import Optional, Type, Union
+from unittest import mock
+import os
+import time
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -8,18 +12,22 @@ from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    aretry_on_exceptions_with_backoff,
     _get_colored_text,
+    get_cache_dir,
     get_color_mapping,
+    get_retry_on_exceptions_with_backoff_decorator,
     get_tokenizer,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
-    get_retry_on_exceptions_with_backoff_decorator,
+    truncate_text,
 )
 
 
 def test_tokenizer() -> None:
-    """Make sure tokenizer works.
+    """
+    Make sure tokenizer works.
 
     NOTE: we use a different tokenizer for python >= 3.9.
 
@@ -33,7 +41,7 @@ call_count = 0
 
 
 def fn_with_exception(
-    exception_cls: Optional[Union[Type[Exception], Exception]]
+    exception_cls: Optional[Union[Type[Exception], Exception]],
 ) -> bool:
     """Return true unless exception is specified."""
     global call_count
@@ -82,7 +90,7 @@ def test_retry_on_exceptions_with_backoff() -> None:
     assert call_count == 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     """Make sure retry decorator works for both sync and async functions."""
     global call_count
@@ -151,6 +159,33 @@ async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     assert call_count == 1
 
 
+@pytest.mark.asyncio
+async def test_aretry_does_not_call_time_sleep(monkeypatch):
+    def _fail_sleep(_):
+        raise AssertionError(
+            "time.sleep() should not be called in aretry_on_exceptions_with_backoff"
+        )
+
+    monkeypatch.setattr(time, "sleep", _fail_sleep)
+
+    attempts = {"n": 0}
+
+    async def flaky():
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("transient")
+        return "ok"
+
+    out = await aretry_on_exceptions_with_backoff(
+        flaky,
+        errors_to_retry=[ErrorToRetry(RuntimeError)],
+        max_tries=2,
+        min_backoff_secs=0.01,
+        max_backoff_secs=0.01,
+    )
+    assert out == "ok"
+
+
 def test_retry_on_conditional_exceptions() -> None:
     """Make sure retry function works on conditional exceptions."""
     global call_count
@@ -200,6 +235,21 @@ def test_get_color_mapping() -> None:
     assert all(color in _ANSI_COLORS for color in color_mapping_ansi.values())
 
 
+def test_truncate_text() -> None:
+    """Test truncate_text function."""
+    text = "Hello, world!"
+    assert truncate_text(text, 5) == "He" + "..."
+
+
+def test_truncate_text_with_less_chars() -> None:
+    text = "hello"
+
+    text1 = "world"
+
+    assert truncate_text(text1, 1) == "w"
+    assert truncate_text(text, 2) == "he"
+
+
 def test_get_colored_text() -> None:
     """Test _get_colored_text function."""
     text = "Hello, world!"
@@ -245,3 +295,61 @@ def test_print_text(capsys: CaptureFixture) -> None:
     print_text(text, end=" ")
     captured = capsys.readouterr()
     assert captured.out == f"{text} "
+
+
+def test_get_cache_dir_with_env_override(tmp_path, monkeypatch) -> None:
+    custom_cache_dir = str(tmp_path / "custom_cache")
+
+    # Test with environment variable set
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", custom_cache_dir)
+    result = get_cache_dir()
+    assert result == custom_cache_dir
+    assert isinstance(result, str)
+    assert Path(custom_cache_dir).exists()
+    assert Path(custom_cache_dir).is_dir()
+
+
+def test_get_cache_dir_default_behavior(monkeypatch) -> None:
+    # Ensure environment variable is not set
+    monkeypatch.delenv("LLAMA_INDEX_CACHE_DIR", raising=False)
+
+    with mock.patch("platformdirs.user_cache_dir") as mock_user_cache_dir:
+        mock_cache_path = "/mock/cache/llama_index"
+        mock_user_cache_dir.return_value = mock_cache_path
+
+        with mock.patch("pathlib.Path.mkdir") as mock_mkdir:
+            result = get_cache_dir()
+            mock_user_cache_dir.assert_called_once_with("llama_index")
+            mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+            assert result == os.path.normpath(mock_cache_path)
+
+
+def test_get_cache_dir_creates_directory(tmp_path, monkeypatch) -> None:
+    cache_dir = str(tmp_path / "test_cache" / "nested" / "llama_index")
+
+    # Ensure directory doesn't exist initially
+    assert not Path(cache_dir).exists()
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", cache_dir)
+    result = get_cache_dir()
+
+    assert Path(cache_dir).exists()
+    assert Path(cache_dir).is_dir()
+    assert result == cache_dir
+
+
+def test_get_cache_dir_no_toctou_issue(tmp_path, monkeypatch) -> None:
+    cache_dir = str(tmp_path / "toctou_test")
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", cache_dir)
+    with mock.patch("pathlib.Path.mkdir") as mock_mkdir:
+        get_cache_dir()
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
+
+def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
+    env_cache_dir = str(tmp_path / "env_cache")
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", env_cache_dir)
+
+    with mock.patch("platformdirs.user_cache_dir") as mock_user_cache_dir:
+        mock_user_cache_dir.return_value = "/should/not/be/used"
+        get_cache_dir()
+        mock_user_cache_dir.assert_not_called()

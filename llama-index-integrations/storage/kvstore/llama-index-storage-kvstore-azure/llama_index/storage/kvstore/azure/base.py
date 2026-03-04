@@ -30,7 +30,8 @@ DEFAULT_PARTITION_KEY = "default"
 
 
 class AzureKVStore(BaseKVStore):
-    """Provides a key-value store interface for Azure Table Storage and Cosmos
+    """
+    Provides a key-value store interface for Azure Table Storage and Cosmos
     DB. This class supports both synchronous and asynchronous operations on
     Azure Table Storage and Cosmos DB. It supports connecting to the service
     using different credentials and manages table creation and data
@@ -122,6 +123,29 @@ class AzureKVStore(BaseKVStore):
         if endpoint is None:
             endpoint = f"https://{account_name}.table.core.windows.net"
         credential = AzureNamedKeyCredential(account_name, account_key)
+        return cls._from_clients(
+            endpoint, credential, service_mode, partition_key, *args, **kwargs
+        )
+
+    @classmethod
+    def from_account_and_id(
+        cls,
+        account_name: str,
+        endpoint: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> "AzureKVStore":
+        """Creates an instance of AzureKVStore from an account name and managed ID."""
+        try:
+            from azure.identity import DefaultAzureCredential
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
+        if endpoint is None:
+            endpoint = f"https://{account_name}.table.core.windows.net"
+        credential = DefaultAzureCredential()
         return cls._from_clients(
             endpoint, credential, service_mode, partition_key, *args, **kwargs
         )

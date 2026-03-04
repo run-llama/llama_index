@@ -17,9 +17,9 @@ def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) 
     child_list.append(child_node.as_related_node_info())
     parent_node.relationships[NodeRelationship.CHILD] = child_list
 
-    child_node.relationships[
-        NodeRelationship.PARENT
-    ] = parent_node.as_related_node_info()
+    child_node.relationships[NodeRelationship.PARENT] = (
+        parent_node.as_related_node_info()
+    )
 
 
 def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
@@ -74,7 +74,8 @@ def get_deeper_nodes(nodes: List[BaseNode], depth: int = 1) -> List[BaseNode]:
 
 
 class HierarchicalNodeParser(NodeParser):
-    """Hierarchical node parser.
+    """
+    Hierarchical node parser.
 
     Splits a document into a recursive hierarchy Nodes using a NodeParser.
 

@@ -12,17 +12,20 @@ Here's an example usage of the CodeInterpreterToolSpec.
 
 ```python
 from llama_index.tools.code_interpreter import CodeInterpreterToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 code_spec = CodeInterpreterToolSpec()
 
-agent = OpenAIAgent.from_tools(code_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=code_spec.to_tool_list(), llm=OpenAI(model="gpt-4.1")
+)
 
 # Prime the agent to use the tool
-agent.chat(
+resp = await agent.run(
     "Can you help me write some python code to pass to the code_interpreter tool"
 )
-agent.chat(
+resp = await agent.run(
     "write a python function to calculate volume of a sphere with radius 4.3cm"
 )
 ```

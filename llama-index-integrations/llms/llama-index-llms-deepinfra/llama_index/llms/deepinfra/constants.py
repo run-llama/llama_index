@@ -1,4 +1,5 @@
 """DeepInfra API base URL."""
+
 API_BASE = "https://api.deepinfra.com"
 """DeepInfra Inference API endpoint."""
 INFERENCE_ENDPOINT = "v1/openai/completions"

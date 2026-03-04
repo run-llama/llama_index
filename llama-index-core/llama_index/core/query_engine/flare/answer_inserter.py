@@ -15,7 +15,8 @@ from llama_index.core.settings import Settings
 
 
 class BaseLookaheadAnswerInserter(PromptMixin):
-    """Lookahead answer inserter.
+    """
+    Lookahead answer inserter.
 
     These are responsible for insert answers into a lookahead answer template.
 
@@ -132,7 +133,8 @@ DEFAULT_ANSWER_INSERT_PROMPT = PromptTemplate(DEFAULT_ANSWER_INSERT_PROMPT_TMPL)
 
 
 class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
-    """LLM Lookahead answer inserter.
+    """
+    LLM Lookahead answer inserter.
 
     Takes in a lookahead response and a list of query tasks, and the
         lookahead answers, and inserts the answers into the lookahead response.
@@ -183,7 +185,8 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
 
 
 class DirectLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
-    """Direct lookahead answer inserter.
+    """
+    Direct lookahead answer inserter.
 
     Simple inserter module that directly inserts answers into
         the [Search(query)] tags in the lookahead response.

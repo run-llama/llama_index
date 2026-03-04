@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class GPTTreeIndexBuilder:
-    """GPT tree index builder.
+    """
+    GPT tree index builder.
 
     Helper class to build the tree-structured index,
     or to synthesize an answer.
@@ -61,7 +62,8 @@ class GPTTreeIndexBuilder:
         nodes: Sequence[BaseNode],
         build_tree: bool = True,
     ) -> IndexGraph:
-        """Build from text.
+        """
+        Build from text.
 
         Returns:
             IndexGraph: graph object consisting of all_nodes, root_nodes
@@ -114,7 +116,8 @@ class GPTTreeIndexBuilder:
         cur_nodes_chunks: List[List[BaseNode]],
         summaries: List[str],
     ) -> Dict[int, str]:
-        """Construct parent nodes.
+        """
+        Construct parent nodes.
 
         Save nodes to docstore.
 
@@ -219,8 +222,7 @@ class GPTTreeIndexBuilder:
                 self._llm.apredict(self.summary_prompt, context_str=text_chunk)
                 for text_chunk in text_chunks_progress
             ]
-            outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
-            summaries = [output[0] for output in outputs]
+            summaries = await asyncio.gather(*tasks)
 
             event.on_end(payload={"summaries": summaries, "level": level})
 

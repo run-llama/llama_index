@@ -27,6 +27,7 @@ class AzureSpeechToolSpec(BaseToolSpec):
 
         Args:
             text (str): The text to play
+
         """
         import azure.cognitiveservices.speech as speechsdk
 
@@ -74,6 +75,7 @@ class AzureSpeechToolSpec(BaseToolSpec):
 
         Args:
             filename (str): The name of the file to transcribe
+
         """
         import azure.cognitiveservices.speech as speechsdk
 

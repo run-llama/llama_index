@@ -1,4 +1,5 @@
 """Retrieve query."""
+
 import logging
 from typing import Any, List, Optional
 
@@ -13,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class TreeRootRetriever(BaseRetriever):
-    """Tree root retriever.
+    """
+    Tree root retriever.
 
     This class directly retrieves the answer from the root nodes.
 

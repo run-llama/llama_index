@@ -7,13 +7,13 @@ This package provides a Gigachat integration as LLM Module.
 using poetry:
 
 ```shell
-poetry add llama-index-llms-gigachat
+poetry add llama-index-llms-gigachat-ru
 ```
 
 or using pip:
 
 ```shell
-pip install llama-index-llms-gigachat
+pip install llama-index-llms-gigachat-ru
 ```
 
 ## Basic Usage

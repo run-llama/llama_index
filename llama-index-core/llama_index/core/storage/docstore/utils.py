@@ -5,6 +5,7 @@ from llama_index.core.schema import (
     ImageDocument,
     ImageNode,
     IndexNode,
+    Node,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
@@ -31,12 +32,16 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
                 doc = ImageDocument.from_dict(data_dict)
             else:
                 doc = Document.from_dict(data_dict)
+        elif doc_type == Node.get_type():
+            doc = Node.from_dict(data_dict)
         elif doc_type == TextNode.get_type():
             doc = TextNode.from_dict(data_dict)
         elif doc_type == ImageNode.get_type():
             doc = ImageNode.from_dict(data_dict)
         elif doc_type == IndexNode.get_type():
             doc = IndexNode.from_dict(data_dict)
+        elif doc_type == Node.get_type():
+            doc = Node.from_dict(data_dict)
         else:
             raise ValueError(f"Unknown doc type: {doc_type}")
 
@@ -61,18 +66,18 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
 
     if doc_type == Document.get_type():
         doc = Document(
-            text=text, metadata=metadata, id=id_, relationships=relationships
+            text=text, metadata=metadata, id_=id_, relationships=relationships
         )
     elif doc_type == TextNode.get_type():
         doc = TextNode(
-            text=text, metadata=metadata, id=id_, relationships=relationships
+            text=text, metadata=metadata, id_=id_, relationships=relationships
         )
     elif doc_type == ImageNode.get_type():
         image = data_dict.get("image", None)
         doc = ImageNode(
             text=text,
             metadata=metadata,
-            id=id_,
+            id_=id_,
             relationships=relationships,
             image=image,
         )
@@ -81,7 +86,7 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
         doc = IndexNode(
             text=text,
             metadata=metadata,
-            id=id_,
+            id_=id_,
             relationships=relationships,
             index_id=index_id,
         )

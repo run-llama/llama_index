@@ -20,7 +20,7 @@ from llama_index.core.node_parser.text.utils import (
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
+CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?|[,.;。？！]"
 DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 
@@ -32,7 +32,8 @@ class _Split:
 
 
 class SentenceSplitter(MetadataAwareTextSplitter):
-    """Parse text with a preference for complete sentences.
+    """
+    Parse text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
     compared to the original TokenTextSplitter, there are less likely to be
@@ -195,7 +196,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
-        r"""Break text into splits that are smaller than chunk size.
+        r"""
+        Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by paragraph separator
@@ -246,30 +248,37 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             new_chunk = True
 
             # add overlap to the next chunk using the last one first
-            # there is a small issue with this logic. If the chunk directly after
-            # the overlap is really big, then we could go over the chunk_size, and
-            # in theory the correct thing to do would be to remove some/all of the
-            # overlap. However, it would complicate the logic further without
-            # much real world benefit, so it's not implemented now.
             if len(last_chunk) > 0:
                 last_index = len(last_chunk) - 1
                 while (
                     last_index >= 0
                     and cur_chunk_len + last_chunk[last_index][1] <= self.chunk_overlap
                 ):
-                    text, length = last_chunk[last_index]
-                    cur_chunk_len += length
-                    cur_chunk.insert(0, (text, length))
+                    overlap_text, overlap_length = last_chunk[last_index]
+                    cur_chunk_len += overlap_length
+                    cur_chunk.insert(0, (overlap_text, overlap_length))
                     last_index -= 1
 
-        while len(splits) > 0:
-            cur_split = splits[0]
+        split_idx = 0
+        while split_idx < len(splits):
+            cur_split = splits[split_idx]
             if cur_split.token_size > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
             if cur_chunk_len + cur_split.token_size > chunk_size and not new_chunk:
                 # if adding split to current chunk exceeds chunk size: close out chunk
                 close_chunk()
             else:
+                # If this is a new chunk with overlap, and adding the split would
+                # exceed chunk_size, remove overlap to make room
+                if new_chunk and cur_chunk_len + cur_split.token_size > chunk_size:
+                    # Remove overlap from the beginning until split fits
+                    while (
+                        len(cur_chunk) > 0
+                        and cur_chunk_len + cur_split.token_size > chunk_size
+                    ):
+                        _, length = cur_chunk.pop(0)
+                        cur_chunk_len -= length
+
                 if (
                     cur_split.is_sentence
                     or cur_chunk_len + cur_split.token_size <= chunk_size
@@ -278,7 +287,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                     # add split to chunk
                     cur_chunk_len += cur_split.token_size
                     cur_chunk.append((cur_split.text, cur_split.token_size))
-                    splits.pop(0)
+                    split_idx += 1
                     new_chunk = False
                 else:
                     # close out chunk
@@ -293,7 +302,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return self._postprocess_chunks(chunks)
 
     def _postprocess_chunks(self, chunks: List[str]) -> List[str]:
-        """Post-process chunks.
+        """
+        Post-process chunks.
         Remove whitespace only chunks and remove leading and trailing whitespace.
         """
         new_chunks = []

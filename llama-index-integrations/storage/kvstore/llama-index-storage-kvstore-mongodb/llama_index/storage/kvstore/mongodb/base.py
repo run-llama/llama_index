@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.core.storage.kvstore.types import (
@@ -6,15 +7,14 @@ from llama_index.core.storage.kvstore.types import (
     BaseKVStore,
 )
 
-IMPORT_ERROR_MSG = (
-    "`pymongo` or `motor` package not found, please run `pip install pymongo motor`"
-)
+IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 
 APP_NAME = "Llama-Index-KVStore-Python"
 
 
 class MongoDBKVStore(BaseKVStore):
-    """MongoDB Key-Value store.
+    """
+    MongoDB Key-Value store.
 
     Args:
         mongo_client (Any): MongoDB client
@@ -36,15 +36,13 @@ class MongoDBKVStore(BaseKVStore):
     ) -> None:
         """Init a MongoDBKVStore."""
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         self._client = cast(MongoClient, mongo_client)
-        self._aclient = (
-            cast(AsyncIOMotorClient, mongo_aclient) if mongo_aclient else None
-        )
+        self._aclient = cast(AsyncMongoClient, mongo_aclient) if mongo_aclient else None
 
         self._uri = uri
         self._host = host
@@ -54,13 +52,24 @@ class MongoDBKVStore(BaseKVStore):
         self._db = self._client[self._db_name]
         self._adb = self._aclient[self._db_name] if self._aclient else None
 
+        # append_metadata was added in PyMongo 4.14.0, but is a valid database name on earlier versions
+        if callable(self._client.append_metadata):
+            self._client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+        if callable(self._aclient.append_metadata):
+            self._aclient.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+
     @classmethod
     def from_uri(
         cls,
         uri: str,
         db_name: Optional[str] = None,
     ) -> "MongoDBKVStore":
-        """Load a MongoDBKVStore from a MongoDB URI.
+        """
+        Load a MongoDBKVStore from a MongoDB URI.
 
         Args:
             uri (str): MongoDB URI
@@ -68,13 +77,24 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(uri, appname=APP_NAME)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(uri)
+        mongo_aclient: AsyncMongoClient = AsyncMongoClient(uri)
+
+        # append_metadata was added in PyMongo 4.14.0, but is a valid database name on earlier versions
+        if callable(mongo_client.append_metadata):
+            mongo_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+        if callable(mongo_aclient.append_metadata):
+            mongo_aclient.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
@@ -89,7 +109,8 @@ class MongoDBKVStore(BaseKVStore):
         port: int,
         db_name: Optional[str] = None,
     ) -> "MongoDBKVStore":
-        """Load a MongoDBKVStore from a MongoDB host and port.
+        """
+        Load a MongoDBKVStore from a MongoDB host and port.
 
         Args:
             host (str): MongoDB host
@@ -98,15 +119,24 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(host, port, appname=APP_NAME)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(
-            host, port, appname=APP_NAME
-        )
+        mongo_aclient: AsyncMongoClient = AsyncMongoClient(host, port, appname=APP_NAME)
+
+        # append_metadata was added in PyMongo 4.14.0, but is a valid database name on earlier versions
+        if callable(mongo_client.append_metadata):
+            mongo_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+        if callable(mongo_aclient.append_metadata):
+            mongo_aclient.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
@@ -125,7 +155,8 @@ class MongoDBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -141,7 +172,8 @@ class MongoDBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -200,7 +232,8 @@ class MongoDBKVStore(BaseKVStore):
             await self._adb[collection].bulk_write(new_docs)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -216,7 +249,8 @@ class MongoDBKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -232,7 +266,8 @@ class MongoDBKVStore(BaseKVStore):
         return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -246,7 +281,8 @@ class MongoDBKVStore(BaseKVStore):
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -262,7 +298,8 @@ class MongoDBKVStore(BaseKVStore):
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -273,7 +310,8 @@ class MongoDBKVStore(BaseKVStore):
         return result.deleted_count > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

@@ -2,7 +2,8 @@ from typing import Any, Optional
 
 
 class ServiceContext:
-    """Service Context container.
+    """
+    Service Context container.
 
     NOTE: Deprecated, use llama_index.settings.Settings instead or pass in
     modules to local functions/methods/interfaces.
@@ -22,7 +23,8 @@ class ServiceContext:
         cls,
         **kwargs: Any,
     ) -> "ServiceContext":
-        """Create a ServiceContext from defaults.
+        """
+        Create a ServiceContext from defaults.
 
         NOTE: Deprecated, use llama_index.settings.Settings instead or pass in
         modules to local functions/methods/interfaces.

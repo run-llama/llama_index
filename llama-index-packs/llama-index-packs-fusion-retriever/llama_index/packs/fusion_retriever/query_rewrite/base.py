@@ -11,7 +11,8 @@ from llama_index.core.schema import TextNode
 
 
 class QueryRewritingRetrieverPack(BaseLlamaPack):
-    """Query rewriting retriever pack.
+    """
+    Query rewriting retriever pack.
 
     Given input nodes, build a vector index.
 

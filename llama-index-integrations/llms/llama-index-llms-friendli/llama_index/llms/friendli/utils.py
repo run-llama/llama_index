@@ -24,13 +24,15 @@ ALL_AVAILABLE_MODELS = {
 
 
 def friendli_modelname_to_contextsize(modelname: str) -> int:
-    """Get a context size of a model from its name.
+    """
+    Get a context size of a model from its name.
 
     Args:
         modelname (str): The name of model.
 
     Returns:
         int: Context size of the model.
+
     """
     context_size = ALL_AVAILABLE_MODELS.get(modelname)
     if context_size is None:

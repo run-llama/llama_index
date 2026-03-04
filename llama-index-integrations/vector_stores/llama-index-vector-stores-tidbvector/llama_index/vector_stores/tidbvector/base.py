@@ -73,6 +73,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Raises:
             ImportError: If the tidbvec python package is not installed.
+
         """
         super().__init__(**kwargs)
         self._connection_string = connection_string
@@ -120,6 +121,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of node IDs that were added.
+
         """
         ids = []
         metadatas = []
@@ -151,6 +153,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         delete_kwargs["filter"] = {"doc_id": ref_doc_id}
         self._tidb.delete(**delete_kwargs)
@@ -168,6 +171,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the query embedding is not provided.
+
         """
         if query.query_embedding is None:
             raise ValueError("Query embedding must be provided.")
@@ -196,6 +200,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: The result of the similarity search, including nodes, similarities, and ids.
+
         """
         filters = self._to_tidb_filters(metadata_filters)
         results = self._tidb.query(
@@ -243,6 +248,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If an unsupported operator is encountered.
+
         """
         if metadata_filters is None:
             return None

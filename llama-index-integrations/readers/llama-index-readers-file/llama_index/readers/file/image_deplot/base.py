@@ -6,7 +6,8 @@ from llama_index.core.schema import Document, ImageDocument
 
 
 class ImageTabularChartReader(BaseReader):
-    """Image parser.
+    """
+    Image parser.
 
     Extract tabular data from a chart or figure.
 

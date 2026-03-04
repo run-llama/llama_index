@@ -1,4 +1,5 @@
-"""Hugging Face file reader.
+"""
+Hugging Face file reader.
 
 A parser for HF files.
 
@@ -15,7 +16,8 @@ from llama_index.core.schema import Document
 
 
 class HuggingFaceFSReader(BaseReader):
-    """Hugging Face File System reader.
+    """
+    Hugging Face File System reader.
 
     Uses the new Filesystem API from the Hugging Face Hub client library.
     """

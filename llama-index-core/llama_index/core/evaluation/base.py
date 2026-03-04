@@ -1,4 +1,5 @@
 """Evaluator."""
+
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
@@ -9,7 +10,8 @@ from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
 
 
 class EvaluationResult(BaseModel):
-    """Evaluation result.
+    """
+    Evaluation result.
 
     Output of an BaseEvaluator.
     """
@@ -55,7 +57,8 @@ class BaseEvaluator(PromptMixin):
         contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Run evaluation with query string, retrieved contexts,
+        """
+        Run evaluation with query string, retrieved contexts,
         and generated response string.
 
         Subclasses can override this method to provide custom evaluation logic and
@@ -78,7 +81,8 @@ class BaseEvaluator(PromptMixin):
         contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Run evaluation with query string, retrieved contexts,
+        """
+        Run evaluation with query string, retrieved contexts,
         and generated response string.
 
         Subclasses can override this method to provide custom evaluation logic and
@@ -92,7 +96,8 @@ class BaseEvaluator(PromptMixin):
         response: Optional[Response] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Run evaluation with query string and generated Response object.
+        """
+        Run evaluation with query string and generated Response object.
 
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
@@ -113,7 +118,8 @@ class BaseEvaluator(PromptMixin):
         response: Optional[Response] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Run evaluation with query string and generated Response object.
+        """
+        Run evaluation with query string and generated Response object.
 
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.

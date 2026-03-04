@@ -1,4 +1,5 @@
-"""Knowledge Graph Index.
+"""
+Knowledge Graph Index.
 
 Build a KG by extracting triplets, and leveraging the KG during query-time.
 
@@ -39,7 +40,8 @@ logger = logging.getLogger(__name__)
     ),
 )
 class KnowledgeGraphIndex(BaseIndex[KG]):
-    """Knowledge Graph Index.
+    """
+    Knowledge Graph Index.
 
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
@@ -254,7 +256,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def upsert_triplet(
         self, triplet: Tuple[str, str, str], include_embeddings: bool = False
     ) -> None:
-        """Insert triplets and optionally embeddings.
+        """
+        Insert triplets and optionally embeddings.
 
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
@@ -262,6 +265,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Args:
             triplet (tuple): Knowledge triplet
             embedding (Any, optional): Embedding option for the triplet. Defaults to None.
+
         """
         self._graph_store.upsert_triplet(*triplet)
         triplet_str = str(triplet)
@@ -271,7 +275,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
-        """Add node.
+        """
+        Add node.
 
         Used for manual insertion of nodes (keyed by keywords).
 
@@ -289,7 +294,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         node: BaseNode,
         include_embeddings: bool = False,
     ) -> None:
-        """Upsert KG triplet and node.
+        """
+        Upsert KG triplet and node.
 
         Calls both upsert_triplet and add_node.
         Behavior is idempotent; if Node already exists,
@@ -335,7 +341,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return all_ref_doc_info
 
     def get_networkx_graph(self, limit: int = 100) -> Any:
-        """Get networkx representation of the graph structure.
+        """
+        Get networkx representation of the graph structure.
 
         Args:
             limit (int): Number of starting nodes to be included in the graph.

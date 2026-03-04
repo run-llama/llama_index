@@ -36,7 +36,8 @@ _logger.setLevel(logging.INFO)
 
 
 class ObjectBoxVectorStore(BasePydanticVectorStore):
-    """ObjectBox vector store.
+    """
+    ObjectBox vector store.
 
     In this vector store, embeddings are stored within a ObjectBox `Box` (collection).
 
@@ -65,6 +66,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
             do_log=True
         )
         ```
+
     """
 
     stores_text: bool = True

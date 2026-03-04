@@ -22,9 +22,7 @@ Initialize the `Neo4jQueryToolSpec` class with:
 ```python
 from llama_index.tools.neo4j import Neo4jQueryToolSpec
 from llama_index.llms.openai import OpenAI
-from llama_index.agent.openai import OpenAIAgent
-
-llm = OpenAI(model="gpt-4", openai_api_key="XXXX-XXXX", temperature=0)
+from llama_index.core.agent.workflow import FunctionAgent
 
 gds_db = Neo4jQueryToolSpec(
     url="neo4j-url",
@@ -35,7 +33,10 @@ gds_db = Neo4jQueryToolSpec(
 )
 
 tools = gds_db.to_tool_list()
-agent = OpenAIAgent.from_tools(tools, verbose=True)
+agent = FunctionAgent(
+    tools=tools,
+    llm=OpenAI(model="gpt-4.1"),
+)
 ```
 
 Where:
@@ -52,7 +53,7 @@ To use the agent:
 
 ```python
 # use agent
-agent.chat("Where is JFK airport is located?")
+resp = await agent.run("Where is JFK airport is located?")
 ```
 
 ```

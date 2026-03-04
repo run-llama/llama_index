@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class BrowserbaseWebReader(BaseReader):
-    """BrowserbaseWebReader.
+    """
+    BrowserbaseWebReader.
 
     Load pre-rendered web pages using a headless browser hosted on Browserbase.
     Depends on `browserbase` package.

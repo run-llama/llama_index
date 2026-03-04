@@ -107,7 +107,8 @@ def _format_sql_query(sql_query: str) -> str:
 
 
 class SQLAugmentQueryTransform(BaseQueryTransform):
-    """SQL Augment Query Transform.
+    """
+    SQL Augment Query Transform.
 
     This query transform will transform the query into a more specific query
     after augmenting with SQL results.
@@ -164,7 +165,8 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
 
 class SQLJoinQueryEngine(BaseQueryEngine):
-    """SQL Join Query Engine.
+    """
+    SQL Join Query Engine.
 
     This query engine can "Join" a SQL database results
     with another query engine.
@@ -283,7 +285,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         logger.info(f"> query engine response: {other_response}")
 
         if self._streaming:
-            response_str = self._llm.stream(
+            response_gen = self._llm.stream(
                 self._sql_join_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query_str=sql_query,
@@ -298,7 +300,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             }
             source_nodes = other_response.source_nodes
             return StreamingResponse(
-                response_str,
+                response_gen,
                 metadata=response_metadata,
                 source_nodes=source_nodes,
             )

@@ -1,4 +1,5 @@
 """Intercom reader."""
+
 import json
 from typing import List
 
@@ -7,10 +8,12 @@ from llama_index.core.schema import Document
 
 
 class IntercomReader(BaseReader):
-    """Intercom reader. Reads data from a Intercom workspace.
+    """
+    Intercom reader. Reads data from a Intercom workspace.
 
     Args:
         personal_access_token (str): Intercom token.
+
     """
 
     def __init__(self, intercom_access_token: str) -> None:
@@ -18,7 +21,8 @@ class IntercomReader(BaseReader):
         self.intercom_access_token = intercom_access_token
 
     def load_data(self) -> List[Document]:
-        """Load data from the workspace.
+        """
+        Load data from the workspace.
 
         Args:
             workspace_id (str): Workspace ID.
@@ -26,6 +30,7 @@ class IntercomReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         from bs4 import BeautifulSoup
 

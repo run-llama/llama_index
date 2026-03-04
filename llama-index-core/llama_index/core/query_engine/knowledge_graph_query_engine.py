@@ -51,7 +51,8 @@ DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
     ),
 )
 class KnowledgeGraphQueryEngine(BaseQueryEngine):
-    """Knowledge graph query engine.
+    """
+    Knowledge graph query engine.
 
     Query engine to call a knowledge graph.
 
@@ -78,9 +79,9 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
     ):
         # Ensure that we have a graph store
         assert storage_context is not None, "Must provide a storage context."
-        assert (
-            storage_context.graph_store is not None
-        ), "Must provide a graph store in the storage context."
+        assert storage_context.graph_store is not None, (
+            "Must provide a graph store in the storage context."
+        )
         self._storage_context = storage_context
         self.graph_store = storage_context.graph_store
 

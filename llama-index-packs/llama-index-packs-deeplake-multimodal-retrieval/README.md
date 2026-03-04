@@ -45,7 +45,7 @@ deeplake_pack = DeepLakeMultimodalRetriever(
 The `run()` function is a light wrapper around `SimpleMultiModalQueryEngine`.
 
 ```python
-response = deeplake_pack.run("Tell me a bout a Music celebritiy.")
+response = deeplake_pack.run("Tell me a bout a Music celebrity.")
 ```
 
 You can also use modules individually.

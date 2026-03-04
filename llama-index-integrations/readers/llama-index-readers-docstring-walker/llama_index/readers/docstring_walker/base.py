@@ -14,7 +14,8 @@ log = logging.getLogger(__name__)
 
 
 class DocstringWalker(BaseReader):
-    """A loader for docstring extraction and building structured documents from them.
+    """
+    A loader for docstring extraction and building structured documents from them.
     Recursively walks a directory and extracts docstrings from each Python
     module - starting from the module itself, then classes, then functions.
     Builds a graph of dependencies between the extracted docstrings.
@@ -42,10 +43,11 @@ class DocstringWalker(BaseReader):
             Whether to fail on malformed files. Defaults to False - in this case,
             the malformed files are skipped and a warning is logged.
 
-        Returns:
+        Returns
         -------
         List[Document]
             A list of loaded documents.
+
         """
         return self.process_directory(code_dir, skip_initpy, fail_on_malformed_files)
 
@@ -57,6 +59,7 @@ class DocstringWalker(BaseReader):
     ) -> List[Document]:
         """
         Process a directory and extract information from Python files.
+
         Parameters
         ----------
         code_dir : str
@@ -67,10 +70,11 @@ class DocstringWalker(BaseReader):
             Whether to fail on malformed files. Defaults to False - in this case,
             the malformed files are skipped and a warning is logged.
 
-        Returns:
+        Returns
         -------
         List[Document]
             A list of Document objects.
+
         """
         llama_docs = []
         for root, _, files in os.walk(code_dir):
@@ -95,23 +99,26 @@ class DocstringWalker(BaseReader):
         return llama_docs
 
     def read_module_text(self, path: str) -> str:
-        """Read the text of a Python module. For tests this function can be mocked.
+        """
+        Read the text of a Python module. For tests this function can be mocked.
 
         Parameters
         ----------
         path : str
             Path to the module.
 
-        Returns:
+        Returns
         -------
         str
             The text of the module.
+
         """
         with open(path, encoding="utf-8") as f:
             return f.read()
 
     def parse_module(self, module_name: str, path: str) -> Document:
-        """Function for parsing a single Python module.
+        """
+        Function for parsing a single Python module.
 
         Parameters
         ----------
@@ -120,10 +127,11 @@ class DocstringWalker(BaseReader):
         path : str
             Path to the module.
 
-        Returns:
+        Returns
         -------
         Document
             A LLama Index Document object with extracted information from the module.
+
         """
         module_text = self.read_module_text(path)
         module = ast.parse(module_text)
@@ -141,7 +149,7 @@ class DocstringWalker(BaseReader):
         """
         Process a class node in the AST and add relevant information to the graph.
 
-        Parameters:
+        Parameters
         ----------
         class_node : ast.ClassDef
             The class node to process. It represents a class definition
@@ -149,11 +157,12 @@ class DocstringWalker(BaseReader):
         parent_node : str
             The name of the parent node. It specifies the name of the parent node in the graph.
 
-        Returns:
-        ----------
+        Returns
+        -------
         str
             A string representation of the processed class node and its sub-elements.
             It provides a textual representation of the processed class node and its sub-elements.
+
         """
         cls_name = class_node.name
         cls_docstring = ast.get_docstring(class_node)
@@ -176,10 +185,11 @@ class DocstringWalker(BaseReader):
         parent_node : str
             The name of the parent node.
 
-        Returns:
+        Returns
         -------
         str
             A string representation of the processed function node with its sub-elements.
+
         """
         func_name = func_node.name
         func_docstring = ast.get_docstring(func_node)
@@ -205,6 +215,7 @@ class DocstringWalker(BaseReader):
 
         Returns:
             str: The result of processing the element.
+
         """
         if isinstance(elem, ast.FunctionDef):
             return self.process_function(elem, parent_node)

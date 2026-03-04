@@ -14,6 +14,7 @@ class WhatsappChatLoader(BaseReader):
 
     Args:
         path (str): Path to Whatsapp chat file.
+
     """
 
     def __init__(self, path: str):
@@ -30,12 +31,13 @@ class WhatsappChatLoader(BaseReader):
 
         parser = WhatsAppParser(path)
         parser.parse_file()
-        df = parser.parsed_messages.get_df()
+        df = parser.parsed_messages.get_df(as_pandas=True)
 
         logging.debug(f"> Number of messages: {len(df)}.")
 
         docs = []
         n = 0
+        # note that `itertuples` assumes a pandas dataframe
         for row in df.itertuples():
             extra_info = {
                 "source": str(path).split("/")[-1].replace(".txt", ""),

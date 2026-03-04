@@ -14,12 +14,14 @@ from llama_index.core.tools.types import ToolMetadata
 
 
 class EmbeddingSingleSelector(BaseSelector):
-    """Embedding selector.
+    """
+    Embedding selector.
 
     Embedding selector that chooses one out of many options.
 
     Args:
         embed_model (BaseEmbedding): An embedding model.
+
     """
 
     def __init__(

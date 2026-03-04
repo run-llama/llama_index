@@ -34,6 +34,7 @@ class TruLensRAGTriadPack(BaseLlamaPack):
             nodes (List[TextNode]): An input list of nodes over which the index
             will be built.
             app_id (str): The application ID for the TruLensEvalPack.
+
         """
         try:
             from trulens_eval import Feedback, Tru, TruLlama
@@ -93,6 +94,7 @@ class TruLensRAGTriadPack(BaseLlamaPack):
         Returns:
             Dict[str, Any]: A dictionary containing the internals of the
             LlamaPack.
+
         """
         return {
             "session": self._tru,
@@ -107,6 +109,7 @@ class TruLensRAGTriadPack(BaseLlamaPack):
 
         Returns:
             Any: A response from the query engine.
+
         """
         with self._tru_query_engine as _:
             return self._query_engine.query(*args, **kwargs)
@@ -137,6 +140,7 @@ class TruLensHarmlessPack(BaseLlamaPack):
             nodes (List[TextNode]): An input list of nodes over which the index
             will be built.
             app_id (str): The application ID for the TruLensEvalPack.
+
         """
         try:
             from trulens_eval import Feedback, Tru, TruLlama
@@ -221,6 +225,7 @@ class TruLensHarmlessPack(BaseLlamaPack):
         Returns:
             Dict[str, Any]: A dictionary containing the internals of the
             LlamaPack.
+
         """
         return {
             "session": self._tru,
@@ -235,6 +240,7 @@ class TruLensHarmlessPack(BaseLlamaPack):
 
         Returns:
             Any: A response from the query engine.
+
         """
         with self._tru_query_engine as _:
             return self._query_engine.query(*args, **kwargs)
@@ -265,6 +271,7 @@ class TruLensHelpfulPack(BaseLlamaPack):
             nodes (List[TextNode]): An input list of nodes over which the index
             will be built.
             app_id (str): The application ID for the TruLensEvalPack.
+
         """
         try:
             from trulens_eval import Feedback, Tru, TruLlama
@@ -318,6 +325,7 @@ class TruLensHelpfulPack(BaseLlamaPack):
         Returns:
             Dict[str, Any]: A dictionary containing the internals of the
             LlamaPack.
+
         """
         return {
             "session": self._tru,
@@ -332,6 +340,7 @@ class TruLensHelpfulPack(BaseLlamaPack):
 
         Returns:
             Any: A response from the query engine.
+
         """
         with self._tru_query_engine as _:
             return self._query_engine.query(*args, **kwargs)

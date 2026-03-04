@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Optional, Sequence
+
 import torch
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -24,11 +25,13 @@ from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.modelscope.utils import (
     chat_message_to_modelscope_messages,
-    text_to_completion_response,
     modelscope_message_to_chat_response,
+    text_to_completion_response,
 )
 
-DEFAULT_MODELSCOPE_MODEL = "qwen/Qwen-7B-Chat"
+from modelscope.pipelines import pipeline as pipeline_builder
+
+DEFAULT_MODELSCOPE_MODEL = "qwen/Qwen2-0.5B-Instruct"
 DEFAULT_MODELSCOPE_MODEL_REVISION = "master"
 DEFAULT_MODELSCOPE_TASK = "chat"
 DEFAULT_MODELSCOPE_DTYPE = "float16"
@@ -128,7 +131,7 @@ class ModelScopeLLM(CustomLLM):
         if model:
             pipeline = model
         else:
-            pipeline = pipeline(
+            pipeline = pipeline_builder(
                 task=task_name,
                 model=model_name,
                 model_revision=model_revision,
@@ -153,10 +156,10 @@ class ModelScopeLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=None,
-            num_output=None,
+            context_window=self.context_window,
+            num_output=self.max_new_tokens,
             model_name=self.model_name,
-            is_chat_model=self.is_chat_model,
+            is_chat_model=False,
         )
 
     @llm_completion_callback()

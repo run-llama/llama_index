@@ -7,11 +7,13 @@ from llama_index.core.schema import Document
 
 
 class ZepReader(BaseReader):
-    """Zep document vector store reader.
+    """
+    Zep document vector store reader.
 
     Args:
         api_url (str): Zep API URL
         api_key (str): Zep API key, optional
+
     """
 
     def __init__(self, api_url: str, api_key: Optional[str] = None):
@@ -32,7 +34,8 @@ class ZepReader(BaseReader):
         separate_documents: Optional[bool] = True,
         include_values: Optional[bool] = True,
     ) -> List[Document]:
-        """Load data from Zep.
+        """
+        Load data from Zep.
 
         Args:
             collection_name (str): Name of the Zep collection.
@@ -47,6 +50,7 @@ class ZepReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         if query is None and vector is None:
             raise ValueError("Either query or vector must be specified.")

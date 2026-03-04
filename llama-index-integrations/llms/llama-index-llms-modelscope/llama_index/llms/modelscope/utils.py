@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence
+from typing import Dict, Sequence
 
 from llama_index.core.base.llms.types import (
     ChatResponse,
@@ -9,7 +9,7 @@ from llama_index.core.base.llms.types import (
 
 def chat_message_to_modelscope_messages(
     chat_messages: Sequence[ChatMessage],
-) -> List[Dict]:
+) -> Dict:
     messages = []
     for msg in chat_messages:
         messages.append({"role": msg.role.value, "content": msg.content})

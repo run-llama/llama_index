@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.elasticsearch import ElasticsearchKVStore
 
 
 class ElasticsearchIndexStore(KVIndexStore):
-    """Elasticsearch Index store.
+    """
+    Elasticsearch Index store.
 
     Args:
         elasticsearch_kvstore (ElasticsearchKVStore): Elasticsearch key-value store

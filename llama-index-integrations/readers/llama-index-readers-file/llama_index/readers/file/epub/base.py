@@ -1,4 +1,5 @@
-"""Epub parser.
+"""
+Epub parser.
 
 Contains parsers for epub files.
 """

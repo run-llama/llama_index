@@ -1,6 +1,7 @@
 """Beautiful Soup Web scraper."""
 
 import logging
+import uuid
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
@@ -133,7 +134,8 @@ DEFAULT_WEBSITE_EXTRACTOR: Dict[
 
 
 class BeautifulSoupWebReader(BasePydanticReader):
-    """BeautifulSoup web page reader.
+    """
+    BeautifulSoup web page reader.
 
     Reads pages from the web.
     Requires the `bs4` and `urllib` packages.
@@ -142,6 +144,7 @@ class BeautifulSoupWebReader(BasePydanticReader):
         website_extractor (Optional[Dict[str, Callable]]): A mapping of website
             hostname (e.g. google.com) to a function that specifies how to
             extract text from the BeautifulSoup obj. See DEFAULT_WEBSITE_EXTRACTOR.
+
     """
 
     is_remote: bool = True
@@ -162,7 +165,8 @@ class BeautifulSoupWebReader(BasePydanticReader):
         custom_hostname: Optional[str] = None,
         include_url_in_text: Optional[bool] = True,
     ) -> List[Document]:
-        """Load data from the urls.
+        """
+        Load data from the urls.
 
         Args:
             urls (List[str]): List of URLs to scrape.
@@ -201,6 +205,8 @@ class BeautifulSoupWebReader(BasePydanticReader):
             else:
                 data = soup.getText()
 
-            documents.append(Document(text=data, id_=url, extra_info=extra_info))
+            documents.append(
+                Document(text=data, id_=str(uuid.uuid4()), extra_info=extra_info)
+            )
 
         return documents

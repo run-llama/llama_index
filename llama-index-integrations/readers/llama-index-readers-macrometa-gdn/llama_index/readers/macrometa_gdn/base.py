@@ -9,7 +9,8 @@ from llama_index.core.schema import Document
 
 
 class MacrometaGDNReader(BaseReader):
-    """Macrometa GDN Reader.
+    """
+    Macrometa GDN Reader.
 
     Reads vectors from Macrometa GDN
 
@@ -21,7 +22,8 @@ class MacrometaGDNReader(BaseReader):
         self.apikey = apikey
 
     def load_data(self, collection_list: List[str]) -> List[Document]:
-        """Loads data from the input directory.
+        """
+        Loads data from the input directory.
 
         Args:
             api: Macrometa GDN API key

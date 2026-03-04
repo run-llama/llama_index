@@ -1,6 +1,5 @@
 """Test prompt mixin."""
 
-
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.mixin import (
     PromptDictType,

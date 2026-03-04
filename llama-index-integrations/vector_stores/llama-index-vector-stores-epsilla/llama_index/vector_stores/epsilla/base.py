@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class EpsillaVectorStore(BasePydanticVectorStore):
-    """The Epsilla Vector Store.
+    """
+    The Epsilla Vector Store.
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a Epsilla collection. This implemnetation
@@ -65,6 +66,7 @@ class EpsillaVectorStore(BasePydanticVectorStore):
         client = vectordb.Client()
         vector_store = EpsillaVectorStore(client=client, db_path="/tmp/llamastore")
         ```
+
     """
 
     stores_text: bool = True
@@ -142,6 +144,7 @@ class EpsillaVectorStore(BasePydanticVectorStore):
 
         Args:
             dimension (int): The dimension of the embeddings.
+
         """
         fields: List[dict] = [
             {"name": "id", "dataType": "STRING", "primaryKey": True},
@@ -175,6 +178,7 @@ class EpsillaVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         # If the collection doesn't exist yet, create the collection
         if not self._collection_created and len(nodes) > 0:
@@ -214,17 +218,20 @@ class EpsillaVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
         raise NotImplementedError("Delete with filtering will be coming soon.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query.
 
         Returns:
             Vector store query result.
+
         """
         if not self._collection_created:
             raise ValueError("Please initialize a collection first.")

@@ -47,7 +47,8 @@ def _default_parser_function(output_str: str) -> Tuple[Optional[float], Optional
 
 
 class AnswerRelevancyEvaluator(BaseEvaluator):
-    """Answer relevancy evaluator.
+    """
+    Answer relevancy evaluator.
 
     Evaluates the relevancy of response to a query.
     This evaluator considers the query string and response string.
@@ -60,6 +61,7 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refinement.
+
     """
 
     def __init__(

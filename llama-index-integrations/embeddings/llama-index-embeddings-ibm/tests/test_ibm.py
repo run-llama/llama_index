@@ -22,26 +22,33 @@ class TestWasonxLLMInference:
         ]
 
     def test_initialization(self) -> None:
-        with pytest.raises(ValueError, match=r"^Did not find") as e_info:
+        with pytest.raises(ValueError, match=r"^Did not find"):
             _ = WatsonxEmbeddings(
                 model_id=self.TEST_MODEL, project_id=self.TEST_PROJECT_ID
             )
 
         # Cloud scenario
-        with pytest.raises(
-            ValueError, match=r"^Did not find 'apikey' or 'token',"
-        ) as e_info:
+        with pytest.raises(ValueError, match=r"^Did not find 'apikey' or 'token',"):
             _ = WatsonxEmbeddings(
                 model_id=self.TEST_MODEL,
                 url=self.TEST_URL,
                 project_id=self.TEST_PROJECT_ID,
             )
 
-        # CPD scenario
-        with pytest.raises(ValueError, match=r"^Did not find instance_id") as e_info:
+        # CPD scenario with password and missing username
+        with pytest.raises(ValueError, match=r"^Did not find username"):
             _ = WatsonxEmbeddings(
                 model_id=self.TEST_MODEL,
-                token="123",
+                password="123",
+                url="cpd-instance",
+                project_id=self.TEST_PROJECT_ID,
+            )
+
+        # CPD scenario with apikey and missing username
+        with pytest.raises(ValueError, match=r"^Did not find username"):
+            _ = WatsonxEmbeddings(
+                model_id=self.TEST_MODEL,
+                apikey="123",
                 url="cpd-instance",
                 project_id=self.TEST_PROJECT_ID,
             )
@@ -77,7 +84,7 @@ class TestWasonxLLMInference:
             == self.mock_embed_texts()
         )
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.embeddings.ibm.base.Embeddings")
     async def test_get_query_embedding_async(self, MockEmbedding: MagicMock) -> None:
         mock_instance = MockEmbedding.return_value

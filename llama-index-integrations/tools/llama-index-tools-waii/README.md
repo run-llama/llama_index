@@ -52,26 +52,44 @@ print(index.query("Which table contains most columns?"))
 #### Initialize the agent:
 
 ```python
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
-agent = OpenAIAgent.from_tools(
-    waii_tool.to_tool_list(), llm=OpenAI(model="gpt-4-1106-preview")
+agent = FunctionAgent(
+    tools=waii_tool.to_tool_list(), llm=OpenAI(model="gpt-4-1106-preview")
 )
 ```
 
 #### Ask simple question
 
 ```python
-agent.chat("Give me top 3 countries with the most number of car factory")
-agent.chat("What are the car factories of these countries")
+from llama_index.core.workflow import Context
+
+ctx = Context(agent)
+
+print(
+    await agent.run(
+        "Give me top 3 countries with the most number of car factory", ctx=ctx
+    )
+)
+print(
+    await agent.run("What are the car factories of these countries", ctx=ctx)
+)
 ```
 
 #### Do performance analyze
 
 ```python
-agent.chat("Give me top 3 longest running queries, and their duration.")
-agent.chat("analyze the 2nd-longest running query")
+from llama_index.core.workflow import Context
+
+ctx = Context(agent)
+
+print(
+    await agent.run(
+        "Give me top 3 longest running queries, and their duration.", ctx=ctx
+    )
+)
+print(await agent.run("analyze the 2nd-longest running query", ctx=ctx))
 ```
 
 #### Diff two queries
@@ -98,14 +116,23 @@ FROM
     employees;
 LIMIT 100;
 """
-agent.chat(f"tell me difference between {previous_query} and {current_query}")
+print(
+    await agent.run(
+        f"tell me difference between {previous_query} and {current_query}",
+        ctx=ctx,
+    )
+)
 ```
 
 #### Describe dataset
 
 ```python
-agent.chat("Summarize the dataset")
-agent.chat("Give me questions which I can ask about this dataset")
+print(await agent.run("Summarize the dataset", ctx=ctx))
+print(
+    await agent.run(
+        "Give me questions which I can ask about this dataset", ctx=ctx
+    )
+)
 ```
 
 #### Describe a query
@@ -121,7 +148,7 @@ SELECT
 FROM
     employees;
 """
-agent.chat(f"what this query can do? {q}")
+print(await agent.run(f"what this query can do? {q}", ctx=ctx))
 ```
 
 #### Migrate query to another dialect
@@ -154,7 +181,9 @@ result = (employees
 # Show the result
 result.show()
 """
-agent.chat(f"translate this pyspark query {q}, to Snowflake")
+print(
+    await agent.run(f"translate this pyspark query {q}, to Snowflake", ctx=ctx)
+)
 ```
 
 ### Use Waii API directly

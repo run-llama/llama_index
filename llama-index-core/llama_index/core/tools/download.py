@@ -20,7 +20,8 @@ def download_tool(
     refresh_cache: bool = False,
     custom_path: Optional[str] = None,
 ) -> Type[BaseToolSpec]:
-    """Download a single tool from Llama Hub.
+    """
+    Download a single tool from Llama Hub.
 
     Args:
         tool_class: The name of the tool class you want to download,
@@ -31,6 +32,7 @@ def download_tool(
 
     Returns:
         A Loader.
+
     """
     del llama_hub_url  # maintain during deprecation period
     del refresh_cache

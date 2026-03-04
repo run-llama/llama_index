@@ -4,15 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core.bridge.pydantic import Field, ConfigDict, SerializeAsAny
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
@@ -27,7 +19,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
+class BaseQueryEngine(PromptMixin, DispatcherSpanMixin):
     """Base query engine."""
 
     def __init__(
@@ -99,46 +91,3 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
-
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return a query component."""
-        return QueryEngineComponent(query_engine=self)
-
-
-class QueryEngineComponent(QueryComponent):
-    """Query engine component."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    query_engine: SerializeAsAny[BaseQueryEngine] = Field(
-        ..., description="Query engine"
-    )
-
-    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
-        """Set callback manager."""
-        self.query_engine.callback_manager = callback_manager
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        # make sure input is a string
-        input["input"] = validate_and_convert_stringable(input["input"])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        output = self.query_engine.query(kwargs["input"])
-        return {"output": output}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        output = await self.query_engine.aquery(kwargs["input"])
-        return {"output": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"input"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

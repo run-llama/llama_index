@@ -1,4 +1,5 @@
-"""Gcs file and directory reader.
+"""
+Gcs file and directory reader.
 
 A loader that fetches a file or iterates through a directory on Gcs.
 
@@ -22,7 +23,8 @@ class OpendalGcsReader(BaseReader):
         credentials: str = "",
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
     ) -> None:
-        """Initialize Gcs container, along with credentials if needed.
+        """
+        Initialize Gcs container, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 

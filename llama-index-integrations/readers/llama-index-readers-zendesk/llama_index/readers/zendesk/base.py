@@ -1,4 +1,5 @@
 """Zendesk reader."""
+
 import json
 from typing import List
 
@@ -7,11 +8,13 @@ from llama_index.core.schema import Document
 
 
 class ZendeskReader(BaseReader):
-    """Zendesk reader. Reads data from a Zendesk workspace.
+    """
+    Zendesk reader. Reads data from a Zendesk workspace.
 
     Args:
         zendesk_subdomain (str): Zendesk subdomain
         locale (str): Locale of articles
+
     """
 
     def __init__(self, zendesk_subdomain: str, locale: str = "en-us") -> None:
@@ -20,7 +23,8 @@ class ZendeskReader(BaseReader):
         self.locale = locale
 
     def load_data(self) -> List[Document]:
-        """Load data from the workspace.
+        """
+        Load data from the workspace.
 
         Args:
             workspace_id (str): Workspace ID.
@@ -28,6 +32,7 @@ class ZendeskReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         from bs4 import BeautifulSoup
 

@@ -12,7 +12,8 @@ warnings.filterwarnings("ignore")
 
 
 class OpenMap(BaseReader):
-    """OpenMap Reader.
+    """
+    OpenMap Reader.
 
     Get the map Features from the overpass api(osm) for the given location/area
 
@@ -73,6 +74,7 @@ class OpenMap(BaseReader):
         tag_only(bool) - if True it  return the nodes which has tags if False returns all the nodes
         tag_values(str) -  filter for the give area
         local_area_buffer(int) - range that you wish to cover (Default 2000(2km))
+
         """
         try:
             from osmxtract import location, overpass

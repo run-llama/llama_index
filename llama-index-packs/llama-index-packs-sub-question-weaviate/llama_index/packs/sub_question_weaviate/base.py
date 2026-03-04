@@ -1,6 +1,5 @@
 """Weaviate Sub-Question Query Engine Pack."""
 
-
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.indices.vector_store import VectorStoreIndex

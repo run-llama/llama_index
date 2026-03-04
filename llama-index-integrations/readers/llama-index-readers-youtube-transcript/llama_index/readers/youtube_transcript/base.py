@@ -1,4 +1,5 @@
 """Simple Reader that reads transcript of youtube video."""
+
 import re
 from typing import Any, List, Optional
 
@@ -25,7 +26,8 @@ class YoutubeTranscriptReader(BasePydanticReader):
         languages: Optional[List[str]] = ["en"],
         **load_kwargs: Any,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             pages (List[str]): List of youtube links \

@@ -4,6 +4,7 @@ from typing import List
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.node_parser import SentenceSplitter
 from redis import Redis
+from redis.asyncio import Redis as RedisAsync
 import docker
 
 docker_client = docker.from_env()
@@ -45,7 +46,8 @@ def turtle_test() -> dict:
 
 @pytest.fixture()
 def documents(turtle_test, dummy_embedding) -> List[Document]:
-    """List of documents represents data to be embedded in the datastore.
+    """
+    List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
     return [
@@ -73,3 +75,9 @@ def test_nodes(documents) -> TextNode:
 @pytest.fixture()
 def redis_client() -> Redis:
     return Redis.from_url("redis://localhost:6379/0")
+
+
+@pytest.fixture()
+def redis_client_async() -> RedisAsync:
+    """Fixture that provides an asynchronous Redis client."""
+    return RedisAsync.from_url("redis://localhost:6379/0")

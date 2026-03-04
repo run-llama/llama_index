@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 class SummaryIndexRetriever(BaseRetriever):
-    """Simple retriever for SummaryIndex that returns all nodes.
+    """
+    Simple retriever for SummaryIndex that returns all nodes.
 
     Args:
         index (SummaryIndex): The index to retrieve from.
@@ -62,7 +63,8 @@ class SummaryIndexRetriever(BaseRetriever):
 
 
 class SummaryIndexEmbeddingRetriever(BaseRetriever):
-    """Embedding based retriever for SummaryIndex.
+    """
+    Embedding based retriever for SummaryIndex.
 
     Generates embeddings in a lazy fashion for all
     nodes that are traversed.
@@ -142,7 +144,8 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
 
 
 class SummaryIndexLLMRetriever(BaseRetriever):
-    """LLM retriever for SummaryIndex.
+    """
+    LLM retriever for SummaryIndex.
 
     Args:
         index (SummaryIndex): The index to retrieve from.
@@ -153,6 +156,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             batch of nodes.
         parse_choice_select_answer_fn (Optional[Callable]): A function that parses the
             choice select answer.
+
     """
 
     def __init__(

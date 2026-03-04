@@ -1,24 +1,22 @@
 # LlamaIndex Llms Integration: Text Generation Inference
 
-Integration with [Text Generation Inference](https://huggingface.co/docs/text-generation-inference) from Hugging Face to generate text.
+⚠️ This integration has been deprecated!
 
-## Installation
+The `TextGenerationInference` is no longer maintained. Instead, you can use [`HuggingFaceInferenceAPI`](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/llms/llama-index-llms-huggingface-api). The underlying Text Generation Inference SDK (`tgi`) [has been deprecated](https://github.com/huggingface/text-generation-inference/tree/main/clients/python) in favor of `huggingface_hub`, which `HuggingFaceInferenceAPI` is built on top of.
+
+Instead, use `llama-index-llms-huggingface-api`:
 
 ```shell
-pip install llama-index-llms-text-generation-inference
+pip install llama-index-llms-huggingface-api
 ```
 
-## Usage
+Usage:
 
-```python
-from llama_index.llms.text_generation_inference import TextGenerationInference
+```py
+from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI
 
-llm = TextGenerationInference(
-    model_name="openai-community/gpt2",
-    temperature=0.7,
-    max_tokens=100,
-    token="<your-token>",  # Optional
-)
-
-response = llm.complete("Hello, how are you?")
+# access hugging face inference
+hub_llm = HuggingFaceInferenceAPI(model="openai-community/gpt2")
+# or with a local TGI server
+tgi_llm = HuggingFaceInferenceAPI(model="http://localhost:8080")
 ```

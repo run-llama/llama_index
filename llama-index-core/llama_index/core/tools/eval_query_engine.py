@@ -15,12 +15,13 @@ DEFAULT_DESCRIPTION = """Useful for running a natural language query
 against a knowledge base and get back a natural language response.
 """
 FAILED_TOOL_OUTPUT_TEMPLATE = (
-    "Could not use tool {tool_name} because it failed evaluation.\n" "Reason: {reason}"
+    "Could not use tool {tool_name} because it failed evaluation.\nReason: {reason}"
 )
 
 
 class EvalQueryEngineTool(QueryEngineTool):
-    """Evaluating query engine tool.
+    """
+    Evaluating query engine tool.
 
     A tool that makes use of a query engine and an evaluator, where the
     evaluation of the query engine response will determine the tool output.
@@ -29,6 +30,7 @@ class EvalQueryEngineTool(QueryEngineTool):
         evaluator (BaseEvaluator): A query engine.
         query_engine (BaseQueryEngine): A query engine.
         metadata (ToolMetadata): The associated metadata of the query engine.
+
     """
 
     _evaluator: BaseEvaluator

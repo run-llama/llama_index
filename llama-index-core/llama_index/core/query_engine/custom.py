@@ -14,7 +14,8 @@ STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]
 
 
 class CustomQueryEngine(BaseModel, BaseQueryEngine):
-    """Custom query engine.
+    """
+    Custom query engine.
 
     Subclasses can define additional attributes as Pydantic fields.
     Subclasses must implement the `custom_query` method, which takes a query string

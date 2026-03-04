@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "diff-cover>=9.2.4",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-dev"
+version = "0.1"
+description = "The official CLI for development, testing, and automation in the LlamaIndex monorepo"
+readme = "README.md"
+authors = [{name = "LlamaIndex"}]
+license = "MIT"
+requires-python = ">=3.9.17"
+classifiers = []
+dependencies = [
+    "click",
+    "packaging>=25.0",
+    "rich>=14.0.0",
+    "tomli>=2.2.1",
+]
+
+[project.scripts]
+llama-dev = "llama_dev.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/run-llama/llama-index"
+Changelog = "https://github.com/run-llama/llama-index/llama-dev/CHANGELOG.md"
+Issues = "https://github.com/run-llama/llama-index/issues"
+CI = "https://github.com/run-llama/llama-index/actions"
+
+[tool.coverage.run]
+omit = [
+    "__main__.py",
+]

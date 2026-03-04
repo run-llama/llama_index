@@ -9,7 +9,7 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 
@@ -39,7 +39,7 @@ class SimpleChatEngine(BaseChatEngine):
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        memory_cls: Type[BaseMemory] = Memory,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
@@ -49,7 +49,9 @@ class SimpleChatEngine(BaseChatEngine):
         llm = llm or Settings.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -144,7 +146,7 @@ class SimpleChatEngine(BaseChatEngine):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
         await self._memory.aput(ChatMessage(content=message, role="user"))
 
         if hasattr(self._memory, "tokenizer_fn"):
@@ -162,8 +164,8 @@ class SimpleChatEngine(BaseChatEngine):
         else:
             initial_token_count = 0
 
-        all_messages = self._prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
+        all_messages = self._prefix_messages + (
+            await self._memory.aget(initial_token_count=initial_token_count)
         )
 
         chat_response = await self._llm.achat(all_messages)
@@ -177,7 +179,7 @@ class SimpleChatEngine(BaseChatEngine):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
         await self._memory.aput(ChatMessage(content=message, role="user"))
 
         if hasattr(self._memory, "tokenizer_fn"):
@@ -195,14 +197,16 @@ class SimpleChatEngine(BaseChatEngine):
         else:
             initial_token_count = 0
 
-        all_messages = self._prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
+        all_messages = self._prefix_messages + (
+            await self._memory.aget(initial_token_count=initial_token_count)
         )
 
         chat_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(all_messages)
         )
-        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
+        chat_response.awrite_response_to_history_task = asyncio.create_task(
+            chat_response.awrite_response_to_history(self._memory)
+        )
 
         return chat_response
 

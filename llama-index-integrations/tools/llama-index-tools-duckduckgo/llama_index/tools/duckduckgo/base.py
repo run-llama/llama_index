@@ -21,6 +21,7 @@ class DuckDuckGoSearchToolSpec(BaseToolSpec):
 
         Args:
             query (str): The query to be passed to DuckDuckGo.
+
         """
         from duckduckgo_search import DDGS
 
@@ -40,6 +41,7 @@ class DuckDuckGoSearchToolSpec(BaseToolSpec):
             query (str): The query to be passed to DuckDuckGo.
             region (Optional[str]): The region to be used for the search in [country-language] convention, ex us-en, uk-en, ru-ru, etc...
             max_results (Optional[int]): The maximum number of results to be returned.
+
         """
         from duckduckgo_search import DDGS
 

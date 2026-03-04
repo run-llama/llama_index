@@ -1,4 +1,5 @@
-"""Document summary index.
+"""
+Document summary index.
 
 A data structure where LlamaIndex stores the summary per document, and maps
 the summary to the underlying Nodes.
@@ -55,7 +56,8 @@ _RetrieverMode = DocumentSummaryRetrieverMode
 
 
 class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
-    """Document Summary Index.
+    """
+    Document Summary Index.
 
     Args:
         response_synthesizer (BaseSynthesizer): A response synthesizer for generating
@@ -112,7 +114,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         retriever_mode: Union[str, _RetrieverMode] = _RetrieverMode.EMBEDDING,
         **kwargs: Any,
     ) -> BaseRetriever:
-        """Get retriever.
+        """
+        Get retriever.
 
         Args:
             retriever_mode (Union[str, DocumentSummaryRetrieverMode]): A retriever mode.
@@ -147,7 +150,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
     def get_document_summary(self, doc_id: str) -> str:
-        """Get document summary by doc id.
+        """
+        Get document summary by doc id.
 
         Args:
             doc_id (str): A document id.
@@ -201,7 +205,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             )
             self.docstore.add_documents([summary_node_dict[doc_id]])
             logger.info(
-                f"> Generated summary for doc {doc_id}: " f"{summary_response.response}"
+                f"> Generated summary for doc {doc_id}: {summary_response.response}"
             )
 
         for doc_id, nodes in doc_id_to_nodes.items():
@@ -245,7 +249,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
-        """Delete a list of nodes from the index.
+        """
+        Delete a list of nodes from the index.
 
         Args:
             node_ids (List[str]): A list of node_ids from the nodes to delete
@@ -277,7 +282,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document from the index.
+        """
+        Delete a document from the index.
         All nodes in the index related to the document will be deleted.
         """
         ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)

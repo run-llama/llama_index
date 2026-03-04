@@ -50,7 +50,8 @@ generate only questions based on the below query.
     action="always",
 )
 class QueryResponseDataset(BaseModel):
-    """Query Response Dataset.
+    """
+    Query Response Dataset.
 
     The response can be empty if the dataset is generated from documents.
 

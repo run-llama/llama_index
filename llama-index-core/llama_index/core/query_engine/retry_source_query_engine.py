@@ -2,7 +2,11 @@ import logging
 from typing import Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.base.response.schema import (
+    AsyncStreamingResponse,
+    RESPONSE_TYPE,
+    Response,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.indices.list.base import SummaryIndex
@@ -41,6 +45,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         response = self._query_engine._query(query_bundle)
+        assert not isinstance(response, AsyncStreamingResponse)
         if self.max_retries <= 0:
             return response
         typed_response = (

@@ -1,19 +1,23 @@
-import pytest
-
+import os
 from typing import Dict
 
+import pytest
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.packs.zenguard import (
-    ZenGuardPack,
-    ZenGuardConfig,
     Credentials,
     Detector,
+    ZenGuardConfig,
+    ZenGuardPack,
+)
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("ZEN_API_KEY") is None, reason="ZEN_API_KEY not set"
 )
 
 
 @pytest.fixture()
 def zenguard_pack():
-    api_key = "3Ev_DGvELv7EnlgWMTlpmWTo82tpstyz4Li_R7kTDQw"  # mock key. whitelisted only for LlamaIndex tests.
+    api_key = os.environ.get("ZEN_API_KEY")
     config = ZenGuardConfig(credentials=Credentials(api_key=api_key))
     return ZenGuardPack(config)
 
@@ -63,14 +67,6 @@ def test_secrets(zenguard_pack):
     detectors = [Detector.SECRETS]
     response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert response["is_detected"] is False
-
-
-# TODO: toxcity endpoint is down
-# def test_toxicity(zenguard_pack):
-#     prompt = "Simple toxicity test"
-#     detectors = [Detector.TOXICITY]
-#     response = zenguard_pack.run(detectors=detectors, prompt=prompt)
-#     assert response["is_detected"] is False
 
 
 def test_get_modules(zenguard_pack):

@@ -28,7 +28,7 @@ def test_llm_stream_chat_handles_nonyielding_stream(
         pass
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_llm_astream_chat_handles_nonyielding_stream(
     nonyielding_llm: LLM, prompt: str
 ) -> None:

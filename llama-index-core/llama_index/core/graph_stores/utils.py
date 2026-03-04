@@ -1,4 +1,5 @@
-"""Borrowed from Langchain's Neo4j graph utility functions.
+"""
+Borrowed from Langchain's Neo4j graph utility functions.
 
 https://github.com/langchain-ai/langchain/blob/95c3e5f85f8ed8026a11e351b57bfae488d654c4/libs/community/langchain_community/graphs/neo4j_graph.py
 """
@@ -13,7 +14,8 @@ def clean_string_values(text: str) -> str:
 
 
 def value_sanitize(d: Any) -> Any:
-    """Sanitize the input dictionary or list.
+    """
+    Sanitize the input dictionary or list.
 
     Sanitizes the input by removing embedding-like values,
     lists with more than 128 elements, that are mostly irrelevant for

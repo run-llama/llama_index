@@ -1,4 +1,6 @@
-# LlamaIndex Llms Integration: Pipeshift
+# LlamaIndex Llms Integration: [Pipeshift](https://pipeshift.com)
+
+[Pipeshift](https://pipeshift.com) provides a fast and scalable infrastructure for fine-tuning and inferencing open-source LLMs. We abstract away the training + inferencing infrastructure and the tooling around it, enabling engineering teams to get to production with all the optimizations and one-click deployments.
 
 ## Installation
 
@@ -10,6 +12,7 @@
    ```
 
 2. Set the PIPESHIFT_API_KEY as an environment variable or pass it directly to the class constructor.
+3. Choose any of the pre-deployed models or the one deployed by you from deployments section of [pipeshift dashboard](https://dashboard.pipeshift.com/deployments)
 
 ## Usage
 
@@ -21,7 +24,7 @@ To generate a simple completion, use the `complete` method:
 from llama_index.llms.pipeshift import Pipeshift
 
 llm = Pipeshift(
-    model="mistralai/Mistral-7B-Instruct-v0.3",
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct",
     # api_key="YOUR_API_KEY" # alternative way to pass api_key if not specified in environment variable
 )
 res = llm.complete("supercars are ")
@@ -49,7 +52,7 @@ messages = [
     ChatMessage(role="user", content="why should I pick porsche 911 gt3 rs"),
 ]
 res = Pipeshift(
-    model="mistralai/Mistral-7B-Instruct-v0.3", max_tokens=50
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct", max_tokens=50
 ).chat(messages)
 print(res)
 ```
@@ -67,7 +70,7 @@ To stream a response in real-time using `stream_complete`:
 ```python
 from llama_index.llms.pipeshift import Pipeshift
 
-llm = Pipeshift(model="mistralai/Mistral-7B-Instruct-v0.3")
+llm = Pipeshift(model="meta-llama/Meta-Llama-3.1-8B-Instruct")
 resp = llm.stream_complete("porsche GT3 RS is ")
 
 for r in resp:
@@ -88,7 +91,7 @@ For a streamed conversation, use `stream_chat`:
 from llama_index.llms.pipeshift import Pipeshift
 from llama_index.core.llms import ChatMessage
 
-llm = Pipeshift(model="mistralai/Mistral-7B-Instruct-v0.3")
+llm = Pipeshift(model="meta-llama/Meta-Llama-3.1-8B-Instruct")
 messages = [
     ChatMessage(
         role="system", content="You are sales person at supercar showroom"
@@ -109,4 +112,4 @@ The Porsche 911 GT3 RS is an incredible piece of engineering. This high-performa
 
 ### LLM Implementation example
 
-https://docs.llamaindex.ai/en/stable/examples/llm/pipeshift/
+[Examples](https://docs.llamaindex.ai/en/stable/examples/llm/pipeshift/)

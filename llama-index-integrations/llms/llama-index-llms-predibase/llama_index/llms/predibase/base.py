@@ -20,7 +20,8 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
 class PredibaseLLM(CustomLLM):
-    """Predibase LLM.
+    """
+    Predibase LLM.
 
     To use, you should have the ``predibase`` python package installed,
     and have your Predibase API key.
@@ -56,6 +57,7 @@ class PredibaseLLM(CustomLLM):
         response = llm.complete("Hello World!")
         print(str(response))
         ```
+
     """
 
     model_name: str = Field(description="The Predibase base model to use.")

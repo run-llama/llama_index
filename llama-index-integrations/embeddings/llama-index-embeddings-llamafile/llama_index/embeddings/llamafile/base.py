@@ -11,7 +11,8 @@ DEFAULT_REQUEST_TIMEOUT = 30.0
 
 
 class LlamafileEmbedding(BaseEmbedding):
-    """Class for llamafile embeddings.
+    """
+    Class for llamafile embeddings.
 
     llamafile lets you distribute and run large language models with a
     single file.

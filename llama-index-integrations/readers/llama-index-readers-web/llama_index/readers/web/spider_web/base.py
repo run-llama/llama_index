@@ -15,6 +15,7 @@ class SpiderWebReader(BasePydanticReader):
         api_key (str): The Spider API key, get one at https://spider.cloud
         mode (Mode): "Scrape" the url (default) or "crawl" the url following all subpages.
         params (dict): Additional parameters to pass to the Spider API.
+
     """
 
     class Config:

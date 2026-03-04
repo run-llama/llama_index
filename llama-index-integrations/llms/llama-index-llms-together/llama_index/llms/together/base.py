@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class TogetherLLM(OpenAILike):
-    """Together LLM.
+    """
+    Together LLM.
 
     Examples:
         `pip install llama-index-llms-together`
@@ -24,6 +25,7 @@ class TogetherLLM(OpenAILike):
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
     """
 
     def __init__(

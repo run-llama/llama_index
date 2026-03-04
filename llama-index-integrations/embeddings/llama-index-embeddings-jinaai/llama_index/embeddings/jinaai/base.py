@@ -163,6 +163,7 @@ class JinaEmbedding(MultiModalEmbedding):
     Args:
         model (str): Model for embedding.
             Defaults to `jina-embeddings-v3`
+
     """
 
     api_key: Optional[str] = Field(default=None, description="The JinaAI API key.")
@@ -202,12 +203,12 @@ class JinaEmbedding(MultiModalEmbedding):
         self._dimensions = dimensions
         self._late_chunking = late_chunking
 
-        assert (
-            self._encoding_documents in VALID_ENCODING
-        ), f"Encoding Documents parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
-        assert (
-            self._encoding_queries in VALID_ENCODING
-        ), f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
+        assert self._encoding_documents in VALID_ENCODING, (
+            f"Encoding Documents parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
+        )
+        assert self._encoding_queries in VALID_ENCODING, (
+            f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
+        )
 
         self._api = _JinaAPICaller(model=model, api_key=api_key)
 

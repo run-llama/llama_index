@@ -81,7 +81,8 @@ class DashScopeCloudRetriever(BaseRetriever):
     def retrieve(
         self, str_or_query_bundle: QueryType, query_history: List[Dict] = None
     ) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Args:
             str_or_query_bundle (QueryType): Either a query string or

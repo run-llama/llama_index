@@ -99,4 +99,4 @@ class SECFilingsLoader(BaseReader):
                     f" {curr_year}"
                 )
 
-        print(f"It took {round(time.time()-start,2)} seconds")
+        print(f"It took {round(time.time() - start, 2)} seconds")

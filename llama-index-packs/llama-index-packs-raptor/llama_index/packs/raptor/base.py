@@ -76,13 +76,15 @@ class SummaryModule(BaseModel):
     async def generate_summaries(
         self, documents_per_cluster: List[List[BaseNode]]
     ) -> List[str]:
-        """Generate summaries of documents per cluster.
+        """
+        Generate summaries of documents per cluster.
 
         Args:
             documents_per_cluster (List[List[BaseNode]]): List of documents per cluster
 
         Returns:
             List[str]: List of summary for each cluster
+
         """
         jobs = []
         for documents in documents_per_cluster:
@@ -139,13 +141,15 @@ class RaptorRetriever(BaseRetriever):
             asyncio.run(self.insert(documents))
 
     def _get_embeddings_per_level(self, level: int = 0) -> List[float]:
-        """Retrieve embeddings per level in the abstraction tree.
+        """
+        Retrieve embeddings per level in the abstraction tree.
 
         Args:
             level (int, optional): Target level. Defaults to 0 which stands for leaf nodes.
 
         Returns:
             List[float]: List of embeddings
+
         """
         filters = MetadataFilters(filters=[MetadataFilter("level", level)])
 
@@ -157,12 +161,14 @@ class RaptorRetriever(BaseRetriever):
         return [x.node for x in source_nodes]
 
     async def insert(self, documents: List[BaseNode]) -> None:
-        """Given a set of documents, this function inserts higher level of abstractions within the index.
+        """
+        Given a set of documents, this function inserts higher level of abstractions within the index.
 
         For later retrieval
 
         Args:
             documents (List[BaseNode]): List of Documents
+
         """
         embed_model = self.index._embed_model
         transformations = self.index._transformations
@@ -239,7 +245,8 @@ class RaptorRetriever(BaseRetriever):
         """Query the index as a tree, traversing the tree from the top down."""
         # get top k nodes for each level, starting with the top
         parent_ids = None
-        nodes = []
+        selected_node_ids = set()
+        selected_nodes = []
         level = self.tree_depth - 1
         while level >= 0:
             # retrieve nodes at the current level
@@ -250,6 +257,11 @@ class RaptorRetriever(BaseRetriever):
                         filters=[MetadataFilter(key="level", value=level)]
                     ),
                 ).aretrieve(query_str)
+
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 parent_ids = [node.id_ for node in nodes]
                 if self._verbose:
@@ -269,6 +281,10 @@ class RaptorRetriever(BaseRetriever):
                 )
 
                 nodes = [node for nested in nested_nodes for node in nested]
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 if self._verbose:
                     print(f"Retrieved {len(nodes)} from parents at level {level}.")
@@ -276,7 +292,7 @@ class RaptorRetriever(BaseRetriever):
                 level -= 1
                 parent_ids = None
 
-        return nodes
+        return selected_nodes
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query and mode."""

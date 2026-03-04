@@ -7,7 +7,11 @@ from typing import Any, Optional, Dict
 import sys
 
 from mistralai import Mistral
-from mistralai.models import DetailedJobOut, WandbIntegration, TrainingParameters
+from mistralai.models import (
+    JobsAPIRoutesFineTuningGetFineTuningJobResponse,
+    WandbIntegration,
+    CompletionTrainingParametersIn,
+)
 
 from llama_index.core.llms.llm import LLM
 from llama_index.finetuning.callbacks.finetuning_handler import (
@@ -60,7 +64,8 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         training_path: str,
         **kwargs: Any,
     ) -> "MistralAIFinetuneEngine":
-        """Initialize from finetuning handler.
+        """
+        Initialize from finetuning handler.
 
         Used to finetune an MistralAI model.
 
@@ -93,7 +98,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
                     training_files=[train_file.id],
                     validation_files=[eval_file.id] if self.validation_path else None,
                     model=self.base_model,
-                    hyperparameters=TrainingParameters(
+                    hyperparameters=CompletionTrainingParametersIn(
                         training_steps=self.training_steps,
                         learning_rate=self.learning_rate,
                     ),
@@ -119,7 +124,9 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         if self._verbose:
             print(info_str)
 
-    def get_current_job(self) -> Optional[DetailedJobOut]:
+    def get_current_job(
+        self,
+    ) -> Optional[JobsAPIRoutesFineTuningGetFineTuningJobResponse]:
         """Get current job."""
         # validate that it works
         if not self._start_job:

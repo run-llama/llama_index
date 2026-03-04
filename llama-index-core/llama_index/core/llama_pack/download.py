@@ -17,7 +17,8 @@ def download_llama_pack(
     llama_pack_url: str = LLAMA_PACKS_CONTENTS_URL,
     refresh_cache: bool = True,
 ) -> Optional[Type[BaseLlamaPack]]:
-    """Download a single LlamaPack PyPi Package.
+    """
+    Download a single LlamaPack PyPi Package.
 
     Args:
         llama_pack_class: The name of the LlamaPack class you want to download,
@@ -28,6 +29,7 @@ def download_llama_pack(
 
     Returns:
         A Loader.
+
     """
     pack_cls = None
 

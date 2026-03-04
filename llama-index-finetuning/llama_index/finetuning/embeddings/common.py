@@ -10,12 +10,14 @@ from llama_index.core.schema import MetadataMode, TextNode
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
-    """Embedding QA Finetuning Dataset.
+    """
+    Embedding QA Finetuning Dataset.
 
     Args:
         queries (Dict[str, str]): Dict id -> query.
         corpus (Dict[str, str]): Dict id -> string.
         relevant_docs (Dict[str, List[str]]): Dict query id -> list of doc ids.
+
     """
 
     queries: Dict[str, str]
@@ -32,23 +34,27 @@ class EmbeddingQAFinetuneDataset(BaseModel):
         ]
 
     def save_json(self, path: str) -> None:
-        """Save the dataset to a JSON file.
+        """
+        Save the dataset to a JSON file.
 
         Args:
             path (str): The file path to save the JSON.
+
         """
         with open(path, "w") as f:
             json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
-        """Load the dataset from a JSON file.
+        """
+        Load the dataset from a JSON file.
 
         Args:
             path (str): The file path to load the JSON from.
 
         Returns:
             EmbeddingQAFinetuneDataset: The loaded dataset.
+
         """
         with open(path) as f:
             data = json.load(f)
@@ -76,13 +82,15 @@ context information provided."
 def load_existing_data(
     path: str,
 ) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]:
-    """Load existing data from a JSON file if it exists.
+    """
+    Load existing data from a JSON file if it exists.
 
     Args:
         path (str): The file path to load the JSON from.
 
     Returns:
         Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]: The loaded queries, corpus, and relevant_docs.
+
     """
     try:
         with open(path) as f:
@@ -103,7 +111,8 @@ def generate_qa_embedding_pairs(
     output_path: str = "qa_finetune_dataset.json",
     verbose: bool = True,
 ) -> EmbeddingQAFinetuneDataset:
-    """Generate QA pairs from a set of nodes and save periodically.
+    """
+    Generate QA pairs from a set of nodes and save periodically.
 
     Args:
         nodes (List[TextNode]): List of TextNode objects to process.
@@ -118,6 +127,7 @@ def generate_qa_embedding_pairs(
 
     Returns:
         EmbeddingQAFinetuneDataset: The generated dataset.
+
     """
     queries, corpus, relevant_docs = load_existing_data(output_path)
 

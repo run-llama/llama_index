@@ -1,4 +1,5 @@
-"""Semantic embedding chunking agent pack.
+"""
+Semantic embedding chunking agent pack.
 
 Inspired by Greg Kamradt's text splitting notebook:
 https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb
@@ -22,7 +23,8 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 def combine_sentences(sentences: List[str], buffer_size: int = 1) -> List[str]:
-    """Combine sentences.
+    """
+    Combine sentences.
 
     Ported over from:
     https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb
@@ -121,7 +123,8 @@ def make_chunks(sentences: List[str], indices_above_thresh: List[int]) -> List[s
 
 
 class SemanticChunker(MetadataAwareTextSplitter):
-    """Semantic splitter.
+    """
+    Semantic splitter.
 
     Inspired by Greg's semantic chunking.
 
@@ -143,7 +146,7 @@ class SemanticChunker(MetadataAwareTextSplitter):
         buffer_size: int = 1,
         embed_model: Optional[BaseEmbedding] = None,
         breakpoint_percentile_threshold: float = 95.0,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         from llama_index.embeddings.openai import OpenAIEmbedding
 
@@ -200,7 +203,8 @@ class SemanticChunker(MetadataAwareTextSplitter):
 
 
 class SemanticChunkingQueryEnginePack(BaseLlamaPack):
-    """Semantic Chunking Query Engine Pack.
+    """
+    Semantic Chunking Query Engine Pack.
 
     Takes in a list of documents, parses it with semantic embedding chunker,
     and runs a query engine on the resulting chunks.

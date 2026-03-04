@@ -32,6 +32,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
             llm (obj): A language model for generating Cypher queries.
             validate_cypher (bool): Validate relationship directions in
                 the generated Cypher statement. Default: False
+
         """
         if find_spec("neo4j") is None:
             raise ImportError(
@@ -56,6 +57,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
 
         Returns:
             str: The system message.
+
         """
         return f"""
         Task: Generate Cypher queries to query a Neo4j graph database based on the provided schema definition.
@@ -79,6 +81,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
 
         Returns:
             list: The query results.
+
         """
         if params is None:
             params = {}
@@ -98,6 +101,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
 
         Returns:
             str: The constructed Cypher query.
+
         """
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=self.get_system_message()),
@@ -121,6 +125,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
 
         Returns:
             list/str: The query results or an error message.
+
         """
         from neo4j.exceptions import CypherSyntaxError
 

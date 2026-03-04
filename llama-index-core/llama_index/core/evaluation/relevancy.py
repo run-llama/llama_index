@@ -40,7 +40,8 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class RelevancyEvaluator(BaseEvaluator):
-    """Relenvancy evaluator.
+    """
+    Relenvancy evaluator.
 
     Evaluates the relevancy of retrieved contexts and response to a query.
     This evaluator considers the query string, retrieved contexts, and response string.
@@ -53,6 +54,7 @@ class RelevancyEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refinement.
+
     """
 
     def __init__(

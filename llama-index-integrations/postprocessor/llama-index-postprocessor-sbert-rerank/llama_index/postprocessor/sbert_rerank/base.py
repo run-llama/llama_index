@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
+from pathlib import Path
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -17,24 +18,42 @@ dispatcher = get_dispatcher(__name__)
 
 
 class SentenceTransformerRerank(BaseNodePostprocessor):
+    """
+    HuggingFace class for cross encoding two sentences/texts.
+
+    Args:
+        model (str): A model name from Hugging Face Hub that can be loaded with AutoModel, or a path to a local model.
+        device (str, optional): Device (like “cuda”, “cpu”, “mps”, “npu”) that should be used for computation.
+            If None, checks if a GPU can be used.
+        cache_folder (str, Path, optional): Path to the folder where cached files are stored. Defaults to None.
+        top_n (int): Number of nodes to return sorted by score. Defaults to 2.
+        keep_retrieval_score (bool, optional): Whether to keep the retrieval score in metadata. Defaults to False.
+        cross_encoder_kwargs (dict, optional): Additional keyword arguments for CrossEncoder initialization. Defaults to None.
+
+    """
+
     model: str = Field(description="Sentence transformer model name.")
     top_n: int = Field(description="Number of nodes to return sorted by score.")
-    device: str = Field(
-        default="cpu",
-        description="Device to use for sentence transformer.",
-    )
     keep_retrieval_score: bool = Field(
         default=False,
         description="Whether to keep the retrieval score in metadata.",
     )
+    cross_encoder_kwargs: dict = Field(
+        default_factory=dict,
+        description="Additional keyword arguments for CrossEncoder initialization. "
+        "device and model should not be included here.",
+    )
     _model: Any = PrivateAttr()
+    _device: str = PrivateAttr()
 
     def __init__(
         self,
-        top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
+        cache_folder: Optional[Union[str, Path]] = None,
+        top_n: int = 2,
         keep_retrieval_score: Optional[bool] = False,
+        cross_encoder_kwargs: Optional[dict] = None,
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -49,10 +68,31 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             model=model,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            cross_encoder_kwargs=cross_encoder_kwargs or {},
         )
-        device = infer_torch_device() if device is None else device
+
+        init_kwargs = self.cross_encoder_kwargs.copy()
+        if "device" in init_kwargs or "model" in init_kwargs:
+            raise ValueError(
+                "'device' and 'model' should not be specified in 'cross_encoder_kwargs'. "
+                "Use the top-level 'device' and 'model' parameters instead."
+            )
+
+        # Set default max_length if not provided by the user in kwargs.
+        if "max_length" not in init_kwargs:
+            init_kwargs["max_length"] = DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
+
+        # Explicit arguments from the constructor take precedence over kwargs
+        resolved_device = infer_torch_device() if device is None else device
+        init_kwargs["device"] = resolved_device
+        self._device = resolved_device
+
+        if cache_folder:
+            init_kwargs["cache_folder"] = cache_folder
+
         self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
+            model_name_or_path=model,
+            **init_kwargs,
         )
 
     @classmethod

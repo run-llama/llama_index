@@ -29,6 +29,7 @@ class TextToImageToolSpec(BaseToolSpec):
             size (str): The size of the image(s) to generate. Defaults to 256x256. Other accepted values are 1024x1024 and 512x512
 
         When handling the urls returned from this function, NEVER strip any parameters or try to modify the url, they are necessary for authorization to view the image
+
         """
         try:
             response = openai.Image.create(prompt=prompt, n=n, size=size)
@@ -63,6 +64,7 @@ class TextToImageToolSpec(BaseToolSpec):
 
         Args:
             urls (str): The url(s) of the image(s) to show
+
         """
         import matplotlib.pyplot as plt
         from PIL import Image

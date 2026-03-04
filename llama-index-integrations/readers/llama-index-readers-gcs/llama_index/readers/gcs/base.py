@@ -55,6 +55,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         service_account_key (Optional[Dict[str, str]]): Service account key as a dictionary.
         service_account_key_json (Optional[str]): Service account key as a JSON string.
         service_account_key_path (Optional[str]): Path to the service account key file.
+
     """
 
     is_remote: bool = True
@@ -91,6 +92,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Raises:
             ValueError: If no valid authentication method is provided.
             DefaultCredentialsError: If there's an issue with the provided credentials.
+
         """
         from gcsfs import GCSFileSystem
 
@@ -127,6 +129,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Returns:
             SimpleDirectoryReader: A configured SimpleDirectoryReader for GCS.
+
         """
         gcsfs = self._get_gcsfs()
 
@@ -159,6 +162,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Raises:
             Exception: If there's an error loading the data.
+
         """
         try:
             logger.info(f"Loading data from GCS bucket: {self.bucket}")
@@ -179,6 +183,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Raises:
             Exception: If there's an error listing the resources.
+
         """
         try:
             logger.info(f"Listing resources in GCS bucket: {self.bucket}")
@@ -200,6 +205,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Raises:
             Exception: If there's an error retrieving the resource information.
+
         """
         try:
             logger.info(f"Getting info for resource: {resource_id}")
@@ -241,6 +247,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Raises:
             Exception: If there's an error loading the resource.
+
         """
         try:
             logger.info(f"Loading resource: {resource_id}")
@@ -264,6 +271,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
         Raises:
             Exception: If there's an error reading the file content.
+
         """
         try:
             logger.info(f"Reading file content: {input_file}")

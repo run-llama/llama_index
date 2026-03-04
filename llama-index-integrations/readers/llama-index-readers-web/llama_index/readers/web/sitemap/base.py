@@ -1,14 +1,15 @@
-import urllib.request
-import xml.etree.ElementTree as ET
+import httpx
 from typing import List
 
+from defusedxml.ElementTree import fromstring
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.readers.web.async_web.base import AsyncWebPageReader
 
 
 class SitemapReader(BaseReader):
-    """Asynchronous sitemap reader for web.
+    """
+    Asynchronous sitemap reader for web.
 
     Reads pages from the web based on their sitemap.xml.
 
@@ -29,12 +30,12 @@ class SitemapReader(BaseReader):
         self._limit = limit
 
     def _load_sitemap(self, sitemap_url: str) -> str:
-        sitemap_url_request = urllib.request.urlopen(sitemap_url)
+        sitemap_url_request = httpx.get(sitemap_url)
 
-        return sitemap_url_request.read()
+        return sitemap_url_request.content
 
     def _parse_sitemap(self, raw_sitemap: str, filter_locs: str = None) -> list:
-        sitemap = ET.fromstring(raw_sitemap)
+        sitemap = fromstring(raw_sitemap)
         sitemap_urls = []
 
         for url in sitemap.findall(f"{{{self.xml_schema_sitemap}}}url"):

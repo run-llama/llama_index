@@ -71,7 +71,7 @@ router = APIRouter()
 def is_expected_response_type(media_type, response_type):
     if media_type == "application/json" and response_type not in [dict, list]:
         return True
-    return bool(media_type == "text/csv" and response_type != str)
+    return bool(media_type == "text/csv" and response_type is not str)
 
 
 # pipeline-api

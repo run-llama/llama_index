@@ -65,8 +65,8 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str,
     expressions = [expr.strip() for expr in llm_output.split(",")]
 
     try:
-        from jsonpath_ng.ext import parse
-        from jsonpath_ng.jsonpath import DatumInContext
+        from jsonpath_ng.ext import parse  # pants: no-infer-dep
+        from jsonpath_ng.jsonpath import DatumInContext  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc
@@ -88,7 +88,8 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str,
 
 
 class JSONQueryEngine(BaseQueryEngine):
-    """GPT JSON Query Engine.
+    """
+    GPT JSON Query Engine.
 
     Converts natural language to JSON Path queries.
 
@@ -101,6 +102,7 @@ class JSONQueryEngine(BaseQueryEngine):
         output_kwargs (dict): Additional output processor kwargs for the
             output_processor function.
         verbose (bool): Whether to print verbose output.
+
     """
 
     def __init__(
@@ -165,7 +167,7 @@ class JSONQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
+                f"> JSONPath Instructions:\n```\n{json_path_response_str}\n```\n"
             )
 
         json_path_output = self._output_processor(
@@ -217,7 +219,7 @@ class JSONQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
+                f"> JSONPath Instructions:\n```\n{json_path_response_str}\n```\n"
             )
 
         json_path_output = self._output_processor(

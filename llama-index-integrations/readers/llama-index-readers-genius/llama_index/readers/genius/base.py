@@ -38,7 +38,8 @@ class GeniusReader(BaseReader):
         max_songs: Optional[int] = None,
         max_pages: int = 50,
     ) -> Document:
-        """Load the most or least popular song of an artist.
+        """
+        Load the most or least popular song of an artist.
 
         Args:
             artist_name (str): The artist's name.
@@ -48,6 +49,7 @@ class GeniusReader(BaseReader):
 
         Returns:
             Document: A document containing lyrics of the most/least popular song.
+
         """
         artist = self.genius.search_artist(artist_name, max_songs=1)
         if not artist:
@@ -90,13 +92,15 @@ class GeniusReader(BaseReader):
         return [Document(text=song.lyrics)] if song else []
 
     def search_songs_by_lyrics(self, lyrics: str) -> List[Document]:
-        """Search for songs by a snippet of lyrics.
+        """
+        Search for songs by a snippet of lyrics.
 
         Args:
             lyrics (str): The lyric snippet you're looking for.
 
         Returns:
             List[Document]: A list of documents containing songs with those lyrics.
+
         """
         search_results = self.genius.search_songs(lyrics)
         songs = search_results["hits"] if search_results else []
@@ -112,7 +116,8 @@ class GeniusReader(BaseReader):
     def load_songs_by_tag(
         self, tag: str, max_songs: Optional[int] = None, max_pages: int = 50
     ) -> List[Document]:
-        """Load songs by a specific tag.
+        """
+        Load songs by a specific tag.
 
         Args:
             tag (str): The tag or genre to load songs for.
@@ -121,6 +126,7 @@ class GeniusReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents containing song lyrics.
+
         """
         lyrics = []
         total_songs_fetched = 0

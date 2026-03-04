@@ -1,4 +1,5 @@
 """Utils for pretty print."""
+
 import textwrap
 from pprint import pprint
 from typing import Any, Dict

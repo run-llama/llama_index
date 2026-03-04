@@ -65,12 +65,9 @@ class ResponseReasoningStep(BaseReasoningStep):
     def get_content(self) -> str:
         """Get content."""
         if self.is_streaming:
-            return (
-                f"Thought: {self.thought}\n"
-                f"Answer (Starts With): {self.response} ..."
-            )
+            return f"Thought: {self.thought}\nAnswer (Starts With): {self.response} ..."
         else:
-            return f"Thought: {self.thought}\n" f"Answer: {self.response}"
+            return f"Thought: {self.thought}\nAnswer: {self.response}"
 
     @property
     def is_done(self) -> bool:

@@ -12,7 +12,10 @@ DEFAULT_OUTRO_HISTORY_MESSAGE = "This is the end of the retrieved message dialog
 
 
 class SimpleComposableMemory(BaseMemory):
-    """A simple composition of potentially several memory sources.
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    A simple composition of potentially several memory sources.
 
     This composable memory considers one of the memory sources as the main
     one and the others as secondary. The secondary memory sources get added to
@@ -23,6 +26,7 @@ class SimpleComposableMemory(BaseMemory):
         primary_memory: (BaseMemory) The main memory buffer for agent.
         secondary_memory_sources: (List(BaseMemory)) Secondary memory sources.
             Retrieved messages from these sources get added to the system prompt message.
+
     """
 
     primary_memory: SerializeAsAny[BaseMemory] = Field(
@@ -124,7 +128,8 @@ class SimpleComposableMemory(BaseMemory):
         return messages
 
     def get_all(self) -> List[ChatMessage]:
-        """Get all chat history.
+        """
+        Get all chat history.
 
         Uses primary memory get_all only.
         """

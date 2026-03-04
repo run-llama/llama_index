@@ -1,0 +1,36 @@
+{
+  "object": "space",
+  "id": "text",
+  "title": "text",
+  "emoji": "🎉",
+  "visibility": "public",
+  "createdAt": "2024-11-11T01:17:03.329Z",
+  "updatedAt": "2024-11-11T01:17:03.329Z",
+  "deletedAt": "2024-11-11T01:17:03.329Z",
+  "editMode": "live",
+  "urls": {
+    "location": "https://example.com",
+    "app": "https://example.com",
+    "published": "https://example.com",
+    "public": "https://example.com",
+    "icon": "https://example.com"
+  },
+  "organization": "text",
+  "parent": "text",
+  "gitSync": {
+    "installationProvider": "text",
+    "operation": {
+      "state": "running",
+      "startedAt": "2024-11-11T01:17:03.329Z",
+      "completedAt": "2024-11-11T01:17:03.329Z",
+      "error": "text"
+    },
+    "url": "text",
+    "updatedAt": "2024-11-11T01:17:03.329Z"
+  },
+  "visitorAuth": {
+    "backend": "custom"
+  },
+  "revision": "text",
+  "defaultLevel": "admin"
+}

@@ -1,12 +1,11 @@
 """Sentence Transformer Finetuning Engine."""
 
+import os
 from typing import Any, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.utils import resolve_embed_model
-from llama_index.finetuning.embeddings.common import (
-    EmbeddingQAFinetuneDataset,
-)
+from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 
 
@@ -27,6 +26,10 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         use_all_docs: bool = False,
         trust_remote_code: bool = False,
         device: Optional[Any] = None,
+        save_checkpoints: bool = False,
+        resume_from_checkpoint: bool = False,
+        checkpoint_save_steps: int = 500,
+        checkpoint_save_total_limit: int = 0,
     ) -> None:
         """Init params."""
         from sentence_transformers import InputExample, SentenceTransformer, losses
@@ -77,6 +80,13 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.evaluation_steps = evaluation_steps
         self.warmup_steps = int(len(self.loader) * epochs * 0.1)
 
+        self.checkpoint_path = (
+            os.path.join("checkpoints", model_output_path) if save_checkpoints else None
+        )
+        self.resume_from_checkpoint = resume_from_checkpoint
+        self.checkpoint_save_steps = checkpoint_save_steps
+        self.checkpoint_save_total_limit = checkpoint_save_total_limit
+
     def finetune(self, **train_kwargs: Any) -> None:
         """Finetune model."""
         self.model.fit(
@@ -87,6 +97,10 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
             show_progress_bar=self.show_progress_bar,
             evaluator=self.evaluator,
             evaluation_steps=self.evaluation_steps,
+            checkpoint_path=self.checkpoint_path,
+            resume_from_checkpoint=self.resume_from_checkpoint,
+            checkpoint_save_steps=self.checkpoint_save_steps,
+            checkpoint_save_total_limit=self.checkpoint_save_total_limit,
         )
 
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:

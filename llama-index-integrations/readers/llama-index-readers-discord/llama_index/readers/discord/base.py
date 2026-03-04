@@ -1,4 +1,5 @@
-"""Discord reader.
+"""
+Discord reader.
 
 Note: this file is named discord_reader.py to avoid conflicts with the
 discord.py module.
@@ -22,7 +23,8 @@ async def read_channel(
     limit: Optional[int],
     oldest_first: bool,
 ) -> List[Document]:
-    """Async read channel.
+    """
+    Async read channel.
 
     Note: This is our hack to create a synchronous interface to the
     async discord.py API. We use the `asyncio` module to run
@@ -86,7 +88,8 @@ async def read_channel(
 
 
 class DiscordReader(BasePydanticReader):
-    """Discord reader.
+    """
+    Discord reader.
 
     Reads conversations from channels.
 
@@ -138,7 +141,8 @@ class DiscordReader(BasePydanticReader):
         limit: Optional[int] = None,
         oldest_first: bool = True,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             channel_ids (List[int]): List of channel ids to read.

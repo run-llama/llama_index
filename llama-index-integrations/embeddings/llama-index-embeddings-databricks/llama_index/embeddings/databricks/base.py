@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class DatabricksEmbedding(BaseEmbedding):
-    """Databricks class for text embedding.
+    """
+    Databricks class for text embedding.
 
     Databricks adheres to the OpenAI API, so this integration aligns closely with the existing OpenAIEmbedding class.
 
@@ -47,6 +48,7 @@ class DatabricksEmbedding(BaseEmbedding):
         embeddings = embed_model.get_text_embedding("The DatabricksEmbedding integration works great.")
 
         ```
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(
@@ -192,7 +194,8 @@ class DatabricksEmbedding(BaseEmbedding):
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings.
+        """
+        Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
         Can be overridden for batch queries.

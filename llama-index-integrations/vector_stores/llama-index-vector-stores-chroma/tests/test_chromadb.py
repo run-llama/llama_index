@@ -141,7 +141,7 @@ def node_embeddings() -> List[TextNode]:
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_chromadb_and_query(
     vector_store: ChromaVectorStore,
@@ -162,7 +162,7 @@ async def test_add_to_chromadb_and_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_chromadb_and_query_by_metafilters_only(
     vector_store: ChromaVectorStore,
@@ -191,6 +191,45 @@ async def test_add_to_chromadb_and_query_by_metafilters_only(
         res.nodes[0].get_content()
         == "I was taught that the way of progress was neither swift nor easy."
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_chromadb_and_query_by_nested_metadata_filters(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="theme", value="Mafia", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key="theme", value="Friendship", operator=FilterOperator.EQ
+                    ),
+                ],
+                condition=FilterCondition.OR,
+            ),
+        ],
+        condition=FilterCondition.AND,
+    )
+
+    if use_async:
+        await vector_store.async_add(node_embeddings)
+        res = await vector_store.aquery(
+            VectorStoreQuery(filters=filters, similarity_top_k=1)
+        )
+    else:
+        vector_store.add(node_embeddings)
+        res = vector_store.query(VectorStoreQuery(filters=filters, similarity_top_k=1))
+
+    assert res.nodes[0].get_content() == "lorem ipsum"
 
 
 def test_get_nodes(

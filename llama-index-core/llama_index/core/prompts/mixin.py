@@ -13,7 +13,8 @@ PromptMixinType = Dict[str, "PromptMixin"]
 
 
 class PromptMixin(ABC):
-    """Prompt mixin.
+    """
+    Prompt mixin.
 
     This mixin is used in other modules, like query engines, response synthesizers.
     This shows that the module supports getting, setting prompts,
@@ -51,7 +52,8 @@ class PromptMixin(ABC):
         return all_prompts
 
     def update_prompts(self, prompts_dict: Dict[str, BasePromptTemplate]) -> None:
-        """Update prompts.
+        """
+        Update prompts.
 
         Other prompts will remain in place.
 
@@ -82,7 +84,8 @@ class PromptMixin(ABC):
 
     @abstractmethod
     def _get_prompt_modules(self) -> PromptMixinType:
-        """Get prompt sub-modules.
+        """
+        Get prompt sub-modules.
 
         Return a dictionary of sub-modules within the current module
         that also implement PromptMixin (so that their prompts can also be get/set).

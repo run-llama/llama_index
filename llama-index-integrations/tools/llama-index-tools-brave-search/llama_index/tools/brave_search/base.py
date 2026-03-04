@@ -29,6 +29,7 @@ class BraveSearchToolSpec(BaseToolSpec):
 
         Returns:
             requests.Response: The response from the API.
+
         """
         headers = {
             "Accept": "application/json",
@@ -54,6 +55,7 @@ class BraveSearchToolSpec(BaseToolSpec):
 
         Returns:
             [Document]: A list of documents containing search results.
+
         """
         search_params = {
             "q": query,

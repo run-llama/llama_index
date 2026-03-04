@@ -16,7 +16,8 @@ DEFAULT_NUM_CHILDREN = 10
 
 
 class TreeAllLeafRetriever(BaseRetriever):
-    """GPT all leaf retriever.
+    """
+    GPT all leaf retriever.
 
     This class builds a query-specific tree from leaf nodes to return a response.
     Using this query mode means that the tree index doesn't need to be built

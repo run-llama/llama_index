@@ -12,7 +12,7 @@ class SemanticScholarReader(BaseReader):
     A class to read and process data from Semantic Scholar API
     ...
 
-    Methods:
+    Methods
     -------
     __init__():
        Instantiate the SemanticScholar object
@@ -39,7 +39,7 @@ class SemanticScholarReader(BaseReader):
 
     def _clear_cache(self):
         """
-        delete the .citation* folder.
+        Delete the .citation* folder.
         """
         import shutil
 
@@ -171,12 +171,12 @@ class SemanticScholarReader(BaseReader):
         returned_fields: list, optional
             The list of fields to be returned from the search
 
-        Returns:
+        Returns
         -------
         list
             The list of Document object that contains the search results
 
-        Raises:
+        Raises
         ------
         Exception
             If there is an error while performing the search

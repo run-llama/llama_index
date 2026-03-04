@@ -1,4 +1,6 @@
 """Simple file node parser."""
+
+import os
 from typing import Any, Dict, List, Optional, Sequence, Type
 
 from llama_index.core.callbacks.base import CallbackManager
@@ -18,7 +20,8 @@ FILE_NODE_PARSERS: Dict[str, Type[NodeParser]] = {
 
 
 class SimpleFileNodeParser(NodeParser):
-    """Simple file node parser.
+    """
+    Simple file node parser.
 
     Splits a document loaded from a file into Nodes using logic based on the file type
     automatically detects the NodeParser to use based on file type
@@ -55,10 +58,12 @@ class SimpleFileNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        """
+        Parse document into nodes.
 
         Args:
             nodes (Sequence[BaseNode]): nodes to parse
+
         """
         all_nodes: List[BaseNode] = []
         documents_with_progress = get_tqdm_iterable(
@@ -66,8 +71,14 @@ class SimpleFileNodeParser(NodeParser):
         )
 
         for document in documents_with_progress:
-            ext = document.metadata.get("extension", "None")
-            if ext in FILE_NODE_PARSERS:
+            # Try to get extension from metadata, or extract from file_path
+            ext = document.metadata.get("extension")
+            if ext is None and "file_path" in document.metadata:
+                # Extract extension from file_path
+                _, ext = os.path.splitext(document.metadata["file_path"])
+                ext = ext.lower()
+
+            if ext and ext in FILE_NODE_PARSERS:
                 parser = FILE_NODE_PARSERS[ext](
                     include_metadata=self.include_metadata,
                     include_prev_next_rel=self.include_prev_next_rel,

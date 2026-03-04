@@ -20,7 +20,7 @@ def test_e2e():
     assert len(embedding) == 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_e2e_async():
     embed_model = FastEmbedSparseEmbedding(model_name="Qdrant/bm25")
     texts = ["hello", "world"]

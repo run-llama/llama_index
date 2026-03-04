@@ -1,4 +1,5 @@
-"""Faiss Vector store index.
+"""
+Faiss Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -30,7 +31,8 @@ DEFAULT_PERSIST_PATH = os.path.join(
 
 
 class FaissVectorStore(BasePydanticVectorStore):
-    """Faiss Vector Store.
+    """
+    Faiss Vector Store.
 
     Embeddings are stored within a Faiss index.
 
@@ -53,6 +55,7 @@ class FaissVectorStore(BasePydanticVectorStore):
 
         vector_store = FaissVectorStore(faiss_index=faiss_index)
         ```
+
     """
 
     stores_text: bool = False
@@ -118,7 +121,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         NOTE: in the Faiss vector store, we do not store text in Faiss.
 
@@ -145,7 +149,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Save to file.
+        """
+        Save to file.
 
         This method saves the vector store to disk.
 
@@ -180,7 +185,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

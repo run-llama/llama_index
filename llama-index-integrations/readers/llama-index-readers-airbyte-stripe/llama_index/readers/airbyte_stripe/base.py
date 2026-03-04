@@ -4,12 +4,14 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteStripeReader(AirbyteCDKReader):
-    """AirbyteStripeReader reader.
+    """
+    AirbyteStripeReader reader.
 
     Retrieve documents from Stripe
 
     Args:
         config: The config object for the stripe source.
+
     """
 
     def __init__(

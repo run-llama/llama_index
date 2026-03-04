@@ -1,3 +1,0 @@
-# Prompting & Synthesis
-
-TODO

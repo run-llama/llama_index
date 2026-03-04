@@ -18,10 +18,7 @@ def test_token_predictor(mock_split: Any) -> None:
     # here, just assert that token predictor runs (before checking behavior)
     # TODO: mock token counting a bit more carefully
     doc_text = (
-        "Hello world.\n"
-        "This is a test.\n"
-        "This is another test.\n"
-        "This is a test v2."
+        "Hello world.\nThis is a test.\nThis is another test.\nThis is a test v2."
     )
     document = Document(text=doc_text)
 

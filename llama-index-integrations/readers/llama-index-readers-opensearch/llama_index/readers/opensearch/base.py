@@ -1,4 +1,5 @@
-"""Opensearch reader over REST api.
+"""
+Opensearch reader over REST api.
 
 This only uses the basic search api, so it will work Opensearch.
 
@@ -20,6 +21,7 @@ class OpensearchReader(BaseReader):
         endpoint (str): URL (http/https) of cluster without port
         index (str): Name of the index (required)
         basic_auth (set): basic authentication username password
+
     """
 
     def __init__(
@@ -45,7 +47,8 @@ class OpensearchReader(BaseReader):
         query: Optional[dict] = None,
         embedding_field: Optional[str] = None,
     ) -> List[Document]:
-        """Read data from the Opensearch index.
+        """
+        Read data from the Opensearch index.
 
         Args:
             field (str): Field in the document to retrieve text from

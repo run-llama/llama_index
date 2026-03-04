@@ -34,6 +34,7 @@ class BoxSearchByMetadataOptions:
         query (Optional[str]): An optional search query string to refine the search
             based on metadata.
         limit (Optional[int]): The maximum number of search results to return.
+
     """
 
     from_: str
@@ -74,6 +75,7 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
             Performs a search for Box resources based on the configured metadata options
             and optional query parameters. Returns a list of `Document` objects representing
             the found resources.
+
     """
 
     spec_functions = ["search"]
@@ -91,6 +93,7 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
             box_client (BoxClient): An authenticated Box API client.
             options (BoxSearchByMetadataToolSpec, optional): An instance of `BoxSearchByMetadataToolSpec` containing search options.
                 Defaults to `BoxSearchByMetadataToolSpec()`.
+
         """
         self._box_client = add_extra_header_to_box_client(box_client)
         self._options = options
@@ -114,6 +117,7 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
 
         Returns:
             List[Document]: A list of `Document` objects representing the found Box resources.
+
         """
         box_check_connection(self._box_client)
 

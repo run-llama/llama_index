@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class TelegramReader(BaseReader):
-    """Telegram posts/chat messages/comments reader.
+    """
+    Telegram posts/chat messages/comments reader.
 
     Read posts/chat messages/comments from Telegram channels or chats.
 
@@ -35,6 +36,7 @@ class TelegramReader(BaseReader):
         api_id (int): The API ID you obtained from https://my.telegram.org.
         api_hash (str): The API hash you obtained from https://my.telegram.org.
         phone_number (str): The phone to which the code will be sent.
+
     """
 
     def __init__(
@@ -61,7 +63,8 @@ class TelegramReader(BaseReader):
         start_date: Optional[datetime.datetime] = None,
         end_date: Optional[datetime.datetime] = None,
     ) -> List[Document]:
-        """Load posts/chat messages/comments from Telegram channels or chats.
+        """
+        Load posts/chat messages/comments from Telegram channels or chats.
 
         Since Telethon is an asynchronous library,\
             you need to await coroutine functions to have them run\
@@ -95,7 +98,8 @@ class TelegramReader(BaseReader):
         start_date: Optional[datetime.datetime] = None,
         end_date: Optional[datetime.datetime] = None,
     ) -> List[Document]:
-        """Load posts/chat messages/comments from Telegram channels or chats.
+        """
+        Load posts/chat messages/comments from Telegram channels or chats.
 
         Args:
             entity_name (str): The entity from whom to retrieve the message history.

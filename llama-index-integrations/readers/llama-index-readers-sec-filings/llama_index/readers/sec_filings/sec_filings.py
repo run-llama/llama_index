@@ -108,13 +108,15 @@ class timeout:
 
 # pipeline-api
 def get_regex_enum(section_regex):
-    """Get sections using regular expression.
+    """
+    Get sections using regular expression.
 
     Args:
         section_regex (str): regular expression for the section name
 
     Returns:
         CustomSECSection.CUSTOM: Custom regex section name
+
     """
 
     class CustomSECSection(Enum):
@@ -138,7 +140,8 @@ class SECExtractor:
         sections: List[str] = ["_ALL"],
         include_amends: bool = True,
     ):
-        """_summary_.
+        """
+        _summary_.
 
         Args:
             tickers (List[str]): list of ticker
@@ -147,6 +150,7 @@ class SECExtractor:
             start_date (str, optional): start date of getting files. Defaults to DEFAULT_AFTER_DATE.
             end_date (str, optional): end date of getting files. Defaults to DEFAULT_BEFORE_DATE.
             sections (List[str], optional): sections required, check sections names. Defaults to ["_ALL"].
+
         """
         self.tickers = tickers
         self.amount = amount
@@ -157,13 +161,15 @@ class SECExtractor:
         self.include_amends = include_amends
 
     def get_accession_numbers(self, tic: str) -> dict:
-        """Get accession numbers and download URL for the SEC filing.
+        """
+        Get accession numbers and download URL for the SEC filing.
 
         Args:
             tic (str): ticker symbol
 
         Returns:
             dict: final dictionary for all the urls and years mentioned
+
         """
         final_dict = {}
         filing_metadata = get_filing_urls_to_download(
@@ -195,13 +201,15 @@ class SECExtractor:
         return final_dict
 
     def get_year(self, filing_details: str) -> str:
-        """Get the year for 10-K and year,month for 10-Q.
+        """
+        Get the year for 10-K and year,month for 10-Q.
 
         Args:
             filing_details (str): filing url
 
         Returns:
             str: year for 10-K and year,month for 10-Q
+
         """
         details = filing_details.split("/")[-1]
         if self.filing_type == "10-K":
@@ -215,7 +223,8 @@ class SECExtractor:
             return None  # In case no match is found
 
     def get_all_text(self, section, all_narratives):
-        """Join all the text from a section.
+        """
+        Join all the text from a section.
 
         Args:
             section (str): section name
@@ -223,6 +232,7 @@ class SECExtractor:
 
         Returns:
             _type_: _description_
+
         """
         all_texts = []
         for text_dict in all_narratives[section]:
@@ -232,13 +242,15 @@ class SECExtractor:
         return " ".join(all_texts)
 
     def get_text_from_url(self, url: str):
-        """Get the text from filing document URL.
+        """
+        Get the text from filing document URL.
 
         Args:
             url (str): url link
 
         Returns:
             _type_: all texts of sections and filing type of the document
+
         """
         text = self.get_filing(
             url, "Unstructured Technologies", "support@unstructured.io"
@@ -252,7 +264,8 @@ class SECExtractor:
         return all_narrative_dict, filing_type
 
     def pipeline_api(self, text, m_section=[], m_section_regex=[]):
-        """Unsturcured API to get the text.
+        """
+        Unsturcured API to get the text.
 
         Args:
             text (str): Text from the filing document URL
@@ -265,6 +278,7 @@ class SECExtractor:
 
         Returns:
                 section and corresponding texts
+
         """
         validate_section_names(m_section)
 
@@ -305,7 +319,8 @@ class SECExtractor:
     @sleep_and_retry
     @limits(calls=10, period=1)
     def get_filing(self, url: str, company: str, email: str) -> str:
-        """Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
+        """
+        Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
         limits specified on the SEC website.
         ref: https://www.sec.gov/os/accessing-edgar-data.
         """
@@ -317,7 +332,8 @@ class SECExtractor:
     def _get_session(
         self, company: Optional[str] = None, email: Optional[str] = None
     ) -> requests.Session:
-        """Creates a requests sessions with the appropriate headers set. If these headers are not
+        """
+        Creates a requests sessions with the appropriate headers set. If these headers are not
         set, SEC will reject your request.
         ref: https://www.sec.gov/os/accessing-edgar-data.
         """

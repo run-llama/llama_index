@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.firestore import FirestoreKVStore
 
 
 class FirestoreDocumentStore(KVDocumentStore):
-    """Firestore Document (Node) store.
+    """
+    Firestore Document (Node) store.
 
     A Firestore store for Document and Node objects.
 
@@ -37,6 +38,7 @@ class FirestoreDocumentStore(KVDocumentStore):
             project (str): The project which the client acts on behalf of.
             database (str): The database name that the client targets.
             namespace (str): namespace for the docstore.
+
         """
         firestore_kvstore = FirestoreKVStore(project=project, database=database)
         return cls(firestore_kvstore, namespace)

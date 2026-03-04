@@ -86,13 +86,15 @@ def _postprocess_answer(answer: str) -> str:
 
 
 def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
-    """Compute relevance score.
+    """
+    Compute relevance score.
 
     Args:
         pred_log_probs (Dict[str, float]): log probabilities of tokens
 
     Returns:
         float: relevance score
+
     """
     rel_prob = np.exp(float(pred_log_probs["[Relevant]"]))
     irel_prob = np.exp(float(pred_log_probs["[Irrelevant]"]))
@@ -102,7 +104,8 @@ def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
 def _is_supported_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute support score.
+    """
+    Compute support score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -110,6 +113,7 @@ def _is_supported_score(
 
     Returns:
         float: support score
+
     """
     isSup_score = 0
     groundness_token_appear_id = -1
@@ -132,7 +136,8 @@ def _is_supported_score(
 def _is_useful_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute usefulness score.
+    """
+    Compute usefulness score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -140,6 +145,7 @@ def _is_useful_score(
 
     Returns:
         float: relevance score
+
     """
     isUse_score = 0
     utility_token_appear_id = -1
@@ -192,13 +198,15 @@ class SelfRAGQueryEngine(CustomQueryEngine):
         self.retriever = retriever
 
     def _run_critic(self, paragraphs: List[str]) -> CriticOutput:
-        """Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them.
+        """
+        Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them.
 
         Args:
             paragraphs (List[str]): List of paragraphs to evaluate
 
         Returns:
             CriticOutput: Paragraphs final score, LLM predictions and source nodes
+
         """
         paragraphs_final_score = {}
         llm_response_text = {}

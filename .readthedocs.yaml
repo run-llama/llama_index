@@ -15,7 +15,7 @@ build:
     post_install:
       - cd docs && poetry config virtualenvs.create false && poetry install --no-root
     pre_build:
-      - cd docs && poetry run merge-llama-deploy-docs
+      - cd docs && poetry run merge-external-docs
 
 mkdocs:
   configuration: docs/mkdocs.yml

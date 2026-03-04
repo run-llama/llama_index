@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 
 class PostgresIndexStore(KVIndexStore):
-    """Postgres Index store.
+    """
+    Postgres Index store.
 
     Args:
         postgres_kvstore (PostgresKVStore): Postgres key-value store

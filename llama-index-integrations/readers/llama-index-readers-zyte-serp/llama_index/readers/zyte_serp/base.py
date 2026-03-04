@@ -8,7 +8,8 @@ from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
 
 
 class ZyteSerpReader(BasePydanticReader):
-    """Get google search results URLs for a search query.
+    """
+    Get google search results URLs for a search query.
 
     Args:
         api_key: Zyte API key.

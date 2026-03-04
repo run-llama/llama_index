@@ -16,7 +16,15 @@ class BaseIndexStore(ABC):
         pass
 
     @abstractmethod
+    async def async_index_structs(self) -> List[IndexStruct]:
+        pass
+
+    @abstractmethod
     def add_index_struct(self, index_struct: IndexStruct) -> None:
+        pass
+
+    @abstractmethod
+    async def async_add_index_struct(self, index_struct: IndexStruct) -> None:
         pass
 
     @abstractmethod
@@ -24,7 +32,17 @@ class BaseIndexStore(ABC):
         pass
 
     @abstractmethod
+    async def adelete_index_struct(self, key: str) -> None:
+        pass
+
+    @abstractmethod
     def get_index_struct(
+        self, struct_id: Optional[str] = None
+    ) -> Optional[IndexStruct]:
+        pass
+
+    @abstractmethod
+    async def aget_index_struct(
         self, struct_id: Optional[str] = None
     ) -> Optional[IndexStruct]:
         pass

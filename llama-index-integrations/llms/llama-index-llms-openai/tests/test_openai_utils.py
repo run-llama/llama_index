@@ -1,53 +1,44 @@
 import json
-import pytest
 from typing import List
+
+import pytest
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_message_param import (
+    ChatCompletionMessageParam,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+    Function,
+)
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    MessageRole,
+    ImageBlock,
     LogProb,
+    MessageRole,
+    TextBlock,
+    ToolCallBlock,
 )
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
     from_openai_message_dicts,
     from_openai_messages,
-    to_openai_message_dicts,
-    to_openai_tool,
-)
-
-from llama_index.llms.openai.utils import (
-    from_openai_completion_logprobs,
     from_openai_token_logprob,
     from_openai_token_logprobs,
-)
-
-
-from openai.types.chat.chat_completion_assistant_message_param import (
-    FunctionCall as FunctionCallParam,
-)
-
-
-from openai.types.chat.chat_completion_message import (
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-)
-
-
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
-    ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
-)
-
-
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-    Function,
+    is_json_schema_supported,
+    to_openai_message_dicts,
+    to_openai_tool,
+    openai_modelname_to_contextsize,
+    is_chat_model,
+    is_function_calling_model,
+    ALL_AVAILABLE_MODELS,
+    CHAT_MODELS,
+    is_chatcomp_api_supported,
 )
 
 
@@ -66,35 +57,35 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
             },
         ),
         ChatMessage(
-            role=MessageRole.FUNCTION,
+            role=MessageRole.TOOL,
             content='{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
             additional_kwargs={
-                "name": "get_current_weather",
+                "tool_call_id": "get_current_weather",
             },
         ),
     ]
 
 
 @pytest.fixture()
-def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
+def openai_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
-        ChatCompletionUserMessageParam(
-            role="user", content="test question with functions"
-        ),
-        ChatCompletionAssistantMessageParam(
-            role="assistant",
-            content=None,
-            function_call=FunctionCallParam(
-                name="get_current_weather",
-                arguments='{ "location": "Boston, MA"}',
-            ),
-        ),
-        ChatCompletionFunctionMessageParam(
-            role="function",
-            content='{"temperature": "22", "unit": "celsius", '
-            '"description": "Sunny"}',
-            name="get_current_weather",
-        ),
+        {
+            "role": "user",
+            "content": "test question with functions",
+        },
+        {
+            "role": "assistant",
+            "content": None,
+            "function_call": {
+                "name": "get_current_weather",
+                "arguments": '{ "location": "Boston, MA"}',
+            },
+        },
+        {
+            "role": "tool",
+            "content": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
+            "tool_call_id": "get_current_weather",
+        },
     ]
 
 
@@ -128,7 +119,14 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
     return [
         ChatMessage(
             role=MessageRole.ASSISTANT,
-            content=None,
+            blocks=[
+                ToolCallBlock(
+                    block_type="tool_call",
+                    tool_call_id="0123",
+                    tool_name="search_hotels",
+                    tool_kwargs='{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
+                )
+            ],
             additional_kwargs={
                 "tool_calls": [
                     ChatCompletionMessageToolCall(
@@ -150,7 +148,9 @@ def test_to_openai_message_dicts_basic_enum() -> None:
         ChatMessage(role=MessageRole.USER, content="test question"),
         ChatMessage(role=MessageRole.ASSISTANT, content="test answer"),
     ]
-    openai_messages = to_openai_message_dicts(chat_messages)
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
     assert openai_messages == [
         {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
@@ -162,26 +162,48 @@ def test_to_openai_message_dicts_basic_string() -> None:
         ChatMessage(role="user", content="test question"),
         ChatMessage(role="assistant", content="test answer"),
     ]
-    openai_messages = to_openai_message_dicts(chat_messages)
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
     assert openai_messages == [
         {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
     ]
 
 
+def test_to_openai_message_dicts_empty_content() -> None:
+    """If neither `tool_calls` nor `function_call` is set, content must not be set to None,
+    see: https://platform.openai.com/docs/api-reference/chat/create"""
+    chat_messages = [
+        ChatMessage(role="user", content="test question"),
+        ChatMessage(role="assistant", content=""),
+    ]
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
+    assert openai_messages == [
+        {"role": "user", "content": "test question"},
+        {"role": "assistant", "content": ""},
+    ]
+
+
 def test_to_openai_message_dicts_function_calling(
     chat_messages_with_function_calling: List[ChatMessage],
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
+    openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
 ) -> None:
-    message_dicts = to_openai_message_dicts(chat_messages_with_function_calling)
-    assert message_dicts == openi_message_dicts_with_function_calling
+    message_dicts = to_openai_message_dicts(
+        chat_messages_with_function_calling,
+    )
+    assert message_dicts == openai_message_dicts_with_function_calling
 
 
 def test_from_openai_message_dicts_function_calling(
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
+    openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
     chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
-    chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)  # type: ignore
+    chat_messages = from_openai_message_dicts(
+        openai_message_dicts_with_function_calling
+    )  # type: ignore
 
     # assert attributes match
     for chat_message, chat_message_with_function_calling in zip(
@@ -200,7 +222,8 @@ def test_from_openai_messages_function_calling_azure(
     azure_chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
     chat_messages = from_openai_messages(
-        azure_openai_message_dicts_with_function_calling
+        azure_openai_message_dicts_with_function_calling,
+        ["text"],
     )
     assert chat_messages == azure_chat_messages_with_function_calling
 
@@ -237,6 +260,80 @@ def test_to_openai_message_with_pydantic_description() -> None:
             "description": "Pydantic description.",
             "parameters": TestOutput.schema(),
         },
+    }
+
+
+def test_to_openai_message_dicts_with_content_blocks() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # user messages are converted to blocks
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "test question"},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://example.com/image.jpg",
+                },
+            },
+        ],
+    }
+
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # other messages do not support blocks
+    chat_message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "assistant",
+        "content": "test question",
+    }
+
+
+def test_to_openai_message_dicts_with_content_blocks_with_detail() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg", detail="high"),
+        ],
+    )
+
+    # user messages are converted to blocks
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "test question"},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://example.com/image.jpg",
+                    "detail": "high",
+                },
+            },
+        ],
     }
 
 
@@ -305,3 +402,102 @@ def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input() -
     tools = OpenAI().get_tool_calls_from_response(response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == arguments
+
+
+def test_is_json_schema_supported_supported_models() -> None:
+    """Test that supported models return True."""
+    supported_models = [
+        "gpt-4o",
+        "gpt-4o-2024-05-13",
+        "gpt-4.1",
+    ]
+
+    for model in supported_models:
+        assert is_json_schema_supported(model), f"Model {model} should be supported"
+
+
+def test_is_json_schema_supported_o1_mini_excluded() -> None:
+    """Test that o1-mini models are explicitly excluded."""
+    o1_mini_models = [
+        "o1-mini",
+        "o1-mini-2024-09-12",
+    ]
+
+    for model in o1_mini_models:
+        assert is_json_schema_supported(model) is False, (
+            f"Model {model} should be excluded"
+        )
+
+
+def test_is_json_schema_supported_unsupported_models() -> None:
+    """Test that unsupported models return False."""
+    unsupported_models = [
+        "gpt-3.5-turbo-0613",
+        "gpt-4-0613",
+        "text-davinci-003",
+        "babbage-002",
+        "unknown-model",
+    ]
+
+    for model in unsupported_models:
+        assert is_json_schema_supported(model) is False, (
+            f"Model {model} should not be supported"
+        )
+
+
+def test_gpt_5_chat_latest_model_support() -> None:
+    """Test that gpt-5-chat-latest is properly supported."""
+    model_name = "gpt-5-chat-latest"
+
+    # Test that model is in available models
+    assert model_name in ALL_AVAILABLE_MODELS, (
+        f"{model_name} should be in ALL_AVAILABLE_MODELS"
+    )
+
+    # Test that model is recognized as a chat model
+    assert is_chat_model(model_name) is True, (
+        f"{model_name} should be recognized as a chat model"
+    )
+
+    # Test that model supports function calling
+    assert is_function_calling_model(model_name) is True, (
+        f"{model_name} should support function calling"
+    )
+
+    # Test that model has correct context size
+    context_size = openai_modelname_to_contextsize(model_name)
+    assert context_size == 128000, (
+        f"{model_name} should have 128000 tokens context, got {context_size}"
+    )
+
+    # Test that model is in CHAT_MODELS
+    assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"
+
+
+def test_is_chatcomp_api_supported() -> None:
+    assert is_chatcomp_api_supported("gpt-5.2")
+    assert not is_chatcomp_api_supported("gpt-5.2-pro")
+
+
+def test_gpt_5_chat_model_support() -> None:
+    """Test that gpt-5-chat is properly supported."""
+    model_name = "gpt-5-chat"
+
+    assert model_name in ALL_AVAILABLE_MODELS, (
+        f"{model_name} should be in ALL_AVAILABLE_MODELS"
+    )
+
+    assert is_chat_model(model_name) is True, (
+        f"{model_name} should be recognized as a chat model"
+    )
+
+    assert is_function_calling_model(model_name) is True, (
+        f"{model_name} should support function calling"
+    )
+
+    context_size = openai_modelname_to_contextsize(model_name)
+    assert context_size == 128000, (
+        f"{model_name} should have 128000 tokens context, got {context_size}"
+    )
+
+    assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"

@@ -1,0 +1,13 @@
+name: Trigger Developer Hub Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Developer Hub deployment
+        run: |
+          curl -X POST "${{ secrets.DEVELOPER_HUB_DEPLOY_HOOK }}"

@@ -1,4 +1,5 @@
-"""Pandas output parser.
+"""
+Pandas output parser.
 
 DEPRECATED: This class has been moved to `llama-index-experimental`.
 """
@@ -7,7 +8,8 @@ from typing import Any
 
 
 class PandasInstructionParser:
-    """Pandas instruction parser.
+    """
+    Pandas instruction parser.
 
     DEPRECATED: This class has been moved to `llama-index-experimental`.
 

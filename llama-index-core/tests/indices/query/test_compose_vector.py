@@ -149,7 +149,8 @@ def test_recursive_query_vector_table_query_configs(
     patch_llm_predictor,
     patch_token_text_splitter,
 ) -> None:
-    """Test query.
+    """
+    Test query.
 
     Difference with above test is we specify query config params and
     assert that they're passed in.

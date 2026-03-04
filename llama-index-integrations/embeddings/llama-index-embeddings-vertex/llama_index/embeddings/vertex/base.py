@@ -1,7 +1,8 @@
+import deprecated
+import vertexai
 from enum import Enum
 from typing import Optional, List, Any, Dict, Union
 
-import vertexai
 from google.oauth2 import service_account
 from llama_index.core.base.embeddings.base import Embedding, BaseEmbedding
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
@@ -15,8 +16,15 @@ from vertexai.vision_models import MultiModalEmbeddingModel, Image
 from google.auth import credentials as auth_credentials
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class VertexEmbeddingMode(str, Enum):
-    """VertexAI embedding mode.
+    """
+    VertexAI embedding mode.
 
     Attributes:
         DEFAULT_MODE (str): The default embedding mode, for older models before August 2023,
@@ -25,6 +33,7 @@ class VertexEmbeddingMode(str, Enum):
         CLUSTERING_MODE (str): Optimizes embeddings for clustering tasks.
         SEMANTIC_SIMILARITY_MODE (str): Optimizes embeddings for tasks that require assessments of semantic similarity.
         RETRIEVAL_MODE (str): Optimizes embeddings for retrieval tasks, including search and document retrieval.
+
     """
 
     DEFAULT_MODE = "default"
@@ -56,7 +65,8 @@ def init_vertexai(
     location: Optional[str] = None,
     credentials: Optional[auth_credentials.Credentials] = None,
 ) -> None:
-    """Init vertexai.
+    """
+    Init vertexai.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.
@@ -64,6 +74,7 @@ def init_vertexai(
         credentials: The default custom
             credentials to use when making API calls. If not provided credentials
             will be ascertained from the environment.
+
     """
     vertexai.init(
         project=project,
@@ -264,7 +275,7 @@ class VertexMultiModalEmbedding(MultiModalEmbedding):
         return self._model.get_embeddings(
             contextual_text=text,
             dimension=self.embed_dimension,
-            **self.additional_kwargs
+            **self.additional_kwargs,
         ).text_embedding
 
     def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:

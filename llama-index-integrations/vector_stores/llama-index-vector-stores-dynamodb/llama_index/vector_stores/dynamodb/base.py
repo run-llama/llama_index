@@ -31,7 +31,8 @@ LEARNER_MODES = {
 
 
 class DynamoDBVectorStore(BasePydanticVectorStore):
-    """DynamoDB Vector Store.
+    """
+    DynamoDB Vector Store.
 
     In this vector store, embeddings are stored within dynamodb table.
     This class was implemented with reference to SimpleVectorStore.
@@ -48,6 +49,7 @@ class DynamoDBVectorStore(BasePydanticVectorStore):
 
         vector_store = DynamoDBVectorStore.from_table_name(table_name="my_table")
         ```
+
     """
 
     stores_text: bool = False

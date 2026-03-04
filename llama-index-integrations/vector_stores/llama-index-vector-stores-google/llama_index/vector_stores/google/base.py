@@ -1,4 +1,5 @@
-"""Google Generative AI Vector Store.
+"""
+Google Generative AI Vector Store.
 
 The GenAI Semantic Retriever API is a managed end-to-end service that allows
 developers to create a corpus of documents to perform semantic search on
@@ -69,6 +70,7 @@ def set_google_config(
             ],
         )
         set_google_config(auth_credentials=credentials)
+
     """
     try:
         import llama_index.vector_stores.google.genai_extension as genaix
@@ -80,7 +82,7 @@ def set_google_config(
         "user_agent": user_agent,
         "page_size": page_size,
         "auth_credentials": auth_credentials,
-        "testing": kwargs.get("testing", None),
+        "testing": kwargs.get("testing"),
     }
     attrs = {k: v for k, v in config_attrs.items() if v is not None}
     config = genaix.Config(**attrs)
@@ -93,7 +95,8 @@ class NoSuchCorpusException(Exception):
 
 
 class GoogleVectorStore(BasePydanticVectorStore):
-    """Google GenerativeAI Vector Store.
+    """
+    Google GenerativeAI Vector Store.
 
     Currently, it computes the embedding vectors on the server side.
 
@@ -115,6 +118,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
         metadata_keys (Optional[List[str]]): Specifies which metadata keys to include in the
             query results if include_metadata is set to True. If None, all metadata keys
             are included. Defaults to None.
+
     """
 
     # Semantic Retriever stores the document node's text as string and embeds
@@ -134,12 +138,14 @@ class GoogleVectorStore(BasePydanticVectorStore):
     _client: Any = PrivateAttr()
 
     def __init__(self, *, client: Any, **kwargs: Any):
-        """Raw constructor.
+        """
+        Raw constructor.
 
         Use the class method `from_corpus` or `create_corpus` instead.
 
         Args:
             client: The low-level retriever class from google.ai.generativelanguage.
+
         """
         try:
             import google.ai.generativelanguage as genai
@@ -159,7 +165,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
         include_metadata: bool = False,
         metadata_keys: Optional[List[str]] = None,
     ) -> "GoogleVectorStore":
-        """Create an instance that points to an existing corpus.
+        """
+        Create an instance that points to an existing corpus.
 
         Args:
             corpus_id (str): ID of an existing corpus on Google's server.
@@ -174,6 +181,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         Raises:
             NoSuchCorpusException if no such corpus is found.
+
         """
         try:
             import llama_index.vector_stores.google.genai_extension as genaix
@@ -196,7 +204,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
     def create_corpus(
         cls, *, corpus_id: Optional[str] = None, display_name: Optional[str] = None
     ) -> "GoogleVectorStore":
-        """Create an instance that points to a newly created corpus.
+        """
+        Create an instance that points to a newly created corpus.
 
         Examples:
             store = GoogleVectorStore.create_corpus()
@@ -223,6 +232,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
         Raises:
             An exception if the corpus already exists or the user hits the
             quota limit.
+
         """
         try:
             import llama_index.vector_stores.google.genai_extension as genaix
@@ -250,7 +260,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
         return self._client
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes with embedding to vector store.
+        """
+        Add nodes with embedding to vector store.
 
         If a node has a source node, the source node's ID will be used to create
         a document. Otherwise, a default document for that corpus will be used
@@ -285,6 +296,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         The above code will create one document with ID `doc-456` and title
         `Title for doc-456`. This document will house both nodes.
+
         """
         try:
             import llama_index.vector_stores.google.genai_extension as genaix
@@ -326,13 +338,15 @@ class GoogleVectorStore(BasePydanticVectorStore):
         return created_node_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes by ref_doc_id.
+        """
+        Delete nodes by ref_doc_id.
 
         Both the underlying nodes and the document will be deleted from Google
         server.
 
         Args:
             ref_doc_id: The document ID to be deleted.
+
         """
         try:
             import llama_index.vector_stores.google.genai_extension as genaix
@@ -349,7 +363,8 @@ class GoogleVectorStore(BasePydanticVectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query vector store.
+        """
+        Query vector store.
 
         Example:
             store = GoogleVectorStore.from_corpus(corpus_id="123")
@@ -374,6 +389,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         Args:
             query: See `llama_index.core.vector_stores.types.VectorStoreQuery`.
+
         """
         try:
             import llama_index.vector_stores.google.genai_extension as genaix
@@ -469,7 +485,8 @@ class _NodeGroup(BaseModel):
 
 
 def _group_nodes_by_source(nodes: Sequence[BaseNode]) -> List[_NodeGroup]:
-    """Returns a list of lists of nodes where each list has all the nodes
+    """
+    Returns a list of lists of nodes where each list has all the nodes
     from the same document.
     """
     groups: Dict[str, _NodeGroup] = {}

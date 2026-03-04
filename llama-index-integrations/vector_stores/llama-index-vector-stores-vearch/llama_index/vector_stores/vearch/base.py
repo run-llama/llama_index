@@ -34,6 +34,7 @@ class VearchVectorStore(BasePydanticVectorStore):
     Args:
         chroma_collection (chromadb.api.models.Collection.Collection):
             ChromaDB collection instance
+
     """
 
     flat_metadata: bool = True
@@ -109,6 +110,7 @@ class VearchVectorStore(BasePydanticVectorStore):
         """
         Returns:
             List of ids from adding the texts into the vectorstore.
+
         """
         if embeddings is None:
             raise ValueError("embeddings is None")
@@ -162,6 +164,7 @@ class VearchVectorStore(BasePydanticVectorStore):
 
         Return:
             code,0 failed for ,1 for success.
+
         """
         type_dict = {"int": "integer", "str": "string", "float": "float"}
         space_config = {
@@ -236,6 +239,7 @@ class VearchVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: Query results.
+
         """
         meta_filters = {}
         if query.filters is not None:
@@ -319,6 +323,7 @@ class VearchVectorStore(BasePydanticVectorStore):
         Returns:
             Optional[bool]: True if deletion is successful.
             False otherwise, None if not implemented.
+
         """
         if ids is None or len(ids) == 0:
             return
@@ -334,13 +339,15 @@ class VearchVectorStore(BasePydanticVectorStore):
             )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
 
         Returns:
             None
+
         """
         if len(ref_doc_id) == 0:
             return

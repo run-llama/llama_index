@@ -28,7 +28,8 @@ class IndexType(enum.Enum):
 
 
 class TimescaleVectorStore(BasePydanticVectorStore):
-    """Timescale vector store.
+    """
+    Timescale vector store.
 
     Examples:
         `pip install llama-index-vector-stores-timescalevector`
@@ -46,6 +47,7 @@ class TimescaleVectorStore(BasePydanticVectorStore):
             num_dimensions=1536,
         )
         ```
+
     """
 
     stores_text: bool = True

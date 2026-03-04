@@ -54,7 +54,8 @@ def get_text_from_node(
 
 
 class TreeSelectLeafRetriever(BaseRetriever):
-    """Tree select leaf retriever.
+    """
+    Tree select leaf retriever.
 
     This class traverses the index graph and searches for a leaf node that can best
     answer the query.
@@ -113,7 +114,8 @@ class TreeSelectLeafRetriever(BaseRetriever):
         prev_response: Optional[str] = None,
         level: int = 0,
     ) -> str:
-        """Get response for selected node.
+        """
+        Get response for selected node.
 
         If not leaf node, it will recursively call _query on the child nodes.
         If prev_response is provided, we will update prev_response with the answer.

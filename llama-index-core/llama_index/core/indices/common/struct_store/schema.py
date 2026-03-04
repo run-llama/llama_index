@@ -1,4 +1,5 @@
 """Common structures for structured indices."""
+
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -8,7 +9,8 @@ from dataclasses_json import DataClassJsonMixin
 # TODO: migrate this to be a data_struct
 @dataclass
 class SQLContextContainer(DataClassJsonMixin):
-    """SQLContextContainer.
+    """
+    SQLContextContainer.
 
     A container interface to store context for a given table.
     Context can be built from unstructured documents (e.g. using SQLContextBuilder).

@@ -10,17 +10,21 @@ Here's an example usage of the ZapierToolSpec.
 
 ```python
 from llama_index.tools.zapier import ZapierToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 
 zapier_spec = ZapierToolSpec(api_key="sk-ak-your-key")
 ## Or
 zapier_spec = ZapierToolSpec(api_key="oauth-token")
 
-agent = OpenAIAgent.from_tools(zapier_spec.to_tool_list(), verbose=True)
+agent = FunctionAgent(
+    tools=zapier_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("what actions are available")
-agent.chat("Can you find the taco night file in google drive")
+print(await agent.run("what actions are available"))
+print(await agent.run("Can you find the taco night file in google drive"))
 ```
 
 `list_actions`: Get the actions that you have enabled through zapier

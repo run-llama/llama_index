@@ -1,4 +1,5 @@
 """Test indices/utils.py."""
+
 import pytest
 from llama_index.core.indices.utils import expand_tokens_with_subtokens
 

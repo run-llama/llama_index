@@ -7,18 +7,19 @@ import requests
 
 def get_file_content(url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(url + path)
+    resp = requests.get(url + path, timeout=(60, 60))
     return resp.text, resp.status_code
 
 
 def get_file_content_bytes(url: str, path: str) -> Tuple[bytes, int]:
     """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(url + path)
+    resp = requests.get(url + path, timeout=(60, 60))
     return resp.content, resp.status_code
 
 
 def get_exports(raw_content: str) -> List:
-    """Read content of a Python file and returns a list of exported class names.
+    """
+    Read content of a Python file and returns a list of exported class names.
 
     For example:
     ```python
@@ -46,7 +47,8 @@ def get_exports(raw_content: str) -> List:
 
 
 def rewrite_exports(exports: List[str], dirpath: str) -> None:
-    """Write the `__all__` variable to the `__init__.py` file in the modules dir.
+    """
+    Write the `__all__` variable to the `__init__.py` file in the modules dir.
 
     Removes the line that contains `__all__` and appends a new line with the updated
     `__all__` variable.
@@ -91,7 +93,9 @@ def initialize_directory(
 def get_source_files_list(source_tree_url: str, path: str) -> List[str]:
     """Get the list of source files to download."""
     resp = requests.get(
-        source_tree_url + path + "?recursive=1", headers={"Accept": "application/json"}
+        source_tree_url + path + "?recursive=1",
+        headers={"Accept": "application/json"},
+        timeout=(60, 60),
     )
     payload = resp.json()["payload"]
     return [item["name"] for item in payload["tree"]["items"]]
@@ -107,7 +111,11 @@ def recursive_tree_traverse(
         url = tree_urls[0]
 
         try:
-            res = requests.get(url, headers={"Accept": "application/json"})
+            res = requests.get(
+                url,
+                headers={"Accept": "application/json"},
+                timeout=(60, 60),
+            )
             tree_elements = res.json()["payload"]["tree"]["items"]
         except Exception:
             raise ValueError("Failed to traverse github tree source.")

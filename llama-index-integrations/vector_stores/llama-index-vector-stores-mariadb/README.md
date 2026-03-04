@@ -1,10 +1,12 @@
 # LlamaIndex Vector_Stores Integration: MariaDB
 
-With the release of MariaDB 11.6 Vector Preview, the MariaDB relational database introduced the long-awaited vector search functionality.
+Starting with version `11.7.1`, the MariaDB relational database has vector search functionality integrated.
 Thus now it can be used as a fully-functional vector store in LlamaIndex.
-Please note, however, that the latest MariaDB version is only an Alpha release, which means that it may crash unexpectedly.
 
-To learn more about the feature, check the [Vector Overview](https://mariadb.com/kb/en/vector-overview/) in the MariaDB docs.
+To learn more about the feature in MariaDB, check its [Vector Overview documentation](https://mariadb.com/kb/en/vector-overview/).
+
+Please note that versions before `0.3.0` of this package are not compatible with MariaDB 11.7 and later.
+They are compatible only with the one-off `MariaDB 11.6 Vector` preview release which used a slightly different syntax.
 
 ## Installation
 
@@ -25,6 +27,8 @@ vector_store = MariaDBVectorStore.from_params(
     database="vectordb",
     table_name="llama_index_vectorstore",
     embed_dim=1536,  # OpenAI embedding dimension
+    default_m=6,  # MariaDB Vector system parameter
+    ef_search=20,  # MariaDB Vector system parameter
 )
 ```
 
@@ -33,7 +37,7 @@ vector_store = MariaDBVectorStore.from_params(
 ### Running Integration Tests
 
 A suite of integration tests is available to verify the MariaDB vector store integration.
-The test suite needs a MariaDB database with vector search support up and running, if not found the tests are skipped.
+The test suite needs a MariaDB database with vector search support up and running. If not found, the tests are skipped.
 To facilitate that, a sample `docker-compose.yaml` file is provided, so you can simply do:
 
 ```shell

@@ -55,6 +55,7 @@ class WordLiftLoader(BaseReader):
         configure_options (dict): Additional configuration options.
         page (int): The page number.
         rows (int): The number of rows per page.
+
     """
 
     def __init__(self, endpoint, headers, query, fields, configure_options) -> None:
@@ -73,6 +74,7 @@ class WordLiftLoader(BaseReader):
 
         Raises:
             APIConnectionError: If there is an error connecting to the API.
+
         """
         try:
             query = self.alter_query()
@@ -100,6 +102,7 @@ class WordLiftLoader(BaseReader):
 
         Raises:
             DataTransformError: If there is an error transforming the data.
+
         """
         try:
             data = data[DATA_KEY][self.fields]
@@ -161,6 +164,7 @@ class WordLiftLoader(BaseReader):
 
         Returns:
             List[Document]: The list of loaded documents.
+
         """
         try:
             data = self.fetch_data()
@@ -175,6 +179,7 @@ class WordLiftLoader(BaseReader):
 
         Returns:
             str: The altered GraphQL query with pagination arguments.
+
         """
         from graphql import parse, print_ast
         from graphql.language.ast import ArgumentNode, IntValueNode, NameNode
@@ -210,6 +215,7 @@ def is_url(text: str) -> bool:
 
     Returns:
         bool: True if the text is a URL, False otherwise.
+
     """
     try:
         result = urlparse(text)

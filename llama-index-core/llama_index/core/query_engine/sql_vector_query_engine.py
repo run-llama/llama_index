@@ -51,7 +51,8 @@ DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = PromptTemplate(
 
 # NOTE: maintain for backwards compatibility
 class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
-    """SQL + Vector Index Auto Retriever Query Engine.
+    """
+    SQL + Vector Index Auto Retriever Query Engine.
 
     This query engine can query both a SQL database
     as well as a vector database. It will first decide
@@ -153,7 +154,8 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         **kwargs: Any,
     ) -> "SQLAutoVectorQueryEngine":
-        """From SQL and vector query engines.
+        """
+        From SQL and vector query engines.
 
         Args:
             sql_query_engine (BaseSQLTableQueryEngine): SQL query engine.

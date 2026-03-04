@@ -25,7 +25,8 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
 
 class GoogleCalendarReader(BaseReader):
-    """Google Calendar reader.
+    """
+    Google Calendar reader.
 
     Reads events from Google Calendar
 
@@ -36,11 +37,13 @@ class GoogleCalendarReader(BaseReader):
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
     ) -> List[Document]:
-        """Load data from user's calendar.
+        """
+        Load data from user's calendar.
 
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from. Defaults to today.
+
         """
         from googleapiclient.discovery import build
 
@@ -102,7 +105,8 @@ class GoogleCalendarReader(BaseReader):
         return results
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -110,6 +114,7 @@ class GoogleCalendarReader(BaseReader):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         from google_auth_oauthlib.flow import InstalledAppFlow
 

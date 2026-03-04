@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
-    """Embedding adapter finetune engine.
+    """
+    Embedding adapter finetune engine.
 
     Args:
         dataset (EmbeddingQAFinetuneDataset): Dataset to finetune on.
@@ -98,7 +99,8 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         model_cls: Optional[Type[Any]] = None,
         **kwargs: Any,
     ) -> "EmbeddingAdapterFinetuneEngine":
-        """Load from model path.
+        """
+        Load from model path.
 
         Args:
             dataset (EmbeddingQAFinetuneDataset): Dataset to finetune on.

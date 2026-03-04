@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class AdapterEmbeddingModel(BaseEmbedding):
-    """Adapter for any embedding model.
+    """
+    Adapter for any embedding model.
 
     This is a wrapper around any embedding model that adds an adapter layer \
         on top of it.

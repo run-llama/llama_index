@@ -33,6 +33,7 @@ class BoxAIExtractToolSpec(BaseToolSpec):
 
     Returns:
         Document: A Document object containing the extracted AI content.
+
     """
 
     spec_functions = ["ai_extract"]
@@ -45,6 +46,7 @@ class BoxAIExtractToolSpec(BaseToolSpec):
 
         Args:
             box_client (BoxClient): The BoxClient instance to use for interacting with the Box API.
+
         """
         self._box_client = add_extra_header_to_box_client(box_client)
 
@@ -63,6 +65,7 @@ class BoxAIExtractToolSpec(BaseToolSpec):
         Returns:
             Document: A Document object containing the extracted AI content,
             including metadata about the original Box file.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)

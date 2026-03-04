@@ -2,13 +2,13 @@ import logging
 import os
 from typing import List, Optional
 
+import duckdb
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.schema import TextNode, NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)
-import_err_msg = "`duckdb` package not found, please run `pip install duckdb`"
 
 
 class DuckDBLocalContext:
@@ -18,18 +18,12 @@ class DuckDBLocalContext:
         self._home_dir = os.path.expanduser("~")
 
     def __enter__(self) -> "duckdb.DuckDBPyConnection":
-        try:
-            import duckdb
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        if not os.path.exists(os.path.dirname(self.database_path)):
+        if self.database_path != ":memory:" and not os.path.exists(
+            os.path.dirname(self.database_path)
+        ):
             raise ValueError(
                 f"Directory {os.path.dirname(self.database_path)} does not exist."
             )
-
-        # if not os.path.isfile(self.database_path):
-        #     raise ValueError(f"Database path {self.database_path} is not a valid file.")
 
         self._conn = duckdb.connect(self.database_path)
         self._conn.execute(f"SET home_directory='{self._home_dir}';")
@@ -40,8 +34,6 @@ class DuckDBLocalContext:
         return self._conn
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self._conn.close()
-
         if self._conn:
             self._conn.close()
 
@@ -49,9 +41,9 @@ class DuckDBLocalContext:
 class DuckDBRetriever(BaseRetriever):
     def __init__(
         self,
-        database_name: Optional[str] = ":memory:",
-        table_name: Optional[str] = "documents",
-        text_search_config: Optional[dict] = {
+        database_name: str = ":memory:",
+        table_name: str = "documents",
+        text_search_config: dict = {
             "stemmer": "english",
             "stopwords": "english",
             "ignore": r"(\\.|[^a-z])+",
@@ -59,9 +51,9 @@ class DuckDBRetriever(BaseRetriever):
             "lower": True,
             "overwrite": True,
         },
-        persist_dir: Optional[str] = "./storage",
-        node_id_column: Optional[str] = "node_id",
-        text_column: Optional[str] = "text",
+        persist_dir: str = "./storage",
+        node_id_column: str = "node_id",
+        text_column: str = "text",
         # TODO: Add more options for FTS index creation
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
@@ -102,7 +94,7 @@ class DuckDBRetriever(BaseRetriever):
         query = query_bundle.query_str
         sql = f"""
                 SELECT
-                    fts_main_{self._table_name}.match_bm25({self._node_id_column}, '{query}') AS score,
+                    fts_main_{self._table_name}.match_bm25({self._node_id_column}, ?) AS score,
                     {self._node_id_column}, {self._text_column}
                 FROM {self._table_name}
                 WHERE score IS NOT NULL
@@ -110,7 +102,7 @@ class DuckDBRetriever(BaseRetriever):
                 LIMIT {self._similarity_top_k};
             """
         with DuckDBLocalContext(self._database_path) as conn:
-            query_result = conn.execute(sql).fetchall()
+            query_result = conn.execute(sql, [query]).fetchall()
         # Convert query result to NodeWithScore objects
         retrieve_nodes = []
         for row in query_result:

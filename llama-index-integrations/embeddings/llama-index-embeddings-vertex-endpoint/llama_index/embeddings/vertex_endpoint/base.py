@@ -107,7 +107,7 @@ class VertexEndpointEmbedding(BaseEmbedding):
         response = self._client.predict(
             instances=self.content_handler.serialize_input(payload),
             parameters=model_kwargs,
-            **endpoint_kwargs
+            **endpoint_kwargs,
         )
 
         # Assuming response contains the embeddings in a field called 'predictions'
@@ -124,7 +124,7 @@ class VertexEndpointEmbedding(BaseEmbedding):
         response = await self._client.predict_async(
             instances=self.content_handler.serialize_input(payload),
             parameters=model_kwargs,
-            **endpoint_kwargs
+            **endpoint_kwargs,
         )
 
         # Assuming response contains the embeddings in a field called 'predictions'

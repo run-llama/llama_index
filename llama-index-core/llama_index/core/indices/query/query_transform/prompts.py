@@ -1,6 +1,5 @@
 """Query transform prompts."""
 
-
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 

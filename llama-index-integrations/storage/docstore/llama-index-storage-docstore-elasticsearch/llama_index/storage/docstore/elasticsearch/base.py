@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.elasticsearch import ElasticsearchKVStore
 
 
 class ElasticsearchDocumentStore(KVDocumentStore):
-    """Elasticsearch Document (Node) store.
+    """
+    Elasticsearch Document (Node) store.
 
     An Elasticsearch store for Document and Node objects.
 

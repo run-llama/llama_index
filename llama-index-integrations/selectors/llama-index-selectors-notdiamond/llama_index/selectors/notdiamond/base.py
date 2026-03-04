@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Sequence
 
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms import LLM, MockLLM
 from llama_index.core.schema import QueryBundle
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.base.base_selector import SelectorResult
@@ -47,7 +47,7 @@ class NotDiamondSelector(LLMSingleSelector):
         """
         # Not needed - we will route using our own client based on the query prompt
         # Add @property for _llm here
-        _encap_selector = LLMSingleSelector.from_defaults()
+        _encap_selector = LLMSingleSelector.from_defaults(llm=MockLLM())
         self._llm = None
         self._prompt = _encap_selector._prompt
 

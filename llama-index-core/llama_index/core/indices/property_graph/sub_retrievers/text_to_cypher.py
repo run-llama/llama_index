@@ -8,7 +8,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.settings import Settings
 
 DEFAULT_RESPONSE_TEMPLATE = (
-    "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
+    "Generated Cypher query:\n{query}\n\nCypher Response:\n{response}"
 )
 
 DEFAULT_SUMMARY_TEMPLATE = PromptTemplate(
@@ -35,7 +35,8 @@ DEFAULT_SUMMARY_TEMPLATE = PromptTemplate(
 
 
 class TextToCypherRetriever(BasePGRetriever):
-    """A Text-to-Cypher retriever that uses a language model to generate Cypher queries.
+    """
+    A Text-to-Cypher retriever that uses a language model to generate Cypher queries.
 
     NOTE: Executing arbitrary cypher has its risks. Ensure you take the needed measures
     (read-only roles, sandboxed env, etc.) to ensure safe usage in a production environment.
@@ -60,6 +61,7 @@ class TextToCypherRetriever(BasePGRetriever):
             response, If False this uses the provided or default response_template. Defaults to False.
         summarization_template (Optional[str], optional):
             The template to use for summarizing the response. Defaults to None.
+
     """
 
     def __init__(

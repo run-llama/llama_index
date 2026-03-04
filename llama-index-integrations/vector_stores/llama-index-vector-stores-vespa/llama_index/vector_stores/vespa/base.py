@@ -98,6 +98,7 @@ class VespaVectorStore(BasePydanticVectorStore):
         retriever.retrieve("Who directed inception?")
 
         ```
+
     """
 
     stores_text: bool = True
@@ -228,6 +229,7 @@ class VespaVectorStore(BasePydanticVectorStore):
         Args:
             nodes (List[BaseNode]): List of nodes to add
             schema (Optional[str]): Schema name in Vespa application to add nodes to. Defaults to `default_schema_name`.
+
         """
         # Create vespa iterable from nodes
         ids = []
@@ -279,6 +281,7 @@ class VespaVectorStore(BasePydanticVectorStore):
             num_concurrent_requests (int): Maximum number of concurrent requests
             total_timeout (int): Total timeout for all requests
             kwargs (Any): Additional kwargs for Vespa application
+
         """
         semaphore = asyncio.Semaphore(num_concurrent_requests)
         ids = []
@@ -379,6 +382,7 @@ class VespaVectorStore(BasePydanticVectorStore):
 
         Returns:
             dict: Query parameters
+
         """
         logger.info(f"Query: {query}")
         if query.filters:

@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class GaudiLLM(HuggingFaceLLM):
-    r"""GaudiLLM LLM.
+    r"""
+    GaudiLLM LLM.
 
     Examples:
         `pip install llama-index-llms-gaudi`
@@ -376,6 +377,7 @@ class GaudiLLM(HuggingFaceLLM):
         response = llm.complete("What is the meaning of life?")
         print(str(response))
         ```
+
     """
 
     model_name: str = Field(

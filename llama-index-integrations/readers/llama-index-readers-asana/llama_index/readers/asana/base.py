@@ -7,10 +7,12 @@ import asana
 
 
 class AsanaReader(BaseReader):
-    """Asana reader. Reads data from an Asana workspace.
+    """
+    Asana reader. Reads data from an Asana workspace.
 
     Args:
         asana_token (str): Asana token.
+
     """
 
     def __init__(self, asana_token: str) -> None:
@@ -20,7 +22,8 @@ class AsanaReader(BaseReader):
     def load_data(
         self, workspace_id: Optional[str] = None, project_id: Optional[str] = None
     ) -> List[Document]:
-        """Load data from the workspace.
+        """
+        Load data from the workspace.
 
         Args:
             workspace_id (Optional[str], optional): Workspace ID. Defaults to None.
@@ -29,6 +32,7 @@ class AsanaReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         if workspace_id is None and project_id is None:
             raise ValueError("Either workspace_id or project_id must be provided")

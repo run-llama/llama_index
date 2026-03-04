@@ -44,6 +44,7 @@ class MetaphorToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15". Get the date from `current_date`
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.search(
             query,
@@ -67,6 +68,7 @@ class MetaphorToolSpec(BaseToolSpec):
 
         Args:
             ids (List(str)): the ids of the documents to retrieve
+
         """
         response = self.client.get_contents(ids)
         return [Document(text=con.extract) for con in response.contents]
@@ -86,6 +88,7 @@ class MetaphorToolSpec(BaseToolSpec):
             num_results (Optional[int]): Number of results to return. Default 3.
             start_published_date (Optional[str]): A date string like "2020-06-15"
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.find_similar(
             url,
@@ -117,6 +120,7 @@ class MetaphorToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15".
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.search(
             query,

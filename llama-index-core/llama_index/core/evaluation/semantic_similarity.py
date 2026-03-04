@@ -11,7 +11,8 @@ from llama_index.core.settings import Settings
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):
-    """Embedding similarity evaluator.
+    """
+    Embedding similarity evaluator.
 
     Evaluate the quality of a question answering system by
     comparing the similarity between embeddings of the generated answer
@@ -24,6 +25,7 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
     Args:
         similarity_threshold (float): Embedding similarity threshold for "passing".
             Defaults to 0.8.
+
     """
 
     def __init__(

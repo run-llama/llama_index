@@ -96,7 +96,8 @@ class CassandraDatabase:
     def get_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
     ) -> str:
-        """Get data from the specified table in the specified keyspace. Optionally can
+        """
+        Get data from the specified table in the specified keyspace. Optionally can
         take a predicate for the WHERE clause and a limit.
         """
         try:
@@ -128,15 +129,18 @@ class CassandraDatabase:
         by iterating over all tables within that keyspace and calling their
         as_markdown method.
 
-        Parameters:
+        Parameters
+        ----------
         - keyspace (str): The name of the keyspace to generate markdown
         documentation for.
         - tables (list[Table]): list of tables in the keyspace; it will be resolved
         if not provided.
 
-        Returns:
+        Returns
+        -------
         A string containing the markdown representation of the specified
         keyspace schema.
+
         """
         if not tables:
             tables = self.get_keyspace_tables(keyspace)
@@ -173,6 +177,7 @@ class CassandraDatabase:
             their tables within this CassandraDatabase instance. This includes keyspace names,
             table names, comments, columns, partition keys, clustering keys, and indexes for
             each table.
+
         """
         schema = self._resolve_schema()
         output = "# Cassandra Database Schema\n\n"
@@ -199,6 +204,7 @@ class CassandraDatabase:
         Raises:
             ValueError: If the value of `type` is not supported.
             DatabaseError: If `cql` is considered unsafe.
+
         """
         SUPPORTED_TYPES = ["SELECT"]
         if type and type.upper() not in SUPPORTED_TYPES:
@@ -238,14 +244,17 @@ class CassandraDatabase:
         filtered by a provided list of keyspace names or by excluding predefined
         keyspaces.
 
-        Parameters:
+        Parameters
+        ----------
         - keyspace_list (Optional[List[str]]): A list of keyspace names to specifically
         include. If provided and not empty, the method returns only the keyspaces
         present in this list. If not provided or empty, the method returns all
         keyspaces except those specified in the _exclude_keyspaces attribute.
 
-        Returns:
+        Returns
+        -------
         - List[str]: A list of keyspace names according to the filtering criteria.
+
         """
         all_keyspaces = self.run(
             "SELECT keyspace_name FROM system_schema.keyspaces", fetch="all"
@@ -276,11 +285,13 @@ class CassandraDatabase:
         schema information from the specified keyspaces and executes them to gather
         data about tables, columns, and indexes within those keyspaces.
 
-        Parameters:
+        Parameters
+        ----------
         - keyspace_list (List[str]): A list of keyspace names from which to fetch
           schema data.
 
-        Returns:
+        Returns
+        -------
         - Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]: A
           tuple containing three lists:
         - The first list contains dictionaries of table details (keyspace name,
@@ -294,6 +305,7 @@ class CassandraDatabase:
         keyspaces in a single operation,
         enabling applications to programmatically analyze or document the database
         schema.
+
         """
         # Construct IN clause for CQL query
         keyspace_in_clause = ", ".join([f"'{ks}'" for ks in keyspace_list])
@@ -338,6 +350,7 @@ class CassandraDatabase:
         A dictionary with keyspace names as keys and lists of Table objects as values,
         where each Table object is populated with schema details appropriate for its
         keyspace and table name.
+
         """
         if not keyspace_list:
             keyspace_list = self._fetch_keyspaces()
@@ -416,18 +429,22 @@ class CassandraDatabase:
         3. A new `cassio` session derived from `cassio_init_kwargs`,
         4. `None`
 
-        Parameters:
+        Parameters
+        ----------
         - session (Optional[Session]): An optional session to use directly.
         - cassio_init_kwargs (Optional[Dict[str, Any]]): An optional dictionary of
           keyword arguments to `cassio`.
 
-        Returns:
+        Returns
+        -------
         - Session: The resolved session object if successful, or `None` if the session
           cannot be resolved.
 
-        Raises:
+        Raises
+        ------
         - ValueError: If `cassio_init_kwargs` is provided but is not a dictionary of
           keyword arguments.
+
         """
         # Prefer given session
         if session:
@@ -439,7 +456,7 @@ class CassandraDatabase:
             import cassio.config
         except ImportError:
             raise ValueError(
-                "cassio package not found, please install with" " `pip install cassio`"
+                "cassio package not found, please install with `pip install cassio`"
             )
 
         # Use pre-existing session on cassio
@@ -460,10 +477,12 @@ class CassandraDatabase:
 
 
 class DatabaseError(Exception):
-    """Exception raised for errors in the database schema.
+    """
+    Exception raised for errors in the database schema.
 
     Attributes:
         message -- explanation of the error
+
     """
 
     def __init__(self, message: str):
@@ -519,7 +538,8 @@ class Table(BaseModel):
         Generates a Markdown representation of the Cassandra table schema, allowing for
         customizable header levels for the table name section.
 
-        Parameters:
+        Parameters
+        ----------
         - include_keyspace (bool): If True, includes the keyspace in the output.
           Defaults to True.
         - header_level (Optional[int]): Specifies the markdown header level for the
@@ -527,12 +547,14 @@ class Table(BaseModel):
           If None, the table name is included without a header. Defaults to None
           (no header level).
 
-        Returns:
+        Returns
+        -------
         - str: A string in Markdown format detailing the table name
           (with optional header level),
           keyspace (optional), comment, columns, partition keys, clustering keys
           (with optional clustering order),
           and indexes.
+
         """
         output = ""
         if header_level is not None:

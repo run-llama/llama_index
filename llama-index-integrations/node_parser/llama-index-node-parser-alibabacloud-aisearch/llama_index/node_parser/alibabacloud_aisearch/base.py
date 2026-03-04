@@ -109,10 +109,12 @@ class AlibabaCloudAISearchNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        """
+        Parse document into nodes.
 
         Args:
             nodes (Sequence[BaseNode]): nodes to parse
+
         """
         jobs = [self._aparse_node(d) for d in documents]
         results = await run_jobs(

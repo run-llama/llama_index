@@ -1,4 +1,5 @@
-"""Hnswlib Vector store index.
+"""
+Hnswlib Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -43,7 +44,8 @@ IMPORT_ERROR_MSG = """
 
 
 class HnswlibVectorStore(BasePydanticVectorStore):
-    """Hnswlib Vector Store.
+    """
+    Hnswlib Vector Store.
 
     Embeddings are stored within a Hnswlib index.
 
@@ -75,6 +77,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         vector_store = HnswlibVectorStore.from_params(space, dim, max_elements, **kwargs)
 
         ```
+
     """
 
     stores_text: bool = False
@@ -98,7 +101,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         ef: Optional[int] = None,
         **kwargs,
     ) -> "HnswlibVectorStore":
-        """To avoid creating the `Hnswlib.Index` Yourself You can just specify it's params.
+        """
+        To avoid creating the `Hnswlib.Index` Yourself You can just specify it's params.
         For more details see [Hnswlib documentation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#api-description).
         """
         try:
@@ -161,7 +165,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -192,7 +197,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Save to file.
+        """
+        Save to file.
 
         This method saves the vector store to disk.
 
@@ -226,7 +232,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

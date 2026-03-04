@@ -84,6 +84,7 @@ def get_completion_endpoint(is_chat_model: bool) -> Any:
 
     Raises:
     - NotImplementedError: If the combination of is_chat_model and API version is not supported.
+
     """
     # For OpenAI version 1
     if is_openai_v1():
@@ -161,7 +162,8 @@ def resolve_konko_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[str, str, str, str, str]:
-    """ "Resolve KonkoAI credentials.
+    """
+    "Resolve KonkoAI credentials.
 
     The order of precedence is:
     1. param

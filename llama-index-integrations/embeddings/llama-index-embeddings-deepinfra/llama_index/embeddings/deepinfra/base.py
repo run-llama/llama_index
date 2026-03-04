@@ -39,6 +39,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         >>> model = DeepInfraEmbeddingModel()
         >>> print(model.get_text_embedding("Hello, world!"))
         [0.1, 0.2, 0.3, ...]
+
     """
 
     """model_id can be obtained from the DeepInfra website."""
@@ -85,6 +86,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
 
         Returns:
             dict: A dictionary containing embeddings from the API.
+
         """
         url = self.get_url()
         chunked_data = _chunk(data, self.embed_batch_size)

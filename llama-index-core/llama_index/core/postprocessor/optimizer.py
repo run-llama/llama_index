@@ -9,6 +9,7 @@ from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
+from llama_index.core.utils import globals_helper
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         context_before: Optional[int] = None,
         context_after: Optional[int] = None,
     ):
-        """Optimizer class that is passed into BaseGPTIndexQuery.
+        """
+        Optimizer class that is passed into BaseGPTIndexQuery.
 
         Should be set like this:
 
@@ -85,9 +87,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                 )
 
         if tokenizer_fn is None:
-            import nltk
-
-            tokenizer = nltk.tokenize.PunktSentenceTokenizer()
+            tokenizer = globals_helper.punkt_tokenizer
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
 

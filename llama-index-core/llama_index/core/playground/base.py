@@ -36,7 +36,8 @@ class Playground:
         indices: List[BaseIndex],
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
     ):
-        """Initialize with indices to experiment with.
+        """
+        Initialize with indices to experiment with.
 
         Args:
             indices: A list of BaseIndex's to experiment with
@@ -44,6 +45,7 @@ class Playground:
                 chosen from the index when a query is made. A full list of
                 retriever_modes available to each index can be found here:
                 https://docs.llamaindex.ai/en/stable/module_guides/querying/retriever/retriever_modes.html
+
         """
         self._validate_indices(indices)
         self._indices = indices
@@ -61,10 +63,12 @@ class Playground:
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
-        """Initialize with Documents using the default list of indices.
+        """
+        Initialize with Documents using the default list of indices.
 
         Args:
             documents: A List of Documents to experiment with.
+
         """
         if len(documents) == 0:
             raise ValueError(
@@ -121,7 +125,8 @@ class Playground:
     def compare(
         self, query_text: str, to_pandas: bool | None = True
     ) -> Any | List[Dict[str, Any]]:
-        """Compare index outputs on an input query.
+        """
+        Compare index outputs on an input query.
 
         Args:
             query_text (str): Query to run all indices on.
@@ -131,6 +136,7 @@ class Playground:
         Returns:
             The output of each index along with other data, such as the time it took to
             compute. Results are stored in a Pandas Dataframe or a list of Dicts.
+
         """
         print(f"\033[1mQuery:\033[0m\n{query_text}\n")
         result = []

@@ -17,12 +17,14 @@ class Article:
 
 
 class HatenaBlogReader(BaseReader):
-    """Hatena Blog reader.
+    """
+    Hatena Blog reader.
 
     Args:
         root_endpoint (str): AtomPub root endpoint.
         api_key (str): AtomPub API Key
         username (str): Hatena ID
+
     """
 
     def __init__(self, root_endpoint: str, api_key: str, username: str) -> None:

@@ -9,11 +9,13 @@ from llama_index.core.schema import Document
 
 
 class PDFTableReader(BaseReader):
-    """PDF Table Reader. Reads table from PDF.
+    """
+    PDF Table Reader. Reads table from PDF.
 
     Args:
         row_separator (str): Row separator used to join rows of a DataFrame.
         col_separator (str): Col separator used to join columns of a DataFrame.
+
     """
 
     def __init__(
@@ -21,7 +23,7 @@ class PDFTableReader(BaseReader):
         *args: Any,
         row_separator: str = "\n",
         col_separator: str = ", ",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._row_separator = row_separator
@@ -30,7 +32,8 @@ class PDFTableReader(BaseReader):
     def load_data(
         self, file: Path, pages: str = "1", extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Load data and extract table from PDF file.
+        """
+        Load data and extract table from PDF file.
 
         Args:
             file (Path): Path for the PDF file.
@@ -39,6 +42,7 @@ class PDFTableReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         import camelot
 

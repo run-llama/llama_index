@@ -19,13 +19,15 @@ except ImportError:
 
 
 def clean_text(text: str) -> str:
-    """Clean raw text string.
+    """
+    Clean raw text string.
 
     Args:
         text (str): Raw text to clean.
 
     Returns:
         str: cleaned text.
+
     """
     # Spacing and filters
     text = re.sub(
@@ -45,7 +47,8 @@ def clean_text(text: str) -> str:
 
 
 def scrape_data(revs):
-    """Multiprocessing function to get the data from the IMDB reviews page.
+    """
+    Multiprocessing function to get the data from the IMDB reviews page.
 
     Args:
         revs (selenium element): element for all the reviews
@@ -56,6 +59,7 @@ def scrape_data(revs):
         rating (str): The ratinng given by the user
         title (str): the title of the review
         link(str): the link of the review
+
     """
     try:
         spoiler_btn = revs.find_element(By.CLASS_NAME, "ipl-expander")
@@ -95,7 +99,8 @@ def scrape_data(revs):
 
 
 def process_muted_text(mute_text: str) -> (float, float):
-    """Post processing the muted text.
+    """
+    Post processing the muted text.
 
     Args:
         mute_text (str): text on how many people people found it helpful
@@ -103,6 +108,7 @@ def process_muted_text(mute_text: str) -> (float, float):
     Returns:
         found_helpful (float): Number of people found the review helpful
         total (float): Number of people voted
+
     """
     found_helpful, total = 0, 0
     pattern = r"(\d+)\s*out\s*of\s*(\d+) found this helpful"
@@ -122,7 +128,8 @@ def main_scraper(
     max_workers: int = 0,
     reviews_folder: str = "movie_reviews",
 ):
-    """The main helper function to scrape data.
+    """
+    The main helper function to scrape data.
 
     Args:
         movie_name (str): The name of the movie along with the year
@@ -136,11 +143,12 @@ def main_scraper(
         reviews_comment (List): list of comment of each review
         reviews_rating (List):  list of ratings of each review
         reviews_link (List):  list of links of each review
+
     """
     if multithreading:
-        assert (
-            max_workers > 0
-        ), "If you are using multithreading, then max_workers should be greater than 1"
+        assert max_workers > 0, (
+            "If you are using multithreading, then max_workers should be greater than 1"
+        )
 
     ia = imdb.Cinemagoer()
     movies = ia.search_movie(movie_name)

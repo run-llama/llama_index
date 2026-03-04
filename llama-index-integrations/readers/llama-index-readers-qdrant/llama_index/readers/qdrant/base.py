@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class QdrantReader(BaseReader):
-    """Qdrant reader.
+    """
+    Qdrant reader.
 
     Retrieve documents from existing Qdrant collections.
 
@@ -35,6 +36,7 @@ class QdrantReader(BaseReader):
             Default: 5.0 seconds for REST and unlimited for gRPC
         host: Host name of Qdrant service. If url and host are None, set to 'localhost'.
             Default: `None`
+
     """
 
     def __init__(
@@ -84,7 +86,8 @@ class QdrantReader(BaseReader):
         rang_search_mapping: Optional[Dict[str, Dict[str, float]]] = None,
         limit: int = 10,
     ) -> List[Document]:
-        """Load data from Qdrant.
+        """
+        Load data from Qdrant.
 
         Args:
             collection_name (str): Name of the Qdrant collection.
@@ -114,6 +117,7 @@ class QdrantReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         from qdrant_client.http.models import (
             FieldCondition,

@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class AzureAIEmbeddingsModel(BaseEmbedding):
-    """Azure AI model inference for embeddings.
+    """
+    Azure AI model inference for embeddings.
 
     Examples:
         ```python
@@ -61,6 +62,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         documents = SimpleDirectoryReader("./data").load_data()
         index = VectorStoreIndex.from_documents(documents)
         ```
+
     """
 
     model_kwargs: Dict[str, Any] = Field(
@@ -75,6 +77,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         model_name: str = None,
+        api_version: str = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         num_workers: Optional[int] = None,
@@ -107,6 +110,9 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
                 "You must provide an credential to use the Azure AI model inference LLM."
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
+
+        if api_version:
+            client_kwargs["api_version"] = api_version
 
         client = EmbeddingsClient(
             endpoint=endpoint,

@@ -81,7 +81,8 @@ class BaseLlamaPredictionDataset(BaseModel):
     def __getitem__(
         self, val: Union[slice, int]
     ) -> Union[Sequence[BaseLlamaExamplePrediction], BaseLlamaExamplePrediction]:
-        """Enable slicing and indexing.
+        """
+        Enable slicing and indexing.
 
         Returns the desired slice on `predictions`.
         """
@@ -138,7 +139,8 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
     def __getitem__(
         self, val: Union[slice, int]
     ) -> Union[Sequence[BaseLlamaDataExample], BaseLlamaDataExample]:
-        """Enable slicing and indexing.
+        """
+        Enable slicing and indexing.
 
         Returns the desired slice on `examples`.
         """
@@ -174,13 +176,15 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
     def _construct_prediction_dataset(
         self, predictions: Sequence[BaseLlamaExamplePrediction]
     ) -> BaseLlamaPredictionDataset:
-        """Construct the specific prediction dataset.
+        """
+        Construct the specific prediction dataset.
 
         Args:
             predictions (List[BaseLlamaExamplePrediction]): the list of predictions.
 
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
+
         """
 
     @abstractmethod
@@ -190,16 +194,18 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaExamplePrediction:
-        """Predict on a single example.
+        """
+        Predict on a single example.
 
         NOTE: Subclasses need to implement this.
 
         Args:
-            predictor (PredictorType): The predictor to make the prediciton with.
+            predictor (PredictorType): The predictor to make the prediction with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
             BaseLlamaExamplePrediction: The prediction.
+
         """
 
     def make_predictions_with(
@@ -209,7 +215,8 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         batch_size: int = 20,
         sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaPredictionDataset:
-        """Predict with a given query engine.
+        """
+        Predict with a given query engine.
 
         Args:
             predictor (PredictorType): The predictor to make predictions with.
@@ -221,6 +228,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
 
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
+
         """
         if self._predictions_cache:
             start_example_position = len(self._predictions_cache)
@@ -249,16 +257,18 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int,
     ) -> BaseLlamaExamplePrediction:
-        """Async predict on a single example.
+        """
+        Async predict on a single example.
 
         NOTE: Subclasses need to implement this.
 
         Args:
-            predictor (PredictorType): The predictor to make the prediciton with.
+            predictor (PredictorType): The predictor to make the prediction with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
             BaseLlamaExamplePrediction: The prediction.
+
         """
 
     def _batch_examples(
@@ -278,7 +288,8 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         batch_size: int = 20,
         sleep_time_in_seconds: int = 1,
     ) -> BaseLlamaPredictionDataset:
-        """Async predict with a given query engine.
+        """
+        Async predict with a given query engine.
 
         Args:
             predictor (PredictorType): The predictor to make predictions with.
@@ -290,6 +301,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
 
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
+
         """
         if self._predictions_cache:
             start_example_position = len(self._predictions_cache)

@@ -47,13 +47,15 @@ def _structured_output_to_selector_result(output: Any) -> SelectorResult:
 
 
 class LLMSingleSelector(BaseSelector):
-    """LLM single selector.
+    """
+    LLM single selector.
 
     LLM-based selector that chooses one out of many options.
 
     Args:
         LLM (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting one out of many options.
+
     """
 
     def __init__(
@@ -136,7 +138,8 @@ class LLMSingleSelector(BaseSelector):
 
 
 class LLMMultiSelector(BaseSelector):
-    """LLM multi selector.
+    """
+    LLM multi selector.
 
     LLM-based selector that chooses multiple out of many options.
 
@@ -144,6 +147,7 @@ class LLMMultiSelector(BaseSelector):
         llm (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting multiple out of many
             options.
+
     """
 
     def __init__(

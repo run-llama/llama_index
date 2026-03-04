@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class SimpleCouchDBReader(BaseReader):
-    """Simple CouchDB reader.
+    """
+    Simple CouchDB reader.
 
     Concatenates each CouchDB doc into Document used by LlamaIndex.
 
@@ -37,7 +38,8 @@ class SimpleCouchDBReader(BaseReader):
         self.max_docs = max_docs
 
     def load_data(self, db_name: str, query: Optional[str] = None) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             db_name (str): name of the database.

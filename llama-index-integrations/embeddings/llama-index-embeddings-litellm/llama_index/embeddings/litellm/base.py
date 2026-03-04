@@ -11,7 +11,7 @@ def get_embeddings(
     model_name: str,
     input: List[str],
     timeout: int = 60,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> List[List[float]]:
     """
     Retrieve embeddings for a given list of input strings using the specified model.
@@ -26,6 +26,7 @@ def get_embeddings(
 
     Returns:
         List[List[float]]: A list of embeddings, where each embedding corresponds to an input string.
+
     """
     response = embedding(
         api_key=api_key,
@@ -39,6 +40,29 @@ def get_embeddings(
 
 
 class LiteLLMEmbedding(BaseEmbedding):
+    """
+    Embedding class using the LiteLLM unified API.
+
+    Args:
+        model_name (str): Name of the embedding model to use.
+            Examples include:
+            - "text-embedding-3-small"
+            - "text-embedding-3-large"
+            - Any OpenAI-compatible embedding model exposed through LiteLLM.
+
+        api_key (Optional[str]): API key for direct OpenAI-compatible requests.
+            Not required when using a LiteLLM proxy with configured credentials.
+
+        api_base (Optional[str]): Base URL of a LiteLLM proxy server
+
+        dimensions (Optional[int]): Output embedding dimensionality.
+            Supported for text-embedding-3 models.
+
+        timeout (int): Timeout (in seconds) for embedding requests.
+            Defaults to 60.
+
+    """
+
     model_name: str = Field(description="The name of the embedding model.")
     api_key: Optional[str] = Field(
         default=None,

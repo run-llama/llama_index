@@ -1,6 +1,5 @@
 """Autoretriever prompts."""
 
-
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.vector_stores.types import (
@@ -127,11 +126,7 @@ Structured Request:
 {example_output_2.model_dump_json()}
 
 ```
-""".replace(
-    "{", "{{"
-).replace(
-    "}", "}}"
-)
+""".replace("{", "{{").replace("}", "}}")
 
 
 SUFFIX = """

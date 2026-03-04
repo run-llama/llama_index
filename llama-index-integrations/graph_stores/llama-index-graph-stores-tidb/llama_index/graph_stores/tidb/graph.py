@@ -1,4 +1,5 @@
 """TiDB graph store index."""
+
 from typing import Tuple, Any, List, Optional, Dict
 from collections import defaultdict
 from sqlalchemy import (

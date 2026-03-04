@@ -342,7 +342,7 @@ class LindormVectorClient:
         filter: Union[Dict, List, None] = None,
     ) -> Dict:
         """
-        construct search query with pre-filter or post-filter.
+        Construct search query with pre-filter or post-filter.
 
         Args:
             query_vector(List[float]): Vector embedding to query.
@@ -720,6 +720,7 @@ class LindormVectorClient:
 
         Returns:
             VectorStoreQueryResult.
+
         """
         nodes = []
         ids = []
@@ -750,7 +751,6 @@ class LindormVectorClient:
                     start_char_idx=start_char_idx,
                     end_char_idx=end_char_idx,
                     relationships=relationships,
-                    extra_info=source,
                 )
             ids.append(node_id)
             nodes.append(node)
@@ -819,6 +819,7 @@ class LindormVectorStore(BasePydanticVectorStore):
         # initialize vector store
         vector_store = LindormVectorStore(client)
         ```
+
     """
 
     stores_text: bool = True
@@ -851,6 +852,7 @@ class LindormVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of node_ids
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.async_add(nodes, **add_kwargs)
@@ -869,6 +871,7 @@ class LindormVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of node_ids
+
         """
         await self._client.index_results(nodes)
         return [result.node_id for result in nodes]

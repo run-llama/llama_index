@@ -1,23 +1,21 @@
-from typing import Any, Callable, Dict, Optional, Sequence, List, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from ai21 import AI21Client, AsyncAI21Client
-from ai21.models.chat import ChatCompletionChunk, ToolCall
-from ai21_tokenizer import Tokenizer, BaseTokenizer  # pants: no-infer-dep
+from ai21_tokenizer import BaseTokenizer, Tokenizer  # pants: no-infer-dep
 from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
     achat_to_completion_decorator,
     astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    ChatResponseAsyncGen,
-    CompletionResponseAsyncGen,
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -25,16 +23,18 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.program.openai.utils import parse_partial_json
-
 from llama_index.llms.ai21.utils import (
     ai21_model_to_context_size,
-    message_to_ai21_message,
-    message_to_ai21_j2_message,
-    is_function_calling_model,
     from_ai21_message_to_chat_message,
+    is_function_calling_model,
+    message_to_ai21_j2_message,
+    message_to_ai21_message,
 )
+
+from ai21 import AI21Client, AsyncAI21Client
+from ai21.models.chat import ChatCompletionChunk, ToolCall
 
 _DEFAULT_AI21_MODEL = "jamba-1.5-mini"
 _DEFAULT_TEMPERATURE = 0.4
@@ -50,7 +50,8 @@ _TOKENIZER_MAP = {
 
 
 class AI21(FunctionCallingLLM):
-    """AI21 Labs LLM.
+    """
+    AI21 Labs LLM.
 
     Examples:
         `pip install llama-index-llms-ai21`
@@ -62,6 +63,7 @@ class AI21(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(
@@ -214,6 +216,7 @@ class AI21(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # ai21 does not support configuring the tool_choice
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]

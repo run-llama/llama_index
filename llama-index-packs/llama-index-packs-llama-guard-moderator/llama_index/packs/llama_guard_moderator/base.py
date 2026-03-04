@@ -63,7 +63,7 @@ class LlamaGuardModeratorPack(BaseLlamaPack):
             from transformers import AutoModelForCausalLM, AutoTokenizer
         except ImportError:
             raise ImportError(
-                "Dependencies missing, run " "`pip install torch transformers`"
+                "Dependencies missing, run `pip install torch transformers`"
             )
 
         import os

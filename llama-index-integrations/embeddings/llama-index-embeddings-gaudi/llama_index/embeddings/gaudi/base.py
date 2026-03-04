@@ -63,9 +63,6 @@ class GaudiEmbedding(BaseEmbedding):
     text_instruction: Optional[str] = Field(
         description="Instruction to prepend to text."
     )
-    cache_folder: Optional[str] = Field(
-        description="Cache folder for Hugging Face files."
-    )
 
     _model: Any = PrivateAttr()
 

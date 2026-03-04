@@ -1,23 +1,29 @@
 import functools
+import re
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Dict,
+    Generator,
     List,
+    Literal,
     Optional,
     Protocol,
     Sequence,
+    Type,
     Union,
     cast,
-    get_args,
     runtime_checkable,
 )
 
 import httpx
 import tiktoken
+
+import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -38,8 +44,14 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ThinkingBlock,
+    ToolCallBlock,
+    TextBlock,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+)
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
@@ -49,11 +61,13 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
+from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.llms.utils import parse_partial_json
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
-    OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
     from_openai_message,
@@ -62,24 +76,19 @@ from llama_index.llms.openai.utils import (
     is_function_calling_model,
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
-    to_openai_message_dicts,
     resolve_tool_choice,
+    to_openai_message_dicts,
     update_tool_calls,
+    is_json_schema_supported,
+    is_chatcomp_api_supported,
 )
-from llama_index.core.bridge.pydantic import (
-    BaseModel,
-)
-
-from openai import AsyncOpenAI, AzureOpenAI
+from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
-from llama_index.core.llms.utils import parse_partial_json
-
-import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -89,7 +98,7 @@ if TYPE_CHECKING:
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
 
-def llm_retry_decorator(f: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(f)
     def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         max_retries = getattr(self, "max_retries", 0)
@@ -112,14 +121,20 @@ def llm_retry_decorator(f: Callable[[Any], Any]) -> Callable[[Any], Any]:
 class Tokenizer(Protocol):
     """Tokenizers support an encode function that returns a list of ints."""
 
-    def encode(self, text: str) -> List[int]:
+    def encode(self, text: str) -> List[int]:  # fmt: skip
         ...
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class OpenAI(FunctionCallingLLM):
@@ -156,7 +171,7 @@ class OpenAI(FunctionCallingLLM):
 
         llm = OpenAI(model="gpt-3.5-turbo")
 
-        stream = llm.stream("Hi, write a short story")
+        stream = llm.stream_complete("Hi, write a short story")
 
         for r in stream:
             print(r.delta, end="")
@@ -170,10 +185,11 @@ class OpenAI(FunctionCallingLLM):
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
         ge=0.0,
-        le=1.0,
+        le=2.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
+        default=None,
         gt=0,
     )
     logprobs: Optional[bool] = Field(
@@ -210,12 +226,30 @@ class OpenAI(FunctionCallingLLM):
         ),
     )
 
-    api_key: str = Field(default=None, description="The OpenAI API key.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The API version for OpenAI API.")
+    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
+    api_base: Optional[str] = Field(
+        default=None, description="The base URL for OpenAI API."
+    )
+    api_version: Optional[str] = Field(
+        default=None, description="The API version for OpenAI API."
+    )
     strict: bool = Field(
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
+    )
+    reasoning_effort: Optional[
+        Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+    ] = Field(
+        default=None,
+        description="The effort to use for reasoning models.",
+    )
+    modalities: Optional[List[str]] = Field(
+        default=None,
+        description="The output modalities to use for the model.",
+    )
+    audio_config: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The audio configuration to use for the model.",
     )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
@@ -248,8 +282,18 @@ class OpenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         strict: bool = False,
+        reasoning_effort: Optional[
+            Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+        ] = None,
+        modalities: Optional[List[str]] = None,
+        audio_config: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
+        # TODO: Support deprecated max_new_tokens
+        if "max_new_tokens" in kwargs:
+            max_tokens = kwargs["max_new_tokens"]
+            del kwargs["max_new_tokens"]
+
         additional_kwargs = additional_kwargs or {}
 
         api_key, api_base, api_version = resolve_openai_credentials(
@@ -261,6 +305,11 @@ class OpenAI(FunctionCallingLLM):
         # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
             temperature = 1.0
+
+        if not is_chatcomp_api_supported(model):
+            raise ValueError(
+                f"Cannot use model {model} as it is only supported by the Responses API. Use the OpenAIResponses class for it."
+            )
 
         super().__init__(
             model=model,
@@ -281,6 +330,9 @@ class OpenAI(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             strict=strict,
+            reasoning_effort=reasoning_effort,
+            modalities=modalities,
+            audio_config=audio_config,
             **kwargs,
         )
 
@@ -312,9 +364,6 @@ class OpenAI(FunctionCallingLLM):
         elif model_name.startswith("ft:"):
             model_name = model_name.split(":")[1]
         return model_name
-
-    def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
 
     @classmethod
     def class_name(cls) -> str:
@@ -368,6 +417,11 @@ class OpenAI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError(
+                "Audio is not supported for completion. Use chat/achat instead."
+            )
+
         if self._use_chat_completions(kwargs):
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -417,13 +471,30 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = {**base_kwargs, **self.additional_kwargs}
         if "stream" not in all_kwargs and "stream_options" in all_kwargs:
             del all_kwargs["stream_options"]
+        if self.model in O1_MODELS and base_kwargs.get("max_tokens") is not None:
+            # O1 models use max_completion_tokens instead of max_tokens
+            all_kwargs["max_completion_tokens"] = all_kwargs.get(
+                "max_completion_tokens", all_kwargs["max_tokens"]
+            )
+            all_kwargs.pop("max_tokens", None)
+        if self.model in O1_MODELS and self.reasoning_effort is not None:
+            # O1 models support reasoning_effort of none, minimal, low, medium, high, xhigh
+            all_kwargs["reasoning_effort"] = self.reasoning_effort
+
+        if self.modalities is not None:
+            all_kwargs["modalities"] = self.modalities
+        if self.audio_config is not None:
+            all_kwargs["audio"] = self.audio_config
 
         return all_kwargs
 
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+        )
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -440,7 +511,9 @@ class OpenAI(FunctionCallingLLM):
                 )
 
         openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
+        message = from_openai_message(
+            openai_message, modalities=self.modalities or ["text"]
+        )
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
@@ -457,11 +530,18 @@ class OpenAI(FunctionCallingLLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError("Audio is not supported for chat streaming")
+
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
+            reasoning_content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
@@ -469,14 +549,12 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
 
                 if delta is None:
                     continue
@@ -490,21 +568,48 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                additional_kwargs = {}
+                # Extract reasoning_content for chain-of-thought streaming.
+                # Many OpenAI-compatible providers surface this extra field.
+                raw_reasoning = getattr(delta, "reasoning_content", None)
+                reasoning_delta = (
+                    raw_reasoning if isinstance(raw_reasoning, str) else ""
+                )
+                reasoning_content += reasoning_delta
+
+                if reasoning_content:
+                    blocks.append(ThinkingBlock(content=reasoning_content))
+                blocks.append(TextBlock(text=content))
+
+                message_additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
-                        additional_kwargs["tool_calls"] = tool_calls
+                        message_additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
+
+                # thinking_delta goes in ChatResponse.additional_kwargs
+                # (same pattern as Ollama) so agents can read it
+                response_additional_kwargs = self._get_response_token_counts(response)
+                if reasoning_delta:
+                    response_additional_kwargs["thinking_delta"] = reasoning_delta
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
+                        additional_kwargs=message_additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
+                    additional_kwargs=response_additional_kwargs,
                 )
 
         return gen()
@@ -645,6 +750,11 @@ class OpenAI(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError(
+                "Audio is not supported for completion. Use chat/achat instead."
+            )
+
         if self._use_chat_completions(kwargs):
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -668,7 +778,10 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+        )
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -683,7 +796,9 @@ class OpenAI(FunctionCallingLLM):
                 )
 
         openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
+        message = from_openai_message(
+            openai_message, modalities=self.modalities or ["text"]
+        )
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
@@ -700,11 +815,18 @@ class OpenAI(FunctionCallingLLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError("Audio is not supported for chat streaming")
+
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+        )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            reasoning_content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
@@ -713,6 +835,7 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     # check if the first chunk has neither content nor tool_calls
@@ -726,10 +849,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 if delta is None:
@@ -744,21 +864,48 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                additional_kwargs = {}
+                # Extract reasoning_content for chain-of-thought streaming.
+                # Many OpenAI-compatible providers surface this extra field.
+                raw_reasoning = getattr(delta, "reasoning_content", None)
+                reasoning_delta = (
+                    raw_reasoning if isinstance(raw_reasoning, str) else ""
+                )
+                reasoning_content += reasoning_delta
+
+                if reasoning_content:
+                    blocks.append(ThinkingBlock(content=reasoning_content))
+                blocks.append(TextBlock(text=content))
+
+                message_additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
-                        additional_kwargs["tool_calls"] = tool_calls
+                        message_additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
+
+                # thinking_delta goes in ChatResponse.additional_kwargs
+                # (same pattern as Ollama) so agents can read it
+                response_additional_kwargs = self._get_response_token_counts(response)
+                if reasoning_delta:
+                    response_additional_kwargs["thinking_delta"] = reasoning_delta
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
+                        additional_kwargs=message_additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
+                    additional_kwargs=response_additional_kwargs,
                 )
 
         return gen()
@@ -828,17 +975,20 @@ class OpenAI(FunctionCallingLLM):
 
     def _prepare_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
         if strict is not None:
@@ -850,9 +1000,8 @@ class OpenAI(FunctionCallingLLM):
             for tool_spec in tool_specs:
                 if tool_spec["type"] == "function":
                     tool_spec["function"]["strict"] = strict
-                    tool_spec["function"]["parameters"][
-                        "additionalProperties"
-                    ] = False  # in current openai 1.40.0 it is always false.
+                    # in current openai 1.40.0 it is always false.
+                    tool_spec["function"]["parameters"]["additionalProperties"] = False
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -861,20 +1010,24 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
+        kwargs = {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_choice, tool_required)
+            if tool_specs
+            else None,
+            **kwargs,
+        }
+
         if tool_specs and self.model not in O1_MODELS:
             kwargs["parallel_tool_calls"] = allow_parallel_tool_calls
 
-        return {
-            "messages": messages,
-            "tools": tool_specs or None,
-            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
-            **kwargs,
-        }
+        return kwargs
 
     def _validate_chat_with_tools_response(
         self,
         response: ChatResponse,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
@@ -890,87 +1043,245 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        if tool_calls:
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            tool_selections = []
+            for tool_call in tool_calls:
+                # this should handle both complete and partial jsons
+                try:
+                    if isinstance(tool_call.tool_kwargs, str):
+                        argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                    else:
+                        argument_dict = tool_call.tool_kwargs
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.tool_call_id or "",
+                        tool_name=tool_call.tool_name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            else:
-                return []
 
-        tool_selections = []
-        for tool_call in tool_calls:
-            if not isinstance(tool_call, get_args(OpenAIToolCall)):
-                raise ValueError("Invalid tool_call object")
-            if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+            return tool_selections
+        else:  # keep it backward-compatible
+            tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
-            # this should handle both complete and partial jsons
-            try:
-                argument_dict = parse_partial_json(tool_call.function.arguments)
-            except ValueError:
-                argument_dict = {}
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.id,
-                    tool_name=tool_call.function.name,
-                    tool_kwargs=argument_dict,
+            tool_selections = []
+            for tool_call in tool_calls:
+                if tool_call.type != "function":
+                    raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
+
+                # this should handle both complete and partial jsons
+                try:
+                    argument_dict = parse_partial_json(tool_call.function.arguments)
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.id,
+                        tool_name=tool_call.function.name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            )
 
-        return tool_selections
+            return tool_selections
+
+    def _prepare_schema(
+        self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
+    ) -> Dict[str, Any]:
+        from openai.resources.chat.completions.completions import (
+            _type_to_response_format,
+        )
+
+        llm_kwargs = llm_kwargs or {}
+        response_format = _type_to_response_format(output_cls)
+        if isinstance(response_format, dict):
+            json_schema = response_format.get("json_schema")
+            if isinstance(json_schema, dict) and "name" in json_schema:
+                json_schema["name"] = re.sub(
+                    r"[^a-zA-Z0-9_-]", "_", str(json_schema["name"])
+                )
+        llm_kwargs["response_format"] = response_format
+        if "tool_choice" in llm_kwargs:
+            del llm_kwargs["tool_choice"]
+        return llm_kwargs
+
+    def _should_use_structure_outputs(self) -> bool:
+        return (
+            self.pydantic_program_mode == PydanticProgramMode.DEFAULT
+            and is_json_schema_supported(self.model)
+        )
 
     @dispatcher.span
     def structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
+
+        if self._should_use_structure_outputs():
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            response = self.chat(messages, **llm_kwargs)
+            return output_cls.model_validate_json(str(response.message.content))
+
+        # when uses function calling to extract structured outputs
+        # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
+
+        if self._should_use_structure_outputs():
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            response = await self.achat(messages, **llm_kwargs)
+            return output_cls.model_validate_json(str(response.message.content))
+
+        # when uses function calling to extract structured outputs
+        # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return await super().astructured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
+
+    def _structured_stream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
+        if self._should_use_structure_outputs():
+            from llama_index.core.program.streaming_utils import (
+                process_streaming_content_incremental,
+            )
+
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            curr = None
+            for response in self.stream_chat(messages, **llm_kwargs):
+                curr = process_streaming_content_incremental(response, output_cls, curr)
+                yield curr
+        else:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
+            yield from super()._structured_stream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+
+    async def _structured_astream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
+        if self._should_use_structure_outputs():
+
+            async def gen(
+                llm_kwargs=llm_kwargs,
+            ) -> AsyncGenerator[
+                Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+            ]:
+                from llama_index.core.program.streaming_utils import (
+                    process_streaming_content_incremental,
+                )
+
+                messages = self._extend_messages(prompt.format_messages(**prompt_args))
+                llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+                curr = None
+                async for response in await self.astream_chat(messages, **llm_kwargs):
+                    curr = process_streaming_content_incremental(
+                        response, output_cls, curr
+                    )
+                    yield curr
+
+            return gen()
+        else:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
+            return await super()._structured_astream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+
+        return super().stream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
 
     @dispatcher.span
-    def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    async def astream_structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        return await super().astream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)

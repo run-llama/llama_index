@@ -30,6 +30,7 @@ def validate_api_key(api_key: str) -> None:
 
     Returns:
         None
+
     """
     if not api_key:
         raise ValueError("API Key is required for Upstage Document Reader.")
@@ -44,6 +45,7 @@ def validate_file_path(file_path: str) -> None:
 
     Raises:
         FileNotFoundError: If the file does not exist at the given file path.
+
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
@@ -63,6 +65,7 @@ def parse_output(data: dict, output_type: Union[OutputType, dict]) -> str:
 
     Raises:
         ValueError: If the output type is invalid.
+
     """
     if isinstance(output_type, dict):
         if data["category"] in output_type:
@@ -116,6 +119,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
             reader = UpstageLayoutAnalysisReader()
 
             docs = reader.load_data("path/to/file.pdf")
+
     """
 
     def __init__(
@@ -136,6 +140,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
                                       Defaults to False. (Use text info in PDF file)
             exclude (list, optional): Exclude specific elements from the output.
                                       Defaults to [] (all included).
+
         """
         self.api_key = get_from_param_or_env(
             "UPSTAGE_API_KEY", api_key, "UPSTAGE_API_KEY"
@@ -158,6 +163,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
 
         Raises:
             ValueError: If there is an error in the API call.
+
         """
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -201,6 +207,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
 
         Returns:
             response: The response from the server.
+
         """
         with fitz.open() as chunk_pdf:
             chunk_pdf.insert_pdf(
@@ -254,6 +261,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
         Returns:
             List[Document]: A list of Document objects, each representing a page
                             with its content and metadata.
+
         """
         _docs = []
         pages = sorted({x["page"] for x in elements})
@@ -309,6 +317,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
 
         Raises:
             ValueError: If an invalid split type is provided or if file_path is required.
+
         """
         # Check if the file path is a list of paths
         if isinstance(file_path, list):

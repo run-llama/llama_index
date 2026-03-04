@@ -1,4 +1,5 @@
 import json
+import deprecated
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -32,13 +33,22 @@ from llama_index.llms.bedrock.utils import (
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
     Provider,
+    ProviderType,
     completion_with_retry,
     get_provider,
+    get_provider_by_type,
 )
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-llms-bedrock-converse` instead, the converse API is the recommended way to use Bedrock.\n"
+        "See: https://docs.llamaindex.ai/en/stable/examples/llm/bedrock_converse/"
+    )
+)
 class Bedrock(LLM):
-    """Bedrock LLM.
+    """
+    Bedrock LLM.
 
     Examples:
         `pip install llama-index-llms-bedrock`
@@ -57,6 +67,7 @@ class Bedrock(LLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The modelId of the Bedrock model to use.")
@@ -94,6 +105,21 @@ class Bedrock(LLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    guardrail_identifier: Optional[str] = (
+        Field(
+            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+        ),
+    )
+    guardrail_version: Optional[str] = (
+        Field(
+            description="The version number for the guardrail. The value can also be DRAFT"
+        ),
+    )
+    trace: Optional[str] = (
+        Field(
+            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+        ),
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -125,12 +151,16 @@ class Bedrock(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        guardrail_identifier: Optional[str] = None,
+        guardrail_version: Optional[str] = None,
+        trace: Optional[str] = None,
+        provider_type: Optional[ProviderType] = None,
         **kwargs: Any,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
                 "`context_size` argument not provided and"
-                "model provided refers to a non-foundation model."
+                " model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
 
@@ -152,6 +182,7 @@ class Bedrock(LLM):
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
                     read_timeout=timeout,
+                    user_agent_extra="x-client-framework:llama_index",
                 )
                 if botocore_config is None
                 else botocore_config
@@ -159,7 +190,7 @@ class Bedrock(LLM):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         additional_kwargs = additional_kwargs or {}
@@ -187,8 +218,14 @@ class Bedrock(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            trace=trace,
         )
-        self._provider = get_provider(model)
+        if provider_type is not None:
+            self._provider = get_provider_by_type(provider_type)
+        else:
+            self._provider = get_provider(model)
         self.messages_to_prompt = (
             messages_to_prompt
             or self._provider.messages_to_prompt
@@ -257,6 +294,9 @@ class Bedrock(LLM):
             model=self.model,
             request_body=request_body_str,
             max_retries=self.max_retries,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
         response_body = response["body"].read()
@@ -287,6 +327,9 @@ class Bedrock(LLM):
             request_body=request_body_str,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
         response_body = response["body"]

@@ -8,7 +8,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class TransformRetriever(BaseRetriever):
-    """Transform Retriever.
+    """
+    Transform Retriever.
 
     Takes in an existing retriever and a query transform and runs the query transform
     before running the retriever.

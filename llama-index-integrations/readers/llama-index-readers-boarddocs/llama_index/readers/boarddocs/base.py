@@ -11,13 +11,15 @@ from llama_index.core.schema import Document
 
 
 class BoardDocsReader(BaseReader):
-    """BoardDocs doc reader.
+    """
+    BoardDocs doc reader.
 
     Read public agendas included on a BoardDocs site.
 
     Args:
         site (str): The BoardDocs site you'd like to index, e.g. "ca/redwood"
         committee_id (str): The committee on the site you want to index
+
     """
 
     def __init__(
@@ -55,6 +57,7 @@ class BoardDocsReader(BaseReader):
             None
         Returns:
             List[dict]: A list of meetings, each with a meetingID, date, and unid
+
         """
         meeting_list_url = self.base_url + "/BD-GetMeetingsList?open"
 
@@ -111,10 +114,12 @@ class BoardDocsReader(BaseReader):
     def load_data(
         self, meeting_ids: Optional[List[str]] = None, **load_kwargs: Any
     ) -> List[Document]:
-        """Load all meetings of the committee.
+        """
+        Load all meetings of the committee.
 
         Args:
             meeting_ids (List[str]): A list of meeting IDs to load. If None, load all meetings.
+
         """
         # if a list of meetings wasn't provided, enumerate them all
         if not meeting_ids:

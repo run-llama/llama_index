@@ -1,6 +1,7 @@
 from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
+    ChunkNode,
 )
 from llama_index.core.schema import TextNode
 from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
@@ -37,6 +38,23 @@ class TestPropertyGraphStore(TestCase):
         triplets = g.get_triplets(entity_names=["e1"])
 
         assert len(triplets) == 1
+
+    def test_mentions_verification(self) -> None:
+        g = get_store()
+        e1 = EntityNode(name="e1", properties={"triplet_source_id": "source_123"})
+        c1 = ChunkNode(name="c1", text="chunk_123", id_="source_123")
+        g.upsert_nodes([e1, c1])
+
+        # Query MENTIONS edges directly using structured_query
+        result = g.structured_query(
+            "MATCH (c:`Chunk__`)-[r:`MENTIONS`]->(e:`Entity__`) "
+            'WHERE id(c) == "source_123" AND id(e) == "e1" '
+            "RETURN id(c) AS chunk_id, id(e) AS entity_id"
+        )
+
+        assert len(result) == 1
+        assert result[0]["chunk_id"] == c1.id
+        assert result[0]["entity_id"] == e1.id
 
     def test_delete(self) -> None:
         g = get_store()

@@ -42,6 +42,7 @@ class YandexGPTEmbedding(BaseEmbedding):
                 api_key="your-api-key",
                 folder_id="your-folder-id",
             )
+
     """
 
     api_key: str = Field(description="The YandexGPT API key.")
@@ -105,6 +106,7 @@ class YandexGPTEmbedding(BaseEmbedding):
 
         Raises:
           YException: If an error occurs during embedding.
+
         """
         payload = {"modelUri": self._getModelUri(is_document), "text": text}
         header = {
@@ -143,6 +145,7 @@ class YandexGPTEmbedding(BaseEmbedding):
 
         Raises:
           YException: If an error occurs during embedding.
+
         """
         payload = {"modelUri": self._getModelUri(is_document), "text": text}
         header = {

@@ -94,10 +94,12 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.
+
         """
         if kwargs.get("model_name") is None:
             task = kwargs.get("task", "")
@@ -121,6 +123,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         Args:
             task: Hugging Face task to check within. A list of all tasks can be
                 found here: https://huggingface.co/tasks
+
         """
         all_models = self._sync_client.list_deployed_models(frameworks="all")
         try:

@@ -109,6 +109,7 @@ class RekaLLM(CustomLLM):
             ...     temperature=0.7,
             ...     max_tokens=100
             ... )
+
         """
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -173,6 +174,7 @@ class RekaLLM(CustomLLM):
             ... ]
             >>> response = reka_llm.chat(messages)
             >>> print(response.message.content)
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
@@ -208,6 +210,7 @@ class RekaLLM(CustomLLM):
             >>> reka_llm = RekaLLM(api_key="your-api-key-here")
             >>> response = reka_llm.complete("The capital of France is")
             >>> print(response.text)
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
@@ -246,6 +249,7 @@ class RekaLLM(CustomLLM):
             ... ]
             >>> for chunk in reka_llm.stream_chat(messages):
             ...     print(chunk.delta, end="", flush=True)
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
@@ -294,6 +298,7 @@ class RekaLLM(CustomLLM):
             >>> prompt = "Write a haiku about programming:"
             >>> for chunk in reka_llm.stream_complete(prompt):
             ...     print(chunk.delta, end="", flush=True)
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
@@ -349,6 +354,7 @@ class RekaLLM(CustomLLM):
             ...     print(response.message.content)
             >>>
             >>> asyncio.run(main())
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
@@ -393,6 +399,7 @@ class RekaLLM(CustomLLM):
             ...     print(response.text)
             >>>
             >>> asyncio.run(main())
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
@@ -439,6 +446,7 @@ class RekaLLM(CustomLLM):
             ...     print()  # New line after the story is complete
             >>>
             >>> asyncio.run(main())
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
@@ -496,6 +504,7 @@ class RekaLLM(CustomLLM):
             ...     print()  # New line after the haiku is complete
             >>>
             >>> asyncio.run(main())
+
         """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:

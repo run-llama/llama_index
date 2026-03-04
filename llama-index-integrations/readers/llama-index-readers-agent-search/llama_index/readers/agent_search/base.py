@@ -1,4 +1,5 @@
-r"""AgentSearch reader.
+r"""
+AgentSearch reader.
 
 Example as of 1/8/2024:
 
@@ -71,6 +72,7 @@ class AgentSearchReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         rag_response = self._client.get_search_rag_response(
             query=query, search_provider=search_provider, llm_model=llm_model

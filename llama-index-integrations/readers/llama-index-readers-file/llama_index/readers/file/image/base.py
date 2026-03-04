@@ -1,4 +1,5 @@
-"""Image parser.
+"""
+Image parser.
 
 Contains parsers for image files.
 
@@ -16,7 +17,8 @@ from llama_index.core.utils import infer_torch_device
 
 
 class ImageReader(BaseReader):
-    """Image parser.
+    """
+    Image parser.
 
     Extract text from images using DONUT or pytesseract.
 

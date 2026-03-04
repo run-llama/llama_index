@@ -21,7 +21,7 @@ from llama_index.core.chat_engine.utils import (
 )
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
-from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 
@@ -79,7 +79,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         condense_question_prompt: Optional[BasePromptTemplate] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        memory_cls: Type[BaseMemory] = Memory,
         verbose: bool = False,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -92,7 +92,9 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         llm = llm or Settings.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or memory_cls.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         if system_prompt is not None:
             raise NotImplementedError(
@@ -272,7 +274,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._memory.get(input=message)
+        chat_history = chat_history or await self._memory.aget(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -316,7 +318,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get(input=message)
+        chat_history = chat_history or await self._memory.aget(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -359,7 +361,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 ),
                 sources=[tool_output],
             )
-            asyncio.create_task(response.awrite_response_to_history(self._memory))
+            response.awrite_response_to_history_task = asyncio.create_task(
+                response.awrite_response_to_history(self._memory)
+            )
+
         else:
             raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response

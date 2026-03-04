@@ -107,10 +107,12 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         retriever: PostgresMLRetriever,
         **kwargs: Any,
     ) -> "PostgresMLQueryEngine":
-        """Initialize a PostgresMLQueryEngine object.".
+        """
+        Initialize a PostgresMLQueryEngine object.".
 
         Args:
             retriever (PostgresMLRetriever): A PostgresML retriever object.
+
         """
         return cls(retriever=retriever, **kwargs)
 

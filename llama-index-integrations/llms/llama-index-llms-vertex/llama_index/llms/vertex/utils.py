@@ -153,7 +153,8 @@ def init_vertexai(
     location: Optional[str] = None,
     credentials: Optional[Any] = None,
 ) -> None:
-    """Init vertexai.
+    """
+    Init vertexai.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.
@@ -164,6 +165,7 @@ def init_vertexai(
 
     Raises:
         ImportError: If importing vertexai SDK did not succeed.
+
     """
     vertexai.init(
         project=project,
@@ -184,7 +186,8 @@ def _parse_message(message: ChatMessage, is_gemini: bool) -> Any:
 
 
 def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
-    """Parse a sequence of messages into history.
+    """
+    Parse a sequence of messages into history.
 
     Args:
         history: The list of messages to re-create the history of the chat.
@@ -195,6 +198,7 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     Raises:
         ValueError: If a sequence of message has a SystemMessage not at the
         first place.
+
     """
     vertex_messages, context = [], None
     for i, message in enumerate(history):

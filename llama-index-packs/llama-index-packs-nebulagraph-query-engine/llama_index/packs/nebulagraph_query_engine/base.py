@@ -55,9 +55,9 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
         os.environ["GRAPHD_HOST"] = "127.0.0.1"
         os.environ["NEBULA_USER"] = username
         os.environ["NEBULA_PASSWORD"] = password
-        os.environ[
-            "NEBULA_ADDRESS"
-        ] = ip_and_port  # such as "127.0.0.1:9669" for local instance
+        os.environ["NEBULA_ADDRESS"] = (
+            ip_and_port  # such as "127.0.0.1:9669" for local instance
+        )
 
         nebulagraph_graph_store = NebulaGraphStore(
             space_name=space_name,

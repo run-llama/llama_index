@@ -1,10 +1,13 @@
+import os
+
+import pytest
+from pytest_mock import MockerFixture
+from voyageai.api_resources import VoyageResponse
+from voyageai.object.reranking import RerankingObject
+
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from voyageai.api_resources import VoyageResponse
-
 from llama_index.postprocessor.voyageai_rerank import VoyageAIRerank
-from voyageai.object.reranking import RerankingObject
-from pytest_mock import MockerFixture
 
 rerank_sample_response = {
     "object": "list",
@@ -22,7 +25,11 @@ def test_class():
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
 
 
-def test_rerank(mocker: MockerFixture) -> None:
+@pytest.mark.parametrize(
+    "constructor_kwargs",
+    [{"top_n": 2, "truncation": True}, {"top_n": None}],
+)
+def test_rerank(mocker: MockerFixture, constructor_kwargs: dict) -> None:
     # Mocked client with the desired behavior for embed_documents
     result_object = RerankingObject(
         documents=["0", "1"],
@@ -39,7 +46,7 @@ def test_rerank(mocker: MockerFixture) -> None:
     )
 
     voyageai_rerank = VoyageAIRerank(
-        api_key="api_key", top_n=2, model="rerank-lite-1", truncation=True
+        api_key="api_key", model="rerank-lite-1", **constructor_kwargs
     )
     result = voyageai_rerank.postprocess_nodes(
         nodes=[
@@ -51,3 +58,20 @@ def test_rerank(mocker: MockerFixture) -> None:
     assert len(result) == 2
     assert result[0].text == "text2"
     assert result[1].text == "text1"
+
+
+def test_rerank_construction_with_no_optional_kwargs():
+    os.environ["VOYAGE_API_KEY"] = "mock_api_key"
+    reranker = VoyageAIRerank(model="rerank-2")
+    assert reranker.truncation
+    assert reranker.top_n is None
+    assert reranker.model == "rerank-2"
+
+
+def test_rerank_construction_with_optional_kwargs():
+    reranker = VoyageAIRerank(
+        model="rerank-2", api_key="mock_api_key", top_n=10, truncation=False
+    )
+    assert not reranker.truncation
+    assert reranker.top_n == 10
+    assert reranker.model == "rerank-2"

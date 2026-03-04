@@ -11,7 +11,8 @@ from .base import ColbertIndex
 
 
 class ColbertRetriever(BaseRetriever):
-    """Vector index retriever.
+    """
+    Vector index retriever.
 
     Args:
         index (ColbertIndex): Colbert index.

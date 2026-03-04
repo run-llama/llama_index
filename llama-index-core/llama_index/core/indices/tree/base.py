@@ -37,7 +37,8 @@ REQUIRE_TREE_MODES = {
 
 
 class TreeIndex(BaseIndex[IndexGraph]):
-    """Tree Index.
+    """
+    Tree Index.
 
     The tree index is a tree-structured index, where each node is a summary of
     the children nodes. During index construction, the tree is constructed

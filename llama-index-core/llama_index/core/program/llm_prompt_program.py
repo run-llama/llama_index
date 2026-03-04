@@ -1,4 +1,5 @@
 """LLM Prompt Program."""
+
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Type, TypeVar
 
@@ -10,7 +11,8 @@ LM = TypeVar("LM")
 
 
 class BaseLLMFunctionProgram(BasePydanticProgram[BaseModel], Generic[LM]):
-    """Base LLM Prompt Program.
+    """
+    Base LLM Prompt Program.
 
     This is a base class for LLM endpoints that can return
     a structured output given the prompt.

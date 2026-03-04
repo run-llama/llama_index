@@ -1,4 +1,5 @@
-"""txtai Vector store index.
+"""
+txtai Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -38,7 +39,8 @@ IMPORT_ERROR_MSG = """
 
 
 class TxtaiVectorStore(BasePydanticVectorStore):
-    """txtai Vector Store.
+    """
+    txtai Vector Store.
 
         Embeddings are stored within a txtai index.
 
@@ -60,6 +62,7 @@ class TxtaiVectorStore(BasePydanticVectorStore):
 
             vector_store = TxtaiVectorStore(txtai_index=txtai_index)
     ```
+
     """
 
     stores_text: bool = False
@@ -132,7 +135,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -162,7 +166,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Save to file.
+        """
+        Save to file.
 
         This method saves the vector store to disk.
 
@@ -212,7 +217,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query to search for in the index

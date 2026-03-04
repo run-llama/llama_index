@@ -20,7 +20,8 @@ def mock_tokenizer(text: str) -> List[str]:
 def mock_extract_keywords(
     text_chunk: str, max_keywords: Optional[int] = None, filter_stopwords: bool = True
 ) -> Set[str]:
-    """Extract keywords (mock).
+    """
+    Extract keywords (mock).
 
     Same as simple_extract_keywords but without filtering stopwords.
 
@@ -33,7 +34,8 @@ def mock_extract_keywords(
 def mock_extract_keywords_response(
     text_chunk: str, max_keywords: Optional[int] = None, filter_stopwords: bool = True
 ) -> str:
-    """Extract keywords mock response.
+    """
+    Extract keywords mock response.
 
     Same as simple_extract_keywords but without filtering stopwords.
 

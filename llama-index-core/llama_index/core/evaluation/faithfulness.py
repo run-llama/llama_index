@@ -111,6 +111,7 @@ class FaithfulnessEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refining the evaluation.
+
     """
 
     def __init__(

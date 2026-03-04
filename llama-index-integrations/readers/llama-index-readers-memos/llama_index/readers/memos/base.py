@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class MemosReader(BaseReader):
-    """Memos reader.
+    """
+    Memos reader.
 
     Reads content from an Memos.
 
@@ -19,7 +20,8 @@ class MemosReader(BaseReader):
         self._memoUrl = urljoin(host, "api/memo")
 
     def load_data(self, params: Dict = {}) -> List[Document]:
-        """Load data from RSS feeds.
+        """
+        Load data from RSS feeds.
 
         Args:
             params (Dict): Filtering parameters.

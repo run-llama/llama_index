@@ -41,7 +41,8 @@ DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
 
 
 class Portkey(CustomLLM):
-    """Portkey LLM.
+    """
+    Portkey LLM.
 
     Examples:
         `pip install llama-index-llms-portkey`
@@ -84,6 +85,7 @@ class Portkey(CustomLLM):
         response = portkey_client.chat(current_messages)
         print(str(response))
         ```
+
     """
 
     mode: Optional[Union["Modes", "ModesLiteral"]] = Field(
@@ -118,6 +120,7 @@ class Portkey(CustomLLM):
             api_key (Optional[str]): The API key to authenticate with Portkey.
             base_url (Optional[str]): The Base url to the self hosted rubeus \
                 (the opensource version of portkey) or any other self hosted server.
+
         """
         try:
             import portkey
@@ -179,6 +182,7 @@ class Portkey(CustomLLM):
 
         Returns:
             self
+
         """
         try:
             from portkey import LLMOptions
@@ -342,11 +346,13 @@ class Portkey(CustomLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        """Check if a given model is a chat-based language model.
+        """
+        Check if a given model is a chat-based language model.
 
         Returns:
             bool: True if the provided model is a chat-based language model,
             False otherwise.
+
         """
         return is_chat_model(self.model or "")
 

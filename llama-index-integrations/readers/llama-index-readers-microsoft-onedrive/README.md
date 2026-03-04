@@ -19,7 +19,7 @@ To disable: `loader.load_data(recursive = False)`
 
 You can also filter the files by the mimeType e.g.: `mime_types=["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]`
 
-### Authenticaton
+### Authentication
 
 OneDriveReader supports following two **MSAL authentication**:
 

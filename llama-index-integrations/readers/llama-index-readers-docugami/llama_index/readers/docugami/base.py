@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiReader(BaseReader):
-    """Docugami reader.
+    """
+    Docugami reader.
 
     Reads Documents as nodes in a Document XML Knowledge Graph, from Docugami.
 
@@ -159,8 +160,9 @@ class DocugamiReader(BaseReader):
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:
-            # Stable IDs for chunks with the same text.
-            _hashed_id = hashlib.md5(dg_chunk.text.encode()).hexdigest()
+            # Adding dg_chunk.text + dg_chunk.xpath should prevent hash collision between two chunks that have the same text but a different xpath
+            text = dg_chunk.xpath + "\n" + dg_chunk.text
+            _hashed_id = hashlib.md5(text.encode()).hexdigest()
             metadata = {
                 XPATH_KEY: dg_chunk.xpath,
                 ID_KEY: _hashed_id,
@@ -358,12 +360,14 @@ class DocugamiReader(BaseReader):
         document_ids: Optional[List[str]] = None,
         access_token: Optional[str] = None,
     ) -> List[Document]:
-        """Load data the given docset_id in Docugami.
+        """
+        Load data the given docset_id in Docugami.
 
         Args:
             docset_id (str): Document set ID to load data for.
             document_ids (Optional[List[str]]): Optional list of document ids to load data for.
                                     If not specified, all documents from docset_id are loaded.
+
         """
         chunks: List[Document] = []
 

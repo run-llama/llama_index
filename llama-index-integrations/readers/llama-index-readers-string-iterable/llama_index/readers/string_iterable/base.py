@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class StringIterableReader(BasePydanticReader):
-    """String Iterable Reader.
+    """
+    String Iterable Reader.
 
     Gets a list of documents, given an iterable (e.g. list) of strings.
 
@@ -25,6 +26,7 @@ class StringIterableReader(BasePydanticReader):
             query_engine.query("what did I buy?")
 
             # response should be something like "You bought an apple."
+
     """
 
     is_remote: bool = False

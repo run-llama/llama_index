@@ -1,5 +1,5 @@
-import asyncio
 import functools
+import inspect
 import logging
 from typing import Any, Callable, cast
 
@@ -22,6 +22,7 @@ def trace_method(
     Assumes that the self instance has a CallbackManager instance in an attribute
     named `callback_manager`.
     This can be overridden by passing in a `callback_manager_attr` keyword argument.
+
     """
 
     def decorator(func: Callable) -> Callable:
@@ -55,6 +56,6 @@ def trace_method(
             with callback_manager.as_trace(trace_id):
                 return await func(self, *args, **kwargs)
 
-        return async_wrapper if asyncio.iscoroutinefunction(func) else wrapper
+        return async_wrapper if inspect.iscoroutinefunction(func) else wrapper
 
     return decorator

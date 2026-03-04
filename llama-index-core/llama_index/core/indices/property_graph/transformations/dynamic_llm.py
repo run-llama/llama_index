@@ -30,6 +30,7 @@ def default_parse_dynamic_triplets(
 
     Returns:
         List[Tuple[EntityNode, Relation, EntityNode]]: A list of triplets.
+
     """
     triplets = []
 
@@ -81,6 +82,7 @@ def default_parse_dynamic_triplets_with_props(
 
     Returns:
         List[Tuple[EntityNode, Relation, EntityNode]]: A list of triplets.
+
     """
     triplets = []
 
@@ -189,6 +191,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         allowed_relation_props (Optional[Union[List[str], List[Tuple[str, str]]]]):
             List of initial relation properties for the ontology.
             Can be either property names or tuples of (name, description).
+
     """
 
     llm: LLM
@@ -226,6 +229,7 @@ class DynamicLLMPathExtractor(TransformComponent):
             num_workers (int): Number of workers for parallel processing.
             allowed_entity_types (Optional[List[str]]): List of initial entity types for the ontology.
             allowed_relation_types (Optional[List[str]]): List of initial relation types for the ontology.
+
         """
         from llama_index.core import Settings
 
@@ -287,6 +291,7 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         Returns:
             List[BaseNode]: Processed nodes with extracted information.
+
         """
         return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
@@ -299,6 +304,7 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         Returns:
             str: The predicted triples.
+
         """
         return await self.llm.apredict(
             self.extract_prompt,
@@ -321,6 +327,7 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         Returns:
             str: The predicted triples.
+
         """
         return await self.llm.apredict(
             self.extract_prompt,
@@ -349,6 +356,7 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         Returns:
             BaseNode: The processed node with extracted information.
+
         """
         text = node.get_content(metadata_mode=MetadataMode.LLM)
         try:
@@ -395,6 +403,7 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         Returns:
             List[BaseNode]: Processed nodes with extracted information.
+
         """
         jobs = []
         for node in nodes:

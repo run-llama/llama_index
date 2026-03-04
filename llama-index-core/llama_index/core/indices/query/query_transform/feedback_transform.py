@@ -26,7 +26,8 @@ DEFAULT_RESYNTHESIS_PROMPT = PromptTemplate(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
 
 
 class FeedbackQueryTransformation(BaseQueryTransform):
-    """Transform the query given the evaluation feedback.
+    """
+    Transform the query given the evaluation feedback.
 
     Args:
         eval(Evaluation): An evaluation object.

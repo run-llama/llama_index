@@ -18,7 +18,7 @@ To use the ModelScopeLLM model, create an instance by specifying the model name 
 import sys
 from llama_index.llms.modelscope import ModelScopeLLM
 
-llm = ModelScopeLLM(model_name="qwen/Qwen1.5-7B-Chat", model_revision="master")
+llm = ModelScopeLLM(model_name="qwen/Qwen3-8B", model_revision="master")
 ```
 
 ### Generate Completions

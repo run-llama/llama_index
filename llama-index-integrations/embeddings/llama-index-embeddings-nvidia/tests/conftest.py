@@ -1,3 +1,6 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
+
 import pytest
 import os
 
@@ -20,6 +23,11 @@ def masked_env_var() -> Generator[str, None, None]:
     finally:
         if val:
             os.environ[var] = val
+
+
+@pytest.fixture(params=[Interface])
+def public_class(request: pytest.FixtureRequest) -> type:
+    return request.param
 
 
 def pytest_collection_modifyitems(config, items):
@@ -63,7 +71,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     mode = get_mode(metafunc.config)
 
     if "model" in metafunc.fixturenames:
-        models = [DEFAULT_MODEL]
+        # Default models to test - include both default and custom endpoint models
+        models = [DEFAULT_MODEL, "NV-Embed-QA"]
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):

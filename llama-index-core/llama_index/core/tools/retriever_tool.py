@@ -7,7 +7,13 @@ from llama_index.core.base.base_retriever import BaseRetriever
 
 if TYPE_CHECKING:
     from llama_index.core.langchain_helpers.agents.tools import LlamaIndexTool
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.core.schema import (
+    MetadataMode,
+    Node,
+    NodeWithScore,
+    QueryBundle,
+    TextNode,
+)
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 
@@ -18,7 +24,8 @@ against a knowledge base and retrieving a set of relevant documents.
 
 
 class RetrieverTool(AsyncBaseTool):
-    """Retriever tool.
+    """
+    Retriever tool.
 
     A tool making use of a retriever.
 
@@ -27,6 +34,7 @@ class RetrieverTool(AsyncBaseTool):
         metadata (ToolMetadata): The associated metadata of the query engine.
         node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
             node postprocessors.
+
     """
 
     def __init__(
@@ -80,13 +88,12 @@ class RetrieverTool(AsyncBaseTool):
         docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         content = ""
         for doc in docs:
+            assert isinstance(doc.node, (Node, TextNode))
             node_copy = doc.node.model_copy()
-            node_copy.text_template = "{metadata_str}\n{content}"
-            node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"input": query_str},
             raw_output=docs,
         )
@@ -105,13 +112,12 @@ class RetrieverTool(AsyncBaseTool):
         content = ""
         docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         for doc in docs:
+            assert isinstance(doc.node, (Node, TextNode))
             node_copy = doc.node.model_copy()
-            node_copy.text_template = "{metadata_str}\n{content}"
-            node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"input": query_str},
             raw_output=docs,
         )

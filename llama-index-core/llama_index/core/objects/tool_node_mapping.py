@@ -64,7 +64,8 @@ class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
 
 
 class SimpleToolNodeMapping(BaseToolNodeMapping):
-    """Simple Tool mapping.
+    """
+    Simple Tool mapping.
 
     In this setup, we assume that the tool name is unique, and
     that the list of all tools are stored in memory.

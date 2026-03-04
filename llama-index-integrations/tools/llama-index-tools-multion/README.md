@@ -18,14 +18,18 @@ Here's an example usage of the MultionToolSpec.
 
 ```python
 from llama_index.tools.multion import MultionToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 multion_tool = MultionToolSpec(api_key="your-multion-key")
 
-agent = OpenAIAgent.from_tools(multion_tool.to_tool_list())
+agent = FunctionAgent(
+    tools=multion_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("Can you read the latest tweets from my followers")
-agent.chat("What's the next thing on my google calendar?")
+print(await agent.run("Can you read the latest tweets from my followers"))
+print(await agent.run("What's the next thing on my google calendar?"))
 ```
 
 `browse`: The core function that takes natural language instructions to pass to the web browser to execute

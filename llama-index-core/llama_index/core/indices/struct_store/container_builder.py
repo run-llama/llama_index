@@ -1,6 +1,5 @@
 """SQL Container builder."""
 
-
 from typing import Any, Dict, List, Optional, Type
 
 from llama_index.core.indices.base import BaseIndex
@@ -19,7 +18,8 @@ DEFAULT_CONTEXT_QUERY_TMPL = (
 
 
 class SQLContextContainerBuilder:
-    """SQLContextContainerBuilder.
+    """
+    SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
     during index construction or during query-time.
@@ -84,7 +84,7 @@ class SQLContextContainerBuilder:
         result_context = {}
         for table_name in sql_database.get_usable_table_names():
             table_desc = sql_database.get_single_table_info(table_name)
-            table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
+            table_text = f"Schema of table {table_name}:\n{table_desc}\n"
             if table_name in current_context:
                 table_text += f"Context of table {table_name}:\n"
                 table_text += current_context[table_name]
@@ -123,7 +123,8 @@ class SQLContextContainerBuilder:
         store_context_str: bool = True,
         **index_kwargs: Any,
     ) -> str:
-        """Query index for context.
+        """
+        Query index for context.
 
         A simple wrapper around the index.query call which
         injects a query template to specifically fetch table information,

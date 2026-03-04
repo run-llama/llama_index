@@ -17,6 +17,7 @@ class PythonFileToolSpec(BaseToolSpec):
 
         Args:
             external (Optional[bool]): Defaults to true. If false, this function will also return functions that start with _
+
         """
         functions = ""
         for node in ast.walk(self.tree):
@@ -35,6 +36,7 @@ arguments: {ast.dump(node.args)}
 
         Args:
             name (str): The name of the function to retrieve
+
         """
         for node in ast.walk(self.tree):
             if isinstance(node, ast.FunctionDef):
@@ -52,6 +54,7 @@ docstring: {ast.get_docstring(node)}
 
         Args:
             name (List[str]): The names of the functions to retrieve
+
         """
         functions = ""
         for name in names:

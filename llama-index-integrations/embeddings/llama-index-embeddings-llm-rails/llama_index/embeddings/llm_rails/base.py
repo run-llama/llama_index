@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class LLMRailsEmbedding(BaseEmbedding):
-    """LLMRails embedding models.
+    """
+    LLMRails embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
     in an LLMRails cluster. It requires a model_id of the model deployed in the cluster and api key you can obtain
@@ -53,6 +54,7 @@ class LLMRailsEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the input query text.
+
         """
         try:
             response = self.session.post(
@@ -76,6 +78,7 @@ class LLMRailsEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the input query text.
+
         """
         try:
             import httpx

@@ -1,4 +1,5 @@
-"""Minio file and directory reader.
+"""
+Minio file and directory reader.
 
 A loader that fetches a file or iterates through a directory on Minio.
 
@@ -14,7 +15,8 @@ from llama_index.core.schema import Document
 
 
 class BotoMinioReader(BaseReader):
-    """General reader for any S3 file or directory.
+    """
+    General reader for any S3 file or directory.
     A loader that fetches a file or iterates through a directory on minio using boto3.
 
     """
@@ -36,7 +38,8 @@ class BotoMinioReader(BaseReader):
         s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com",
         **kwargs: Any,
     ) -> None:
-        """Initialize S3 bucket and key, along with credentials if needed.
+        """
+        Initialize S3 bucket and key, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 
@@ -59,6 +62,7 @@ class BotoMinioReader(BaseReader):
         aws_access_id (Optional[str]): provide AWS access key directly.
         aws_access_secret (Optional[str]): provide AWS access key directly.
         s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+
         """
         super().__init__(*args, **kwargs)
 

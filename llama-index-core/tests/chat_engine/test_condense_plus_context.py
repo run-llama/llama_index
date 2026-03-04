@@ -60,7 +60,7 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     assert len(chat_engine.chat_history) == 4
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(chat_engine: CondensePlusContextChatEngine):
     response = await chat_engine.achat("Hello World!")
     assert SYSTEM_PROMPT in str(response)
@@ -74,7 +74,7 @@ async def test_achat(chat_engine: CondensePlusContextChatEngine):
     assert len(chat_engine.chat_history) == 4
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     response = await chat_engine.astream_chat("Hello World!")
 

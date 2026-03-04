@@ -38,7 +38,8 @@ from llama_index.core.settings import Settings
 
 
 class FixedRecencyPostprocessor(BaseNodePostprocessor):
-    """Fixed Recency post-processor.
+    """
+    Fixed Recency post-processor.
 
     This post-processor does the following steps orders nodes by date.
 
@@ -160,7 +161,8 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
 
 
 class TimeWeightedPostprocessor(BaseNodePostprocessor):
-    """Time-weighted post-processor.
+    """
+    Time-weighted post-processor.
 
     Reranks a set of nodes based on their recency.
 

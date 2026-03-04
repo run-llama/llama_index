@@ -289,7 +289,7 @@ def test_stream_complete():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
@@ -317,7 +317,7 @@ async def test_achat():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete():
     expected_chat_response = CompletionResponse(
         text="42",
@@ -346,7 +346,7 @@ async def test_acomplete():
     llm._async_client.completion.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
 
@@ -385,7 +385,7 @@ async def test_astream_chat():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete():
     expected_stream_completion_chunks_response = [
         CompletionResponse(text="", delta="", raw=_FAKE_STREAM_CHUNKS[0].to_dict()),
@@ -430,7 +430,7 @@ def test_chat_complete_when_j2__should_raise_error():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_complete_when_j2__should_raise_error():
     llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
 
@@ -440,7 +440,7 @@ async def test_achat_complete_when_j2__should_raise_error():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_when_j2__should_raise_error():
     llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
 
@@ -454,7 +454,7 @@ async def test_astream_complete_when_j2__should_raise_error():
         "when_j2_ultra__should_return_right_tokenizer",
         "when_jamba_instruct__should_return_right_tokenizer",
     ],
-    argnames=["model", "expected_tokenizer_type"],
+    argnames=("model", "expected_tokenizer_type"),
     argvalues=[
         ("j2-mid", JurassicTokenizer),
         ("j2-ultra", JurassicTokenizer),
@@ -505,7 +505,7 @@ def test_from_ai21_message_to_chat_message_with_tool_calls():
         "when_jamba-1.5-mini__should_return_true",
         "when_jamba-1.5-large__should_return_true",
     ],
-    argnames=["model", "expected_result"],
+    argnames=("model", "expected_result"),
     argvalues=[
         ("j2-mid", False),
         ("j2-ultra", False),
@@ -547,7 +547,7 @@ def test_is_function_calling_model(model: str, expected_result: bool):
             SystemMessage(content="Assistant message"),
         ),
     ],
-    argnames=["message", "expected_result"],
+    argnames=("message", "expected_result"),
 )
 def test_message_to_ai21_message(
     message: ChatMessage, expected_result: AI21ChatMessage

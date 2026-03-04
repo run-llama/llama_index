@@ -1,12 +1,15 @@
 """Pandas output parser."""
 
+import ast
 import logging
+import sys
+import traceback
 from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
 from llama_index.experimental.exec_utils import safe_eval, safe_exec
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import parse_code_markdown
 
 logger = logging.getLogger(__name__)
@@ -16,10 +19,6 @@ def default_output_processor(
     output: str, df: pd.DataFrame, **output_kwargs: Any
 ) -> str:
     """Process outputs in a default manner."""
-    import ast
-    import sys
-    import traceback
-
     if sys.version_info < (3, 9):
         logger.warning(
             "Python version must be >= 3.9 in order to use "
@@ -32,7 +31,9 @@ def default_output_processor(
     local_vars = {"df": df, "pd": pd}
     global_vars = {"np": np}
 
-    output = parse_code_markdown(output, only_last=True)[0]
+    output = parse_code_markdown(output, only_last=True)
+    if not isinstance(output, str):
+        output = output[0]
 
     # NOTE: inspired from langchain's tool
     # see langchain.tools.python.tool (PythonAstREPLTool)
@@ -68,15 +69,15 @@ def default_output_processor(
             raise
     except Exception as e:
         err_string = (
-            "There was an error running the output as Python code. "
-            f"Error message: {e}"
+            f"There was an error running the output as Python code. Error message: {e}"
         )
         traceback.print_exc()
         return err_string
 
 
-class PandasInstructionParser(ChainableOutputParser):
-    """Pandas instruction parser.
+class PandasInstructionParser(BaseOutputParser):
+    """
+    Pandas instruction parser.
 
     This 'output parser' takes in pandas instructions (in Python code) and
     executes them to return an output.

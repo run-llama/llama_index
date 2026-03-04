@@ -45,7 +45,7 @@ hybrid_fusion_pack = HybridFusionRetrieverPack(
 The `run()` function is a light wrapper around `query_engine.query()`.
 
 ```python
-response = hybrid_fusion_pack.run("Tell me about a Music celebritiy.")
+response = hybrid_fusion_pack.run("Tell me about a Music celebrity.")
 ```
 
 You can also use modules individually.
@@ -110,7 +110,7 @@ query_rewriting_pack = QueryRewritingRetrieverPack(
 The `run()` function is a light wrapper around `query_engine.query()`.
 
 ```python
-response = query_rewriting_pack.run("Tell me a bout a Music celebritiy.")
+response = query_rewriting_pack.run("Tell me a bout a Music celebrity.")
 ```
 
 You can also use modules individually.

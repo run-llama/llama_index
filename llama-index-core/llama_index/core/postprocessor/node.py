@@ -147,7 +147,8 @@ def get_backward_nodes(
 
 
 class PrevNextNodePostprocessor(BaseNodePostprocessor):
-    """Previous/Next Node post-processor.
+    """
+    Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
     based on the relationships of the nodes.
@@ -266,7 +267,8 @@ DEFAULT_REFINE_INFER_PREV_NEXT_TMPL = (
 
 
 class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
-    """Previous/Next Node post-processor.
+    """
+    Previous/Next Node post-processor.
 
     Allows users to fetch additional nodes from the document store,
     based on the prev/next relationships of the nodes.

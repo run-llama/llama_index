@@ -2,12 +2,14 @@
 
 from typing import List, Optional
 
+from defusedxml import ElementTree as safe_xml
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
 class PubmedReader(BaseReader):
-    """Pubmed Reader.
+    """
+    Pubmed Reader.
 
     Gets a search query, return a list of Documents of the top corresponding scientific papers on Pubmed.
     """
@@ -17,7 +19,8 @@ class PubmedReader(BaseReader):
         search_query: str,
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
+        """
+        Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
         Uses the BoiC API, which has been down a lot.
 
         Args:
@@ -26,11 +29,12 @@ class PubmedReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
-        import xml.etree.ElementTree as xml
         from datetime import datetime
 
         import requests
+        from defusedxml import ElementTree as safe_xml
 
         pubmed_search = []
         parameters = {"tool": "tool", "email": "email", "db": "pmc"}
@@ -40,7 +44,7 @@ class PubmedReader(BaseReader):
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
             params=parameters,
         )
-        root = xml.fromstring(resp.content)
+        root = safe_xml.fromstring(resp.content)
 
         for elem in root.iter():
             if elem.tag == "Id":
@@ -99,7 +103,8 @@ class PubmedReader(BaseReader):
         search_query: str,
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
+        """
+        Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
 
         Args:
             search_query (str): A topic to search for (e.g. "Alzheimers").
@@ -108,9 +113,9 @@ class PubmedReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         import time
-        import xml.etree.ElementTree as xml
 
         import requests
 
@@ -122,7 +127,7 @@ class PubmedReader(BaseReader):
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
             params=parameters,
         )
-        root = xml.fromstring(resp.content)
+        root = safe_xml.fromstring(resp.content)
 
         for elem in root.iter():
             if elem.tag == "Id":
@@ -131,7 +136,7 @@ class PubmedReader(BaseReader):
                 print(url)
                 try:
                     resp = requests.get(url)
-                    info = xml.fromstring(resp.content)
+                    info = safe_xml.fromstring(resp.content)
 
                     raw_text = ""
                     title = ""

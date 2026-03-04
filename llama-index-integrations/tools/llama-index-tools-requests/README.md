@@ -12,7 +12,8 @@ Here's an example usage of the RequestsToolSpec.
 
 ```python
 from llama_index.tools.requests import RequestsToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 domain_headers = {
     "api.openai.com": {
@@ -23,9 +24,12 @@ domain_headers = {
 
 tool_spec = RequestsToolSpec(domain_headers=domain_headers)
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("")
+print(await agent.run("<query>"))
 ```
 
 `get_request`: Performs a get request against the URL

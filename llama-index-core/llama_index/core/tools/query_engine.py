@@ -15,13 +15,15 @@ against a knowledge base and get back a natural language response.
 
 
 class QueryEngineTool(AsyncBaseTool):
-    """Query engine tool.
+    """
+    Query engine tool.
 
     A tool making use of a query engine.
 
     Args:
         query_engine (BaseQueryEngine): A query engine.
         metadata (ToolMetadata): The associated metadata of the query engine.
+
     """
 
     def __init__(
@@ -68,7 +70,7 @@ class QueryEngineTool(AsyncBaseTool):
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"input": query_str},
             raw_output=response,
         )
@@ -78,7 +80,7 @@ class QueryEngineTool(AsyncBaseTool):
         response = await self._query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"input": query_str},
             raw_output=response,
         )
@@ -91,7 +93,7 @@ class QueryEngineTool(AsyncBaseTool):
 
         tool_config = IndexToolConfig(
             query_engine=self.query_engine,
-            name=self.metadata.name,
+            name=self.metadata.get_name(),
             description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)

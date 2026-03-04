@@ -35,6 +35,7 @@ class ArizePhoenixQueryEnginePack(BaseLlamaPack):
         Args:
             nodes (List[TextNode]): An input list of nodes over which the index
             will be built.
+
         """
         try:
             import phoenix as px
@@ -55,6 +56,7 @@ class ArizePhoenixQueryEnginePack(BaseLlamaPack):
         Returns:
             Dict[str, Any]: A dictionary containing the internals of the
             LlamaPack.
+
         """
         return {
             "session": self._session,
@@ -69,5 +71,6 @@ class ArizePhoenixQueryEnginePack(BaseLlamaPack):
 
         Returns:
             Any: A response from the query engine.
+
         """
         return self._query_engine.query(*args, **kwargs)

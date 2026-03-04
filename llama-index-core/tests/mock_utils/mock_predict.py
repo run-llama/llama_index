@@ -16,7 +16,8 @@ def _mock_summary_predict(prompt_args: Dict) -> str:
 
 
 def _mock_insert_predict() -> str:
-    """Mock insert predict.
+    """
+    Mock insert predict.
 
     Used in GPT tree index during insertion
     to select the next node.
@@ -26,7 +27,8 @@ def _mock_insert_predict() -> str:
 
 
 def _mock_query_select() -> str:
-    """Mock query predict.
+    """
+    Mock query predict.
 
     Used in GPT tree index during query traversal
     to select the next node.
@@ -149,7 +151,8 @@ def _mock_sql_response_synthesis(prompt_args: Dict) -> str:
 
 
 def _mock_sql_response_synthesis_v2(prompt_args: Dict) -> str:
-    """Mock sql response synthesis prompt.
+    """
+    Mock sql response synthesis prompt.
 
     TODO: deprecate the above
 
@@ -162,7 +165,8 @@ def _mock_conversation(prompt_args: Dict) -> str:
 
 
 def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) -> str:
-    """Mock predict method of LLMPredictor.
+    """
+    Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
 
@@ -221,7 +225,8 @@ def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) ->
 def patch_llmpredictor_predict(
     self: Any, prompt: BasePromptTemplate, **prompt_args: Any
 ) -> str:
-    """Mock predict method of LLMPredictor.
+    """
+    Mock predict method of LLMPredictor.
 
     Depending on the prompt, return response.
 

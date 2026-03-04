@@ -53,6 +53,7 @@ CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
 CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
+CREATE EDGE IF NOT EXISTS `MENTIONS` ();
 
 CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING, `props_json` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` STRING);
@@ -61,13 +62,14 @@ CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` ST
 
 # TODO: need to define Props__ Indexes based on all the properties
 INDEX_DDL = """
-CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`);
-CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`);
-CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`);
+CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_MENTIONS ON `MENTIONS`();
 
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`(256));
 """
 
 # Hard coded default schema, which is union of
@@ -98,6 +100,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         %ngql --address 127.0.0.1 --port 9669 --user root --password nebula
         %ngql CREATE SPACE IF NOT EXISTS llamaindex_nebula_property_graph(vid_type=FIXED_STRING(256));
         ```
+
     """
 
     _space: str
@@ -157,7 +160,8 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
-        """Refresh schema.
+        """
+        Refresh schema.
 
         Example data of self.structured_schema
         {
@@ -275,6 +279,18 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                     f"entity_{i}": entity.name for i, entity in enumerate(entity_list)
                 },
             )
+            mention_list = []  # Use a fresh variable name to be safe
+            for entity in entity_list:
+                if "triplet_source_id" in entity.properties:
+                    chunk_id = entity.properties["triplet_source_id"]
+                    mention_list.append(f'"{chunk_id}"->"{entity.id}"')  # Just the IDs
+
+            if mention_list:  # Check if empty!
+                values_str = ",".join(
+                    [f"{pair}:()" for pair in mention_list]
+                )  # Add the :() here
+                edge_query = f"INSERT EDGE `MENTIONS` () VALUES {values_str}"
+                self.structured_query(edge_query)
 
         # Create tags for each LabelledNode
         # This could be revisited, if we don't have any properties for labels, mapping labels to
@@ -358,7 +374,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             params[f"all_id"] = ids
         if properties:
             for i, prop in enumerate(properties):
-                cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
+                cypher_statement += f"e.Props__.`{prop}` == $property_{i} AND "
                 params[f"property_{i}"] = properties[prop]
             cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 
@@ -640,7 +656,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop["values"]
                                 else ""
@@ -663,7 +679,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         "double",
                     ]:
                         if prop.get("min") is not None:
-                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max: {prop['max']}"
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -690,7 +706,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop.get("values")
                                 else ""
@@ -712,7 +728,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         "timestamp",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -723,7 +739,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )

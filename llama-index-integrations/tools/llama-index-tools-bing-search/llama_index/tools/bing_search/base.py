@@ -48,6 +48,7 @@ class BingSearchToolSpec(BaseToolSpec):
             query (str): The query to be passed to bing.
 
         returns a url of the images found
+
         """
         return self._bing_request("images/search", query, ["name", "contentUrl"])
 

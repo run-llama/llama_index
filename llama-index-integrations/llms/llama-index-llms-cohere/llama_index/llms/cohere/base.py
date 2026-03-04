@@ -42,7 +42,8 @@ from cohere.types import (
 
 
 class Cohere(FunctionCallingLLM):
-    """Cohere LLM.
+    """
+    Cohere LLM.
 
     Examples:
         `pip install llama-index-llms-cohere`
@@ -54,6 +55,7 @@ class Cohere(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The cohere model to use.")
@@ -67,7 +69,9 @@ class Cohere(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the Cohere API."
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-
+    base_url: Optional[str] = Field(
+        default=None, description="The endpoint to use. Defaults to the Cohere API."
+    )
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
 
@@ -86,6 +90,7 @@ class Cohere(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        base_url: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -98,14 +103,19 @@ class Cohere(FunctionCallingLLM):
             model=model,
             callback_manager=callback_manager,
             max_tokens=max_tokens,
+            base_url=base_url,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-        self._client = cohere.Client(api_key, client_name="llama_index")
-        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
+        self._client = cohere.Client(
+            api_key, base_url=self.base_url, client_name="llama_index"
+        )
+        self._aclient = cohere.AsyncClient(
+            api_key, base_url=self.base_url, client_name="llama_index"
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -147,6 +157,7 @@ class Cohere(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -162,6 +173,8 @@ class Cohere(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tools_cohere_format or [],
+            # switch to tool_choice on V2
+            **({"force_single_step": True} if tool_required else {}),
             **kwargs,
         }
 
@@ -202,7 +215,8 @@ class Cohere(FunctionCallingLLM):
         stop_sequences: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Get the request for the Cohere chat API.
+        """
+        Get the request for the Cohere chat API.
 
         Args:
             messages: The messages.
@@ -211,6 +225,7 @@ class Cohere(FunctionCallingLLM):
 
         Returns:
             The request for the Cohere chat API.
+
         """
         additional_kwargs = messages[-1].additional_kwargs
 
@@ -222,10 +237,9 @@ class Cohere(FunctionCallingLLM):
 
         messages, documents = remove_documents_from_messages(messages)
 
-        tool_results: Optional[
-            List[Dict[str, Any]]
-        ] = _messages_to_cohere_tool_results_curr_chat_turn(messages) or kwargs.get(
-            "tool_results"
+        tool_results: Optional[List[Dict[str, Any]]] = (
+            _messages_to_cohere_tool_results_curr_chat_turn(messages)
+            or kwargs.get("tool_results")
         )
         if not tool_results:
             tool_results = None

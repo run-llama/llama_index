@@ -37,7 +37,8 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleDocsReader(BasePydanticReader):
-    """Google Docs reader.
+    """
+    Google Docs reader.
 
     Reads a page from Google Docs
 
@@ -59,10 +60,12 @@ class GoogleDocsReader(BasePydanticReader):
         return "GoogleDocsReader"
 
     def load_data(self, document_ids: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             document_ids (List[str]): a list of document ids.
+
         """
         if document_ids is None:
             raise ValueError('Must specify a "document_ids" in `load_kwargs`.')
@@ -75,13 +78,15 @@ class GoogleDocsReader(BasePydanticReader):
         return results
 
     def _load_doc(self, document_id: str) -> str:
-        """Load a document from Google Docs.
+        """
+        Load a document from Google Docs.
 
         Args:
             document_id: the document id.
 
         Returns:
             The document text.
+
         """
         credentials = self._get_credentials()
         docs_service = discovery.build("docs", "v1", credentials=credentials)
@@ -93,7 +98,8 @@ class GoogleDocsReader(BasePydanticReader):
         return self._structural_elements_to_docs(google_doc_content, doc_metadata)
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -101,6 +107,7 @@ class GoogleDocsReader(BasePydanticReader):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         creds = None
         port = 8080
@@ -119,7 +126,7 @@ class GoogleDocsReader(BasePydanticReader):
                     client_config = json.load(json_file)
                     redirect_uris = client_config["web"].get("redirect_uris", [])
                     if len(redirect_uris) > 0:
-                        port = redirect_uris[0].strip("/").split(":")[-1]
+                        port = int(redirect_uris[0].strip("/").split(":")[-1])
 
                 creds = flow.run_local_server(port=port)
             # Save the credentials for the next run
@@ -129,10 +136,12 @@ class GoogleDocsReader(BasePydanticReader):
         return creds
 
     def _read_paragraph_element(self, element: Any) -> Any:
-        """Return the text in the given ParagraphElement.
+        """
+        Return the text in the given ParagraphElement.
 
         Args:
             element: a ParagraphElement from a Google Doc.
+
         """
         text_run = element.get("textRun")
         if not text_run:
@@ -140,12 +149,14 @@ class GoogleDocsReader(BasePydanticReader):
         return text_run.get("content")
 
     def _read_structural_elements(self, elements: List[Any]) -> Any:
-        """Recurse through a list of Structural Elements.
+        """
+        Recurse through a list of Structural Elements.
 
         Read a document's text where text may be in nested elements.
 
         Args:
             elements: a list of Structural Elements.
+
         """
         text = ""
         for value in elements:
@@ -168,10 +179,12 @@ class GoogleDocsReader(BasePydanticReader):
         return text
 
     def _determine_heading_level(self, element):
-        """Extracts the heading level, label, and ID from a document element.
+        """
+        Extracts the heading level, label, and ID from a document element.
 
         Args:
             element: a Structural Element.
+
         """
         level = None
         heading_key = None
@@ -204,12 +217,14 @@ class GoogleDocsReader(BasePydanticReader):
     def _structural_elements_to_docs(
         self, elements: List[Any], doc_metadata: dict
     ) -> Any:
-        """Recurse through a list of Structural Elements.
+        """
+        Recurse through a list of Structural Elements.
 
         Split documents on heading if split_on_heading_level is set.
 
         Args:
             elements: a list of Structural Elements.
+
         """
         docs = []
 

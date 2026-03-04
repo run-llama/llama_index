@@ -15,7 +15,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"
 
 
 class Anyscale(OpenAI):
-    """Anyscale LLM.
+    """
+    Anyscale LLM.
 
     Examples:
         `pip install llama-index-llms-anyscale`
@@ -27,6 +28,7 @@ class Anyscale(OpenAI):
         resp = llm.complete("Show me the c++ code to send requests to HTTP Server")
         print(resp)
         ```
+
     """
 
     def __init__(

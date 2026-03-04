@@ -1,10 +1,11 @@
-import pytest
 from unittest.mock import MagicMock
-from llama_index.readers.gitlab import GitLabIssuesReader
+
 import gitlab
+import pytest
 
 # import so that pants sees it as a dependency
 import pytest_mock  # noqa
+from llama_index.readers.gitlab import GitLabIssuesReader
 
 
 @pytest.fixture()

@@ -54,6 +54,7 @@ class BilibiliTranscriptReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects, each containing the transcript for a Bilibili video.
+
         """
         results = []
         for bili_url in video_urls:
