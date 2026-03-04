@@ -7,7 +7,8 @@ import logging
 import re
 import struct
 from typing import Any, Dict, List, Optional, Pattern
-
+from glide_sync import Batch as SyncBatch
+from glide import ClusterBatch, Batch
 from glide import (
     GlideClient,
     GlideClientConfiguration,
@@ -32,6 +33,7 @@ from glide_sync import (
     GlideClusterClient as SyncGlideClusterClient,
 )
 from glide_sync import ft as sync_ft
+from llama_index.vector_stores.valkey.exceptions import ValkeyVectorStoreError
 from llama_index.vector_stores.valkey.schema import (
     DOC_ID_FIELD_NAME,
     NODE_CONTENT_FIELD_NAME,
@@ -233,7 +235,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             )
 
         if not self._valkey_client and not self._valkey_client_async:
-            raise Exception(
+            raise ValkeyVectorStoreError(
                 "Either valkey_client, valkey_url, or valkey_client_async need to be defined"
             )
 
@@ -253,7 +255,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         """
         if not self._valkey_client:
-            raise Exception("No sync client available")
+            raise ValkeyVectorStoreError("No sync client available")
 
     async def _ensure_async_client(self) -> None:
         """
@@ -277,7 +279,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             self._pending_async_config = None
         else:
             # No way to create async client
-            raise Exception(
+            raise ValkeyVectorStoreError(
                 "No async client available. Either provide valkey_client_async, "
                 "valkey_url, or both valkey_client and valkey_client_async."
             )
@@ -360,15 +362,18 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 self._valkey_client, self.index_name, self._schema.fields, options
             )
             if result not in (b"OK", "OK"):
-                raise Exception(
+                raise ValkeyVectorStoreError(
                     f"FT.CREATE failed for index '{self.index_name}': {result!r}"
                 )
 
             logger.info(f"Created index {self.index_name}")
 
-        except Exception as e:
-            logger.error(f"Error creating index {self.index_name}: {e}")
+        except ValkeyVectorStoreError:
             raise
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to create index {self.index_name}: {e}"
+            ) from e
 
     async def async_create_index(self, overwrite: Optional[bool] = None) -> None:
         """Create an async index in Valkey."""
@@ -412,16 +417,19 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 self._valkey_client_async, self.index_name, self._schema.fields, options
             )
             if result not in (b"OK", "OK"):
-                raise Exception(
+                raise ValkeyVectorStoreError(
                     f"FT.CREATE failed for index '{self.index_name}': {result!r}"
                 )
 
             self.created_async_index = True
             logger.info(f"Created index {self.index_name}")
 
-        except Exception as e:
-            logger.error(f"Error creating index {self.index_name}: {e}")
+        except ValkeyVectorStoreError:
             raise
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to create index {self.index_name}: {e}"
+            ) from e
 
     def delete_index(self) -> None:
         """Delete the index and all documents."""
@@ -431,8 +439,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             sync_ft.dropindex(self._valkey_client, self.index_name)
             logger.info(f"Deleted index {self.index_name}")
         except Exception as e:
-            logger.error(f"Failed to delete index: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to delete index {self.index_name}: {e}"
+            ) from e
 
     async def async_delete_index(self) -> None:
         """Delete the index and all documents asynchronously."""
@@ -442,8 +451,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             await ft.dropindex(self._valkey_client_async, self.index_name)
             logger.info(f"Deleted index {self.index_name}")
         except Exception as e:
-            logger.error(f"Failed to delete index: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to delete index {self.index_name}: {e}"
+            ) from e
 
     def _prepare_node_data(self, nodes: List[BaseNode]) -> List[tuple[str, dict, str]]:
         """
@@ -468,15 +478,20 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         if vector_field and hasattr(vector_field, "attributes"):
             expected_dims = vector_field.attributes.dimensions
         else:
+            logger.warning(
+                f"Vector field '{VECTOR_FIELD_NAME}' not found in schema or missing attributes. "
+                "Defaulting to 1536 dimensions. This may cause issues if your embeddings have different dimensions."
+            )
             expected_dims = 1536  # Default
 
         # Check embedding dimensions
-        embedding_len = len(nodes[0].get_embedding())
-        if expected_dims != embedding_len:
-            raise ValueError(
-                f"Attempting to index embeddings of dim {embedding_len} "
-                f"which doesn't match the index schema expectation of {expected_dims}."
-            )
+        for node in nodes:
+            embedding_len = len(node.get_embedding())
+            if expected_dims != embedding_len:
+                raise ValueError(
+                    f"Attempting to index embeddings of dim {embedding_len} "
+                    f"which doesn't match the index schema expectation of {expected_dims}."
+                )
 
         # Prepare all nodes
         prepared_nodes = []
@@ -524,12 +539,18 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         prepared_nodes = self._prepare_node_data(nodes)
         node_ids = []
 
+        batch = SyncBatch(True)
         for key, fields, node_id in prepared_nodes:
-            self._valkey_client.hset(key, fields)
+            batch.hset(key, fields)
             node_ids.append(node_id)
-
-        logger.info(f"Added {len(node_ids)} documents to index {self.index_name}")
-        return node_ids
+        try:
+            self._valkey_client.exec(batch, raise_on_error=True)
+            logger.info(f"Added {len(node_ids)} documents to index {self.index_name}")
+            return node_ids
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to add {len(node_ids)} nodes to index {self.index_name}: {e}"
+            ) from e
 
     async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
@@ -547,12 +568,19 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         prepared_nodes = self._prepare_node_data(nodes)
         node_ids = []
 
+        batch = ClusterBatch(True) if self._is_cluster else Batch(True)
         for key, fields, node_id in prepared_nodes:
-            await self._valkey_client_async.hset(key, fields)
+            batch.hset(key, fields)
             node_ids.append(node_id)
 
-        logger.info(f"Added {len(node_ids)} documents to index {self.index_name}")
-        return node_ids
+        try:
+            await self._valkey_client_async.exec(batch, raise_on_error=True)
+            logger.info(f"Added {len(node_ids)} documents to index {self.index_name}")
+            return node_ids
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to add {len(node_ids)} nodes to index {self.index_name}: {e}"
+            ) from e
 
     def delete_nodes(self, node_ids: List[str]) -> None:
         """Delete specific nodes by node_id."""
@@ -569,8 +597,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                     f"Some nodes not found. Expected {len(node_ids)}, deleted {result}"
                 )
         except Exception as e:
-            logger.error(f"Failed to delete nodes: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to delete nodes from index {self.index_name}: {e}"
+            ) from e
 
     async def async_delete_nodes(self, node_ids: List[str]) -> None:
         """Delete specific nodes by node_id asynchronously."""
@@ -587,8 +616,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                     f"Some nodes not found. Expected {len(node_ids)}, deleted {result}"
                 )
         except Exception as e:
-            logger.error(f"Failed to delete nodes: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to delete nodes from index {self.index_name}: {e}"
+            ) from e
 
     def delete(self, ref_doc_id: str) -> None:
         """
@@ -634,7 +664,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                     result = self._valkey_client.delete(node_keys)
                     logger.info(f"Deleted {result} documents with doc_id {ref_doc_id}")
         except Exception as e:
-            logger.error(f"Failed to delete documents: {e}")
+            raise ValkeyVectorStoreError(
+                f"Failed to delete documents with doc_id {ref_doc_id} from index {self.index_name}: {e}"
+            ) from e
 
     async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -681,7 +713,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
             else:
                 logger.debug(f"No results or invalid result format")
         except Exception as e:
-            logger.error(f"Failed to delete documents: {e}")
+            raise ValkeyVectorStoreError(
+                f"Failed to delete documents with doc_id {ref_doc_id} from index {self.index_name}: {e}"
+            ) from e
 
     # Aliases for compatibility
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -776,8 +810,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 result, query.query_embedding is not None
             )
         except Exception as e:
-            logger.error(f"Query failed: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to query index {self.index_name}: {e}"
+            ) from e
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -808,8 +843,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 result, query.query_embedding is not None
             )
         except Exception as e:
-            logger.error(f"Query failed: {e}")
-            raise
+            raise ValkeyVectorStoreError(
+                f"Failed to query index {self.index_name}: {e}"
+            ) from e
 
     def _build_filter_string(self, filters: Optional[MetadataFilters]) -> str:
         """Build filter string for FT.SEARCH."""
@@ -995,8 +1031,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 logger.info("Saving index to disk")
                 self._valkey_client.custom_command(["SAVE"])
         except Exception as e:
-            logger.error(f"Error saving index to disk: {e}")
-            raise
+            raise ValkeyVectorStoreError(f"Failed to persist index to disk: {e}") from e
 
     async def apersist(
         self,
@@ -1021,5 +1056,4 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 logger.info("Saving index to disk")
                 await self._valkey_client_async.custom_command(["SAVE"])
         except Exception as e:
-            logger.error(f"Error saving index to disk: {e}")
-            raise
+            raise ValkeyVectorStoreError(f"Failed to persist index to disk: {e}") from e
