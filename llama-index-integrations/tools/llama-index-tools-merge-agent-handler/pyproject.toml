@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-merge-agent-handler"
+version = "0.1.0"
+description = "LlamaIndex tool integration for Merge Agent Handler - connect AI agents to Merge Tool Packs via MCP"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9,<4.0"
+authors = [{ name = "Merge Agent Handler Contributors" }]
+dependencies = [
+  "llama-index-core>=0.13.0,<0.15",
+  "httpx>=0.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov>=4.0",
+  "respx>=0.21",
+  "mypy==0.991",
+  "ruff==0.11.11",
+  "streamlit>=1.30.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/", "examples/", "tests/", "ui/", "README.md", "LICENSE", "CHANGELOG.md", "Makefile"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+follow_imports = "skip"
+namespace_packages = true
+explicit_package_bases = true
+pretty = true
+show_error_codes = true
+files = [
+  "llama_index/tools/merge_agent_handler/base.py",
+  "tests/test_tools.py",
+  "examples/merge_agent_handler_example.py",
+  "ui/merge_agent_handler_ui.py",
+]
+
+[tool.llamahub]
+import_path = "llama_index.tools.merge_agent_handler"
+classes = ["MergeAgentHandlerToolSpec"]
