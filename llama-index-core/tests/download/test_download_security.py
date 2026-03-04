@@ -1,4 +1,5 @@
-"""Tests for download module security validations.
+"""
+Tests for download module security validations.
 
 Validates that path traversal and SSRF protections prevent malicious
 values from remote manifests (library.json) from being used to write
@@ -6,7 +7,7 @@ files outside intended directories or make requests to non-HTTPS URLs.
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from llama_index.core.download.utils import (

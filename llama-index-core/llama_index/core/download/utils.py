@@ -7,7 +7,8 @@ import requests
 
 
 def _validate_url(full_url: str) -> None:
-    """Validate URL scheme before making HTTP requests.
+    """
+    Validate URL scheme before making HTTP requests.
 
     Prevents accidental use of non-HTTPS URLs which could expose data
     in transit or facilitate downgrade attacks.
@@ -21,7 +22,8 @@ def _validate_url(full_url: str) -> None:
 
 
 def _validate_path_component(component: str, label: str = "path component") -> None:
-    """Validate that a path component from a remote manifest is safe.
+    """
+    Validate that a path component from a remote manifest is safe.
 
     Prevents directory traversal attacks when constructing local file paths
     from values sourced from remote manifests (e.g., library.json).
@@ -40,12 +42,8 @@ def _validate_path_component(component: str, label: str = "path component") -> N
             f"Invalid {label}: '{component}' contains directory traversal."
         )
     # Check for absolute paths (Unix-style or Windows-style drive letters)
-    if normalized.startswith("/") or (
-        len(normalized) >= 2 and normalized[1] == ":"
-    ):
-        raise ValueError(
-            f"Invalid {label}: '{component}' is an absolute path."
-        )
+    if normalized.startswith("/") or (len(normalized) >= 2 and normalized[1] == ":"):
+        raise ValueError(f"Invalid {label}: '{component}' is an absolute path.")
 
 
 def get_file_content(url: str, path: str) -> Tuple[str, int]:
