@@ -1,6 +1,5 @@
 """Base object types."""
 
-import logging
 import os
 import pickle
 from abc import abstractmethod
@@ -9,8 +8,6 @@ from typing import Any, Dict, Generic, Optional, Sequence, TypeVar
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.storage.storage_context import DEFAULT_PERSIST_DIR
 from llama_index.core.utils import concat_dirs
-
-logger = logging.getLogger(__name__)
 
 DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
 
