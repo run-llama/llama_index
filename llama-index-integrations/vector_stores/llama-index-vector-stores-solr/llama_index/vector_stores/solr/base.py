@@ -432,12 +432,11 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
         * ``EQ``, ``NE``: Equality and inequality comparisons
         * ``GT``, ``GTE``, ``LT``, ``LTE``: Numeric range comparisons
         * ``IN``, ``NIN``: List membership tests
-        * ``TEXT_MATCH``: Exact text matching
+        * ``TEXT_MATCH``, ``TEXT_MATCH_INSENSITIVE``: Exact text matching
 
         Unsupported Filter Operations:
 
         * ``ANY``, ``ALL``: Complex logical operations
-        * ``TEXT_MATCH_INSENSITIVE``: Case-insensitive text matching
         * ``CONTAINS``: Substring matching
 
         Args:
@@ -500,12 +499,11 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
         * ``EQ``, ``NE``: Equality and inequality comparisons
         * ``GT``, ``GTE``, ``LT``, ``LTE``: Numeric range comparisons
         * ``IN``, ``NIN``: List membership tests
-        * ``TEXT_MATCH``: Exact text matching
+        * ``TEXT_MATCH``, ``TEXT_MATCH_INSENSITIVE``: Exact text matching
 
         Unsupported Filter Operations:
 
         * ``ANY``, ``ALL``: Complex logical operations
-        * ``TEXT_MATCH_INSENSITIVE``: Case-insensitive text matching
         * ``CONTAINS``: Substring matching
 
         Args:

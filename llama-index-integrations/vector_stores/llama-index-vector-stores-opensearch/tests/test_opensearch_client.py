@@ -684,6 +684,41 @@ def test_filter_text_match(
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_text_match_insensitive(
+    os_stores: List[OpensearchVectorStore],
+    insert_document,
+) -> None:
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH_INSENSITIVE
+    in filters. This should behave similarly to TEXT_MATCH for typical text analyzers.
+    """
+    for os_store in os_stores:
+        for metadata, id_ in [
+            ({"name": "John Doe"}, "match1"),
+            ({"name": "Doe John Johnson"}, "match2"),
+            ({"name": "Johnny Doe"}, "match3"),
+            ({"name": "Mary Sue"}, "nomatch"),
+        ]:
+            insert_document(os_store, doc_id=id_, metadata=metadata)
+
+        query = _get_sample_vector_store_query(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="name",
+                        value="john doe",
+                        operator=FilterOperator.TEXT_MATCH_INSENSITIVE,
+                    )
+                ]
+            )
+        )
+        query_result = os_store.query(query)
+
+        doc_ids = {node.id_ for node in query_result.nodes}
+        assert doc_ids == {"match1", "match2", "match3"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document):
     """
     Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match

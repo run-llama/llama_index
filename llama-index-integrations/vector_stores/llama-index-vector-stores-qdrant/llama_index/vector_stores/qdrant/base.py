@@ -1480,7 +1480,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # Unsupported filter operator
                 raise NotImplementedError(
                     f"Filter operator {subfilter.operator} is not supported by Qdrant vector store. "
-                    f"Supported operators: EQ, NE, GT, GTE, LT, LTE, IN, NIN, TEXT_MATCH, IS_EMPTY"
+                    f"Supported operators: EQ, NE, GT, GTE, LT, LTE, IN, NIN, TEXT_MATCH, "
+                    f"TEXT_MATCH_INSENSITIVE, IS_EMPTY"
                 )
 
         filter = Filter()

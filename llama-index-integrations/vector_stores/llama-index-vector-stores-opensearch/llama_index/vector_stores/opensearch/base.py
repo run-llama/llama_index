@@ -438,7 +438,7 @@ class OpensearchVectorClient:
                     }
                 }
             }
-        elif op == FilterOperator.TEXT_MATCH:
+        elif op in (FilterOperator.TEXT_MATCH, FilterOperator.TEXT_MATCH_INSENSITIVE):
             return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
         elif op == FilterOperator.CONTAINS:
             return {"wildcard": {key: f"*{filter.value}*"}}
