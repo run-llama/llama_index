@@ -342,7 +342,8 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         return self._cosmos_client
 
     def _is_vector_search_with_threshold(self, search_type: str) -> bool:
-        """Check if the search type requires post-query filtering by similarity score threshold.
+        """
+        Check if the search type requires post-query filtering by similarity score threshold.
         Hybrid search types are excluded — they use ORDER BY RANK RRF which doesn't
         project a SimilarityScore that can be threshold-filtered client-side.
         """
@@ -379,15 +380,16 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         try:
             AzureCosmosDBNoSqlVectorSearchType(search_type)
         except ValueError:
-            valid_options = ", ".join(t.value for t in AzureCosmosDBNoSqlVectorSearchType)
+            valid_options = ", ".join(
+                t.value for t in AzureCosmosDBNoSqlVectorSearchType
+            )
             raise ValueError(
                 f"Invalid search_type '{search_type}'. "
                 f"Valid options are: {valid_options}."
             )
 
-        if (
-            self._full_text_search_enabled is False
-            and self._is_full_text_search_type(search_type)
+        if self._full_text_search_enabled is False and self._is_full_text_search_type(
+            search_type
         ):
             raise ValueError(
                 f"Full text search is not enabled for this collection, "
@@ -426,25 +428,37 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
             AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
-            if search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING and not full_text_rank_filter:
+            if (
+                search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING
+                and not full_text_rank_filter
+            ):
                 raise ValueError(f"'full_text_rank_filter' required for {search_type}.")
 
             # Use direct field path syntax (c.fieldname) — bracket indexer is not
             # supported by CosmosDB in queries with ORDER BY RANK.
-            projection_fields = [f"{self._table_alias}.{Constants.ID} as {Constants.ID}"]
+            projection_fields = [
+                f"{self._table_alias}.{Constants.ID} as {Constants.ID}"
+            ]
             projection_fields += [
                 f"{self._table_alias}.{key} as {key}"
                 for key in [self._text_key, self._metadata_key]
             ]
-            if search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING and full_text_rank_filter:
-                seen = set([self._text_key, self._metadata_key])
+            if (
+                search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING
+                and full_text_rank_filter
+            ):
+                seen = {self._text_key, self._metadata_key}
                 for item in full_text_rank_filter:
                     field = item[Constants.SEARCH_FIELD]
                     if field not in seen:
-                        projection_fields.append(f"{self._table_alias}.{field} as {field}")
+                        projection_fields.append(
+                            f"{self._table_alias}.{field} as {field}"
+                        )
                         seen.add(field)
         else:
-            projection_fields = [f"{self._table_alias}.{Constants.ID} as {Constants.ID}"]
+            projection_fields = [
+                f"{self._table_alias}.{Constants.ID} as {Constants.ID}"
+            ]
             projection_fields += [
                 param_mapping.gen_proj_field(key=key, value=key, alias=key)
                 for key in [self._text_key, self._metadata_key]
@@ -507,21 +521,23 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     ) -> str:
         order_by_clause = ""
         if search_type in (
-                AzureCosmosDBNoSqlVectorSearchType.VECTOR,
-                AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.VECTOR,
+            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
         ):
             vector_distance_proj_field = param_mapping.gen_vector_distance_proj_field(
                 vector_field=self._embedding_key, vector=vector
             )
             order_by_clause = f"ORDER BY {vector_distance_proj_field}"
         elif search_type in (
-                AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
-                AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-                AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-                AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
+            AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
+            AzureCosmosDBNoSqlVectorSearchType.HYBRID,
+            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
+            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             if not full_text_rank_filter:
-                raise ValueError(f"'full_text_rank_filter' required for {search_type} search.")
+                raise ValueError(
+                    f"'full_text_rank_filter' required for {search_type} search."
+                )
             components = [
                 self._generate_order_by_component_with_full_text_rank_filter(
                     full_text_rank_filter=item,
@@ -565,7 +581,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         # ORDER BY RANK RRF does not support TOP — use OFFSET/LIMIT for hybrid types.
         if not offset_limit and not is_hybrid:
-            query += self._generate_limit_clause(param_mapping=param_mapping, limit=limit)
+            query += self._generate_limit_clause(
+                param_mapping=param_mapping, limit=limit
+            )
 
         query += self._generate_projection_fields(
             search_type=search_type,
@@ -643,9 +661,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             n_components = len(weights)
             weighted_scores: List[float] = []
             for rank, _ in enumerate(filtered_items, start=1):
-                score = sum(
-                    weights[i] / (k + rank) for i in range(n_components)
-                )
+                score = sum(weights[i] / (k + rank) for i in range(n_components))
                 weighted_scores.append(score)
             # Re-sort by descending weighted score
             paired = sorted(
@@ -669,7 +685,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 # return a TextNode with the projected fields surfaced as metadata.
                 node = TextNode(
                     id_=node_id,
-                    metadata={alias: item.get(alias) for alias in projection_mapping.values()},
+                    metadata={
+                        alias: item.get(alias) for alias in projection_mapping.values()
+                    },
                 )
             else:
                 raw_metadata = item.get(self._metadata_key, {})
@@ -736,6 +754,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         Returns:
             A VectorStoreQueryResult containing the results of the search query.
+
         """
         # Backward-compat: support old pre_filter={"where_clause": ..., "limit_offset_clause": ...}
         pre_filter = kwargs.pop("pre_filter", None)
@@ -776,7 +795,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             weights=weights,
         )
 
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
@@ -795,6 +813,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
+
         """
         return self._search_query(
             vectors=query.query_embedding,

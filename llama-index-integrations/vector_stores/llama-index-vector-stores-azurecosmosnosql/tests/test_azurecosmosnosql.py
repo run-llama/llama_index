@@ -135,21 +135,27 @@ def node_embeddings_with_description() -> list[TextNode]:
         TextNode(
             text="lorem ipsum dolor sit amet",
             id_="fts-node-1",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-1")},
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-1")
+            },
             metadata={"author": "Stephen King"},
             embedding=[1.0, 0.0, 0.0],
         ),
         TextNode(
             text="the quick brown fox jumps",
             id_="fts-node-2",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-2")},
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-2")
+            },
             metadata={"author": "George Orwell"},
             embedding=[0.0, 1.0, 0.0],
         ),
         TextNode(
             text="adipiscing elit sed consectetur",
             id_="fts-node-3",
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-3")},
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="fts-doc-3")
+            },
             metadata={"author": "J.K. Rowling"},
             embedding=[0.0, 0.0, 1.0],
         ),
@@ -429,9 +435,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         assert node.get_content() == "lorem ipsum"
 
         # No nodes from other authors should be present
-        assert all(
-            n.metadata.get("author") == "Stephen King" for n in res.nodes
-        )
+        assert all(n.metadata.get("author") == "Stephen King" for n in res.nodes)
 
     def test_query_full_text_search(self, node_embeddings: List[TextNode]) -> None:
         """FullTextContains WHERE returns only nodes whose text contains the term."""
@@ -503,8 +507,12 @@ class TestAzureCosmosNoSqlVectorSearch:
 
         # Top result must contain "lorem ipsum" (only node d0 has both terms)
         top_content = res.nodes[0].get_content()
-        assert "lorem" in top_content, f"top result '{top_content}' must contain 'lorem'"
-        assert "ipsum" in top_content, f"top result '{top_content}' must contain 'ipsum'"
+        assert "lorem" in top_content, (
+            f"top result '{top_content}' must contain 'lorem'"
+        )
+        assert "ipsum" in top_content, (
+            f"top result '{top_content}' must contain 'ipsum'"
+        )
 
         # Top node ID must be the "lorem ipsum dolor sit amet" node
         assert res.ids[0] == "fts-node-1"
@@ -648,7 +656,8 @@ class TestAzureCosmosNoSqlVectorSearch:
     def test_query_weighted_hybrid_search(
         self, node_embeddings_with_description: List[TextNode]
     ) -> None:
-        """Weighted hybrid RRF assigns per-component weights via weight=[...].
+        """
+        Weighted hybrid RRF assigns per-component weights via weight=[...].
 
         weights=[0.3, 0.7] gives 30 % to FullTextScore and 70 % to VectorDistance.
         Node fts-node-1 has the exact query vector AND contains the search terms,

@@ -24,7 +24,9 @@ client = CosmosClient(URI, credential=KEY)
 Alternatively, use the built-in factory methods:
 
 ```python
-from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
+from llama_index.vector_stores.azurecosmosnosql import (
+    AzureCosmosDBNoSqlVectorSearch,
+)
 
 # From host + key
 store = AzureCosmosDBNoSqlVectorSearch.from_host_and_key(
@@ -86,7 +88,9 @@ store = AzureCosmosDBNoSqlVectorSearch(
 from llama_index.core import VectorStoreIndex, StorageContext
 
 storage_context = StorageContext.from_defaults(vector_store=store)
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 ```
 
 ---
@@ -208,7 +212,7 @@ result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
     search_type="weighted_hybrid_search",
     full_text_rank_filter=[
-        {"search_field": "title",   "search_text": "neural network"},
+        {"search_field": "title", "search_text": "neural network"},
         {"search_field": "summary", "search_text": "deep learning"},
     ],
     # weights=[title_weight, summary_weight, vector_weight]

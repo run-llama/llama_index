@@ -42,7 +42,6 @@ class AzureCosmosDBNoSqlVectorSearchType(str, Enum):
     WEIGHTED_HYBRID_SEARCH = "weighted_hybrid_search"
 
 
-
 class ParamMapping:
     """Parameter mapping class for building parameterized queries."""
 
@@ -100,7 +99,8 @@ class ParamMapping:
         vector: Any,
         alias: Optional[str] = None,
     ) -> str:
-        """Generate VectorDistance using direct field path and inline vector literal.
+        """
+        Generate VectorDistance using direct field path and inline vector literal.
 
         Both the bracket indexer (table[@key]) AND query parameters (@vector) are
         rejected by CosmosDB inside ORDER BY RANK RRF. Use direct field path and
@@ -117,4 +117,3 @@ class ParamMapping:
             {self.name_key: param.key, self.value_key: param.value}
             for param in self.parameter_map.values()
         ]
-

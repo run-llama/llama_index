@@ -6,14 +6,13 @@ Tests core methods and helpers without any database access using mocks.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from typing import Any, Dict
+from unittest.mock import MagicMock
 
 import pytest
 
 from llama_index.vector_stores.azurecosmosnosql.utils import (
     AzureCosmosDBNoSqlVectorSearchType,
-    Constants,
     ParamMapping,
 )
 from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
@@ -66,7 +65,7 @@ def _make_store(
     mock_client.create_database_if_not_exists.return_value = mock_db
     mock_db.create_container_if_not_exists.return_value = mock_container
 
-    store = AzureCosmosDBNoSqlVectorSearch(
+    return AzureCosmosDBNoSqlVectorSearch(
         cosmos_client=mock_client,
         vector_embedding_policy=VECTOR_EMBEDDING_POLICY,
         indexing_policy=indexing_policy or INDEXING_POLICY,
@@ -76,12 +75,12 @@ def _make_store(
         container_name="test_container",
         full_text_search_enabled=full_text_search_enabled,
     )
-    return store
 
 
 # ===========================================================================
 # ParamMapping tests
 # ===========================================================================
+
 
 class TestParamMapping:
     def test_add_parameter(self) -> None:
@@ -176,6 +175,7 @@ class TestParamMapping:
 # AzureCosmosDBNoSqlVectorSearchType enum tests
 # ===========================================================================
 
+
 class TestSearchTypeEnum:
     def test_all_values_exist(self) -> None:
         values = {t.value for t in AzureCosmosDBNoSqlVectorSearchType}
@@ -198,6 +198,7 @@ class TestSearchTypeEnum:
 # ===========================================================================
 # Store initialisation & property tests
 # ===========================================================================
+
 
 class TestStoreInit:
     def test_embedding_key_extracted_from_policy(self) -> None:
@@ -243,6 +244,7 @@ class TestStoreInit:
 # _is_* helper method tests
 # ===========================================================================
 
+
 class TestIsHelpers:
     def setup_method(self) -> None:
         self.store = _make_store(full_text_search_enabled=True)
@@ -278,7 +280,9 @@ class TestIsHelpers:
             AzureCosmosDBNoSqlVectorSearchType.VECTOR,
             AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
         ):
-            assert not self.store._is_full_text_search_type(st), f"{st} should not be full text"
+            assert not self.store._is_full_text_search_type(st), (
+                f"{st} should not be full text"
+            )
 
     def test_is_vector_search_type(self) -> None:
         for st in (
@@ -295,12 +299,15 @@ class TestIsHelpers:
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_SEARCH,
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
         ):
-            assert not self.store._is_vector_search_type(st), f"{st} should not be vector"
+            assert not self.store._is_vector_search_type(st), (
+                f"{st} should not be vector"
+            )
 
 
 # ===========================================================================
 # _validate_search_args tests
 # ===========================================================================
+
 
 class TestValidateSearchArgs:
     def setup_method(self) -> None:
@@ -309,9 +316,7 @@ class TestValidateSearchArgs:
 
     def test_valid_vector_search(self) -> None:
         # Should not raise
-        self.store._validate_search_args(
-            search_type="vector", vector=[1.0, 0.0, 0.0]
-        )
+        self.store._validate_search_args(search_type="vector", vector=[1.0, 0.0, 0.0])
 
     def test_invalid_search_type_raises(self) -> None:
         with pytest.raises(ValueError, match="Invalid search_type"):
@@ -323,9 +328,7 @@ class TestValidateSearchArgs:
 
     def test_full_text_search_disabled_raises(self) -> None:
         with pytest.raises(ValueError, match="Full text search is not enabled"):
-            self.store_no_fts._validate_search_args(
-                search_type="full_text_search"
-            )
+            self.store_no_fts._validate_search_args(search_type="full_text_search")
 
     def test_full_text_search_enabled_valid(self) -> None:
         # Should not raise
@@ -352,6 +355,7 @@ class TestValidateSearchArgs:
 # _generate_limit_clause tests
 # ===========================================================================
 
+
 class TestGenerateLimitClause:
     def setup_method(self) -> None:
         self.store = _make_store()
@@ -373,6 +377,7 @@ class TestGenerateLimitClause:
 # ===========================================================================
 # _generate_order_by_component_with_full_text_rank_filter tests
 # ===========================================================================
+
 
 class TestGenerateOrderByComponent:
     def setup_method(self) -> None:
@@ -411,6 +416,7 @@ class TestGenerateOrderByComponent:
 # _generate_order_by_clause tests
 # ===========================================================================
 
+
 class TestGenerateOrderByClause:
     def setup_method(self) -> None:
         self.store = _make_store(full_text_search_enabled=True)
@@ -427,7 +433,9 @@ class TestGenerateOrderByClause:
     def test_vector_score_threshold(self) -> None:
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
-            search_type="vector_score_threshold", param_mapping=pm, vector=[0.5, 0.5, 0.0]
+            search_type="vector_score_threshold",
+            param_mapping=pm,
+            vector=[0.5, 0.5, 0.0],
         )
         assert "ORDER BY" in result
         assert "VectorDistance" in result
@@ -554,6 +562,7 @@ class TestGenerateOrderByClause:
 # _generate_projection_fields tests
 # ===========================================================================
 
+
 class TestGenerateProjectionFields:
     def setup_method(self) -> None:
         self.store = _make_store(full_text_search_enabled=True)
@@ -647,6 +656,7 @@ class TestGenerateProjectionFields:
 # ===========================================================================
 # _construct_search_query tests
 # ===========================================================================
+
 
 class TestConstructSearchQuery:
     def setup_method(self) -> None:
@@ -833,8 +843,10 @@ class TestConstructSearchQuery:
 # _search_query backward-compat (pre_filter) tests
 # ===========================================================================
 
+
 class TestSearchQueryPreFilterCompat:
-    """Verify _search_query is a full backward-compatible replacement for _query.
+    """
+    Verify _search_query is a full backward-compatible replacement for _query.
 
     The old _query accepted:
         pre_filter = {
@@ -852,6 +864,7 @@ class TestSearchQueryPreFilterCompat:
     def setup_method(self) -> None:
         self.store = _make_store()
         from llama_index.core.vector_stores.types import VectorStoreQueryResult
+
         self._empty_result = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
         self.store._execute_search_query = MagicMock(return_value=self._empty_result)
 
@@ -1020,6 +1033,7 @@ class TestSearchQueryPreFilterCompat:
     def test_query_passes_pre_filter_through(self) -> None:
         """query() must forward pre_filter kwargs to _search_query."""
         from llama_index.core.vector_stores.types import VectorStoreQuery
+
         self.store._search_query = MagicMock(return_value=self._empty_result)
 
         vq = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3)
@@ -1028,11 +1042,14 @@ class TestSearchQueryPreFilterCompat:
             pre_filter={"where_clause": "WHERE c.author = 'King'"},
         )
         call_kwargs = self.store._search_query.call_args[1]
-        assert call_kwargs.get("pre_filter") == {"where_clause": "WHERE c.author = 'King'"}
+        assert call_kwargs.get("pre_filter") == {
+            "where_clause": "WHERE c.author = 'King'"
+        }
 
     def test_query_passes_vectors_and_limit(self) -> None:
         """query() must extract query_embedding and similarity_top_k correctly."""
         from llama_index.core.vector_stores.types import VectorStoreQuery
+
         self.store._search_query = MagicMock(return_value=self._empty_result)
 
         vq = VectorStoreQuery(query_embedding=[0.5, 0.5, 0.0], similarity_top_k=7)
@@ -1048,6 +1065,7 @@ class TestSearchQueryPreFilterCompat:
     def test_result_has_nodes_similarities_ids(self) -> None:
         from llama_index.core.vector_stores.types import VectorStoreQueryResult
         from llama_index.core.schema import TextNode
+
         mock_node = TextNode(id_="abc", text="hello")
         self.store._execute_search_query = MagicMock(
             return_value=VectorStoreQueryResult(
@@ -1060,6 +1078,3 @@ class TestSearchQueryPreFilterCompat:
         assert result.nodes == [mock_node]
         assert result.similarities == [0.9]
         assert result.ids == ["abc"]
-
-
-
