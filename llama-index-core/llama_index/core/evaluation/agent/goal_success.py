@@ -72,7 +72,8 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
 
 
 class AgentGoalSuccessEvaluator(BaseEvaluator):
-    """Evaluate whether an agent successfully achieved a given goal.
+    """
+    Evaluate whether an agent successfully achieved a given goal.
 
     Uses an LLM judge to score the agent's response on a 1-5 scale
     based on goal achievement, considering the tool call history
@@ -146,11 +147,7 @@ class AgentGoalSuccessEvaluator(BaseEvaluator):
         if query is None or response is None:
             raise ValueError("query and response must be provided")
 
-        tool_history = (
-            "\n".join(contexts)
-            if contexts
-            else "(NO TOOL HISTORY PROVIDED)"
-        )
+        tool_history = "\n".join(contexts) if contexts else "(NO TOOL HISTORY PROVIDED)"
 
         eval_response = await self._llm.apredict(
             prompt=self._eval_template,

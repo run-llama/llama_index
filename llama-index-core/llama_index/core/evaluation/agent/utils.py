@@ -26,7 +26,8 @@ def _kwargs_match(
     actual_kwargs: Dict[str, Any],
     strict: bool = False,
 ) -> bool:
-    """Check if expected kwargs match actual kwargs.
+    """
+    Check if expected kwargs match actual kwargs.
 
     Args:
         expected_kwargs: The expected keyword arguments.
@@ -38,8 +39,7 @@ def _kwargs_match(
     if strict:
         return expected_kwargs == actual_kwargs
     return all(
-        k in actual_kwargs and actual_kwargs[k] == v
-        for k, v in expected_kwargs.items()
+        k in actual_kwargs and actual_kwargs[k] == v for k, v in expected_kwargs.items()
     )
 
 
@@ -49,7 +49,8 @@ def compare_tool_calls(
     ordered: bool = False,
     strict_kwargs: bool = False,
 ) -> ToolCallComparisonResult:
-    """Compare expected tool calls against actual tool calls.
+    """
+    Compare expected tool calls against actual tool calls.
 
     Each tool call is a dict with keys:
         - tool_name (str): Name of the tool.

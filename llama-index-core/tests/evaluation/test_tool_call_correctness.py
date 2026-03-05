@@ -6,7 +6,6 @@ from llama_index.core.evaluation.agent.tool_call_correctness import (
     ToolCallCorrectnessEvaluator,
 )
 from llama_index.core.evaluation.agent.utils import (
-    ToolCallComparisonResult,
     compare_tool_calls,
 )
 
@@ -117,9 +116,7 @@ def test_compare_empty_expected():
 
 
 def test_compare_empty_actual():
-    result = compare_tool_calls(
-        [{"tool_name": "search", "tool_kwargs": {}}], []
-    )
+    result = compare_tool_calls([{"tool_name": "search", "tool_kwargs": {}}], [])
     assert result.score == 0.0
     assert result.matched == 0
 
@@ -145,7 +142,7 @@ def test_compare_tool_id_ignored():
 # -- ToolCallCorrectnessEvaluator tests --
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_exact_match():
     evaluator = ToolCallCorrectnessEvaluator()
     result = await evaluator.aevaluate(
@@ -160,7 +157,7 @@ async def test_evaluator_exact_match():
     assert result.passing is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_no_match():
     evaluator = ToolCallCorrectnessEvaluator()
     result = await evaluator.aevaluate(
@@ -176,7 +173,7 @@ async def test_evaluator_no_match():
     assert "Missing expected" in result.feedback
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_partial_match():
     evaluator = ToolCallCorrectnessEvaluator(threshold=0.5)
     result = await evaluator.aevaluate(
@@ -192,7 +189,7 @@ async def test_evaluator_partial_match():
     assert result.passing is True  # threshold=0.5
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_custom_threshold_fail():
     evaluator = ToolCallCorrectnessEvaluator(threshold=0.8)
     result = await evaluator.aevaluate(
@@ -210,7 +207,7 @@ async def test_evaluator_custom_threshold_fail():
     assert result.passing is False  # 0.667 < 0.8
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_missing_args_raises():
     evaluator = ToolCallCorrectnessEvaluator()
     with pytest.raises(ValueError, match="must be provided"):
@@ -220,7 +217,7 @@ async def test_evaluator_missing_args_raises():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_ordered():
     evaluator = ToolCallCorrectnessEvaluator(ordered=True)
     result = await evaluator.aevaluate(
@@ -237,7 +234,7 @@ async def test_evaluator_ordered():
     assert result.passing is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_evaluator_feedback_content():
     evaluator = ToolCallCorrectnessEvaluator()
     result = await evaluator.aevaluate(

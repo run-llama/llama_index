@@ -8,7 +8,8 @@ from llama_index.core.prompts.mixin import PromptDictType
 
 
 class ToolCallCorrectnessEvaluator(BaseEvaluator):
-    """Evaluate whether an agent made the correct tool calls.
+    """
+    Evaluate whether an agent made the correct tool calls.
 
     Compares a list of expected tool calls against actual tool calls,
     checking tool names and keyword arguments. This is a deterministic

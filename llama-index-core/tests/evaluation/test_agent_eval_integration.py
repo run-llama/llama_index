@@ -1,4 +1,5 @@
-"""Integration tests for agent evaluation (requires real OpenAI API key).
+"""
+Integration tests for agent evaluation (requires real OpenAI API key).
 
 Run with: pytest test_agent_eval_integration.py -v -m integration
 """
@@ -21,7 +22,7 @@ skip_no_api_key = pytest.mark.skipif(
 
 
 @skip_no_api_key
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_tool_call_real_scenario():
     """Realistic tool call comparison with multiple tools."""
     evaluator = ToolCallCorrectnessEvaluator(threshold=0.5)
@@ -31,7 +32,10 @@ def test_tool_call_real_scenario():
         {"tool_name": "format_response", "tool_kwargs": {"format": "brief"}},
     ]
     actual = [
-        {"tool_name": "web_search", "tool_kwargs": {"query": "San Francisco weather today", "limit": 5}},
+        {
+            "tool_name": "web_search",
+            "tool_kwargs": {"query": "San Francisco weather today", "limit": 5},
+        },
         {"tool_name": "format_response", "tool_kwargs": {"format": "brief"}},
     ]
     result = evaluator.evaluate(
@@ -46,7 +50,7 @@ def test_tool_call_real_scenario():
 
 
 @skip_no_api_key
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_goal_success_real_llm():
     """Test AgentGoalSuccessEvaluator with a real OpenAI call."""
     from llama_index.llms.openai import OpenAI
@@ -67,7 +71,7 @@ def test_goal_success_real_llm():
 
 
 @skip_no_api_key
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_goal_success_with_tool_history():
     """Full agent scenario with tool call history."""
     from llama_index.llms.openai import OpenAI

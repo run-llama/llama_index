@@ -16,7 +16,7 @@ def _make_mock_llm(response_text: str) -> MagicMock:
     return mock_llm
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_high_score():
     mock_llm = _make_mock_llm("5.0\nThe agent perfectly achieved the goal.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -30,7 +30,7 @@ async def test_goal_success_high_score():
     assert "perfectly" in result.feedback
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_low_score():
     mock_llm = _make_mock_llm("2.0\nThe agent failed to complete the task.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -43,7 +43,7 @@ async def test_goal_success_low_score():
     assert result.passing is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_with_reference():
     mock_llm = _make_mock_llm("4.0\nClose to the expected outcome.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -61,7 +61,7 @@ async def test_goal_success_with_reference():
     assert "Paris" in str(call_kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_with_contexts():
     mock_llm = _make_mock_llm("5.0\nCorrect tool usage and response.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -82,7 +82,7 @@ async def test_goal_success_with_contexts():
     assert "weather_api" in str(call_kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_custom_threshold():
     mock_llm = _make_mock_llm("3.5\nPartially achieved the goal.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm, score_threshold=3.0)
@@ -95,7 +95,7 @@ async def test_goal_success_custom_threshold():
     assert result.passing is True  # 3.5 >= 3.0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_no_query_raises():
     mock_llm = _make_mock_llm("5.0\nPerfect.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -104,7 +104,7 @@ async def test_goal_success_no_query_raises():
         await evaluator.aevaluate(query=None, response="some response")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_no_response_raises():
     mock_llm = _make_mock_llm("5.0\nPerfect.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -113,7 +113,7 @@ async def test_goal_success_no_response_raises():
         await evaluator.aevaluate(query="some query", response=None)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_invalid_score():
     mock_llm = _make_mock_llm("not_a_number\nSomething went wrong.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -126,7 +126,7 @@ async def test_goal_success_invalid_score():
     assert result.passing is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_prompts():
     mock_llm = _make_mock_llm("4.0\nGood.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
@@ -135,9 +135,11 @@ async def test_goal_success_prompts():
     assert "eval_template" in prompts
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_string_template():
-    template = "Score this: {query} {generated_answer} {reference_answer} {tool_history}"
+    template = (
+        "Score this: {query} {generated_answer} {reference_answer} {tool_history}"
+    )
     mock_llm = _make_mock_llm("4.0\nGood.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm, eval_template=template)
 
@@ -148,7 +150,7 @@ async def test_goal_success_string_template():
     assert result.score == 4.0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_goal_success_result_fields():
     mock_llm = _make_mock_llm("4.5\nWell done.")
     evaluator = AgentGoalSuccessEvaluator(llm=mock_llm)
