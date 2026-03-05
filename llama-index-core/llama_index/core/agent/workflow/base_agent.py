@@ -346,6 +346,7 @@ class BaseWorkflowAgent(
         ctx: Context,
         tool: AsyncBaseTool,
         tool_input: dict,
+        tool_call_id: Optional[str] = None,
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
@@ -356,11 +357,32 @@ class BaseWorkflowAgent(
             ):
                 new_tool_input = {**tool_input}
                 new_tool_input[tool.ctx_param_name] = ctx
-                tool_output = await tool.acall(**new_tool_input)
+                call_kwargs = new_tool_input
             else:
-                tool_output = await tool.acall(**tool_input)
+                call_kwargs = tool_input
+
+            tool_output = None
+            async for intermediate in tool.acall_stream(**call_kwargs):
+                if intermediate.is_preliminary and tool_call_id is not None:
+                    ctx.write_event_to_stream(
+                        ToolCallResult(
+                            tool_name=tool.metadata.get_name(),
+                            tool_kwargs=tool_input,
+                            tool_id=tool_call_id,
+                            tool_output=intermediate,
+                            return_direct=tool.metadata.return_direct,
+                        )
+                    )
+                tool_output = intermediate
+
+            if tool_output is None:
+                tool_output = ToolOutput(
+                    content="Tool returned no output.",
+                    tool_name=tool.metadata.get_name(),
+                    raw_input=tool_input,
+                    raw_output=None,
+                )
         except Exception as e:
-            # raise to wait
             waiting_for_event_exception = _get_waiting_for_event_exception()
             if waiting_for_event_exception and isinstance(
                 e, waiting_for_event_exception
@@ -640,7 +662,9 @@ class BaseWorkflowAgent(
             )
         else:
             tool = tools_by_name[ev.tool_name]
-            result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+            result = await self._call_tool(
+                ctx, tool, ev.tool_kwargs, tool_call_id=ev.tool_id
+            )
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,

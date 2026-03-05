@@ -475,3 +475,89 @@ def test_function_tool_field_default() -> None:
     # Calling with an explicit arg should override the default
     result = tool.call(location="Munich")
     assert result.content == "weather in Munich"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_acall_async_generator() -> None:
+    async def streaming_tool(x: int):
+        yield {"status": "loading", "progress": 0}
+        yield {"status": "processing", "progress": 50}
+        yield {"status": "done", "result": x * 2, "progress": 100}
+
+    tool = FunctionTool.from_defaults(async_fn=streaming_tool, name="stream", description="streaming tool")
+    result = await tool.acall(x=5)
+    assert result.raw_output == {"status": "done", "result": 10, "progress": 100}
+    assert not result.is_preliminary
+
+
+@pytest.mark.asyncio
+async def test_function_tool_acall_stream_async_generator() -> None:
+    async def streaming_tool(x: int):
+        yield {"status": "loading", "progress": 0}
+        yield {"status": "processing", "progress": 50}
+        yield {"status": "done", "result": x * 2, "progress": 100}
+
+    tool = FunctionTool.from_defaults(async_fn=streaming_tool, name="stream", description="streaming tool")
+    outputs = []
+    async for output in tool.acall_stream(x=5):
+        outputs.append(output)
+
+    assert len(outputs) == 4
+    assert outputs[0].is_preliminary
+    assert outputs[0].raw_output == {"status": "loading", "progress": 0}
+    assert outputs[1].is_preliminary
+    assert outputs[1].raw_output == {"status": "processing", "progress": 50}
+    assert outputs[2].is_preliminary
+    assert outputs[2].raw_output == {"status": "done", "result": 10, "progress": 100}
+    assert not outputs[3].is_preliminary
+    assert outputs[3].raw_output == {"status": "done", "result": 10, "progress": 100}
+
+
+@pytest.mark.asyncio
+async def test_function_tool_acall_stream_regular_function() -> None:
+    async def regular_tool(x: int) -> str:
+        return f"result: {x}"
+
+    tool = FunctionTool.from_defaults(async_fn=regular_tool, name="regular", description="regular tool")
+    outputs = []
+    async for output in tool.acall_stream(x=5):
+        outputs.append(output)
+
+    assert len(outputs) == 1
+    assert not outputs[0].is_preliminary
+    assert outputs[0].raw_output == "result: 5"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_acall_stream_empty_generator() -> None:
+    async def empty_gen():
+        return
+        yield
+
+    tool = FunctionTool.from_defaults(async_fn=empty_gen, name="empty", description="empty generator")
+    outputs = []
+    async for output in tool.acall_stream():
+        outputs.append(output)
+
+    assert len(outputs) == 0
+
+
+def test_tool_output_is_preliminary_default() -> None:
+    from llama_index.core.tools.types import ToolOutput
+
+    output = ToolOutput(
+        content="test",
+        tool_name="test_tool",
+        raw_input={},
+        raw_output="test",
+    )
+    assert not output.is_preliminary
+
+    preliminary_output = ToolOutput(
+        content="test",
+        tool_name="test_tool",
+        raw_input={},
+        raw_output="test",
+        is_preliminary=True,
+    )
+    assert preliminary_output.is_preliminary

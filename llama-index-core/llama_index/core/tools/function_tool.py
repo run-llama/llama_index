@@ -3,6 +3,7 @@ import inspect
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -356,30 +357,30 @@ class FunctionTool(AsyncBaseTool):
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
-        raw_output = await self._async_fn(*args, **all_kwargs)
+        if inspect.isasyncgenfunction(self._async_fn):
+            raw_output = None
+            async for result in self._async_fn(*args, **all_kwargs):
+                raw_output = result
+        else:
+            raw_output = await self._async_fn(*args, **all_kwargs)
 
-        # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
-        # Parse tool output into content blocks
         output_blocks = self._parse_tool_output(raw_output)
 
-        # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             blocks=output_blocks,
             tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
-        # Check for an async callback override
         callback_result = await self._run_async_callback(raw_output)
         if callback_result is not None:
             if isinstance(callback_result, ToolOutput):
                 return callback_result
             else:
-                # Assume callback_result is a string to override the content.
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.get_name(),
@@ -387,6 +388,73 @@ class FunctionTool(AsyncBaseTool):
                     raw_output=raw_output,
                 )
         return default_output
+
+    async def acall_stream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ToolOutput]:
+        """
+        Async streaming call that yields intermediate ToolOutput objects.
+
+        When the underlying async function is an async generator, each yielded
+        value produces a ToolOutput with ``is_preliminary=True``.  The last
+        yielded value is emitted as the final (non-preliminary) ToolOutput.
+
+        For regular async functions the behaviour is identical to ``acall``.
+        """
+        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
+                raise ValueError("Context is required for this tool")
+
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+
+        if inspect.isasyncgenfunction(self._async_fn):
+            raw_output = self._async_fn(*args, **all_kwargs)
+            results: List[Any] = []
+            async for result in raw_output:
+                results.append(result)
+                output_blocks = self._parse_tool_output(result)
+                yield ToolOutput(
+                    blocks=output_blocks,
+                    tool_name=self.metadata.get_name(),
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
+                    raw_output=result,
+                    is_preliminary=True,
+                )
+
+            if results:
+                final = results[-1]
+                output_blocks = self._parse_tool_output(final)
+                yield ToolOutput(
+                    blocks=output_blocks,
+                    tool_name=self.metadata.get_name(),
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
+                    raw_output=final,
+                )
+        else:
+            raw_output = await self._async_fn(*args, **all_kwargs)
+            output_blocks = self._parse_tool_output(raw_output)
+            default_output = ToolOutput(
+                blocks=output_blocks,
+                tool_name=self.metadata.get_name(),
+                raw_input={"args": args, "kwargs": tool_output_kwargs},
+                raw_output=raw_output,
+            )
+            callback_result = await self._run_async_callback(raw_output)
+            if callback_result is not None:
+                if isinstance(callback_result, ToolOutput):
+                    yield callback_result
+                else:
+                    yield ToolOutput(
+                        content=str(callback_result),
+                        tool_name=self.metadata.get_name(),
+                        raw_input={"args": args, "kwargs": tool_output_kwargs},
+                        raw_output=raw_output,
+                    )
+            else:
+                yield default_output
 
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
         """To langchain tool."""
