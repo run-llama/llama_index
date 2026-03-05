@@ -2,6 +2,12 @@
 
 This module provides tools for interacting with [AWS Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/)'s browser and code interpreter sandbox tools.
 
+## Prerequisites
+
+- **AWS credentials** configured via environment variables, AWS CLI profile, or IAM role
+- **IAM permissions** for `bedrock-agentcore:*` actions (see the [AgentCore documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/agentcore.html) for details)
+- **Python 3.9+**
+
 ## Installation
 
 (Optional) To run the examples below, first install:
@@ -31,6 +37,22 @@ Included tools:
 - `get_elements`: Get elements matching a CSS selector
 - `navigate_back`: Navigate to the previous page
 - `current_webpage`: Get information about the current webpage
+- `generate_live_view_url`: Generate a presigned URL for human oversight of a browser session
+- `take_control`: Take manual control of a browser session (disables automation)
+- `release_control`: Release manual control (re-enables automation)
+
+Lifecycle methods available for programmatic use (not exposed as agent tools):
+
+- `list_browsers`, `create_browser`, `delete_browser`, `get_browser`
+
+You can optionally pass a custom `identifier` for VPC-enabled browser resources:
+
+```python
+tool_spec = AgentCoreBrowserToolSpec(
+    region="us-west-2",
+    identifier="my-custom-browser-id",
+)
+```
 
 Example usage:
 
@@ -86,6 +108,25 @@ Included tools:
 - `start_command`: Start long-running commands asynchronously
 - `get_task`: Check status of async tasks
 - `stop_task`: Stop running tasks
+- `upload_file`: Upload a file with an optional semantic description
+- `upload_files`: Upload multiple files at once
+- `install_packages`: Install Python packages via pip
+- `download_file`: Download a file from the sandbox
+- `download_files`: Download multiple files from the sandbox
+- `clear_context`: Clear all variable state in the Python execution context
+
+Lifecycle methods available for programmatic use (not exposed as agent tools):
+
+- `list_code_interpreters`, `create_code_interpreter`, `delete_code_interpreter`, `get_code_interpreter`
+
+You can optionally pass a custom `identifier` for VPC-enabled code interpreter resources:
+
+```python
+tool_spec = AgentCoreCodeInterpreterToolSpec(
+    region="us-west-2",
+    identifier="my-custom-interpreter-id",
+)
+```
 
 Example usage:
 
@@ -132,3 +173,8 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+## Example Notebooks
+
+- [Browser Tool Notebook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/tools/agentcore_browser.ipynb)
+- [Code Interpreter Tool Notebook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/tools/agentcore_code_interpreter.ipynb)
