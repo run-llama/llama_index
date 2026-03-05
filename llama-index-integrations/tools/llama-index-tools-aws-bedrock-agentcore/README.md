@@ -42,6 +42,7 @@ Included tools:
 - `release_control`: Release manual control (re-enables automation)
 
 Lifecycle methods available for programmatic use (not exposed as agent tools):
+
 - `list_browsers`, `create_browser`, `delete_browser`, `get_browser`
 
 You can optionally pass a custom `identifier` for VPC-enabled browser resources:
@@ -115,6 +116,7 @@ Included tools:
 - `clear_context`: Clear all variable state in the Python execution context
 
 Lifecycle methods available for programmatic use (not exposed as agent tools):
+
 - `list_code_interpreters`, `create_code_interpreter`, `delete_code_interpreter`, `get_code_interpreter`
 
 You can optionally pass a custom `identifier` for VPC-enabled code interpreter resources:
