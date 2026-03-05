@@ -26,6 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-google"
+
 version = "0.7.0"
 description = "llama-index tools google integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
