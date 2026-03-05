@@ -142,6 +142,11 @@ def parse_partial_json(s: str) -> Dict:
     stack = []
     is_inside_string = False
     escaped = False
+    # Track container context so we can tell if an unfinished string is
+    # supposed to be an object key or a value.
+    # - object containers track whether the next string token should be a key.
+    # - array containers never expect keys.
+    context_stack = []
 
     # Process each character in the string one at a time.
     for char in s:
@@ -160,11 +165,25 @@ def parse_partial_json(s: str) -> Dict:
                 escaped = False
             elif char == "{":
                 stack.append("}")
+                context_stack.append({"type": "object", "expecting_key": True})
             elif char == "[":
                 stack.append("]")
+                context_stack.append({"type": "array"})
+            elif char == ":":
+                if (
+                    context_stack
+                    and context_stack[-1]["type"] == "object"
+                    and context_stack[-1]["expecting_key"]
+                ):
+                    context_stack[-1]["expecting_key"] = False
+            elif char == ",":
+                if context_stack and context_stack[-1]["type"] == "object":
+                    context_stack[-1]["expecting_key"] = True
             elif char == "}" or char == "]":
                 if stack and stack[-1] == char:
                     stack.pop()
+                    if context_stack:
+                        context_stack.pop()
                 else:
                     # Mismatched closing character; the input is malformed.
                     raise ValueError("Malformed partial JSON encountered.")
@@ -172,12 +191,22 @@ def parse_partial_json(s: str) -> Dict:
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing and no colon was found after the opening quote,
-    # this is an incomplete key - remove it
-    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
-        new_s = new_s[: new_s.rindex('"')]
-    elif is_inside_string:
-        new_s += '"'
+    # If we ended inside a string, close unfinished string values, but strip
+    # unfinished object keys so we don't create malformed key/value pairs.
+    if is_inside_string:
+        if '"' not in new_s:
+            raise ValueError("Malformed partial JSON encountered.")
+
+        is_incomplete_object_key = (
+            context_stack
+            and context_stack[-1]["type"] == "object"
+            and context_stack[-1]["expecting_key"]
+        )
+
+        if is_incomplete_object_key:
+            new_s = new_s[: new_s.rindex('"')]
+        else:
+            new_s += '"'
 
     # Check if we have an incomplete key-value pair
     new_s = new_s.rstrip()
