@@ -190,12 +190,12 @@ def test_recursively_unpack_filters_valid_inputs(
         (
             FilterOperator.TEXT_MATCH_INSENSITIVE,
             10,
-            "Query filter uses a non-string with the 'TEXT_MATCH'",
+            "Query filter uses a non-string with the 'TEXT_MATCH_INSENSITIVE'",
         ),
         (
             FilterOperator.TEXT_MATCH_INSENSITIVE,
             2.0,
-            "Query filter uses a non-string with the 'TEXT_MATCH'",
+            "Query filter uses a non-string with the 'TEXT_MATCH_INSENSITIVE'",
         ),
     ],
     ids=[
