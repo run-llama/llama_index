@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
@@ -329,6 +330,40 @@ def test_azureaisearch_semantic_query() -> None:
     assert len(result.nodes) == 2
     assert len(result.ids) == 2
     assert len(result.similarities) == 2
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_query_raises_for_unsupported_mode() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+    query = VectorStoreQuery(
+        query_str="test query",
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+    )
+
+    with pytest.raises(ValueError, match="Unsupported query mode"):
+        vector_store.query(query)
+
+    search_client.search.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_aquery_raises_for_unsupported_mode() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+    query = VectorStoreQuery(
+        query_str="test query",
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+    )
+
+    with pytest.raises(ValueError, match="Unsupported query mode"):
+        asyncio.run(vector_store.aquery(query))
 
 
 @pytest.mark.skipif(

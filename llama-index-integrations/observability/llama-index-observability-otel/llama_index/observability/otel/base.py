@@ -1,16 +1,17 @@
 import inspect
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
 import llama_index_instrumentation as instrument
-from llama_index.observability.otel.utils import flatten_dict
+from llama_index.observability.otel.utils import _is_otel_supported_type, flatten_dict
 from llama_index_instrumentation.base.event import BaseEvent
 from llama_index_instrumentation.event_handlers import BaseEventHandler
 from llama_index_instrumentation.span import SimpleSpan, active_span_id
 from llama_index_instrumentation.span_handlers.simple import SimpleSpanHandler
-from opentelemetry import context, trace
+from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import SpanProcessor, TracerProvider, _Span
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
@@ -20,6 +21,8 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.trace import set_span_in_context
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from termcolor.termcolor import cprint
+
+_logger = logging.getLogger(__name__)
 
 
 class OTelEventAttributes(BaseModel):
@@ -45,10 +48,11 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     """OpenTelemetry-compatible span handler."""
 
     _tracer: trace.Tracer = PrivateAttr()
+    _tracer_provider: Optional[TracerProvider] = PrivateAttr(default=None)
     _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
         default_factory=dict,
     )
-    all_spans: Dict[str, Union[trace.Span, _Span]] = Field(
+    all_spans: Dict[str, trace.Span] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
     debug: bool = Field(
@@ -64,6 +68,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         completed_spans: Optional[List[SimpleSpan]] = None,
         dropped_spans: Optional[List[SimpleSpan]] = None,
         current_span_ids: Optional[Dict[Any, str]] = None,
+        tracer_provider: Optional[TracerProvider] = None,
     ):
         super().__init__(
             open_spans=open_spans or {},
@@ -72,13 +77,45 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             current_span_ids=cast(Dict[str, Any], current_span_ids or {}),
         )
         self._tracer = tracer
+        self._tracer_provider = tracer_provider
         self._events_by_span = {}
         self.debug = debug
+
+    def close(self) -> None:
+        """Flush and shut down the OTel tracer provider."""
+        provider = self._tracer_provider
+        if provider is None:
+            # Fall back to the global tracer provider
+            global_provider = trace.get_tracer_provider()
+            if isinstance(global_provider, TracerProvider):
+                provider = global_provider
+        if provider is not None:
+            try:
+                provider.shutdown()
+            except BaseException:
+                _logger.warning("Error shutting down tracer provider", exc_info=True)
 
     @classmethod
     def class_name(cls) -> str:  # type: ignore
         """Class name."""
         return "OTelCompatibleSpanHandler"
+
+    _PROPAGATION_KEY = "otel"
+
+    def capture_propagation_context(self) -> Dict[str, Any]:
+        """Serialize the current OTel trace context for cross-process propagation."""
+        carrier: Dict[str, str] = {}
+        propagate.inject(carrier)
+        if carrier:
+            return {self._PROPAGATION_KEY: carrier}
+        return {}
+
+    def restore_propagation_context(self, ctx: Dict[str, Any]) -> None:
+        """Restore OTel trace context from a serialized carrier dict."""
+        carrier = ctx.get(self._PROPAGATION_KEY)
+        if carrier:
+            restored = propagate.extract(carrier)
+            context.attach(restored)
 
     def new_span(
         self,
@@ -92,16 +129,32 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         span = super().new_span(
             id_, bound_args, instance, parent_span_id, tags, **kwargs
         )
-        if parent_span_id is not None:
+
+        # Strip UUID suffix from span name for clean grouping
+        span_name = id_.partition("-")[0]
+
+        # Resolve parent context:
+        # 1. Same-process parent found in all_spans → use it
+        # 2. Otherwise → use ambient OTel context (set by restore_propagation_context
+        #    for cross-process, or inherited naturally for same-process roots)
+        if parent_span_id is not None and parent_span_id in self.all_spans:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
         else:
             ctx = context.get_current()
-            ctx.update(bound_args.arguments)
-        otel_span = self._tracer.start_span(name=id_, context=ctx)
+
+        otel_span = self._tracer.start_span(name=span_name, context=ctx)
         self.all_spans.update({id_: otel_span})
+
+        # Record instrument_tags as span attributes
+        if tags is not None:
+            for key, value in tags.items():
+                if _is_otel_supported_type(value):
+                    attr_key = key if "." in key else f"llamaindex.{key}"
+                    otel_span.set_attribute(attr_key, value)
+
         if self.debug:
             cprint(
-                f"Emitting span {id_} at time: {datetime.now()}",
+                f"Emitting span {span_name} at time: {datetime.now()}",
                 color="yellow",
                 attrs=["bold"],
             )
@@ -122,7 +175,10 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
                 attrs=["bold"],
             )
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
-        span = self.all_spans.pop(id_)
+        span = self.all_spans.pop(id_, None)
+        if span is None:
+            _logger.warning("No OTel span found for %s in prepare_to_exit_span", id_)
+            return sp
 
         # Get and process events specific to this span
         events = self._events_by_span.pop(id_, [])
@@ -148,13 +204,18 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
                 attrs=["bold"],
             )
         sp = super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
-        span = self.all_spans.pop(id_)
+        span = self.all_spans.pop(id_, None)
+        if span is None:
+            _logger.warning("No OTel span found for %s in prepare_to_drop_span", id_)
+            return sp
 
         # Get and process events specific to this span
         events = self._events_by_span.pop(id_, [])
         for event in events:
             span.add_event(name=event.name, attributes=event.attributes)
 
+        if err is not None:
+            span.record_exception(err)
         span.set_status(status=trace.StatusCode.ERROR, description=err.__str__())
         span.end()
         return sp
@@ -247,6 +308,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
         description="Debug the start and end of span and the recording of events",
     )
     _tracer: Optional[trace.Tracer] = PrivateAttr(default=None)
+    _tracer_provider_instance: Optional[TracerProvider] = PrivateAttr(default=None)
 
     def _start_otel(
         self,
@@ -270,6 +332,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
             tracer_provider.add_span_processor(extra_span_processor)
         tracer_provider.add_span_processor(span_processor)
         trace.set_tracer_provider(tracer_provider)
+        self._tracer_provider_instance = tracer_provider
         self._tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
 
     def start_registering(
@@ -284,6 +347,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
         span_handler = OTelCompatibleSpanHandler(
             tracer=self._tracer,
             debug=self.debug,
+            tracer_provider=self._tracer_provider_instance,
         )
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(

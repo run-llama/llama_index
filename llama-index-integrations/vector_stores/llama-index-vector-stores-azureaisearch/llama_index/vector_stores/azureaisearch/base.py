@@ -1292,7 +1292,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     **kwargs,
                 )
             )
-        if query.mode == VectorStoreQueryMode.SPARSE:
+        elif query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
                 query,
                 self._field_mapping,
@@ -1320,6 +1320,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._semantic_configuration_name or "mySemanticConfig",
                 **kwargs,
             )
+        else:
+            raise ValueError(f"Unsupported query mode: {query.mode}")
         return azure_query_result_search.search()
 
     async def aquery(
@@ -1337,17 +1339,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             if query.filters is not None:
                 odata_filter = self._create_odata_filter(query.filters)
 
-        azure_query_result_search: AzureQueryResultSearchBase = (
-            AzureQueryResultSearchDefault(
-                query,
-                self._field_mapping,
-                odata_filter,
-                self._search_client,
-                self._async_search_client,
-                **kwargs,
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            azure_query_result_search: AzureQueryResultSearchBase = (
+                AzureQueryResultSearchDefault(
+                    query,
+                    self._field_mapping,
+                    odata_filter,
+                    self._search_client,
+                    self._async_search_client,
+                    **kwargs,
+                )
             )
-        )
-        if query.mode == VectorStoreQueryMode.SPARSE:
+        elif query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
                 query,
                 self._field_mapping,
@@ -1375,6 +1378,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._semantic_configuration_name or "mySemanticConfig",
                 **kwargs,
             )
+        else:
+            raise ValueError(f"Unsupported query mode: {query.mode}")
         return await azure_query_result_search.asearch()
 
     def _build_filter_str(
