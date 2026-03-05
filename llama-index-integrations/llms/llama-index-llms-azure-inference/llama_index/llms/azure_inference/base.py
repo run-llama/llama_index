@@ -2,8 +2,10 @@
 
 import json
 import logging
+from contextlib import asynccontextmanager
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -215,7 +217,9 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     )
 
     _client: ChatCompletionsClient = PrivateAttr()
-    _async_client: ChatCompletionsClientAsync = PrivateAttr()
+    _async_client_class: Type[ChatCompletionsClientAsync] = PrivateAttr()
+    _async_client_kwargs: Dict[str, Any] = PrivateAttr()
+    _managed_async_client: Optional[ChatCompletionsClientAsync] = PrivateAttr(None)
     _model_name: str = PrivateAttr(None)
     _model_type: str = PrivateAttr(None)
     _model_provider: str = PrivateAttr(None)
@@ -237,7 +241,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         client_kwargs: Dict[str, Any] = None,
         **kwargs: Dict[str, Any],
     ) -> None:
-        client_kwargs = client_kwargs or {}
+        client_kwargs = dict(client_kwargs or {})
         callback_manager = callback_manager or CallbackManager([])
 
         endpoint = get_from_param_or_env(
@@ -288,12 +292,57 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             **client_kwargs,
         )
 
-        self._async_client = ChatCompletionsClientAsync(
+        # Save async client config: default calls use short-lived clients;
+        # `async with llm` reuses one managed async client.
+        self._async_client_class = ChatCompletionsClientAsync
+        self._async_client_kwargs = dict(
             endpoint=endpoint,
             credential=credential,
             user_agent="llamaindex",
             **client_kwargs,
         )
+
+    def _create_async_client(self) -> ChatCompletionsClientAsync:
+        return self._async_client_class(**self._async_client_kwargs)
+
+    @asynccontextmanager
+    async def _get_request_async_client(
+        self,
+    ) -> AsyncIterator[ChatCompletionsClientAsync]:
+        # Reuse the managed client in `async with llm`; otherwise,
+        # create and auto-close a short-lived client per request.
+        if self._managed_async_client is not None:
+            yield self._managed_async_client
+            return
+
+        async with self._create_async_client() as async_client:
+            yield async_client
+
+    async def aclose(self) -> None:
+        client = self._managed_async_client
+        if client is None:
+            return
+        try:
+            await client.close()
+        finally:
+            self._managed_async_client = None
+
+    async def __aenter__(self) -> "AzureAICompletionsModel":
+        if self._managed_async_client is None:
+            async_client = self._create_async_client()
+            await async_client.__aenter__()
+            self._managed_async_client = async_client
+        return self
+
+    async def __aexit__(self, *exc_details: object) -> None:
+        client = self._managed_async_client
+        if client is None:
+            return
+        try:
+            # Use the client's context exit path to preserve exception-aware cleanup.
+            await client.__aexit__(*exc_details)
+        finally:
+            self._managed_async_client = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -419,7 +468,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     ) -> ChatResponse:
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._async_client.complete(messages=messages, **all_kwargs)
+        async with self._get_request_async_client() as async_client:
+            response = await async_client.complete(messages=messages, **all_kwargs)
 
         response_message = from_inference_message(response.choices[0].message)
 
@@ -442,27 +492,28 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._async_client.complete(
-            messages=messages, stream=True, **all_kwargs
-        )
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            role = MessageRole.ASSISTANT
-            async for chunk in response:
-                content_delta = (
-                    chunk.choices[0].delta.content if chunk.choices else None
-                )
-                if content_delta is None:
-                    continue
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=chunk,
+        async def stream_gen() -> ChatResponseAsyncGen:
+            async with self._get_request_async_client() as async_client:
+                response = await async_client.complete(
+                    messages=messages, stream=True, **all_kwargs
                 )
 
-        return gen()
+                content = ""
+                role = MessageRole.ASSISTANT
+                async for chunk in response:
+                    content_delta = (
+                        chunk.choices[0].delta.content if chunk.choices else None
+                    )
+                    if content_delta is None:
+                        continue
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=chunk,
+                    )
+
+        return stream_gen()
 
     @llm_completion_callback()
     async def astream_complete(
