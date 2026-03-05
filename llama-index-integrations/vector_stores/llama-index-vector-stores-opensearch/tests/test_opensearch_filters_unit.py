@@ -41,4 +41,3 @@ def test_parse_filter_text_match_insensitive_uses_match_query() -> None:
     assert parsed == {
         "match": {"metadata.name": {"query": "john doe", "fuzziness": "AUTO"}}
     }
-
