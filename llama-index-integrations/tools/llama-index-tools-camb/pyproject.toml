@@ -29,7 +29,7 @@ name = "llama-index-tools-camb"
 version = "0.1.0"
 description = "llama-index tools CAMB AI integration"
 authors = [{name = "CAMB AI", email = "support@camb.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "neilruaro-camb"}]
