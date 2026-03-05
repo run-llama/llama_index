@@ -178,9 +178,28 @@ class BM25Retriever(BaseRetriever):
         if docstore is not None:
             nodes = cast(List[BaseNode], list(docstore.docs.values()))
 
-        assert nodes is not None, (
-            "Please pass exactly one of index, nodes, or docstore."
-        )
+        # If nodes is empty and an index was provided, try fetching from
+        # the vector store directly.  This covers vector stores that keep
+        # the original text (stores_text=True) such as ChromaDB, where
+        # the docstore is intentionally left empty.
+        if index is not None and (nodes is None or len(nodes) == 0):
+            vector_store = index.vector_store
+            if hasattr(vector_store, "stores_text") and vector_store.stores_text:
+                try:
+                    nodes = cast(
+                        List[BaseNode], vector_store.get_nodes()
+                    )
+                except NotImplementedError:
+                    pass
+
+        if not nodes:
+            raise ValueError(
+                "No nodes found for the BM25 retriever. "
+                "If you are using an external vector store (e.g. ChromaDB) that "
+                "stores text, make sure the collection is not empty. "
+                "Alternatively, pass nodes directly via the `nodes` parameter or "
+                "use `store_nodes_override=True` when building the index."
+            )
 
         return cls(
             nodes=nodes,
