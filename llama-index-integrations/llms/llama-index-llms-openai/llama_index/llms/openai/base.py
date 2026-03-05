@@ -1019,7 +1019,7 @@ class OpenAI(FunctionCallingLLM):
             **kwargs,
         }
 
-        if tool_specs:
+        if tool_specs and self.model not in O1_MODELS:
             kwargs["parallel_tool_calls"] = allow_parallel_tool_calls
 
         return kwargs
