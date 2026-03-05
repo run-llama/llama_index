@@ -2,7 +2,7 @@ from llama_index.core.llms.utils import parse_partial_json
 
 
 def test_parse_partial_json_keeps_incomplete_string_value() -> None:
-    """Regression test for #20541: unfinished string values should be preserved."""
+    """Unfinished top-level string values should be preserved."""
     parsed = parse_partial_json('{"key": "value')
 
     assert parsed == {"key": "value"}
@@ -20,3 +20,17 @@ def test_parse_partial_json_keeps_incomplete_string_value_in_array() -> None:
     parsed = parse_partial_json('{"items": ["alpha", "bet')
 
     assert parsed == {"items": ["alpha", "bet"]}
+
+
+def test_parse_partial_json_keeps_incomplete_string_value_in_nested_object() -> None:
+    """Unfinished nested object string values should be preserved."""
+    parsed = parse_partial_json('{"outer": {"inner": "wor')
+
+    assert parsed == {"outer": {"inner": "wor"}}
+
+
+def test_parse_partial_json_keeps_incomplete_string_value_in_nested_array_object() -> None:
+    """Unfinished string values inside nested object-in-array contexts should be preserved."""
+    parsed = parse_partial_json('{"items": [{"name": "alp')
+
+    assert parsed == {"items": [{"name": "alp"}]}
