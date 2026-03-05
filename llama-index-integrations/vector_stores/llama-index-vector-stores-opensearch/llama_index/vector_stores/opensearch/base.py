@@ -1,5 +1,7 @@
 """Elasticsearch/Opensearch vector store."""
 
+import asyncio
+import logging
 import uuid
 import warnings
 from datetime import datetime
@@ -32,6 +34,8 @@ INVALID_HYBRID_QUERY_ERROR = (
     "Please specify the lexical_query and search_pipeline for hybrid search."
 )
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
+
+logger = logging.getLogger(__name__)
 
 
 class OpensearchVectorClient:
@@ -131,6 +135,8 @@ class OpensearchVectorClient:
                 },
             }
         self._idx_conf = idx_conf
+        self._owns_os_client = os_client is None
+        self._owns_os_async_client = os_async_client is None
         self._os_client = os_client or self._get_opensearch_client(
             self._endpoint, **kwargs
         )
@@ -868,17 +874,45 @@ class OpensearchVectorClient:
         )
 
     def close(self) -> None:
-        """Close the OpenSearch clients and release resources."""
-        self._os_client.close()
-        try:
-            asyncio_run(self._os_async_client.close())
-        except RuntimeError:
-            pass
+        """
+        Close the OpenSearch clients and release resources.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_os_client and self._os_client is not None:
+            self._os_client.close()
+        if self._owns_os_async_client and self._os_async_client is not None:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                asyncio.run(self._os_async_client.close())
+            else:
+                loop.create_task(self._os_async_client.close())
 
     async def aclose(self) -> None:
-        """Asynchronously close the OpenSearch clients and release resources."""
-        self._os_client.close()
-        await self._os_async_client.close()
+        """
+        Asynchronously close the OpenSearch clients and release resources.
+
+        Only closes clients that were created internally by this class.
+        Clients passed in by the user are not closed.
+        """
+        if self._owns_os_client and self._os_client is not None:
+            self._os_client.close()
+        if self._owns_os_async_client and self._os_async_client is not None:
+            await self._os_async_client.close()
+
+    def __del__(self) -> None:
+        """Clean up OpenSearch clients during garbage collection."""
+        try:
+            self.close()
+        except Exception as exc:
+            logger.debug(
+                "Failed to close OpenSearch clients during garbage collection, "
+                "type=%s err='%s'",
+                type(exc),
+                exc,
+            )
 
     def query(
         self,
@@ -1168,6 +1202,18 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     async def aclose(self) -> None:
         """Asynchronously close the vector store and release resources."""
         await self._client.aclose()
+
+    def __del__(self) -> None:
+        """Clean up resources during garbage collection."""
+        try:
+            self.close()
+        except Exception as exc:
+            logger.debug(
+                "Failed to close OpenSearch vector store during garbage collection, "
+                "type=%s err='%s'",
+                type(exc),
+                exc,
+            )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
