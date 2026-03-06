@@ -35,6 +35,8 @@ await agent.run("What are the latest developments in AI reasoning?")
 
 - `query` (str): The search query text.
 - `max_documents` (int, optional): Maximum number of documents to return (default: 10).
+- `context` (str, optional): Additional context to refine search results.
+- `profile` (str, optional): Profile to customize search behavior.
 
 ### Example
 
