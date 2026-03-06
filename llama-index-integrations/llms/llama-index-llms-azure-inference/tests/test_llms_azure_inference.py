@@ -208,39 +208,6 @@ def test_achat_closes_async_client_context(
     client_instance.__aexit__.assert_awaited_once()
 
 
-def test_achat_reuses_async_client_with_llm_context(
-    loop: asyncio.AbstractEventLoop,
-    test_params: dict,
-    azure_llm_async_fixture,
-):
-    """Ensures `async with llm` reuses one async client and closes it on exit."""
-    llm = azure_llm_async_fixture.llm
-    client_instance = azure_llm_async_fixture.client_instance
-    entered_client = client_instance.__aenter__.return_value
-    entered_client.complete = mock.AsyncMock(
-        return_value=ChatCompletions(
-            choices=[
-                ChatChoice(
-                    message=ChatResponseMessage(
-                        content="Yes, this is a test.", role="assistant"
-                    )
-                )
-            ]
-        )
-    )
-
-    async def run_calls() -> None:
-        async with llm:
-            await llm.achat(**test_params)
-            await llm.achat(**test_params)
-
-    loop.run_until_complete(run_calls())
-
-    assert entered_client.complete.await_count == 2
-    client_instance.__aenter__.assert_awaited_once()
-    client_instance.__aexit__.assert_awaited_once()
-
-
 def test_astream_chat_closes_async_client_context(
     loop: asyncio.AbstractEventLoop,
     test_params: dict,
@@ -273,27 +240,6 @@ def test_astream_chat_closes_async_client_context(
     assert response == "Yes, this is a test."
     client_instance.__aenter__.assert_awaited_once()
     client_instance.__aexit__.assert_awaited_once()
-
-
-def test_aclose_closes_managed_async_client_and_is_idempotent(
-    loop: asyncio.AbstractEventLoop,
-    azure_llm_async_fixture,
-):
-    """Ensures manual aclose() closes managed client once and is safe to repeat."""
-    llm = azure_llm_async_fixture.llm
-    client_instance = azure_llm_async_fixture.client_instance
-    client_instance.close = mock.AsyncMock()
-
-    async def run() -> None:
-        await llm.__aenter__()
-        await llm.aclose()
-        await llm.aclose()
-
-    loop.run_until_complete(run())
-
-    client_instance.__aenter__.assert_awaited_once()
-    client_instance.close.assert_awaited_once()
-    assert llm._managed_async_client is None
 
 
 @pytest.mark.skipif(

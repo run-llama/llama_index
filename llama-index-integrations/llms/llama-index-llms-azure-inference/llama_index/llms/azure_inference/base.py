@@ -219,7 +219,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     _client: ChatCompletionsClient = PrivateAttr()
     _async_client_class: Type[ChatCompletionsClientAsync] = PrivateAttr()
     _async_client_kwargs: Dict[str, Any] = PrivateAttr()
-    _managed_async_client: Optional[ChatCompletionsClientAsync] = PrivateAttr(None)
     _model_name: str = PrivateAttr(None)
     _model_type: str = PrivateAttr(None)
     _model_provider: str = PrivateAttr(None)
@@ -292,8 +291,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             **client_kwargs,
         )
 
-        # Save async client config: default calls use short-lived clients;
-        # `async with llm` reuses one managed async client.
+        # Save async client config so each async request can create
+        # and close its own short-lived client.
         self._async_client_class = ChatCompletionsClientAsync
         self._async_client_kwargs = dict(
             endpoint=endpoint,
@@ -309,40 +308,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     async def _get_request_async_client(
         self,
     ) -> AsyncIterator[ChatCompletionsClientAsync]:
-        # Reuse the managed client in `async with llm`; otherwise,
-        # create and auto-close a short-lived client per request.
-        if self._managed_async_client is not None:
-            yield self._managed_async_client
-            return
-
         async with self._create_async_client() as async_client:
             yield async_client
-
-    async def aclose(self) -> None:
-        client = self._managed_async_client
-        if client is None:
-            return
-        try:
-            await client.close()
-        finally:
-            self._managed_async_client = None
-
-    async def __aenter__(self) -> "AzureAICompletionsModel":
-        if self._managed_async_client is None:
-            async_client = self._create_async_client()
-            await async_client.__aenter__()
-            self._managed_async_client = async_client
-        return self
-
-    async def __aexit__(self, *exc_details: object) -> None:
-        client = self._managed_async_client
-        if client is None:
-            return
-        try:
-            # Use the client's context exit path to preserve exception-aware cleanup.
-            await client.__aexit__(*exc_details)
-        finally:
-            self._managed_async_client = None
 
     @classmethod
     def class_name(cls) -> str:
