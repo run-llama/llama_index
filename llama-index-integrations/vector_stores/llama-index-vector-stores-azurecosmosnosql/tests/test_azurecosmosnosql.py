@@ -225,7 +225,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         assert stored["embedding"] == [0.5, 0.5, 0.5]
 
         # --- delete ---
-        vector_store.delete("test-node-id")
+        vector_store.delete("test-doc-id")
 
         items = list(test_container.read_all_items())
         assert len(items) == 0, "container must be empty after delete"
