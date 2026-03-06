@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
@@ -29,6 +30,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.memory import BaseMemory, Memory
+from llama_index.core.types import Thread
 
 from llama_index.core.chat_engine.multi_modal_context import _get_image_and_text_nodes
 from llama_index.core.llms.llm import (
@@ -380,6 +382,8 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
         response = self.synthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, StreamingResponse)
 
+        self._memory.put(ChatMessage(content=str(message), role=MessageRole.USER))
+
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
@@ -391,23 +395,20 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
-            assistant_message = ChatMessage(
-                content=full_response, role=MessageRole.ASSISTANT
-            )
-            self._memory.put(user_message)
-            self._memory.put(assistant_message)
-
         assert context_source.tool_name == "retriever"
         # re-package raw_outputs here to provide image nodes and text nodes separately
         context_source.raw_output = response.metadata
 
-        return StreamingAgentChatResponse(
+        chat_response = StreamingAgentChatResponse(
             chat_stream=wrapped_gen(response),
             sources=[context_source],
             source_nodes=context_nodes,
-            is_writing_to_memory=False,
         )
+        thread = Thread(
+            target=chat_response.write_response_to_history, args=(self._memory,)
+        )
+        thread.start()
+        return chat_response
 
     @trace_method("chat")
     async def achat(
@@ -443,6 +444,10 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
         response = await self.asynthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, AsyncStreamingResponse)
 
+        await self._memory.aput(
+            ChatMessage(content=str(message), role=MessageRole.USER)
+        )
+
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
             async for token in response.async_response_gen():
@@ -454,23 +459,19 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
-            assistant_message = ChatMessage(
-                content=full_response, role=MessageRole.ASSISTANT
-            )
-            await self._memory.aput(user_message)
-            await self._memory.aput(assistant_message)
-
         assert context_source.tool_name == "retriever"
         # re-package raw_outputs here to provide image nodes and text nodes separately
         context_source.raw_output = response.metadata
 
-        return StreamingAgentChatResponse(
+        chat_response = StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),
             sources=[context_source],
             source_nodes=context_nodes,
-            is_writing_to_memory=False,
         )
+        chat_response.awrite_response_to_history_task = asyncio.create_task(
+            chat_response.awrite_response_to_history(self._memory)
+        )
+        return chat_response
 
     def reset(self) -> None:
         # Clear chat history
