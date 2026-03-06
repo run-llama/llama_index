@@ -453,7 +453,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         sleep(1)
 
         res = vector_store.query(
-            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            VectorStoreQuery(similarity_top_k=3),
             search_type="full_text_search",
             where="FullTextContains(c.text, 'lorem')",
         )
@@ -495,7 +495,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         sleep(1)
 
         res = vector_store.query(
-            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            VectorStoreQuery(similarity_top_k=3),
             search_type="full_text_ranking",
             full_text_rank_filter=[
                 {"search_field": "text", "search_text": "lorem ipsum"},
@@ -541,7 +541,7 @@ class TestAzureCosmosNoSqlVectorSearch:
         sleep(1)
 
         res = vector_store.query(
-            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            VectorStoreQuery(similarity_top_k=3),
             search_type="full_text_ranking",
             full_text_rank_filter=[
                 {"search_field": "text", "search_text": "lorem ipsum"},
