@@ -7,7 +7,6 @@ import warnings
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
