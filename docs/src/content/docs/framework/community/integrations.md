@@ -41,6 +41,10 @@ for full tracing integrations.
 - [Guardrails](/python/examples/output_parsing/guardrailsdemo)
 - [OpenAI Function Calling](/python/examples/output_parsing/openai_pydantic_program)
 
+## Memory and Chat Storage
+
+- [llamaindex-soul](/python/framework/community/integrations/llamaindex_soul) - Markdown-native chat storage with RAG+RLM hybrid retrieval
+
 ## Storage and Managed Indexes
 
 - [Vector Stores](/python/framework/community/integrations/vector_stores)
