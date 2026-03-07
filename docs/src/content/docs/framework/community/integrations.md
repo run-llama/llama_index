@@ -43,7 +43,7 @@ for full tracing integrations.
 
 ## Memory and Chat Storage
 
-- [llamaindex-soul](/python/framework/community/integrations/llamaindex_soul) - Markdown-native chat storage with RAG+RLM hybrid retrieval
+- [llamaindex-soul](/python/framework/community/integrations/llamaindex_soul)
 
 ## Storage and Managed Indexes
 

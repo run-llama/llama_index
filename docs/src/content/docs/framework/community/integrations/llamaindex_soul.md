@@ -43,6 +43,11 @@ memory = ChatMemoryBuffer.from_defaults(
 
 # Use with any LlamaIndex agent
 from llama_index.core.agent import FunctionAgent
+from llama_index.llms.openai import OpenAI
+
+# Define your tools and LLM
+tools = []  # Add your Tool objects here
+llm = OpenAI(model="gpt-4")
 
 agent = FunctionAgent(tools=tools, llm=llm)
 await agent.run("Hello!", memory=memory)
@@ -88,9 +93,11 @@ memory = ChatMemoryBuffer.from_defaults(
 ```python
 from llamaindex_soul import create_chat_store
 
-# Switch backends easily
+# Choose your backend:
 store = create_chat_store("local")      # File-based
-store = create_chat_store("soulmate")   # Managed cloud
+
+# OR for managed cloud:
+# store = create_chat_store("soulmate", api_key="your-key")
 ```
 
 ## Links
