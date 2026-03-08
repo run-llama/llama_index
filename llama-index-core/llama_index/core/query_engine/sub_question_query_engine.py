@@ -242,7 +242,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 event.on_end(payload={EventPayload.SUB_QUESTION: qa_pair})
 
             return qa_pair
-        except ValueError:
+        except Exception:
             logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
 
@@ -273,6 +273,6 @@ class SubQuestionQueryEngine(BaseQueryEngine):
                 event.on_end(payload={EventPayload.SUB_QUESTION: qa_pair})
 
             return qa_pair
-        except ValueError:
+        except Exception:
             logger.warning(f"[{sub_q.tool_name}] Failed to run {question}")
             return None
