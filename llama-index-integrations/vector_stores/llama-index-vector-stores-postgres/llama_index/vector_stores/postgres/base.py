@@ -37,7 +37,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-DEFAULT_MMR_PREFETCH_FACTOR = 4
+DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 
 from sqlalchemy import text, select
 from sqlalchemy.sql.selectable import Select
@@ -811,6 +811,33 @@ class PGVectorStore(BasePydanticVectorStore):
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
+    def _get_query_session_settings(self, **kwargs: Any) -> List[Tuple[str, dict]]:
+        """Build list of (SQL, params) for index-specific session settings."""
+        settings: List[Tuple[str, dict]] = []
+        needs_bitmapscan_off = False
+        if kwargs.get("ivfflat_probes"):
+            settings.append(
+                (
+                    "SET ivfflat.probes = :ivfflat_probes",
+                    {"ivfflat_probes": int(kwargs["ivfflat_probes"])},
+                )
+            )
+            needs_bitmapscan_off = True
+        if self.hnsw_kwargs:
+            hnsw_ef_search = (
+                kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+            )
+            settings.append(
+                (
+                    "SET hnsw.ef_search = :hnsw_ef_search",
+                    {"hnsw_ef_search": int(hnsw_ef_search)},
+                )
+            )
+            needs_bitmapscan_off = True
+        if needs_bitmapscan_off:
+            settings.append(("SET LOCAL enable_bitmapscan = off", {}))
+        return settings
+
     def _query_with_score(
         self,
         embedding: Optional[List[float]],
@@ -1079,22 +1106,8 @@ class PGVectorStore(BasePydanticVectorStore):
             embedding, limit, metadata_filters, **kwargs
         )
         with self._session() as session, session.begin():
-            if kwargs.get("ivfflat_probes"):
-                ivfflat_probes = kwargs.get("ivfflat_probes")
-                session.execute(
-                    text(f"SET ivfflat.probes = :ivfflat_probes"),
-                    {"ivfflat_probes": ivfflat_probes},
-                )
-                session.execute(text("SET LOCAL enable_bitmapscan = off"))
-            if self.hnsw_kwargs:
-                hnsw_ef_search = (
-                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
-                )
-                session.execute(
-                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
-                    {"hnsw_ef_search": hnsw_ef_search},
-                )
-                session.execute(text("SET LOCAL enable_bitmapscan = off"))
+            for sql, params in self._get_query_session_settings(**kwargs):
+                session.execute(text(sql), params)
 
             res = session.execute(stmt)
             return [
@@ -1137,21 +1150,8 @@ class PGVectorStore(BasePydanticVectorStore):
             embedding, limit, metadata_filters, **kwargs
         )
         async with self._async_session() as async_session, async_session.begin():
-            if self.hnsw_kwargs:
-                hnsw_ef_search = (
-                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
-                )
-                await async_session.execute(
-                    text(f"SET hnsw.ef_search = {hnsw_ef_search}"),
-                )
-                await async_session.execute(text("SET LOCAL enable_bitmapscan = off"))
-            if kwargs.get("ivfflat_probes"):
-                ivfflat_probes = kwargs.get("ivfflat_probes")
-                await async_session.execute(
-                    text(f"SET ivfflat.probes = :ivfflat_probes"),
-                    {"ivfflat_probes": ivfflat_probes},
-                )
-                await async_session.execute(text("SET LOCAL enable_bitmapscan = off"))
+            for sql, params in self._get_query_session_settings(**kwargs):
+                await async_session.execute(text(sql), params)
 
             res = await async_session.execute(stmt)
             return [
@@ -1182,6 +1182,114 @@ class PGVectorStore(BasePydanticVectorStore):
                 for item in res.all()
             ]
 
+    def _prepare_mmr_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> Tuple[int, Optional[float]]:
+        """Validate MMR parameters and compute prefetch_k and mmr_threshold."""
+        if query.query_embedding is None:
+            raise ValueError("MMR query requires query_embedding")
+
+        if (
+            kwargs.get("mmr_prefetch_factor") is not None
+            and kwargs.get("mmr_prefetch_k") is not None
+        ):
+            raise ValueError(
+                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                "cannot coexist in a call to query()"
+            )
+
+        mmr_prefetch_k = kwargs.get("mmr_prefetch_k")
+        if mmr_prefetch_k is not None:
+            prefetch_k = int(mmr_prefetch_k)
+        else:
+            prefetch_k = int(
+                query.similarity_top_k
+                * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+            )
+        prefetch_k = max(prefetch_k, query.similarity_top_k)
+
+        mmr_threshold = (
+            query.mmr_threshold
+            if query.mmr_threshold is not None
+            else kwargs.get("mmr_threshold")
+        )
+        if mmr_threshold is not None and not (0 <= mmr_threshold <= 1):
+            raise ValueError(
+                f"mmr_threshold must be between 0 and 1, got {mmr_threshold}"
+            )
+
+        _logger.debug(
+            f"MMR search: prefetching {prefetch_k} candidates for "
+            f"{query.similarity_top_k} final results"
+        )
+
+        return prefetch_k, mmr_threshold
+
+    def _mmr_rerank_results(
+        self,
+        query: VectorStoreQuery,
+        results_with_embeddings: List[Tuple[DBEmbeddingRow, List[float]]],
+        mmr_threshold: Optional[float],
+    ) -> Optional[VectorStoreQueryResult]:
+        """
+        Apply MMR algorithm to prefetched results.
+
+        Returns VectorStoreQueryResult on success, or None if fallback to
+        regular search is needed (insufficient valid embeddings).
+        """
+        if not results_with_embeddings:
+            _logger.debug("MMR search: no results found during prefetch")
+            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+
+        embeddings = [emb for _, emb in results_with_embeddings]
+        node_ids = [row.node_id for row, _ in results_with_embeddings]
+
+        valid_indices = [i for i, emb in enumerate(embeddings) if emb]
+        if not valid_indices:
+            _logger.debug("MMR search: no valid embeddings found")
+            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+
+        valid_embeddings = [embeddings[i] for i in valid_indices]
+        valid_node_ids = [node_ids[i] for i in valid_indices]
+
+        if len(valid_embeddings) < query.similarity_top_k:
+            _logger.warning(
+                f"Not enough valid embeddings for MMR: "
+                f"{len(valid_embeddings)} < {query.similarity_top_k}. "
+                f"Falling back to regular search."
+            )
+            return None  # Signal caller to fall back
+
+        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
+            query_embedding=query.query_embedding,
+            embeddings=valid_embeddings,
+            similarity_top_k=query.similarity_top_k,
+            embedding_ids=valid_node_ids,
+            mmr_threshold=mmr_threshold,
+        )
+
+        result_map = {row.node_id: row for row, _ in results_with_embeddings}
+        ordered_rows = []
+        for mmr_sim, node_id in zip(mmr_similarities, mmr_ids):
+            if node_id in result_map:
+                row = result_map[node_id]
+                ordered_rows.append(
+                    DBEmbeddingRow(
+                        node_id=row.node_id,
+                        text=row.text,
+                        metadata=row.metadata,
+                        custom_fields=row.custom_fields,
+                        similarity=mmr_sim,
+                    )
+                )
+
+        _logger.debug(
+            f"MMR search completed: {len(ordered_rows)} results selected from "
+            f"{len(results_with_embeddings)} candidates"
+        )
+
+        return self._db_rows_to_query_result(ordered_rows)
+
     def _mmr_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
@@ -1203,124 +1311,30 @@ class PGVectorStore(BasePydanticVectorStore):
             VectorStoreQueryResult with nodes reranked by MMR algorithm.
 
         """
-        if query.query_embedding is None:
-            raise ValueError("MMR query requires query_embedding")
+        prefetch_k, mmr_threshold = self._prepare_mmr_query(query, **kwargs)
 
-        # Validate that mmr_prefetch_factor and mmr_prefetch_k cannot coexist
-        if (
-            kwargs.get("mmr_prefetch_factor") is not None
-            and kwargs.get("mmr_prefetch_k") is not None
-        ):
-            raise ValueError(
-                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
-                "cannot coexist in a call to query()"
-            )
+        db_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("mmr_prefetch_factor", "mmr_prefetch_k", "mmr_threshold")
+        }
 
-        # Determine prefetch size
-        mmr_prefetch_k = kwargs.get("mmr_prefetch_k")
-        if mmr_prefetch_k is not None:
-            prefetch_k = int(mmr_prefetch_k)
-        else:
-            prefetch_k = int(
-                query.similarity_top_k
-                * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
-            )
-
-        # Ensure prefetch_k is at least similarity_top_k
-        prefetch_k = max(prefetch_k, query.similarity_top_k)
-
-        # Get mmr_threshold from query or kwargs
-        mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
-
-        _logger.debug(
-            f"MMR search: prefetching {prefetch_k} candidates for "
-            f"{query.similarity_top_k} final results"
-        )
-
-        # Fetch more candidates with their embeddings
         results_with_embeddings = self._query_with_embedding(
+            query.query_embedding, prefetch_k, query.filters, **db_kwargs
+        )
+
+        result = self._mmr_rerank_results(query, results_with_embeddings, mmr_threshold)
+        if result is not None:
+            return result
+
+        # Fallback to regular search
+        rows = self._query_with_score(
             query.query_embedding,
-            prefetch_k,
+            query.similarity_top_k,
             query.filters,
+            **db_kwargs,
         )
-
-        if not results_with_embeddings:
-            _logger.debug("MMR search: no results found during prefetch")
-            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-        # Extract embeddings and node IDs for MMR
-        embeddings = [emb for _, emb in results_with_embeddings]
-        node_ids = [row.node_id for row, _ in results_with_embeddings]
-
-        # Filter out any results with empty embeddings
-        valid_indices = [i for i, emb in enumerate(embeddings) if emb]
-        if not valid_indices:
-            _logger.debug("MMR search: no valid embeddings found")
-            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-        valid_embeddings = [embeddings[i] for i in valid_indices]
-        valid_node_ids = [node_ids[i] for i in valid_indices]
-
-        # Fallback to regular search if not enough valid embeddings for MMR
-        if len(valid_embeddings) < query.similarity_top_k:
-            _logger.warning(
-                f"Not enough valid embeddings for MMR: "
-                f"{len(valid_embeddings)} < {query.similarity_top_k}. "
-                f"Falling back to regular search."
-            )
-            results = self._query_with_score(
-                query.query_embedding,
-                query.similarity_top_k,
-                query.filters,
-            )
-            return self._db_rows_to_query_result(results)
-
-        # Apply MMR algorithm
-        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
-            query_embedding=query.query_embedding,
-            embeddings=valid_embeddings,
-            similarity_top_k=query.similarity_top_k,
-            embedding_ids=valid_node_ids,
-            mmr_threshold=mmr_threshold,
-        )
-
-        # Build result mapping
-        result_map = {row.node_id: row for row, _ in results_with_embeddings}
-
-        # Construct final result
-        nodes = []
-        similarities = []
-        ids = []
-
-        for mmr_sim, node_id in zip(mmr_similarities, mmr_ids):
-            if node_id in result_map:
-                db_row = result_map[node_id]
-                try:
-                    node = metadata_dict_to_node(db_row.metadata)
-                    node.set_content(str(db_row.text))
-                except Exception:
-                    node = TextNode(
-                        id_=db_row.node_id,
-                        text=db_row.text,
-                        metadata=db_row.metadata,
-                    )
-                if db_row.custom_fields:
-                    node.metadata["custom_fields"] = db_row.custom_fields
-
-                nodes.append(node)
-                similarities.append(mmr_sim)
-                ids.append(node_id)
-
-        _logger.debug(
-            f"MMR search completed: {len(nodes)} results selected from "
-            f"{len(results_with_embeddings)} candidates"
-        )
-
-        return VectorStoreQueryResult(
-            nodes=nodes,
-            similarities=similarities,
-            ids=ids,
-        )
+        return self._db_rows_to_query_result(rows)
 
     async def _async_mmr_query(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -1343,124 +1357,30 @@ class PGVectorStore(BasePydanticVectorStore):
             VectorStoreQueryResult with nodes reranked by MMR algorithm.
 
         """
-        if query.query_embedding is None:
-            raise ValueError("MMR query requires query_embedding")
+        prefetch_k, mmr_threshold = self._prepare_mmr_query(query, **kwargs)
 
-        # Validate that mmr_prefetch_factor and mmr_prefetch_k cannot coexist
-        if (
-            kwargs.get("mmr_prefetch_factor") is not None
-            and kwargs.get("mmr_prefetch_k") is not None
-        ):
-            raise ValueError(
-                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
-                "cannot coexist in a call to query()"
-            )
+        db_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("mmr_prefetch_factor", "mmr_prefetch_k", "mmr_threshold")
+        }
 
-        # Determine prefetch size
-        mmr_prefetch_k = kwargs.get("mmr_prefetch_k")
-        if mmr_prefetch_k is not None:
-            prefetch_k = int(mmr_prefetch_k)
-        else:
-            prefetch_k = int(
-                query.similarity_top_k
-                * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
-            )
-
-        # Ensure prefetch_k is at least similarity_top_k
-        prefetch_k = max(prefetch_k, query.similarity_top_k)
-
-        # Get mmr_threshold from query or kwargs
-        mmr_threshold = query.mmr_threshold or kwargs.get("mmr_threshold")
-
-        _logger.debug(
-            f"MMR search: prefetching {prefetch_k} candidates for "
-            f"{query.similarity_top_k} final results"
-        )
-
-        # Fetch more candidates with their embeddings
         results_with_embeddings = await self._async_query_with_embedding(
+            query.query_embedding, prefetch_k, query.filters, **db_kwargs
+        )
+
+        result = self._mmr_rerank_results(query, results_with_embeddings, mmr_threshold)
+        if result is not None:
+            return result
+
+        # Fallback to regular search
+        rows = await self._aquery_with_score(
             query.query_embedding,
-            prefetch_k,
+            query.similarity_top_k,
             query.filters,
+            **db_kwargs,
         )
-
-        if not results_with_embeddings:
-            _logger.debug("MMR search: no results found during prefetch")
-            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-        # Extract embeddings and node IDs for MMR
-        embeddings = [emb for _, emb in results_with_embeddings]
-        node_ids = [row.node_id for row, _ in results_with_embeddings]
-
-        # Filter out any results with empty embeddings
-        valid_indices = [i for i, emb in enumerate(embeddings) if emb]
-        if not valid_indices:
-            _logger.debug("MMR search: no valid embeddings found")
-            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-        valid_embeddings = [embeddings[i] for i in valid_indices]
-        valid_node_ids = [node_ids[i] for i in valid_indices]
-
-        # Fallback to regular search if not enough valid embeddings for MMR
-        if len(valid_embeddings) < query.similarity_top_k:
-            _logger.warning(
-                f"Not enough valid embeddings for MMR: "
-                f"{len(valid_embeddings)} < {query.similarity_top_k}. "
-                f"Falling back to regular search."
-            )
-            results = await self._aquery_with_score(
-                query.query_embedding,
-                query.similarity_top_k,
-                query.filters,
-            )
-            return self._db_rows_to_query_result(results)
-
-        # Apply MMR algorithm
-        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
-            query_embedding=query.query_embedding,
-            embeddings=valid_embeddings,
-            similarity_top_k=query.similarity_top_k,
-            embedding_ids=valid_node_ids,
-            mmr_threshold=mmr_threshold,
-        )
-
-        # Build result mapping
-        result_map = {row.node_id: row for row, _ in results_with_embeddings}
-
-        # Construct final result
-        nodes = []
-        similarities = []
-        ids = []
-
-        for mmr_sim, node_id in zip(mmr_similarities, mmr_ids):
-            if node_id in result_map:
-                db_row = result_map[node_id]
-                try:
-                    node = metadata_dict_to_node(db_row.metadata)
-                    node.set_content(str(db_row.text))
-                except Exception:
-                    node = TextNode(
-                        id_=db_row.node_id,
-                        text=db_row.text,
-                        metadata=db_row.metadata,
-                    )
-                if db_row.custom_fields:
-                    node.metadata["custom_fields"] = db_row.custom_fields
-
-                nodes.append(node)
-                similarities.append(mmr_sim)
-                ids.append(node_id)
-
-        _logger.debug(
-            f"MMR search completed: {len(nodes)} results selected from "
-            f"{len(results_with_embeddings)} candidates"
-        )
-
-        return VectorStoreQueryResult(
-            nodes=nodes,
-            similarities=similarities,
-            ids=ids,
-        )
+        return self._db_rows_to_query_result(rows)
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]

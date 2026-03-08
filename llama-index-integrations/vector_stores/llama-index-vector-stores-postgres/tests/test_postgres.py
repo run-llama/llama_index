@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any, Dict, Generator, List, Union, Optional
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 from llama_index.core.schema import (
@@ -16,9 +17,20 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
 from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.vector_stores.postgres.base import (
+    DBEmbeddingRow,
+    DEFAULT_MMR_PREFETCH_FACTOR,
+)
 from sqlalchemy import Select, MetaData, Table, Column, String, Integer, insert
+import numpy as np
+from llama_index.core.indices.query.embedding_utils import (
+    get_top_k_embeddings,
+    get_top_k_mmr_embeddings,
+)
+
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
@@ -2183,426 +2195,1028 @@ async def test_custom_sparse_query(
         assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]
 
 
-# ================== MMR (Maximal Marginal Relevance) Tests ==================
-
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_basic(
-    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test basic MMR query functionality."""
-    if use_async:
-        await pg_fixture.async_add(node_embeddings)
-    else:
-        pg_fixture.add(node_embeddings)
-
-    assert isinstance(pg_fixture, PGVectorStore)
-
-    # Query with MMR mode
-    q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=3,
-        mode=VectorStoreQueryMode.MMR,
+# ================== MMR Mock Tests ==================
+def _create_mock_db_embedding_row(
+    node_id: str,
+    text: str,
+    metadata: Dict[str, Any],
+    similarity: float = 0.9,
+    custom_fields: Optional[Dict[str, Any]] = None,
+) -> "DBEmbeddingRow":
+    """Helper to create DBEmbeddingRow for mock tests."""
+    return DBEmbeddingRow(
+        node_id=node_id,
+        text=text,
+        metadata=metadata,
+        custom_fields=custom_fields or {},
+        similarity=similarity,
     )
 
-    if use_async:
-        res = await pg_fixture.aquery(q)
-    else:
-        res = pg_fixture.query(q)
 
-    assert res.nodes is not None
-    assert len(res.nodes) <= 3
-    assert res.similarities is not None
-    assert res.ids is not None
-    # Check that we got valid results
-    assert all(node.node_id in ["aaa", "bbb", "ccc", "ddd"] for node in res.nodes)
+def _create_mock_pg_vector_store() -> MagicMock:
+    """Create a mock PGVectorStore with minimal setup for testing _mmr_query."""
+    mock_store = MagicMock(spec=PGVectorStore)
+    mock_store.hnsw_kwargs = None
 
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_with_threshold(
-    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test MMR query with different mmr_threshold values."""
-    if use_async:
-        await pg_fixture.async_add(node_embeddings)
-    else:
-        pg_fixture.add(node_embeddings)
-
-    # High threshold (favor relevance)
-    q_high = VectorStoreQuery(
-        query_embedding=_get_sample_vector(1.0),
-        similarity_top_k=2,
-        mode=VectorStoreQueryMode.MMR,
-        mmr_threshold=0.9,
+    mock_store._db_rows_to_query_result = (
+        PGVectorStore._db_rows_to_query_result.__get__(mock_store)
     )
-
-    if use_async:
-        res_high = await pg_fixture.aquery(q_high)
-    else:
-        res_high = pg_fixture.query(q_high)
-
-    assert res_high.nodes is not None
-    assert len(res_high.nodes) <= 2
-
-    # Low threshold (favor diversity)
-    q_low = VectorStoreQuery(
-        query_embedding=_get_sample_vector(1.0),
-        similarity_top_k=2,
-        mode=VectorStoreQueryMode.MMR,
-        mmr_threshold=0.1,
+    mock_store._prepare_mmr_query = PGVectorStore._prepare_mmr_query.__get__(mock_store)
+    mock_store._mmr_rerank_results = PGVectorStore._mmr_rerank_results.__get__(
+        mock_store
     )
+    return mock_store
 
+
+# ---- sync/async dispatch helpers used by parametrized tests ----
+
+
+def _setup_embedding_mock(mock_store, return_value, use_async):
     if use_async:
-        res_low = await pg_fixture.aquery(q_low)
+        mock_store._async_query_with_embedding = AsyncMock(return_value=return_value)
     else:
-        res_low = pg_fixture.query(q_low)
-
-    assert res_low.nodes is not None
-    assert len(res_low.nodes) <= 2
+        mock_store._query_with_embedding = MagicMock(return_value=return_value)
 
 
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_with_prefetch_kwargs(
-    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test MMR query with prefetch configuration kwargs."""
+def _setup_fallback_mock(mock_store, return_value, use_async):
     if use_async:
-        await pg_fixture.async_add(node_embeddings)
+        mock_store._aquery_with_score = AsyncMock(return_value=return_value)
     else:
-        pg_fixture.add(node_embeddings)
+        mock_store._query_with_score = MagicMock(return_value=return_value)
 
-    # Test with mmr_prefetch_factor
-    q1 = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=2,
-        mode=VectorStoreQueryMode.MMR,
-    )
 
+async def _call_mmr(mock_store, query, use_async, **kwargs):
     if use_async:
-        res1 = await pg_fixture.aquery(q1, mmr_prefetch_factor=2)
+        return await PGVectorStore._async_mmr_query(mock_store, query, **kwargs)
     else:
-        res1 = pg_fixture.query(q1, mmr_prefetch_factor=2)
+        return PGVectorStore._mmr_query(mock_store, query, **kwargs)
 
-    assert res1.nodes is not None
-    assert len(res1.nodes) <= 2
 
-    # Test with mmr_prefetch_k
-    q2 = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=2,
-        mode=VectorStoreQueryMode.MMR,
-    )
-
+def _get_embedding_mock(mock_store, use_async):
     if use_async:
-        res2 = await pg_fixture.aquery(q2, mmr_prefetch_k=8)
+        return mock_store._async_query_with_embedding
     else:
-        res2 = pg_fixture.query(q2, mmr_prefetch_k=8)
-
-    assert res2.nodes is not None
-    assert len(res2.nodes) <= 2
+        return mock_store._query_with_embedding
 
 
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_with_filters(
-    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test MMR query with metadata filters."""
+def _get_fallback_mock(mock_store, use_async):
     if use_async:
-        await pg_fixture.async_add(node_embeddings)
+        return mock_store._aquery_with_score
     else:
-        pg_fixture.add(node_embeddings)
-
-    filters = MetadataFilters(
-        filters=[MetadataFilter(key="test_key", value="test_value")]
-    )
-
-    q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=3,
-        mode=VectorStoreQueryMode.MMR,
-        filters=filters,
-    )
-
-    if use_async:
-        res = await pg_fixture.aquery(q)
-    else:
-        res = pg_fixture.query(q)
-
-    assert res.nodes is not None
-    # Should only return nodes that match the filter
-    for node in res.nodes:
-        assert node.metadata.get("test_key") == "test_value"
+        return mock_store._query_with_score
 
 
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+# ================== MMR Query Tests (parametrized sync/async) ==================
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_empty_result(pg: PGVectorStore, use_async: bool) -> None:
-    """Test MMR query when no nodes match."""
-    # Query without adding any nodes
-    q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=3,
-        mode=VectorStoreQueryMode.MMR,
-    )
-
-    if use_async:
-        res = await pg.aquery(q)
-    else:
-        res = pg.query(q)
-
-    assert res.nodes is not None
-    assert len(res.nodes) == 0
-
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_requires_embedding(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test that MMR query raises error without query_embedding."""
-    if use_async:
-        await pg.async_add(node_embeddings)
-    else:
-        pg.add(node_embeddings)
-
-    q = VectorStoreQuery(
-        query_embedding=None,  # Missing required embedding
-        similarity_top_k=3,
-        mode=VectorStoreQueryMode.MMR,
-    )
-
-    with pytest.raises(ValueError, match="MMR query requires query_embedding"):
-        if use_async:
-            await pg.aquery(q)
-        else:
-            pg.query(q)
-
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio
-@pytest.mark.parametrize("use_async", [True, False])
-async def test_mmr_query_prefetch_params_coexistence(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    """Test that MMR query raises error when both prefetch params are provided."""
-    if use_async:
-        await pg.async_add(node_embeddings)
-    else:
-        pg.add(node_embeddings)
-
-    q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=2,
-        mode=VectorStoreQueryMode.MMR,
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="'mmr_prefetch_factor' and 'mmr_prefetch_k' cannot coexist",
-    ):
-        if use_async:
-            await pg.aquery(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
-        else:
-            pg.query(q, mmr_prefetch_factor=2, mmr_prefetch_k=10)
-
-
-# ================== MMR Mock Tests (No DB Required) ==================
-
-
-class MockPGVectorStore:
-    """A minimal mock of PGVectorStore for testing MMR logic without a database."""
-
-    def __init__(self) -> None:
-        self._data: Dict[str, Dict[str, Any]] = {}
-
-    def _add_mock_data(
-        self, node_id: str, text: str, embedding: List[float], metadata: Dict[str, Any]
-    ) -> None:
-        """Add mock data for testing."""
-        self._data[node_id] = {
-            "node_id": node_id,
-            "text": text,
-            "embedding": embedding,
-            "metadata": metadata,
-        }
-
-
-def test_mmr_algorithm_returns_diverse_results():
-    """Test that MMR algorithm returns diverse results without needing a database."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    # Create embeddings where some are very similar and others are different
-    # Embeddings: [1,0,0], [0.9,0.1,0], [0,1,0], [0,0,1]
-    # First two are very similar, last two are orthogonal
-    embeddings = [
-        [1.0, 0.0, 0.0],  # id=0 - similar to query
-        [0.9, 0.1, 0.0],  # id=1 - very similar to id=0
-        [0.0, 1.0, 0.0],  # id=2 - orthogonal
-        [0.0, 0.0, 1.0],  # id=3 - orthogonal
-    ]
-    query_embedding = [1.0, 0.0, 0.0]
-
-    # With high threshold (favor relevance), should get the most similar ones
-    _, ids_high = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=1.0, similarity_top_k=2
-    )
-    assert ids_high[0] == 0  # Most similar first
-
-    # With low threshold (favor diversity), should diversify
-    _, ids_low = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=0.0, similarity_top_k=3
-    )
-    # Should include diverse results
-    assert len(ids_low) == 3
-    # The order should favor diversity - not just the two most similar
-    assert 0 in ids_low  # Most relevant still included
-
-
-def test_mmr_algorithm_with_embedding_ids():
-    """Test MMR algorithm with custom embedding IDs."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    embeddings = [
-        [1.0, 0.0],
-        [0.5, 0.5],
-        [0.0, 1.0],
-    ]
-    query_embedding = [1.0, 0.0]
-
-    _, ids = get_top_k_mmr_embeddings(
-        query_embedding,
-        embeddings,
-        embedding_ids=["node_a", "node_b", "node_c"],
-        mmr_threshold=0.5,
-        similarity_top_k=3,
-    )
-    # Should return the custom IDs, not indices
-    assert all(isinstance(id_, str) for id_ in ids)
-    assert "node_a" in ids
-
-
-def test_mmr_algorithm_threshold_boundaries():
-    """Test MMR at threshold boundaries (0 and 1)."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    embeddings = [
-        [1.0, 0.0],
-        [0.9, 0.0],
-        [0.0, 1.0],
-    ]
-    query_embedding = [1.0, 0.0]
-
-    # threshold=1.0 should behave like regular similarity search
-    sims_t1, ids_t1 = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=1.0, similarity_top_k=3
-    )
-    assert ids_t1[0] == 0  # Most similar first
-    assert ids_t1[1] == 1  # Second most similar
-
-    # threshold=0.0 should maximize diversity
-    sims_t0, ids_t0 = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=0.0, similarity_top_k=3
-    )
-    # All results should still be returned
-    assert len(ids_t0) == 3
-
-
-def test_mmr_algorithm_empty_embeddings():
-    """Test MMR with empty embedding list."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    query_embedding = [1.0, 0.0, 0.0]
-    embeddings: List[List[float]] = []
-
-    sims, ids = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=5
-    )
-    assert len(ids) == 0
-    assert len(sims) == 0
-
-
-def test_mmr_algorithm_single_embedding():
-    """Test MMR with single embedding."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    query_embedding = [1.0, 0.0, 0.0]
-    embeddings = [[0.9, 0.1, 0.0]]
-
-    sims, ids = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=5
-    )
-    assert len(ids) == 1
-    assert ids[0] == 0
-
-
-def test_mmr_algorithm_similarity_top_k_larger_than_embeddings():
-    """Test MMR when similarity_top_k is larger than available embeddings."""
-    from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-
-    query_embedding = [1.0, 0.0]
-    embeddings = [[0.9, 0.1], [0.5, 0.5]]
-
-    sims, ids = get_top_k_mmr_embeddings(
-        query_embedding, embeddings, mmr_threshold=0.5, similarity_top_k=10
-    )
-    # Should return all available embeddings
-    assert len(ids) == 2
-
-
-def test_mmr_query_validation_requires_embedding():
-    """Test that MMR query validation requires query_embedding (mock test)."""
-    # This tests the validation logic without needing a database connection
-    q = VectorStoreQuery(
+async def test_mmr_query_rejects_none_embedding(use_async):
+    """Test that MMR query raises ValueError when query_embedding is None."""
+    query = VectorStoreQuery(
         query_embedding=None,
         similarity_top_k=3,
         mode=VectorStoreQueryMode.MMR,
     )
-    # The query itself is valid, but the vector store should reject it
-    assert q.query_embedding is None
-    assert q.mode == VectorStoreQueryMode.MMR
+    mock_store = _create_mock_pg_vector_store()
+
+    with pytest.raises(ValueError, match="MMR query requires query_embedding"):
+        await _call_mmr(mock_store, query, use_async)
 
 
-def test_mmr_prefetch_factor_calculation():
-    """Test prefetch calculations used in MMR."""
-    # Test that prefetch_factor multiplication works correctly
-    similarity_top_k = 5
-    mmr_prefetch_factor = 4
-    expected_prefetch = similarity_top_k * mmr_prefetch_factor
-    assert expected_prefetch == 20
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_rejects_conflicting_prefetch_params(use_async):
+    """Test that MMR query raises ValueError when both prefetch params provided."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
 
-    # Test with mmr_prefetch_k override
-    mmr_prefetch_k = 50
-    # When mmr_prefetch_k is provided, it should be used directly
-    assert mmr_prefetch_k == 50
+    with pytest.raises(
+        ValueError, match="'mmr_prefetch_factor' and 'mmr_prefetch_k' cannot coexist"
+    ):
+        await _call_mmr(
+            mock_store, query, use_async, mmr_prefetch_factor=4, mmr_prefetch_k=20
+        )
 
 
-def test_mmr_query_mode_enum():
-    """Test VectorStoreQueryMode.MMR enum value."""
-    assert VectorStoreQueryMode.MMR == "mmr"
-    assert VectorStoreQueryMode.MMR.value == "mmr"
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_returns_empty_when_no_candidates(use_async):
+    """Test that MMR query returns empty result when no candidates found."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert result.nodes == []
+    assert result.similarities == []
+    assert result.ids == []
+    _get_embedding_mock(mock_store, use_async).assert_called_once()
 
 
-def test_mmr_threshold_in_query():
-    """Test that mmr_threshold can be set in VectorStoreQuery."""
-    q = VectorStoreQuery(
-        query_embedding=[1.0, 0.0, 0.0],
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_returns_empty_when_no_valid_embeddings(use_async):
+    """Test MMR query returns empty when candidates have empty embeddings."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_row = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="test text",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [(mock_row, [])], use_async)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert result.nodes == []
+    assert result.similarities == []
+    assert result.ids == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_falls_back_when_insufficient_embeddings(use_async):
+    """Test MMR query falls back to regular search when not enough embeddings."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
         similarity_top_k=5,
         mode=VectorStoreQueryMode.MMR,
-        mmr_threshold=0.7,
     )
-    assert q.mmr_threshold == 0.7
-    assert q.mode == VectorStoreQueryMode.MMR
+    mock_row1 = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="text1",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.9,
+    )
+    mock_row2 = _create_mock_db_embedding_row(
+        node_id="node2",
+        text="text2",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.8,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [(mock_row1, [1.0, 0.0]), (mock_row2, [0.9, 0.1])],
+        use_async,
+    )
+
+    expected_result = VectorStoreQueryResult(
+        nodes=[TextNode(id_="node1", text="text1")],
+        similarities=[0.9],
+        ids=["node1"],
+    )
+    _setup_fallback_mock(mock_store, [mock_row1, mock_row2], use_async)
+    mock_store._db_rows_to_query_result = MagicMock(return_value=expected_result)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    _get_fallback_mock(mock_store, use_async).assert_called_once()
+    mock_store._db_rows_to_query_result.assert_called_once()
+    assert result == expected_result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_applies_mmr_algorithm(use_async):
+    """
+    Test MMR query correctly applies MMR and returns diverse results.
+
+    With query=[1,0.5,0], node1=[1,0,0] and node2=[1,0.1,0] are near-duplicates,
+    while node3=[0,1,0] is diverse. MMR at threshold=0.5 should pick the most
+    relevant node first (node2), then prefer node3 over the redundant node1.
+    """
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.5, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.5,
+    )
+    mock_row1 = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="text1",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.89,
+    )
+    mock_row2 = _create_mock_db_embedding_row(
+        node_id="node2",
+        text="text2",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.93,
+    )
+    mock_row3 = _create_mock_db_embedding_row(
+        node_id="node3",
+        text="text3",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.45,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [
+            (mock_row1, [1.0, 0.0, 0.0]),  # Similar to query, near-duplicate of node2
+            (mock_row2, [1.0, 0.1, 0.0]),  # Most relevant, near-duplicate of node1
+            (mock_row3, [0.0, 1.0, 0.0]),  # Diverse — different direction
+        ],
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert len(result.nodes) == 2
+    assert len(result.ids) == 2
+    assert len(result.similarities) == 2
+    # MMR should pick node2 (most relevant) and node3 (diverse),
+    # NOT node1 which is redundant with node2
+    assert result.ids == ["node2", "node3"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_uses_prefetch_k_override(use_async):
+    """Test MMR query uses mmr_prefetch_k when provided."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async, mmr_prefetch_k=50)
+
+    call_args = _get_embedding_mock(mock_store, use_async).call_args
+    assert call_args[0][1] == 50  # limit argument
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_uses_default_prefetch_factor(use_async):
+    """Test MMR query uses DEFAULT_MMR_PREFETCH_FACTOR when no override."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async)
+
+    expected_prefetch = 5 * DEFAULT_MMR_PREFETCH_FACTOR
+    call_args = _get_embedding_mock(mock_store, use_async).call_args
+    assert call_args[0][1] == expected_prefetch
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_preserves_custom_fields_in_result(use_async):
+    """Ensure MMR query preserves custom_fields into node.metadata."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    row = _create_mock_db_embedding_row(
+        node_id="n1",
+        text="t1",
+        metadata={"_node_type": "TextNode"},
+        custom_fields={"score": 7, "source": "join"},
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [(row, [1.0, 0.0, 0.0])], use_async)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert result.nodes and len(result.nodes) == 1
+    node = result.nodes[0]
+    assert "custom_fields" in node.metadata
+    assert node.metadata["custom_fields"] == {"score": 7, "source": "join"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_passes_filters_to_prefetch(use_async):
+    """MMR prefetch should receive metadata filters."""
+    filters = MetadataFilters(filters=[ExactMatchFilter(key="k", value="v")])
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        filters=filters,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async)
+
+    call_args = _get_embedding_mock(mock_store, use_async).call_args
+    assert call_args[0][2] == filters
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_uses_custom_prefetch_factor(use_async):
+    """Test MMR query uses custom mmr_prefetch_factor."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async, mmr_prefetch_factor=10)
+
+    # Should prefetch 5 * 10 = 50
+    call_args = _get_embedding_mock(mock_store, use_async).call_args
+    assert call_args[0][1] == 50
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_uses_mmr_threshold_from_kwargs(use_async):
+    """Test MMR query uses mmr_threshold from kwargs when not in query."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=None,
+    )
+    mock_row1 = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="text1",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_row2 = _create_mock_db_embedding_row(
+        node_id="node2",
+        text="text2",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [(mock_row1, [1.0, 0.0, 0.0]), (mock_row2, [0.0, 1.0, 0.0])],
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async, mmr_threshold=0.8)
+
+    assert len(result.nodes) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_handles_node_without_node_type(use_async):
+    """Test MMR query handles metadata without _node_type (uses TextNode fallback)."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_row = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="text1",
+        metadata={"some_key": "some_value"},  # No _node_type
+        similarity=0.9,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [(mock_row, [1.0, 0.0])], use_async)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert len(result.nodes) == 1
+    assert result.nodes[0].id_ == "node1"
+    assert result.nodes[0].text == "text1"
+
+
+# ================== MMR Threshold Validation Tests ==================
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_rejects_threshold_above_one(use_async):
+    """mmr_threshold > 1 should raise ValueError."""
+    mock_store = _create_mock_pg_vector_store()
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    with pytest.raises(ValueError, match="mmr_threshold must be between 0 and 1"):
+        await _call_mmr(mock_store, query, use_async, mmr_threshold=1.5)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_rejects_threshold_below_zero(use_async):
+    """mmr_threshold < 0 should raise ValueError."""
+    mock_store = _create_mock_pg_vector_store()
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    with pytest.raises(ValueError, match="mmr_threshold must be between 0 and 1"):
+        await _call_mmr(mock_store, query, use_async, mmr_threshold=-0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_accepts_threshold_zero(use_async):
+    """mmr_threshold=0.0 (max diversity) should be accepted, not rejected."""
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    result = await _call_mmr(mock_store, query, use_async, mmr_threshold=0.0)
+    assert result.nodes == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_accepts_threshold_one(use_async):
+    """mmr_threshold=1.0 (max relevance) should be accepted."""
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    result = await _call_mmr(mock_store, query, use_async, mmr_threshold=1.0)
+    assert result.nodes == []
+
+
+# ================== Prefetch Clamping Test ==================
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_clamps_prefetch_k_to_similarity_top_k(use_async):
+    """When mmr_prefetch_k < similarity_top_k, prefetch at least similarity_top_k."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async, mmr_prefetch_k=1)
+
+    call_args = _get_embedding_mock(mock_store, use_async).call_args
+    assert call_args[0][1] == 5
+
+
+# ================== _get_query_session_settings Tests ==================
+
+
+def test_get_query_session_settings_empty_when_no_kwargs():
+    """No settings returned when no ivfflat_probes and no hnsw_kwargs."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = None
+
+    settings = PGVectorStore._get_query_session_settings(mock_store)
+    assert settings == []
+
+
+def test_get_query_session_settings_ivfflat_probes():
+    """ivfflat_probes produces SET + bitmapscan off."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = None
+
+    settings = PGVectorStore._get_query_session_settings(mock_store, ivfflat_probes=10)
+    assert len(settings) == 2
+    assert "ivfflat.probes" in settings[0][0]
+    assert settings[0][1] == {"ivfflat_probes": 10}
+    assert "enable_bitmapscan" in settings[1][0]
+
+
+def test_get_query_session_settings_hnsw():
+    """hnsw_kwargs produces SET hnsw.ef_search + bitmapscan off."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = {"hnsw_ef_search": 40}
+
+    settings = PGVectorStore._get_query_session_settings(mock_store)
+    assert len(settings) == 2
+    assert "hnsw.ef_search" in settings[0][0]
+    assert settings[0][1] == {"hnsw_ef_search": 40}
+    assert "enable_bitmapscan" in settings[1][0]
+
+
+def test_get_query_session_settings_hnsw_override_from_kwargs():
+    """Per-call hnsw_ef_search kwarg overrides default from hnsw_kwargs."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = {"hnsw_ef_search": 40}
+
+    settings = PGVectorStore._get_query_session_settings(mock_store, hnsw_ef_search=200)
+    assert settings[0][1] == {"hnsw_ef_search": 200}
+
+
+def test_get_query_session_settings_both_ivfflat_and_hnsw():
+    """When both ivfflat and hnsw are active, bitmapscan off is emitted once."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = {"hnsw_ef_search": 40}
+
+    settings = PGVectorStore._get_query_session_settings(mock_store, ivfflat_probes=7)
+    # ivfflat SET, hnsw SET, one bitmapscan off
+    assert len(settings) == 3
+    bitmapscan_count = sum(1 for sql, _ in settings if "bitmapscan" in sql)
+    assert bitmapscan_count == 1
+
+
+def test_get_query_session_settings_casts_to_int():
+    """Values are cast to int even when passed as strings."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store.hnsw_kwargs = None
+
+    settings = PGVectorStore._get_query_session_settings(
+        mock_store, ivfflat_probes="15"
+    )
+    assert settings[0][1] == {"ivfflat_probes": 15}
+
+
+# ================== Public query() / aquery() Routing Tests ==================
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_query_routes_to_mmr(use_async):
+    """query()/aquery() with MMR mode delegates to the MMR method."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store._initialize = MagicMock()
+
+    expected = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+    if use_async:
+        mock_store._async_mmr_query = AsyncMock(return_value=expected)
+    else:
+        mock_store._mmr_query = MagicMock(return_value=expected)
+
+    q = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+
+    if use_async:
+        result = await PGVectorStore.aquery(mock_store, q)
+        mock_store._async_mmr_query.assert_called_once_with(q)
+    else:
+        result = PGVectorStore.query(mock_store, q)
+        mock_store._mmr_query.assert_called_once_with(q)
+    assert result == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_query_routes_to_default(use_async):
+    """query()/aquery() with DEFAULT mode delegates to the score method."""
+    mock_store = _create_mock_pg_vector_store()
+    mock_store._initialize = MagicMock()
+
+    rows = [
+        _create_mock_db_embedding_row(
+            node_id="n1", text="t1", metadata={"_node_type": "TextNode"}
+        )
+    ]
+    if use_async:
+        mock_store._aquery_with_score = AsyncMock(return_value=rows)
+    else:
+        mock_store._query_with_score = MagicMock(return_value=rows)
+
+    q = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+
+    if use_async:
+        result = await PGVectorStore.aquery(mock_store, q)
+        mock_store._aquery_with_score.assert_called_once()
+    else:
+        result = PGVectorStore.query(mock_store, q)
+        mock_store._query_with_score.assert_called_once()
+    assert len(result.nodes) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_threshold_from_query_overrides_kwargs(use_async):
+    """query.mmr_threshold=0.3 should take precedence over kwarg mmr_threshold=0.9."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.5, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.3,
+    )
+    mock_row1 = _create_mock_db_embedding_row(
+        node_id="node1",
+        text="text1",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_row2 = _create_mock_db_embedding_row(
+        node_id="node2",
+        text="text2",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_row3 = _create_mock_db_embedding_row(
+        node_id="node3",
+        text="text3",
+        metadata={"_node_type": "TextNode"},
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [
+            (mock_row1, [1.0, 0.0, 0.0]),
+            (mock_row2, [1.0, 0.1, 0.0]),
+            (mock_row3, [0.0, 1.0, 0.0]),
+        ],
+        use_async,
+    )
+
+    # Pass a conflicting kwarg threshold — the query's own value should win
+    result = await _call_mmr(mock_store, query, use_async, mmr_threshold=0.9)
+
+    assert len(result.nodes) == 2
+    # Low threshold (0.3) favors diversity, so node3 (diverse) should be picked
+    # over node1 (redundant with node2). Same assertion as
+    # test_mmr_query_applies_mmr_algorithm but now proving the 0.3 from query
+    # was used, not the 0.9 from kwargs.
+    assert "node3" in result.ids
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_returns_correct_similarity_scores(use_async):
+    """
+    Verify the actual MMR similarity scores returned, not just ordering.
+
+    Uses the core get_top_k_mmr_embeddings to compute expected scores
+    and then asserts the PG implementation returns matching values.
+    """
+    query_emb = [1.0, 0.5, 0.0]
+    emb1, emb2, emb3 = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.5, 0.5, 0.0]
+    threshold = 0.5
+
+    expected_sims, expected_ids = get_top_k_mmr_embeddings(
+        query_embedding=query_emb,
+        embeddings=[emb1, emb2, emb3],
+        similarity_top_k=3,
+        embedding_ids=["n1", "n2", "n3"],
+        mmr_threshold=threshold,
+    )
+
+    rows = [
+        _create_mock_db_embedding_row(
+            node_id="n1", text="t1", metadata={"_node_type": "TextNode"}
+        ),
+        _create_mock_db_embedding_row(
+            node_id="n2", text="t2", metadata={"_node_type": "TextNode"}
+        ),
+        _create_mock_db_embedding_row(
+            node_id="n3", text="t3", metadata={"_node_type": "TextNode"}
+        ),
+    ]
+    query = VectorStoreQuery(
+        query_embedding=query_emb,
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=threshold,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [(rows[0], emb1), (rows[1], emb2), (rows[2], emb3)],
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert result.ids == expected_ids
+    for actual_sim, expected_sim in zip(result.similarities, expected_sims):
+        assert np.isclose(actual_sim, expected_sim, atol=1e-5), (
+            f"Score mismatch: {actual_sim} != {expected_sim}"
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_threshold_one_matches_regular_similarity_order(use_async):
+    """At mmr_threshold=1.0, MMR should produce the same order as plain similarity."""
+    query_emb = [1.0, 0.0, 0.0]
+    embeddings = [[0.9, 0.1, 0.0], [0.5, 0.5, 0.0], [0.1, 0.9, 0.0]]
+    node_ids = ["a", "b", "c"]
+
+    _, regular_ids = get_top_k_embeddings(query_emb, embeddings, embedding_ids=node_ids)
+
+    rows = [
+        _create_mock_db_embedding_row(
+            node_id=nid, text=f"t_{nid}", metadata={"_node_type": "TextNode"}
+        )
+        for nid in node_ids
+    ]
+    query = VectorStoreQuery(
+        query_embedding=query_emb,
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=1.0,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        list(zip(rows, embeddings)),
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert result.ids == regular_ids
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_invokes_customize_query_fn(use_async):
+    """When _customize_query_fn is set, the MMR prefetch should call it via _build_query_with_embedding, and the extra kwarg should pass through."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+
+    # Track whether _build_query_with_embedding was called with the extra param
+    build_spy = MagicMock(return_value="stmt_sentinel")
+    mock_store._build_query_with_embedding = build_spy
+    mock_store._apply_filters_and_limit = MagicMock(return_value="final")
+
+    # Make the embedding query return empty so we hit the empty-result path
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(mock_store, query, use_async, hnsw_ef_search=200)
+
+    # Verify the DB kwarg (hnsw_ef_search) was forwarded but MMR kwargs were not
+    call_kwargs = _get_embedding_mock(mock_store, use_async).call_args
+    forwarded_kwargs = call_kwargs[1] if call_kwargs[1] else {}
+    assert forwarded_kwargs.get("hnsw_ef_search") == 200
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_handles_index_node_type(use_async):
+    """MMR query correctly handles IndexNode type in metadata."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    # IndexNode metadata uses a different _node_type
+    mock_row = _create_mock_db_embedding_row(
+        node_id="idx_node1",
+        text="index text",
+        metadata={
+            "_node_type": "IndexNode",
+            "index_id": "some_index",
+        },
+        similarity=0.95,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [(mock_row, [1.0, 0.0])], use_async)
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert len(result.nodes) == 1
+    assert result.ids == ["idx_node1"]
+    assert result.nodes[0].text == "index text"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_handles_duplicate_node_ids(use_async):
+    """
+    If prefetch returns duplicate node_ids, result_map deduplication
+    should not crash and should still return valid results.
+    """
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    row_a = _create_mock_db_embedding_row(
+        node_id="dup",
+        text="text_a",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.9,
+    )
+    row_b = _create_mock_db_embedding_row(
+        node_id="dup",
+        text="text_b",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.8,
+    )
+    row_c = _create_mock_db_embedding_row(
+        node_id="unique",
+        text="text_c",
+        metadata={"_node_type": "TextNode"},
+        similarity=0.7,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [(row_a, [1.0, 0.0, 0.0]), (row_b, [1.0, 0.0, 0.0]), (row_c, [0.0, 1.0, 0.0])],
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    # Should not crash; result should contain up to similarity_top_k nodes
+    assert len(result.nodes) <= 2
+    assert len(result.ids) <= 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_kwargs_not_forwarded_to_db_query(use_async):
+    """mmr_prefetch_factor, mmr_prefetch_k, mmr_threshold must not leak to DB layer."""
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(mock_store, [], use_async)
+
+    await _call_mmr(
+        mock_store,
+        query,
+        use_async,
+        mmr_prefetch_factor=4,
+        mmr_threshold=0.5,
+        hnsw_ef_search=100,  # legitimate DB kwarg
+    )
+
+    call_kwargs = _get_embedding_mock(mock_store, use_async).call_args
+    # The positional/keyword args sent to the DB query
+    forwarded_kwargs = call_kwargs[1] if call_kwargs[1] else {}
+    assert "mmr_prefetch_factor" not in forwarded_kwargs
+    assert "mmr_prefetch_k" not in forwarded_kwargs
+    assert "mmr_threshold" not in forwarded_kwargs
+    # Legitimate DB kwarg should be forwarded
+    assert forwarded_kwargs.get("hnsw_ef_search") == 100
+
+
+def test_prepare_mmr_query_query_threshold_takes_precedence():
+    """_prepare_mmr_query should use query.mmr_threshold over kwargs."""
+    mock_store = _create_mock_pg_vector_store()
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.3,
+    )
+    _, threshold = PGVectorStore._prepare_mmr_query(
+        mock_store, query, mmr_threshold=0.9
+    )
+    assert threshold == 0.3
+
+
+def test_prepare_mmr_query_falls_back_to_kwargs_threshold():
+    """_prepare_mmr_query should use kwargs threshold when query has None."""
+    mock_store = _create_mock_pg_vector_store()
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=None,
+    )
+    _, threshold = PGVectorStore._prepare_mmr_query(
+        mock_store, query, mmr_threshold=0.7
+    )
+    assert threshold == 0.7
+
+
+def test_prepare_mmr_query_threshold_none_when_both_absent():
+    """_prepare_mmr_query returns None threshold when neither source provides it."""
+    mock_store = _create_mock_pg_vector_store()
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=5,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=None,
+    )
+    _, threshold = PGVectorStore._prepare_mmr_query(mock_store, query)
+    assert threshold is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_diverse_selection_from_large_candidate_pool(use_async):
+    """
+    With 6 candidates (3 clusters of 2 near-duplicates), MMR at low threshold
+    should pick one from each cluster rather than both from the same cluster.
+
+    All clusters have similar relevance to the query so diversity dominates.
+    """
+    # Query is equally similar to all three axes via a diagonal direction
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 1.0, 1.0],
+        similarity_top_k=3,
+        mode=VectorStoreQueryMode.MMR,
+        mmr_threshold=0.1,  # strongly favor diversity
+    )
+    # Cluster 1: x-axis pair
+    emb_a1, emb_a2 = [1.0, 0.0, 0.0], [0.95, 0.05, 0.0]
+    # Cluster 2: y-axis pair
+    emb_b1, emb_b2 = [0.0, 1.0, 0.0], [0.05, 0.95, 0.0]
+    # Cluster 3: z-axis pair
+    emb_c1, emb_c2 = [0.0, 0.0, 1.0], [0.05, 0.0, 0.95]
+
+    rows = []
+    embs = [emb_a1, emb_a2, emb_b1, emb_b2, emb_c1, emb_c2]
+    for i, emb in enumerate(embs):
+        rows.append(
+            _create_mock_db_embedding_row(
+                node_id=f"n{i}",
+                text=f"t{i}",
+                metadata={"_node_type": "TextNode"},
+            )
+        )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        list(zip(rows, embs)),
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert len(result.nodes) == 3
+    # With strong diversity and equal relevance, MMR should pick at most
+    # one member from each near-duplicate cluster
+    cluster_a_ids = {"n0", "n1"}
+    cluster_b_ids = {"n2", "n3"}
+    cluster_c_ids = {"n4", "n5"}
+    selected = set(result.ids)
+    assert len(selected & cluster_a_ids) <= 1, "Both x-axis duplicates selected"
+    assert len(selected & cluster_b_ids) <= 1, "Both y-axis duplicates selected"
+    assert len(selected & cluster_c_ids) <= 1, "Both z-axis duplicates selected"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_mmr_query_filters_out_empty_embeddings_in_mixed_results(use_async):
+    """
+    When some candidates have valid embeddings and others have empty ones,
+    only valid ones should be used for MMR, and the result should still work
+    as long as enough valid embeddings exist.
+    """
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.MMR,
+    )
+    row_valid1 = _create_mock_db_embedding_row(
+        node_id="v1", text="valid1", metadata={"_node_type": "TextNode"}
+    )
+    row_empty = _create_mock_db_embedding_row(
+        node_id="e1", text="empty", metadata={"_node_type": "TextNode"}
+    )
+    row_valid2 = _create_mock_db_embedding_row(
+        node_id="v2", text="valid2", metadata={"_node_type": "TextNode"}
+    )
+    mock_store = _create_mock_pg_vector_store()
+    _setup_embedding_mock(
+        mock_store,
+        [
+            (row_valid1, [1.0, 0.0]),
+            (row_empty, []),  # empty embedding
+            (row_valid2, [0.0, 1.0]),
+        ],
+        use_async,
+    )
+
+    result = await _call_mmr(mock_store, query, use_async)
+
+    assert len(result.nodes) == 2
+    # Only v1 and v2 should be in results, not e1
+    assert "e1" not in result.ids
+    assert "v1" in result.ids
+    assert "v2" in result.ids
