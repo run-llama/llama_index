@@ -60,6 +60,23 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     assert len(chat_engine.chat_history) == 4
 
 
+def test_chat_stream_partial_consumption(
+    chat_engine: CondensePlusContextChatEngine,
+):
+    """Verify that memory is persisted even if the stream is not fully consumed."""
+    response = chat_engine.stream_chat("My name is Alice.")
+
+    # Only consume a few tokens, then stop (simulating client disconnect).
+    for i, _ in enumerate(response.response_gen):
+        if i == 2:
+            break
+
+    # Both the user message and the partial assistant response must be saved.
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[0].role.value == "user"
+    assert "Alice" in str(chat_engine.chat_history[0].content)
+
+
 @pytest.mark.asyncio
 async def test_achat(chat_engine: CondensePlusContextChatEngine):
     response = await chat_engine.achat("Hello World!")
@@ -98,3 +115,23 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+@pytest.mark.asyncio
+async def test_chat_astream_partial_consumption(
+    chat_engine: CondensePlusContextChatEngine,
+):
+    """Verify that memory is persisted even if the async stream is not fully consumed."""
+    response = await chat_engine.astream_chat("My name is Alice.")
+
+    # Only consume a few tokens, then stop (simulating client disconnect).
+    count = 0
+    async for _ in response.async_response_gen():
+        count += 1
+        if count == 2:
+            break
+
+    # Both the user message and the partial assistant response must be saved.
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[0].role.value == "user"
+    assert "Alice" in str(chat_engine.chat_history[0].content)

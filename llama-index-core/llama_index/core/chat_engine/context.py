@@ -260,21 +260,30 @@ class ContextChatEngine(BaseChatEngine):
         response = synthesizer.synthesize(message, nodes)
         assert isinstance(response, StreamingResponse)
 
+        # Persist user message before streaming so it is recorded even if
+        # the consumer never fully drains the generator.
+        self._memory.put(
+            ChatMessage(content=str(message), role=MessageRole.USER)
+        )
+
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
-            for token in response.response_gen:
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
+            try:
+                for token in response.response_gen:
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+            finally:
+                # Persist whatever was generated, even on partial consumption.
+                self._memory.put(
+                    ChatMessage(
                         content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
+                    )
                 )
-
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
-            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            self._memory.put(user_message)
-            self._memory.put(ai_message)
 
         return StreamingAgentChatResponse(
             chat_stream=wrapped_gen(response),
@@ -354,21 +363,30 @@ class ContextChatEngine(BaseChatEngine):
         response = await synthesizer.asynthesize(message, nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
+        # Persist user message before streaming so it is recorded even if
+        # the consumer never fully drains the generator.
+        await self._memory.aput(
+            ChatMessage(content=str(message), role=MessageRole.USER)
+        )
+
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
-            async for token in response.async_response_gen():
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
+            try:
+                async for token in response.async_response_gen():
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+            finally:
+                # Persist whatever was generated, even on partial consumption.
+                await self._memory.aput(
+                    ChatMessage(
                         content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
+                    )
                 )
-
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
-            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            await self._memory.aput(user_message)
-            await self._memory.aput(ai_message)
 
         return StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),
