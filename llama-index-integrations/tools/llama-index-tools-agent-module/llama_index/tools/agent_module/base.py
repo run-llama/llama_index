@@ -2,7 +2,6 @@
 
 from typing import List, Optional
 
-import httpx
 import requests
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -48,12 +47,18 @@ class AgentModuleToolSpec(BaseToolSpec):
             return {"X-AM-Key": self.am_key}
         return {}
 
+    def _to_node_id(self, module: str, vertical: str) -> str:
+        """Convert module identifier to full node ID. ETH_013 -> node:ethics:eth013."""
+        node_key = module.lower().replace("_", "").replace("-", "")
+        return f"node:{vertical}:{node_key}"
+
     def _get(self, module: str, vertical: Optional[str] = None) -> str:
         """Execute synchronous GET request to Agent Module API."""
+        vert = vertical or self.vertical
         try:
             response = requests.get(
                 "https://api.agent-module.dev/api/demo",
-                params={"vertical": vertical or self.vertical, "module": module},
+                params={"vertical": vert, "node": self._to_node_id(module, vert)},
                 headers=self._build_headers(),
                 timeout=self.timeout,
             )
@@ -71,9 +76,10 @@ class AgentModuleToolSpec(BaseToolSpec):
 
         Args:
             module_id: Module identifier in ETH_XXX format.
-                       Examples: "ETH_021" (FRIA), "ETH_016" (prohibited practices),
+                       Examples: "ETH_016" (prohibited practices),
                        "ETH_015" (high-risk classification), "ETH_017" (risk management),
                        "ETH_013" (conformity assessment), "ETH_020" (GPAI obligations).
+                       ETH_021 (FRIA) and above require a membership key.
             vertical: Knowledge vertical to query. Defaults to instance vertical ("ethics").
 
         Returns:
@@ -87,6 +93,9 @@ class AgentModuleToolSpec(BaseToolSpec):
         Retrieves Art. 27 obligations for deployers of high-risk AI systems.
         August 2026 enforcement deadline. Covers: scope triggers, assessment
         methodology, documentation requirements, and competent authority obligations.
+
+        Requires a membership key — ETH_021 is not accessible in demo mode.
+        Get a trial key at https://agent-module.dev/waitlist.
 
         Returns:
             JSON with ETH_021 FRIA logic gates and Art. 27 statutory citations.
