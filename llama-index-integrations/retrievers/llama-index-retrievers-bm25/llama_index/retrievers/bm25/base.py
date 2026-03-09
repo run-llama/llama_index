@@ -139,115 +139,16 @@ class BM25Retriever(BaseRetriever):
                 for corpus_token in self.corpus
             ]
 
+            # Check if all nodes were filtered out
+            if not any(self.corpus_weight_mask):
+                raise ValueError(
+                    "All nodes were filtered out by the metadata filters. "
+                    "Please adjust your filters or add more data."
+                )
+
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
             objects=objects,
             verbose=verbose,
         )
-
-    @classmethod
-    def from_defaults(
-        cls,
-        index: Optional[VectorStoreIndex] = None,
-        nodes: Optional[List[BaseNode]] = None,
-        docstore: Optional[BaseDocumentStore] = None,
-        stemmer: Optional[Stemmer.Stemmer] = None,
-        language: str = "en",
-        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
-        verbose: bool = False,
-        skip_stemming: bool = False,
-        token_pattern: str = r"(?u)\b\w\w+\b",
-        filters: Optional[MetadataFilters] = None,
-        # deprecated
-        tokenizer: Optional[Callable[[str], List[str]]] = None,
-    ) -> "BM25Retriever":
-        if tokenizer is not None:
-            logger.warning(
-                "The tokenizer parameter is deprecated and will be removed in a future release. "
-                "Use a stemmer from PyStemmer instead."
-            )
-
-        # ensure only one of index, nodes, or docstore is passed
-        if sum(bool(val) for val in [index, nodes, docstore]) != 1:
-            raise ValueError("Please pass exactly one of index, nodes, or docstore.")
-
-        if index is not None:
-            docstore = index.docstore
-
-        if docstore is not None:
-            nodes = cast(List[BaseNode], list(docstore.docs.values()))
-
-        assert nodes is not None, (
-            "Please pass exactly one of index, nodes, or docstore."
-        )
-
-        return cls(
-            nodes=nodes,
-            stemmer=stemmer,
-            language=language,
-            similarity_top_k=similarity_top_k,
-            verbose=verbose,
-            skip_stemming=skip_stemming,
-            token_pattern=token_pattern,
-            filters=filters,
-        )
-
-    def get_persist_args(self) -> Dict[str, Any]:
-        """Get Persist Args Dict to Save."""
-        return {
-            DEFAULT_PERSIST_ARGS[key]: getattr(self, key)
-            for key in DEFAULT_PERSIST_ARGS
-            if hasattr(self, key)
-        }
-
-    def persist(self, path: str, encoding: str = "utf-8", **kwargs: Any) -> None:
-        """Persist the retriever to a directory."""
-        self.bm25.save(path, corpus=self.corpus, **kwargs)
-        with open(
-            os.path.join(path, DEFAULT_PERSIST_FILENAME), "w", encoding=encoding
-        ) as f:
-            json.dump(self.get_persist_args(), f, indent=2)
-
-    @classmethod
-    def from_persist_dir(
-        cls, path: str, encoding: str = "utf-8", **kwargs: Any
-    ) -> "BM25Retriever":
-        """Load the retriever from a directory."""
-        bm25 = bm25s.BM25.load(path, load_corpus=True, **kwargs)
-        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME), encoding=encoding) as f:
-            retriever_data = json.load(f)
-        return cls(existing_bm25=bm25, **retriever_data)
-
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        query = query_bundle.query_str
-        tokenized_query = bm25s.tokenize(
-            query,
-            stemmer=self.stemmer if not self.skip_stemming else None,
-            token_pattern=self.token_pattern,
-            show_progress=self._verbose,
-        )
-        indexes, scores = self.bm25.retrieve(
-            tokenized_query,
-            k=self.similarity_top_k,
-            show_progress=self._verbose,
-            weight_mask=np.array(self.corpus_weight_mask)
-            if self.corpus_weight_mask
-            else None,
-        )
-
-        # batched, but only one query
-        indexes = indexes[0]
-        scores = scores[0]
-
-        nodes: List[NodeWithScore] = []
-        for idx, score in zip(indexes, scores):
-            # idx can be an int or a dict of the node
-            if isinstance(idx, dict):
-                node = metadata_dict_to_node(idx)
-            else:
-                node_dict = self.corpus[int(idx)]
-                node = metadata_dict_to_node(node_dict)
-            nodes.append(NodeWithScore(node=node, score=float(score)))
-
-        return nodes
