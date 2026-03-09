@@ -47,6 +47,11 @@ class TestMediaWikiReaderInit:
         assert "BaseReader" in names_of_base_classes
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
+    def test_is_remote(self, _mock_site_cls):
+        reader = _make_reader()
+        assert reader.is_remote is True
+
+    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_missing_host_raises(self, _mock_site_cls):
         with pytest.raises(ValidationError, match="host"):
             MediaWikiReader(host="")
@@ -69,6 +74,7 @@ class TestMediaWikiReaderInit:
         assert reader.scheme == "https"
         assert reader.page_limit == 500
         assert reader.namespaces is None
+        assert reader.filter_redirects is True
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_logger_injection(self, _mock_site_cls):
@@ -156,8 +162,8 @@ class TestLogin:
 # ---------------------------------------------------------------------------
 
 
-class TestFetchContentNamespaceIds:
-    """_fetch_content_namespace_ids filters namespaces for content=True."""
+class TestGetContentNamespaceIds:
+    """_get_content_namespace_ids filters namespaces for content flag."""
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_filters_content_namespaces(self, mock_site_cls):
@@ -174,7 +180,7 @@ class TestFetchContentNamespaceIds:
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
-        ids = reader._fetch_content_namespace_ids()
+        ids = reader._get_content_namespace_ids()
         assert ids == [0, 4]
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
@@ -184,10 +190,10 @@ class TestFetchContentNamespaceIds:
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
-        assert reader._fetch_content_namespace_ids() == [0]
+        assert reader._get_content_namespace_ids() == [0]
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_defaults_to_zero_on_api_error(self, mock_site_cls):
+    def test_raises_on_api_error(self, mock_site_cls):
         import mwclient.errors
 
         mock_site = _mock_site()
@@ -195,7 +201,8 @@ class TestFetchContentNamespaceIds:
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
-        assert reader._fetch_content_namespace_ids() == [0]
+        with pytest.raises(mwclient.errors.APIError):
+            reader._get_content_namespace_ids()
 
 
 # ---------------------------------------------------------------------------
@@ -273,29 +280,41 @@ class TestGetAllPages:
         assert len(pages) == 1
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_content_ns_cache(self, mock_site_cls):
-        """Content namespace IDs are cached after first call."""
+    def test_filter_redirects_default(self, mock_site_cls):
+        """filterredir='nonredirects' is passed by default."""
         mock_site = _mock_site()
-        mock_site.get.return_value = {
-            "query": {
-                "namespaces": {
-                    "0": {"id": 0, "*": "", "content": True},
-                }
-            }
-        }
-        page = MagicMock()
-        page.name = "A"
-        page.revision = True
-        page.last_rev_time = (2024, 1, 1, 0, 0, 0, 0, 0, 0)
-        mock_site.allpages.return_value = [page]
+        mock_site.allpages.return_value = []
         mock_site_cls.return_value = mock_site
 
-        reader = _make_reader(namespaces=None)
-        list(reader._get_all_pages_generator())
+        reader = _make_reader(namespaces=[0])
         list(reader._get_all_pages_generator())
 
-        # siteinfo should be called only once
-        assert mock_site.get.call_count == 1
+        call_kwargs = mock_site.allpages.call_args.kwargs
+        assert call_kwargs.get("filterredir") == "nonredirects"
+
+    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
+    def test_filter_redirects_disabled(self, mock_site_cls):
+        """filterredir='all' is passed when filter_redirects=False."""
+        mock_site = _mock_site()
+        mock_site.allpages.return_value = []
+        mock_site_cls.return_value = mock_site
+
+        reader = _make_reader(namespaces=[0], filter_redirects=False)
+        list(reader._get_all_pages_generator())
+
+        call_kwargs = mock_site.allpages.call_args.kwargs
+        assert call_kwargs.get("filterredir") == "all"
+
+    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
+    def test_raises_when_siteinfo_base_missing(self, mock_site_cls):
+        """RuntimeError is raised when siteinfo has no base URL."""
+        mock_site = _mock_site()
+        mock_site.site = {}  # no "base" key
+        mock_site_cls.return_value = mock_site
+
+        reader = _make_reader(namespaces=[0])
+        with pytest.raises(RuntimeError, match="site URL base"):
+            list(reader._get_all_pages_generator())
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +354,13 @@ class TestGetPageContents:
         assert result is not None
         assert "Test page content" in result
         assert "<p>" in result  # raw HTML
-        mock_site.parse.assert_called_once_with(page="Test Page", prop="text")
+        mock_site.parse.assert_called_once_with(
+            page="Test Page",
+            prop="text",
+            disablelimitreport=True,
+            disableeditsection=True,
+            disabletoc=True,
+        )
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_empty_parse_result(self, mock_site_cls):
@@ -400,152 +425,6 @@ class TestHtmlToCleanText:
 
 
 # ---------------------------------------------------------------------------
-# Resource interface
-# ---------------------------------------------------------------------------
-
-
-class TestResourcesInterface:
-    """Public resource-based API."""
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_load_resource(self, mock_site_cls):
-        mock_site = _mock_site()
-        mock_site.parse.return_value = {"text": {"*": "<p>Content</p>"}}
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        timestamp = datetime(2024, 2, 1, 10, 0, 0, tzinfo=timezone.utc)
-        docs = reader.load_resource(
-            "P", resource_url="https://wiki.com/P", last_modified=timestamp
-        )
-
-        assert len(docs) == 1
-        assert docs[0].text == "Content"
-        assert docs[0].metadata["url"] == "https://wiki.com/P"
-        assert docs[0].metadata["last_modified"] == timestamp.isoformat()
-        mock_site.parse.assert_called_once()
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_load_resource_missing_page(self, mock_site_cls):
-        mock_site = _mock_site()
-        mock_site.parse.return_value = {}
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        docs = reader.load_resource(
-            "Missing",
-            resource_url="https://example.com/wiki/Missing",
-            last_modified=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        )
-        assert docs == []
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_load_resource_last_modified_none(self, mock_site_cls):
-        """When last_modified is None, metadata["last_modified"] is None."""
-        mock_site = _mock_site()
-        mock_site.parse.return_value = {"text": {"*": "<p>Content</p>"}}
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        docs = reader.load_resource(
-            "SomePage",
-            resource_url="https://example.com/wiki/SomePage",
-            last_modified=None,
-        )
-
-        assert len(docs) == 1
-        assert docs[0].metadata["last_modified"] is None
-        assert docs[0].metadata["url"] == "https://example.com/wiki/SomePage"
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_get_resource_info(self, mock_site_cls):
-        mock_site = _mock_site()
-        mock_site.get.return_value = {
-            "query": {
-                "pages": {
-                    "123": {
-                        "pageid": 123,
-                        "title": "Page",
-                        "canonicalurl": "https://example.com/wiki/Page",
-                        "revisions": [{"timestamp": "2024-06-01T00:00:00Z"}],
-                    }
-                }
-            }
-        }
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        info = reader.get_resource_info("Page")
-
-        assert info["url"] == "https://example.com/wiki/Page"
-        assert info["last_modified"] is not None
-        assert info["last_modified"].year == 2024
-        mock_site.get.assert_called_once()
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_get_resource_info_empty_revisions(self, mock_site_cls):
-        """When page exists but revisions list is empty, last_modified is None."""
-        mock_site = _mock_site()
-        mock_site.get.return_value = {
-            "query": {
-                "pages": {
-                    "1": {
-                        "pageid": 1,
-                        "title": "Page",
-                        "canonicalurl": "https://example.com/wiki/Page",
-                        "revisions": [],
-                    }
-                }
-            }
-        }
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        info = reader.get_resource_info("Page")
-
-        assert info["url"] == "https://example.com/wiki/Page"
-        assert info["last_modified"] is None
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_get_resource_info_missing_page(self, mock_site_cls):
-        """When the page does not exist, API returns 'missing'; url and last_modified are None."""
-        mock_site = _mock_site()
-        mock_site.get.return_value = {
-            "query": {
-                "pages": {
-                    "-1": {
-                        "ns": 0,
-                        "title": "NonExistent",
-                        "missing": "",
-                    }
-                }
-            }
-        }
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        info = reader.get_resource_info("NonExistent")
-
-        assert info["url"] is None
-        assert info["last_modified"] is None
-
-    @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_get_resource_info_api_error(self, mock_site_cls):
-        """When site.get raises APIError, return url and last_modified as None."""
-        import mwclient.errors
-
-        mock_site = _mock_site()
-        mock_site.get.side_effect = mwclient.errors.APIError("query-error", "code", {})
-        mock_site_cls.return_value = mock_site
-
-        reader = _make_reader()
-        info = reader.get_resource_info("Any")
-
-        assert info["url"] is None
-        assert info["last_modified"] is None
-
-
-# ---------------------------------------------------------------------------
 # lazy_load_data
 # ---------------------------------------------------------------------------
 
@@ -557,14 +436,12 @@ class TestLazyLoadData:
     def test_yields_documents(self, mock_site_cls):
         mock_site = _mock_site()
 
-        # allpages returns mwclient Page objects
         page = MagicMock()
         page.name = "Test Page"
         page.revision = True
         page.last_rev_time = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
         mock_site.allpages.return_value = [page]
 
-        # parse returns HTML
         mock_site.parse.return_value = {"text": {"*": "<p>Hello world</p>"}}
 
         mock_site_cls.return_value = mock_site
@@ -578,27 +455,16 @@ class TestLazyLoadData:
         assert "example.com" in docs[0].metadata["url"]
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_uses_fallback_url_when_siteinfo_has_no_base(self, mock_site_cls):
-        """When siteinfo has no base URL, lazy_load_data uses scheme/host/path fallback."""
+    def test_raises_when_siteinfo_base_missing(self, mock_site_cls):
+        """When siteinfo has no base URL, lazy_load_data raises RuntimeError."""
         mock_site = _mock_site()
-        mock_site.site = {}  # no "base" -> url_base is None in generator
-        page = MagicMock()
-        page.name = "NoURL Page"
-        page.revision = True
-        page.last_rev_time = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
-        mock_site.allpages.return_value = [page]
-        mock_site.parse.return_value = {"text": {"*": "<p>Content</p>"}}
+        mock_site.site = {}  # no "base"
+        mock_site.allpages.return_value = []
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader(host="wiki.example.com", namespaces=[0])
-        docs = list(reader.lazy_load_data())
-
-        assert len(docs) == 1
-        assert docs[0].metadata["title"] == "NoURL Page"
-        # Fallback URL from reader config
-        assert docs[0].metadata["url"] == (
-            "https://wiki.example.com/w/index.php?title=NoURL_Page"
-        )
+        with pytest.raises(RuntimeError, match="site URL base"):
+            list(reader.lazy_load_data())
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_skips_page_when_get_page_contents_returns_none(self, mock_site_cls):
@@ -618,7 +484,7 @@ class TestLazyLoadData:
         mock_site.allpages.return_value = [page_ok, page_skip]
         mock_site.parse.side_effect = [
             {"text": {"*": "<p>Only this page has content</p>"}},
-            {},  # second page: no content -> load_resource returns []
+            {},  # second page: no content
         ]
         mock_site_cls.return_value = mock_site
 

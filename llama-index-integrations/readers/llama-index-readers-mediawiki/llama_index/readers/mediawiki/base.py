@@ -41,18 +41,18 @@ class MediaWikiReader(BasePydanticReader):
     Example::
 
         reader = MediaWikiReader(host="en.wikipedia.org")
-        docs = list(reader.lazy_load_data())
+        docs = reader.load_data()
 
     With authentication::
 
         reader = MediaWikiReader(host="my.private.wiki")
         reader.login("username", "password")
-        docs = list(reader.lazy_load_data())
+        docs = reader.load_data()
 
-    Implements BasePydanticReader (for serialization / LlamaHub compatibility)
-    and provides load_resource and get_resource_info for resource-based use.
+    Implements BasePydanticReader (for serialization / LlamaHub compatibility).
     """
 
+    is_remote: bool = True
     model_config = {"arbitrary_types_allowed": True}
 
     # -- Pydantic fields (serialisable config) --------------------------------
@@ -81,8 +81,14 @@ class MediaWikiReader(BasePydanticReader):
         default=None,
         description=(
             "Namespace IDs to list. None = wiki content namespaces from "
-            "siteinfo API (i.e. $wgContentNamespaces). Set explicitly to "
-            "override."
+            "siteinfo (i.e. $wgContentNamespaces). Set explicitly to override."
+        ),
+    )
+    filter_redirects: bool = Field(
+        default=True,
+        description=(
+            "If True (default), redirect pages are excluded from results. "
+            "Set to False to include redirect pages."
         ),
     )
     logger: logging.Logger = Field(
@@ -93,7 +99,6 @@ class MediaWikiReader(BasePydanticReader):
 
     # -- Non-serialised internal state ----------------------------------------
     _site: Optional[mwclient.Site] = PrivateAttr(default=None)
-    _content_namespace_ids: Optional[List[int]] = PrivateAttr(default=None)
 
     # -- Construction helpers -------------------------------------------------
 
@@ -140,39 +145,60 @@ class MediaWikiReader(BasePydanticReader):
 
     # -- Internal helpers -----------------------------------------------------
 
-    def _fetch_content_namespace_ids(self) -> List[int]:
+    def _get_content_namespace_ids(self) -> List[int]:
         """
         Return namespace IDs marked as content ($wgContentNamespaces).
 
-        Uses ``action=query&meta=siteinfo&siprop=namespaces`` and filters for
-        the ``content`` attribute. Falls back to ``[0]`` on failure.
-        """
-        try:
-            result = self.site.get("query", meta="siteinfo", siprop="namespaces")
-        except mwclient.errors.APIError as exc:
-            self.logger.warning(
-                "Could not fetch siteinfo; defaulting to main namespace (0): %s",
-                exc,
-            )
-            return [0]
+        Queries ``action=query&meta=siteinfo&siprop=namespaces`` and filters
+        for namespaces that carry the ``content`` flag. mwclient fetches
+        siteinfo on Site init so this call hits the already-cached data.
+        Falls back to ``[0]`` (main namespace) if none are found.
 
+        Raises:
+            mwclient.errors.APIError: If the siteinfo query fails.
+
+        """
+        result = self.site.get("query", meta="siteinfo", siprop="namespaces")
         namespaces = result.get("query", {}).get("namespaces", {})
-        ids: List[int] = []
-        for ns_data in namespaces.values():
-            if not isinstance(ns_data, dict):
-                continue
-            if not ns_data.get("content"):
-                continue
-            ns_id = ns_data.get("id")
-            if ns_id is not None:
-                ids.append(int(ns_id))
+        ids: List[int] = [
+            int(ns_data["id"])
+            for ns_data in namespaces.values()
+            if isinstance(ns_data, dict)
+            and ns_data.get("content")
+            and ns_data.get("id") is not None
+        ]
 
         if not ids:
             self.logger.warning(
-                "No content namespaces in siteinfo; defaulting to main namespace (0)."
+                "No content namespaces found in siteinfo; defaulting to main namespace (0)."
             )
             return [0]
         return sorted(ids)
+
+    def _resolve_namespace_list(self) -> List[int]:
+        """Return the effective list of namespace IDs to iterate."""
+        if self.namespaces is not None:
+            return self.namespaces
+        return self._get_content_namespace_ids()
+
+    def _get_url_base(self) -> Tuple[str, str]:
+        """
+        Return ``(origin, article_path)`` parsed from the site's siteinfo.
+
+        Raises:
+            RuntimeError: If the URL base cannot be determined from siteinfo.
+        """
+        site_info = self.site.site
+        base_url = site_info.get("base", "")
+        article_path = site_info.get("articlepath", "/wiki/$1")
+        if not base_url:
+            raise RuntimeError(
+                "Could not determine base URL from siteinfo; "
+                "the 'base' field is missing or empty."
+            )
+        parsed = urlparse(base_url)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        return origin, article_path
 
     def _build_page_url(
         self, title: str, url_base: Optional[Tuple[str, str]]
@@ -190,7 +216,7 @@ class MediaWikiReader(BasePydanticReader):
             if ts:
                 return datetime(*ts[:6], tzinfo=timezone.utc)
             return None
-        except Exception as e:
+        except (AttributeError, TypeError) as e:
             self.logger.debug(
                 "Revision timestamp extraction failed for page %r: %s",
                 title,
@@ -208,35 +234,26 @@ class MediaWikiReader(BasePydanticReader):
             - url (str or None)
             - last_modified (datetime or None)
         """
-        if self.namespaces is None:
-            if self._content_namespace_ids is None:
-                self._content_namespace_ids = self._fetch_content_namespace_ids()
-            ns_list = self._content_namespace_ids
-        else:
-            ns_list = self.namespaces
+        ns_list = self._resolve_namespace_list()
 
         # Parse site base URL once; origin + article_path are constant per site
         url_base: Optional[Tuple[str, str]] = None
         try:
-            site_info = self.site.site
-            base_url = site_info.get("base", "")
-            article_path = site_info.get("articlepath", "/wiki/$1")
-            if base_url:
-                parsed = urlparse(base_url)
-                origin = f"{parsed.scheme}://{parsed.netloc}"
-                url_base = (origin, article_path)
-        except Exception as e:
-            self.logger.debug(
-                "URL base from siteinfo failed: %s",
-                e,
-                exc_info=True,
-            )
+            url_base = self._get_url_base()
+        except RuntimeError as e:
+            raise RuntimeError(
+                "Cannot list pages: failed to determine site URL base. "
+                "Check that the MediaWiki API is reachable and siteinfo is accessible."
+            ) from e
+
+        filterredir = "nonredirects" if self.filter_redirects else "all"
 
         for ns in ns_list:
             for page in self.site.allpages(
                 namespace=ns,
                 generator=True,
                 api_chunk_size=self.page_limit,
+                filterredir=filterredir,
             ):
                 title = page.name
                 url = self._build_page_url(title, url_base)
@@ -256,7 +273,13 @@ class MediaWikiReader(BasePydanticReader):
 
         """
         try:
-            result = self.site.parse(page=page_title, prop="text")
+            result = self.site.parse(
+                page=page_title,
+                prop="text",
+                disablelimitreport=True,
+                disableeditsection=True,
+                disabletoc=True,
+            )
         except mwclient.errors.APIError as exc:
             self.logger.warning("Parse API failed for '%s': %s", page_title, exc)
             return None
@@ -292,85 +315,37 @@ class MediaWikiReader(BasePydanticReader):
             )
             return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html_content)).strip()
 
-    # -- Resource API (load_resource) -----------------------------------------
-
-    def load_resource(
+    def _page_to_document(
         self,
-        resource_id: str,
-        resource_url: str,
+        title: str,
+        url: Optional[str],
         last_modified: Optional[datetime],
-    ) -> List[Document]:
+    ) -> Optional[Document]:
         """
-        Load a single page as a list containing one Document.
+        Fetch and convert a single wiki page into a Document.
 
         Args:
-            resource_id: The page title.
-            resource_url: Pre-fetched canonical URL for the page.
-            last_modified: Pre-fetched last-modified timestamp (or None).
+            title: Page title.
+            url: Canonical URL for the page (may be None).
+            last_modified: Last-modified timestamp (may be None).
 
         Returns:
-            A one-element list with the page Document, or empty on failure.
-
+            A Document, or None if the page content could not be fetched.
         """
-        content = self._get_page_contents(resource_id)
+        content = self._get_page_contents(title)
         if not content:
-            return []
+            return None
 
-        content = self._html_to_clean_text(content)
-        doc = Document(
-            text=content,
-            id_=f"mediawiki:{resource_id}",
+        text = self._html_to_clean_text(content)
+        return Document(
+            text=text,
+            id_=f"mediawiki:{title}",
             metadata={
-                "title": resource_id,
-                "url": resource_url,
+                "title": title,
+                "url": url,
                 "last_modified": (last_modified.isoformat() if last_modified else None),
             },
         )
-        return [doc]
-
-    # -- Resource info (single page) ------------------------------------------
-
-    def get_resource_info(self, resource_id: str) -> Dict[str, Any]:
-        """
-        Return metadata for a single page (URL and last_modified).
-
-        Args:
-            resource_id: Page title.
-
-        Returns:
-            ``{"last_modified": datetime | None, "url": str | None}``.
-
-        """
-        try:
-            result = self.site.get(
-                "query",
-                titles=resource_id,
-                prop="info|revisions",
-                inprop="url",
-                rvprop="timestamp",
-            )
-        except mwclient.errors.APIError as exc:
-            self.logger.warning("Query API failed for '%s': %s", resource_id, exc)
-            return {"last_modified": None, "url": None}
-
-        pages = result.get("query", {}).get("pages", {})
-        page_data = next((p for p in pages.values() if p.get("title")), None)
-        last_modified = None
-        url = None
-        if page_data and "missing" not in page_data:
-            url = page_data.get("canonicalurl")
-            revisions = page_data.get("revisions", [])
-            if revisions:
-                ts_str = revisions[0].get("timestamp")
-                if ts_str:
-                    try:
-                        last_modified = datetime.fromisoformat(
-                            ts_str.replace("Z", "+00:00")
-                        )
-                    except (ValueError, TypeError):
-                        pass
-
-        return {"last_modified": last_modified, "url": url}
 
     # -- BasePydanticReader / BaseReader interface -----------------------------
 
@@ -383,22 +358,10 @@ class MediaWikiReader(BasePydanticReader):
         has no batch parse API; see class docstring for scale notes).
         """
         for page_record in self._get_all_pages_generator():
-            url = page_record.get("url")
-            if not url:
-                # API-based URL construction failed; use guaranteed fallback
-                # so we never drop content due to missing siteinfo.
-                safe_title = page_record["title"].replace(" ", "_")
-                url = (
-                    f"{self.scheme}://{self.host}{self.path}"
-                    f"index.php?title={safe_title}"
-                )
-                self.logger.debug(
-                    "Using fallback URL for %s",
-                    page_record["title"],
-                )
-            docs = self.load_resource(
-                page_record["title"],
-                resource_url=url,
+            doc = self._page_to_document(
+                title=page_record["title"],
+                url=page_record.get("url"),
                 last_modified=page_record.get("last_modified"),
             )
-            yield from docs
+            if doc is not None:
+                yield doc
