@@ -31,6 +31,13 @@ def test_build_headers_without_key():
     assert headers == {}
 
 
+def test_to_node_id():
+    spec = AgentModuleToolSpec()
+    assert spec._to_node_id("ETH_013", "ethics") == "node:ethics:eth013"
+    assert spec._to_node_id("ETH_021", "ethics") == "node:ethics:eth021"
+    assert spec._to_node_id("ETH_016", "travel") == "node:travel:eth016"
+
+
 def test_spec_functions():
     spec = AgentModuleToolSpec()
     expected = [
@@ -54,17 +61,17 @@ def test_to_tool_list():
 @patch("llama_index.tools.agent_module.base.requests.get")
 def test_query_module(mock_get):
     mock_response = MagicMock()
-    mock_response.text = '{"module": "ETH_021", "records": []}'
+    mock_response.text = '{"module": "ETH_013", "records": []}'
     mock_response.raise_for_status = MagicMock()
     mock_get.return_value = mock_response
 
     spec = AgentModuleToolSpec(am_key="am_test_key_123")
-    result = spec.query_module("ETH_021")
+    result = spec.query_module("ETH_013")
 
-    assert result == '{"module": "ETH_021", "records": []}'
+    assert result == '{"module": "ETH_013", "records": []}'
     mock_get.assert_called_once_with(
         "https://api.agent-module.dev/api/demo",
-        params={"vertical": "ethics", "module": "ETH_021"},
+        params={"vertical": "ethics", "node": "node:ethics:eth013"},
         headers={"X-AM-Key": "am_test_key_123"},
         timeout=10,
     )
@@ -82,11 +89,11 @@ def test_query_fria(mock_get):
 
     assert "ETH_021" in result
     call_args = mock_get.call_args
-    assert call_args[1]["params"]["module"] == "ETH_021"
+    assert call_args[1]["params"]["node"] == "node:ethics:eth021"
 
 
 @patch("llama_index.tools.agent_module.base.requests.get")
-def test_query_module_no_key(mock_get):
+def test_query_high_risk_no_key(mock_get):
     mock_response = MagicMock()
     mock_response.text = '{"module": "ETH_015"}'
     mock_response.raise_for_status = MagicMock()
@@ -97,7 +104,7 @@ def test_query_module_no_key(mock_get):
 
     call_args = mock_get.call_args
     assert call_args[1]["headers"] == {}
-    assert call_args[1]["params"]["module"] == "ETH_015"
+    assert call_args[1]["params"]["node"] == "node:ethics:eth015"
 
 
 @patch("llama_index.tools.agent_module.base.requests.get")
@@ -136,7 +143,8 @@ def test_custom_vertical(mock_get):
     mock_get.return_value = mock_response
 
     spec = AgentModuleToolSpec(am_key="am_test_key_123")
-    result = spec.query_module("TRAVEL_001", vertical="travel")
+    spec.query_module("TRAVEL_001", vertical="travel")
 
     call_args = mock_get.call_args
     assert call_args[1]["params"]["vertical"] == "travel"
+    assert call_args[1]["params"]["node"] == "node:travel:travel001"
