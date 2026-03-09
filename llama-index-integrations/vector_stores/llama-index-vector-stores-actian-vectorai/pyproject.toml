@@ -25,20 +25,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-vde"
+name = "llama-index-vector-stores-actian-vectorai"
 version = "0.1.0"
-description = "llama-index vector_stores vde integration"
+description = "llama-index vector_stores actianvectorai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "actiancortex",
+    "actian-vectorai",
 ]
-
-[tool.uv.sources]
-actiancortex = { path = "../../../../../Downloads/Beta/actiancortex-0.1.0b1-py3-none-any.whl" }
 
 [tool.codespell]
 check-filenames = true
@@ -55,13 +52,16 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.vde"
+import_path = "llama_index.vector_stores.actian_vectorai"
 
 [tool.llamahub.class_authors]
-VDEVectorStore = "llama-index"
+ActianVectorAIVectorStore = "davidpei"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.uv.sources]
+actian-vectorai = { path = "../../../../../Downloads/Actian VectorAI DB - 7ca38b14/actian_vectorai-0.1.0b2-py3-none-any.whl" }
