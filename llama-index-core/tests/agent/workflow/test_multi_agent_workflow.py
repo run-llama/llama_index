@@ -697,7 +697,9 @@ async def test_retry():
 
 
 @pytest.mark.asyncio
-async def test_run_id_passthrough(empty_calculator_agent, empty_retriever_agent):
+async def test_run_id_passthrough(
+    empty_calculator_agent: ReActAgent, empty_retriever_agent: FunctionAgent
+) -> None:
     """Test that run_id kwarg is forwarded to the WorkflowHandler."""
     workflow = AgentWorkflow(
         agents=[empty_calculator_agent, empty_retriever_agent],
@@ -711,7 +713,9 @@ async def test_run_id_passthrough(empty_calculator_agent, empty_retriever_agent)
 
 
 @pytest.mark.asyncio
-async def test_run_id_default(empty_calculator_agent, empty_retriever_agent):
+async def test_run_id_default(
+    empty_calculator_agent: ReActAgent, empty_retriever_agent: FunctionAgent
+) -> None:
     """Test that omitting run_id still generates one automatically."""
     workflow = AgentWorkflow(
         agents=[empty_calculator_agent, empty_retriever_agent],
@@ -720,5 +724,5 @@ async def test_run_id_default(empty_calculator_agent, empty_retriever_agent):
 
     handler = workflow.run(user_msg="hello")
     assert handler.run_id is not None
-    assert len(handler.run_id) > 0
+    assert isinstance(handler.run_id, str)
     handler.cancel()
