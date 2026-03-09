@@ -84,7 +84,6 @@ class DepsWorkflow(Workflow, Generic[DepsT]):
     `deps: WorkflowContext[MyDeps]`. Wiring is done at the call site.
 
     Example:
-
         @dataclass
         class MyDeps:
             memory: Memory
@@ -108,6 +107,7 @@ class DepsWorkflow(Workflow, Generic[DepsT]):
         ))
         # Testing: pass mocks without changing workflow code
         workflow = MyWorkflow(deps=MyDeps(memory=MockMemory(), llm=MockLLM(), customer_id=999))
+
     """
 
     def __init__(

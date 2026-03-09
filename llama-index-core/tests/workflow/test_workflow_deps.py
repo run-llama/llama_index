@@ -54,9 +54,7 @@ async def test_deps_workflow_testing_swap_implementations():
 @pytest.mark.asyncio
 async def test_deps_scope_default_is_run():
     """DepsScope defaults to RUN."""
-    workflow = SimpleDepsWorkflow(
-        deps=SimpleDeps(value=1), deps_scope=DepsScope.RUN
-    )
+    workflow = SimpleDepsWorkflow(deps=SimpleDeps(value=1), deps_scope=DepsScope.RUN)
     assert workflow._deps_scope == DepsScope.RUN
 
 
@@ -72,6 +70,7 @@ def test_deps_resource_returns_resource():
 
 def test_workflow_context_type_alias():
     """WorkflowContext[SimpleDeps] is valid as type annotation."""
+
     # Type check: deps parameter type
     def take_deps(deps: WorkflowContext[SimpleDeps]) -> str:
         return deps.label  # type: ignore[union-attr]
