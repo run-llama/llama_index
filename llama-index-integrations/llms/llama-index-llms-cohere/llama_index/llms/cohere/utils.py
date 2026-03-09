@@ -34,21 +34,13 @@ from cohere.types import (
     ToolParameterDefinitionsValue,
 )
 
-
+# AS OF MARCH 2026 - live list at : https://docs.cohere.com/docs/models
 COMMAND_MODELS = {
-    "command-a-03-2025": 256000,
-    "command-r7b-12-2024": 128000,
-    "command-r": 128000,
-    "command-r-08-2024": 128000,
-    "command-r-plus": 128000,
-    "command-r-plus-04-2024": 128000,
-    "command-r-plus-08-2024": 128000,
-    "command": 4096,
-    "command-nightly": 128000,
-    "command-light": 4096,
-    "command-light-nightly": 4096,
-    "c4ai-aya-expanse-32b": 128000,
-    "c4ai-aya-expanse-8b": 128000,
+    "command-a-03-2025": 256000,      # Newest flagship
+    "command-r-plus-08-2024": 128000, # Current R-Plus stable
+    "command-r-08-2024": 128000,      # Current R stable
+    "command-r7b-12-2024": 128000,    # Lightweight R7B
+    "c4ai-aya-expanse-32b": 128000,   # Active open-weights model
 }
 
 GENERATION_MODELS = {"base": 2048, "base-light": 2048}
