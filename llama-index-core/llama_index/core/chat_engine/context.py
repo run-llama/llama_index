@@ -260,6 +260,9 @@ class ContextChatEngine(BaseChatEngine):
         response = synthesizer.synthesize(message, nodes)
         assert isinstance(response, StreamingResponse)
 
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+        self._memory.put(user_message)
+
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
@@ -271,9 +274,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            self._memory.put(user_message)
             self._memory.put(ai_message)
 
         return StreamingAgentChatResponse(
@@ -354,6 +355,9 @@ class ContextChatEngine(BaseChatEngine):
         response = await synthesizer.asynthesize(message, nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+        await self._memory.aput(user_message)
+
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
             async for token in response.async_response_gen():
@@ -365,9 +369,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            await self._memory.aput(user_message)
             await self._memory.aput(ai_message)
 
         return StreamingAgentChatResponse(

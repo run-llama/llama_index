@@ -380,6 +380,9 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
         response = self.synthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, StreamingResponse)
 
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+        self._memory.put(user_message)
+
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
@@ -391,11 +394,9 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
-            self._memory.put(user_message)
             self._memory.put(assistant_message)
 
         assert context_source.tool_name == "retriever"
@@ -443,6 +444,9 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
         response = await self.asynthesize(message, nodes=context_nodes, streaming=True)
         assert isinstance(response, AsyncStreamingResponse)
 
+        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        await self._memory.aput(user_message)
+
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
             async for token in response.async_response_gen():
@@ -454,11 +458,9 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
-            await self._memory.aput(user_message)
             await self._memory.aput(assistant_message)
 
         assert context_source.tool_name == "retriever"
