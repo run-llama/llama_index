@@ -968,46 +968,83 @@ def test_no_excluded_source_fields(
         assert "_source" not in body
 
 
-def test_close_calls_underlying_clients() -> None:
-    """Test that OpensearchVectorClient.close() calls close on both sync and async clients."""
+def _make_client_with_mocks(owns_sync=True, owns_async=True):
+    """Helper to create an OpensearchVectorClient with mock underlying clients."""
     mock_sync_client = mock.MagicMock()
     mock_async_client = mock.MagicMock()
     mock_async_client.close = mock.AsyncMock()
 
-    with mock.patch.object(
-        OpensearchVectorClient, "__init__", lambda self, *args, **kwargs: None
-    ):
-        client = OpensearchVectorClient.__new__(OpensearchVectorClient)
-        client._os_client = mock_sync_client
-        client._os_async_client = mock_async_client
+    client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+    client._os_client = mock_sync_client
+    client._os_async_client = mock_async_client
+    client._owns_os_client = owns_sync
+    client._owns_os_async_client = owns_async
 
-        # Call the close method
-        client.close()
+    return client, mock_sync_client, mock_async_client
 
-        # Verify sync client was closed
-        mock_sync_client.close.assert_called_once()
+
+def test_close_calls_underlying_clients() -> None:
+    """Test that OpensearchVectorClient.close() calls close on both owned clients."""
+    client, mock_sync, mock_async = _make_client_with_mocks()
+
+    client.close()
+
+    mock_sync.close.assert_called_once()
+    mock_async.close.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_aclose_calls_underlying_clients() -> None:
-    """Test that OpensearchVectorClient.aclose() calls close on both sync and async clients."""
-    mock_sync_client = mock.MagicMock()
-    mock_async_client = mock.MagicMock()
-    mock_async_client.close = mock.AsyncMock()
+    """Test that OpensearchVectorClient.aclose() calls close on both owned clients."""
+    client, mock_sync, mock_async = _make_client_with_mocks()
 
-    with mock.patch.object(
-        OpensearchVectorClient, "__init__", lambda self, *args, **kwargs: None
-    ):
-        client = OpensearchVectorClient.__new__(OpensearchVectorClient)
-        client._os_client = mock_sync_client
-        client._os_async_client = mock_async_client
+    await client.aclose()
 
-        # Call the aclose method
-        await client.aclose()
+    mock_sync.close.assert_called_once()
+    mock_async.close.assert_called_once()
 
-        # Verify both clients were closed
-        mock_sync_client.close.assert_called_once()
-        mock_async_client.close.assert_called_once()
+
+def test_close_respects_ownership() -> None:
+    """Test that close() does not close externally-provided clients."""
+    client, mock_sync, mock_async = _make_client_with_mocks(
+        owns_sync=False, owns_async=False
+    )
+
+    client.close()
+
+    mock_sync.close.assert_not_called()
+    mock_async.close.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_aclose_respects_ownership() -> None:
+    """Test that aclose() does not close externally-provided clients."""
+    client, mock_sync, mock_async = _make_client_with_mocks(
+        owns_sync=False, owns_async=False
+    )
+
+    await client.aclose()
+
+    mock_sync.close.assert_not_called()
+    mock_async.close.assert_not_called()
+
+
+def test_del_calls_close() -> None:
+    """Test that __del__ triggers close() on OpensearchVectorClient."""
+    client, mock_sync, mock_async = _make_client_with_mocks()
+
+    client.__del__()
+
+    mock_sync.close.assert_called_once()
+
+
+def test_del_suppresses_exceptions() -> None:
+    """Test that __del__ doesn't propagate errors."""
+    client, mock_sync, mock_async = _make_client_with_mocks()
+    mock_sync.close.side_effect = RuntimeError("connection lost")
+
+    # Should not raise
+    client.__del__()
 
 
 def test_store_close_calls_client_close() -> None:
@@ -1017,10 +1054,8 @@ def test_store_close_calls_client_close() -> None:
     store = OpensearchVectorStore.__new__(OpensearchVectorStore)
     store._client = mock_client
 
-    # Call the close method
     store.close()
 
-    # Verify client.close() was called
     mock_client.close.assert_called_once()
 
 
@@ -1033,8 +1068,30 @@ async def test_store_aclose_calls_client_aclose() -> None:
     store = OpensearchVectorStore.__new__(OpensearchVectorStore)
     store._client = mock_client
 
-    # Call the aclose method
     await store.aclose()
 
-    # Verify client.aclose() was called
     mock_client.aclose.assert_called_once()
+
+
+def test_store_del_calls_close() -> None:
+    """Test that __del__ on OpensearchVectorStore triggers close()."""
+    mock_client = mock.MagicMock(spec=OpensearchVectorClient)
+
+    store = OpensearchVectorStore.__new__(OpensearchVectorStore)
+    store._client = mock_client
+
+    store.__del__()
+
+    mock_client.close.assert_called_once()
+
+
+def test_store_del_suppresses_exceptions() -> None:
+    """Test that __del__ on OpensearchVectorStore doesn't propagate errors."""
+    mock_client = mock.MagicMock(spec=OpensearchVectorClient)
+    mock_client.close.side_effect = RuntimeError("connection lost")
+
+    store = OpensearchVectorStore.__new__(OpensearchVectorStore)
+    store._client = mock_client
+
+    # Should not raise
+    store.__del__()
