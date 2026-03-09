@@ -731,9 +731,11 @@ class BaseWorkflowAgent(
         **kwargs: Any,
     ) -> WorkflowHandler:
         # Detect if hitl is needed
+        run_id = kwargs.pop("run_id", None)
         if ctx is not None and ctx.is_running:
             return super().run(
                 ctx=ctx,
+                run_id=run_id,
                 **kwargs,
             )
         else:
@@ -748,6 +750,7 @@ class BaseWorkflowAgent(
             return super().run(
                 start_event=start_event,
                 ctx=ctx,
+                run_id=run_id,
             )
 
 

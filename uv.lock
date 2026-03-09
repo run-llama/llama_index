@@ -1969,7 +1969,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "2.14.0"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
@@ -1977,9 +1977,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/b3/4b34967e5452480f79929c86f31bb353b7aa9aeeb668db89280676ec946e/llama_index_workflows-2.14.0.tar.gz", hash = "sha256:6d315786e84df93950a9b7a18681fd6aa0cb2630a9ba55439664261a4f9d585c", size = 75596, upload-time = "2026-02-05T20:15:56.819Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/9e/c885c97afd3fb5db397ede05d5c288f26539e1d5de775b97d03c523d4fde/llama_index_workflows-2.15.1.tar.gz", hash = "sha256:5e46dae2c683d3a9de800a4faf472b4aa915026b3f41bd36baba307b12cd3e7f", size = 81696, upload-time = "2026-03-07T17:32:05.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/c0/b478ca44135266e40468b346b17c2363c056c9ac0752cde76628c36cdaa9/llama_index_workflows-2.14.0-py3-none-any.whl", hash = "sha256:c2138aee2c4cf6c80268088e2e38550f7b75469de9a157a52b7ee87ec90d1ae4", size = 96695, upload-time = "2026-02-05T20:15:57.702Z" },
+    { url = "https://files.pythonhosted.org/packages/72/fa/a1aabbce40485d741067b46c6754c1ce81792ef56445777769d3da760a5d/llama_index_workflows-2.15.1-py3-none-any.whl", hash = "sha256:a36b4a8f30e5899c33391e99bad5768b9ca8331ace75f2f5bbbc0c0d380c2a0e", size = 104505, upload-time = "2026-03-07T17:32:06.163Z" },
 ]
 
 [[package]]
