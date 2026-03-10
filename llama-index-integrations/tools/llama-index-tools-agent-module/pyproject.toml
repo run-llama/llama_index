@@ -37,7 +37,6 @@ keywords = [
     "regulation",
 ]
 dependencies = [
-    "httpx>=0.24.0,<1",
     "requests>=2.31.0,<3",
     "llama-index-core>=0.13.0,<0.15",
 ]
