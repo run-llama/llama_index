@@ -25,6 +25,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    cast,
 )
 
 import filetype
@@ -61,6 +62,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from llama_index.core.base.llms.types import BaseContentBlock
     from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
+    from llama_index.core.embeddings.mixed_embedding_utils import (
+        MixedEmbeddingContent,
+    )
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -373,6 +377,27 @@ class BaseNode(BaseComponent):
     @abstractmethod
     def set_content(self, value: Any) -> None:
         """Set the content of the node."""
+
+    def get_mixed_embedding_content(
+        self, metadata_mode: MetadataMode = MetadataMode.EMBED
+    ) -> Optional[MixedEmbeddingContent]:
+        """
+        Get content as a sequence of embeddable content blocks (text, image, audio, video)
+        for models that support joint multimodal embedding.
+
+        Returns None if this node should use the regular text (or image-only)
+        embedding path instead. When non-None, the embedding model embeds the
+        returned blocks jointly via embed() (same types as Node/LLM content blocks).
+        """
+        from llama_index.core.base.llms.types import ContentBlock
+        from llama_index.core.embeddings.mixed_embedding_utils import (
+            content_blocks_to_mixed_embedding_content,
+        )
+
+        blocks = self.get_content_blocks(metadata_mode=metadata_mode)
+        return content_blocks_to_mixed_embedding_content(
+            cast(List[ContentBlock], blocks)
+        )
 
     @property
     @abstractmethod
@@ -925,10 +950,12 @@ class ImageNode(TextNode):
         self, metadata_mode: MetadataMode = MetadataMode.NONE
     ) -> list[BaseContentBlock]:
         """Get content blocks for the node."""
-        from llama_index.core.base.llms.types import ImageBlock
+        from llama_index.core.base.llms.types import ImageBlock, TextBlock
 
         blocks: list[BaseContentBlock] = []
         blocks.extend(self.get_metadata_content_blocks(metadata_mode))
+        if self.text and self.text.strip():
+            blocks.append(TextBlock(text=self.text))
         resolved = self.resolve_image()
         if isinstance(resolved, BytesIO):
             image_data: bytes | None = resolved.read()

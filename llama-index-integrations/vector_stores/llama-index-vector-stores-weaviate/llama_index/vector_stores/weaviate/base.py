@@ -36,9 +36,15 @@ from llama_index.vector_stores.weaviate._exceptions import (
 import weaviate
 import weaviate.classes as wvc
 
-from weaviate.collections.batch.batch_wrapper import (
-    _ContextManagerWrapper as BatchWrapper,
-)
+# weaviate-client >= ~4.20 renamed this internal type; keep both for compatibility.
+try:
+    from weaviate.collections.batch.batch_wrapper import (
+        _ContextManagerWrapper as _WeaviateBatchContextManager,
+    )
+except ImportError:
+    from weaviate.collections.batch.batch_wrapper import (
+        _ContextManagerSync as _WeaviateBatchContextManager,
+    )
 
 _logger = logging.getLogger(__name__)
 
@@ -221,7 +227,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     _collection_initialized: bool = PrivateAttr()
     _is_self_created_weaviate_client: bool = PrivateAttr()  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
-    _custom_batch: Optional[BatchWrapper] = PrivateAttr()
+    _custom_batch: Optional[_WeaviateBatchContextManager] = PrivateAttr()
     _property_types: Optional[Dict[str, Any]] = PrivateAttr()
 
     def __init__(
@@ -282,7 +288,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         self._custom_batch = (
             client_kwargs.get("custom_batch") if client_kwargs else None
         )
-        if self._custom_batch and not isinstance(self._custom_batch, BatchWrapper):
+        if self._custom_batch and not isinstance(
+            self._custom_batch, _WeaviateBatchContextManager
+        ):
             raise ValueError(
                 "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
             )

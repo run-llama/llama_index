@@ -1,3 +1,4 @@
+import base64
 from typing import List, cast
 import pytest
 from llama_index.core.indices.vector_store.retrievers.retriever import (
@@ -98,8 +99,10 @@ def test_query(
 
 def test_query_image_node() -> None:
     """Test embedding query."""
+    # ImageNode stores image as base64; resolve_image() decodes it for content blocks.
+    image_b64 = base64.b64encode(b"potato").decode("ascii")
     image_node = ImageNode(
-        image="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        image=image_b64, embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     )
     text_node = TextNode(
         text="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -124,7 +127,7 @@ def test_query_image_node() -> None:
 
     assert image_node.node.node_id == image_node.node_id
     assert isinstance(image_node.node, ImageNode)
-    assert image_node.node.image == "potato"
+    assert image_node.node.image == image_b64
     assert text_node.node.node_id == text_node.node_id
     assert isinstance(text_node.node, TextNode)
     assert text_node.node.text == "potato"
