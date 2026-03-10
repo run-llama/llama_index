@@ -407,6 +407,7 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
         thread = Thread(
             target=chat_response.write_response_to_history, args=(self._memory,)
         )
+        chat_response.write_response_to_history_thread = thread
         thread.start()
         return chat_response
 

@@ -178,3 +178,34 @@ async def test_astream_chat_memory_not_lost_on_incomplete_consumption(
     await response.awrite_response_to_history_task
     assert len(chat_engine.chat_history) == 2
     assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+def test_stream_chat_history_write_completes_on_early_exit(
+    chat_engine: ContextChatEngine,
+):
+    chat_engine._memory = ChatMemoryBuffer.from_defaults()
+    response = chat_engine.stream_chat("Hello World!")
+    assert len(chat_engine.chat_history) == 1
+    gen = response.response_gen
+    for i, _ in enumerate(gen):
+        if i >= 2:
+            break
+    gen.close()
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_history_write_completes_on_early_exit(
+    chat_engine: ContextChatEngine,
+):
+    chat_engine._memory = ChatMemoryBuffer.from_defaults()
+    response = await chat_engine.astream_chat("Hello World!")
+    assert len(chat_engine.chat_history) == 1
+    i = 0
+    async for _ in response.async_response_gen():
+        i += 1
+        if i >= 2:
+            break
+    assert len(chat_engine.chat_history) == 2
+    assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
