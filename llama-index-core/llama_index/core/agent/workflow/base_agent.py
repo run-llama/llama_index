@@ -580,7 +580,8 @@ class BaseWorkflowAgent(
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
             if self.output_cls is not None:
                 try:
@@ -598,7 +599,8 @@ class BaseWorkflowAgent(
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
 
             await ctx.store.set("current_tool_calls", [])
