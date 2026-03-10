@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Tuple, cast
 from typing_extensions import Self
 
 import numpy as np
@@ -102,6 +102,80 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         description="Rate limiter instance to throttle API calls.",
         exclude=True,
     )
+
+    def supports_mixed_embedding(self) -> bool:
+        """
+        Whether this embedding model supports joint embedding of interleaved
+        text and image content (mixed multimodal embedding).
+        When True, nodes with mixed content will use get_mixed_content_embedding.
+        """
+        return False
+
+    def _get_mixed_content_embedding(self, content: List[Dict[str, Any]]) -> Embedding:
+        """
+        Embed a single mixed content (interleaved text + image) input.
+
+        Subclasses that support mixed embedding should override this.
+        Default raises NotImplementedError.
+        """
+        raise NotImplementedError(
+            "This embedding model does not support mixed (interleaved) multimodal embedding."
+        )
+
+    async def _aget_mixed_content_embedding(
+        self, content: List[Dict[str, Any]]
+    ) -> Embedding:
+        """
+        Async embed a single mixed content input.
+
+        Subclasses can override for true async implementation.
+        Default falls back to sync _get_mixed_content_embedding.
+        """
+        return self._get_mixed_content_embedding(content)
+
+    @dispatcher.span
+    def get_mixed_content_embedding(self, content: List[Dict[str, Any]]) -> Embedding:
+        """Get embedding for interleaved text + image content (single item)."""
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            if self.rate_limiter is not None:
+                self.rate_limiter.acquire()
+            embedding = self._get_mixed_content_embedding(content)
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [content],
+                    EventPayload.EMBEDDINGS: [embedding],
+                }
+            )
+        dispatcher.event(EmbeddingEndEvent(chunks=[content], embeddings=[embedding]))
+        return embedding
+
+    @dispatcher.span
+    async def aget_mixed_content_embedding(
+        self, content: List[Dict[str, Any]]
+    ) -> Embedding:
+        """Async get embedding for interleaved text + image content."""
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            if self.rate_limiter is not None:
+                await self.rate_limiter.async_acquire()
+            embedding = await self._aget_mixed_content_embedding(content)
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [content],
+                    EventPayload.EMBEDDINGS: [embedding],
+                }
+            )
+        dispatcher.event(EmbeddingEndEvent(chunks=[content], embeddings=[embedding]))
+        return embedding
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
@@ -628,25 +702,100 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
     def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
-        embeddings = self.get_text_embedding_batch(
-            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
-            **kwargs,
-        )
+        show_progress = kwargs.pop("show_progress", False)
+        mixed_indices: List[int] = []
+        text_indices: List[int] = []
+        for i, node in enumerate(nodes):
+            mixed_content = node.get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if mixed_content is not None and self.supports_mixed_embedding():
+                mixed_indices.append(i)
+            else:
+                text_indices.append(i)
 
-        for node, embedding in zip(nodes, embeddings):
-            node.embedding = embedding
+        # Batch text embeddings
+        text_nodes = [nodes[i] for i in text_indices]
+        if text_nodes:
+            text_embeddings = self.get_text_embedding_batch(
+                [
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                    for node in text_nodes
+                ],
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            text_embeddings = []
+
+        # Mixed embeddings (one call per node for now)
+        mixed_embeddings: List[Embedding] = []
+        for i in mixed_indices:
+            content = nodes[i].get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if content is not None:
+                mixed_embeddings.append(self.get_mixed_content_embedding(content))
+
+        # Assign in original order
+        text_pos = 0
+        mixed_pos = 0
+        for i, node in enumerate(nodes):
+            if i in mixed_indices:
+                node.embedding = mixed_embeddings[mixed_pos]
+                mixed_pos += 1
+            else:
+                node.embedding = text_embeddings[text_pos]
+                text_pos += 1
 
         return nodes
 
     async def acall(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> Sequence[BaseNode]:
-        embeddings = await self.aget_text_embedding_batch(
-            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
-            **kwargs,
-        )
+        show_progress = kwargs.pop("show_progress", False)
+        mixed_indices = []
+        text_indices = []
+        for i, node in enumerate(nodes):
+            mixed_content = node.get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if mixed_content is not None and self.supports_mixed_embedding():
+                mixed_indices.append(i)
+            else:
+                text_indices.append(i)
 
-        for node, embedding in zip(nodes, embeddings):
-            node.embedding = embedding
+        text_nodes = [nodes[i] for i in text_indices]
+        if text_nodes:
+            text_embeddings = await self.aget_text_embedding_batch(
+                [
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                    for node in text_nodes
+                ],
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            text_embeddings = []
+
+        mixed_embeddings = []
+        for i in mixed_indices:
+            content = nodes[i].get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if content is not None:
+                mixed_embeddings.append(
+                    await self.aget_mixed_content_embedding(content)
+                )
+
+        text_pos = 0
+        mixed_pos = 0
+        for i, node in enumerate(nodes):
+            if i in mixed_indices:
+                node.embedding = mixed_embeddings[mixed_pos]
+                mixed_pos += 1
+            else:
+                node.embedding = text_embeddings[text_pos]
+                text_pos += 1
 
         return nodes

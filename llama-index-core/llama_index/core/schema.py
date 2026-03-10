@@ -374,6 +374,26 @@ class BaseNode(BaseComponent):
     def set_content(self, value: Any) -> None:
         """Set the content of the node."""
 
+    def get_mixed_embedding_content(
+        self, metadata_mode: MetadataMode = MetadataMode.EMBED
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Get content in mixed embedding format (interleaved text + image items)
+        for models that support joint multimodal embedding.
+
+        Returns None if this node should use the regular text (or image-only)
+        embedding path instead. When non-None, the embedding model may use
+        get_mixed_content_embedding() to embed the returned list jointly.
+
+        Format: [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "data:..."}}, ...]
+        """
+        from llama_index.core.embeddings.mixed_embedding_utils import (
+            content_blocks_to_mixed_embedding_content,
+        )
+
+        blocks = self.get_content_blocks(metadata_mode=metadata_mode)
+        return content_blocks_to_mixed_embedding_content(blocks)
+
     @property
     @abstractmethod
     def hash(self) -> str:
@@ -925,10 +945,12 @@ class ImageNode(TextNode):
         self, metadata_mode: MetadataMode = MetadataMode.NONE
     ) -> list[BaseContentBlock]:
         """Get content blocks for the node."""
-        from llama_index.core.base.llms.types import ImageBlock
+        from llama_index.core.base.llms.types import ImageBlock, TextBlock
 
         blocks: list[BaseContentBlock] = []
         blocks.extend(self.get_metadata_content_blocks(metadata_mode))
+        if self.text and self.text.strip():
+            blocks.append(TextBlock(text=self.text))
         resolved = self.resolve_image()
         if isinstance(resolved, BytesIO):
             image_data: bytes | None = resolved.read()
