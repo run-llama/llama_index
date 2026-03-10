@@ -38,19 +38,19 @@ print(response)
 
 ## Available Models
 
-| Model | Context Window | Notes |
-|---|---|---|
-| `semantic-ranker-default-004` (default) | 1024 tokens | Latest, multilingual |
-| `semantic-ranker-default-003` | 512 tokens | Multilingual |
-| `semantic-ranker-default-002` | 512 tokens | English only |
+| Model                                   | Context Window | Notes                |
+| --------------------------------------- | -------------- | -------------------- |
+| `semantic-ranker-default-004` (default) | 1024 tokens    | Latest, multilingual |
+| `semantic-ranker-default-003`           | 512 tokens     | Multilingual         |
+| `semantic-ranker-default-002`           | 512 tokens     | English only         |
 
 ## Configuration
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `model` | `str` | `"semantic-ranker-default-004"` | Ranking model name |
-| `top_n` | `int` | `2` | Number of top results to return |
-| `project_id` | `str` | `None` | GCP project ID (falls back to `GOOGLE_CLOUD_PROJECT` env var, then ADC) |
-| `location` | `str` | `"global"` | GCP location for the ranking config |
-| `ranking_config` | `str` | `"default_ranking_config"` | Ranking config resource name |
-| `credentials` | `Credentials` | `None` | Optional Google auth credentials object |
+| Parameter        | Type          | Default                         | Description                                                             |
+| ---------------- | ------------- | ------------------------------- | ----------------------------------------------------------------------- |
+| `model`          | `str`         | `"semantic-ranker-default-004"` | Ranking model name                                                      |
+| `top_n`          | `int`         | `2`                             | Number of top results to return                                         |
+| `project_id`     | `str`         | `None`                          | GCP project ID (falls back to `GOOGLE_CLOUD_PROJECT` env var, then ADC) |
+| `location`       | `str`         | `"global"`                      | GCP location for the ranking config                                     |
+| `ranking_config` | `str`         | `"default_ranking_config"`      | Ranking config resource name                                            |
+| `credentials`    | `Credentials` | `None`                          | Optional Google auth credentials object                                 |

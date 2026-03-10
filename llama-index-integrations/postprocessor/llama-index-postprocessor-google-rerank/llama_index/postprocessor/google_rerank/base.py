@@ -3,8 +3,11 @@
 import os
 from typing import Any, List, Optional
 
+import google.auth
+
+from google.cloud import discoveryengine_v1 as discoveryengine
+
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
     ReRankEndEvent,
@@ -21,7 +24,8 @@ DEFAULT_RANKING_CONFIG = "default_ranking_config"
 
 
 class GoogleRerank(BaseNodePostprocessor):
-    """Google Rerank postprocessor.
+    """
+    Google Rerank postprocessor.
 
     Uses Google's Discovery Engine Ranking API to rerank nodes
     based on query relevance.
@@ -74,18 +78,8 @@ class GoogleRerank(BaseNodePostprocessor):
         if self.project_id is None:
             self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
         if self.project_id is None:
-            import google.auth
-
             _, resolved_project = google.auth.default()
             self.project_id = resolved_project
-
-        try:
-            from google.cloud import discoveryengine_v1 as discoveryengine
-        except ImportError:
-            raise ImportError(
-                "google-cloud-discoveryengine is required. "
-                "Install it with: pip install google-cloud-discoveryengine"
-            )
 
         self._client = discoveryengine.RankServiceClient(credentials=credentials)
         self._async_client = discoveryengine.RankServiceAsyncClient(
@@ -103,8 +97,6 @@ class GoogleRerank(BaseNodePostprocessor):
         )
 
     def _build_records(self, nodes: List[NodeWithScore]) -> list:
-        from google.cloud import discoveryengine_v1 as discoveryengine
-
         records = []
         for i, node in enumerate(nodes):
             content = node.node.get_content(metadata_mode=MetadataMode.EMBED)
@@ -116,6 +108,7 @@ class GoogleRerank(BaseNodePostprocessor):
             )
         return records
 
+    @dispatcher.span
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -135,45 +128,33 @@ class GoogleRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        with self.callback_manager.event(
-            CBEventType.RERANKING,
-            payload={
-                EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model,
-                EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
-            },
-        ) as event:
-            from google.cloud import discoveryengine_v1 as discoveryengine
+        records = self._build_records(nodes)
+        top_n = min(self.top_n, len(nodes))
 
-            records = self._build_records(nodes)
-            top_n = min(self.top_n, len(nodes))
+        request = discoveryengine.RankRequest(
+            ranking_config=self._build_ranking_config_path(),
+            model=self.model,
+            top_n=top_n,
+            query=query_bundle.query_str,
+            records=records,
+        )
 
-            request = discoveryengine.RankRequest(
-                ranking_config=self._build_ranking_config_path(),
-                model=self.model,
-                top_n=top_n,
-                query=query_bundle.query_str,
-                records=records,
-            )
+        response = self._client.rank(request=request)
 
-            response = self._client.rank(request=request)
-
-            new_nodes = []
-            for record in response.records:
-                index = int(record.id)
-                new_nodes.append(
-                    NodeWithScore(
-                        node=nodes[index].node,
-                        score=record.score,
-                    )
+        new_nodes = []
+        for record in response.records:
+            index = int(record.id)
+            new_nodes.append(
+                NodeWithScore(
+                    node=nodes[index].node,
+                    score=record.score,
                 )
-
-            event.on_end(payload={EventPayload.NODES: new_nodes})
+            )
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
 
+    @dispatcher.span
     async def _apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -193,41 +174,28 @@ class GoogleRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        with self.callback_manager.event(
-            CBEventType.RERANKING,
-            payload={
-                EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model,
-                EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
-            },
-        ) as event:
-            from google.cloud import discoveryengine_v1 as discoveryengine
+        records = self._build_records(nodes)
+        top_n = min(self.top_n, len(nodes))
 
-            records = self._build_records(nodes)
-            top_n = min(self.top_n, len(nodes))
+        request = discoveryengine.RankRequest(
+            ranking_config=self._build_ranking_config_path(),
+            model=self.model,
+            top_n=top_n,
+            query=query_bundle.query_str,
+            records=records,
+        )
 
-            request = discoveryengine.RankRequest(
-                ranking_config=self._build_ranking_config_path(),
-                model=self.model,
-                top_n=top_n,
-                query=query_bundle.query_str,
-                records=records,
-            )
+        response = await self._async_client.rank(request=request)
 
-            response = await self._async_client.rank(request=request)
-
-            new_nodes = []
-            for record in response.records:
-                index = int(record.id)
-                new_nodes.append(
-                    NodeWithScore(
-                        node=nodes[index].node,
-                        score=record.score,
-                    )
+        new_nodes = []
+        for record in response.records:
+            index = int(record.id)
+            new_nodes.append(
+                NodeWithScore(
+                    node=nodes[index].node,
+                    score=record.score,
                 )
-
-            event.on_end(payload={EventPayload.NODES: new_nodes})
+            )
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
