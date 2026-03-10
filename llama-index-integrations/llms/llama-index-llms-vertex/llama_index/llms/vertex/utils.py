@@ -69,6 +69,41 @@ def to_gemini_tools(tools) -> Any:
     return [gemini_tools]
 
 
+def _split_gemini_request_kwargs(kwargs: Any) -> tuple[Any, Any, Any]:
+    """Split Gemini chat kwargs into tools, tool_config, and generation_config."""
+    request_kwargs = dict(kwargs)
+    tools = request_kwargs.pop("tools", None)
+    tool_config = request_kwargs.pop("tool_config", None)
+
+    return (
+        to_gemini_tools(tools) if tools else [],
+        tool_config,
+        request_kwargs if request_kwargs else {},
+    )
+
+
+def _start_gemini_chat(
+    client: Any,
+    history: Any,
+    tools: Any,
+    tool_config: Any,
+) -> tuple[Any, Any]:
+    """Start a Gemini chat session, binding tool config on the model when needed."""
+    if tool_config is None:
+        return client.start_chat(history=history), tools
+
+    bound_client = client.__class__(
+        model_name=client._model_name,
+        generation_config=getattr(client, "_generation_config", None),
+        safety_settings=getattr(client, "_safety_settings", None),
+        tools=tools or getattr(client, "_tools", None),
+        tool_config=tool_config,
+        system_instruction=getattr(client, "_system_instruction", None),
+        labels=getattr(client, "_labels", None),
+    )
+    return bound_client.start_chat(history=history), None
+
+
 def completion_with_retry(
     client: Any,
     prompt: Optional[Any],
@@ -86,18 +121,18 @@ def completion_with_retry(
     def _completion_with_retry(**kwargs: Any) -> Any:
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
-            generation = client.start_chat(history=history)
-            kwargs = dict(kwargs)
-            tools = kwargs.pop("tools", None) if "tools" in kwargs else []
-            tools = to_gemini_tools(tools) if tools else []
-            generation_config = kwargs if kwargs else {}
-
-            return generation.send_message(
-                prompt,
-                stream=stream,
-                tools=tools,
-                generation_config=generation_config,
+            tools, tool_config, generation_config = _split_gemini_request_kwargs(kwargs)
+            generation, request_tools = _start_gemini_chat(
+                client, history, tools, tool_config
             )
+
+            send_kwargs = {
+                "stream": stream,
+                "generation_config": generation_config,
+            }
+            if request_tools:
+                send_kwargs["tools"] = request_tools
+            return generation.send_message(prompt, **send_kwargs)
         elif chat:
             generation = client.start_chat(**params)
             if stream:
@@ -115,34 +150,47 @@ def completion_with_retry(
 
 async def acompletion_with_retry(
     client: Any,
-    prompt: Optional[str],
+    prompt: Optional[Any],
     max_retries: int = 5,
     chat: bool = False,
+    stream: bool = False,
     is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
-    """Use tenacity to retry the completion call."""
+    """
+    Retry async Vertex calls for chat/completion and classic async streaming.
+
+    Native async streaming is used only for classic `vertexai.language_models`
+    clients. Gemini-through-Vertex async streaming is handled separately in
+    `base.py` via the sync-to-async fallback.
+    """
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
-            generation = client.start_chat(history=history)
-            kwargs = dict(kwargs)
-            tools = kwargs.pop("tools", None) if "tools" in kwargs else []
-            tools = to_gemini_tools(tools) if tools else []
-            generation_config = kwargs if kwargs else {}
-            return await generation.send_message_async(
-                prompt,
-                tools=tools,
-                generation_config=generation_config,
+            tools, tool_config, generation_config = _split_gemini_request_kwargs(kwargs)
+            generation, request_tools = _start_gemini_chat(
+                client, history, tools, tool_config
             )
+            if stream:
+                raise ValueError(
+                    "Async streaming is not supported for Gemini through this Vertex integration."
+                )
+            send_kwargs = {"generation_config": generation_config}
+            if request_tools:
+                send_kwargs["tools"] = request_tools
+            return await generation.send_message_async(prompt, **send_kwargs)
         elif chat:
             generation = client.start_chat(**params)
+            if stream:
+                return generation.send_message_streaming_async(prompt, **kwargs)
             return await generation.send_message_async(prompt, **kwargs)
         else:
+            if stream:
+                return client.predict_streaming_async(prompt, **kwargs)
             return await client.predict_async(prompt, **kwargs)
 
     return await _completion_with_retry(**kwargs)

@@ -1,9 +1,12 @@
+import asyncio
 import deprecated
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Tuple,
     Optional,
@@ -24,6 +27,15 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    async_stream_completion_response_to_chat_response,
+    chat_to_completion_decorator,
+    completion_response_to_chat_response,
+    stream_chat_to_completion_decorator,
+    stream_completion_response_to_chat_response,
+)
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
@@ -46,6 +58,52 @@ from vertexai.generative_models import ToolConfig
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+_STREAM_DONE = object()
+
+
+@dataclass(frozen=True)
+class ChatRequestParams:
+    prompt: Any
+    chat_request_params: Dict[str, Any]
+    model_params: Dict[str, Any]
+
+
+def _async_stream_from_sync(stream_factory: Callable[[], Iterator[Any]]) -> Any:
+    """
+    Adapt a sync streaming generator into an async generator.
+
+    Classic `vertexai.language_models` chat/completion clients expose native
+    async streaming APIs, and this integration uses those directly.
+    Reference:
+    https://docs.cloud.google.com/python/docs/reference/vertexai/latest/vertexai.language_models.ChatSession
+    https://docs.cloud.google.com/python/docs/reference/vertexai/latest/summary_method
+
+    The remaining case is Gemini-through-Vertex (`vertexai.generative_models`),
+    where this integration already has a working sync streaming path but does
+    not have a clearly documented native async streaming API to call here.
+    Reference:
+    https://docs.cloud.google.com/python/docs/reference/vertexai/latest/vertexai.generative_models.ChatSession
+    This helper preserves the async LlamaIndex surface by:
+
+    This follows the same pull-based pattern used in other integrations such as
+    `zhipuai`: advance the blocking sync iterator with `asyncio.to_thread(...)`
+    and yield the resulting chunks through an async generator.
+
+    This keeps `astream_chat()` / `astream_complete()` workflow-compatible
+    without duplicating the Gemini sync streaming logic.
+    """
+    stream = stream_factory()
+
+    async def gen() -> Any:
+        while True:
+            item = await asyncio.to_thread(next, stream, _STREAM_DONE)
+            if item is _STREAM_DONE:
+                break
+            yield item
+
+    return gen()
 
 
 @deprecated.deprecated(
@@ -152,6 +210,8 @@ class Vertex(FunctionCallingLLM):
         )
 
         self._safety_settings = safety_settings
+        self._client = None
+        self._chat_client = None
         self._is_gemini = False
         self._is_chat_model = False
         if model in CHAT_MODELS:
@@ -227,8 +287,10 @@ class Vertex(FunctionCallingLLM):
             content = ""
         return content, tool_calls
 
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def _prepare_chat_request(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatRequestParams:
+        """Prepare the prompt, chat request params, and model params for chat calls."""
         merged_messages = (
             merge_neighboring_same_role_messages(messages)
             if self._is_gemini
@@ -236,11 +298,9 @@ class Vertex(FunctionCallingLLM):
         )
         question = _parse_message(merged_messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
-
         chat_params = {**chat_history}
 
         kwargs = kwargs if kwargs else {}
-
         params = {**self._model_kwargs, **kwargs}
 
         if self.iscode and "candidate_count" in params:
@@ -254,80 +314,26 @@ class Vertex(FunctionCallingLLM):
                 )
             )
 
-        generation = completion_with_retry(
-            client=self._chat_client,
+        return ChatRequestParams(
             prompt=question,
-            chat=True,
-            stream=False,
-            is_gemini=self._is_gemini,
-            params=chat_params,
-            max_retries=self.max_retries,
-            **params,
+            chat_request_params=chat_params,
+            model_params=params,
         )
 
-        content, tool_calls = self._get_content_and_tool_calls(generation)
-
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=content,
-                additional_kwargs={"tool_calls": tool_calls},
-            ),
-            raw=generation.__dict__,
-        )
-
-    @llm_completion_callback()
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs, **kwargs}
-        if self.iscode and "candidate_count" in params:
-            raise (ValueError("candidate_count is not supported by the codey model's"))
-
-        completion = completion_with_retry(
-            self._client,
-            prompt,
-            max_retries=self.max_retries,
-            is_gemini=self._is_gemini,
-            **params,
-        )
-        return CompletionResponse(text=completion.text, raw=completion.__dict__)
-
-    @llm_chat_callback()
-    def stream_chat(
+    def _stream_chat_impl(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        merged_messages = (
-            merge_neighboring_same_role_messages(messages)
-            if self._is_gemini
-            else messages
-        )
-        question = _parse_message(merged_messages[-1], self._is_gemini)
-        chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
-        chat_params = {**chat_history}
-        kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs, **kwargs}
-        if self.iscode and "candidate_count" in params:
-            raise (ValueError("candidate_count is not supported by the codey model's"))
-        if self.examples and "examples" not in params:
-            chat_params["examples"] = _parse_examples(self.examples)
-        elif "examples" in params:
-            raise (
-                ValueError(
-                    "examples are not supported in chat generation pass them as a constructor parameter"
-                )
-            )
+        prepared = self._prepare_chat_request(messages, **kwargs)
 
         response = completion_with_retry(
             client=self._chat_client,
-            prompt=question,
+            prompt=prepared.prompt,
             chat=True,
             stream=True,
             is_gemini=self._is_gemini,
-            params=chat_params,
+            params=prepared.chat_request_params,
             max_retries=self.max_retries,
-            **params,
+            **prepared.model_params,
         )
 
         def gen() -> ChatResponseGen:
@@ -344,9 +350,8 @@ class Vertex(FunctionCallingLLM):
 
         return gen()
 
-    @llm_completion_callback()
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+    def _stream_complete_impl(
+        self, prompt: str, **kwargs: Any
     ) -> CompletionResponseGen:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
@@ -373,40 +378,161 @@ class Vertex(FunctionCallingLLM):
 
         return gen()
 
-    @llm_chat_callback()
-    async def achat(
+    async def _astream_chat_impl(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        merged_messages = (
-            merge_neighboring_same_role_messages(messages)
-            if self._is_gemini
-            else messages
+    ) -> ChatResponseAsyncGen:
+        prepared = self._prepare_chat_request(messages, **kwargs)
+
+        response = await acompletion_with_retry(
+            client=self._chat_client,
+            prompt=prepared.prompt,
+            chat=True,
+            stream=True,
+            is_gemini=self._is_gemini,
+            params=prepared.chat_request_params,
+            max_retries=self.max_retries,
+            **prepared.model_params,
         )
-        question = _parse_message(merged_messages[-1], self._is_gemini)
-        chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
-        chat_params = {**chat_history}
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            async for r in response:
+                content_delta = r.text
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=r.__dict__,
+                )
+
+        return gen()
+
+    async def _astream_complete_impl(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        kwargs = kwargs if kwargs else {}
+        params = {**self._model_kwargs, **kwargs}
+        if "candidate_count" in params:
+            raise (ValueError("candidate_count is not supported by the streaming"))
+
+        completion = await acompletion_with_retry(
+            client=self._client,
+            prompt=prompt,
+            stream=True,
+            is_gemini=self._is_gemini,
+            max_retries=self.max_retries,
+            **params,
+        )
+
+        async def gen() -> CompletionResponseAsyncGen:
+            content = ""
+            async for r in completion:
+                content_delta = r.text
+                content += content_delta
+                yield CompletionResponse(
+                    text=content, delta=content_delta, raw=r.__dict__
+                )
+
+        return gen()
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            return completion_response_to_chat_response(
+                self.complete(prompt, formatted=True, **kwargs)
+            )
+
+        prepared = self._prepare_chat_request(messages, **kwargs)
+
+        generation = completion_with_retry(
+            client=self._chat_client,
+            prompt=prepared.prompt,
+            chat=True,
+            stream=False,
+            is_gemini=self._is_gemini,
+            params=prepared.chat_request_params,
+            max_retries=self.max_retries,
+            **prepared.model_params,
+        )
+
+        content, tool_calls = self._get_content_and_tool_calls(generation)
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
+            raw=generation.__dict__,
+        )
+
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if self.metadata.is_chat_model and self._client is None:
+            return chat_to_completion_decorator(self.chat)(prompt, **kwargs)
+
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
             raise (ValueError("candidate_count is not supported by the codey model's"))
-        if self.examples and "examples" not in params:
-            chat_params["examples"] = _parse_examples(self.examples)
-        elif "examples" in params:
-            raise (
-                ValueError(
-                    "examples are not supported in chat generation pass them as a constructor parameter"
-                )
-            )
-        generation = await acompletion_with_retry(
-            client=self._chat_client,
-            prompt=question,
-            chat=True,
-            is_gemini=self._is_gemini,
-            params=chat_params,
+
+        completion = completion_with_retry(
+            self._client,
+            prompt,
             max_retries=self.max_retries,
+            is_gemini=self._is_gemini,
             **params,
         )
-        ##this is due to a bug in vertex AI we have to await twice
+        return CompletionResponse(text=completion.text, raw=completion.__dict__)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            return stream_completion_response_to_chat_response(
+                self.stream_complete(prompt, formatted=True, **kwargs)
+            )
+
+        return self._stream_chat_impl(messages, **kwargs)
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        if self.metadata.is_chat_model and self._client is None:
+            return stream_chat_to_completion_decorator(self.stream_chat)(
+                prompt, **kwargs
+            )
+
+        return self._stream_complete_impl(prompt, **kwargs)
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            return completion_response_to_chat_response(
+                await self.acomplete(prompt, formatted=True, **kwargs)
+            )
+
+        prepared = self._prepare_chat_request(messages, **kwargs)
+        generation = await acompletion_with_retry(
+            client=self._chat_client,
+            prompt=prepared.prompt,
+            chat=True,
+            is_gemini=self._is_gemini,
+            params=prepared.chat_request_params,
+            max_retries=self.max_retries,
+            **prepared.model_params,
+        )
+        # This is due to a bug in Vertex AI where code models must be awaited twice.
         if self.iscode:
             generation = await generation
 
@@ -424,6 +550,9 @@ class Vertex(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.metadata.is_chat_model and self._client is None:
+            return await achat_to_completion_decorator(self.achat)(prompt, **kwargs)
+
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
@@ -441,13 +570,35 @@ class Vertex(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise (ValueError("Not Implemented"))
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_stream = await self.astream_complete(
+                prompt, formatted=True, **kwargs
+            )
+            return async_stream_completion_response_to_chat_response(completion_stream)
+
+        if not self._is_gemini:
+            return await self._astream_chat_impl(messages, **kwargs)
+
+        return _async_stream_from_sync(
+            lambda: self._stream_chat_impl(messages, **kwargs),
+        )
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise (ValueError("Not Implemented"))
+        if self.metadata.is_chat_model and self._client is None:
+            return await astream_chat_to_completion_decorator(self.astream_chat)(
+                prompt, **kwargs
+            )
+
+        if not self._is_gemini:
+            return await self._astream_complete_impl(prompt, **kwargs)
+
+        return _async_stream_from_sync(
+            lambda: self._stream_complete_impl(prompt, **kwargs),
+        )
 
     def _prepare_chat_with_tools(
         self,
@@ -482,7 +633,6 @@ class Vertex(FunctionCallingLLM):
             else {}
         )
 
-        print("tool_config", tool_config)
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
