@@ -14,6 +14,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import deprecated
 from pydantic import BaseModel
 
 from llama_index.core.agent.utils import generate_structured_response
@@ -743,7 +744,20 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         return AgentInput(input=input_messages, current_agent_name=agent.name)
 
+    # TODO: Remove the deprecated agent-specific overload. The agent params
+    # (user_msg, chat_history, memory, etc.) should be passed as kwargs that
+    # flow through Workflow.run() → AgentWorkflowStartEvent construction
+    # automatically, matching the standard Workflow.run(ctx, start_event,
+    # **kwargs) signature. At that point this entire override can be deleted.
+
     @overload
+    @deprecated(
+        "Use the standard workflow signature instead: "
+        "workflow.run(user_msg='hello') or "
+        "workflow.run(ctx=ctx, start_event=event, user_msg='hello'). "
+        "This positional signature will be removed in a future version.",
+        category=None,
+    )
     def run(
         self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -765,9 +779,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     ) -> WorkflowHandler: ...
 
     def run(self, *args: Any, **kwargs: Any) -> WorkflowHandler:
-        # Parse positional args to support both overloaded signatures.
-        # Agent signature: run(user_msg, chat_history, memory, ctx, ...)
-        # Parent signature: run(ctx, start_event, **kwargs)
         user_msg: Optional[Union[str, ChatMessage]] = None
         chat_history: Optional[List[ChatMessage]] = None
         memory: Optional[BaseMemory] = None

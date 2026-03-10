@@ -15,6 +15,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import deprecated
 
 from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import (
@@ -720,7 +721,20 @@ class BaseWorkflowAgent(
 
         return AgentInput(input=input_messages, current_agent_name=self.name)
 
+    # TODO: Remove the deprecated agent-specific overload. The agent params
+    # (user_msg, chat_history, memory, etc.) should be passed as kwargs that
+    # flow through Workflow.run() → AgentWorkflowStartEvent construction
+    # automatically, matching the standard Workflow.run(ctx, start_event,
+    # **kwargs) signature. At that point this entire override can be deleted.
+
     @overload
+    @deprecated(
+        "Use the standard workflow signature instead: "
+        "agent.run(user_msg='hello') or "
+        "agent.run(ctx=ctx, start_event=event, user_msg='hello'). "
+        "This positional signature will be removed in a future version.",
+        category=None,
+    )
     def run(
         self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -742,9 +756,6 @@ class BaseWorkflowAgent(
     ) -> WorkflowHandler: ...
 
     def run(self, *args: Any, **kwargs: Any) -> WorkflowHandler:
-        # Parse positional args to support both overloaded signatures.
-        # Agent signature: run(user_msg, chat_history, memory, ctx, ...)
-        # Parent signature: run(ctx, start_event, **kwargs)
         user_msg: Optional[Union[str, ChatMessage]] = None
         chat_history: Optional[List[ChatMessage]] = None
         memory: Optional[BaseMemory] = None
@@ -754,12 +765,10 @@ class BaseWorkflowAgent(
         if args:
             first = args[0]
             if isinstance(first, Context):
-                # Parent signature: run(ctx, start_event, ...)
                 ctx = first
                 if len(args) > 1 and isinstance(args[1], StartEvent):
                     start_event = args[1]
             else:
-                # Agent signature: run(user_msg, chat_history, memory, ctx, ...)
                 user_msg = first
                 if len(args) > 1:
                     chat_history = args[1]
@@ -768,7 +777,6 @@ class BaseWorkflowAgent(
                 if len(args) > 3:
                     ctx = args[3]
 
-        # Keyword args take precedence over positional
         user_msg = kwargs.pop("user_msg", None) or user_msg
         chat_history = kwargs.pop("chat_history", None) or chat_history
         memory = kwargs.pop("memory", None) or memory
