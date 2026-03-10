@@ -1,3 +1,4 @@
 ::: llama_index.storage.kvstore.firestore
-options:
-members: - FirestoreKVStore
+    options:
+      members:
+        - FirestoreKVStore

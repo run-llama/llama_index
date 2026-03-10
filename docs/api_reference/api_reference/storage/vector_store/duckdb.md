@@ -1,3 +1,4 @@
 ::: llama_index.vector_stores.duckdb
-options:
-members: - DuckDBVectorStore
+    options:
+      members:
+        - DuckDBVectorStore
