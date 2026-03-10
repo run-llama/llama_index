@@ -203,9 +203,11 @@ async def test_astream_chat_history_write_completes_on_early_exit(
     response = await chat_engine.astream_chat("Hello World!")
     assert len(chat_engine.chat_history) == 1
     i = 0
-    async for _ in response.async_response_gen():
+    gen = response.async_response_gen()
+    async for _ in gen:
         i += 1
         if i >= 2:
             break
+    await gen.aclose()
     assert len(chat_engine.chat_history) == 2
     assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
