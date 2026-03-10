@@ -265,6 +265,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 target=response.write_response_to_history,
                 args=(self._memory,),
             )
+            response.write_response_to_history_thread = thread
             thread.start()
         else:
             raise ValueError("Streaming is not enabled. Please use chat() instead.")
