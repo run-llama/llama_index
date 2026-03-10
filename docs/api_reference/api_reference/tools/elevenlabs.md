@@ -1,4 +1,3 @@
 ::: llama_index.tools.elevenlabs
-    options:
-      members:
-        - ElevenLabsToolSpec
+options:
+members: - ElevenLabsToolSpec
