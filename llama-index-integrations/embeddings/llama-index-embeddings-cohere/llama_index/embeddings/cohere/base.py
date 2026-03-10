@@ -11,6 +11,7 @@ from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embe
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
+from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
 from llama_index.core.schema import ImageType
 from PIL import Image
 from tenacity import (
@@ -288,6 +289,64 @@ class CohereEmbedding(MultiModalEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "CohereEmbedding"
+
+    def supports_mixed_embedding(self) -> bool:
+        """Cohere v3/v4 models support joint embedding of interleaved text and images."""
+        return self.model_name in (V3_MODELS + V4_MODELS)
+
+    def _get_mixed_content_embedding(
+        self, content: MixedEmbeddingContent
+    ) -> List[float]:
+        """Get embedding for interleaved text + image content."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        client = self._get_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+
+        @retry_decorator
+        def _embed_with_retry() -> List[List[float]]:
+            result = client.embed(
+                inputs=[{"content": content}],
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return _embed_with_retry()[0]
+
+    async def _aget_mixed_content_embedding(
+        self, content: MixedEmbeddingContent
+    ) -> List[float]:
+        """Async get embedding for interleaved text + image content."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        async_client = self._get_async_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+
+        @retry_decorator
+        async def _aembed_with_retry() -> List[List[float]]:
+            result = (
+                await async_client.embed(
+                    inputs=[{"content": content}],
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return (await _aembed_with_retry())[0]
 
     def _image_to_base64_data_url(self, image_input: Union[str, Path, BytesIO]) -> str:
         """Convert an image to a base64 Data URL."""
