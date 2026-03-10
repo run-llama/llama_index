@@ -13,7 +13,7 @@ pip install llama-index-embeddings-google-genai
 ```python
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-embed_model = GoogleGenAIEmbedding(model_name="text-embedding-004")
+embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview")
 
 embeddings = embed_model.get_text_embedding("Hello, world!")
 print(embeddings)
@@ -23,7 +23,7 @@ print(embeddings)
 
 ```python
 embed_model = GoogleGenAIEmbedding(
-    model_name="text-embedding-004",
+    model_name="gemini-embedding-2-preview",
     vertexai_config={
         "project": "your-project-id",
         "location": "your-location",
