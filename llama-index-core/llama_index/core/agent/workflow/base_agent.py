@@ -13,6 +13,7 @@ from typing import (
     Union,
     Type,
     cast,
+    overload,
 )
 
 from pydantic._internal._model_construction import ModelMetaclass
@@ -56,7 +57,7 @@ from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StopEvent
+from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import Workflow, WorkflowMeta
@@ -719,6 +720,7 @@ class BaseWorkflowAgent(
 
         return AgentInput(input=input_messages, current_agent_name=self.name)
 
+    @overload
     def run(
         self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -729,8 +731,55 @@ class BaseWorkflowAgent(
         early_stopping_method: Optional[Literal["force", "generate"]] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
-    ) -> WorkflowHandler:
+    ) -> WorkflowHandler: ...
+
+    @overload
+    def run(
+        self,
+        ctx: Optional[Context] = None,
+        start_event: Optional[StartEvent] = None,
+        **kwargs: Any,
+    ) -> WorkflowHandler: ...
+
+    def run(self, *args: Any, **kwargs: Any) -> WorkflowHandler:
+        # Parse positional args to support both overloaded signatures.
+        # Agent signature: run(user_msg, chat_history, memory, ctx, ...)
+        # Parent signature: run(ctx, start_event, **kwargs)
+        user_msg: Optional[Union[str, ChatMessage]] = None
+        chat_history: Optional[List[ChatMessage]] = None
+        memory: Optional[BaseMemory] = None
+        ctx: Optional[Context] = None
+        start_event: Optional[StartEvent] = None
+
+        if args:
+            first = args[0]
+            if isinstance(first, Context):
+                # Parent signature: run(ctx, start_event, ...)
+                ctx = first
+                if len(args) > 1 and isinstance(args[1], StartEvent):
+                    start_event = args[1]
+            else:
+                # Agent signature: run(user_msg, chat_history, memory, ctx, ...)
+                user_msg = first
+                if len(args) > 1:
+                    chat_history = args[1]
+                if len(args) > 2:
+                    memory = args[2]
+                if len(args) > 3:
+                    ctx = args[3]
+
+        # Keyword args take precedence over positional
+        user_msg = kwargs.pop("user_msg", None) or user_msg
+        chat_history = kwargs.pop("chat_history", None) or chat_history
+        memory = kwargs.pop("memory", None) or memory
+        ctx = kwargs.pop("ctx", None) or ctx
+        max_iterations: Optional[int] = kwargs.pop("max_iterations", None)
+        early_stopping_method: Optional[Literal["force", "generate"]] = kwargs.pop(
+            "early_stopping_method", None
+        )
+        start_event = kwargs.pop("start_event", None) or start_event
         run_id = kwargs.pop("run_id", None)
+
         if ctx is not None and ctx.is_running:
             return super().run(
                 ctx=ctx,
@@ -738,14 +787,15 @@ class BaseWorkflowAgent(
                 **kwargs,
             )
         else:
-            start_event = start_event or AgentWorkflowStartEvent(
-                user_msg=user_msg,
-                chat_history=chat_history,
-                memory=memory,
-                max_iterations=max_iterations,
-                early_stopping_method=early_stopping_method,
-                **kwargs,
-            )
+            if start_event is None or isinstance(start_event, AgentWorkflowStartEvent):
+                start_event = start_event or AgentWorkflowStartEvent(
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    memory=memory,
+                    max_iterations=max_iterations,
+                    early_stopping_method=early_stopping_method,
+                    **kwargs,
+                )
             return super().run(
                 start_event=start_event,
                 ctx=ctx,
