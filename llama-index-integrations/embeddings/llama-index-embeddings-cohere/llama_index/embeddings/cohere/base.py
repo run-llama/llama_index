@@ -290,18 +290,36 @@ class CohereEmbedding(MultiModalEmbedding):
     def class_name(cls) -> str:
         return "CohereEmbedding"
 
+    @property
     def supports_mixed_embedding(self) -> bool:
         """Cohere v3/v4 models support joint embedding of interleaved text and images."""
         return self.model_name in (V3_MODELS + V4_MODELS)
 
+    @staticmethod
+    def _mixed_content_cohere_supported(
+        content: MixedEmbeddingContent,
+    ) -> MixedEmbeddingContent:
+        """Filter to content types Cohere supports: text and image_url only."""
+        supported = []
+        for item in content:
+            t = item.get("type")
+            if t == "text" or t == "image_url":
+                supported.append(item)
+        return supported
+
     def _get_mixed_content_embedding(
         self, content: MixedEmbeddingContent
     ) -> List[float]:
-        """Get embedding for interleaved text + image content."""
+        """Get embedding for interleaved text + image content (audio/video dropped)."""
         if self.model_name not in (V3_MODELS + V4_MODELS):
             raise ValueError(
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        content = self._mixed_content_cohere_supported(content)
+        if not content:
+            raise ValueError(
+                "No Cohere-supported content (text or image_url) in mixed content."
             )
         client = self._get_client()
         input_type = self.input_type or "search_document"
@@ -323,11 +341,16 @@ class CohereEmbedding(MultiModalEmbedding):
     async def _aget_mixed_content_embedding(
         self, content: MixedEmbeddingContent
     ) -> List[float]:
-        """Async get embedding for interleaved text + image content."""
+        """Async get embedding for interleaved text + image content (audio/video dropped)."""
         if self.model_name not in (V3_MODELS + V4_MODELS):
             raise ValueError(
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        content = self._mixed_content_cohere_supported(content)
+        if not content:
+            raise ValueError(
+                "No Cohere-supported content (text or image_url) in mixed content."
             )
         async_client = self._get_async_client()
         input_type = self.input_type or "search_document"
@@ -347,6 +370,78 @@ class CohereEmbedding(MultiModalEmbedding):
             return getattr(result, self.embedding_type, None)
 
         return (await _aembed_with_retry())[0]
+
+    def _get_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[List[float]]:
+        """Get embeddings for a batch of interleaved contents (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        if not contents:
+            return []
+        contents = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in contents):
+            raise ValueError(
+                "Every mixed content item must contain at least one Cohere-supported "
+                "block (text or image_url)."
+            )
+        client = self._get_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+        inputs = [{"content": c} for c in contents]
+
+        @retry_decorator
+        def _embed_batch_with_retry() -> List[List[float]]:
+            result = client.embed(
+                inputs=inputs,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return _embed_batch_with_retry()
+
+    async def _aget_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[List[float]]:
+        """Async get embeddings for a batch of interleaved contents (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        if not contents:
+            return []
+        contents = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in contents):
+            raise ValueError(
+                "Every mixed content item must contain at least one Cohere-supported "
+                "block (text or image_url)."
+            )
+        async_client = self._get_async_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+        inputs = [{"content": c} for c in contents]
+
+        @retry_decorator
+        async def _aembed_batch_with_retry() -> List[List[float]]:
+            result = (
+                await async_client.embed(
+                    inputs=inputs,
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return await _aembed_batch_with_retry()
 
     def _image_to_base64_data_url(self, image_input: Union[str, Path, BytesIO]) -> str:
         """Convert an image to a base64 Data URL."""
