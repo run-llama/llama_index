@@ -39,15 +39,15 @@ Or call the MCP tool `get_trial_key` if you have the Agent Module MCP server con
 
 ## Available Tools
 
-| Tool | Module | Coverage |
-|---|---|---|
-| `query_module` | Any ETH_XXX | Direct module lookup by ID |
-| `query_fria` | ETH_021 | FRIA obligations — Art. 27, Aug 2026 deadline |
-| `query_prohibited_practices` | ETH_016 | Prohibited AI — Art. 5 (€35M penalty tier) |
-| `query_high_risk_classification` | ETH_015 | High-risk classification — Art. 6, Annex III |
-| `query_risk_management` | ETH_017 | Risk management system — Art. 9 |
-| `query_conformity_assessment` | ETH_013 | Conformity assessment — Art. 43 |
-| `query_gpai_obligations` | ETH_020 | GPAI model obligations — Art. 53-55 |
+| Tool                             | Module      | Coverage                                      |
+| -------------------------------- | ----------- | --------------------------------------------- |
+| `query_module`                   | Any ETH_XXX | Direct module lookup by ID                    |
+| `query_fria`                     | ETH_021     | FRIA obligations — Art. 27, Aug 2026 deadline |
+| `query_prohibited_practices`     | ETH_016     | Prohibited AI — Art. 5 (€35M penalty tier)    |
+| `query_high_risk_classification` | ETH_015     | High-risk classification — Art. 6, Annex III  |
+| `query_risk_management`          | ETH_017     | Risk management system — Art. 9               |
+| `query_conformity_assessment`    | ETH_013     | Conformity assessment — Art. 43               |
+| `query_gpai_obligations`         | ETH_020     | GPAI model obligations — Art. 53-55           |
 
 ## Usage Without an Agent
 

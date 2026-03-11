@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from llama_index.tools.agent_module.base import AgentModuleToolSpec
 
