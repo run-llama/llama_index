@@ -64,7 +64,7 @@ from llama_index.core.base.llms.types import ChatMessage
 
 llm = Cohere(model=SAMPLE_MODEL,api_key=api_key)
 
-resp = llm.stream_complete(messages= [ChatMessage(content="Who is Paul Graham?")])
+resp = llm.stream_complete("Paul Graham is")
 for r in resp:
     print(r.delta, end="")
 
@@ -114,8 +114,7 @@ print(resp)
 # He is also the co-founder of the online dating platform Match.com.
 
 # Async calls
-
-resp = await llm.acomplete(messages= [ChatMessage(content="Who is Paul Graham?")])
+resp = await llm.acomplete("Paul Graham is")
 # Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
 print(resp)
 
@@ -126,7 +125,7 @@ print(resp)
 # many of which have become highly influential in the software engineering field.
 
 # Streaming async
-resp = await llm.astream_complete(messages= [ChatMessage(content="Who is Paul Graham?")])
+resp = await llm.astream_complete("Paul Graham is")
 async for delta in resp:
     print(delta.delta, end="")
 
