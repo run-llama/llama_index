@@ -75,6 +75,30 @@ documents = SimpleDirectoryReader(
 
 Full documentation for `SimpleDirectoryReader` can be found on the [LlamaIndex Documentation](https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader.html).
 
+## Production: Timeout for agentic tier
+
+When using `tier="agentic"`, parse latency can be variable. For production pipelines with SLA requirements or parallel parsing (e.g. `asyncio`), wrap async calls with `asyncio.wait_for` to enforce timeouts:
+
+```python
+import asyncio
+from llama_parse import LlamaParse
+
+parser = LlamaParse(
+    api_key="llx-...",
+    result_type="markdown",
+    tier="agentic",
+    version="latest",
+)
+
+# Enforce 5-minute timeout per document
+documents = await asyncio.wait_for(
+    parser.aload_data("./document.pdf"),
+    timeout=300.0,
+)
+```
+
+For batch parsing, use `asyncio.wait_for` per document or consider `parse_mode="parse_page_with_llm"` for more predictable latency.
+
 ## Examples
 
 Several end-to-end indexing examples can be found in the examples folder
