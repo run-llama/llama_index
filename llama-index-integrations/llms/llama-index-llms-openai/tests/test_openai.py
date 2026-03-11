@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ThinkingBlock, TextBlock
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import O1_MODELS
 
@@ -475,6 +476,41 @@ def test_ensure_chat_message_is_serializable(MockSyncOpenAI: MagicMock) -> None:
             data["additional_kwargs"]["test"]["choices"][0]["delta"]["content"]
             == "test"
         )
+
+
+def _dummy_tool_fn(x: int) -> int:
+    """A dummy tool for testing."""
+    return x
+
+
+def test_prepare_chat_with_tools_reasoning_model_omits_parallel_tool_calls() -> None:
+    """Reasoning models (O1_MODELS) should NOT send parallel_tool_calls to the API."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        tool = FunctionTool.from_defaults(fn=_dummy_tool_fn)
+
+        llm = OpenAI(model="o1-mini")
+        result = llm._prepare_chat_with_tools(
+            tools=[tool],
+            user_msg="test",
+            allow_parallel_tool_calls=True,
+        )
+        assert "parallel_tool_calls" not in result
+
+
+def test_prepare_chat_with_tools_non_reasoning_model_includes_parallel_tool_calls() -> (
+    None
+):
+    """Non-reasoning models SHOULD send parallel_tool_calls to the API."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        tool = FunctionTool.from_defaults(fn=_dummy_tool_fn)
+
+        llm = OpenAI(model="gpt-4o")
+        result = llm._prepare_chat_with_tools(
+            tools=[tool],
+            user_msg="test",
+            allow_parallel_tool_calls=True,
+        )
+        assert result["parallel_tool_calls"] is True
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")

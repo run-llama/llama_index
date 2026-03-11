@@ -2439,7 +2439,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-seltz"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2472,7 +2472,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "seltz", specifier = ">=0.1.3" },
+    { name = "seltz", specifier = ">=0.2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -4801,15 +4801,15 @@ wheels = [
 
 [[package]]
 name = "seltz"
-version = "0.1.3"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/f3/a81823416850ec97f5d95f330d13e0ca5d0352caa9ebaa65732f4c0ff073/seltz-0.1.3.tar.gz", hash = "sha256:c77f024fe4eb1dc3ce1a439d8cbb72060b2102520c0b99a9d16b1bc738b0dec3", size = 11533, upload-time = "2026-02-03T00:34:11.122Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/9a/fb73753caabb67f59daabb4eef1dea39c8309161d2ceba325963967e3118/seltz-0.2.0.tar.gz", hash = "sha256:6549ab29507195231af180d0d665f6b90490f1d6cbd8bc2cdba1561139f3a82d", size = 9504, upload-time = "2026-03-04T19:02:23.543Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3d/c1/4db9fcfc1102d99b33f0925101b6182ab2f844c671c3d8a98d4b3df96d90/seltz-0.1.3-py3-none-any.whl", hash = "sha256:16a3e576a2fbcc855d139c6b8a9e0a512e5fc171d8b3c0ff97d8580068b1f078", size = 12363, upload-time = "2026-02-03T00:34:10.185Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/27/26d7d21f44a559b7a99dce66f61db294b868f1e0f646cd954f751bb63af8/seltz-0.2.0-py3-none-any.whl", hash = "sha256:c0bc5399f48d3284dadf7860e0682e5f013ce0bc14abbd731d4491fb4b6843e5", size = 10223, upload-time = "2026-03-04T19:02:22.137Z" },
 ]
 
 [[package]]

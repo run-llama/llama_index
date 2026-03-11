@@ -24,7 +24,7 @@ dev = [
 
 [project]
 name = "llama-index-node-parser-chonkie"
-version = "0.1.1"
+version = "0.1.2"
 description = "llama-index Chonkie integration"
 authors = [{name = "Hafedh Hichri", email = "hhichri60@gmail.com"}]
 readme = "README.md"

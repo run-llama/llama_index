@@ -1969,7 +1969,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "2.14.0"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
@@ -1977,9 +1977,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/b3/4b34967e5452480f79929c86f31bb353b7aa9aeeb668db89280676ec946e/llama_index_workflows-2.14.0.tar.gz", hash = "sha256:6d315786e84df93950a9b7a18681fd6aa0cb2630a9ba55439664261a4f9d585c", size = 75596, upload-time = "2026-02-05T20:15:56.819Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/9e/c885c97afd3fb5db397ede05d5c288f26539e1d5de775b97d03c523d4fde/llama_index_workflows-2.15.1.tar.gz", hash = "sha256:5e46dae2c683d3a9de800a4faf472b4aa915026b3f41bd36baba307b12cd3e7f", size = 81696, upload-time = "2026-03-07T17:32:05.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/c0/b478ca44135266e40468b346b17c2363c056c9ac0752cde76628c36cdaa9/llama_index_workflows-2.14.0-py3-none-any.whl", hash = "sha256:c2138aee2c4cf6c80268088e2e38550f7b75469de9a157a52b7ee87ec90d1ae4", size = 96695, upload-time = "2026-02-05T20:15:57.702Z" },
+    { url = "https://files.pythonhosted.org/packages/72/fa/a1aabbce40485d741067b46c6754c1ce81792ef56445777769d3da760a5d/llama_index_workflows-2.15.1-py3-none-any.whl", hash = "sha256:a36b4a8f30e5899c33391e99bad5768b9ca8331ace75f2f5bbbc0c0d380c2a0e", size = 104505, upload-time = "2026-03-07T17:32:06.163Z" },
 ]
 
 [[package]]
@@ -3387,14 +3387,14 @@ wheels = [
 
 [[package]]
 name = "pypdf"
-version = "6.7.2"
+version = "6.7.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/b2/335465d6cff28a772ace8a58beb168f125c2e1d8f7a31527da180f4d89a1/pypdf-6.7.2.tar.gz", hash = "sha256:82a1a48de500ceea59a52a7d979f5095927ef802e4e4fac25ab862a73468acbb", size = 5302986, upload-time = "2026-02-22T11:33:30.776Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/52/37cc0aa9e9d1bf7729a737a0d83f8b3f851c8eb137373d9f71eafb0a3405/pypdf-6.7.5.tar.gz", hash = "sha256:40bb2e2e872078655f12b9b89e2f900888bb505e88a82150b64f9f34fa25651d", size = 5304278, upload-time = "2026-03-02T09:05:21.464Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/df/38b06d6e74646a4281856920a11efb431559bdeb643bf1e192bff5e29082/pypdf-6.7.2-py3-none-any.whl", hash = "sha256:331b63cd66f63138f152a700565b3e0cebdf4ec8bec3b7594b2522418782f1f3", size = 331245, upload-time = "2026-02-22T11:33:29.204Z" },
+    { url = "https://files.pythonhosted.org/packages/05/89/336673efd0a88956562658aba4f0bbef7cb92a6fbcbcaf94926dbc82b408/pypdf-6.7.5-py3-none-any.whl", hash = "sha256:07ba7f1d6e6d9aa2a17f5452e320a84718d4ce863367f7ede2fd72280349ab13", size = 331421, upload-time = "2026-03-02T09:05:19.722Z" },
 ]
 
 [[package]]

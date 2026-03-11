@@ -577,3 +577,32 @@ def test_get_all_items_with_pagination_empty_result():
         )
 
     assert len(items) == 0
+
+
+def test_drive_id_endpoint_set_when_drive_id_provided():
+    """
+    Test that _drive_id_endpoint is set even when drive_id is provided directly.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/18753
+    """
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        drive_id="my_drive_id",
+    )
+    reader._site_id_with_host_name = "dummy_site_id"
+
+    # Bypass the autouse _get_drive_id mock by calling the unpatched method directly
+    # via the descriptor protocol on the original class
+    import importlib
+
+    mod = importlib.import_module("llama_index.readers.microsoft_sharepoint.base")
+    importlib.reload(mod)
+    orig_get_drive_id = mod.SharePointReader._get_drive_id
+    result = orig_get_drive_id(reader)
+
+    assert result == "my_drive_id"
+    assert reader._drive_id_endpoint == (
+        "https://graph.microsoft.com/v1.0/sites/dummy_site_id/drives"
+    )
