@@ -318,9 +318,8 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        # NOTE: At the time of writing, "txt" format works for all file types
-        # The API then infers the format from the file type based on the bytes
-        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+        fmt = __get_doc_format_from_document_mimetype(block.document_mimetype)
+        return {"document": {"format": fmt, "name": title, "source": {"bytes": data}}}
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -363,6 +362,45 @@ def _content_block_to_bedrock_format(
     else:
         logger.warning(f"Unsupported block type: {type(block)}")
         return None
+
+
+# Maps MIME types to Bedrock DocumentFormat enum values.
+# The canonical list of valid format strings lives in the botocore service model:
+#   botocore/data/bedrock-runtime/2023-09-30/service-2.json -> DocumentFormat.enum
+# If AWS adds a new supported format, add the corresponding MIME type here.
+_MIME_TO_BEDROCK_DOC_FORMAT: Dict[str, str] = {
+    "application/pdf": "pdf",
+    "text/csv": "csv",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/html": "html",
+    "text/plain": "txt",
+    "text/markdown": "md",
+}
+
+
+def __get_doc_format_from_document_mimetype(document_mimetype: Optional[str]) -> str:
+    """
+    Get the Bedrock document format string from the document mimetype.
+
+    Falls back to "txt" for unknown or missing mimetypes, which allows Bedrock
+    to infer the format from the file bytes.  This fallback also preserves the
+    workaround for scanned (image-only) PDFs where Bedrock may detect PLAIN_TEXT
+    even when the bytes are a valid PDF (see https://github.com/run-llama/llama_index/issues/18789).
+    """
+    if document_mimetype is None:
+        return "txt"
+    fmt = _MIME_TO_BEDROCK_DOC_FORMAT.get(document_mimetype)
+    if fmt is None:
+        logger.warning(
+            f"Unsupported document mimetype: {document_mimetype}. "
+            f"Bedrock Converse API supports: {', '.join(_MIME_TO_BEDROCK_DOC_FORMAT.keys())}. "
+            "Defaulting to txt."
+        )
+        return "txt"
+    return fmt
 
 
 def __get_img_format_from_image_mimetype(image_mimetype: str) -> str:
@@ -516,7 +554,24 @@ def messages_to_converse_messages(
             )
     if current_system_prompt != "":
         system_prompt.append({"text": current_system_prompt.strip()})
-    return __merge_common_role_msgs(converse_messages), system_prompt
+
+    merged = __merge_common_role_msgs(converse_messages)
+
+    # Bedrock Converse API requires document names to be unique within a request.
+    # DocumentBlock defaults title to "input_document" when not set, so multiple
+    # documents without explicit titles will collide.  Deduplicate by appending
+    # an incrementing suffix to any repeated names.
+    seen_doc_names: Dict[str, int] = {}
+    for block in (b for msg in merged for b in msg.get("content", [])):
+        if "document" in block:
+            name = block["document"]["name"]
+            if name in seen_doc_names:
+                seen_doc_names[name] += 1
+                block["document"]["name"] = f"{name}_{seen_doc_names[name]}"
+            else:
+                seen_doc_names[name] = 0
+
+    return merged, system_prompt
 
 
 def tools_to_converse_tools(

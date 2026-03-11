@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from typing import Literal
 from unittest.mock import MagicMock, patch
@@ -10,6 +11,7 @@ from llama_index.core.base.llms.types import (
     CacheControl,
     CachePoint,
     ChatMessage,
+    DocumentBlock,
     ImageBlock,
     MessageRole,
     TextBlock,
@@ -18,6 +20,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
     ThinkingDict,
+    __get_doc_format_from_document_mimetype,
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
     converse_with_retry,
@@ -765,3 +768,105 @@ def test_thinking_dict_adaptive_no_budget():
     td: ThinkingDict = {"type": "adaptive"}
     assert td["type"] == "adaptive"
     assert "budget_tokens" not in td
+
+
+# ---------------------------------------------------------------------------
+# DocumentBlock format mapping tests
+# ---------------------------------------------------------------------------
+
+_PDF_DATA = base64.b64encode(b"fake-pdf-bytes")
+
+
+def test_get_doc_format_pdf():
+    assert __get_doc_format_from_document_mimetype("application/pdf") == "pdf"
+
+
+def test_get_doc_format_csv():
+    assert __get_doc_format_from_document_mimetype("text/csv") == "csv"
+
+
+def test_get_doc_format_docx():
+    assert (
+        __get_doc_format_from_document_mimetype(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        == "docx"
+    )
+
+
+def test_get_doc_format_unknown_mimetype_falls_back_to_txt(caplog):
+    result = __get_doc_format_from_document_mimetype("application/octet-stream")
+    assert result == "txt"
+    assert "Unsupported document mimetype" in caplog.text
+
+
+def test_get_doc_format_none_mimetype_falls_back_to_txt():
+    """No mimetype -> 'txt', preserving the scanned-PDF workaround from #18789."""
+    assert __get_doc_format_from_document_mimetype(None) == "txt"
+
+
+def test_content_block_to_bedrock_format_document_pdf():
+    """DocumentBlock with PDF mimetype should produce format='pdf', not 'txt'."""
+    block = DocumentBlock(data=_PDF_DATA, document_mimetype="application/pdf", title="my-doc")
+    result = _content_block_to_bedrock_format(block, MessageRole.USER)
+    assert result is not None
+    assert result["document"]["format"] == "pdf"
+    assert result["document"]["name"] == "my-doc"
+
+
+def test_content_block_to_bedrock_format_document_no_mimetype():
+    """DocumentBlock without mimetype should fall back to format='txt'."""
+    block = DocumentBlock(data=_PDF_DATA, title="my-doc")
+    # Clear the mimetype that _guess_mimetype() may have set
+    block.document_mimetype = None
+    result = _content_block_to_bedrock_format(block, MessageRole.USER)
+    assert result is not None
+    assert result["document"]["format"] == "txt"
+
+
+# ---------------------------------------------------------------------------
+# Document name deduplication tests
+# ---------------------------------------------------------------------------
+
+
+def test_messages_to_converse_messages_duplicate_document_names_deduplicated():
+    """Two DocumentBlocks with the same title get distinct names after deduplication."""
+    doc_data = base64.b64encode(b"content")
+    messages = [
+        ChatMessage(
+            role=MessageRole.USER,
+            blocks=[
+                DocumentBlock(data=doc_data, title="input_document", document_mimetype="application/pdf"),
+                DocumentBlock(data=doc_data, title="input_document", document_mimetype="application/pdf"),
+            ],
+        )
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    doc_blocks = [b for b in converse_messages[0]["content"] if "document" in b]
+    assert len(doc_blocks) == 2
+    names = {b["document"]["name"] for b in doc_blocks}
+    assert len(names) == 2, f"Expected distinct names, got: {names}"
+
+
+def test_messages_to_converse_messages_explicit_unique_titles_unchanged():
+    """DocumentBlocks with already-distinct titles are not modified."""
+    doc_data = base64.b64encode(b"content")
+    messages = [
+        ChatMessage(
+            role=MessageRole.USER,
+            blocks=[
+                DocumentBlock(data=doc_data, title="doc-alpha", document_mimetype="application/pdf"),
+                DocumentBlock(data=doc_data, title="doc-beta", document_mimetype="application/pdf"),
+            ],
+        )
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    doc_blocks = [b for b in converse_messages[0]["content"] if "document" in b]
+    assert len(doc_blocks) == 2
+    names = [b["document"]["name"] for b in doc_blocks]
+    assert "doc-alpha" in names
+    assert "doc-beta" in names
