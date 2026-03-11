@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -135,10 +135,27 @@ class OpenAILike(OpenAI):
 
     @property
     def metadata(self) -> LLMMetadata:
+        is_chat_model = self.is_chat_model
+
+        # Auto-detect chat models for certain OpenAI-compatible providers.
+        api_base = getattr(self, "api_base", None)
+        if not is_chat_model and isinstance(api_base, str):
+            base = api_base.lower().rstrip("/")
+            # Gemini's OpenAI compatibility endpoint only supports the
+            # Chat Completions API. If users configure OpenAILike with the
+            # Gemini OpenAI-compatible base URL but forget to set
+            # `is_chat_model=True`, we still need to route traffic through
+            # the chat endpoint, otherwise the Completions endpoint will
+            # return 404.
+            if "generativelanguage.googleapis.com" in base or base.endswith(
+                "/v1beta/openai"
+            ):
+                is_chat_model = True
+
         return LLMMetadata(
             context_window=self.context_window,
             num_output=self.max_tokens or -1,
-            is_chat_model=self.is_chat_model,
+            is_chat_model=is_chat_model,
             is_function_calling_model=self.is_function_calling_model,
             model_name=self.model,
         )
