@@ -172,3 +172,53 @@ def test_serialization() -> None:
     # Check OpenAILike subclass specifics
     assert serialized["context_window"] == 43
     assert serialized["is_chat_model"]
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_gemini_openai_compat_defaults_to_chat(
+    MockSyncOpenAI: MagicMock,
+) -> None:
+    content = "hello from gemini"
+
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion(content)
+
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME,
+        api_key=STUB_API_KEY,
+        api_base="https://generativelanguage.googleapis.com/v1beta/openai/",
+        context_window=1024,
+        max_tokens=None,
+        # is_chat_model left as default False; heuristics should route via chat API.
+    )
+
+    response = llm.complete("A prompt to Gemini")
+    assert response.text == content
+
+    mock_instance.chat.completions.create.assert_called_once()
+    mock_instance.completions.create.assert_not_called()
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_generate_kwargs_forwarded_to_openai(MockSyncOpenAI: MagicMock) -> None:
+    content = "ok"
+
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion(content)
+
+    generate_kwargs = {"chat_template_kwargs": {"enable_thinking": False}}
+
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME,
+        is_chat_model=True,
+        generate_kwargs=generate_kwargs,
+    )
+
+    response = llm.chat(
+        [ChatMessage(role=MessageRole.USER, content="test message with thinking")]
+    )
+    assert response.message.content == content
+
+    # Ensure provider-specific kwargs are forwarded to the underlying client.
+    _, kwargs = mock_instance.chat.completions.create.call_args
+    assert kwargs["chat_template_kwargs"] == generate_kwargs["chat_template_kwargs"]
