@@ -27,7 +27,7 @@ from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.chat_engine.utils import (
@@ -323,7 +323,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ) -> AgentChatResponse:
         synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        synth_nodes = context_nodes or [NodeWithScore(node=TextNode(text=""))]
+        response = synthesizer.synthesize(message, synth_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -346,7 +347,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        synth_nodes = context_nodes or [NodeWithScore(node=TextNode(text=""))]
+        response = synthesizer.synthesize(message, synth_nodes)
         assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
@@ -382,7 +384,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        synth_nodes = context_nodes or [NodeWithScore(node=TextNode(text=""))]
+        response = await synthesizer.asynthesize(message, synth_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -405,7 +408,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        synth_nodes = context_nodes or [NodeWithScore(node=TextNode(text=""))]
+        response = await synthesizer.asynthesize(message, synth_nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:

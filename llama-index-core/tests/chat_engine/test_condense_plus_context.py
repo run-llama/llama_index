@@ -1,14 +1,22 @@
+from typing import List
+
 import pytest
 
 from llama_index.core import MockEmbedding
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.chat_engine.condense_plus_context import (
     CondensePlusContextChatEngine,
 )
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, NodeWithScore, QueryBundle
 
 SYSTEM_PROMPT = "Talk like a pirate."
+
+
+class EmptyRetriever(BaseRetriever):
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        return []
 
 
 @pytest.fixture()
@@ -98,3 +106,54 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+@pytest.fixture()
+def empty_chat_engine() -> CondensePlusContextChatEngine:
+    return CondensePlusContextChatEngine.from_defaults(
+        EmptyRetriever(), llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+
+
+def test_chat_empty_nodes(empty_chat_engine: CondensePlusContextChatEngine):
+    response = empty_chat_engine.chat("Hello World!")
+    assert str(response) != "Empty Response"
+    assert "Hello World!" in str(response)
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+def test_chat_stream_empty_nodes(empty_chat_engine: CondensePlusContextChatEngine):
+    response = empty_chat_engine.stream_chat("Hello World!")
+
+    num_iters = 0
+    for _ in response.response_gen:
+        num_iters += 1
+
+    assert num_iters > 0
+    assert str(response) != "Empty Response"
+    assert "Hello World!" in str(response)
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_achat_empty_nodes(empty_chat_engine: CondensePlusContextChatEngine):
+    response = await empty_chat_engine.achat("Hello World!")
+    assert str(response) != "Empty Response"
+    assert "Hello World!" in str(response)
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_empty_nodes(
+    empty_chat_engine: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine.astream_chat("Hello World!")
+
+    num_iters = 0
+    async for _ in response.async_response_gen():
+        num_iters += 1
+
+    assert num_iters > 0
+    assert str(response) != "Empty Response"
+    assert "Hello World!" in str(response)
+    assert len(empty_chat_engine.chat_history) == 2
