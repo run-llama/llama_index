@@ -117,6 +117,40 @@ def test_text_match_insensitive_uses_case_insensitive_search() -> None:
     assert not fn("n3")
 
 
+def test_text_match_requires_string_values() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="weight",
+                operator=FilterOperator.TEXT_MATCH,
+                value="1",
+            )
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # Non-string metadata values should raise a TypeError when used with TEXT_MATCH.
+    with pytest.raises(TypeError):
+        fn("n1")
+
+
+def test_text_match_insensitive_requires_string_values() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="weight",
+                operator=FilterOperator.TEXT_MATCH_INSENSITIVE,
+                value="1",
+            )
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # Non-string metadata values should raise a TypeError when used with TEXT_MATCH_INSENSITIVE.
+    with pytest.raises(TypeError):
+        fn("n1")
+
+
 def test_nested_metadata_filters_raise_error() -> None:
     inner = MetadataFilters(
         filters=[
