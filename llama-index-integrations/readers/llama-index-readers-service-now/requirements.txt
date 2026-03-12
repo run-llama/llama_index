@@ -497,7 +497,7 @@ tomli==2.2.1 ; python_full_version <= '3.11'
     #   pytest
 tomlkit==0.13.3
     # via pylint
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client
