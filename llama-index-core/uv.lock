@@ -1779,7 +1779,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.6.18"
+version = "0.6.21"
 source = { directory = "../llama-index-integrations/llms/llama-index-llms-openai" }
 dependencies = [
     { name = "llama-index-core" },
@@ -1817,7 +1817,7 @@ dev = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "2.13.1"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
@@ -1825,9 +1825,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/7b/00c35d14dc4a7dc64c63dad8b1532f55cd5b5f8856c34f5bf587693ac270/llama_index_workflows-2.13.1.tar.gz", hash = "sha256:55cd3cff9c92a37272ab8651ad750288abc339165b009066f130cb0c5c65994b", size = 84279, upload-time = "2026-01-25T14:51:50.493Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/9e/c885c97afd3fb5db397ede05d5c288f26539e1d5de775b97d03c523d4fde/llama_index_workflows-2.15.1.tar.gz", hash = "sha256:5e46dae2c683d3a9de800a4faf472b4aa915026b3f41bd36baba307b12cd3e7f", size = 81696, upload-time = "2026-03-07T17:32:05.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/8d/ba97cda62829b60658a86d4c012d59e3b13c99d9b336fcf0e507d03812df/llama_index_workflows-2.13.1-py3-none-any.whl", hash = "sha256:e779078817d413b29a5297521fb71694a80e502f18dfd41e8b342f83e45f2c19", size = 107344, upload-time = "2026-01-25T14:51:49.297Z" },
+    { url = "https://files.pythonhosted.org/packages/72/fa/a1aabbce40485d741067b46c6754c1ce81792ef56445777769d3da760a5d/llama_index_workflows-2.15.1-py3-none-any.whl", hash = "sha256:a36b4a8f30e5899c33391e99bad5768b9ca8331ace75f2f5bbbc0c0d380c2a0e", size = 104505, upload-time = "2026-03-07T17:32:06.163Z" },
 ]
 
 [[package]]
