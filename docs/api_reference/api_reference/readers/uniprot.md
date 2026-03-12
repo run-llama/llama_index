@@ -1,3 +1,4 @@
 ::: llama_index.readers.uniprot
-options:
-members: - UniProtReader
+    options:
+      members:
+        - UniProtReader

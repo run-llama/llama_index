@@ -1,3 +1,4 @@
 ::: llama_index.llms.replicate
-options:
-members: - Replicate
+    options:
+      members:
+        - Replicate

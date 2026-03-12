@@ -2,6 +2,171 @@
 
 <!--- generated changelog --->
 
+## [2026-03-12]
+
+### llama-index-agent-agentmesh [0.2.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-agent-azure [0.3.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-agentops [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-argilla [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-arize-phoenix [0.7.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-honeyhive [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-langfuse [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-literalai [1.4.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-openinference [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-opik [1.3.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-promptlayer [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-uptrain [0.6.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-wandb [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-core [0.15.1]
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+- fix(chat_engine): preserve chat history on incomplete stream consumption ([#20897](https://github.com/run-llama/llama_index/pull/20897))
+- fix: guard against ZeroDivisionError in LlamaDebugHandler._get_time_stats_from_event_pairs ([#20937](https://github.com/run-llama/llama_index/pull/20937))
+- fix: add stacklevel=2 to warnings.warn() for accurate caller reporting ([#20939](https://github.com/run-llama/llama_index/pull/20939))
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-adapter [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-alephalpha [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-alibabacloud-aisearch [0.4.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-anyscale [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-autoembeddings [0.3.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-azure-inference [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-azure-openai [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-baseten [0.2.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-bedrock [0.8.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-clarifai [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-clip [0.6.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-cloudflare-workersai [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-cohere [0.8.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-dashscope [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-databricks [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-deepinfra [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-elasticsearch [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-fastembed [0.6.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-fireworks [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-gaudi [0.4.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-gigachat [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-google-genai [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-heroku [0.2.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface [0.7.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-api [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-openvino [0.7.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-optimum-intel [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-instructor [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-isaacus [0.2.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-jinaai [0.6.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-langchain [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-litellm [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-llamafile [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-llm-rails [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-mistralai [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-instrumentation [0.5.0]
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-vector-stores-opensearch [1.2.0]
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+
+### llama-index-vector-stores-qdrant [0.10.0]
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+
+### llama-index-vector-stores-solr [0.2.0]
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+
 ## [2026-03-10]
 
 ### llama-index-core [0.14.16]
