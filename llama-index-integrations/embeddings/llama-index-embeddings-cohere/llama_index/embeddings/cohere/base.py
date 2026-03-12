@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import cohere
 import httpx
@@ -13,6 +13,7 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
 from llama_index.core.schema import ImageType
+from llama_index.core.base.llms.types import ImageBlock, TextBlock
 from PIL import Image
 from tenacity import (
     before_sleep_log,
@@ -299,13 +300,26 @@ class CohereEmbedding(MultiModalEmbedding):
     def _mixed_content_cohere_supported(
         content: MixedEmbeddingContent,
     ) -> MixedEmbeddingContent:
-        """Filter to content types Cohere supports: text and image_url only."""
-        supported = []
-        for item in content:
-            t = item.get("type")
-            if t == "text" or t == "image_url":
-                supported.append(item)
-        return supported
+        """Filter to content block types Cohere supports: text and image only."""
+        return [b for b in content if isinstance(b, (TextBlock, ImageBlock))]
+
+    @staticmethod
+    def _blocks_to_cohere_api_format(
+        content: MixedEmbeddingContent,
+    ) -> List[Dict[str, Any]]:
+        """Convert embeddable content blocks to Cohere embed API input format."""
+        out: List[Dict[str, Any]] = []
+        for block in content:
+            if isinstance(block, TextBlock):
+                out.append({"type": "text", "text": block.text})
+            elif isinstance(block, ImageBlock):
+                out.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": block.inline_url()},
+                    }
+                )
+        return out
 
     def _get_mixed_content_embedding(
         self, content: MixedEmbeddingContent
@@ -316,11 +330,12 @@ class CohereEmbedding(MultiModalEmbedding):
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {V3_MODELS + V4_MODELS}"
             )
-        content = self._mixed_content_cohere_supported(content)
-        if not content:
+        supported = self._mixed_content_cohere_supported(content)
+        if not supported:
             raise ValueError(
-                "No Cohere-supported content (text or image_url) in mixed content."
+                "No Cohere-supported content (text or image blocks) in mixed content."
             )
+        api_content = self._blocks_to_cohere_api_format(supported)
         client = self._get_client()
         input_type = self.input_type or "search_document"
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
@@ -328,7 +343,7 @@ class CohereEmbedding(MultiModalEmbedding):
         @retry_decorator
         def _embed_with_retry() -> List[List[float]]:
             result = client.embed(
-                inputs=[{"content": content}],
+                inputs=[{"content": api_content}],
                 input_type=input_type,
                 embedding_types=[self.embedding_type],
                 model=self.model_name,
@@ -347,11 +362,12 @@ class CohereEmbedding(MultiModalEmbedding):
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {V3_MODELS + V4_MODELS}"
             )
-        content = self._mixed_content_cohere_supported(content)
-        if not content:
+        supported = self._mixed_content_cohere_supported(content)
+        if not supported:
             raise ValueError(
-                "No Cohere-supported content (text or image_url) in mixed content."
+                "No Cohere-supported content (text or image blocks) in mixed content."
             )
+        api_content = self._blocks_to_cohere_api_format(supported)
         async_client = self._get_async_client()
         input_type = self.input_type or "search_document"
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
@@ -360,7 +376,7 @@ class CohereEmbedding(MultiModalEmbedding):
         async def _aembed_with_retry() -> List[List[float]]:
             result = (
                 await async_client.embed(
-                    inputs=[{"content": content}],
+                    inputs=[{"content": api_content}],
                     input_type=input_type,
                     embedding_types=[self.embedding_type],
                     model=self.model_name,
@@ -391,7 +407,7 @@ class CohereEmbedding(MultiModalEmbedding):
         client = self._get_client()
         input_type = self.input_type or "search_document"
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
-        inputs = [{"content": c} for c in contents]
+        inputs = [{"content": self._blocks_to_cohere_api_format(c)} for c in filtered]
 
         @retry_decorator
         def _embed_batch_with_retry() -> List[List[float]]:
@@ -417,16 +433,16 @@ class CohereEmbedding(MultiModalEmbedding):
             )
         if not contents:
             return []
-        contents = [self._mixed_content_cohere_supported(c) for c in contents]
-        if any(not c for c in contents):
+        filtered = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in filtered):
             raise ValueError(
                 "Every mixed content item must contain at least one Cohere-supported "
-                "block (text or image_url)."
+                "block (text or image)."
             )
+        inputs = [{"content": self._blocks_to_cohere_api_format(c)} for c in filtered]
         async_client = self._get_async_client()
         input_type = self.input_type or "search_document"
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
-        inputs = [{"content": c} for c in contents]
 
         @retry_decorator
         async def _aembed_batch_with_retry() -> List[List[float]]:
