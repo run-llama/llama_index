@@ -56,7 +56,7 @@
 
 - chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
 
-### llama-index-core [0.15.1]
+### llama-index-core [0.14.17]
 
 - feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
 - fix(chat_engine): preserve chat history on incomplete stream consumption ([#20897](https://github.com/run-llama/llama_index/pull/20897))
