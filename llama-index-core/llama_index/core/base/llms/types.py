@@ -697,9 +697,10 @@ class DocumentBlock(BaseContentBlock):
 
     @model_validator(mode="after")
     def document_validation(self) -> Self:
-        self.document_mimetype = self.document_mimetype or self._guess_mimetype()
+        if self.document_mimetype is None:
+            self.document_mimetype = self._guess_mimetype()
 
-        if not self.title:
+        if self.title is None:
             self.title = "input_document"
 
         # skip data validation if no byte is provided
