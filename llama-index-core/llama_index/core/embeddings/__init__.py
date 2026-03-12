@@ -1,13 +1,17 @@
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockMultiModalEmbedding
-from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
+from llama_index.core.embeddings.mixed_embedding_utils import (
+    EmbeddableContentBlock,
+    MixedEmbeddingContent,
+)
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.embeddings.pooling import Pooling
 from llama_index.core.embeddings.utils import resolve_embed_model
 
 __all__ = [
     "BaseEmbedding",
+    "EmbeddableContentBlock",
     "MockEmbedding",
     "MixedEmbeddingContent",
     "MultiModalEmbedding",

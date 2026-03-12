@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple, cast
 from typing_extensions import Self
 
 import numpy as np
@@ -22,6 +22,7 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
 from llama_index.core.async_utils import run_jobs
+from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
 
 # TODO: change to numpy array
 Embedding = List[float]
@@ -108,13 +109,13 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         """
         Whether this embedding model supports joint embedding of interleaved
         text and image content (mixed multimodal embedding).
-        When True, nodes with mixed content will use get_mixed_content_embedding.
+        When True, nodes with mixed content will use embed().
         """
         return False
 
-    def _get_mixed_content_embedding(self, content: List[Dict[str, Any]]) -> Embedding:
+    def _get_mixed_content_embedding(self, content: MixedEmbeddingContent) -> Embedding:
         """
-        Embed a single mixed content (interleaved text + image) input.
+        Embed a single mixed content (interleaved text / image / audio / video) input.
 
         Subclasses that support mixed embedding should override this.
         Default raises NotImplementedError.
@@ -124,7 +125,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         )
 
     def _get_mixed_content_embeddings(
-        self, contents: List[List[Dict[str, Any]]]
+        self, contents: List[MixedEmbeddingContent]
     ) -> List[Embedding]:
         """
         Embed a batch of mixed content inputs.
@@ -135,7 +136,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return [self._get_mixed_content_embedding(content) for content in contents]
 
     async def _aget_mixed_content_embedding(
-        self, content: List[Dict[str, Any]]
+        self, content: MixedEmbeddingContent
     ) -> Embedding:
         """
         Async embed a single mixed content input.
@@ -146,7 +147,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return self._get_mixed_content_embedding(content)
 
     async def _aget_mixed_content_embeddings(
-        self, contents: List[List[Dict[str, Any]]]
+        self, contents: List[MixedEmbeddingContent]
     ) -> List[Embedding]:
         """
         Async embed a batch of mixed content inputs.
@@ -159,8 +160,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         )
 
     @dispatcher.span
-    def get_mixed_content_embedding(self, content: List[Dict[str, Any]]) -> Embedding:
-        """Get embedding for interleaved text + image content (single item)."""
+    def embed(self, content: MixedEmbeddingContent) -> Embedding:
+        """Embed interleaved text + image/content (single item)."""
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
         dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
@@ -171,10 +172,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return embedding
 
     @dispatcher.span
-    async def aget_mixed_content_embedding(
-        self, content: List[Dict[str, Any]]
-    ) -> Embedding:
-        """Async get embedding for interleaved text + image content."""
+    async def aembed(self, content: MixedEmbeddingContent) -> Embedding:
+        """Async embed interleaved text + image/content."""
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
         dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
@@ -185,13 +184,13 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return embedding
 
     @dispatcher.span
-    def get_mixed_content_embedding_batch(
+    def embed_batch(
         self,
-        contents: List[List[Dict[str, Any]]],
+        contents: List[MixedEmbeddingContent],
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[Embedding]:
-        """Get a list of mixed content embeddings, with batching."""
+        """Embed a list of mixed contents, with batching."""
         result_embeddings: List[Embedding] = []
         queue_with_progress = enumerate(
             get_tqdm_iterable(
@@ -200,7 +199,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         )
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        cur_batch: List[List[Dict[str, Any]]] = []
+        cur_batch: List[MixedEmbeddingContent] = []
         for idx, content in queue_with_progress:
             cur_batch.append(content)
             if idx == len(contents) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -216,19 +215,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return result_embeddings
 
     @dispatcher.span
-    async def aget_mixed_content_embedding_batch(
+    async def aembed_batch(
         self,
-        contents: List[List[Dict[str, Any]]],
+        contents: List[MixedEmbeddingContent],
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[Embedding]:
-        """Async get a list of mixed content embeddings, with batching."""
+        """Async embed a list of mixed contents, with batching."""
         result_embeddings: List[Embedding] = []
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        cur_batch: List[List[Dict[str, Any]]] = []
+        cur_batch: List[MixedEmbeddingContent] = []
         embeddings_coroutines: List[Coroutine] = []
-        batch_payloads: List[List[List[Dict[str, Any]]]] = []
+        batch_payloads: List[List[MixedEmbeddingContent]] = []
         for idx, content in enumerate(contents):
             cur_batch.append(content)
             if idx == len(contents) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -800,7 +799,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             text_embeddings = []
 
         # Mixed embeddings (batched)
-        mixed_contents: List[List[Dict[str, Any]]] = []
+        mixed_contents: List[MixedEmbeddingContent] = []
         for i in mixed_indices:
             content = nodes[i].get_mixed_embedding_content(
                 metadata_mode=MetadataMode.EMBED
@@ -808,7 +807,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if content is not None:
                 mixed_contents.append(content)
         if mixed_contents:
-            mixed_embeddings = self.get_mixed_content_embedding_batch(
+            mixed_embeddings = self.embed_batch(
                 mixed_contents,
                 show_progress=show_progress,
                 **kwargs,
@@ -865,7 +864,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if content is not None:
                 mixed_contents.append(content)
         if mixed_contents:
-            mixed_embeddings = await self.aget_mixed_content_embedding_batch(
+            mixed_embeddings = await self.aembed_batch(
                 mixed_contents,
                 show_progress=show_progress,
                 **kwargs,
