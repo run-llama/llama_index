@@ -70,6 +70,7 @@ class PostgresKVStore(BaseKVStore):
         perform_setup (Optional[bool]): perform table setup
         debug (Optional[bool]): debug mode
         use_jsonb (Optional[bool]): use JSONB data type for storage
+        create_engine_kwargs (Optional[Dict[str, Any]]): extra keyword arguments forwarded to SQLAlchemy's create_engine/create_async_engine (for example, connect_args for timeouts and pooling).
 
     """
 
@@ -80,6 +81,7 @@ class PostgresKVStore(BaseKVStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    create_engine_kwargs: Dict[str, Any]
     _engine: Optional[sqlalchemy.engine.Engine] = PrivateAttr()
     _async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = PrivateAttr()
 
@@ -89,6 +91,7 @@ class PostgresKVStore(BaseKVStore):
         connection_string: Optional[str] = None,
         async_connection_string: Optional[str] = None,
         schema_name: str = "public",
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
         perform_setup: bool = True,
@@ -112,6 +115,7 @@ class PostgresKVStore(BaseKVStore):
         self.perform_setup = perform_setup
         self.debug = debug
         self.use_jsonb = use_jsonb
+        self.create_engine_kwargs = create_engine_kwargs or {}
         self._engine = engine
         self._async_engine = async_engine
         self._is_initialized = False
@@ -159,6 +163,7 @@ class PostgresKVStore(BaseKVStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresKVStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -176,6 +181,7 @@ class PostgresKVStore(BaseKVStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @classmethod
@@ -187,6 +193,7 @@ class PostgresKVStore(BaseKVStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresKVStore":
         """Return connection string from database parameters."""
         params = params_from_uri(uri)
@@ -197,6 +204,7 @@ class PostgresKVStore(BaseKVStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     def _connect(self) -> Any:
@@ -205,12 +213,12 @@ class PostgresKVStore(BaseKVStore):
         from sqlalchemy.orm import sessionmaker
 
         self._engine = self._engine or create_engine(
-            self.connection_string, echo=self.debug
+            self.connection_string, echo=self.debug, **self.create_engine_kwargs
         )
         self._session = sessionmaker(self._engine)
 
         self._async_engine = self._async_engine or create_async_engine(
-            self.async_connection_string
+            self.async_connection_string, **self.create_engine_kwargs
         )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
