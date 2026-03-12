@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-oci-genai"
-version = "0.4.2"
+version = "0.5.0"
 description = "llama-index embeddings oci-genai integration"
 authors = [
     {name = "Arthur Cheng", email = "arthur.cheng@oracle.com"},
     {name = "Rave Harpaz", email = "rave.harpaz@oracle.com"},
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

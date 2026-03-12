@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-packs-raft-dataset"
-version = "0.4.1"
+version = "0.5.0"
 description = "llama-index packs RAFT Dataset paper implementation"
 authors = [{name = "Ravi Theja", email = "ravi03071991@gmail.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ravi-theja"}]
