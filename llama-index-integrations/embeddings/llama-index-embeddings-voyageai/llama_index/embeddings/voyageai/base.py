@@ -4,7 +4,7 @@ import logging
 import os
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 import voyageai
 from PIL import Image
@@ -18,6 +18,7 @@ except ImportError:
     VIDEO_SUPPORT = False
 
 from llama_index.core.base.embeddings.base import Embedding
+from llama_index.core.base.llms.types import ImageBlock, TextBlock, VideoBlock
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
@@ -147,32 +148,54 @@ class VoyageEmbedding(MultiModalEmbedding):
     def _mixed_content_voyage_supported(
         content: MixedEmbeddingContent,
     ) -> MixedEmbeddingContent:
-        """Filter to content types Voyage supports: text, image_url, video_url."""
-        supported = []
-        for item in content:
-            t = item.get("type")
-            if t in ("text", "image_url", "video_url"):
-                supported.append(item)
-        return supported
+        """Filter to content block types Voyage supports: text, image, video."""
+        return [
+            b for b in content if isinstance(b, (TextBlock, ImageBlock, VideoBlock))
+        ]
+
+    @staticmethod
+    def _blocks_to_voyage_api_format(
+        content: MixedEmbeddingContent,
+    ) -> List[Dict[str, Any]]:
+        """Convert embeddable content blocks to Voyage embed API input format."""
+        out: List[Dict[str, Any]] = []
+        for block in content:
+            if isinstance(block, TextBlock):
+                out.append({"type": "text", "text": block.text})
+            elif isinstance(block, ImageBlock):
+                out.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": block.inline_url()},
+                    }
+                )
+            elif isinstance(block, VideoBlock):
+                out.append(
+                    {
+                        "type": "video_url",
+                        "video_url": {"url": block.inline_url()},
+                    }
+                )
+        return out
 
     def _get_mixed_content_embedding(
         self, content: MixedEmbeddingContent
     ) -> List[float]:
-        """Get embedding for interleaved text + image/content (audio dropped if unsupported)."""
+        """Get embedding for interleaved text + image/video content (audio dropped if unsupported)."""
         if self.model_name not in MULTIMODAL_MODELS:
             raise ValueError(
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {MULTIMODAL_MODELS}"
             )
-        content = self._mixed_content_voyage_supported(content)
-        if not content:
+        supported = self._mixed_content_voyage_supported(content)
+        if not supported:
             raise ValueError(
-                "No Voyage-supported content (text, image_url, or video_url) in mixed content."
+                "No Voyage-supported content (text, image, or video blocks) in mixed content."
             )
-        # Voyage API: inputs is list of {"content": [content items]}
+        api_content = self._blocks_to_voyage_api_format(supported)
         result = self._client.multimodal_embed(
             model=self.model_name,
-            inputs=[{"content": content}],
+            inputs=[{"content": api_content}],
             input_type="document",
             truncation=self.truncation if self.truncation is not None else True,
         )
@@ -187,14 +210,15 @@ class VoyageEmbedding(MultiModalEmbedding):
                 f"{self.model_name} is not a valid multi-modal embedding model. "
                 f"Supported models are {MULTIMODAL_MODELS}"
             )
-        content = self._mixed_content_voyage_supported(content)
-        if not content:
+        supported = self._mixed_content_voyage_supported(content)
+        if not supported:
             raise ValueError(
-                "No Voyage-supported content (text, image_url, or video_url) in mixed content."
+                "No Voyage-supported content (text, image, or video blocks) in mixed content."
             )
+        api_content = self._blocks_to_voyage_api_format(supported)
         result = await self._aclient.multimodal_embed(
             model=self.model_name,
-            inputs=[{"content": content}],
+            inputs=[{"content": api_content}],
             input_type="document",
             truncation=self.truncation if self.truncation is not None else True,
         )
@@ -211,13 +235,13 @@ class VoyageEmbedding(MultiModalEmbedding):
             )
         if not contents:
             return []
-        contents = [self._mixed_content_voyage_supported(c) for c in contents]
-        if any(not c for c in contents):
+        filtered = [self._mixed_content_voyage_supported(c) for c in contents]
+        if any(not c for c in filtered):
             raise ValueError(
                 "Every mixed content item must contain at least one Voyage-supported "
-                "block (text, image_url, or video_url)."
+                "block (text, image, or video)."
             )
-        inputs = [{"content": c} for c in contents]
+        inputs = [{"content": self._blocks_to_voyage_api_format(c)} for c in filtered]
         result = self._client.multimodal_embed(
             model=self.model_name,
             inputs=inputs,
@@ -237,13 +261,13 @@ class VoyageEmbedding(MultiModalEmbedding):
             )
         if not contents:
             return []
-        contents = [self._mixed_content_voyage_supported(c) for c in contents]
-        if any(not c for c in contents):
+        filtered = [self._mixed_content_voyage_supported(c) for c in contents]
+        if any(not c for c in filtered):
             raise ValueError(
                 "Every mixed content item must contain at least one Voyage-supported "
-                "block (text, image_url, or video_url)."
+                "block (text, image, or video)."
             )
-        inputs = [{"content": c} for c in contents]
+        inputs = [{"content": self._blocks_to_voyage_api_format(c)} for c in filtered]
         result = await self._aclient.multimodal_embed(
             model=self.model_name,
             inputs=inputs,

@@ -376,16 +376,14 @@ class BaseNode(BaseComponent):
 
     def get_mixed_embedding_content(
         self, metadata_mode: MetadataMode = MetadataMode.EMBED
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> Optional["MixedEmbeddingContent"]:
         """
-        Get content in mixed embedding format (interleaved text + image items)
+        Get content as a sequence of embeddable content blocks (text, image, audio, video)
         for models that support joint multimodal embedding.
 
         Returns None if this node should use the regular text (or image-only)
-        embedding path instead. When non-None, the embedding model may use
-        get_mixed_content_embedding() to embed the returned list jointly.
-
-        Format: [{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "data:..."}}, ...]
+        embedding path instead. When non-None, the embedding model embeds the
+        returned blocks jointly via embed() (same types as Node/LLM content blocks).
         """
         from llama_index.core.embeddings.mixed_embedding_utils import (
             content_blocks_to_mixed_embedding_content,

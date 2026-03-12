@@ -1,60 +1,51 @@
 """
 Utilities for (truly) multimodal embeddings with interleaved content.
 
-Supports embedding models (e.g. Cohere, Voyage) that accept a single sequence of
-content items, e.g.:
-  [{"type": "text", "text": "Look at this:"},
-   {"type": "image_url", "image_url": {"url": "data:image/...;base64,..."}},
-   {"type": "audio_url", "audio_url": {"url": "data:audio/...;base64,..."}},
-   {"type": "video_url", "video_url": {"url": "data:video/...;base64,..."}}]
-
-Support for audio and video in the embedding API is backend-dependent
-(e.g. Voyage supports video; Cohere currently supports text and image only).
+Uses the same content block types as the rest of the stack (Node, LLM content blocks):
+TextBlock, ImageBlock, AudioBlock, VideoBlock from llama_index.core.base.llms.types.
+Embedding backends (Cohere, Voyage, etc.) convert these to their API format.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional, Union
+
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    ImageBlock,
+    TextBlock,
+    VideoBlock,
+)
 
 
-# Format accepted by multimodal embed APIs (Cohere, Voyage, etc.)
-MixedEmbeddingContent = List[Dict[str, Any]]
+# Typed multimodal content: sequence of embeddable content blocks (same concept as Node resources / LLM blocks).
+EmbeddableContentBlock = Union[TextBlock, ImageBlock, AudioBlock, VideoBlock]
+MixedEmbeddingContent = List[EmbeddableContentBlock]
 
 
 def content_blocks_to_mixed_embedding_content(
     blocks: List[Any],
 ) -> Optional[MixedEmbeddingContent]:
     """
-    Convert content blocks (Text, Image, Audio, Video) to the mixed embedding API format.
+    Extract mixed (interleaved) embeddable content from content blocks.
 
-    Returns None if the blocks do not represent mixed (interleaved) content
-    suitable for joint embedding. Includes text, image, audio, and video blocks;
-    other block types are skipped.
+    Returns None if the blocks do not represent mixed content suitable for
+    joint embedding. Otherwise returns the ordered list of embeddable blocks
+    (Text, Image, Audio, Video). Backends convert these to their API format.
 
     Args:
         blocks: List of content blocks from e.g. node.get_content_blocks().
 
     Returns:
-        List of content items, e.g.:
-        - {"type": "text", "text": "..."}
-        - {"type": "image_url", "image_url": {"url": "data:..."}}
-        - {"type": "audio_url", "audio_url": {"url": "data:..."}}
-        - {"type": "video_url", "video_url": {"url": "data:..."}}
-        or None if not mixed (e.g. single text-only or single image-only).
+        List of embeddable content blocks (TextBlock, ImageBlock, AudioBlock,
+        VideoBlock) when mixed, or None if single-modality or empty.
 
     Note:
-        Whether audio/video are actually embedded depends on the embedding
-        backend (e.g. Voyage supports video; Cohere is text+image only).
+        Support for audio/video in the embedding API is backend-dependent
+        (e.g. Voyage supports video; Cohere is text+image only).
 
     """
-    from llama_index.core.base.llms.types import (
-        AudioBlock,
-        ImageBlock,
-        TextBlock,
-        VideoBlock,
-    )
-
-    embedding_blocks = [
+    embedding_blocks: MixedEmbeddingContent = [
         b
         for b in blocks
         if isinstance(b, (TextBlock, ImageBlock, AudioBlock, VideoBlock))
@@ -66,35 +57,8 @@ def content_blocks_to_mixed_embedding_content(
     has_audio = any(isinstance(b, AudioBlock) for b in embedding_blocks)
     has_video = any(isinstance(b, VideoBlock) for b in embedding_blocks)
     has_media = has_image or has_audio or has_video
-    # Only treat as mixed when we have media and (text or multiple blocks)
     if not has_media:
         return None
     if len(embedding_blocks) == 1 and not has_text:
         return None  # single media block: use regular modality-specific path
-
-    content: MixedEmbeddingContent = []
-    for block in embedding_blocks:
-        if isinstance(block, TextBlock):
-            content.append({"type": "text", "text": block.text})
-        elif isinstance(block, ImageBlock):
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": block.inline_url()},
-                }
-            )
-        elif isinstance(block, AudioBlock):
-            content.append(
-                {
-                    "type": "audio_url",
-                    "audio_url": {"url": block.inline_url()},
-                }
-            )
-        elif isinstance(block, VideoBlock):
-            content.append(
-                {
-                    "type": "video_url",
-                    "video_url": {"url": block.inline_url()},
-                }
-            )
-    return content if content else None
+    return embedding_blocks
