@@ -2,8 +2,10 @@
 
 import json
 import logging
+from contextlib import asynccontextmanager
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -215,7 +217,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     )
 
     _client: ChatCompletionsClient = PrivateAttr()
-    _async_client: ChatCompletionsClientAsync = PrivateAttr()
+    _async_client_class: Type[ChatCompletionsClientAsync] = PrivateAttr()
+    _async_client_kwargs: Dict[str, Any] = PrivateAttr()
     _model_name: str = PrivateAttr(None)
     _model_type: str = PrivateAttr(None)
     _model_provider: str = PrivateAttr(None)
@@ -237,7 +240,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         client_kwargs: Dict[str, Any] = None,
         **kwargs: Dict[str, Any],
     ) -> None:
-        client_kwargs = client_kwargs or {}
+        client_kwargs = dict(client_kwargs or {})
         callback_manager = callback_manager or CallbackManager([])
 
         endpoint = get_from_param_or_env(
@@ -288,12 +291,25 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             **client_kwargs,
         )
 
-        self._async_client = ChatCompletionsClientAsync(
+        # Save async client config so each async request can create
+        # and close its own short-lived client.
+        self._async_client_class = ChatCompletionsClientAsync
+        self._async_client_kwargs = dict(
             endpoint=endpoint,
             credential=credential,
             user_agent="llamaindex",
             **client_kwargs,
         )
+
+    def _create_async_client(self) -> ChatCompletionsClientAsync:
+        return self._async_client_class(**self._async_client_kwargs)
+
+    @asynccontextmanager
+    async def _get_request_async_client(
+        self,
+    ) -> AsyncIterator[ChatCompletionsClientAsync]:
+        async with self._create_async_client() as async_client:
+            yield async_client
 
     @classmethod
     def class_name(cls) -> str:
@@ -419,7 +435,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     ) -> ChatResponse:
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._async_client.complete(messages=messages, **all_kwargs)
+        async with self._get_request_async_client() as async_client:
+            response = await async_client.complete(messages=messages, **all_kwargs)
 
         response_message = from_inference_message(response.choices[0].message)
 
@@ -442,27 +459,28 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._async_client.complete(
-            messages=messages, stream=True, **all_kwargs
-        )
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            role = MessageRole.ASSISTANT
-            async for chunk in response:
-                content_delta = (
-                    chunk.choices[0].delta.content if chunk.choices else None
-                )
-                if content_delta is None:
-                    continue
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=chunk,
+        async def stream_gen() -> ChatResponseAsyncGen:
+            async with self._get_request_async_client() as async_client:
+                response = await async_client.complete(
+                    messages=messages, stream=True, **all_kwargs
                 )
 
-        return gen()
+                content = ""
+                role = MessageRole.ASSISTANT
+                async for chunk in response:
+                    content_delta = (
+                        chunk.choices[0].delta.content if chunk.choices else None
+                    )
+                    if content_delta is None:
+                        continue
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=chunk,
+                    )
+
+        return stream_gen()
 
     @llm_completion_callback()
     async def astream_complete(
