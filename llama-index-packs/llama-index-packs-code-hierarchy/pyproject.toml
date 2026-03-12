@@ -17,10 +17,10 @@ dev = [
 
 [project]
 name = "llama-index-packs-code-hierarchy"
-version = "0.6.1"
+version = "0.7.0"
 description = "A node parser which can create a hierarchy of all code scopes in a directory."
 authors = [{name = "Ryan Peach", email = "rgpeach10@gmail.com"}]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "ryanpeach"}]

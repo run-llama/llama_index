@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-indices-managed-vertexai"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index managed Vertex AI integration"
 authors = [{name = "Holt Skinner", email = "holtskinner@google.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

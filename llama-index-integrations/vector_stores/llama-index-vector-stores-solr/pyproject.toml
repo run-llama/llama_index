@@ -31,7 +31,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-solr"
-version = "0.1.1"
+version = "0.2.0"
 description = "llama-index vector_stores Apache Solr integration"
 authors = [
     {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
@@ -41,7 +41,7 @@ authors = [
     {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
     {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
