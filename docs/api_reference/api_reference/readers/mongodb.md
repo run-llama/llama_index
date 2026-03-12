@@ -1,4 +1,3 @@
 ::: llama_index.readers.mongodb
-    options:
-      members:
-        - SimpleMongoReader
+options:
+members: - SimpleMongoReader
