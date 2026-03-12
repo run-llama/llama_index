@@ -1,1 +1,1 @@
-# LlamaIndex Embeddings Integration: Anyscale
+# LlamaIndex Embeddings Integration: Fireworks
