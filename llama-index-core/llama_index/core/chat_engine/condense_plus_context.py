@@ -27,7 +27,7 @@ from llama_index.core.memory import BaseMemory, Memory
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.chat_engine.utils import (
@@ -256,7 +256,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore], List[NodeWithScore]]:
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -270,6 +270,16 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         # get the context nodes using the condensed question
         context_nodes = self._get_nodes(condensed_question)
+
+        # If no nodes were retrieved, use a single node with empty content so
+        # that the response synthesizer still calls the LLM instead of
+        # short-circuiting with a hardcoded "Empty Response".
+        nodes_for_synthesizer = context_nodes
+        if len(context_nodes) == 0:
+            nodes_for_synthesizer = [
+                NodeWithScore(node=TextNode(text=""), score=0.0)
+            ]
+
         context_source = ToolOutput(
             tool_name="retriever",
             content=str(context_nodes),
@@ -282,14 +292,14 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history, streaming=streaming
         )
 
-        return response_synthesizer, context_source, context_nodes
+        return response_synthesizer, context_source, nodes_for_synthesizer, context_nodes
 
     async def _arun_c3(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         streaming: bool = False,
-    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore], List[NodeWithScore]]:
         if chat_history is not None:
             await self._memory.aset(chat_history)
 
@@ -303,6 +313,16 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         # get the context nodes using the condensed question
         context_nodes = await self._aget_nodes(condensed_question)
+
+        # If no nodes were retrieved, use a single node with empty content so
+        # that the response synthesizer still calls the LLM instead of
+        # short-circuiting with a hardcoded "Empty Response".
+        nodes_for_synthesizer = context_nodes
+        if len(context_nodes) == 0:
+            nodes_for_synthesizer = [
+                NodeWithScore(node=TextNode(text=""), score=0.0)
+            ]
+
         context_source = ToolOutput(
             tool_name="retriever",
             content=str(context_nodes),
@@ -315,15 +335,17 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             chat_history, streaming=streaming
         )
 
-        return response_synthesizer, context_source, context_nodes
+        return response_synthesizer, context_source, nodes_for_synthesizer, context_nodes
 
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
+        synthesizer, context_source, synth_nodes, context_nodes = self._run_c3(
+            message, chat_history
+        )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = synthesizer.synthesize(message, synth_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -342,11 +364,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = self._run_c3(
+        synthesizer, context_source, synth_nodes, context_nodes = self._run_c3(
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = synthesizer.synthesize(message, synth_nodes)
         assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
@@ -378,11 +400,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
+        synthesizer, context_source, synth_nodes, context_nodes = await self._arun_c3(
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await synthesizer.asynthesize(message, synth_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -401,11 +423,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        synthesizer, context_source, context_nodes = await self._arun_c3(
+        synthesizer, context_source, synth_nodes, context_nodes = await self._arun_c3(
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await synthesizer.asynthesize(message, synth_nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
