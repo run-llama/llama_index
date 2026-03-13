@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["llama_index"]
+
+[project]
+name = "llama-index-graph-stores-arcadedb"
+version = "0.1.0"
+description = "LlamaIndex PropertyGraphStore integration for ArcadeDB."
+license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "neo4j>=5.25.0,<7.0.0",
+]
+
+[project.urls]
+Homepage = "https://arcadedb.com"
+Documentation = "https://docs.arcadedb.com"
+Repository = "https://github.com/run-llama/llama_index"
+
+[dependency-groups]
+test = [
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+]
+dev = []
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.graph_stores.arcadedb"
+
+[tool.llamahub.class_authors]
+ArcadeDBPropertyGraphStore = "lvca"
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "integration: mark tests as requiring a running ArcadeDB instance",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "PLR0912",  # too many branches (schema introspection)
+    "PLR0913",  # too many arguments (constructor API)
+    "C901",     # too complex (schema introspection)
+    "ANN401",   # Any type needed for dynamic DB results
+    "BLE001",   # blind exception needed for DB driver errors
+    "PERF203",  # try-except in loop needed for DB operations
+    "FBT001",   # bool positional arg in overridden methods
+    "FBT002",   # bool default in overridden methods
+    "S608",     # SQL string (ArcadeDB SQL, not user input)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "S101", "S106", "SLF001", "PLR2004", "PT011", "BLE001", "ANN", "S110", "SIM105", "FBT", "ARG001", "TRY003", "EM101"]
+
+[tool.coverage.run]
+omit = ["tests/*"]
