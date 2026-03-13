@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-finetuning"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index finetuning"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -39,6 +39,7 @@ dependencies = [
     "llama-index-embeddings-adapter>=0.4.0,<0.5",
     "mistralai>=1.7.0",
     "sentence-transformers>=2.3.0",
+    "faiss-cpu>=1.7.0",
 ]
 
 [tool.codespell]
