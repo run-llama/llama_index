@@ -5,6 +5,7 @@ from typing import Any, List, cast
 
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
+from llama_index.core.indices.keyword_table.simple import SimpleKeywordTableIndex
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
@@ -164,7 +165,8 @@ def test_delete_ref_doc_nodes_removed_from_docstore(
         Document(text="This is a test.", id_="test_id_1"),
         Document(text="This is another test.", id_="test_id_2"),
     ]
-    index = VectorStoreIndex.from_documents(
+    # Use SimpleKeywordTableIndex here so we exercise BaseIndex.delete_ref_doc
+    index = SimpleKeywordTableIndex.from_documents(
         documents=new_documents, embed_model=mock_embed_model
     )
 
