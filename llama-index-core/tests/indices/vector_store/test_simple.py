@@ -151,6 +151,56 @@ def test_simple_delete_ref_node_from_docstore(
     assert docstore is None
 
 
+def test_delete_ref_doc_nodes_removed_from_docstore(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    """Test delete_ref_doc with delete_from_docstore=True removes nodes.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/15529.
+    Verifies that individual nodes are deleted from the docstore when
+    delete_from_docstore=True is passed, not just the ref doc info entry.
+    """
+    new_documents = [
+        Document(text="This is a test.", id_="test_id_1"),
+        Document(text="This is another test.", id_="test_id_2"),
+    ]
+    index = VectorStoreIndex.from_documents(
+        documents=new_documents, embed_model=mock_embed_model
+    )
+
+    # Get node IDs for test_id_1 before deletion
+    ref_doc_info = index.docstore.get_ref_doc_info("test_id_1")
+    assert ref_doc_info is not None
+    node_ids = ref_doc_info.node_ids
+    assert len(node_ids) > 0
+
+    # Verify nodes exist in docstore before deletion
+    for node_id in node_ids:
+        node = index.docstore.get_node(node_id, raise_error=False)
+        assert node is not None
+
+    # Delete with delete_from_docstore=True
+    index.delete_ref_doc("test_id_1", delete_from_docstore=True)
+
+    # Verify ref doc info is removed
+    assert index.docstore.get_ref_doc_info("test_id_1") is None
+
+    # Verify individual nodes are also removed from docstore
+    for node_id in node_ids:
+        node = index.docstore.get_node(node_id, raise_error=False)
+        assert node is None, (
+            f"Node {node_id} should have been deleted from docstore "
+            f"when delete_from_docstore=True (issue #15529)"
+        )
+
+    # Verify the other document's nodes are NOT affected
+    ref_doc_info_2 = index.docstore.get_ref_doc_info("test_id_2")
+    assert ref_doc_info_2 is not None
+    for node_id in ref_doc_info_2.node_ids:
+        node = index.docstore.get_node(node_id, raise_error=False)
+        assert node is not None
+
+
 def test_simple_async(
     allow_networking: Any,
     documents: List[Document],
