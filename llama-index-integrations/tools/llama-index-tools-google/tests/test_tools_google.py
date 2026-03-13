@@ -62,9 +62,8 @@ def test_google_calendar_tool_spec_get_credentials_oauth_flow(
     )
 
 
-@patch("os.path.isfile", return_value=False)
 @patch("google.oauth2.service_account.Credentials.from_service_account_info")
-def test_google_calendar_service_account_key_dict(mock_sa, mock_isfile):
+def test_google_calendar_service_account_key_dict(mock_sa):
     """Test service account key dict is used when provided."""
     mock_creds = Mock()
     mock_sa.return_value = mock_creds
@@ -102,9 +101,8 @@ def test_google_calendar_custom_paths():
     assert tool.service_account_key_path == "/custom/sa.json"
 
 
-@patch("os.path.isfile", return_value=False)
 @patch("google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file")
-def test_google_calendar_is_cloud_no_file_write(mock_flow_cls, mock_isfile):
+def test_google_calendar_is_cloud_no_file_write(mock_flow_cls):
     """Test that is_cloud=True skips writing token file."""
     mock_creds = Mock()
     mock_creds.to_json.return_value = "{}"
@@ -152,9 +150,8 @@ def test_gmail_get_credentials_with_provided_creds():
     assert credentials is mock_creds
 
 
-@patch("os.path.isfile", return_value=False)
 @patch("google.oauth2.service_account.Credentials.from_service_account_info")
-def test_gmail_service_account_key_dict(mock_sa, mock_isfile):
+def test_gmail_service_account_key_dict(mock_sa):
     """Test service account key dict works for Gmail."""
     mock_creds = Mock()
     mock_sa.return_value = mock_creds
