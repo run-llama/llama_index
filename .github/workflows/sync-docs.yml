@@ -53,14 +53,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check if there are changes
-          if git diff --quiet && git diff --staged --quiet; then
+          # Stage first, then check for changes
+          git add src/content/docs/python/framework/
+          git add public/python/framework-api-reference/
+
+          if git diff --staged --quiet; then
             echo "No docs changes to sync."
             exit 0
           fi
 
           SOURCE_SHA="${GITHUB_SHA::8}"
-          git add src/content/docs/python/framework/
-          git add public/python/framework-api-reference/
           git commit -m "sync: python docs from run-llama/llama_index@${SOURCE_SHA}"
           git push
