@@ -49,6 +49,8 @@ echo "=== Syncing framework docs ==="
 echo "  from: $SOURCE_DIR"
 echo "  to:   $DEST_DIR"
 
+mkdir -p "$DEST_DIR"
+
 # rsync processes rules in order — specific excludes before generic includes
 rsync -av --delete \
   --exclude='examples/***' \
