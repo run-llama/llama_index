@@ -95,10 +95,15 @@ if [ ! -f "$MKDOCS_CONFIG" ]; then
   exit 1
 fi
 
-# Build mkdocs
+# Build mkdocs — use uv run --with to install mkdocs and plugins on-the-fly
+# without polluting the main project dependencies
+MKDOCS_DEPS="mkdocs>=1.6.1,mkdocs-material>=9.6.14,mkdocstrings[python]>=0.29.1,mkdocs-click>=0.9.0,mkdocs-include-dir-to-nav>=1.2.0,mkdocs-render-swagger-plugin>=0.1.2,mkdocs-github-admonitions-plugin>=0.0.3,griffe-fieldz>=0.2.1"
+
 echo "Running mkdocs build..."
 cd "$REPO_ROOT"
-uv run mkdocs build -f "$MKDOCS_CONFIG" -d "$API_DOCS_BUILD_DIR"
+uv run \
+  --with "$MKDOCS_DEPS" \
+  mkdocs build -f "$MKDOCS_CONFIG" -d "$API_DOCS_BUILD_DIR"
 
 echo "Syncing API docs to $API_DOCS_DEST_DIR"
 mkdir -p "$API_DOCS_DEST_DIR"
