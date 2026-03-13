@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import tqdm
 from llama_index.core.download.utils import (
+    _validate_path_component,
     get_file_content,
     get_file_content_bytes,
     get_source_files_list,
@@ -74,6 +75,10 @@ def get_dataset_info(
         if dataset_class in library:
             dataset_id = library[dataset_class]["id"]
             source_files = library[dataset_class].get("source_files", [])
+            # Validate even cached values — cache file could be tampered
+            _validate_path_component(dataset_id, "dataset_id")
+            for sf in source_files:
+                _validate_path_component(sf, "source_file")
 
     # Fetch up-to-date library from remote repo if dataset_id not found
     if dataset_id is None:
@@ -85,6 +90,8 @@ def get_dataset_info(
             raise ValueError("Loader class name not found in library")
 
         dataset_id = library[dataset_class]["id"]
+        # Validate path component from remote manifest to prevent traversal
+        _validate_path_component(dataset_id, "dataset_id")
 
         # get data card
         raw_card_content, _ = get_file_content(
@@ -99,6 +106,9 @@ def get_dataset_info(
                 str(remote_source_dir_path),
                 f"/llama_datasets/{dataset_id}/{source_files_path}",
             )
+            # Validate source file names from remote tree listing
+            for sf in source_files:
+                _validate_path_component(sf, "source_file")
 
         # create cache dir if needed
         local_library_dir = os.path.dirname(local_library_path)

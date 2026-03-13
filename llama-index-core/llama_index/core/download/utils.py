@@ -1,19 +1,64 @@
 import os
 from pathlib import Path
 from typing import List, Optional, Tuple
+from urllib.parse import urlparse
 
 import requests
 
 
+def _validate_url(full_url: str) -> None:
+    """
+    Validate URL scheme before making HTTP requests.
+
+    Prevents accidental use of non-HTTPS URLs which could expose data
+    in transit or facilitate downgrade attacks.
+    """
+    parsed = urlparse(full_url)
+    if parsed.scheme not in ("https",):
+        raise ValueError(
+            f"URL scheme '{parsed.scheme}' is not allowed. "
+            f"Only HTTPS URLs are permitted for remote content fetching."
+        )
+
+
+def _validate_path_component(component: str, label: str = "path component") -> None:
+    """
+    Validate that a path component from a remote manifest is safe.
+
+    Prevents directory traversal attacks when constructing local file paths
+    from values sourced from remote manifests (e.g., library.json).
+    A malicious manifest could set module_id or extra_files to values like
+    '../../.bashrc' to write files outside the intended directory.
+    """
+    if not component:
+        raise ValueError(f"Empty {label} is not allowed.")
+    if "\x00" in component:
+        raise ValueError(f"Invalid {label}: contains null byte.")
+    # Normalize separators and check for traversal
+    normalized = component.replace("\\", "/")
+    parts = [p for p in normalized.split("/") if p]
+    if ".." in parts:
+        raise ValueError(
+            f"Invalid {label}: '{component}' contains directory traversal."
+        )
+    # Check for absolute paths (Unix-style or Windows-style drive letters)
+    if normalized.startswith("/") or (len(normalized) >= 2 and normalized[1] == ":"):
+        raise ValueError(f"Invalid {label}: '{component}' is an absolute path.")
+
+
 def get_file_content(url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(url + path, timeout=(60, 60))
+    full_url = url + path
+    _validate_url(full_url)
+    resp = requests.get(full_url, timeout=(60, 60))
     return resp.text, resp.status_code
 
 
 def get_file_content_bytes(url: str, path: str) -> Tuple[bytes, int]:
     """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(url + path, timeout=(60, 60))
+    full_url = url + path
+    _validate_url(full_url)
+    resp = requests.get(full_url, timeout=(60, 60))
     return resp.content, resp.status_code
 
 
