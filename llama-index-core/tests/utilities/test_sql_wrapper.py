@@ -164,6 +164,38 @@ def test_schema_prefix_skips_already_qualified(sql_database: SQLDatabase) -> Non
     assert "myschema.other_schema" not in result
 
 
+def test_schema_prefix_left_join(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix(
+        "SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id"
+    )
+    assert "FROM myschema.users" in result
+    assert "JOIN myschema.orders" in result
+
+
+def test_schema_prefix_subquery_not_prefixed(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    result = sql_database._add_schema_prefix(
+        "SELECT * FROM (SELECT id FROM users) AS sub"
+    )
+    # The subquery opener '(' should not be treated as a table name
+    assert "FROM myschema.users" in result
+    assert "myschema.(SELECT" not in result
+
+
+def test_schema_prefix_cte_join_inside_body(sql_database: SQLDatabase) -> None:
+    sql_database._schema = "myschema"
+    cmd = (
+        "WITH active AS (SELECT * FROM users WHERE active = 1) "
+        "SELECT * FROM active JOIN orders ON active.id = orders.user_id"
+    )
+    result = sql_database._add_schema_prefix(cmd)
+    assert "FROM myschema.users" in result
+    assert "JOIN myschema.orders" in result
+    assert "FROM active " in result
+    assert "myschema.active" not in result
+
+
 def test_schema_prefix_case_insensitive(sql_database: SQLDatabase) -> None:
     sql_database._schema = "myschema"
     result = sql_database._add_schema_prefix("select * from users join orders on 1=1")

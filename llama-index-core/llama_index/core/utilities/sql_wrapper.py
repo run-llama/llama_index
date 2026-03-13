@@ -1,7 +1,7 @@
 """SQL wrapper around SQLDatabase in langchain."""
 
 import re
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
@@ -221,7 +221,7 @@ class SQLDatabase:
         schema-qualified identifiers so they are not double-prefixed.
         """
         # Collect CTE names defined in WITH clauses
-        cte_names: set[str] = set()
+        cte_names: Set[str] = set()
         # First CTE: WITH [RECURSIVE] name AS (
         for m in re.finditer(
             r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", command, re.IGNORECASE
