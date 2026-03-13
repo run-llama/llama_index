@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-keywordsai"
-version = "1.2.0"
+version = "1.2.1"
 description = "llama-index llms keywordsai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.10,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.14.3,<0.15",
-    "llama-index-llms-openai>=0.6.0,<0.7",
+    "llama-index-llms-openai>=0.7.0,<0.8",
 ]
 
 [tool.codespell]
