@@ -434,8 +434,10 @@ def to_openai_message_dict(
             content.append(
                 {
                     "type": "file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -613,8 +615,10 @@ def to_openai_responses_message_dict(
             content.append(
                 {
                     "type": "input_file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):
