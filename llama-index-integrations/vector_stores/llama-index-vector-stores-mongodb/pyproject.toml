@@ -31,10 +31,10 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-mongodb"
-version = "0.9.1"
+version = "0.10.0"
 description = "llama-index vector_stores mongodb integration"
 authors = [{name = "The MongoDB Python Team"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

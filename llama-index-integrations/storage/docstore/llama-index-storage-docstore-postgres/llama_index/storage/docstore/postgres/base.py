@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.core.storage.docstore.types import DEFAULT_BATCH_SIZE
@@ -37,6 +37,7 @@ class PostgresDocumentStore(KVDocumentStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresDocumentStore":
         """Load a PostgresDocumentStore from a Postgres URI."""
         postgres_kvstore = PostgresKVStore.from_uri(
@@ -46,6 +47,7 @@ class PostgresDocumentStore(KVDocumentStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            create_engine_kwargs=create_engine_kwargs,
         )
         return cls(postgres_kvstore, namespace)
 
@@ -63,6 +65,7 @@ class PostgresDocumentStore(KVDocumentStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PostgresDocumentStore":
         """Load a PostgresDocumentStore from a Postgres host and port."""
         postgres_kvstore = PostgresKVStore.from_params(
@@ -76,5 +79,6 @@ class PostgresDocumentStore(KVDocumentStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            create_engine_kwargs=create_engine_kwargs,
         )
         return cls(postgres_kvstore, namespace)
