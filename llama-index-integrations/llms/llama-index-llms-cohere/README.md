@@ -17,10 +17,12 @@ from llama_index.llms.cohere import Cohere
 # Set your API key
 api_key = "Your api key"
 
-# Call complete function
-resp = Cohere(api_key=api_key).complete("Paul Graham is ")
-# Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
-print(resp)
+# Initialize the model
+llm = Cohere(api_key=api_key)
+
+# Call chat
+resp = llm.chat("Who is Paul Graham?")
+print(resp.message.content)
 
 # Output
 # an English computer scientist, entrepreneur and investor.
