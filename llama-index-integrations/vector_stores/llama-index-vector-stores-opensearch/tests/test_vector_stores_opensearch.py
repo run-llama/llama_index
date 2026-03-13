@@ -284,3 +284,101 @@ def test_close_does_not_raise_in_running_event_loop():
         client.close()
 
     mock_sync.close.assert_called_once()
+
+
+class TestCoerceFilterValue:
+    """Tests for _coerce_filter_value handling JSON-encoded strings."""
+
+    def test_json_encoded_string_is_unquoted(self):
+        """json.dumps('hello') produces '"hello"', which should be coerced to 'hello'."""
+        import json
+
+        val = json.dumps("sample.pdf")  # '"sample.pdf"'
+        result = OpensearchVectorClient._coerce_filter_value(val)
+        assert result == "sample.pdf"
+
+    def test_json_encoded_int_is_coerced(self):
+        """json.dumps(2) produces '2', which should be coerced to int 2."""
+        import json
+
+        val = json.dumps(2)  # '2'
+        result = OpensearchVectorClient._coerce_filter_value(val)
+        assert result == 2
+        assert isinstance(result, int)
+
+    def test_json_encoded_float_is_coerced(self):
+        """json.dumps(3.14) produces '3.14', which should be coerced to float."""
+        import json
+
+        val = json.dumps(3.14)
+        result = OpensearchVectorClient._coerce_filter_value(val)
+        assert result == 3.14
+        assert isinstance(result, float)
+
+    def test_plain_string_unchanged(self):
+        """A plain string that is not valid JSON should remain unchanged."""
+        result = OpensearchVectorClient._coerce_filter_value("sample.pdf")
+        assert result == "sample.pdf"
+
+    def test_native_int_unchanged(self):
+        """A native int should pass through unchanged."""
+        result = OpensearchVectorClient._coerce_filter_value(2)
+        assert result == 2
+        assert isinstance(result, int)
+
+    def test_native_float_unchanged(self):
+        """A native float should pass through unchanged."""
+        result = OpensearchVectorClient._coerce_filter_value(3.14)
+        assert result == 3.14
+
+    def test_list_values_coerced(self):
+        """List elements should each be coerced individually."""
+        import json
+
+        val = [json.dumps("a"), json.dumps(1)]
+        result = OpensearchVectorClient._coerce_filter_value(val)
+        assert result == ["a", 1]
+
+    def test_none_unchanged(self):
+        """None should pass through unchanged."""
+        result = OpensearchVectorClient._coerce_filter_value(None)
+        assert result is None
+
+
+class TestParseFilterWithJsonEncodedValues:
+    """Regression tests for issue #18900: JSONDecodeError with metadata filters."""
+
+    def _make_client(self) -> OpensearchVectorClient:
+        return _make_client_no_network()
+
+    def test_string_filter_value(self):
+        """Native string filter value should produce correct term query."""
+        client = self._make_client()
+        f = MetadataFilter(key="file_name", value="sample.pdf")
+        result = client._parse_filter(f)
+        assert result == {"term": {"metadata.file_name.keyword": "sample.pdf"}}
+
+    def test_int_filter_value(self):
+        """Native int filter value should produce correct term query."""
+        client = self._make_client()
+        f = MetadataFilter(key="page_label", value=2)
+        result = client._parse_filter(f)
+        assert result == {"term": {"metadata.page_label": 2}}
+
+    def test_json_encoded_string_filter_value(self):
+        """json.dumps()-wrapped string should be coerced and not raise JSONDecodeError."""
+        import json
+
+        client = self._make_client()
+        f = MetadataFilter(key="file_name", value=json.dumps("sample.pdf"))
+        result = client._parse_filter(f)
+        assert result == {"term": {"metadata.file_name.keyword": "sample.pdf"}}
+
+    def test_json_encoded_int_filter_value(self):
+        """json.dumps()-wrapped int should be coerced and not raise JSONDecodeError."""
+        import json
+
+        client = self._make_client()
+        f = MetadataFilter(key="page_label", value=json.dumps(2))
+        result = client._parse_filter(f)
+        assert result == {"term": {"metadata.page_label": 2}}
