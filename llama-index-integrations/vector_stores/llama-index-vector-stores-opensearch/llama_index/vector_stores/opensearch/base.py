@@ -1,6 +1,7 @@
 """Elasticsearch/Opensearch vector store."""
 
 import asyncio
+import json
 import logging
 import uuid
 import warnings
@@ -399,6 +400,34 @@ class OpensearchVectorClient:
         else:
             return False
 
+    @staticmethod
+    def _coerce_filter_value(value: Any) -> Any:
+        """
+        Coerce a filter value to a native Python type if it is a JSON-encoded string.
+
+        Users may accidentally pass JSON-encoded values (e.g., via json.dumps()),
+        which would cause errors or incorrect queries. This method attempts to
+        parse such strings back to their native types.
+
+        Args:
+            value: The filter value to coerce.
+
+        Returns:
+            The coerced value, or the original value if coercion is not applicable.
+        """
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                # Only coerce if the result is a different type (not str -> str)
+                # e.g., '"hello"' -> 'hello', '2' -> 2, '2.5' -> 2.5
+                if not isinstance(parsed, str) or parsed != value:
+                    return parsed
+            except (json.JSONDecodeError, ValueError):
+                pass
+        elif isinstance(value, list):
+            return [OpensearchVectorClient._coerce_filter_value(v) for v in value]
+        return value
+
     def _parse_filter(self, filter: MetadataFilter) -> dict:
         """
         Parse a single MetadataFilter to equivalent OpenSearch expression.
@@ -407,46 +436,47 @@ class OpensearchVectorClient:
         """
         key = f"metadata.{filter.key}"
         op = filter.operator
+        value = self._coerce_filter_value(filter.value)
 
-        equality_postfix = ".keyword" if self._is_text_field(value=filter.value) else ""
+        equality_postfix = ".keyword" if self._is_text_field(value=value) else ""
 
         if op == FilterOperator.EQ:
-            return {"term": {f"{key}{equality_postfix}": filter.value}}
+            return {"term": {f"{key}{equality_postfix}": value}}
         elif op in [
             FilterOperator.GT,
             FilterOperator.GTE,
             FilterOperator.LT,
             FilterOperator.LTE,
         ]:
-            return {"range": {key: {filter.operator.name.lower(): filter.value}}}
+            return {"range": {key: {filter.operator.name.lower(): value}}}
         elif op == FilterOperator.NE:
             return {
                 "bool": {
-                    "must_not": {"term": {f"{key}{equality_postfix}": filter.value}}
+                    "must_not": {"term": {f"{key}{equality_postfix}": value}}
                 }
             }
         elif op in [FilterOperator.IN, FilterOperator.ANY]:
-            if isinstance(filter.value, list) and all(
-                self._is_text_field(val) for val in filter.value
+            if isinstance(value, list) and all(
+                self._is_text_field(val) for val in value
             ):
-                return {"terms": {f"{key}.keyword": filter.value}}
+                return {"terms": {f"{key}.keyword": value}}
             else:
-                return {"terms": {key: filter.value}}
+                return {"terms": {key: value}}
         elif op == FilterOperator.NIN:
-            return {"bool": {"must_not": {"terms": {key: filter.value}}}}
+            return {"bool": {"must_not": {"terms": {key: value}}}}
         elif op == FilterOperator.ALL:
             return {
                 "terms_set": {
                     key: {
-                        "terms": filter.value,
+                        "terms": value,
                         "minimum_should_match_script": {"source": "params.num_terms"},
                     }
                 }
             }
-        elif op == FilterOperator.TEXT_MATCH:
-            return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
+        elif op in (FilterOperator.TEXT_MATCH, FilterOperator.TEXT_MATCH_INSENSITIVE):
+            return {"match": {key: {"query": value, "fuzziness": "AUTO"}}}
         elif op == FilterOperator.CONTAINS:
-            return {"wildcard": {key: f"*{filter.value}*"}}
+            return {"wildcard": {key: f"*{value}*"}}
         elif op == FilterOperator.IS_EMPTY:
             return {"bool": {"must_not": {"exists": {"field": key}}}}
         else:
