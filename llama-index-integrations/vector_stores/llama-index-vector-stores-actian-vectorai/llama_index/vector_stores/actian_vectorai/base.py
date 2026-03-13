@@ -10,6 +10,9 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterCondition,
+    FilterOperator,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
     VectorStoreQueryMode,
@@ -22,11 +25,14 @@ from llama_index.core.vector_stores.utils import (
 )
 
 from actian_vectorai import (
+    Condition,
     Field,
     FilterBuilder,
     HnswConfigDiff, 
     VectorAIClient, 
     WalConfigDiff,
+    Filter,
+    is_empty,
 )
 
 from actian_vectorai.models import (
@@ -112,7 +118,35 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         )
 
         assert result.status == UpdateStatus.Completed, f"Failed to delete points with ref_doc_id {ref_doc_id} from collection {self._collection_name}. Response: {result}"
+    
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes using list of node ids.
 
+        Args:
+            node_ids (List[str]): The list of node ids to delete.
+
+        """
+        result = self._client.points.delete(
+            self._collection_name,
+            ids=node_ids,
+            filter=self._build_db_filter_from_metadata_filters(filters)
+        )
+
+        assert result.status == UpdateStatus.Completed, f"Failed to delete points with ids {node_ids} from collection {self._collection_name}. Response: {result}"
+
+    def clear(self) -> None:
+        """
+        Clear all nodes from index.
+        """
+        result = self._client.collections.delete(self._collection_name)
+        assert result == True, f"Failed to clear collection {self._collection_name}. Response: {result}"
+        
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
@@ -152,3 +186,74 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             points.append(point)
             ids.append(node.node_id)
         return points, ids
+    
+    def _build_db_filter_from_metadata_filters(self, filters: MetadataFilters) -> Filter:
+        """
+        Build Actian Vector AI filter from LlamaIndex MetadataFilters.
+
+        Args:
+            filters: MetadataFilters object containing list of filter groups
+        """
+        if filters is None:
+            return None
+
+        conditions = []
+        for filter in filters.filters:
+            if isinstance(filter, MetadataFilters):
+                if len(filter.filters) == 0:
+                    continue
+                conditions.append(Condition(filter=self._build_db_filter_from_metadata_filters(filter)))
+            else:
+                def filter_operation_to_condition_eq(key: str, value: Any) -> Condition:
+                    if isinstance(value, float):
+                        return Field(key).between(value, value)
+                    else:
+                        return Field(key).eq(value)
+                    
+                def filter_operation_to_condition_ne(key: str, value: Any) -> Condition:
+                    if isinstance(value, float):
+                        return Condition(filter=FilterBuilder().should(Field(key).lt(value)).should(Field(key).gt(value)).build())
+                    else:
+                        return Field(key).except_of([value])
+                    
+                def filter_operation_to_condition_in(key: str, value: Any) -> Condition:
+                    if isinstance(value, list):
+                        values = value
+                    else:
+                        values = value.split(",")
+                    return Field(key).any_of(values)
+                
+                def filter_operation_to_condition_nin(key: str, value: Any) -> Condition:
+                    if isinstance(value, list):
+                        values = value
+                    else:
+                        values = value.split(",")
+                    return Field(key).except_of(values)
+
+                fops_dict = {
+                    FilterOperator.EQ: filter_operation_to_condition_eq,
+                    FilterOperator.GT: lambda key, value: Field(key).gt(float(value)),
+                    FilterOperator.LT: lambda key, value: Field(key).lt(float(value)),
+                    FilterOperator.NE: filter_operation_to_condition_ne,
+                    FilterOperator.GTE: lambda key, value: Field(key).gte(float(value)),
+                    FilterOperator.LTE: lambda key, value: Field(key).lte(float(value)),
+                    FilterOperator.IN: filter_operation_to_condition_in,
+                    FilterOperator.NIN: filter_operation_to_condition_nin,
+                    # FilterOperator.ANY: raise NotImplementedError
+                    # FilterOperator.ALL: raise NotImplementedError
+                    FilterOperator.TEXT_MATCH: lambda key, value: Field(key).text(value),
+                    # FilterOperator.TEXT_MATCH_INSENSITIVE: raise NotImplementedError
+                    # FilterOperator.CONTAINS: raise NotImplementedError
+                    FilterOperator.IS_EMPTY: lambda key, value: is_empty(key),
+                }
+
+                if filter.operator not in fops_dict:
+                    raise NotImplementedError(f"Unsupported filter operator: {filter.operator}")
+                conditions.append(fops_dict[filter.operator](filter.key, filter.value))
+
+        if filters.condition == FilterCondition.AND:
+            return Filter(must = conditions)
+        elif filters.condition == FilterCondition.OR:
+            return Filter(should = conditions)
+        elif filters.condition == FilterCondition.NOT:
+            return Filter(must_not = conditions)

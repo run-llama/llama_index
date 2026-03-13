@@ -9,7 +9,7 @@ resolution-markers = [
 [[package]]
 name = "actian-vectorai"
 version = "0.1.0b2"
-source = { path = "../../../../../Downloads/Actian VectorAI DB - 7ca38b14/actian_vectorai-0.1.0b2-py3-none-any.whl" }
+source = { path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0b2-py3-none-any.whl" }
 dependencies = [
     { name = "grpcio" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -18,7 +18,7 @@ dependencies = [
     { name = "pydantic" },
 ]
 wheels = [
-    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:2d5c6ccba61821dd7fe3b27cf8ba9594e99c3f880e6818aefa44cedb6feefa2f" },
+    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:060266b1ecc291df8e7f951c5c09d2f063660c72be855d6bdab584c15658aaff" },
 ]
 
 [package.metadata]
@@ -1553,7 +1553,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "actian-vectorai", path = "../../../../../Downloads/Actian VectorAI DB - 7ca38b14/actian_vectorai-0.1.0b2-py3-none-any.whl" },
+    { name = "actian-vectorai", path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0b2-py3-none-any.whl" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
