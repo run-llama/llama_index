@@ -4,9 +4,10 @@ Valkey Vector store.
 
 import json
 import logging
-import re
 import struct
-from typing import Any, Dict, List, Optional, Pattern
+import traceback
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 from glide_sync import Batch as SyncBatch
 from glide import ClusterBatch, Batch
 from glide import (
@@ -28,6 +29,7 @@ from glide_shared.commands.server_modules.ft_options.ft_search_options import (
 )
 from glide_sync import (
     GlideClient as SyncGlideClient,
+    GlideClientConfiguration as SyncGlideClientConfiguration,
 )
 from glide_sync import (
     GlideClusterClient as SyncGlideClusterClient,
@@ -41,6 +43,7 @@ from llama_index.vector_stores.valkey.schema import (
     TEXT_FIELD_NAME,
     VECTOR_FIELD_NAME,
     ValkeyVectorStoreSchema,
+    DEFAULT_EMBEDDING_DIM,
 )
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -73,29 +76,6 @@ def array_to_buffer(array: List[float], dtype: str = "FLOAT32") -> bytes:
     if dtype == "FLOAT32":
         return struct.pack(f"{len(array)}f", *array)
     raise ValueError(f"Unsupported dtype: {dtype}")
-
-
-class TokenEscaper:
-    """
-    Escape punctuation within an input string. Taken from RedisOM Python.
-    """
-
-    # Keep for compatibility. Characters that RediSearch requires us to escape during queries.
-    # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
-    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
-
-    def __init__(self, escape_chars_re: Optional[Pattern] = None):
-        if escape_chars_re:
-            self.escaped_chars_re = escape_chars_re
-        else:
-            self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
-
-    def escape(self, value: str) -> str:
-        def escape_symbol(match: re.Match) -> str:
-            value = match.group(0)
-            return f"\\{value}"
-
-        return self.escaped_chars_re.sub(escape_symbol, value)
 
 
 class ValkeyVectorStore(BasePydanticVectorStore):
@@ -153,9 +133,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
     created_async_index: bool = False
     legacy_filters: bool = False
 
-    _tokenizer: Any = PrivateAttr()
     _valkey_client: Any = PrivateAttr()
     _valkey_client_async: Any = PrivateAttr()
+    _pending_sync_config: Any = PrivateAttr()
     _pending_async_config: Any = PrivateAttr()
     _prefix: str = PrivateAttr()
     _index_args: Dict[str, Any] = PrivateAttr()
@@ -193,24 +173,21 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         # Setup clients
         if valkey_url:
-            # Parse URL and create clients
-            url_parts = valkey_url.replace("valkey://", "").split(":")
-            host = url_parts[0] if len(url_parts) > 0 else "localhost"
-            port = int(url_parts[1]) if len(url_parts) > 1 else 6379
+            # Parse URL using urllib
+            parsed = urlparse(valkey_url)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 6379
 
-            # Create sync client immediately (synchronous operation)
+            # Store config for lazy sync client creation
             if not valkey_client:
-                from glide_sync import (
-                    GlideClientConfiguration as SyncGlideClientConfiguration,
-                )
-
                 sync_config = SyncGlideClientConfiguration(
                     addresses=[NodeAddress(host, port)]
                 )
-                self._valkey_client = SyncGlideClient.create(sync_config)
-                logger.info("Created sync client from URL")
+                self._pending_sync_config = sync_config
+                self._valkey_client = None
             else:
                 self._valkey_client = valkey_client
+                self._pending_sync_config = None
 
             # Store config for lazy async client creation
             if not valkey_client_async:
@@ -225,6 +202,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
             self._is_cluster = False
         else:
+            self._pending_sync_config = None
             self._pending_async_config = None
             self._valkey_client = valkey_client
             self._valkey_client_async = valkey_client_async
@@ -234,7 +212,12 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                 else False
             )
 
-        if not self._valkey_client and not self._valkey_client_async:
+        if (
+            not self._valkey_client
+            and not self._valkey_client_async
+            and not self._pending_sync_config
+            and not self._pending_async_config
+        ):
             raise ValkeyVectorStoreError(
                 "Either valkey_client, valkey_url, or valkey_client_async need to be defined"
             )
@@ -242,27 +225,59 @@ class ValkeyVectorStore(BasePydanticVectorStore):
     @property
     def client(
         self,
-    ) -> SyncGlideClient | SyncGlideClusterClient | GlideClient | GlideClusterClient:
-        """Return the valkey client instance."""
-        return self._valkey_client or self._valkey_client_async
+    ) -> SyncGlideClient | SyncGlideClusterClient:
+        """Return the sync valkey client instance."""
+        if not self._valkey_client:
+            raise ValkeyVectorStoreError("No sync client available")
+        return self._valkey_client
+
+    @property
+    def aclient(
+        self,
+    ) -> GlideClient | GlideClusterClient:
+        """Return the async valkey client instance."""
+        if not self._valkey_client_async:
+            raise ValkeyVectorStoreError(
+                "No async client available. Use async methods or provide valkey_client_async."
+            )
+        return self._valkey_client_async
 
     def _ensure_sync_client(self) -> None:
         """
-        Ensure sync client is available.
+        Ensure sync client is available, creating it lazily if needed.
 
         Raises:
-            Exception: If sync client is not available.
+            ValkeyVectorStoreError: If sync client cannot be created.
 
         """
-        if not self._valkey_client:
-            raise ValkeyVectorStoreError("No sync client available")
+        if self._valkey_client:
+            # Already have sync client
+            return
+
+        if self._pending_sync_config:
+            # Create sync client from pending config
+            try:
+                self._valkey_client = SyncGlideClient.create(self._pending_sync_config)
+                logger.info("Created sync client from URL configuration")
+                # Clear pending config after creating client
+                self._pending_sync_config = None
+            except Exception as e:
+                raise ValkeyVectorStoreError(
+                    f"Failed to create sync client: {e}"
+                ) from e
+        else:
+            # No way to create sync client
+            raise ValkeyVectorStoreError(
+                "No sync client available. Either provide valkey_client_async, "
+                "valkey_url, or both valkey_client and valkey_client_async."
+            )
 
     async def _ensure_async_client(self) -> None:
         """
         Ensure async client is created from pending config if needed.
 
         Raises:
-            Exception: If async client cannot be created (no config available).
+            ValkeyVectorStoreError: If async client cannot be created.
 
         """
         if self._valkey_client_async:
@@ -271,18 +286,55 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
         if self._pending_async_config:
             # Create async client from pending config
-            self._valkey_client_async = await GlideClient.create(
-                self._pending_async_config
-            )
-            logger.info("Created async client from URL configuration")
-            # Clear pending config after creating client
-            self._pending_async_config = None
+            try:
+                self._valkey_client_async = await GlideClient.create(
+                    self._pending_async_config
+                )
+                logger.info("Created async client from URL configuration")
+                # Clear pending config after creating client
+                self._pending_async_config = None
+            except Exception as e:
+                raise ValkeyVectorStoreError(
+                    f"Failed to create async client: {e}"
+                ) from e
         else:
             # No way to create async client
             raise ValkeyVectorStoreError(
                 "No async client available. Either provide valkey_client_async, "
                 "valkey_url, or both valkey_client and valkey_client_async."
             )
+
+    def _drop_index(self) -> None:
+        """
+        Drop the index synchronously.
+
+        Raises:
+            ValkeyVectorStoreError: If dropping the index fails.
+
+        """
+        try:
+            sync_ft.dropindex(self._valkey_client, self.index_name)
+            logger.info(f"Dropped index {self.index_name}")
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to drop index {self.index_name}: {e}"
+            ) from e
+
+    async def _async_drop_index(self) -> None:
+        """
+        Drop the index asynchronously.
+
+        Raises:
+            ValkeyVectorStoreError: If dropping the index fails.
+
+        """
+        try:
+            await ft.dropindex(self._valkey_client_async, self.index_name)
+            logger.info(f"Dropped index {self.index_name}")
+        except Exception as e:
+            raise ValkeyVectorStoreError(
+                f"Failed to drop index {self.index_name}: {e}"
+            ) from e
 
     @property
     def index_name(self) -> str:
@@ -342,11 +394,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
             if exists and overwrite:
                 # Drop existing index
-                try:
-                    sync_ft.dropindex(self._valkey_client, self.index_name)
-                    logger.info(f"Dropped existing index {self.index_name}")
-                except Exception as e:
-                    logger.warning(f"Failed to drop index: {e}")
+                self._drop_index()
             elif exists and not overwrite:
                 logger.info(
                     f"Index {self.index_name} already exists, skipping creation"
@@ -393,11 +441,7 @@ class ValkeyVectorStore(BasePydanticVectorStore):
 
             if exists and overwrite:
                 # Drop existing index
-                try:
-                    await ft.dropindex(self._valkey_client_async, self.index_name)
-                    logger.info(f"Dropped existing index {self.index_name}")
-                except Exception as e:
-                    logger.warning(f"Failed to drop index: {e}")
+                await self._async_drop_index()
             elif exists and not overwrite:
                 logger.info(
                     f"Index {self.index_name} already exists, skipping creation"
@@ -434,26 +478,12 @@ class ValkeyVectorStore(BasePydanticVectorStore):
     def delete_index(self) -> None:
         """Delete the index and all documents."""
         self._ensure_sync_client()
-
-        try:
-            sync_ft.dropindex(self._valkey_client, self.index_name)
-            logger.info(f"Deleted index {self.index_name}")
-        except Exception as e:
-            raise ValkeyVectorStoreError(
-                f"Failed to delete index {self.index_name}: {e}"
-            ) from e
+        self._drop_index()
 
     async def async_delete_index(self) -> None:
         """Delete the index and all documents asynchronously."""
         await self._ensure_async_client()
-
-        try:
-            await ft.dropindex(self._valkey_client_async, self.index_name)
-            logger.info(f"Deleted index {self.index_name}")
-        except Exception as e:
-            raise ValkeyVectorStoreError(
-                f"Failed to delete index {self.index_name}: {e}"
-            ) from e
+        await self._async_drop_index()
 
     def _prepare_node_data(self, nodes: List[BaseNode]) -> List[tuple[str, dict, str]]:
         """
@@ -480,9 +510,9 @@ class ValkeyVectorStore(BasePydanticVectorStore):
         else:
             logger.warning(
                 f"Vector field '{VECTOR_FIELD_NAME}' not found in schema or missing attributes. "
-                "Defaulting to 1536 dimensions. This may cause issues if your embeddings have different dimensions."
+                f"Defaulting to {DEFAULT_EMBEDDING_DIM} dimensions. This may cause issues if your embeddings have different dimensions."
             )
-            expected_dims = 1536  # Default
+            expected_dims = DEFAULT_EMBEDDING_DIM
 
         # Check embedding dimensions
         for node in nodes:
@@ -996,8 +1026,6 @@ class ValkeyVectorStore(BasePydanticVectorStore):
                     logger.warning(
                         f"Failed to parse node: {e}, fields: {list(doc_dict.keys())}"
                     )
-                    import traceback
-
                     logger.warning(f"Traceback: {traceback.format_exc()}")
                     continue
 
