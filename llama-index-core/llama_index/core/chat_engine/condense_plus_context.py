@@ -218,7 +218,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         for postprocessor in self._node_postprocessors:
-            nodes = postprocessor.postprocess_nodes(
+            nodes = await postprocessor.apostprocess_nodes(
                 nodes, query_bundle=QueryBundle(message)
             )
 
