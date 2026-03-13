@@ -1,5 +1,6 @@
 """SQL wrapper around SQLDatabase in langchain."""
 
+import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -212,6 +213,39 @@ class SQLDatabase:
 
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
+    def _add_schema_prefix(self, command: str) -> str:
+        """
+        Add schema prefix to table names in FROM/JOIN clauses.
+
+        Preserves CTE (Common Table Expression) names and already
+        schema-qualified identifiers so they are not double-prefixed.
+        """
+        # Collect CTE names defined in WITH clauses
+        cte_names: set[str] = set()
+        # First CTE: WITH [RECURSIVE] name AS (
+        for m in re.finditer(
+            r"\bWITH\s+(?:RECURSIVE\s+)?(\w+)\s+AS\s*\(", command, re.IGNORECASE
+        ):
+            cte_names.add(m.group(1).lower())
+        # Subsequent CTEs: ), name AS (
+        for m in re.finditer(r"\)\s*,\s*(\w+)\s+AS\s*\(", command, re.IGNORECASE):
+            cte_names.add(m.group(1).lower())
+
+        def _replace(match: re.Match) -> str:
+            keyword = match.group(1)
+            table_ref = match.group(2)
+            # Skip CTE references and already schema-qualified names
+            if table_ref.lower() in cte_names or "." in table_ref:
+                return match.group(0)
+            return f"{keyword}{self._schema}.{table_ref}"
+
+        return re.sub(
+            r"\b((?:FROM|JOIN)\s+)(\w+(?:\.\w+)?)",
+            _replace,
+            command,
+            flags=re.IGNORECASE,
+        )
+
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """
         Execute a SQL statement and return a string representing the results.
@@ -222,8 +256,7 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             try:
                 if self._schema:
-                    command = command.replace("FROM ", f"FROM {self._schema}.")
-                    command = command.replace("JOIN ", f"JOIN {self._schema}.")
+                    command = self._add_schema_prefix(command)
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
