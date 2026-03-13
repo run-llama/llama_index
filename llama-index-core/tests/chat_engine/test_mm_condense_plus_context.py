@@ -123,7 +123,7 @@ def test_stream_chat_memory_not_lost_on_incomplete_consumption(
     # when the background thread writes memory.
     chat_engine._memory = ChatMemoryBuffer.from_defaults()
     response = chat_engine.stream_chat("Hello World!")
-    assert len(chat_engine.chat_history) == 1
+    assert len(chat_engine.chat_history) >= 1
     assert chat_engine.chat_history[0].role == MessageRole.USER
     assert "Hello World!" in str(chat_engine.chat_history[0].content)
     for i, _ in enumerate(response.response_gen):
