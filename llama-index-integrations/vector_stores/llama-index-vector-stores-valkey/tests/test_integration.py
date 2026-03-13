@@ -68,10 +68,14 @@ class TestBasicConnection:
             valkey_url="valkey://localhost:6379", schema=schema, overwrite=True
         )
 
-        assert vector_store._valkey_client is not None
+        # With lazy initialization, clients are None until first use
+        assert vector_store._valkey_client is None
         assert vector_store._valkey_client_async is None
+        assert vector_store._pending_sync_config is not None
+        assert vector_store._pending_async_config is not None
 
         await vector_store.async_create_index()
+        # After async operation, async client should be created
         assert vector_store._valkey_client_async is not None
 
         exists = await vector_store.async_index_exists()
