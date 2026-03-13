@@ -217,25 +217,44 @@ def is_reasoning(model_name: str) -> bool:
 
 
 def get_model_name(model_name: str) -> str:
-    """Extract base model name from region-prefixed model identifier."""
+    """Extract base model name from region-prefixed model identifier or ARN."""
     # Check for region prefixes (us, eu, apac, jp, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
+    REGION_PREFIXES = ("us.", "eu.", "apac.", "jp.", "global.")
 
-    # If no region prefix, return the original model name
-    if not any(prefix in model_name for prefix in REGION_PREFIXES):
-        return model_name
+    is_inference_profile_arn = False
+    normalized_model_name = model_name
 
-    # Remove region prefix to get the base model name
-    base_model_name = model_name[model_name.find(".") + 1 :]
+    if model_name.startswith("arn:"):
+        if (
+            ":inference-profile/" in model_name
+            or ":application-inference-profile/" in model_name
+        ):
+            is_inference_profile_arn = True
+        if "/" in model_name:
+            normalized_model_name = model_name.rsplit("/", 1)[-1]
 
-    if base_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
-        raise ValueError(
-            f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
-            "Please provide a valid Bedrock model name. "
-            "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
-        )
+    if normalized_model_name.startswith(REGION_PREFIXES):
+        base_model_name = normalized_model_name.split(".", 1)[1]
+        if base_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
+            raise ValueError(
+                f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
+                "Please provide a valid Bedrock model name. "
+                "Known models are: "
+                + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+            )
+        return base_model_name
 
-    return base_model_name
+    if is_inference_profile_arn:
+        if normalized_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
+            raise ValueError(
+                f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
+                "Please provide a valid Bedrock model name. "
+                "Known models are: "
+                + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+            )
+        return normalized_model_name
+
+    return normalized_model_name
 
 
 def is_bedrock_function_calling_model(model_name: str) -> bool:

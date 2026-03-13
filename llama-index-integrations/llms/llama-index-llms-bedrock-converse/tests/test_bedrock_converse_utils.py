@@ -129,6 +129,31 @@ def test_get_model_name_throws_inference_profile_exception():
         assert get_model_name("us.cohere.command-r-plus-v1:0")
 
 
+def test_get_model_name_translates_inference_profile_arn_with_region_prefix():
+    assert (
+        get_model_name(
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.meta.llama3-2-3b-instruct-v1:0"
+        )
+        == "meta.llama3-2-3b-instruct-v1:0"
+    )
+
+
+def test_get_model_name_translates_inference_profile_arn_without_region_prefix():
+    assert (
+        get_model_name(
+            "arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        )
+        == "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+
+
+def test_get_model_name_throws_inference_profile_arn_exception():
+    with pytest.raises(ValueError):
+        assert get_model_name(
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/cohere.command-r-plus-v1:0"
+        )
+
+
 def test_get_img_format_jpeg():
     assert __get_img_format_from_image_mimetype("image/jpeg") == "jpeg"
 
