@@ -239,7 +239,8 @@ def get_model_name(model_name: str) -> str:
             raise ValueError(
                 f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
                 "Please provide a valid Bedrock model name. "
-                "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+                "Known models are: "
+                + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
             )
         return base_model_name
 
@@ -248,7 +249,8 @@ def get_model_name(model_name: str) -> str:
             raise ValueError(
                 f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
                 "Please provide a valid Bedrock model name. "
-                "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+                "Known models are: "
+                + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
             )
         return normalized_model_name
 
