@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-commune"
+version = "0.1.0"
+description = "llama-index tools commune integration"
+authors = [{name = "Commune", email = "hello@commune.email"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = ["email", "sms", "ai-agents", "llamaindex"]
+dependencies = [
+    "llama-index-core>=0.11.0",
+    "commune-mail>=0.2.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.commune"
+
+[tool.llamahub.class_authors]
+CommuneToolSpec = "shanjai-raj"
