@@ -2110,7 +2110,7 @@ wheels = [
 [[package]]
 name = "llama-index-core"
 version = "0.14.15"
-source = { editable = "../../../llama-index-core" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiosqlite" },
@@ -2151,67 +2151,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.8.6,<4" },
-    { name = "aiosqlite" },
-    { name = "banks", specifier = ">=2.3.0,<3" },
-    { name = "dataclasses-json" },
-    { name = "deprecated", specifier = ">=1.2.9.3" },
-    { name = "dirtyjson", specifier = ">=1.0.8,<2" },
-    { name = "eval-type-backport", marker = "python_full_version < '3.10'", specifier = ">=0.2.0,<0.3" },
-    { name = "filetype", specifier = ">=1.2.0,<2" },
-    { name = "fsspec", specifier = ">=2023.5.0" },
-    { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=2,!=2.9.0,<3" },
-    { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
-    { name = "networkx", specifier = ">=3.0" },
-    { name = "nltk", specifier = ">3.8.1" },
-    { name = "numpy" },
-    { name = "pillow", specifier = ">=9.0.0" },
-    { name = "platformdirs" },
-    { name = "pydantic", specifier = ">=2.8.0" },
-    { name = "pyyaml", specifier = ">=6.0.1" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "setuptools", specifier = ">=80.9.0" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=1.4.49" },
-    { name = "tenacity", specifier = ">=8.2.0,!=8.4.0,<10.0.0" },
-    { name = "tiktoken", specifier = ">=0.7.0" },
-    { name = "tinytag", specifier = ">=2.2.0" },
-    { name = "tqdm", specifier = ">=4.66.1,<5" },
-    { name = "typing-extensions", specifier = ">=4.5.0" },
-    { name = "typing-inspect", specifier = ">=0.8.0" },
-    { name = "wrapt" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=23.7.0,<=24.3.0" },
-    { name = "boto3", specifier = "==1.33.6" },
-    { name = "botocore", specifier = ">=1.33.13" },
-    { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
-    { name = "diff-cover", specifier = ">=9.2.0" },
-    { name = "llama-cloud", specifier = ">=0.0.6" },
-    { name = "llama-index-llms-openai", directory = "../../llms/llama-index-llms-openai" },
-    { name = "mypy", specifier = "==1.11.0" },
-    { name = "openai" },
-    { name = "pandas" },
-    { name = "pre-commit", specifier = "==3.2.0" },
-    { name = "pylint", specifier = "==2.15.10" },
-    { name = "pytest", specifier = "~=7.2" },
-    { name = "pytest-asyncio", specifier = "==0.21.0" },
-    { name = "pytest-cov", specifier = "~=5.0" },
-    { name = "pytest-dotenv", specifier = "==0.5.2" },
-    { name = "pytest-mock", specifier = "==3.11.1" },
-    { name = "pytest-timeout", specifier = ">=2.4.0" },
-    { name = "rake-nltk", specifier = "==1.0.6" },
-    { name = "ruff", specifier = "==0.11.11" },
-    { name = "tree-sitter" },
-    { name = "tree-sitter-language-pack" },
-    { name = "types-deprecated", specifier = ">=0.1.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
-    { name = "types-requests", specifier = ">=2.28.11.8" },
+sdist = { url = "https://files.pythonhosted.org/packages/0c/4f/7c714bdf94dd229707b43e7f8cedf3aed0a99938fd46a9ad8a418c199988/llama_index_core-0.14.15.tar.gz", hash = "sha256:3766aeeb95921b3a2af8c2a51d844f75f404215336e1639098e3652db52c68ce", size = 11593505, upload-time = "2026-02-18T19:05:48.274Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/41/9e/262f6465ee4fffa40698b3cc2177e377ce7d945d3bd8b7d9c6b09448625d/llama_index_core-0.14.15-py3-none-any.whl", hash = "sha256:e02b321c10673871a38aaefdc4a93d5ae8ec324cad4408683189e5a1aa1e3d52", size = 11937002, upload-time = "2026-02-18T19:05:45.855Z" },
 ]
 
 [[package]]
@@ -2265,7 +2207,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", editable = "../../../llama-index-core" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "valkey-glide", specifier = ">=2.2.7" },
     { name = "valkey-glide-sync", specifier = ">=2.1.0" },
 ]

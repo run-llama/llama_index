@@ -3,15 +3,10 @@ from typing import List
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.node_parser import SentenceSplitter
 
-try:
-    from glide_sync import GlideClient as SyncGlideClient
-    from glide_sync import GlideClientConfiguration as SyncGlideClientConfiguration
-    from glide import GlideClient, GlideClientConfiguration
-    from glide_shared import NodeAddress
-
-    GLIDE_AVAILABLE = True
-except ImportError:
-    GLIDE_AVAILABLE = False
+from glide_sync import GlideClient as SyncGlideClient
+from glide_sync import GlideClientConfiguration as SyncGlideClientConfiguration
+from glide import GlideClient, GlideClientConfiguration
+from glide_shared import NodeAddress
 
 
 @pytest.fixture()
@@ -60,9 +55,6 @@ def test_nodes(documents) -> List[TextNode]:
 @pytest.fixture()
 def valkey_client():
     """Fixture that provides a synchronous Valkey client."""
-    if not GLIDE_AVAILABLE:
-        pytest.skip("valkey-glide not installed")
-
     try:
         config = SyncGlideClientConfiguration(
             addresses=[NodeAddress("localhost", 6379)]
@@ -76,9 +68,6 @@ def valkey_client():
 @pytest.fixture()
 async def valkey_client_async():
     """Fixture that provides an asynchronous Valkey client."""
-    if not GLIDE_AVAILABLE:
-        pytest.skip("valkey-glide not installed")
-
     try:
         config = GlideClientConfiguration(addresses=[NodeAddress("localhost", 6379)])
         client = await GlideClient.create(config)

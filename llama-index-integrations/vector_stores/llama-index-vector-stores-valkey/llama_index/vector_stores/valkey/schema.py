@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, List
 
 from glide_shared.commands.server_modules.ft_options.ft_create_options import (
@@ -19,19 +20,22 @@ TEXT_FIELD_NAME: str = "text"
 NODE_CONTENT_FIELD_NAME: str = "_node_content"
 VECTOR_FIELD_NAME: str = "vector"
 
+# Default embedding dimension (OpenAI text-embedding-ada-002)
+DEFAULT_EMBEDDING_DIM: int = 1536
 
+
+@dataclass
 class ValkeyIndexInfo:
     """The default Valkey Vector Store Index Info."""
 
-    def __init__(self) -> None:
-        self.name: str = "llama_index"
-        """The unique name of the index."""
-        self.prefix: str = "llama_index/vector"
-        """The prefix used for Valkey keys associated with this index."""
-        self.key_separator: str = "_"
-        """The separator character used in designing Valkey keys."""
-        self.storage_type: DataType = DataType.HASH
-        """The storage type used in Valkey (HASH or JSON)."""
+    name: str = "llama_index"
+    """The unique name of the index."""
+    prefix: str = "llama_index/vector"
+    """The prefix used for Valkey keys associated with this index."""
+    key_separator: str = "_"
+    """The separator character used in designing Valkey keys."""
+    storage_type: DataType = DataType.HASH
+    """The storage type used in Valkey (HASH or JSON)."""
 
 
 class ValkeyVectorStoreSchema:
@@ -50,7 +54,7 @@ class ValkeyVectorStoreSchema:
                 name=VECTOR_FIELD_NAME,
                 algorithm=VectorAlgorithm.FLAT,
                 attributes=VectorFieldAttributesFlat(
-                    dimensions=1536,
+                    dimensions=DEFAULT_EMBEDDING_DIM,
                     distance_metric=DistanceMetricType.COSINE,
                     type=VectorType.FLOAT32,
                 ),

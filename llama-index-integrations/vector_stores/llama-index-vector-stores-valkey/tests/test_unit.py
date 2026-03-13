@@ -10,7 +10,7 @@ from llama_index.core.vector_stores.types import (
     FilterOperator,
     VectorStoreQuery,
 )
-from llama_index.vector_stores.valkey import ValkeyVectorStore, TokenEscaper
+from llama_index.vector_stores.valkey import ValkeyVectorStore
 from llama_index.vector_stores.valkey.schema import (
     ValkeyVectorStoreSchema,
     NODE_ID_FIELD_NAME,
@@ -27,39 +27,6 @@ class TestClassInheritance:
         """Test that ValkeyVectorStore inherits from BasePydanticVectorStore."""
         names_of_base_classes = [b.__name__ for b in ValkeyVectorStore.__mro__]
         assert BasePydanticVectorStore.__name__ in names_of_base_classes
-
-
-class TestTokenEscaper:
-    """Test TokenEscaper functionality."""
-
-    def test_escape_space(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("hello world") == "hello\\ world"
-
-    def test_escape_at_symbol(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("test@example.com") == "test\\@example\\.com"
-
-    def test_escape_dash(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("value-with-dash") == "value\\-with\\-dash"
-
-    def test_escape_comma(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("a,b,c") == "a\\,b\\,c"
-
-    def test_escape_parentheses(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("(test)") == "\\(test\\)"
-
-    def test_escape_multiple_special_chars(self):
-        escaper = TokenEscaper()
-        result = escaper.escape("test@example.com (2024)")
-        assert result == "test\\@example\\.com\\ \\(2024\\)"
-
-    def test_no_escape_needed(self):
-        escaper = TokenEscaper()
-        assert escaper.escape("simple") == "simple"
 
 
 class TestSchemaValidation:
@@ -123,6 +90,28 @@ class TestInitialization:
         ):
             ValkeyVectorStore()
 
+    def test_client_property_returns_sync_client(self, valkey_client):
+        """Test that client property returns sync client."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        assert vector_store.client is valkey_client
+
+    def test_client_property_raises_when_no_sync_client(self, valkey_client_async):
+        """Test that client property raises error when only async client available."""
+        vector_store = ValkeyVectorStore(valkey_client_async=valkey_client_async)
+        with pytest.raises(Exception, match="No sync client available"):
+            _ = vector_store.client
+
+    def test_aclient_property_returns_async_client(self, valkey_client_async):
+        """Test that aclient property returns async client."""
+        vector_store = ValkeyVectorStore(valkey_client_async=valkey_client_async)
+        assert vector_store.aclient is valkey_client_async
+
+    def test_aclient_property_raises_when_no_async_client(self, valkey_client):
+        """Test that aclient property raises error when only sync client available."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        with pytest.raises(Exception, match="No async client available"):
+            _ = vector_store.aclient
+
     def test_property_accessors(self, valkey_client):
         schema = ValkeyVectorStoreSchema()
         schema.index.name = "test_index"
@@ -169,6 +158,39 @@ class TestEmbeddingValidation:
         except Exception as e:
             if "Attempting to index embeddings" in str(e):
                 pytest.fail("Embedding dimension validation failed incorrectly")
+
+
+class TestURLParsing:
+    """Test URL parsing for valkey_url parameter."""
+
+    def test_url_with_port(self):
+        """Test parsing URL with explicit port."""
+        vector_store = ValkeyVectorStore(valkey_url="valkey://localhost:6380")
+        # Verify config was stored (no connection made yet)
+        assert vector_store._pending_sync_config is not None
+        assert vector_store._pending_sync_config.addresses[0].host == "localhost"
+        assert vector_store._pending_sync_config.addresses[0].port == 6380
+
+    def test_url_without_port(self):
+        """Test parsing URL without port (should default to 6379)."""
+        vector_store = ValkeyVectorStore(valkey_url="valkey://localhost")
+        assert vector_store._pending_sync_config is not None
+        assert vector_store._pending_sync_config.addresses[0].host == "localhost"
+        assert vector_store._pending_sync_config.addresses[0].port == 6379
+
+    def test_url_with_ip_address(self):
+        """Test parsing URL with IP address."""
+        vector_store = ValkeyVectorStore(valkey_url="valkey://192.168.1.100:6379")
+        assert vector_store._pending_sync_config is not None
+        assert vector_store._pending_sync_config.addresses[0].host == "192.168.1.100"
+        assert vector_store._pending_sync_config.addresses[0].port == 6379
+
+    def test_url_with_domain(self):
+        """Test parsing URL with domain name."""
+        vector_store = ValkeyVectorStore(valkey_url="valkey://example.com:6379")
+        assert vector_store._pending_sync_config is not None
+        assert vector_store._pending_sync_config.addresses[0].host == "example.com"
+        assert vector_store._pending_sync_config.addresses[0].port == 6379
 
 
 class TestFilterProcessing:
@@ -254,6 +276,84 @@ class TestFilterProcessing:
         result = vector_store._build_filter_string(filters)
         assert "@animal:{turtle}" in result
         assert "@price:[(100 +inf]" in result
+
+    def test_filter_with_space_in_value(self, valkey_client):
+        """Test filter value containing spaces."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="name", value="hello world", operator=FilterOperator.EQ
+                )
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@name:{hello world}" in result
+
+    def test_filter_with_at_symbol(self, valkey_client):
+        """Test filter value containing @ symbol."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="email", value="test@example.com", operator=FilterOperator.EQ
+                )
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@email:{test@example.com}" in result
+
+    def test_filter_with_dash(self, valkey_client):
+        """Test filter value containing dash."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="id", value="value-with-dash", operator=FilterOperator.EQ
+                )
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@id:{value-with-dash}" in result
+
+    def test_filter_with_parentheses(self, valkey_client):
+        """Test filter value containing parentheses."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="note", value="test(2024)", operator=FilterOperator.EQ
+                )
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@note:{test(2024)}" in result
+
+    def test_filter_with_comma(self, valkey_client):
+        """Test filter value containing comma."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="tags", value="a,b,c", operator=FilterOperator.EQ)
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@tags:{a,b,c}" in result
+
+    def test_filter_with_multiple_special_chars(self, valkey_client):
+        """Test filter value with multiple special characters."""
+        vector_store = ValkeyVectorStore(valkey_client=valkey_client)
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="email",
+                    value="test@example.com (2024)",
+                    operator=FilterOperator.EQ,
+                )
+            ]
+        )
+        result = vector_store._build_filter_string(filters)
+        assert "@email:{test@example.com (2024)}" in result
 
 
 class TestQueryValidation:
