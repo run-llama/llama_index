@@ -127,7 +127,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
-            while chat_history[-message_count].role in (
+            while message_count > 1 and chat_history[-message_count].role in (
                 MessageRole.TOOL,
                 MessageRole.ASSISTANT,
             ):

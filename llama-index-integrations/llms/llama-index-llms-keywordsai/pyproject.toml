@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-keywordsai"
-version = "1.1.2"
+version = "1.2.0"
 description = "llama-index llms keywordsai integration"
 authors = [{name = "llama-index"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
