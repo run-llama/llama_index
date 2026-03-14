@@ -14,7 +14,7 @@ set -euo pipefail
 #
 #   2. API reference (built HTML via mkdocs):
 #      Builds mkdocs, then syncs output
-#        -> <docs-repo>/public/python/framework-api-reference/
+#        -> <docs-repo>/api-reference/python/framework/
 #
 # Excluded from framework docs:
 #   examples/**, api_reference/**, CONTRIBUTING.md, DOCS_README.md
@@ -88,7 +88,7 @@ echo "=== Building API reference ==="
 
 MKDOCS_CONFIG="$REPO_ROOT/docs/api_reference/mkdocs.yml"
 API_DOCS_BUILD_DIR="$REPO_ROOT/.build/api-docs-output"
-API_DOCS_DEST_DIR="$DOCS_REPO/public/python/framework-api-reference"
+API_DOCS_DEST_DIR="$DOCS_REPO/api-reference/python/framework"
 
 if [ ! -f "$MKDOCS_CONFIG" ]; then
   echo "Error: mkdocs config not found: $MKDOCS_CONFIG"
