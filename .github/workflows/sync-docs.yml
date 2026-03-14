@@ -13,6 +13,10 @@ on:
         description: "Skip API docs build (faster, only syncs markdown)"
         type: boolean
         default: false
+      skip_examples:
+        description: "Skip examples conversion (faster, only syncs framework docs)"
+        type: boolean
+        default: false
 
 jobs:
   sync-docs:
@@ -20,6 +24,11 @@ jobs:
     steps:
       - name: Checkout source repo (llama_index)
         uses: actions/checkout@v4
+
+      # Fetch the base commit so git diff works for incremental example conversion
+      - name: Fetch base commit for diff
+        if: github.event_name == 'push'
+        run: git fetch --depth=1 origin ${{ github.event.before }}
 
       - name: Checkout docs repo (developer hub)
         uses: actions/checkout@v4
@@ -43,6 +52,14 @@ jobs:
           if [ "${{ inputs.skip_api_docs }}" = "true" ]; then
             ARGS="$ARGS --skip-api-docs"
           fi
+          if [ "${{ inputs.skip_examples }}" = "true" ]; then
+            ARGS="$ARGS --skip-examples"
+          fi
+          # On push events, pass the before SHA for incremental example conversion.
+          # On manual dispatch, omit --since so all examples are reconverted.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="$ARGS --since=${{ github.event.before }}"
+          fi
           ./scripts/sync-docs-to-developer-hub.sh $ARGS
 
       - name: Commit and push
@@ -53,6 +70,7 @@ jobs:
 
           # Stage first, then check for changes
           git add src/content/docs/python/framework/
+          git add src/content/docs/python/examples/
           git add api-reference/python/framework/
 
           if git diff --staged --quiet; then
