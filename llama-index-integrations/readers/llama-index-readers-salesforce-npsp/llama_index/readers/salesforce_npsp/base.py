@@ -165,11 +165,11 @@ class SalesforceNPSPReader(BaseReader):
                 opp_map.setdefault(cid, []).append(opp)
         return opp_map
 
-    def _format_gift_history(self, opps: List[Dict]) -> str:
-        if not opps:
+    def _format_gift_history(self, opportunities: List[Dict]) -> str:
+        if not opportunities:
             return ""
         lines = []
-        for opp in opps[:10]:
+        for opp in opportunities[:10]:
             amount = opp.get("Amount") or 0
             date = opp.get("CloseDate", "N/A")
             gift_type = (
@@ -178,9 +178,7 @@ class SalesforceNPSPReader(BaseReader):
                 or "Standard"
             )
             ack = opp.get("npsp__Acknowledgment_Status__c") or "Not acknowledged"
-            lines.append(
-                f"  • ${amount:,.0f} on {date} | Type: {gift_type} | {ack}"
-            )
+            lines.append(f"  • ${amount:,.0f} on {date} | Type: {gift_type} | {ack}")
         return "\nGift History (most recent 10):\n" + "\n".join(lines)
 
     def _build_document(
@@ -200,10 +198,9 @@ class SalesforceNPSPReader(BaseReader):
         avg_gift = contact.get("npo02__AverageAmount__c") or 0.0
         largest_gift = contact.get("npo02__LargestAmount__c") or 0.0
         last_activity = contact.get("LastActivityDate") or "No activity recorded"
-        affiliation = (
-            (contact.get("npsp__Primary_Affiliation__r") or {}).get("Name")
-            or "Not affiliated"
-        )
+        affiliation = (contact.get("npsp__Primary_Affiliation__r") or {}).get(
+            "Name"
+        ) or "Not affiliated"
         soft_credits = contact.get("npsp__Soft_Credit_Total__c") or 0.0
         planned_gifts = contact.get("npsp__Planned_Giving_Count__c") or 0
 

@@ -62,11 +62,15 @@ import numpy as np
 model = DonorPropensityModel(n_estimators=300, class_weight="balanced")
 model.fit(X_train, y_train)
 
+
 def affinity_scorer(meta):
     X = np.array([[meta["total_gift_amount"], meta["gift_count"], 0]])
     return model.predict_affinity_score(X)[0]
 
-reader = SalesforceNPSPReader(domain="login", affinity_score_fn=affinity_scorer)
+
+reader = SalesforceNPSPReader(
+    domain="login", affinity_score_fn=affinity_scorer
+)
 docs = reader.load_data(limit=1000)
 ```
 
@@ -74,22 +78,22 @@ docs = reader.load_data(limit=1000)
 
 ### SalesforceNPSPReader
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| username | str | SF_USERNAME env | Salesforce username |
-| password | str | SF_PASSWORD env | Salesforce password |
-| security_token | str | SF_TOKEN env | Salesforce security token |
-| domain | str | "login" | "login" for prod, "test" for sandbox |
-| include_opportunities | bool | True | Fetch full gift history per donor |
-| affinity_score_fn | Callable | None | Optional scorer: (metadata) → float |
+| Parameter             | Type     | Default         | Description                          |
+| --------------------- | -------- | --------------- | ------------------------------------ |
+| username              | str      | SF_USERNAME env | Salesforce username                  |
+| password              | str      | SF_PASSWORD env | Salesforce password                  |
+| security_token        | str      | SF_TOKEN env    | Salesforce security token            |
+| domain                | str      | "login"         | "login" for prod, "test" for sandbox |
+| include_opportunities | bool     | True            | Fetch full gift history per donor    |
+| affinity_score_fn     | Callable | None            | Optional scorer: (metadata) → float  |
 
 ### load_data()
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| contact_ids | List[str] | None | Specific Contact IDs to load |
-| soql_filter | str | "npo02__TotalOppAmount__c > 0" | SOQL WHERE clause |
-| limit | int | 500 | Max records to return |
+| Parameter   | Type      | Default                        | Description                  |
+| ----------- | --------- | ------------------------------ | ---------------------------- |
+| contact_ids | List[str] | None                           | Specific Contact IDs to load |
+| soql_filter | str       | "npo02**TotalOppAmount**c > 0" | SOQL WHERE clause            |
+| limit       | int       | 500                            | Max records to return        |
 
 Each returned Document has:
 
