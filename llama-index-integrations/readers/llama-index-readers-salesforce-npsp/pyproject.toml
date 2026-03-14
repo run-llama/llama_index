@@ -1,0 +1,38 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-readers-salesforce-npsp"
+version = "0.1.0"
+description = "LlamaIndex data reader for Salesforce Nonprofit Success Pack (NPSP). Ingests donor records, gift histories, and engagement metrics as structured LLM-ready Documents."
+authors = ["Shivam Lalakiya <shivamlalakiya@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "llama_index"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = ">=0.10.0"
+simple-salesforce = ">=1.12.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0"
+pytest-mock = ">=3.0"
+black = {version = ">=23.0", allow-prereleases = true}
+ruff = ">=0.0.270"
+mypy = ">=1.0"
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.readers.salesforce_npsp"
+
+[tool.llamahub.class_authors]
+SalesforceNPSPReader = "shivamlalakiya"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
+explicit_package_bases = true
+namespace_packages = true
+mypy_path = "."
