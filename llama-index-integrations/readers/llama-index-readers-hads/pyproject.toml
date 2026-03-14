@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest==7.2.1",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-readers-hads"
+version = "0.1.0"
+description = "llama-index readers HADS (Human-AI Document Standard) integration"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10,<4.0"
+dependencies = ["llama-index-core>=0.13.0,<0.15"]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.hads"
+
+[tool.llamahub.class_authors]
+HADSReader = "catcam"
