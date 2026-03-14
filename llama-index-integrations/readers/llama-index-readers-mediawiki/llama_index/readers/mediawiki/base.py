@@ -52,6 +52,9 @@ class MediaWikiReader(BasePydanticReader):
     Implements BasePydanticReader (for serialization / LlamaHub compatibility).
     """
 
+    FILTERREDIR_NONREDIRECTS: str = "nonredirects"
+    FILTERREDIR_ALL: str = "all"
+
     is_remote: bool = True
     model_config = {"arbitrary_types_allowed": True}
 
@@ -150,8 +153,7 @@ class MediaWikiReader(BasePydanticReader):
         Return namespace IDs marked as content ($wgContentNamespaces).
 
         Queries ``action=query&meta=siteinfo&siprop=namespaces`` and filters
-        for namespaces that carry the ``content`` flag. mwclient fetches
-        siteinfo on Site init so this call hits the already-cached data.
+        for namespaces that carry the ``content`` flag.
         Falls back to ``[0]`` (main namespace) if none are found.
 
         Raises:
@@ -164,7 +166,7 @@ class MediaWikiReader(BasePydanticReader):
             int(ns_data["id"])
             for ns_data in namespaces.values()
             if isinstance(ns_data, dict)
-            and ns_data.get("content")
+            and "content" in ns_data
             and ns_data.get("id") is not None
         ]
 
@@ -212,7 +214,7 @@ class MediaWikiReader(BasePydanticReader):
     def _extract_revision_time(self, page: Any, title: str) -> Optional[datetime]:
         """Extract last_modified from page revision timestamp (struct_time)."""
         try:
-            ts = page.last_rev_time
+            ts = page.touched
             if ts:
                 return datetime(*ts[:6], tzinfo=timezone.utc)
             return None
@@ -233,6 +235,8 @@ class MediaWikiReader(BasePydanticReader):
             - title (str)
             - url (str or None)
             - last_modified (datetime or None)
+            - pageid (int or None)
+            - namespace (int or None)
         """
         ns_list = self._resolve_namespace_list()
 
@@ -246,7 +250,11 @@ class MediaWikiReader(BasePydanticReader):
                 "Check that the MediaWiki API is reachable and siteinfo is accessible."
             ) from e
 
-        filterredir = "nonredirects" if self.filter_redirects else "all"
+        filterredir = (
+            self.FILTERREDIR_NONREDIRECTS
+            if self.filter_redirects
+            else self.FILTERREDIR_ALL
+        )
 
         for ns in ns_list:
             for page in self.site.allpages(
@@ -262,6 +270,8 @@ class MediaWikiReader(BasePydanticReader):
                     "title": title,
                     "url": url,
                     "last_modified": last_modified,
+                    "pageid": page.revision,
+                    "namespace": page.namespace,
                 }
 
     def _get_page_contents(self, page_title: str) -> Optional[str]:
@@ -273,7 +283,8 @@ class MediaWikiReader(BasePydanticReader):
 
         """
         try:
-            result = self.site.parse(
+            result = self.site.get(
+                "parse",
                 page=page_title,
                 prop="text",
                 disablelimitreport=True,
@@ -288,7 +299,7 @@ class MediaWikiReader(BasePydanticReader):
             self.logger.warning("No parse result for page '%s'", page_title)
             return None
 
-        html_content = result.get("text", {}).get("*", "")
+        html_content = result.get("parse", {}).get("text", {}).get("*", "")
         if not html_content:
             self.logger.warning("No content in parse result for page '%s'", page_title)
             return None
@@ -320,6 +331,8 @@ class MediaWikiReader(BasePydanticReader):
         title: str,
         url: Optional[str],
         last_modified: Optional[datetime],
+        pageid: Optional[int] = None,
+        namespace: Optional[int] = None,
     ) -> Optional[Document]:
         """
         Fetch and convert a single wiki page into a Document.
@@ -328,6 +341,8 @@ class MediaWikiReader(BasePydanticReader):
             title: Page title.
             url: Canonical URL for the page (may be None).
             last_modified: Last-modified timestamp (may be None).
+            pageid: Numeric page ID (may be None).
+            namespace: Namespace ID for the page (may be None).
 
         Returns:
             A Document, or None if the page content could not be fetched.
@@ -344,6 +359,8 @@ class MediaWikiReader(BasePydanticReader):
                 "title": title,
                 "url": url,
                 "last_modified": (last_modified.isoformat() if last_modified else None),
+                "pageid": pageid,
+                "namespace": namespace,
             },
         )
 
@@ -362,6 +379,8 @@ class MediaWikiReader(BasePydanticReader):
                 title=page_record["title"],
                 url=page_record.get("url"),
                 last_modified=page_record.get("last_modified"),
+                pageid=page_record.get("pageid"),
+                namespace=page_record.get("namespace"),
             )
             if doc is not None:
                 yield doc

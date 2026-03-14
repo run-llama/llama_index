@@ -1,7 +1,6 @@
 """Tests for MediaWikiReader (mwclient-backed version)."""
 
 import logging
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -171,9 +170,9 @@ class TestGetContentNamespaceIds:
         mock_site.get.return_value = {
             "query": {
                 "namespaces": {
-                    "0": {"id": 0, "*": "", "content": True},
-                    "1": {"id": 1, "*": "Talk", "content": False},
-                    "4": {"id": 4, "*": "Project", "content": True},
+                    "0": {"id": 0, "*": "", "content": ""},
+                    "1": {"id": 1, "*": "Talk"},
+                    "4": {"id": 4, "*": "Project", "content": ""},
                 }
             }
         }
@@ -219,7 +218,7 @@ class TestGetAllPages:
         mock_page = MagicMock()
         mock_page.name = "Page 1"
         mock_page.revision = True
-        mock_page.last_rev_time = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
+        mock_page.touched = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
         mock_site.allpages.return_value = [mock_page]
         mock_site_cls.return_value = mock_site
 
@@ -345,7 +344,7 @@ class TestGetPageContents:
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_success(self, mock_site_cls):
         mock_site = _mock_site()
-        mock_site.parse.return_value = {"text": {"*": "<p>Test page content.</p>"}}
+        mock_site.get.return_value = {"parse": {"text": {"*": "<p>Test page content.</p>"}}}
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -354,7 +353,8 @@ class TestGetPageContents:
         assert result is not None
         assert "Test page content" in result
         assert "<p>" in result  # raw HTML
-        mock_site.parse.assert_called_once_with(
+        mock_site.get.assert_called_once_with(
+            "parse",
             page="Test Page",
             prop="text",
             disablelimitreport=True,
@@ -365,7 +365,7 @@ class TestGetPageContents:
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_empty_parse_result(self, mock_site_cls):
         mock_site = _mock_site()
-        mock_site.parse.return_value = {}
+        mock_site.get.return_value = {}
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -376,7 +376,7 @@ class TestGetPageContents:
         import mwclient.errors
 
         mock_site = _mock_site()
-        mock_site.parse.side_effect = mwclient.errors.APIError("error", "info", {})
+        mock_site.get.side_effect = mwclient.errors.APIError("error", "info", {})
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
@@ -439,10 +439,10 @@ class TestLazyLoadData:
         page = MagicMock()
         page.name = "Test Page"
         page.revision = True
-        page.last_rev_time = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
+        page.touched = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
         mock_site.allpages.return_value = [page]
 
-        mock_site.parse.return_value = {"text": {"*": "<p>Hello world</p>"}}
+        mock_site.get.return_value = {"parse": {"text": {"*": "<p>Hello world</p>"}}}
 
         mock_site_cls.return_value = mock_site
 
@@ -474,16 +474,16 @@ class TestLazyLoadData:
         page_ok = MagicMock()
         page_ok.name = "PageWithContent"
         page_ok.revision = True
-        page_ok.last_rev_time = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
+        page_ok.touched = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
 
         page_skip = MagicMock()
         page_skip.name = "PageWithoutContent"
         page_skip.revision = True
-        page_skip.last_rev_time = (2024, 1, 2, 12, 0, 0, 0, 0, 0)
+        page_skip.touched = (2024, 1, 2, 12, 0, 0, 0, 0, 0)
 
         mock_site.allpages.return_value = [page_ok, page_skip]
-        mock_site.parse.side_effect = [
-            {"text": {"*": "<p>Only this page has content</p>"}},
+        mock_site.get.side_effect = [
+            {"parse": {"text": {"*": "<p>Only this page has content</p>"}}},
             {},  # second page: no content
         ]
         mock_site_cls.return_value = mock_site
