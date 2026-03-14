@@ -13,13 +13,15 @@
 ```py
 # Import Cohere
 from llama_index.llms.cohere import Cohere
-
+from llama_index.core.base.llms.types import ChatMessage
 # Set your API key
 api_key = "Your api key"
+SAMPLE_MODEL = 'command-r-08-2024'
 
-# Call complete function
-resp = Cohere(api_key=api_key).complete("Paul Graham is ")
-# Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
+llm = Cohere(model=SAMPLE_MODEL,api_key=api_key)
+
+#Call chat function
+resp = llm.chat(messages= [ChatMessage(content="Who is Paul Graham?")])
 print(resp)
 
 # Output
@@ -30,8 +32,6 @@ print(resp)
 # Has given away hundreds of millions of dollars to good causes.
 
 # Call chat with a list of messages
-from llama_index.core.llms import ChatMessage
-
 messages = [
     ChatMessage(role="user", content="hello there"),
     ChatMessage(
@@ -58,10 +58,13 @@ print(resp)
 ### Streaming: Using stream_complete endpoint
 
 ```py
+# Import Cohere
 from llama_index.llms.cohere import Cohere
+from llama_index.core.base.llms.types import ChatMessage
 
-llm = Cohere(api_key=api_key)
-resp = llm.stream_complete("Paul Graham is ")
+llm = Cohere(model=SAMPLE_MODEL,api_key=api_key)
+
+resp = llm.stream_complete("Paul Graham is")
 for r in resp:
     print(r.delta, end="")
 
@@ -93,8 +96,15 @@ for r in resp:
 ### Configure Model
 
 ```py
-llm = Cohere(model="command", api_key=api_key)
-resp = llm.complete("Paul Graham is ")
+SAMPLE_MODEL = 'command-r-08-2024'
+
+# Import Cohere
+from llama_index.llms.cohere import Cohere
+from llama_index.core.base.llms.types import ChatMessage
+
+llm = Cohere(model=SAMPLE_MODEL,api_key=api_key)
+
+resp = llm.chat(messages= [ChatMessage(content="Who is Paul Graham?")])
 # Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
 print(resp)
 
@@ -104,8 +114,7 @@ print(resp)
 # He is also the co-founder of the online dating platform Match.com.
 
 # Async calls
-llm = Cohere(model="command", api_key=api_key)
-resp = await llm.acomplete("Paul Graham is ")
+resp = await llm.acomplete("Paul Graham is")
 # Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
 print(resp)
 
@@ -116,7 +125,7 @@ print(resp)
 # many of which have become highly influential in the software engineering field.
 
 # Streaming async
-resp = await llm.astream_complete("Paul Graham is ")
+resp = await llm.astream_complete("Paul Graham is")
 async for delta in resp:
     print(delta.delta, end="")
 
@@ -131,14 +140,17 @@ async for delta in resp:
 ```py
 # If desired, you can have separate LLM instances use separate API keys.
 from llama_index.llms.cohere import Cohere
+from llama_index.core.base.llms.types import ChatMessage
+
+SAMPLE_MODEL = 'command-r-08-2024'
 
 llm_good = Cohere(api_key=api_key)
-llm_bad = Cohere(model="command", api_key="BAD_KEY")
+llm_bad = Cohere(api_key="BAD_KEY")
 
-resp = llm_good.complete("Paul Graham is ")
+resp = llm_good.chat(messages= [ChatMessage(content="Who is Paul Graham?")])
 print(resp)
 
-resp = llm_bad.complete("Paul Graham is ")
+resp = llm_bad.chat(messages= [ChatMessage(content="Who is Paul Graham?")])
 print(resp)
 ```
 
@@ -152,6 +164,7 @@ You can now specify a custom base URL when initializing the Cohere LLM. This is 
 
 ```python
 from llama_index.llms.cohere import Cohere
+from llama_index.core.base.llms.types import ChatMessage
 
 # Initialize with a custom base URL
 llm = Cohere(
