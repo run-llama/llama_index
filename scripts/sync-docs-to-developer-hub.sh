@@ -65,6 +65,7 @@ mkdir -p "$DEST_DIR"
 rsync -av --delete \
   --exclude='examples/***' \
   --exclude='api_reference/***' \
+  --exclude='integrations/***' \
   --exclude='CONTRIBUTING.md' \
   --exclude='DOCS_README.md' \
   --exclude='_static/***' \
