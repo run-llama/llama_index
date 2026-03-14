@@ -113,12 +113,14 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
     _delta_sync_index_spec: dict = PrivateAttr()
     _direct_access_index_spec: dict = PrivateAttr()
     _doc_id_to_pk: dict = PrivateAttr()
+    _doc_id_column: str = PrivateAttr()
 
     def __init__(
         self,
         index: VectorSearchIndex,
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
+        doc_id_column: str = "doc_id",
     ) -> None:
         super().__init__(text_column=text_column, columns=columns)
 
@@ -135,6 +137,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             )
 
         self._index = index
+        self._doc_id_column = doc_id_column
 
         # unpack the index spec
         index_description = _DatabricksIndexDescription.parse_obj(
@@ -149,8 +152,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
 
         if columns is None:
             columns = []
-        if "doc_id" not in columns:
-            columns = columns[:19] + ["doc_id"]
+        if self._doc_id_column not in columns:
+            columns = columns[:19] + [self._doc_id_column]
 
         # initialize the column name for the text column in the delta table
         if self._is_databricks_managed_embeddings():
@@ -216,8 +219,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             metadata_columns = self.columns or []
 
             # explicitly record doc_id as metadata (for delete)
-            if "doc_id" not in metadata_columns:
-                metadata_columns.append("doc_id")
+            if self._doc_id_column not in metadata_columns:
+                metadata_columns.append(self._doc_id_column)
 
             entry = {
                 self._primary_key: node_id,
