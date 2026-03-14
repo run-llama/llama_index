@@ -21,10 +21,10 @@ print(response)
 
 ### Available Models
 
-| Model | Description |
-|-------|-------------|
-| `MiniMax-M2.5` | Peak Performance. Ultimate Value. Master the Complex. |
-| `MiniMax-M2.5-highspeed` | Same performance, faster and more agile. |
+| Model                    | Description                                           |
+| ------------------------ | ----------------------------------------------------- |
+| `MiniMax-M2.5`           | Peak Performance. Ultimate Value. Master the Complex. |
+| `MiniMax-M2.5-highspeed` | Same performance, faster and more agile.              |
 
 Both models support a 204,800-token context window.
 

@@ -41,6 +41,11 @@ class MiniMax(OpenAILike):
         **openai_llm_kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("MINIMAX_API_KEY", None)
+        if api_key is None:
+            raise ValueError(
+                "MiniMax API key is required. Either pass `api_key` or set the "
+                "`MINIMAX_API_KEY` environment variable."
+            )
         context_window = openai_llm_kwargs.pop(
             "context_window", get_context_window(model)
         )

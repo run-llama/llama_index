@@ -29,7 +29,7 @@ name = "llama-index-llms-minimax"
 version = "0.1.0"
 description = "llama-index llms minimax integration"
 authors = [{name = "MiniMax"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-llms-openai-like>=0.5.0,<0.6"]
@@ -58,4 +58,4 @@ MiniMax = "minimax"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.10"
