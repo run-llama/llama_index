@@ -53,6 +53,21 @@ def test_pydantic_format() -> None:
     assert "hello world" in formatted_query
 
 
+class NonAsciiModel(BaseModel):
+    username: str = "用户名"
+    formula: str = "H₂O"
+
+
+def test_pydantic_format_preserves_non_ascii() -> None:
+    """Test that non-ASCII characters in schema descriptions are not escaped."""
+    parser = PydanticOutputParser(output_cls=NonAsciiModel)
+    format_str = parser.get_format_string(escape_json=False)
+    # Non-ASCII characters should be preserved, not escaped to \\uXXXX
+    assert "用户名" in format_str
+    assert "H₂O" in format_str
+    assert "\\u" not in format_str
+
+
 def test_pydantic_format_with_blocks() -> None:
     """Test pydantic format with blocks."""
     parser = PydanticOutputParser(output_cls=AttrDict)
