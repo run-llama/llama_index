@@ -5,19 +5,7 @@ Pay for AI services using USDC (gasless) via the x402 protocol.
 ## Installation
 
 ```bash
-pip install llama-index-tools-moltspay
-```
-
-## Setup
-
-1. Initialize a MoltsPay wallet:
-```bash
-npx moltspay init --chain base
-```
-
-2. Fund your wallet with USDC:
-```bash
-npx moltspay fund
+pip install llama-index-tools-moltspay moltspay
 ```
 
 ## Usage
@@ -51,17 +39,17 @@ Pay for and execute an AI service.
 
 ```python
 result = tool.pay_service(
-    provider_url="https://juai8.com/zen7",
+    service_url="https://juai8.com/zen7",
     service_id="text-to-video",
     prompt="A dragon flying over mountains"
 )
 ```
 
-### get_services
-List available services from a provider.
+### discover_services
+Discover available services from a provider.
 
 ```python
-services = tool.get_services("https://juai8.com/zen7")
+services = tool.discover_services("https://juai8.com/zen7")
 ```
 
 ### get_balance
@@ -72,10 +60,24 @@ balance = tool.get_balance()
 ```
 
 ### fund_wallet
-Get instructions to fund the wallet with USDC.
+Get a link to fund the wallet with USDC.
 
 ```python
-funding_info = tool.fund_wallet()
+funding_info = tool.fund_wallet(amount=20.0)
+```
+
+### get_limits
+Check current spending limits.
+
+```python
+limits = tool.get_limits()
+```
+
+### set_limits
+Update spending limits.
+
+```python
+tool.set_limits(max_per_tx=5.0, max_per_day=50.0)
 ```
 
 ## Features
@@ -84,6 +86,17 @@ funding_info = tool.fund_wallet()
 - **Pay-for-success**: Payment settles only if service delivers
 - **Agent-to-agent commerce**: AI agents can purchase from other AI services
 - **Multi-chain**: Supports Base, Polygon, Ethereum
+- **Spending limits**: Control how much your agent can spend
+
+## Configuration
+
+```python
+# Custom wallet path and chain
+tools = MoltsPayToolSpec(
+    wallet_path="/path/to/wallet.json",
+    chain="polygon"  # base, polygon, or ethereum
+).to_tool_list()
+```
 
 ## Links
 

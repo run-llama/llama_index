@@ -6,7 +6,7 @@ Enables AI agents to autonomously purchase services from other agents.
 """
 
 import os
-from typing import Optional
+from typing import Optional, List
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -25,8 +25,8 @@ class MoltsPayToolSpec(BaseToolSpec):
     
     Setup:
         1. Install: pip install moltspay
-        2. Initialize wallet: npx moltspay init --chain base
-        3. Fund wallet: npx moltspay fund
+        2. Create wallet: MoltsPay will auto-create on first use
+        3. Fund wallet: Use fund() to get onramp URL
     
     Example:
         ```python
@@ -46,20 +46,29 @@ class MoltsPayToolSpec(BaseToolSpec):
         ```
     """
     
-    spec_functions = ["pay_service", "get_services", "get_balance", "fund_wallet"]
+    spec_functions = [
+        "pay_service",
+        "discover_services", 
+        "get_balance",
+        "fund_wallet",
+        "get_limits",
+        "set_limits"
+    ]
     
-    def __init__(self, wallet_path: Optional[str] = None):
+    def __init__(self, wallet_path: Optional[str] = None, chain: str = "base"):
         """
         Initialize MoltsPayToolSpec.
         
         Args:
             wallet_path: Path to MoltsPay wallet JSON file.
                         Defaults to ~/.moltspay/wallet.json
+            chain: Blockchain to use (base, polygon, ethereum). Default: base
         """
         self._wallet_path = wallet_path or os.environ.get(
             "MOLTSPAY_WALLET_PATH",
             os.path.expanduser("~/.moltspay/wallet.json")
         )
+        self._chain = chain
         self._client = None
     
     def _get_client(self):
@@ -67,7 +76,10 @@ class MoltsPayToolSpec(BaseToolSpec):
         if self._client is None:
             try:
                 from moltspay import MoltsPay
-                self._client = MoltsPay(wallet_path=self._wallet_path)
+                self._client = MoltsPay(
+                    wallet_path=self._wallet_path,
+                    chain=self._chain
+                )
             except ImportError:
                 raise ImportError(
                     "MoltsPay is required. Install with: pip install moltspay"
@@ -76,10 +88,10 @@ class MoltsPayToolSpec(BaseToolSpec):
     
     def pay_service(
         self,
-        provider_url: str,
+        service_url: str,
         service_id: str,
         prompt: Optional[str] = None,
-        image_path: Optional[str] = None,
+        image_url: Optional[str] = None,
     ) -> str:
         """
         Pay for and execute an AI service.
@@ -88,17 +100,17 @@ class MoltsPayToolSpec(BaseToolSpec):
         if the service successfully delivers results.
         
         Args:
-            provider_url: Service provider URL (e.g., "https://juai8.com/zen7")
-            service_id: Service identifier (e.g., "text-to-video")
+            service_url: Service provider URL (e.g., "https://juai8.com/zen7")
+            service_id: Service identifier (e.g., "text-to-video", "image-to-video")
             prompt: Text prompt for the service
-            image_path: Path to image file for image-based services
+            image_url: URL to image for image-based services
             
         Returns:
             Service result (usually a URL to the generated content)
             
         Example:
             >>> result = tool.pay_service(
-            ...     provider_url="https://juai8.com/zen7",
+            ...     service_url="https://juai8.com/zen7",
             ...     service_id="text-to-video",
             ...     prompt="A dragon flying over mountains"
             ... )
@@ -106,94 +118,176 @@ class MoltsPayToolSpec(BaseToolSpec):
         try:
             client = self._get_client()
             
+            # Build params based on what's provided
             params = {}
             if prompt:
                 params["prompt"] = prompt
-            if image_path:
-                params["image"] = image_path
+            if image_url:
+                params["image_url"] = image_url
             
-            result = client.x402(
-                url=f"{provider_url.rstrip('/')}/v1/{service_id}",
-                method="POST",
-                data=params
+            result = client.pay(
+                service_url=service_url,
+                service_id=service_id,
+                **params
             )
             
-            return str(result)
+            # Return the result URL or data
+            if hasattr(result, 'url'):
+                return f"Success! Result: {result.url}"
+            elif hasattr(result, 'data'):
+                return f"Success! Data: {result.data}"
+            else:
+                return str(result)
             
         except Exception as e:
-            return f"MoltsPay error: {str(e)}"
+            return f"Payment error: {str(e)}"
     
-    def get_services(self, provider_url: str) -> str:
+    def discover_services(self, service_url: str) -> str:
         """
-        List available services from a MoltsPay provider.
+        Discover available services from a MoltsPay provider.
         
         Args:
-            provider_url: Service provider URL
+            service_url: Service provider URL (e.g., "https://juai8.com/zen7")
             
         Returns:
-            JSON string listing available services and prices
+            List of available services with prices
             
         Example:
-            >>> services = tool.get_services("https://juai8.com/zen7")
+            >>> tool.discover_services("https://juai8.com/zen7")
         """
         try:
-            import requests
-            response = requests.get(
-                f"{provider_url.rstrip('/')}/services",
-                timeout=10
-            )
-            response.raise_for_status()
-            return response.text
+            client = self._get_client()
+            services = client.discover(service_url)
+            
+            result = f"Available services from {service_url}:\n\n"
+            for svc in services:
+                result += f"- {svc.id}: {svc.name}\n"
+                result += f"  Price: ${svc.price} {svc.currency}\n"
+                if svc.description:
+                    result += f"  Description: {svc.description}\n"
+                result += "\n"
+            
+            return result
+            
         except Exception as e:
-            return f"Error fetching services: {str(e)}"
+            return f"Error discovering services: {str(e)}"
     
     def get_balance(self) -> str:
         """
         Get current wallet balance.
         
         Returns:
-            Wallet address and USDC balance
-        """
-        try:
-            client = self._get_client()
-            balance = client.get_balance()
-            address = client.address
-            return f"Wallet: {address}\nBalance: {balance} USDC"
-        except Exception as e:
-            return f"Error getting balance: {str(e)}"
-    
-    def fund_wallet(self) -> str:
-        """
-        Get a link to fund the wallet with USDC.
-        
-        Opens an onramp to purchase USDC directly with card or bank transfer.
-        If the wallet already has USDC, returns the wallet address for direct transfer.
-        
-        Returns:
-            Funding instructions with wallet address or onramp URL
+            Wallet address and USDC balance on each chain
             
         Example:
-            >>> tool.fund_wallet()
-            "Fund your wallet at: https://... or send USDC to 0x..."
+            >>> tool.get_balance()
         """
         try:
             client = self._get_client()
-            address = client.address
-            balance = client.get_balance()
+            balance = client.balance()
             
-            # Get onramp URL
-            onramp_url = client.get_fund_url() if hasattr(client, 'get_fund_url') else None
-            
-            result = f"Wallet Address: {address}\n"
-            result += f"Current Balance: {balance} USDC\n\n"
-            result += "To fund your wallet:\n"
-            result += f"1. Send USDC (Base network) to: {address}\n"
-            if onramp_url:
-                result += f"2. Or buy USDC directly: {onramp_url}\n"
-            else:
-                result += "2. Or run: npx moltspay fund\n"
+            result = f"Wallet: {client.address}\n\n"
+            result += "Balances:\n"
+            if hasattr(balance, 'usdc'):
+                result += f"  USDC: ${balance.usdc}\n"
+            if hasattr(balance, 'by_chain'):
+                for chain, amount in balance.by_chain.items():
+                    result += f"  {chain}: ${amount} USDC\n"
             
             return result
             
         except Exception as e:
-            return f"Error: {str(e)}"
+            return f"Error getting balance: {str(e)}"
+    
+    def fund_wallet(self, amount: float = 10.0) -> str:
+        """
+        Get a link to fund the wallet with USDC.
+        
+        Opens an onramp to purchase USDC directly with card or bank transfer.
+        
+        Args:
+            amount: Amount in USD to fund (default: $10)
+            
+        Returns:
+            Funding URL and instructions
+            
+        Example:
+            >>> tool.fund_wallet(20.0)
+        """
+        try:
+            client = self._get_client()
+            result = client.fund(amount=amount)
+            
+            output = f"Fund your wallet with ${amount} USDC:\n\n"
+            output += f"Wallet Address: {client.address}\n"
+            output += f"Chain: {self._chain}\n\n"
+            
+            if hasattr(result, 'url') and result.url:
+                output += f"Onramp URL: {result.url}\n"
+                output += "\nClick the link to purchase USDC with card/bank transfer.\n"
+            else:
+                output += f"Send USDC on {self._chain} to: {client.address}\n"
+            
+            return output
+            
+        except Exception as e:
+            return f"Error generating funding link: {str(e)}"
+    
+    def get_limits(self) -> str:
+        """
+        Get current spending limits.
+        
+        Returns:
+            Current max per transaction and daily limits
+            
+        Example:
+            >>> tool.get_limits()
+        """
+        try:
+            client = self._get_client()
+            limits = client.limits()
+            
+            result = "Spending Limits:\n"
+            result += f"  Max per transaction: ${limits.max_per_tx}\n"
+            result += f"  Max per day: ${limits.max_per_day}\n"
+            if hasattr(limits, 'spent_today'):
+                result += f"  Spent today: ${limits.spent_today}\n"
+            
+            return result
+            
+        except Exception as e:
+            return f"Error getting limits: {str(e)}"
+    
+    def set_limits(
+        self,
+        max_per_tx: Optional[float] = None,
+        max_per_day: Optional[float] = None
+    ) -> str:
+        """
+        Update spending limits.
+        
+        Args:
+            max_per_tx: Maximum amount per transaction in USD
+            max_per_day: Maximum amount per day in USD
+            
+        Returns:
+            Confirmation of new limits
+            
+        Example:
+            >>> tool.set_limits(max_per_tx=5.0, max_per_day=50.0)
+        """
+        try:
+            client = self._get_client()
+            client.set_limits(max_per_tx=max_per_tx, max_per_day=max_per_day)
+            
+            # Get updated limits
+            limits = client.limits()
+            
+            result = "Limits updated!\n"
+            result += f"  Max per transaction: ${limits.max_per_tx}\n"
+            result += f"  Max per day: ${limits.max_per_day}\n"
+            
+            return result
+            
+        except Exception as e:
+            return f"Error setting limits: {str(e)}"
