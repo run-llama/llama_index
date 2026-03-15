@@ -46,7 +46,7 @@ class MoltsPayToolSpec(BaseToolSpec):
         ```
     """
     
-    spec_functions = ["pay_service", "get_services", "get_balance"]
+    spec_functions = ["pay_service", "get_services", "get_balance", "fund_wallet"]
     
     def __init__(self, wallet_path: Optional[str] = None):
         """
@@ -161,3 +161,39 @@ class MoltsPayToolSpec(BaseToolSpec):
             return f"Wallet: {address}\nBalance: {balance} USDC"
         except Exception as e:
             return f"Error getting balance: {str(e)}"
+    
+    def fund_wallet(self) -> str:
+        """
+        Get a link to fund the wallet with USDC.
+        
+        Opens an onramp to purchase USDC directly with card or bank transfer.
+        If the wallet already has USDC, returns the wallet address for direct transfer.
+        
+        Returns:
+            Funding instructions with wallet address or onramp URL
+            
+        Example:
+            >>> tool.fund_wallet()
+            "Fund your wallet at: https://... or send USDC to 0x..."
+        """
+        try:
+            client = self._get_client()
+            address = client.address
+            balance = client.get_balance()
+            
+            # Get onramp URL
+            onramp_url = client.get_fund_url() if hasattr(client, 'get_fund_url') else None
+            
+            result = f"Wallet Address: {address}\n"
+            result += f"Current Balance: {balance} USDC\n\n"
+            result += "To fund your wallet:\n"
+            result += f"1. Send USDC (Base network) to: {address}\n"
+            if onramp_url:
+                result += f"2. Or buy USDC directly: {onramp_url}\n"
+            else:
+                result += "2. Or run: npx moltspay fund\n"
+            
+            return result
+            
+        except Exception as e:
+            return f"Error: {str(e)}"

@@ -71,6 +71,13 @@ Check wallet balance.
 balance = tool.get_balance()
 ```
 
+### fund_wallet
+Get instructions to fund the wallet with USDC.
+
+```python
+funding_info = tool.fund_wallet()
+```
+
 ## Features
 
 - **Gasless payments**: No ETH needed, pay only in USDC
