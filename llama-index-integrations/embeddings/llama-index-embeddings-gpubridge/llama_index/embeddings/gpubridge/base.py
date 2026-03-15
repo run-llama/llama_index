@@ -71,7 +71,7 @@ class GPUBridgeEmbedding(BaseEmbedding):
         for _ in range(30):
             time.sleep(1)
             resp = requests.get(
-                f"{GPUBRIDGE_BASE_URL}{status_url}",
+                f"{self.base_url.rstrip('/run')}{status_url}",
                 headers=self._get_headers(),
                 timeout=10,
             )
