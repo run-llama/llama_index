@@ -1,0 +1,24 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-moltspay"
+version = "0.1.0"
+description = "MoltsPay tool for LlamaIndex - Pay for AI services with USDC via x402 protocol"
+authors = ["Zen7 Labs <support@zen7.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://moltspay.com"
+repository = "https://github.com/run-llama/llama_index"
+documentation = "https://docs.moltspay.com"
+keywords = ["llama-index", "moltspay", "crypto", "payments", "ai-agents", "x402"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = ">=0.12.0"
+moltspay = ">=1.0.0"
+requests = ">=2.25.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
