@@ -147,7 +147,7 @@ class VectorMemory(BaseMemory):
         return [
             ChatMessage.model_validate(sub_dict)
             for node in nodes
-            for sub_dict in node.metadata["sub_dicts"]
+            for sub_dict in node.metadata.get("sub_dicts", [])
         ]
 
     def get_all(self) -> List[ChatMessage]:
