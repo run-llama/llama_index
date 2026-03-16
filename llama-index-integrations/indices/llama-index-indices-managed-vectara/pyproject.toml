@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-indices-managed-vectara"
-version = "0.6.0"
+version = "0.5.1"
 description = "llama-index managed vectara integration"
 authors = [
     {name = "David Oplatka", email = "david.oplatka@vectara.com"},
     {name = "Ofer Mendelevitch", email = "ofer@vectara.com"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15"]

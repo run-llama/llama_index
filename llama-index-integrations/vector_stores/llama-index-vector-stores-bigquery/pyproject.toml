@@ -27,9 +27,9 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-bigquery"
-version = "0.2.0"
+version = "0.1.1"
 description = "llama-index vector_stores bigquery vector search integration"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

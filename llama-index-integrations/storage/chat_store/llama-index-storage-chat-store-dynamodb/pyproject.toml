@@ -27,10 +27,10 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-dynamodb"
-version = "0.5.0"
+version = "0.4.2"
 description = "llama-index storage-chat-store aws dynamodb integration"
 authors = [{name = "brycecf", email = "26725654+brycecf@users.noreply.github.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

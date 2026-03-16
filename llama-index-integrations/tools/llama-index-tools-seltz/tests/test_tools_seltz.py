@@ -49,9 +49,7 @@ def test_search(mock_seltz, mock_includes_class):
     results = tool.search("test query", max_documents=5)
 
     mock_includes_class.assert_called_once_with(max_documents=5)
-    mock_client.search.assert_called_once_with(
-        "test query", includes=mock_includes, context=None, profile=None
-    )
+    mock_client.search.assert_called_once_with("test query", includes=mock_includes)
 
     assert len(results) == 2
     assert all(isinstance(doc, Document) for doc in results)
@@ -59,35 +57,6 @@ def test_search(mock_seltz, mock_includes_class):
     assert results[0].metadata["url"] == "https://example1.com"
     assert results[1].text == "Result content 2"
     assert results[1].metadata["url"] == "https://example2.com"
-
-
-@patch("llama_index.tools.seltz.base.Includes")
-@patch("llama_index.tools.seltz.base.Seltz")
-def test_search_with_context_and_profile(mock_seltz, mock_includes_class):
-    mock_response = Mock()
-    mock_response.documents = []
-
-    mock_client = Mock()
-    mock_client.search.return_value = mock_response
-    mock_seltz.return_value = mock_client
-
-    mock_includes = Mock()
-    mock_includes_class.return_value = mock_includes
-
-    tool = SeltzToolSpec(api_key="test-key")
-    tool.search(
-        "test query",
-        max_documents=5,
-        context="extra context",
-        profile="my-profile",
-    )
-
-    mock_client.search.assert_called_once_with(
-        "test query",
-        includes=mock_includes,
-        context="extra context",
-        profile="my-profile",
-    )
 
 
 @patch("llama_index.tools.seltz.base.Includes")
@@ -107,9 +76,7 @@ def test_search_default_max_documents(mock_seltz, mock_includes_class):
     tool.search("test query")
 
     mock_includes_class.assert_called_once_with(max_documents=10)
-    mock_client.search.assert_called_once_with(
-        "test query", includes=mock_includes, context=None, profile=None
-    )
+    mock_client.search.assert_called_once_with("test query", includes=mock_includes)
 
 
 @patch("llama_index.tools.seltz.base.Seltz")

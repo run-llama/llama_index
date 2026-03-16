@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-mariadb"
-version = "0.5.0"
+version = "0.4.1"
 description = "llama-index vector_stores mariadb integration"
 authors = [
     {name = "Kalin Arsov", email = "kalin@skysql.com"},
     {name = "Vishal Rao", email = "vishal@skysql.com"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -9,13 +9,6 @@ def test_class():
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
-def test_model_param_raises_error():
-    """Test that passing 'model' instead of 'model_name' raises ValueError."""
-    bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
-    with pytest.raises(ValueError, match="Please use 'model_name' instead"):
-        BedrockEmbedding(model="cohere.embed-multilingual-v3", client=bedrock_client)
-
-
 def test_get_provider_two_part_format():
     """Test _get_provider with 2-part model names (provider.model)."""
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")

@@ -27,10 +27,10 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-siliconflow"
-version = "0.4.0"
+version = "0.3.2"
 description = "llama-index embeddings siliconflow integration"
 authors = [{name = "nightosong", email = "nightosong2013@gmail.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

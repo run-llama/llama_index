@@ -24,8 +24,6 @@ DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
 _logger = logging.getLogger(__name__)
 
-_INSTRUMENT_TAGS_KEY = "instrument_tags"
-
 # ContextVar for managing active instrument tags
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
     "instrument_tags", default={}
@@ -116,15 +114,6 @@ class Dispatcher(BaseModel):
     def root(self) -> "Dispatcher":
         assert self.manager is not None
         return self.manager.dispatchers[self.root_name]
-
-    def _walk_span_handlers(self) -> Generator[BaseSpanHandler, None, None]:
-        """Yield every span handler reachable via the propagation chain."""
-        c: Optional[Dispatcher] = self
-        while c:
-            yield from c.span_handlers
-            if not c.propagate:
-                break
-            c = c.parent
 
     def add_event_handler(self, handler: BaseEventHandler) -> None:
         """Add handler to set of handlers."""
@@ -271,73 +260,6 @@ class Dispatcher(BaseModel):
                 c = None
             else:
                 c = c.parent
-
-    def capture_propagation_context(self) -> Dict[str, Any]:
-        """
-        Capture trace propagation context from all registered span handlers.
-
-        Each span handler namespaces its data under its own key. The Dispatcher
-        also captures active instrument_tags. The returned dict can be serialized
-        and passed to restore_propagation_context() in another process.
-        """
-        result: Dict[str, Any] = {}
-        for h in self._walk_span_handlers():
-            try:
-                result.update(h.capture_propagation_context())
-            except BaseException:
-                _logger.warning("Error capturing propagation context", exc_info=True)
-        tags = active_instrument_tags.get()
-        if tags:
-            result[_INSTRUMENT_TAGS_KEY] = dict(tags)
-        return result
-
-    def restore_propagation_context(self, context: Dict[str, Any]) -> None:
-        """
-        Restore trace propagation context on all registered span handlers.
-
-        Also restores instrument_tags so that subsequent spans see them.
-        """
-        for h in self._walk_span_handlers():
-            try:
-                h.restore_propagation_context(context)
-            except BaseException:
-                _logger.warning("Error restoring propagation context", exc_info=True)
-        tags = context.get(_INSTRUMENT_TAGS_KEY)
-        if tags:
-            active_instrument_tags.set(dict(tags))
-
-    def shutdown(self) -> None:
-        """
-        Drop all open spans and close all handlers.
-
-        Walks the dispatcher parent chain (same as other span methods),
-        drops every open span on every handler, then calls close() on
-        each handler. Exceptions are swallowed to match existing convention.
-        """
-        _synthetic_bound_args = inspect.signature(lambda: None).bind()
-        _shutdown_err = RuntimeError("dispatcher shutdown")
-
-        for h in self._walk_span_handlers():
-            # Drop all open spans — snapshot keys since span_drop mutates the dict
-            for span_id in list(h.open_spans.keys()):
-                try:
-                    h.span_drop(
-                        id_=span_id,
-                        bound_args=_synthetic_bound_args,
-                        instance=None,
-                        err=_shutdown_err,
-                    )
-                except BaseException:
-                    _logger.debug(
-                        "Error dropping span %s during shutdown",
-                        span_id,
-                        exc_info=True,
-                    )
-            # Close the handler
-            try:
-                h.close()
-            except BaseException:
-                _logger.warning("Error closing handler %s", h, exc_info=True)
 
     def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.

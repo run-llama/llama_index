@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-alibabacloud-aisearch"
-version = "0.4.0"
+version = "0.3.1"
 description = "llama-index embeddings alibabacloud_aisearch integration"
 authors = [{name = "llama-index"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

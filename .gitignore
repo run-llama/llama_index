@@ -1,7 +1,6 @@
 # Build
 .pants.d/
 dist/
-.docs-preview/
 migration_scripts/
 /uv.lock
 

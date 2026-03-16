@@ -245,9 +245,7 @@ class CitationQueryEngine(BaseQueryEngine):
         nodes = await self._retriever.aretrieve(query_bundle)
 
         for postprocessor in self._node_postprocessors:
-            nodes = await postprocessor.apostprocess_nodes(
-                nodes, query_bundle=query_bundle
-            )
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
 
         return nodes
 

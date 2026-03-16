@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from llama_index.core import MockEmbedding
@@ -10,8 +8,7 @@ from llama_index.core.chat_engine.multi_modal_context import (
 from llama_index.core.indices import MultiModalVectorStoreIndex
 from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
 from llama_index.core.schema import Document, ImageDocument, QueryBundle
-from llama_index.core.llms import TextBlock, ImageBlock, MessageRole
-from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.chat_engine.types import ChatMode
 
 SYSTEM_PROMPT = "Talk like a pirate."
@@ -228,43 +225,3 @@ async def test_chat_astream(chat_engine: MultiModalContextChatEngine):
     assert str(q) in str(response)
     assert len(chat_engine.chat_history) == 2
     assert str(q) in str(chat_engine.chat_history[0])
-
-
-def test_stream_chat_memory_not_lost_on_incomplete_consumption(
-    chat_engine: MultiModalContextChatEngine,
-):
-    # Use ChatMemoryBuffer to avoid per-event-loop aiosqlite isolation
-    # when the background thread writes memory.
-    chat_engine._memory = ChatMemoryBuffer.from_defaults()
-    response = chat_engine.stream_chat("Hello World!")
-    assert len(chat_engine.chat_history) >= 1
-    assert chat_engine.chat_history[0].role == MessageRole.USER
-    assert "Hello World!" in str(chat_engine.chat_history[0].content)
-    for i, _ in enumerate(response.response_gen):
-        if i >= 2:
-            break
-    deadline = time.time() + 2.0
-    while not response.is_done and time.time() < deadline:
-        time.sleep(0.01)
-    assert response.is_done
-    assert len(chat_engine.chat_history) == 2
-    assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
-
-
-@pytest.mark.asyncio
-async def test_astream_chat_memory_not_lost_on_incomplete_consumption(
-    chat_engine: MultiModalContextChatEngine,
-):
-    response = await chat_engine.astream_chat("Hello World!")
-    assert len(chat_engine.chat_history) == 1
-    assert chat_engine.chat_history[0].role == MessageRole.USER
-    assert "Hello World!" in str(chat_engine.chat_history[0].content)
-    i = 0
-    async for _ in response.async_response_gen():
-        i += 1
-        if i >= 2:
-            break
-    assert response.awrite_response_to_history_task is not None
-    await response.awrite_response_to_history_task
-    assert len(chat_engine.chat_history) == 2
-    assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT

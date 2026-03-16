@@ -7,7 +7,6 @@ This module contains utility functions for the Github readers.
 import asyncio
 import os
 import time
-import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
@@ -105,8 +104,8 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         github_client: GithubClient,
         owner: str,
         repo: str,
+        loop: asyncio.AbstractEventLoop,
         buffer_size: int,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
         verbose: bool = False,
         timeout: Optional[int] = 5,
         retries: int = 0,
@@ -120,22 +119,14 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
             - github_client (GithubClient): Github client.
             - owner (str): Owner of the repository.
             - repo (str): Name of the repository.
-            - buffer_size (int): Size of the buffer.
-            - loop (Optional[asyncio.AbstractEventLoop]): Deprecated. No longer used.
-                Kept for backwards compatibility.
+            - loop (asyncio.AbstractEventLoop): Event loop.
             - verbose (bool): Whether to print verbose messages.
+            - buffer_size (int): Size of the buffer.
             - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
             - retries (int): Number of retries for requests made to the Github API. Default is 0.
 
         """
         super().__init__(buffer_size)
-        if loop is not None:
-            warnings.warn(
-                "The 'loop' parameter is deprecated and will be removed in a future release. "
-                "It is no longer used internally.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         self._blobs_and_paths = blobs_and_paths
         self._github_client = github_client
         self._owner = owner
@@ -143,6 +134,10 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         self._verbose = verbose
         self._timeout = timeout
         self._retries = retries
+        if loop is None:
+            loop = asyncio.get_event_loop()
+            if loop is None:
+                raise ValueError("No event loop found")
 
     async def _fill_buffer(self) -> None:
         """

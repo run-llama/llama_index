@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -1745,7 +1745,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-google"
-version = "0.6.2"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },

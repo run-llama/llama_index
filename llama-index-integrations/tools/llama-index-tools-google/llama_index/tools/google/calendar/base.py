@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import datetime
-import json
 import os
 from typing import Any, List, Optional, Union
 
@@ -36,46 +35,16 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     spec_functions = ["load_data", "create_event", "get_date"]
 
-    def __init__(
-        self,
-        creds: Optional[Any] = None,
-        credentials_path: str = "credentials.json",
-        token_path: str = "token.json",
-        service_account_key_path: str = "service_account_key.json",
-        service_account_key: Optional[dict] = None,
-        authorized_user_info: Optional[dict] = None,
-        is_cloud: bool = False,
-    ):
+    def __init__(self, creds: Optional[Any] = None):
         """
         Initialize the GoogleCalendarToolSpec.
 
         Args:
             creds (Optional[Any]): Pre-configured credentials to use for authentication.
                                  If provided, these will be used instead of the OAuth flow.
-            credentials_path (str): Path to the OAuth client secrets file.
-            token_path (str): Path to the token file for storing user credentials.
-            service_account_key_path (str): Path to the service account key JSON file.
-            service_account_key (Optional[dict]): Service account key info as a dict.
-            authorized_user_info (Optional[dict]): Authorized user info as a dict.
-            is_cloud (bool): If True, skip writing token file to disk.
 
         """
         self.creds = creds
-        self.credentials_path = credentials_path
-        self.token_path = token_path
-        self.service_account_key_path = service_account_key_path
-        self.service_account_key = service_account_key
-        self.authorized_user_info = authorized_user_info
-        self.is_cloud = is_cloud
-        self.service = None
-
-    def _cache_service(self) -> None:
-        if self.service:
-            return
-        from googleapiclient.discovery import build
-
-        credentials = self._get_credentials()
-        self.service = build("calendar", "v3", credentials=credentials)
 
     def load_data(
         self,
@@ -90,7 +59,10 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
 
         """
-        self._cache_service()
+        from googleapiclient.discovery import build
+
+        credentials = self._get_credentials()
+        service = build("calendar", "v3", credentials=credentials)
 
         if start_date is None:
             start_date = datetime.date.today()
@@ -101,7 +73,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         start_datetime_utc = start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
         events_result = (
-            self.service.events()
+            service.events()
             .list(
                 calendarId="primary",
                 timeMin=start_datetime_utc,
@@ -150,13 +122,9 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         """
         Get valid user credentials from storage.
 
-        Credential resolution order:
-        1. Pre-built ``creds`` passed to the constructor.
-        2. ``service_account_key`` dict.
-        3. ``service_account_key_path`` file.
-        4. ``authorized_user_info`` dict.
-        5. ``token_path`` file (stored OAuth tokens).
-        6. ``InstalledAppFlow`` from ``credentials_path`` (desktop OAuth).
+        The file token.json stores the user's access and refresh tokens, and is
+        created automatically when the authorization flow completes for the first
+        time.
 
         Returns:
             Credentials, the obtained credential.
@@ -165,42 +133,26 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         if self.creds is not None:
             return self.creds
 
-        from google.auth.transport.requests import Request
-        from google.oauth2 import service_account as sa
-        from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
 
-        if self.service_account_key is not None:
-            return sa.Credentials.from_service_account_info(
-                self.service_account_key, scopes=SCOPES
-            )
-
-        if os.path.isfile(self.service_account_key_path):
-            with open(self.service_account_key_path, encoding="utf-8") as f:
-                sa_key = json.load(f)
-            return sa.Credentials.from_service_account_info(sa_key, scopes=SCOPES)
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
 
         creds = None
-        if self.authorized_user_info is not None:
-            creds = Credentials.from_authorized_user_info(
-                self.authorized_user_info, SCOPES
-            )
-        elif os.path.isfile(self.token_path):
-            creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-
+        if os.path.exists("token.json"):
+            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_path, SCOPES
+                    "credentials.json", SCOPES
                 )
                 creds = flow.run_local_server(port=8080)
             # Save the credentials for the next run
-            if not self.is_cloud:
-                with open(self.token_path, "w") as token:
-                    token.write(creds.to_json())
+            with open("token.json", "w") as token:
+                token.write(creds.to_json())
 
         return creds
 
@@ -225,7 +177,10 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             attendees Optional[List[str]]: A list of email address to invite to the event
 
         """
-        self._cache_service()
+        from googleapiclient.discovery import build
+
+        credentials = self._get_credentials()
+        service = build("calendar", "v3", credentials=credentials)
 
         attendees_list = (
             [{"email": attendee} for attendee in attendees] if attendees else []
@@ -254,7 +209,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             },
             "attendees": attendees_list,
         }
-        event = self.service.events().insert(calendarId="primary", body=event).execute()
+        event = service.events().insert(calendarId="primary", body=event).execute()
         return (
             "Your calendar event has been created successfully! You can move on to the"
             " next step."

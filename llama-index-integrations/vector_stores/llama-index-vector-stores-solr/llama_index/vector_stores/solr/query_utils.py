@@ -122,15 +122,11 @@ def _handle_metadata_filter(subfilter: Union[MetadataFilter, ExactMatchFilter]) 
         if isinstance(value, str):
             # NOTE: Ensure that the field is properly configured for text_match_insensitive in the Solr schema
             return f'({key}:"{value}")'
-
-        op_label = (
-            "TEXT_MATCH_INSENSITIVE"
-            if op == FilterOperator.TEXT_MATCH_INSENSITIVE
-            else "TEXT_MATCH"
-        )
-        raise ValueError(
-            f"Query filter uses a non-string with the '{op_label}' operator: {subfilter}"
-        )
+        if op == FilterOperator.TEXT_MATCH:
+            raise ValueError(
+                f"Query filter uses a non-string with the 'TEXT_MATCH' operator: {subfilter}"
+            )
+        # For TEXT_MATCH_INSENSITIVE with non-string, fall through to unknown operator error below.
 
     # 4. Explicitly disallowed operators
     if op in (FilterOperator.CONTAINS, FilterOperator.IS_EMPTY):

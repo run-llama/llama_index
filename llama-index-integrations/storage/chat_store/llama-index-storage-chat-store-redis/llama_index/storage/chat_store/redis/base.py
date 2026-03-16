@@ -1,19 +1,33 @@
-import asyncio
+import json
 import logging
 import sys
-from typing import Any, List, Optional, Tuple, Union
+import asyncio
+from typing import Any, List, Optional, Union, Tuple
 from urllib.parse import urlparse
+
+import redis
+from redis import Redis
+from redis.cluster import RedisCluster
+from redis.sentinel import Sentinel
+
+import redis.asyncio
+from redis.asyncio import Redis as AsyncRedis
+from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
+from redis.asyncio.sentinel import Sentinel as AsyncSentinel
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 
-from redis.asyncio.client import Redis as AsyncRedis
-from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
-from redis.asyncio.sentinel import Sentinel as AsyncSentinel
-from redis.client import Redis
-from redis.cluster import RedisCluster
-from redis.sentinel import Sentinel
+
+# Convert a ChatMessage to a json object for Redis
+def _message_to_dict(message: ChatMessage) -> dict:
+    return message.dict()
+
+
+# Convert the json object in Redis to a ChatMessage
+def _dict_to_message(d: dict) -> ChatMessage:
+    return ChatMessage.model_validate(d)
 
 
 class RedisChatStore(BaseChatStore):
@@ -66,21 +80,26 @@ class RedisChatStore(BaseChatStore):
         items = self._redis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
-        return [ChatMessage.model_validate_json(item) for item in items]
+
+        items_json = [json.loads(m.decode("utf-8")) for m in items]
+        return [_dict_to_message(d) for d in items_json]
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
         items = await self._aredis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
-        return [ChatMessage.model_validate_json(item) for item in items]
+
+        items_json = [json.loads(m.decode("utf-8")) for m in items]
+        return [_dict_to_message(d) for d in items_json]
 
     def add_message(
         self, key: str, message: ChatMessage, idx: Optional[int] = None
     ) -> None:
         """Add a message for a key."""
         if idx is None:
-            self._redis_client.rpush(key, message.model_dump_json())
+            item = json.dumps(_message_to_dict(message))
+            self._redis_client.rpush(key, item)
         else:
             self._insert_element_at_index(key, idx, message)
 
@@ -92,7 +111,8 @@ class RedisChatStore(BaseChatStore):
     ) -> None:
         """Add a message for a key."""
         if idx is None:
-            await self._aredis_client.rpush(key, message.model_dump_json())
+            item = json.dumps(_message_to_dict(message))
+            await self._aredis_client.rpush(key, item)
         else:
             await self._ainsert_element_at_index(key, idx, message)
 
@@ -331,7 +351,7 @@ class RedisChatStore(BaseChatStore):
             redis_client = self._redis_sentinel_client(redis_url, **kwargs)
         else:
             # connect to redis server from url, reconnect with cluster client if needed
-            redis_client = Redis.from_url(redis_url, **kwargs)
+            redis_client = redis.from_url(redis_url, **kwargs)
             if self._check_for_cluster(redis_client):
                 redis_client.close()
                 redis_client = self._redis_cluster_client(redis_url, **kwargs)
@@ -351,8 +371,8 @@ class RedisChatStore(BaseChatStore):
             aredis_client = self._aredis_sentinel_client(redis_url, **kwargs)
         else:
             # connect to redis server from url, reconnect with cluster client if needed
-            aredis_client = AsyncRedis.from_url(redis_url, **kwargs)
-            redis_client = Redis.from_url(redis_url, **kwargs)
+            aredis_client = redis.asyncio.from_url(redis_url, **kwargs)
+            redis_client = redis.from_url(redis_url, **kwargs)
             is_cluster = self._check_for_cluster(redis_client)
             redis_client.close()
 

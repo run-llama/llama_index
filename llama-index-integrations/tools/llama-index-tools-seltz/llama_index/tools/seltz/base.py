@@ -27,30 +27,20 @@ class SeltzToolSpec(BaseToolSpec):
         """
         self.client = Seltz(api_key=api_key)
 
-    def search(
-        self,
-        query: str,
-        max_documents: Optional[int] = 10,
-        context: Optional[str] = None,
-        profile: Optional[str] = None,
-    ) -> List[Document]:
+    def search(self, query: str, max_documents: Optional[int] = 10) -> List[Document]:
         """
         Search the web using Seltz and return relevant documents with sources.
 
         Args:
             query: The search query text.
             max_documents: Maximum number of documents to return (default: 10).
-            context: Optional context to refine search results.
-            profile: Optional profile to customize search behavior.
 
         Returns:
             A list of Document objects containing web content and source URLs.
 
         """
         includes = Includes(max_documents=max_documents) if max_documents else None
-        response = self.client.search(
-            query, includes=includes, context=context, profile=profile
-        )
+        response = self.client.search(query, includes=includes)
         return [
             Document(text=doc.content or "", metadata={"url": doc.url or ""})
             for doc in response.documents

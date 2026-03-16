@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, List, Optional, Union
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -22,7 +21,6 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, Memory
-from llama_index.core.types import Thread
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
@@ -151,7 +149,7 @@ class ContextChatEngine(BaseChatEngine):
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         for postprocessor in self._node_postprocessors:
-            nodes = await postprocessor.apostprocess_nodes(
+            nodes = postprocessor.postprocess_nodes(
                 nodes, query_bundle=QueryBundle(message)
             )
 
@@ -262,8 +260,6 @@ class ContextChatEngine(BaseChatEngine):
         response = synthesizer.synthesize(message, nodes)
         assert isinstance(response, StreamingResponse)
 
-        self._memory.put(ChatMessage(content=str(message), role=MessageRole.USER))
-
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
@@ -275,7 +271,12 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-        chat_response = StreamingAgentChatResponse(
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
+            self._memory.put(user_message)
+            self._memory.put(ai_message)
+
+        return StreamingAgentChatResponse(
             chat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
@@ -286,13 +287,8 @@ class ContextChatEngine(BaseChatEngine):
                 )
             ],
             source_nodes=nodes,
+            is_writing_to_memory=False,
         )
-        thread = Thread(
-            target=chat_response.write_response_to_history, args=(self._memory,)
-        )
-        chat_response.write_response_to_history_thread = thread
-        thread.start()
-        return chat_response
 
     @trace_method("chat")
     async def achat(
@@ -358,10 +354,6 @@ class ContextChatEngine(BaseChatEngine):
         response = await synthesizer.asynthesize(message, nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
-        await self._memory.aput(
-            ChatMessage(content=str(message), role=MessageRole.USER)
-        )
-
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
             async for token in response.async_response_gen():
@@ -373,7 +365,12 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-        chat_response = StreamingAgentChatResponse(
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
+            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
+            await self._memory.aput(user_message)
+            await self._memory.aput(ai_message)
+
+        return StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
@@ -384,11 +381,8 @@ class ContextChatEngine(BaseChatEngine):
                 )
             ],
             source_nodes=nodes,
+            is_writing_to_memory=False,
         )
-        chat_response.awrite_response_to_history_task = asyncio.create_task(
-            chat_response.awrite_response_to_history(self._memory)
-        )
-        return chat_response
 
     def reset(self) -> None:
         self._memory.reset()

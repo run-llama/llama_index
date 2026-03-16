@@ -28,10 +28,10 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-sqlite"
-version = "0.3.0"
+version = "0.2.1"
 description = "llama-index storage-chat-store sqlite integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -279,45 +279,6 @@ async def test_aput_all_uses_safe_insert():
 @pytest.mark.skipif(
     no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
-def test_engine_kwargs_forwarded_to_sqlalchemy():
-    import sqlalchemy
-
-    mock_engine = MagicMock()
-    mock_async_engine = MagicMock()
-
-    with (
-        patch.object(sqlalchemy, "create_engine", return_value=mock_engine) as mock_ce,
-        patch.object(
-            sqlalchemy.ext.asyncio,
-            "create_async_engine",
-            return_value=mock_async_engine,
-        ) as mock_cae,
-        patch("sqlalchemy.orm.sessionmaker", return_value=MagicMock()),
-    ):
-        pgstore = PostgresKVStore(
-            table_name="test_table",
-            connection_string="postgresql://user:pass@localhost/db",
-            async_connection_string="postgresql+asyncpg://user:pass@localhost/db",
-            schema_name="test_schema",
-            perform_setup=False,
-            create_engine_kwargs={"connect_args": {"timeout": 123}},
-        )
-
-        pgstore._connect()
-
-        mock_ce.assert_called_once()
-        _, ce_kwargs = mock_ce.call_args
-        assert ce_kwargs["echo"] is False
-        assert ce_kwargs["connect_args"] == {"timeout": 123}
-
-        mock_cae.assert_called_once()
-        _, cae_kwargs = mock_cae.call_args
-        assert cae_kwargs["connect_args"] == {"timeout": 123}
-
-
-@pytest.mark.skipif(
-    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
-)
 def test_schema_name_with_special_characters():
     import sqlalchemy
 

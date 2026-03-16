@@ -31,10 +31,10 @@ test_integration = [
 
 [project]
 name = "llama-index-embeddings-isaacus"
-version = "0.2.0"
+version = "0.1.0"
 description = "llama-index embeddings isaacus integration"
 authors = [{name = "Isaacus", email = "hello@isaacus.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

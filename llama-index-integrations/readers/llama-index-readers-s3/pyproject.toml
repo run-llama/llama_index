@@ -27,10 +27,10 @@ dev = [
 
 [project]
 name = "llama-index-readers-s3"
-version = "0.6.1"
+version = "0.5.1"
 description = "llama-index readers s3 integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "thejessezhang"}]
@@ -40,7 +40,7 @@ keywords = [
     "bucket",
 ]
 dependencies = [
-    "llama-index-embeddings-openai>=0.6.0,<0.7",
+    "llama-index-readers-file>=0.5.0,<0.6",
     "s3fs>=2024.3.1",
     "llama-index-core>=0.13.0,<0.15",
 ]

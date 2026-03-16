@@ -66,10 +66,10 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
-    "anthropic.claude-opus-4-6-v1": 1000000,
+    "anthropic.claude-opus-4-6-v1": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
-    "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-sonnet-4-6": 200000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -278,32 +278,6 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
-BEDROCK_DOC_MIMETYPE_TO_FORMAT = {
-    "application/pdf": "pdf",
-    "text/csv": "csv",
-    "application/msword": "doc",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-    "application/vnd.ms-excel": "xls",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-    "text/html": "html",
-    "text/plain": "txt",
-    "text/markdown": "md",
-}
-
-
-def _get_bedrock_doc_format(mimetype: Optional[str]) -> str:
-    """Map a document mimetype to a Bedrock Converse document format."""
-    if mimetype and mimetype in BEDROCK_DOC_MIMETYPE_TO_FORMAT:
-        return BEDROCK_DOC_MIMETYPE_TO_FORMAT[mimetype]
-    if mimetype:
-        logger.warning(
-            f"Unsupported document mimetype for Bedrock Converse: {mimetype}. "
-            f"Supported types: {', '.join(BEDROCK_DOC_MIMETYPE_TO_FORMAT.keys())}. "
-            "Falling back to 'txt'."
-        )
-    return "txt"
-
-
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
@@ -344,10 +318,9 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        doc_format = _get_bedrock_doc_format(block.document_mimetype)
-        return {
-            "document": {"format": doc_format, "name": title, "source": {"bytes": data}}
-        }
+        # NOTE: At the time of writing, "txt" format works for all file types
+        # The API then infers the format from the file type based on the bytes
+        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -879,6 +852,28 @@ async def converse_with_retry_async(
         return _conversion_stream_with_retry(**converse_kwargs)
     else:
         return await _conversion_with_retry(**converse_kwargs)
+
+
+def extract_thinking_from_block(block: Dict[str, Any]) -> Optional[str]:
+    """Extract thinking content from a Bedrock Converse content block or delta."""
+    if "reasoningContent" in block:
+        # For non-streaming, it's reasoningContent.reasoningText.text
+        # For streaming, it's reasoningContent.text
+        reasoning = block["reasoningContent"]
+        if "reasoningText" in reasoning:
+            return reasoning["reasoningText"].get("text")
+        return reasoning.get("text")
+
+    # Fallback for other potential keys (Nova, etc.)
+    for key in ("reasoning_content", "thinking", "reasoning"):
+        if key in block:
+            val = block[key]
+            if isinstance(val, str):
+                return val
+            if isinstance(val, dict):
+                return val.get("text") or val.get("content")
+
+    return None
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:

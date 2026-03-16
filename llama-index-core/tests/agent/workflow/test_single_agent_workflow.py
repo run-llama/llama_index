@@ -486,21 +486,3 @@ async def test_function_agent_with_context_and_chat_message():
     response_str = str(response)
     assert "Can you help me with a calculation?" in response_str
     assert "It's one plus one." in response_str
-
-
-@pytest.mark.asyncio
-async def test_run_id_passthrough(function_agent: FunctionAgent) -> None:
-    """Test that run_id kwarg is forwarded to the WorkflowHandler."""
-    custom_run_id = "test-run-id-12345"
-    handler = function_agent.run(user_msg="hello", run_id=custom_run_id)
-    assert handler.run_id == custom_run_id
-    handler.cancel()
-
-
-@pytest.mark.asyncio
-async def test_run_id_default(function_agent: FunctionAgent) -> None:
-    """Test that omitting run_id still generates one automatically."""
-    handler = function_agent.run(user_msg="hello")
-    assert handler.run_id is not None
-    assert isinstance(handler.run_id, str)
-    handler.cancel()

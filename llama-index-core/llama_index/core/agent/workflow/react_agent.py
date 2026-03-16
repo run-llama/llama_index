@@ -3,7 +3,6 @@ from typing import List, Sequence, Optional, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
-from llama_index.core.agent.react.prompts import CONTEXT_REACT_CHAT_SYSTEM_HEADER
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -60,9 +59,6 @@ class ReActAgent(BaseWorkflowAgent):
             )
         elif not self.formatter.context and self.system_prompt:
             self.formatter.context = self.system_prompt
-
-        if self.formatter.context and "{context}" not in self.formatter.system_header:
-            self.formatter.system_header = CONTEXT_REACT_CHAT_SYSTEM_HEADER
 
         return self
 

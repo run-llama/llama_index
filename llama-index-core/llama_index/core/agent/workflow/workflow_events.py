@@ -60,7 +60,6 @@ class AgentStreamStructuredOutput(Event):
             warnings.warn(
                 f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
                 PydanticConversionWarning,
-                stacklevel=2,
             )
             return None
 
@@ -87,7 +86,6 @@ class AgentOutput(Event):
             warnings.warn(
                 f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
                 PydanticConversionWarning,
-                stacklevel=2,
             )
             return None
 

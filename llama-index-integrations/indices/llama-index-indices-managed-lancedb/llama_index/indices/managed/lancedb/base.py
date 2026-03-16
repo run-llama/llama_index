@@ -77,7 +77,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         multimodal_embedding_model: Optional[
             Literal["open-clip", "colpali", "jina", "imagebind"]
         ] = None,
-        embedding_model_kwargs: Dict[str, Any] = None,
+        embedding_model_kwargs: Dict[str, Any] = {},
         table_name: str = DEFAULT_TABLE_NAME,
         indexing: Literal[
             "IVF_PQ",
@@ -89,15 +89,11 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
             "LABEL_LIST",
             "NO_INDEXING",
         ] = "IVF_PQ",
-        indexing_kwargs: Dict[str, Any] = None,
+        indexing_kwargs: Dict[str, Any] = {},
         reranker: Optional[Reranker] = None,
         use_async: bool = False,
         table_exists: bool = False,
     ) -> None:
-        if embedding_model_kwargs is None:
-            embedding_model_kwargs = {}
-        if indexing_kwargs is None:
-            indexing_kwargs = {}
         self._reranker = reranker
         if connection:
             assert isinstance(connection, (DBConnection, AsyncConnection)), (
@@ -319,7 +315,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         multimodal_embedding_model: Optional[
             Literal["open-clip", "colpali", "jina", "imagebind"]
         ] = None,
-        embedding_model_kwargs: Dict[str, Any] = None,
+        embedding_model_kwargs: Dict[str, Any] = {},
         table_name: str = DEFAULT_TABLE_NAME,
         indexing: Literal[
             "IVF_PQ",
@@ -331,7 +327,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
             "LABEL_LIST",
             "NO_INDEXING",
         ] = "IVF_PQ",
-        indexing_kwargs: Dict[str, Any] = None,
+        indexing_kwargs: Dict[str, Any] = {},
         reranker: Optional[Reranker] = None,
         use_async: bool = False,
         table_exists: bool = False,
@@ -339,10 +335,6 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         """
         Generate a LanceDBMultiModalIndex from LlamaIndex Documents.
         """
-        if embedding_model_kwargs is None:
-            embedding_model_kwargs = {}
-        if indexing_kwargs is None:
-            indexing_kwargs = {}
         try:
             index = cls(
                 connection,

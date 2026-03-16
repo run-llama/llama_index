@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-sambanovasystems"
-version = "0.6.0"
+version = "0.5.1"
 description = "llama-index llms sambanova cloud and sambastudio integration"
 authors = [{name = "Rodrigo Maldonado", email = "rodrigo.maldonado@pucp.edu.pe"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",

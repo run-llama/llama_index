@@ -62,7 +62,7 @@ While we welcome contributions, we do not recommend to work on these areas:
 
 - Experimental features (`llama-index-experimental`)
 - Packs (`llama-index-packs`)
-- Finetuning (`llama-index-finetuning`)
+- Finentuning (`llama-index-finentuning`)
 - CLI (`llama-index-cli`)
 
 ---

@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-neo4jvector"
-version = "0.6.0"
+version = "0.5.2"
 description = "llama-index vector_stores neo4jvector integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -180,8 +180,7 @@ class RagDatasetGenerator(PromptMixin):
             if num_questions_generated < self.num_questions_per_chunk:
                 warnings.warn(
                     f"Fewer questions generated ({num_questions_generated}) "
-                    f"than requested ({self.num_questions_per_chunk}).",
-                    stacklevel=2,
+                    f"than requested ({self.num_questions_per_chunk})."
                 )
 
             index = summary_indices[idx]

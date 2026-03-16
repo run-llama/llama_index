@@ -124,9 +124,6 @@ class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
         self, event_pairs: List[List[CBEvent]]
     ) -> EventStats:
         """Calculate time-based stats for a set of event pairs."""
-        if not event_pairs:
-            return EventStats(total_secs=0.0, average_secs=0.0, total_count=0)
-
         total_secs = 0.0
         for event_pair in event_pairs:
             start_time = datetime.strptime(event_pair[0].time, TIMESTAMP_FORMAT)

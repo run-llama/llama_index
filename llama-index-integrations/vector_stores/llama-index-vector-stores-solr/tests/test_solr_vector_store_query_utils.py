@@ -187,23 +187,11 @@ def test_recursively_unpack_filters_valid_inputs(
             2.0,
             "Query filter uses a non-string with the 'TEXT_MATCH'",
         ),
-        (
-            FilterOperator.TEXT_MATCH_INSENSITIVE,
-            10,
-            "Query filter uses a non-string with the 'TEXT_MATCH_INSENSITIVE'",
-        ),
-        (
-            FilterOperator.TEXT_MATCH_INSENSITIVE,
-            2.0,
-            "Query filter uses a non-string with the 'TEXT_MATCH_INSENSITIVE'",
-        ),
     ],
     ids=[
         "Unsupported operator: contains",
         "text_match operator with int",
         "text_match operator with float",
-        "text_match_insensitive operator with int",
-        "text_match_insensitive operator with float",
     ],
 )
 def test_recursively_unpack_filters_invalid_operators(
@@ -233,7 +221,6 @@ def test_recursively_unpack_filters_invalid_operators(
         FilterOperator.EQ,
         FilterOperator.NE,
         FilterOperator.TEXT_MATCH,
-        FilterOperator.TEXT_MATCH_INSENSITIVE,
     ],
 )
 @pytest.mark.parametrize(

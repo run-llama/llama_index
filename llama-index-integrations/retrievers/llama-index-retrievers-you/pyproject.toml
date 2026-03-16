@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-you"
-version = "1.1.0"
+version = "1.0.0"
 description = "llama-index retrievers you integration"
 authors = [{email = "akhil@you.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

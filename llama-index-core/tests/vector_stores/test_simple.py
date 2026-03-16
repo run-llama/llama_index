@@ -217,27 +217,6 @@ class SimpleVectorStoreTest(unittest.TestCase):
         result = simple_vector_store.query(query)
         self.assertEqual(len(result.ids), 0)
 
-    def test_query_with_not_filter_returns_matches(self) -> None:
-        simple_vector_store = SimpleVectorStore()
-        simple_vector_store.add(_node_embeddings_for_test())
-
-        # Exclude all nodes where rank == "a"
-        filters = MetadataFilters(
-            filters=[
-                MetadataFilter(key="rank", operator=FilterOperator.EQ, value="a"),
-            ],
-            condition=FilterCondition.NOT,
-        )
-        query = VectorStoreQuery(
-            query_embedding=[1.0, 1.0],
-            filters=filters,
-            similarity_top_k=3,
-        )
-        result = simple_vector_store.query(query)
-        assert result.ids is not None
-        # Only the nodes with rank "c" should remain.
-        self.assertEqual(len(result.ids), 2)
-
     def test_query_with_equal_filter_returns_matches(self) -> None:
         simple_vector_store = SimpleVectorStore()
         simple_vector_store.add(_node_embeddings_for_test())

@@ -27,13 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-callbacks-arize-phoenix"
-version = "0.7.0"
+version = "0.6.1"
 description = "llama-index callbacks arize-phoenix integration"
 authors = [
     {name = "Arize AI", email = "phoenix-devs@arize.com"},
     {name = "OpenInference Authors", email = "oss@arize.com"},
 ]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.9,<3.14"
 readme = "README.md"
 license = "MIT"
 dependencies = [

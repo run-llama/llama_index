@@ -122,7 +122,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     Args:
         model_name (str): Model for embedding.
-            Defaults to "gemini-embedding-2-preview".
+            Defaults to "text-embedding-005".
         api_key (Optional[str]): API key to access the model. Defaults to None.
         embedding_config (Optional[types.EmbedContentConfigOrDict]): Embedding config to access the model. Defaults to None.
         vertexai_config (Optional[VertexAIConfig]): Vertex AI config to access the model. Defaults to None.
@@ -142,7 +142,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         ```python
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview", api_key="...")
+        embed_model = GoogleGenAIEmbedding(model_name="text-embedding-005", api_key="...")
         ```
 
     """
@@ -167,7 +167,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "gemini-embedding-2-preview",
+        model_name: str = "text-embedding-004",
         api_key: Optional[str] = None,
         embedding_config: Optional[types.EmbedContentConfigOrDict] = None,
         vertexai_config: Optional[VertexAIConfig] = None,

@@ -170,12 +170,13 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         type="code",
                         element=line.lstrip("```"),
                     )
+                elif currentElement is not None and currentElement.type == "text":
+                    currentElement.element += "\n" + line
                 else:
-                    # Start of a new code block
                     if currentElement is not None:
                         elements.append(currentElement)
                     currentElement = Element(
-                        id=f"id_{len(elements)}", type="code", element=""
+                        id=f"id_{len(elements)}", type="text", element=line
                     )
             elif currentElement is not None and currentElement.type == "code":
                 currentElement.element += "\n" + line
@@ -265,10 +266,10 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         element=element.element,
                     )
             else:
-                # if the element is not a table, keep its original type
+                # if the element is not a table, keep it as to text
                 elements[idx] = Element(
                     id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
-                    type=element.type,
+                    type="text",
                     element=element.element,
                 )
 

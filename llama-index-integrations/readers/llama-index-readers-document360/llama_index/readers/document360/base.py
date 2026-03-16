@@ -106,9 +106,7 @@ class Document360Reader(BaseReader):
     def _get_document360_response_data(self, response):
         return response["data"]
 
-    def _process_category_recursively(self, category: Category, parent_categories=None):
-        if parent_categories is None:
-            parent_categories = []
+    def _process_category_recursively(self, category: Category, parent_categories=[]):
         if self.should_process_category and not self.should_process_category(
             category, parent_categories
         ):

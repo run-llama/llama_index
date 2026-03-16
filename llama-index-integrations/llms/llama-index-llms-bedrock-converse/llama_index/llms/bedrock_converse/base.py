@@ -47,6 +47,7 @@ from llama_index.llms.bedrock_converse.utils import (
     bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
+    extract_thinking_from_block,
     force_single_tool_call,
     is_bedrock_adaptive_thinking_supported_model,
     is_bedrock_function_calling_model,
@@ -303,8 +304,8 @@ class BedrockConverse(FunctionCallingLLM):
         }
 
         try:
-            import aioboto3
             import boto3
+            import aioboto3
             from botocore.config import Config
 
             self._config = (
@@ -381,12 +382,11 @@ class BedrockConverse(FunctionCallingLLM):
         response: Optional[Dict[str, Any]] = None,
         content: Optional[Dict[str, Any]] = None,
     ) -> Tuple[
-        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]], List[str], List[str]
+        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]],
+        List[str],
+        List[str],
+        Optional[str],
     ]:
-        """
-        Returns a tuple containing content, tool call ids, and status by parsing the
-        response from a Bedrock Converse (non-streaming) request.
-        """
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
@@ -395,6 +395,7 @@ class BedrockConverse(FunctionCallingLLM):
         )
         tool_call_ids = []
         status = []
+        thinking_text = ""
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         if content is not None:
             content_list = [content]
@@ -404,15 +405,16 @@ class BedrockConverse(FunctionCallingLLM):
         for content_block in content_list:
             if text := content_block.get("text", None):
                 blocks.append(TextBlock(text=text))
-            if reasoning_content := content_block.get("reasoningContent", None):
-                # For Converse (non-streaming) requests, reasoning text and signature
-                # are both stored within `reasoningContent.reasoningText`.
-                reasoning_text = reasoning_content.get("reasoningText", {})
+            if reasoning_text := extract_thinking_from_block(content_block):
+                if reasoning_text:
+                    thinking_text += reasoning_text
                 blocks.append(
                     ThinkingBlock(
-                        content=reasoning_text.get("text", None),
+                        content=reasoning_text,
                         additional_information={
-                            "signature": reasoning_text.get("signature", None)
+                            "signature": content_block.get("reasoningContent", {})
+                            .get("reasoningText", {})
+                            .get("signature", None)
                         },
                     )
                 )
@@ -436,7 +438,7 @@ class BedrockConverse(FunctionCallingLLM):
                 tool_call_ids.append(tool_result.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return blocks, tool_call_ids, status
+        return blocks, tool_call_ids, status, (thinking_text or None)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -463,7 +465,9 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
+        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
+            response
+        )
 
         additional_kwargs = self._get_response_token_counts(dict(response))
 
@@ -528,15 +532,12 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
-                        # For ConverseStream (streaming) requests, reasoning text, signature,
-                        # redacted content are stored within `reasoningContent`.
-                        reasoning_content = content_delta.get("reasoningContent", {})
-                        reasoning_text = reasoning_content.get("text", "")
-                        thinking += reasoning_text
-                        thinking_delta_value = reasoning_text
-                        thinking_signature += reasoning_content.get("signature", "")
+                    thinking_delta_value = extract_thinking_from_block(content_delta)
+                    if thinking_delta_value:
+                        thinking += thinking_delta_value
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -745,7 +746,9 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
+        blocks, tool_call_ids, status, thinking_text = self._get_content_and_tool_calls(
+            response
+        )
 
         additional_kwargs = self._get_response_token_counts(dict(response))
 
@@ -812,15 +815,12 @@ class BedrockConverse(FunctionCallingLLM):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
 
-                    thinking_delta_value = None
-                    if "reasoningContent" in content_delta:
-                        # For ConverseStream (streaming) requests, reasoning text, signature,
-                        # redacted content are stored within `reasoningContent`.
-                        reasoning_content = content_delta.get("reasoningContent", {})
-                        reasoning_text = reasoning_content.get("text", "")
-                        thinking += reasoning_text
-                        thinking_delta_value = reasoning_text
-                        thinking_signature += reasoning_content.get("signature", "")
+                    thinking_delta_value = extract_thinking_from_block(content_delta)
+                    if thinking_delta_value:
+                        thinking += thinking_delta_value
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:

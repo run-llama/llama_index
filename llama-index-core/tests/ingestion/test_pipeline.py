@@ -5,7 +5,7 @@ from typing import Sequence, Any
 import pytest
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
-from llama_index.core.ingestion.pipeline import IngestionPipeline, DocstoreStrategy
+from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
 from llama_index.core.readers import ReaderConfig, StringIterableReader
@@ -86,7 +86,6 @@ def test_save_load_pipeline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=documents)
@@ -170,7 +169,6 @@ def test_pipeline_update_text_content() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=[document1])
@@ -202,7 +200,6 @@ def test_pipeline_update_metadata() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=[document1])
@@ -239,7 +236,6 @@ def test_pipeline_dedup_duplicates_only() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = pipeline.run(documents=documents)
@@ -259,7 +255,6 @@ def test_pipeline_parallel() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     num_workers = min(2, cpu_count())
@@ -285,7 +280,6 @@ def test_pipeline_with_transform_error() -> None:
             RaisingTransform(),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     with pytest.raises(RuntimeError):
@@ -346,7 +340,6 @@ async def test_async_pipeline_update_text_content() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=[document1])
@@ -379,7 +372,6 @@ async def test_async_pipeline_update_metadata() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=[document1])
@@ -417,7 +409,6 @@ async def test_async_pipeline_dedup_duplicates_only() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     nodes = await pipeline.arun(documents=documents)
@@ -438,7 +429,6 @@ async def test_async_pipeline_parallel() -> None:
             SentenceSplitter(chunk_size=25, chunk_overlap=0),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     num_workers = min(2, cpu_count())
@@ -467,37 +457,9 @@ async def test_async_pipeline_with_transform_error() -> None:
             RaisingTransform(),
         ],
         docstore=SimpleDocumentStore(),
-        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
     )
 
     with pytest.raises(RuntimeError):
         await pipeline.arun(documents=[document1])
 
     assert pipeline.docstore.get_node("1", raise_error=False) is None
-
-
-def test_docstore_strategy_not_mutated_on_run_without_vector_store() -> None:
-    for strategy in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE):
-        pipeline = IngestionPipeline(
-            transformations=[],
-            docstore=SimpleDocumentStore(),
-            docstore_strategy=strategy,
-        )
-        with pytest.warns(UserWarning, match="requires a vector store"):
-            pipeline.run(documents=[Document.example()])
-
-        assert pipeline.docstore_strategy is strategy
-
-
-@pytest.mark.asyncio
-async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> None:
-    for strategy in (DocstoreStrategy.UPSERTS, DocstoreStrategy.UPSERTS_AND_DELETE):
-        pipeline = IngestionPipeline(
-            transformations=[],
-            docstore=SimpleDocumentStore(),
-            docstore_strategy=strategy,
-        )
-        with pytest.warns(UserWarning, match="requires a vector store"):
-            await pipeline.arun(documents=[Document.example()])
-
-        assert pipeline.docstore_strategy is strategy

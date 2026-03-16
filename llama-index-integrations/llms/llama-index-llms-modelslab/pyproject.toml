@@ -19,10 +19,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-modelslab"
-version = "0.2.0"
+version = "0.1.0"
 description = "llama-index llms modelslab integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 keywords = ["modelslab", "llm", "llama-index", "uncensored", "llama"]

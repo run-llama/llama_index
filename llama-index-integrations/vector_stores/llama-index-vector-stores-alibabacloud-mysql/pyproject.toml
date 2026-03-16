@@ -26,12 +26,12 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-alibabacloud-mysql"
-version = "0.2.0"
+version = "0.1.0"
 description = "llama-index vector_stores alibabacloud-mysql integration"
 authors = [
     {name = "Alibaba Cloud"},
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

@@ -7,6 +7,7 @@ from abc import ABC
 from enum import Enum
 from io import IOBase, BytesIO
 from pathlib import Path
+from types import NoneType
 from typing import (
     Annotated,
     Any,
@@ -19,13 +20,6 @@ from typing import (
     Union,
     cast,
 )
-
-try:
-    # Python 3.10+
-    from types import NoneType  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover
-    # Python 3.9 and below
-    NoneType = type(None)  # type: ignore[misc,assignment]
 
 import filetype
 from tinytag import TinyTag, UnsupportedFormatError

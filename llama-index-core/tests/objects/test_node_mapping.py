@@ -1,8 +1,5 @@
 """Test node mapping."""
 
-import pickle
-
-import pytest
 from llama_index.core import SQLDatabase
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.objects.base_node_mapping import SimpleObjectNodeMapping
@@ -117,26 +114,3 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
     # Make sure no None values are passed in otherwise PineconeVectorStore will fail the upsert
     for node in nodes:
         assert None not in node.metadata.values()
-
-
-def test_simple_object_node_mapping_persist_rejects_unsafe_pickle(
-    tmp_path,
-) -> None:
-    """
-    Test that loading a malicious pickle payload is blocked.
-
-    A crafted pickle file in the persist directory could execute arbitrary
-    code (e.g., os.system, eval) when loaded with unrestricted pickle.load().
-    The RestrictedUnpickler should reject any class not in its allowlist.
-    """
-
-    class _Exploit:
-        def __reduce__(self):
-            return (eval, ("1+1",))
-
-    payload = pickle.dumps(_Exploit())
-    persist_path = tmp_path / "object_node_mapping.pickle"
-    persist_path.write_bytes(payload)
-
-    with pytest.raises(ValueError, match="cannot be loaded"):
-        SimpleObjectNodeMapping.from_persist_dir(persist_dir=str(tmp_path))

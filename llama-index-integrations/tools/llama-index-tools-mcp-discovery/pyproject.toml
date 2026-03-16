@@ -21,12 +21,12 @@ dev = [
 
 [project]
 name = "llama-index-tools-mcp-discovery"
-version = "0.2.0"
+version = "0.1.0"
 description = "llama-index tools mcp_discovery integration"
 authors = [{name = "Roaim khan", email = "roimkhan459@gmail.com"}]
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.9,<4.0"
 keywords = [
     "mcp",
     "discovery",

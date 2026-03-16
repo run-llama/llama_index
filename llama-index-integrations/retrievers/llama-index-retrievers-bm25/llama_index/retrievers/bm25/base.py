@@ -139,13 +139,6 @@ class BM25Retriever(BaseRetriever):
                 for corpus_token in self.corpus
             ]
 
-            # Check if all nodes were filtered out
-            if not any(self.corpus_weight_mask):
-                raise ValueError(
-                    "All nodes were filtered out by the metadata filters. "
-                    "Please adjust your filters or add more data."
-                )
-
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,

@@ -41,7 +41,7 @@ jobs:
           uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer('gpt-5-mini'))"
 
       - name: Generate build provenance attestations
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@v3
         id: attest
         with:
           subject-path: "llama-index-core/llama_index/core/_static/**/*"
@@ -100,7 +100,7 @@ jobs:
       - name: Install uv and set python version
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.10"
+          python-version: "3.9"
 
       - name: Get version
         id: get_version

@@ -107,12 +107,7 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             return [NodeWithScore(node=obj, score=score)]
         elif isinstance(obj, BaseQueryEngine):
             response = await obj.aquery(query_bundle)
-            return [
-                NodeWithScore(
-                    node=TextNode(text=str(response), metadata=response.metadata or {}),
-                    score=score,
-                )
-            ]
+            return [NodeWithScore(node=TextNode(text=str(response)), score=score)]
         elif isinstance(obj, BaseRetriever):
             return await obj.aretrieve(query_bundle)
         else:

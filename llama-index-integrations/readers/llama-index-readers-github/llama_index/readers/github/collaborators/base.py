@@ -18,11 +18,11 @@ Each collaborator is converted to a document by doing the following:
 
 """
 
+import asyncio
 import enum
 import logging
 from typing import Dict, List
 
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.readers.github.collaborators.github_client import (
@@ -88,6 +88,15 @@ class GitHubRepositoryCollaboratorsReader(BaseReader):
         self._owner = owner
         self._repo = repo
         self._verbose = verbose
+
+        # Set up the event loop
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # If there is no running loop, create a new one
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+
         self._github_client = github_client
 
     def load_data(
@@ -118,7 +127,7 @@ class GitHubRepositoryCollaboratorsReader(BaseReader):
         page = 1
         # Loop until there are no more collaborators
         while True:
-            collaborators: Dict = asyncio_run(
+            collaborators: Dict = self._loop.run_until_complete(
                 self._github_client.get_collaborators(
                     self._owner, self._repo, page=page
                 )
