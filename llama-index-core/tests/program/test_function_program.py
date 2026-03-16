@@ -241,3 +241,253 @@ def test_single_field_int_with_default() -> None:
     result = call_tool(tool, arguments)
 
     assert result.raw_output.count == 42
+
+
+# Tests for Structured outputs sometimes return string instead of Pydantic model
+# Used opus here for tests
+
+
+class MockLLMReturnsNoToolCalls(MagicMock):
+    """Mock LLM that returns a text response with no tool calls (empty sources)."""
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        return AgentChatResponse(
+            response="I can help with that! Here's a great album.",
+            sources=[],
+        )
+
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        return AgentChatResponse(
+            response="I can help with that! Here's a great album.",
+            sources=[],
+        )
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_function_calling_model=True)
+
+
+class MockLLMReturnsErrorToolOutput(MagicMock):
+    """Mock LLM that returns a ToolOutput with is_error=True (tool call failed)."""
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        error = ValueError("1 validation error for MockAlbum\nfield required")
+        tool_output = ToolOutput(
+            content="Encountered error: 1 validation error for MockAlbum",
+            tool_name="MockAlbum",
+            raw_input={"title": "hello"},
+            raw_output=str(error),
+            is_error=True,
+            exception=error,
+        )
+        return AgentChatResponse(
+            response="Encountered error",
+            sources=[tool_output],
+        )
+
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        error = ValueError("1 validation error for MockAlbum\nfield required")
+        tool_output = ToolOutput(
+            content="Encountered error: 1 validation error for MockAlbum",
+            tool_name="MockAlbum",
+            raw_input={"title": "hello"},
+            raw_output=str(error),
+            is_error=True,
+            exception=error,
+        )
+        return AgentChatResponse(
+            response="Encountered error",
+            sources=[tool_output],
+        )
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_function_calling_model=True)
+
+
+class MockLLMReturnsStringRawOutput(MagicMock):
+    """Mock LLM that returns a ToolOutput where raw_output is a string (not a model)."""
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        tool_output = ToolOutput(
+            content="some text output",
+            tool_name="MockAlbum",
+            raw_input={},
+            raw_output="this is a string, not a pydantic model",
+        )
+        return AgentChatResponse(
+            response="some text output",
+            sources=[tool_output],
+        )
+
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        tool_output = ToolOutput(
+            content="some text output",
+            tool_name="MockAlbum",
+            raw_input={},
+            raw_output="this is a string, not a pydantic model",
+        )
+        return AgentChatResponse(
+            response="some text output",
+            sources=[tool_output],
+        )
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_function_calling_model=True)
+
+
+def test_function_program_raises_on_no_tool_calls() -> None:
+    """
+    Test that FunctionCallingProgram raises a clear ValueError when the LLM
+    returns no tool calls (empty sources).
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsNoToolCalls(),
+    )
+    with pytest.raises(ValueError, match="did not return any tool calls"):
+        llm_program(topic="songs")
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_raises_on_no_tool_calls() -> None:
+    """
+    Test async: FunctionCallingProgram raises a clear ValueError when the LLM
+    returns no tool calls.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsNoToolCalls(),
+    )
+    with pytest.raises(ValueError, match="did not return any tool calls"):
+        await llm_program.acall(topic="songs")
+
+
+def test_function_program_raises_on_tool_error() -> None:
+    """
+    Test that FunctionCallingProgram raises a clear ValueError when a tool call
+    fails (is_error=True on ToolOutput), instead of silently returning a string.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsErrorToolOutput(),
+    )
+    with pytest.raises(ValueError, match="Structured output extraction failed"):
+        llm_program(topic="songs")
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_raises_on_tool_error() -> None:
+    """
+    Test async: FunctionCallingProgram raises a clear ValueError when a tool
+    call fails.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsErrorToolOutput(),
+    )
+    with pytest.raises(ValueError, match="Structured output extraction failed"):
+        await llm_program.acall(topic="songs")
+
+
+def test_function_program_raises_on_string_raw_output() -> None:
+    """
+    Test that FunctionCallingProgram raises a clear ValueError when raw_output
+    is a string instead of a Pydantic model.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsStringRawOutput(),
+    )
+    with pytest.raises(ValueError, match="expected a MockAlbum instance but got str"):
+        llm_program(topic="songs")
+
+
+@pytest.mark.asyncio
+async def test_async_function_program_raises_on_string_raw_output() -> None:
+    """
+    Test async: FunctionCallingProgram raises a clear ValueError when raw_output
+    is a string instead of a Pydantic model.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsStringRawOutput(),
+    )
+    with pytest.raises(ValueError, match="expected a MockAlbum instance but got str"):
+        await llm_program.acall(topic="songs")
+
+
+def test_function_program_error_message_includes_llm_text() -> None:
+    """
+    Test that the error message for no-tool-call includes the LLM's text response
+    so the user can see what the model actually returned.
+
+    """
+    llm_program = FunctionCallingProgram.from_defaults(
+        output_cls=MockAlbum,
+        prompt_template_str="This is a test album with {topic}",
+        llm=MockLLMReturnsNoToolCalls(),
+    )
+    with pytest.raises(ValueError, match="Here's a great album"):
+        llm_program(topic="songs")

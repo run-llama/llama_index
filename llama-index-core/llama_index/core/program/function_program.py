@@ -14,6 +14,7 @@ from typing import (
 )
 
 from llama_index.core.bridge.pydantic import (
+    BaseModel,
     ValidationError,
 )
 from llama_index.core.base.llms.types import ChatResponse
@@ -204,8 +205,50 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         agent_response: AgentChatResponse,
         allow_parallel_tool_calls: bool = False,
     ) -> Union[Model, List[Model]]:
-        """Parse tool outputs."""
-        outputs = [cast(Model, s.raw_output) for s in agent_response.sources]
+        """
+        Parse tool outputs.
+
+        Validates that each tool output is actually a Pydantic model instance.
+        Raises a clear error if the LLM failed to produce a valid structured
+        output (e.g. returned text instead of a tool call, or the tool call
+        produced a parsing error).
+        """
+        if len(agent_response.sources) == 0:
+            raise ValueError(
+                "LLM did not return any tool calls for structured output. "
+                "The model was expected to call a function to produce a "
+                f"{self._output_cls.__name__} object, but instead returned "
+                f"plain text: {agent_response.response!r}. "
+                "This can happen when the LLM provider does not honor "
+                "tool_choice='required'. Consider using a different model or "
+                "switching to PydanticProgramMode.LLM to use text-based "
+                "output parsing instead."
+            )
+
+        outputs: List[Model] = []
+        for source in agent_response.sources:
+            raw = source.raw_output
+            if source.is_error:
+                # The tool call failed (e.g. Pydantic validation error).
+                # Surface the original exception with context instead of
+                # silently returning a string that will crash downstream.
+                error_detail = str(source.exception) if source.exception else str(raw)
+                raise ValueError(
+                    f"Structured output extraction failed: the LLM's tool "
+                    f"call could not be parsed into "
+                    f"{self._output_cls.__name__}. "
+                    f"Error: {error_detail}"
+                )
+            if not isinstance(raw, BaseModel):
+                raise ValueError(
+                    f"Structured output extraction failed: expected a "
+                    f"{self._output_cls.__name__} instance but got "
+                    f"{type(raw).__name__}: {raw!r}. "
+                    f"This may indicate a bug in the LLM integration's "
+                    f"tool call handling."
+                )
+            outputs.append(cast(Model, raw))
+
         if allow_parallel_tool_calls:
             return outputs
         else:

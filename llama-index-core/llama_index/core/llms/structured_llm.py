@@ -52,8 +52,6 @@ class StructuredLLM(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
-        # TODO:
-
         # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
@@ -63,6 +61,13 @@ class StructuredLLM(LLM):
         output = self.llm.structured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
+        if not isinstance(output, BaseModel):
+            raise ValueError(
+                f"StructuredLLM expected a {self.output_cls.__name__} instance "
+                f"from structured_predict, but got {type(output).__name__}: "
+                f"{output!r}. The underlying LLM failed to produce valid "
+                f"structured output."
+            )
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
@@ -117,6 +122,13 @@ class StructuredLLM(LLM):
         output = await self.llm.astructured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
+        if not isinstance(output, BaseModel):
+            raise ValueError(
+                f"StructuredLLM expected a {self.output_cls.__name__} instance "
+                f"from astructured_predict, but got {type(output).__name__}: "
+                f"{output!r}. The underlying LLM failed to produce valid "
+                f"structured output."
+            )
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
