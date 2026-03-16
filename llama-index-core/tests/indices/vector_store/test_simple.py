@@ -5,7 +5,7 @@ from typing import Any, List, cast
 
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
-from llama_index.core.indices.keyword_table.simple import SimpleKeywordTableIndex
+from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
