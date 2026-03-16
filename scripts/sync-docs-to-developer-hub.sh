@@ -5,7 +5,7 @@ set -euo pipefail
 # Can be run locally or from CI.
 #
 # Usage:
-#   ./scripts/sync-docs-to-developer-hub.sh /path/to/developer-hub-repo [--skip-api-docs]
+#   ./scripts/sync-docs-to-developer-hub.sh /path/to/developer-hub-repo [--skip-api-docs] [--skip-examples]
 #
 # What it syncs:
 #   1. Framework docs (markdown):
@@ -14,16 +14,26 @@ set -euo pipefail
 #
 #   2. API reference (built HTML via mkdocs):
 #      Builds mkdocs, then syncs output
-#        -> <docs-repo>/public/python/framework-api-reference/
+#        -> <docs-repo>/api-reference/python/framework/
+#
+#   3. Examples (Jupyter notebooks -> markdown):
+#      Converts docs/examples/**/*.ipynb to markdown (incremental, hash-based)
+#        -> <docs-repo>/src/content/docs/python/examples/
+#      Integration examples (llm, embeddings, vector_stores, retrievers)
+#        -> <docs-repo>/src/content/docs/python/framework/integrations/
 #
 # Excluded from framework docs:
 #   examples/**, api_reference/**, CONTRIBUTING.md, DOCS_README.md
 
-DOCS_REPO="${1:?Usage: $0 /path/to/developer-hub-repo [--skip-api-docs]}"
+DOCS_REPO="${1:?Usage: $0 /path/to/developer-hub-repo [--skip-api-docs] [--skip-examples] [--since=SHA]}"
 SKIP_API_DOCS=false
+SKIP_EXAMPLES=false
+SINCE_SHA=""
 for arg in "${@:2}"; do
   case "$arg" in
     --skip-api-docs) SKIP_API_DOCS=true ;;
+    --skip-examples) SKIP_EXAMPLES=true ;;
+    --since=*) SINCE_SHA="${arg#--since=}" ;;
   esac
 done
 
@@ -55,6 +65,7 @@ mkdir -p "$DEST_DIR"
 rsync -av --delete \
   --exclude='examples/***' \
   --exclude='api_reference/***' \
+  --exclude='integrations/***' \
   --exclude='CONTRIBUTING.md' \
   --exclude='DOCS_README.md' \
   --exclude='_static/***' \
@@ -80,33 +91,64 @@ echo "Framework docs sync complete."
 
 if [ "$SKIP_API_DOCS" = true ]; then
   echo "=== Skipping API docs (--skip-api-docs) ==="
-  exit 0
+else
+  echo ""
+  echo "=== Building API reference ==="
+
+  MKDOCS_CONFIG="$REPO_ROOT/docs/api_reference/mkdocs.yml"
+  API_DOCS_BUILD_DIR="$REPO_ROOT/.build/api-docs-output"
+  API_DOCS_DEST_DIR="$DOCS_REPO/api-reference/python/framework"
+
+  if [ ! -f "$MKDOCS_CONFIG" ]; then
+    echo "Error: mkdocs config not found: $MKDOCS_CONFIG"
+    exit 1
+  fi
+
+  # Build mkdocs — use uv run --with to install mkdocs and plugins on-the-fly
+  # without polluting the main project dependencies
+  MKDOCS_DEPS="mkdocs>=1.6.1,mkdocs-material>=9.6.14,mkdocstrings[python]>=0.29.1,mkdocs-click>=0.9.0,mkdocs-include-dir-to-nav>=1.2.0,mkdocs-render-swagger-plugin>=0.1.2,mkdocs-github-admonitions-plugin>=0.0.3,griffe-fieldz>=0.2.1"
+
+  echo "Running mkdocs build..."
+  cd "$REPO_ROOT"
+  uv run \
+    --with "$MKDOCS_DEPS" \
+    mkdocs build -f "$MKDOCS_CONFIG" -d "$API_DOCS_BUILD_DIR"
+
+  echo "Syncing API docs to $API_DOCS_DEST_DIR"
+  mkdir -p "$API_DOCS_DEST_DIR"
+  rsync -av --delete "$API_DOCS_BUILD_DIR/" "$API_DOCS_DEST_DIR/"
+
+  echo "API reference sync complete."
 fi
 
-echo ""
-echo "=== Building API reference ==="
+# --- 3. Convert and sync examples ---
 
-MKDOCS_CONFIG="$REPO_ROOT/docs/api_reference/mkdocs.yml"
-API_DOCS_BUILD_DIR="$REPO_ROOT/.build/api-docs-output"
-API_DOCS_DEST_DIR="$DOCS_REPO/public/python/framework-api-reference"
+if [ "$SKIP_EXAMPLES" = true ]; then
+  echo ""
+  echo "=== Skipping examples (--skip-examples) ==="
+else
+  echo ""
+  echo "=== Converting and syncing examples ==="
 
-if [ ! -f "$MKDOCS_CONFIG" ]; then
-  echo "Error: mkdocs config not found: $MKDOCS_CONFIG"
-  exit 1
+  EXAMPLES_DEST="$DOCS_REPO/src/content/docs/python/examples"
+  INTEGRATIONS_DEST="$DOCS_REPO/src/content/docs/python/framework/integrations"
+  STATIC_SOURCE="$REPO_ROOT/docs/src/content/docs/framework/_static"
+
+  # nbconvert + deps installed on-the-fly via uv run --with
+  CONVERT_DEPS="nbconvert>=7.0,nbformat>=5.0,tqdm>=4.0"
+
+  CONVERT_ARGS=(
+    --source "$REPO_ROOT/docs/examples"
+    --dest "$EXAMPLES_DEST"
+    --integrations-dest "$INTEGRATIONS_DEST"
+    --static-source "$STATIC_SOURCE"
+  )
+  if [ -n "$SINCE_SHA" ]; then
+    CONVERT_ARGS+=(--since "$SINCE_SHA")
+  fi
+
+  uv run --with "$CONVERT_DEPS" \
+    python "$REPO_ROOT/scripts/convert-examples.py" "${CONVERT_ARGS[@]}"
+
+  echo "Examples sync complete."
 fi
-
-# Build mkdocs — use uv run --with to install mkdocs and plugins on-the-fly
-# without polluting the main project dependencies
-MKDOCS_DEPS="mkdocs>=1.6.1,mkdocs-material>=9.6.14,mkdocstrings[python]>=0.29.1,mkdocs-click>=0.9.0,mkdocs-include-dir-to-nav>=1.2.0,mkdocs-render-swagger-plugin>=0.1.2,mkdocs-github-admonitions-plugin>=0.0.3,griffe-fieldz>=0.2.1"
-
-echo "Running mkdocs build..."
-cd "$REPO_ROOT"
-uv run \
-  --with "$MKDOCS_DEPS" \
-  mkdocs build -f "$MKDOCS_CONFIG" -d "$API_DOCS_BUILD_DIR"
-
-echo "Syncing API docs to $API_DOCS_DEST_DIR"
-mkdir -p "$API_DOCS_DEST_DIR"
-rsync -av --delete "$API_DOCS_BUILD_DIR/" "$API_DOCS_DEST_DIR/"
-
-echo "API reference sync complete."
