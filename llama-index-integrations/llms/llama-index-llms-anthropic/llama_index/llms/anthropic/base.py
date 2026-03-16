@@ -376,7 +376,7 @@ class Anthropic(FunctionCallingLLM):
         self, chat_response: AnthropicChatResponse
     ) -> AnthropicCompletionResponse:
         return AnthropicCompletionResponse(
-            text=chat_response.message.content,
+            text=chat_response.message.content or "",
             delta=chat_response.delta,
             additional_kwargs=chat_response.additional_kwargs,
             raw=chat_response.raw,
