@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from typing import AsyncGenerator, List, Sequence
 from unittest.mock import patch
 
+
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -11,6 +12,7 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
 )
 from llama_index.llms.dashscope.base import DashScope
+from llama_index.llms.dashscope.utils import chat_message_to_dashscope_messages
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 
@@ -309,3 +311,38 @@ async def test_astream_chat_with_tools(monkeypatch, dashscope_llm):
         "function": {"name": "dummy_tool", "arguments": '{"param": "value"}'},
     }
     assert tool_calls[0] == expected_tool_call, "tool_calls is not as expected"
+
+
+def test_chat_message_to_dashscope_messages_without_tool_calls():
+    """Test assistant message conversion without tool calls."""
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="content",
+        additional_kwargs={"not_tool_calls": "tool"},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert "tool_calls" not in result[0]
+
+
+def test_chat_message_to_dashscope_messages_with_tool_calls():
+    """Test assistant message conversion with tool calls."""
+    tool_calls = [{"id": "123", "type": "function", "function": {"name": "test"}}]
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="content",
+        additional_kwargs={"tool_calls": tool_calls},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert result[0]["tool_calls"] == tool_calls
+
+
+def test_chat_message_to_dashscope_messages_with_tool():
+    """Test tool message conversion."""
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        content="content",
+        additional_kwargs={"tool_call_id": "123", "name": "mock_name"},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert result[0]["role"] == "tool"
+    assert result[0]["tool_call_id"] == "123"

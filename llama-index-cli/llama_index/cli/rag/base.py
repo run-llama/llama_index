@@ -17,7 +17,12 @@ from llama_index.core.base.response.schema import (
     Response,
     StreamingResponse,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
@@ -73,6 +78,7 @@ class RagCLI(BaseModel):
     chat_engine: Optional[CondenseQuestionChatEngine] = Field(
         description="Chat engine to use for chatting.",
         default=None,
+        validate_default=True,
     )
     file_extractor: Optional[Dict[str, BaseReader]] = Field(
         description="File extractor to use for extracting text from files.",
@@ -84,7 +90,7 @@ class RagCLI(BaseModel):
 
     @field_validator("chat_engine", mode="before")
     def chat_engine_from_ingestion_pipeline(
-        cls, chat_engine: Any, values: Dict[str, Any]
+        cls, chat_engine: Any, info: ValidationInfo
     ) -> Optional[CondenseQuestionChatEngine]:
         """
         If chat_engine is not provided, create one from ingestion_pipeline.
@@ -92,12 +98,14 @@ class RagCLI(BaseModel):
         if chat_engine is not None:
             return chat_engine
 
-        ingestion_pipeline = cast(IngestionPipeline, values["ingestion_pipeline"])
+        ingestion_pipeline = cast(
+            IngestionPipeline, info.data.get("ingestion_pipeline")
+        )
         if ingestion_pipeline.vector_store is None:
             return None
 
-        verbose = cast(bool, values["verbose"])
-        llm = cast(LLM, values["llm"])
+        verbose = cast(bool, info.data.get("verbose"))
+        llm = cast(LLM, info.data.get("llm"))
 
         # get embed_model from transformations if possible
         embed_model = None

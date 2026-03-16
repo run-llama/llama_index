@@ -240,10 +240,10 @@ class LanternVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             return
 
-        self._session.close_all()
-        self._engine.dispose()
-
-        await self._async_engine.dispose()
+        if self._engine:
+            self._engine.dispose()
+        if self._async_engine:
+            await self._async_engine.dispose()
 
     @classmethod
     def class_name(cls) -> str:

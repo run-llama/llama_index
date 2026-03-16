@@ -36,7 +36,7 @@ if __name__ == "__main__":
     query_result_one = query_engine.query("What did Paul do?")
 ```
 
-Or you can add some customization to the `LlamaIndexOpenTelemetry` class by, for example, set a custom span exporter, a custom service name, activating the debugging, set a custom LlamaIndex dispatcher name...
+Or you can add some customization to the `LlamaIndexOpenTelemetry` class by, for example, set a custom span exporter, a custom service name, activating the debugging, set a custom list of extra span processors...
 
 ```python
 from llama_index.observability.otel import LlamaIndexOpenTelemetry
@@ -44,9 +44,16 @@ from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter,
 )
+from opentelemetry.sdk.trace import SpanProcessor
 from llama_index.core.llms import MockLLM
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.core import Settings
+
+
+class CustomSpanProcessor(SpanProcessor):
+    # your implementation
+    ...
+
 
 # define a custom span exporter
 span_exporter = OTLPSpanExporter("http://0.0.0.0:4318/v1/traces")
@@ -56,6 +63,7 @@ instrumentor = LlamaIndexOpenTelemetry(
     service_name_or_resource="my.test.service.1",
     span_exporter=span_exporter,
     debug=True,
+    extra_span_processors=[CustomSpanProcessor()],
 )
 
 if __name__ == "__main__":

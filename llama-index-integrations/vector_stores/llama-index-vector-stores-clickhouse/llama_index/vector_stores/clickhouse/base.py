@@ -144,6 +144,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             "hnsw_candidate_list_size_for_construction" : Default is 128.
         search_params (dict, optional): The search parameters for a ClickHouse query.
             Defaults to None.
+        drop_existing_table (bool, optional): Whether to drop the existing table
+            during initialization. Defaults to False to preserve existing data.
 
     Examples:
         `pip install llama-index-vector-stores-clickhouse`
@@ -191,6 +193,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         dimension: Optional[int] = None,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
+        drop_existing_table: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -265,6 +268,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         self._column_config = column_config
         self._column_names = column_names
         self._column_type_names = column_type_names
+        self._drop_existing_table = drop_existing_table
         if dimension is None:
             dimension = len(Settings.embed_model.get_query_embedding("try this out"))
         self.create_table(dimension)
@@ -309,7 +313,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             ) ENGINE = MergeTree ORDER BY id
             """
         self._dim = dimension
-        self.drop()
+        if self._drop_existing_table:
+            self.drop()
         self._client.command(schema_, settings=settings)
         self._table_existed = True
 

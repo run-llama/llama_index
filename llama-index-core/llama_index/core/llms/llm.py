@@ -791,11 +791,11 @@ class LLM(BaseLLM):
 
         """
         from llama_index.core.agent.workflow import ReActAgent
+        from llama_index.core.agent.workflow.agent_context import SimpleAgentContext
         from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import Memory
+        from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import call_tool_with_selection
-        from llama_index.core.workflow import Context
-        from workflows.context.state_store import DictState
 
         agent = ReActAgent(
             tools=tools,
@@ -819,12 +819,13 @@ class LLM(BaseLLM):
         if user_msg:
             llm_input.append(user_msg)
 
-        ctx: Context[DictState] = Context(agent)
+        ctx = SimpleAgentContext()
+        async_tools = [adapt_to_async_tool(t) for t in (tools or [])]
 
         try:
             resp = asyncio_run(
                 agent.take_step(
-                    ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+                    ctx=ctx, llm_input=llm_input, tools=async_tools, memory=memory
                 )
             )
             tool_outputs = []
@@ -861,11 +862,11 @@ class LLM(BaseLLM):
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
         from llama_index.core.agent.workflow import ReActAgent
+        from llama_index.core.agent.workflow.agent_context import SimpleAgentContext
         from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import Memory
+        from llama_index.core.tools import adapt_to_async_tool
         from llama_index.core.tools.calling import acall_tool_with_selection
-        from llama_index.core.workflow import Context
-        from workflows.context.state_store import DictState
 
         agent = ReActAgent(
             tools=tools,
@@ -889,11 +890,12 @@ class LLM(BaseLLM):
         if user_msg:
             llm_input.append(user_msg)
 
-        ctx: Context[DictState] = Context(agent)
+        ctx = SimpleAgentContext()
+        async_tools = [adapt_to_async_tool(t) for t in (tools or [])]
 
         try:
             resp = await agent.take_step(
-                ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+                ctx=ctx, llm_input=llm_input, tools=async_tools, memory=memory
             )
             tool_outputs = []
             for tool_call in resp.tool_calls:

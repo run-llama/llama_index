@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -1905,3 +1905,37 @@ def test_client_header_initialization() -> None:
 
         assert "x-goog-api-client" in headers
         assert headers["x-goog-api-client"].startswith("llamaindex/")
+
+
+META_SCENARIOS_TO_TEST = [
+    # default case, should fetch metadata
+    {"kwargs": {}, "meta_fetched": True},
+    # only max_tokens provided, should fetch metadata
+    {"kwargs": {"max_tokens": 1024}, "meta_fetched": True},
+    # only context_window provided, should fetch metadata
+    {"kwargs": {"context_window": 8192}, "meta_fetched": True},
+    # both provided, should not fetch metadata
+    {"kwargs": {"max_tokens": 512, "context_window": 4096}, "meta_fetched": False},
+]
+
+
+@pytest.mark.parametrize("scenario", META_SCENARIOS_TO_TEST)
+def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
+    """Test that the model metadata is fetched only when max_tokens or context_window is not provided."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_client.models.get.return_value = mock_model
+
+        llm = GoogleGenAI(
+            model="models/gemini-3.0-flash", api_key="test-key", **scenario["kwargs"]
+        )
+
+        if scenario["meta_fetched"]:
+            # confirm model metadata was fetched
+            mock_client.models.get.assert_called_once()
+        else:
+            # confirm model metadata was not fetched
+            mock_client.models.get.assert_not_called()

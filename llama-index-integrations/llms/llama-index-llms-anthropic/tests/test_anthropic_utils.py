@@ -7,6 +7,9 @@ from llama_index.llms.anthropic.utils import (
     is_anthropic_structured_output_supported,
     STRUCTURED_OUTPUT_SUPPORT,
     messages_to_anthropic_beta_messages,
+    blocks_to_anthropic_blocks,
+    blocks_to_anthropic_beta_blocks,
+    messages_to_anthropic_messages,
 )
 from llama_index.core.base.llms.types import (
     ToolCallBlock,
@@ -27,6 +30,11 @@ from anthropic.types.beta import (
 
 class TestAnthropicPromptCachingSupport:
     """Test suite for Anthropic prompt caching model validation."""
+
+    def test_claude_4_5_opus_supported(self):
+        """Test Claude 4.5 Opus models support prompt caching."""
+        assert is_anthropic_prompt_caching_supported_model("claude-opus-4-5-20251101")
+        assert is_anthropic_prompt_caching_supported_model("claude-opus-4-5")
 
     def test_claude_4_1_opus_supported(self):
         """Test Claude 4.1 Opus models support prompt caching."""
@@ -60,6 +68,11 @@ class TestAnthropicPromptCachingSupport:
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-20241022")
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-20240620")
         assert is_anthropic_prompt_caching_supported_model("claude-3-5-sonnet-latest")
+
+    def test_claude_4_5_haiku_supported(self):
+        """Test Claude 4.5 Haiku models support prompt caching."""
+        assert is_anthropic_prompt_caching_supported_model("claude-haiku-4-5-20251001")
+        assert is_anthropic_prompt_caching_supported_model("claude-haiku-4-5")
 
     def test_claude_3_5_haiku_supported(self):
         """Test Claude 3.5 Haiku models support prompt caching."""
@@ -99,12 +112,14 @@ class TestAnthropicPromptCachingSupport:
         assert len(ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS) > 0
 
         expected_patterns = [
+            "claude-opus-4-5",
             "claude-opus-4-1",
             "claude-opus-4-0",
             "claude-sonnet-4-5",
             "claude-sonnet-4-0",
             "claude-3-7-sonnet",
             "claude-3-5-sonnet",
+            "claude-haiku-4-5",
             "claude-3-5-haiku",
             "claude-3-haiku",
             "claude-3-opus",
@@ -274,3 +289,132 @@ def test_is_anthropic_structured_output_supported() -> None:
     for model in STRUCTURED_OUTPUT_SUPPORT:
         assert is_anthropic_structured_output_supported(model)
     assert not is_anthropic_structured_output_supported("claude-sonnet-4-0")
+
+
+class TestCacheControlOnlyLastBlock:
+    """
+    Test that cache_control is applied only to the last block.
+
+    Fixes: https://github.com/run-llama/llama_index/issues/20854
+    When a message has many blocks and cache_control is set, only the last
+    block should receive cache_control to stay within Anthropic's limit of
+    4 blocks with cache_control per request.
+    """
+
+    def test_blocks_to_anthropic_blocks_cache_control_only_on_last(self):
+        """cache_control should only appear on the last block."""
+        blocks = [
+            TextBlock(text="block 1"),
+            TextBlock(text="block 2"),
+            TextBlock(text="block 3"),
+            TextBlock(text="block 4"),
+            TextBlock(text="block 5"),
+        ]
+        kwargs = {"cache_control": {"type": "ephemeral"}}
+        result = blocks_to_anthropic_blocks(blocks, kwargs)
+
+        assert len(result) == 5
+        # Only the last block should have cache_control
+        for i in range(4):
+            assert "cache_control" not in result[i], (
+                f"Block {i} should not have cache_control"
+            )
+        assert result[4]["cache_control"] == {"type": "ephemeral"}
+
+    def test_blocks_to_anthropic_blocks_no_cache_control(self):
+        """Without cache_control in kwargs, no block should have it."""
+        blocks = [
+            TextBlock(text="block 1"),
+            TextBlock(text="block 2"),
+        ]
+        kwargs = {}
+        result = blocks_to_anthropic_blocks(blocks, kwargs)
+
+        assert len(result) == 2
+        for block in result:
+            assert "cache_control" not in block
+
+    def test_blocks_to_anthropic_blocks_single_block_with_cache(self):
+        """Single block should get cache_control when set."""
+        blocks = [TextBlock(text="only block")]
+        kwargs = {"cache_control": {"type": "ephemeral"}}
+        result = blocks_to_anthropic_blocks(blocks, kwargs)
+
+        assert len(result) == 1
+        assert result[0]["cache_control"] == {"type": "ephemeral"}
+
+    def test_blocks_to_anthropic_beta_blocks_cache_control_only_on_last(self):
+        """Beta: cache_control should only appear on the last block."""
+        blocks = [
+            TextBlock(text="block 1"),
+            TextBlock(text="block 2"),
+            TextBlock(text="block 3"),
+            TextBlock(text="block 4"),
+            TextBlock(text="block 5"),
+        ]
+        kwargs = {"cache_control": {"type": "ephemeral"}}
+        result = blocks_to_anthropic_beta_blocks(blocks, kwargs)
+
+        assert len(result) == 5
+        # Only the last block should have cache_control
+        for i in range(4):
+            assert "cache_control" not in result[i], (
+                f"Block {i} should not have cache_control"
+            )
+        assert result[4]["cache_control"] == {"type": "ephemeral"}
+
+    def test_blocks_to_anthropic_beta_blocks_no_cache_control(self):
+        """Beta: without cache_control in kwargs, no block should have it."""
+        blocks = [
+            TextBlock(text="block 1"),
+            TextBlock(text="block 2"),
+        ]
+        kwargs = {}
+        result = blocks_to_anthropic_beta_blocks(blocks, kwargs)
+
+        assert len(result) == 2
+        for block in result:
+            assert "cache_control" not in block
+
+    def test_messages_to_anthropic_messages_cache_idx_last_block_only(self):
+        """
+        With cache_idx, cache_control should only be on the last block
+        of each message, not on every block.
+        """
+        messages = [
+            ChatMessage(
+                role="user",
+                blocks=[
+                    TextBlock(text="first block"),
+                    TextBlock(text="second block"),
+                    TextBlock(text="third block"),
+                ],
+            ),
+        ]
+        ant_messages, _ = messages_to_anthropic_messages(messages, cache_idx=0)
+
+        assert len(ant_messages) == 1
+        content = ant_messages[0]["content"]
+        assert len(content) == 3
+        # Only the last block should have cache_control
+        for i in range(2):
+            assert "cache_control" not in content[i], (
+                f"Block {i} should not have cache_control"
+            )
+        assert content[2]["cache_control"] == {"type": "ephemeral"}
+
+    def test_many_blocks_stay_under_api_limit(self):
+        """
+        Simulates the exact scenario from issue #20854: 29 blocks with
+        cache_control should not exceed Anthropic's 4-block limit.
+        """
+        blocks = [TextBlock(text=f"block {i}") for i in range(29)]
+        kwargs = {"cache_control": {"type": "ephemeral"}}
+        result = blocks_to_anthropic_blocks(blocks, kwargs)
+
+        cache_control_count = sum(1 for block in result if "cache_control" in block)
+        assert cache_control_count == 1, (
+            f"Expected 1 block with cache_control, found {cache_control_count}"
+        )
+        # Verify it's on the last block
+        assert "cache_control" in result[-1]

@@ -13,13 +13,16 @@ from typing import (
     Union,
     Type,
     cast,
+    overload,
 )
+from typing_extensions import deprecated
 
 from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import (
     DEFAULT_STATE_PROMPT,
     DEFAULT_EARLY_STOPPING_PROMPT,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     AgentInput,
@@ -55,7 +58,7 @@ from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StopEvent
+from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import Workflow, WorkflowMeta
@@ -190,6 +193,15 @@ class BaseWorkflowAgent(
         # Initialize Workflow with workflow-specific parameters
         Workflow.__init__(self, timeout=timeout, verbose=verbose, **workflow_kwargs)
 
+    def validate(self, **kwargs: Any) -> bool:  # type: ignore[override]
+        """
+        Validate the workflow to ensure it's well-formed.
+
+        Explicitly delegates to Workflow.validate to resolve the method conflict
+        between Workflow.validate (instance method) and BaseModel.validate (classmethod).
+        """
+        return Workflow.validate(self, **kwargs)
+
     @field_validator("tools", mode="before")
     def validate_tools(
         cls, v: Optional[Sequence[Union[BaseTool, Callable]]]
@@ -232,7 +244,7 @@ class BaseWorkflowAgent(
     @abstractmethod
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
@@ -568,7 +580,8 @@ class BaseWorkflowAgent(
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
             if self.output_cls is not None:
                 try:
@@ -586,7 +599,8 @@ class BaseWorkflowAgent(
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
 
             await ctx.store.set("current_tool_calls", [])
@@ -709,6 +723,20 @@ class BaseWorkflowAgent(
 
         return AgentInput(input=input_messages, current_agent_name=self.name)
 
+    # TODO: Remove the deprecated agent-specific overload. The agent params
+    # (user_msg, chat_history, memory, etc.) should be passed as kwargs that
+    # flow through Workflow.run() → AgentWorkflowStartEvent construction
+    # automatically, matching the standard Workflow.run(ctx, start_event,
+    # **kwargs) signature. At that point this entire override can be deleted.
+
+    @overload
+    @deprecated(
+        "Use the standard workflow signature instead: "
+        "agent.run(user_msg='hello') or "
+        "agent.run(ctx=ctx, start_event=event, user_msg='hello'). "
+        "This positional signature will be removed in a future version.",
+        category=None,
+    )
     def run(
         self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -719,25 +747,69 @@ class BaseWorkflowAgent(
         early_stopping_method: Optional[Literal["force", "generate"]] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
-    ) -> WorkflowHandler:
-        # Detect if hitl is needed
+    ) -> WorkflowHandler: ...
+
+    @overload
+    def run(
+        self,
+        ctx: Optional[Context] = None,
+        start_event: Optional[StartEvent] = None,
+        **kwargs: Any,
+    ) -> WorkflowHandler: ...
+
+    def run(self, *args: Any, **kwargs: Any) -> WorkflowHandler:
+        user_msg: Optional[Union[str, ChatMessage]] = None
+        chat_history: Optional[List[ChatMessage]] = None
+        memory: Optional[BaseMemory] = None
+        ctx: Optional[Context] = None
+        start_event: Optional[StartEvent] = None
+
+        if args:
+            first = args[0]
+            if isinstance(first, Context):
+                ctx = first
+                if len(args) > 1 and isinstance(args[1], StartEvent):
+                    start_event = args[1]
+            else:
+                user_msg = first
+                if len(args) > 1:
+                    chat_history = args[1]
+                if len(args) > 2:
+                    memory = args[2]
+                if len(args) > 3:
+                    ctx = args[3]
+
+        user_msg = kwargs.pop("user_msg", None) or user_msg
+        chat_history = kwargs.pop("chat_history", None) or chat_history
+        memory = kwargs.pop("memory", None) or memory
+        ctx = kwargs.pop("ctx", None) or ctx
+        max_iterations: Optional[int] = kwargs.pop("max_iterations", None)
+        early_stopping_method: Optional[Literal["force", "generate"]] = kwargs.pop(
+            "early_stopping_method", None
+        )
+        start_event = kwargs.pop("start_event", None) or start_event
+        run_id = kwargs.pop("run_id", None)
+
         if ctx is not None and ctx.is_running:
             return super().run(
                 ctx=ctx,
+                run_id=run_id,
                 **kwargs,
             )
         else:
-            start_event = start_event or AgentWorkflowStartEvent(
-                user_msg=user_msg,
-                chat_history=chat_history,
-                memory=memory,
-                max_iterations=max_iterations,
-                early_stopping_method=early_stopping_method,
-                **kwargs,
-            )
+            if start_event is None or isinstance(start_event, AgentWorkflowStartEvent):
+                start_event = start_event or AgentWorkflowStartEvent(
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    memory=memory,
+                    max_iterations=max_iterations,
+                    early_stopping_method=early_stopping_method,
+                    **kwargs,
+                )
             return super().run(
                 start_event=start_event,
                 ctx=ctx,
+                run_id=run_id,
             )
 
 

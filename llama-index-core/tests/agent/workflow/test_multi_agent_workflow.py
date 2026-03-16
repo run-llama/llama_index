@@ -18,7 +18,7 @@ from workflows.events import (
     InputRequiredEvent,
 )
 from workflows.context import PickleSerializer
-from workflows.errors import WorkflowRuntimeError
+from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 
 def _response_generator_from_list(responses: List[ChatMessage]):
@@ -222,12 +222,13 @@ async def test_workflow_execution_empty(empty_calculator_agent, retriever_agent)
     memory = ChatMemoryBuffer.from_defaults()
     handler = workflow.run(user_msg="Can you add 5 and 3?", memory=memory)
 
-    events = []
+    contains_error_message = False
     async for event in handler.stream_events():
-        events.append(event)
+        if isinstance(event, AgentInput):
+            if "FAILURE: Your previous response was empty" in event.input[-1].content:
+                contains_error_message = True
 
-    with pytest.raises(ValueError, match="Got empty message"):
-        await handler
+    assert contains_error_message
 
 
 @pytest.mark.asyncio
@@ -693,3 +694,35 @@ async def test_retry():
     response = await handler
 
     assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_run_id_passthrough(
+    empty_calculator_agent: ReActAgent, empty_retriever_agent: FunctionAgent
+) -> None:
+    """Test that run_id kwarg is forwarded to the WorkflowHandler."""
+    workflow = AgentWorkflow(
+        agents=[empty_calculator_agent, empty_retriever_agent],
+        root_agent="calculator",
+    )
+
+    custom_run_id = "test-run-id-12345"
+    handler = workflow.run(user_msg="hello", run_id=custom_run_id)
+    assert handler.run_id == custom_run_id
+    handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_run_id_default(
+    empty_calculator_agent: ReActAgent, empty_retriever_agent: FunctionAgent
+) -> None:
+    """Test that omitting run_id still generates one automatically."""
+    workflow = AgentWorkflow(
+        agents=[empty_calculator_agent, empty_retriever_agent],
+        root_agent="calculator",
+    )
+
+    handler = workflow.run(user_msg="hello")
+    assert handler.run_id is not None
+    assert isinstance(handler.run_id, str)
+    handler.cancel()

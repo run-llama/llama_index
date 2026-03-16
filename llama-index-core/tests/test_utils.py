@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Optional, Type, Union
 from unittest import mock
+import os
+import time
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -10,6 +12,7 @@ from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    aretry_on_exceptions_with_backoff,
     _get_colored_text,
     get_cache_dir,
     get_color_mapping,
@@ -18,6 +21,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    truncate_text,
 )
 
 
@@ -155,6 +159,33 @@ async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     assert call_count == 1
 
 
+@pytest.mark.asyncio
+async def test_aretry_does_not_call_time_sleep(monkeypatch):
+    def _fail_sleep(_):
+        raise AssertionError(
+            "time.sleep() should not be called in aretry_on_exceptions_with_backoff"
+        )
+
+    monkeypatch.setattr(time, "sleep", _fail_sleep)
+
+    attempts = {"n": 0}
+
+    async def flaky():
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("transient")
+        return "ok"
+
+    out = await aretry_on_exceptions_with_backoff(
+        flaky,
+        errors_to_retry=[ErrorToRetry(RuntimeError)],
+        max_tries=2,
+        min_backoff_secs=0.01,
+        max_backoff_secs=0.01,
+    )
+    assert out == "ok"
+
+
 def test_retry_on_conditional_exceptions() -> None:
     """Make sure retry function works on conditional exceptions."""
     global call_count
@@ -202,6 +233,21 @@ def test_get_color_mapping() -> None:
     assert len(color_mapping_ansi) == len(items)
     assert set(color_mapping_ansi.keys()) == set(items)
     assert all(color in _ANSI_COLORS for color in color_mapping_ansi.values())
+
+
+def test_truncate_text() -> None:
+    """Test truncate_text function."""
+    text = "Hello, world!"
+    assert truncate_text(text, 5) == "He" + "..."
+
+
+def test_truncate_text_with_less_chars() -> None:
+    text = "hello"
+
+    text1 = "world"
+
+    assert truncate_text(text1, 1) == "w"
+    assert truncate_text(text, 2) == "he"
 
 
 def test_get_colored_text() -> None:
@@ -275,7 +321,7 @@ def test_get_cache_dir_default_behavior(monkeypatch) -> None:
             result = get_cache_dir()
             mock_user_cache_dir.assert_called_once_with("llama_index")
             mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-            assert result == mock_cache_path
+            assert result == os.path.normpath(mock_cache_path)
 
 
 def test_get_cache_dir_creates_directory(tmp_path, monkeypatch) -> None:

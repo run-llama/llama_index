@@ -27,15 +27,16 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-cohere"
-version = "0.6.1"
+version = "0.8.0"
 description = "llama-index embeddings cohere integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "cohere>=5.15,<6",
     "llama-index-core>=0.13.0,<0.15",
+    "tenacity>=8.2.0,<10",
 ]
 
 [tool.codespell]

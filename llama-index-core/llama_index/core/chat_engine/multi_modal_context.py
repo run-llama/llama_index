@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
+import asyncio
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
@@ -27,6 +28,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.memory import BaseMemory, Memory
+from llama_index.core.types import Thread
 
 # from llama_index.core.query_engine.multi_modal import _get_image_and_text_nodes
 from llama_index.core.llms.llm import (
@@ -36,9 +38,6 @@ from llama_index.core.llms.llm import (
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.settings import Settings
 from llama_index.core.base.base_retriever import BaseRetriever
-
-if TYPE_CHECKING:
-    from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
 
 
 def _get_image_and_text_nodes(
@@ -80,7 +79,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
 
     def __init__(
         self,
-        retriever: "MultiModalVectorIndexRetriever",
+        retriever: BaseRetriever,
         multi_modal_llm: LLM,
         memory: BaseMemory,
         system_prompt: str,
@@ -325,6 +324,8 @@ class MultiModalContextChatEngine(BaseChatEngine):
         )
         assert isinstance(response, StreamingResponse)
 
+        self._memory.put(ChatMessage(content=str(message), role=MessageRole.USER))
+
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
             for token in response.response_gen:
@@ -336,12 +337,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
-            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            self._memory.put(user_message)
-            self._memory.put(ai_message)
-
-        return StreamingAgentChatResponse(
+        chat_response = StreamingAgentChatResponse(
             chat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
@@ -352,8 +348,13 @@ class MultiModalContextChatEngine(BaseChatEngine):
                 )
             ],
             source_nodes=response.source_nodes,
-            is_writing_to_memory=False,
         )
+        thread = Thread(
+            target=chat_response.write_response_to_history, args=(self._memory,)
+        )
+        chat_response.write_response_to_history_thread = thread
+        thread.start()
+        return chat_response
 
     @trace_method("chat")
     async def achat(
@@ -413,6 +414,10 @@ class MultiModalContextChatEngine(BaseChatEngine):
         )
         assert isinstance(response, AsyncStreamingResponse)
 
+        await self._memory.aput(
+            ChatMessage(content=str(message), role=MessageRole.USER)
+        )
+
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""
             async for token in response.async_response_gen():
@@ -424,13 +429,7 @@ class MultiModalContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
-            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-
-            await self._memory.aput(user_message)
-            await self._memory.aput(ai_message)
-
-        return StreamingAgentChatResponse(
+        chat_response = StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
@@ -441,8 +440,11 @@ class MultiModalContextChatEngine(BaseChatEngine):
                 )
             ],
             source_nodes=response.source_nodes,
-            is_writing_to_memory=False,
         )
+        chat_response.awrite_response_to_history_task = asyncio.create_task(
+            chat_response.awrite_response_to_history(self._memory)
+        )
+        return chat_response
 
     def reset(self) -> None:
         self._memory.reset()

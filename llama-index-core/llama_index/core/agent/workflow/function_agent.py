@@ -1,5 +1,6 @@
 from typing import List, Optional, Sequence
 
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
@@ -50,7 +51,7 @@ class FunctionAgent(BaseWorkflowAgent):
 
     async def _get_streaming_response(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         current_llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
     ) -> ChatResponse:
@@ -99,7 +100,7 @@ class FunctionAgent(BaseWorkflowAgent):
 
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,

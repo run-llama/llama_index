@@ -150,6 +150,10 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
             (see llama_index.core.utils.globals_helper).
         event_starts_to_ignore: List of event types to ignore at the start of a trace.
         event_ends_to_ignore: List of event types to ignore at the end of a trace.
+        token_budget:
+            Optional maximum allowed total LLM token usage across the lifetime of this
+            handler instance. If exceeded, a ValueError is raised. (Currently applies
+            to LLM token counts only.)
 
     """
 
@@ -160,9 +164,11 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         verbose: bool = False,
         logger: Optional[logging.Logger] = None,
+        token_budget: Optional[int] = None,
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
+        self.token_budget = token_budget
         self.tokenizer = tokenizer or get_tokenizer()
 
         self._token_counter = TokenCounter(tokenizer=self.tokenizer)
@@ -184,6 +190,16 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
     ) -> None:
         return
 
+    def _check_budget(self) -> None:
+        if (
+            self.token_budget is not None
+            and self.total_llm_token_count > self.token_budget
+        ):
+            raise ValueError(
+                f"Token budget exceeded! Limit: {self.token_budget}, "
+                f"Current: {self.total_llm_token_count}"
+            )
+
     def on_event_start(
         self,
         event_type: CBEventType,
@@ -192,6 +208,7 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
         parent_id: str = "",
         **kwargs: Any,
     ) -> str:
+        self._check_budget()
         return event_id
 
     def on_event_end(
@@ -222,6 +239,7 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
                     "LLM Completion Token Usage: "
                     f"{self.llm_token_counts[-1].completion_token_count}",
                 )
+            self._check_budget()
         elif (
             event_type == CBEventType.EMBEDDING
             and event_type not in self.event_ends_to_ignore

@@ -23,9 +23,8 @@ def load_embedding(file_path: str) -> List[float]:
     """Load embedding from file. Will only return first embedding in file."""
     with open(file_path) as f:
         for line in f:
-            embedding = [float(x) for x in line.strip().split(",")]
-            break
-        return embedding
+            return [float(x) for x in line.strip().split(",")]
+    raise ValueError(f"The embedding file {file_path} is empty.")
 
 
 def resolve_embed_model(

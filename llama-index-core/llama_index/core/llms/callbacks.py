@@ -1,4 +1,4 @@
-import asyncio
+import inspect
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -72,6 +72,9 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
+
                 try:
                     f_return_val = await f(_self, messages, **kwargs)
                 except BaseException as e:
@@ -171,6 +174,9 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
+
                 try:
                     f_return_val = f(_self, messages, **kwargs)
                 except BaseException as e:
@@ -271,7 +277,7 @@ def llm_chat_callback() -> Callable:
                 setattr(dummy_wrapper, attr, v)
                 setattr(wrapped_llm_chat, attr, v)
 
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
             else:
@@ -332,6 +338,9 @@ def llm_completion_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
 
                 try:
                     f_return_val = await f(_self, *args, **kwargs)
@@ -431,6 +440,9 @@ def llm_completion_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
+
                 try:
                     f_return_val = f(_self, *args, **kwargs)
                 except BaseException as e:
@@ -531,7 +543,7 @@ def llm_completion_callback() -> Callable:
                 setattr(dummy_wrapper, attr, v)
                 setattr(wrapped_llm_predict, attr, v)
 
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
             else:

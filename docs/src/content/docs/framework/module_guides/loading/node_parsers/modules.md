@@ -92,6 +92,29 @@ parser = LangchainNodeParser(RecursiveCharacterTextSplitter())
 nodes = parser.get_nodes_from_documents(documents)
 ```
 
+### Chunker
+
+The `Chunker` is a multi purpose node parser that wraps around the [chonkie](https://docs.chonkie.ai/) chunkers.
+you can initialize your parser using an alias for any of the supported chonkie chunking strategies, the full list of valid aliases can be accessed via `Chunker.valid_chunker_types` attribute.
+
+```python
+from llama_index.node_parser.chonkie import Chunker
+
+parser = Chunker("recursive", chunk_size=2048)
+nodes = parser.get_nodes_from_documents(documents)
+```
+
+you can also directly pass in a chonkie chunker instance to initialize the parser.
+
+```python
+from chonkie import RecursiveChunker
+from llama_index.node_parser.chonkie import Chunker
+
+chonkie_chunker = RecursiveChunker()
+parser = Chunker(chonkie_chunker)
+nodes = parser.get_nodes_from_documents(documents)
+```
+
 ### SentenceSplitter
 
 The `SentenceSplitter` attempts to split text while respecting the boundaries of sentences.

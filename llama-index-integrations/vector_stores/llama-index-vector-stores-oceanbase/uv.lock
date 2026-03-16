@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -99,14 +99,14 @@ wheels = [
 
 [[package]]
 name = "aiomysql"
-version = "0.2.0"
+version = "0.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pymysql" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/67/76/2c5b55e4406a1957ffdfd933a94c2517455291c97d2b81cec6813754791a/aiomysql-0.2.0.tar.gz", hash = "sha256:558b9c26d580d08b8c5fd1be23c5231ce3aeff2dadad989540fee740253deb67", size = 114706, upload-time = "2023-06-11T19:57:53.608Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/e0/302aeffe8d90853556f47f3106b89c16cc2ec2a4d269bdfd82e3f4ae12cc/aiomysql-0.3.2.tar.gz", hash = "sha256:72d15ef5cfc34c03468eb41e1b90adb9fd9347b0b589114bd23ead569a02ac1a", size = 108311, upload-time = "2025-10-22T00:15:21.278Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/87/c982ee8b333c85b8ae16306387d703a1fcdfc81a2f3f15a24820ab1a512d/aiomysql-0.2.0-py3-none-any.whl", hash = "sha256:b7c26da0daf23a5ec5e0b133c03d20657276e4eae9b73e040b72787f6f6ade0a", size = 44215, upload-time = "2023-06-11T19:57:51.09Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/af/aae0153c3e28712adaf462328f6c7a3c196a1c1c27b491de4377dd3e6b52/aiomysql-0.3.2-py3-none-any.whl", hash = "sha256:c82c5ba04137d7afd5c693a258bea8ead2aad77101668044143a991e04632eb2", size = 71834, upload-time = "2025-10-22T00:15:15.905Z" },
 ]
 
 [[package]]
@@ -1539,7 +1539,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "pyobvector", specifier = ">=0.1.6,<0.2" },
+    { name = "pyobvector", specifier = ">=0.2.0,<0.3" },
 ]
 
 [package.metadata.requires-dev]
@@ -2439,7 +2439,7 @@ wheels = [
 
 [[package]]
 name = "pyobvector"
-version = "0.1.20"
+version = "0.2.22"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiomysql" },
@@ -2449,9 +2449,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "sqlglot" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/f7/fcc99e41bac6aee0822667809957800b2f512f2d96d1fa52c283cb58db16/pyobvector-0.1.20.tar.gz", hash = "sha256:26e8155d5b933333a2ab21b08e51df84e374d188f5fb26520347450e72f34c6e", size = 35256, upload-time = "2025-03-17T12:32:16.66Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/30/b9/443d65757cdfb47d31ef4b9ed0609628ae468e52e57033051e1fad256c59/pyobvector-0.2.22.tar.gz", hash = "sha256:0bd4af46cfdfbc67e691d5b49f3b0662f702a7a42a7f7a240f1021af378e793c", size = 72706, upload-time = "2026-01-15T03:19:57.4Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/7d/00cd33c18814bec0a4f6f4a89becdbe2c6c28d78f87d765d0259a22b117e/pyobvector-0.1.20-py3-none-any.whl", hash = "sha256:1a991f8b9f53e1a749fc396ccb90c7591e64b2c5679930023f00789c62e7af72", size = 46264, upload-time = "2025-03-17T12:32:15.356Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/88/1583888a4ce85202d93fa03f2817681637465668e8b260ef1b9d5a39c3ca/pyobvector-0.2.22-py3-none-any.whl", hash = "sha256:4a0f5c094af7ca8242fdf9e5111e75544de0a9615491e9ec2f9d218dc909b509", size = 60627, upload-time = "2026-01-15T03:19:55.918Z" },
 ]
 
 [[package]]

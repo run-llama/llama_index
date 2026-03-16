@@ -10,7 +10,7 @@ DEPRECATED: Use `JSONalyzeQueryEngine` from `llama-index-experimental` instead.
 
 """
 
-import asyncio
+import inspect
 import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -205,7 +205,7 @@ def load_jsonalyzer(
 
     """
     if custom_jsonalyzer:
-        assert not use_async or asyncio.iscoroutinefunction(custom_jsonalyzer), (
+        assert not use_async or inspect.iscoroutinefunction(custom_jsonalyzer), (
             "custom_jsonalyzer function must be async when use_async is True"
         )
         return custom_jsonalyzer

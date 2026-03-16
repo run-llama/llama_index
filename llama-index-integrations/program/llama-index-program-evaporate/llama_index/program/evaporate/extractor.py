@@ -1,3 +1,5 @@
+import ast
+import logging
 import random
 import re
 import signal
@@ -84,7 +86,131 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
     return existing_fields
 
 
-# since we define globals below
+logger = logging.getLogger(__name__)
+
+# Builtins allowed in the sandboxed execution environment for LLM-generated
+# extraction functions.  Dangerous builtins (eval, exec, compile, open,
+# __import__, getattr, setattr, delattr, globals, locals, vars, breakpoint)
+# are intentionally excluded.
+_SANDBOX_BUILTINS = {
+    "abs": abs,
+    "all": all,
+    "any": any,
+    "bool": bool,
+    "chr": chr,
+    "dict": dict,
+    "enumerate": enumerate,
+    "filter": filter,
+    "float": float,
+    "format": format,
+    "frozenset": frozenset,
+    "hasattr": hasattr,
+    "hash": hash,
+    "int": int,
+    "isinstance": isinstance,
+    "issubclass": issubclass,
+    "iter": iter,
+    "len": len,
+    "list": list,
+    "map": map,
+    "max": max,
+    "min": min,
+    "next": next,
+    "ord": ord,
+    "pow": pow,
+    "print": print,
+    "range": range,
+    "repr": repr,
+    "reversed": reversed,
+    "round": round,
+    "set": set,
+    "slice": slice,
+    "sorted": sorted,
+    "str": str,
+    "sum": sum,
+    "tuple": tuple,
+    "type": type,
+    "zip": zip,
+    "True": True,
+    "False": False,
+    "None": None,
+}
+
+
+_SANDBOX_ALLOWED_IMPORTS = {
+    "re",
+    "math",
+    "datetime",
+    "json",
+    "string",
+    "typing",
+    "time",
+    "collections",
+    "itertools",
+    "functools",
+    "decimal",
+    "fractions",
+    "statistics",
+    "textwrap",
+    "unicodedata",
+    "operator",
+}
+
+
+def _validate_generated_code(code: str) -> None:
+    """Reject generated code that accesses dunder/private attrs or unsafe imports."""
+    tree = ast.parse(code)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name not in _SANDBOX_ALLOWED_IMPORTS:
+                    raise RuntimeError(
+                        f"Generated code imports '{alias.name}' which is not "
+                        f"in the allowed set: {_SANDBOX_ALLOWED_IMPORTS}"
+                    )
+        if isinstance(node, ast.ImportFrom):
+            if (
+                node.module
+                and node.module.split(".")[0] not in _SANDBOX_ALLOWED_IMPORTS
+            ):
+                raise RuntimeError(
+                    f"Generated code imports from '{node.module}' which is not "
+                    f"in the allowed set: {_SANDBOX_ALLOWED_IMPORTS}"
+                )
+        if isinstance(node, ast.Name) and node.id.startswith("__"):
+            raise RuntimeError(
+                f"Generated code accesses a dunder name '{node.id}' which is "
+                f"not allowed in the sandbox"
+            )
+        if isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            raise RuntimeError(
+                f"Generated code accesses a dunder attribute '{node.attr}' "
+                f"which is not allowed in the sandbox"
+            )
+
+
+def _restricted_import(
+    name: str,
+    globals: Any = None,
+    locals: Any = None,
+    fromlist: Any = (),
+    level: int = 0,
+) -> Any:
+    if name in _SANDBOX_ALLOWED_IMPORTS:
+        return __import__(name, globals, locals, fromlist, level)
+    raise ImportError(f"Import of module '{name}' is not allowed in the sandbox")
+
+
+def _build_sandbox(node_text: str) -> Dict[str, Any]:
+    """Build a restricted globals dict for executing generated functions."""
+    builtins = {**_SANDBOX_BUILTINS, "__import__": _restricted_import}
+    return {
+        "__builtins__": builtins,
+        "re": re,
+        "node_text": node_text,
+    }
+
+
 class EvaporateExtractor:
     """
     Wrapper around Evaporate.
@@ -213,28 +339,32 @@ class EvaporateExtractor:
         self, nodes: List[BaseNode], fn_str: str, field_name: str, num_timeouts: int = 1
     ) -> List:
         """
-        Run function on nodes.
+        Run LLM-generated extraction function on nodes.
 
-        Calls python exec().
-
-        There are definitely security holes with this approach, use with caution.
+        Executes the generated code in a sandboxed environment with restricted
+        builtins and no access to dangerous functions like __import__, eval,
+        exec, open, etc.  The ``re`` module is pre-loaded since the prompt
+        templates produce code that uses it.
 
         """
         function_field = get_function_field_from_attribute(field_name)
+
+        # Validate the generated code before execution
+        _validate_generated_code(fn_str)
+
         results = []
         for node in nodes:
-            global result
-            global node_text
-            node_text = node.get_content()  # type: ignore[name-defined]
-            # this is temporary
-            result = []  # type: ignore[name-defined]
+            sandbox = _build_sandbox(node.get_content())
             try:
                 with time_limit(1):
-                    exec(fn_str, globals())
-                    exec(f"result = get_{function_field}_field(node_text)", globals())
+                    exec(fn_str, sandbox)
+                    exec(
+                        f"__result__ = get_{function_field}_field(node_text)",
+                        sandbox,
+                    )
             except TimeoutException:
                 raise
-            results.append(result)  # type: ignore[name-defined]
+            results.append(sandbox.get("__result__", []))
         return results
 
     def extract_datapoints_with_fn(

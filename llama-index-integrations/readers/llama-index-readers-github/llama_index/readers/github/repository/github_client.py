@@ -88,6 +88,39 @@ class GitBlobResponseModel(DataClassJsonMixin):
 
 
 @dataclass
+class GitContentResponseModel(DataClassJsonMixin):
+    """
+    Dataclass for the response from the Github API's getContent endpoint.
+
+    Attributes:
+        - type (str): Type of the object (file, dir, symlink, submodule).
+        - encoding (str): Encoding of the content.
+        - size (int): Size of the content.
+        - name (str): Name of the content.
+        - path (str): Path to the content.
+        - content (str): Content of the file.
+        - sha (str): SHA of the content.
+        - url (str): URL for the content.
+        - git_url (str): Git URL for the content.
+        - html_url (str): HTML URL for the content.
+        - download_url (str): Download URL for the content.
+
+    """
+
+    type: str
+    encoding: str
+    size: int
+    name: str
+    path: str
+    content: str
+    sha: str
+    url: str
+    git_url: str
+    html_url: str
+    download_url: str
+
+
+@dataclass
 class GitCommitResponseModel(DataClassJsonMixin):
     """
     Dataclass for the response from the Github API's getCommit endpoint.
@@ -202,6 +235,14 @@ class BaseGithubClient(Protocol):
         branch_name: Optional[str],
     ) -> GitBranchResponseModel: ...
 
+    async def get_content(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: Optional[str] = None,
+    ) -> GitContentResponseModel: ...
+
 
 class GithubClient:
     """
@@ -300,6 +341,7 @@ class GithubClient:
             "getBranch": "/repos/{owner}/{repo}/branches/{branch}",
             "getBlob": "/repos/{owner}/{repo}/git/blobs/{file_sha}",
             "getCommit": "/repos/{owner}/{repo}/commits/{commit_sha}",
+            "getContent": "/repos/{owner}/{repo}/contents/{path}",
         }
 
         # Base headers (Authorization header will be added per-request)
@@ -577,6 +619,57 @@ class GithubClient:
                     commit_sha=commit_sha,
                     timeout=timeout,
                     retries=retries,
+                )
+            ).text
+        )
+
+    async def get_content(
+        self,
+        owner: str,
+        repo: str,
+        path: str,
+        ref: Optional[str] = None,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
+    ) -> GitContentResponseModel:
+        """
+        Get information about a file content. (Github API endpoint: getContent).
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `path (str)`: Path to the file.
+            - `ref (str)`: The name of the commit/branch/tag.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
+
+        Returns:
+            - `content_info (GitContentResponseModel)`: Information about the content.
+
+        Examples:
+            >>> content_info = client.get_content("owner", "repo", "path/to/file")
+
+        """
+        kwargs = {
+            "owner": owner,
+            "repo": repo,
+            "path": path,
+        }
+        if ref:
+            kwargs["ref"] = ref
+
+        # Handle ref query param
+        req_kwargs = {"params": {"ref": ref}} if ref else {}
+
+        return GitContentResponseModel.from_json(
+            (
+                await self.request(
+                    "getContent",
+                    "GET",
+                    timeout=timeout,
+                    retries=retries,
+                    **kwargs,
+                    **req_kwargs,
                 )
             ).text
         )
