@@ -11,7 +11,7 @@ import llama_index.core.instrumentation as instrument
 dispatcher = instrument.get_dispatcher(__name__)
 
 
-def asyncio_module(show_progress: bool = False) -> Any:
+def get_asyncio_module(show_progress: bool = False) -> Any:
     if show_progress:
         from tqdm.asyncio import tqdm_asyncio
 
@@ -20,6 +20,18 @@ def asyncio_module(show_progress: bool = False) -> Any:
         module = asyncio
 
     return module
+
+
+def asyncio_module(show_progress: bool = False) -> Any:
+    import warnings
+
+    warnings.warn(
+        "asyncio_module() is deprecated and will be removed in a future release. "
+        "Use get_asyncio_module() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return get_asyncio_module(show_progress=show_progress)
 
 
 def asyncio_run(coro: Coroutine) -> Any:
@@ -116,17 +128,6 @@ async def batch_gather(
         if verbose:
             print(f"Completed {len(output)} out of {len(tasks)} tasks")
     return output
-
-
-def get_asyncio_module(show_progress: bool = False) -> Any:
-    if show_progress:
-        from tqdm.asyncio import tqdm_asyncio
-
-        module = tqdm_asyncio
-    else:
-        module = asyncio
-
-    return module
 
 
 DEFAULT_NUM_WORKERS = 4

@@ -75,11 +75,14 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
+    "gpt-5.4": 400000,
+    "gpt-5.4-chat-latest": 128000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
     "gpt-5.2-pro": 400000,
     "gpt-5.2-pro-2025-12-11": 400000,
+    "gpt-5.4-pro": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -221,6 +224,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-4.1",
     "gpt-5",
     "gpt-5.2",
+    "gpt-5.4",
 ]
 
 
@@ -434,8 +438,10 @@ def to_openai_message_dict(
             content.append(
                 {
                     "type": "file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -613,8 +619,10 @@ def to_openai_responses_message_dict(
             content.append(
                 {
                     "type": "input_file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):

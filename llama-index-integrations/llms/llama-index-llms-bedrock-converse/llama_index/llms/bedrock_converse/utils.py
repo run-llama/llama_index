@@ -66,10 +66,10 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
-    "anthropic.claude-opus-4-6-v1": 200000,
+    "anthropic.claude-opus-4-6-v1": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
-    "anthropic.claude-sonnet-4-6": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -278,6 +278,32 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+BEDROCK_DOC_MIMETYPE_TO_FORMAT = {
+    "application/pdf": "pdf",
+    "text/csv": "csv",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/html": "html",
+    "text/plain": "txt",
+    "text/markdown": "md",
+}
+
+
+def _get_bedrock_doc_format(mimetype: Optional[str]) -> str:
+    """Map a document mimetype to a Bedrock Converse document format."""
+    if mimetype and mimetype in BEDROCK_DOC_MIMETYPE_TO_FORMAT:
+        return BEDROCK_DOC_MIMETYPE_TO_FORMAT[mimetype]
+    if mimetype:
+        logger.warning(
+            f"Unsupported document mimetype for Bedrock Converse: {mimetype}. "
+            f"Supported types: {', '.join(BEDROCK_DOC_MIMETYPE_TO_FORMAT.keys())}. "
+            "Falling back to 'txt'."
+        )
+    return "txt"
+
+
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
@@ -318,9 +344,10 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        # NOTE: At the time of writing, "txt" format works for all file types
-        # The API then infers the format from the file type based on the bytes
-        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+        doc_format = _get_bedrock_doc_format(block.document_mimetype)
+        return {
+            "document": {"format": doc_format, "name": title, "source": {"bytes": data}}
+        }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(

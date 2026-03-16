@@ -28,12 +28,12 @@ dev = [
 
 [project]
 name = "llama-index-protocols-ag-ui"
-version = "0.2.4"
+version = "0.3.0"
 description = "llama-index protocols AG-UI integration"
 authors = [
     {name = "Logan Markewich", email = "logan@runllama.ai"},
 ]
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.10,<3.14"
 readme = "README.md"
 license = "MIT"
 dependencies = [
