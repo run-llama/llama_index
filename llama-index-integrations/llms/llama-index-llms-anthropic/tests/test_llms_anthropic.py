@@ -1074,3 +1074,44 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def test_completion_response_from_chat_response_with_none_content():
+    """
+    Test that _completion_response_from_chat_response handles None content.
+
+    Regression test for issue #21026 - Pydantic validation error when
+    chat_response.message.content is None (e.g., when message only has blocks).
+    """
+    from llama_index.llms.anthropic.base import (
+        AnthropicChatResponse,
+        AnthropicCompletionResponse,
+    )
+    from llama_index.core.base.llms.types import ChatMessage, MessageRole
+
+    # Create an Anthropic instance (no API key needed for this test)
+    llm = Anthropic(
+        model="claude-sonnet-4-5",
+        api_key="test-key",
+    )
+
+    # Create a ChatMessage with no content (just empty blocks)
+    # This simulates the case where message.content is None
+    chat_msg = ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
+
+    # Create an AnthropicChatResponse with None content
+    chat_response = AnthropicChatResponse(
+        message=chat_msg,
+        citations=[],
+    )
+
+    # This should NOT raise a Pydantic validation error
+    # The fix ensures text defaults to "" when content is None
+    completion_response = llm._completion_response_from_chat_response(chat_response)
+
+    # Verify the response
+    assert isinstance(completion_response, AnthropicCompletionResponse)
+    assert completion_response.text == "", (
+        "text should be empty string when content is None"
+    )
+    assert completion_response.citations == []
