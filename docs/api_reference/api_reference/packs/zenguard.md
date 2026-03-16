@@ -1,4 +1,3 @@
 ::: llama_index.packs.zenguard
-    options:
-      members:
-        - ZenGuardPack
+options:
+members: - ZenGuardPack

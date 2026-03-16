@@ -1,4 +1,3 @@
 ::: llama_index.tools.wikipedia
-    options:
-      members:
-        - WikipediaToolSpec
+options:
+members: - WikipediaToolSpec
