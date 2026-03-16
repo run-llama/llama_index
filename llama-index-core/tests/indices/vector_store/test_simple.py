@@ -155,7 +155,8 @@ def test_simple_delete_ref_node_from_docstore(
 def test_delete_ref_doc_nodes_removed_from_docstore(
     patch_llm_predictor, patch_token_text_splitter, mock_embed_model
 ) -> None:
-    """Test delete_ref_doc with delete_from_docstore=True removes nodes.
+    """
+    Test delete_ref_doc with delete_from_docstore=True removes nodes.
 
     Regression test for https://github.com/run-llama/llama_index/issues/15529.
     Verifies that individual nodes are deleted from the docstore when
