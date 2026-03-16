@@ -21,7 +21,7 @@ def test_tool_spec_init_with_key():
 def test_build_headers_with_key():
     spec = AgentModuleToolSpec(am_key="am_test_key_123")
     headers = spec._build_headers()
-    assert headers == {"X-AM-Key": "am_test_key_123"}
+    assert headers == {"X-Agent-Module-Key": "am_test_key_123"}
 
 
 def test_build_headers_without_key():
@@ -71,7 +71,7 @@ def test_query_module(mock_get):
     mock_get.assert_called_once_with(
         "https://api.agent-module.dev/api/demo",
         params={"vertical": "ethics", "node": "node:ethics:eth013"},
-        headers={"X-AM-Key": "am_test_key_123"},
+        headers={"X-Agent-Module-Key": "am_test_key_123"},
         timeout=10,
     )
 
