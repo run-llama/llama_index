@@ -16,8 +16,8 @@ class AgentModuleToolSpec(BaseToolSpec):
     inference — all records have confidence_required: 1.0.
 
     Args:
-        am_key: Agent Module API key (X-AM-Key header).
-                Get a free trial key at https://agent-module.dev/waitlist
+        am_key: Agent Module API key (X-Agent-Module-Key header).
+                Get a free 24-hour trial key via POST https://api.agent-module.dev/api/trial
                 or by calling the MCP tool ``get_trial_key``.
         vertical: Knowledge vertical to query. Default: "ethics".
         timeout: Request timeout in seconds. Default: 10.
@@ -46,7 +46,7 @@ class AgentModuleToolSpec(BaseToolSpec):
 
     def _build_headers(self) -> dict:
         if self.am_key:
-            return {"X-AM-Key": self.am_key}
+            return {"X-Agent-Module-Key": self.am_key}
         return {}
 
     def _to_node_id(self, module: str, vertical: str) -> str:
@@ -100,7 +100,8 @@ class AgentModuleToolSpec(BaseToolSpec):
         methodology, documentation requirements, and competent authority obligations.
 
         Requires a membership key — ETH_021 is not accessible in demo mode.
-        Get a trial key at https://agent-module.dev/waitlist.
+        Get a free 24-hour trial key via POST https://api.agent-module.dev/api/trial
+        or by calling the MCP tool get_trial_key.
 
         Returns:
             JSON with ETH_021 FRIA logic gates and Art. 27 statutory citations.

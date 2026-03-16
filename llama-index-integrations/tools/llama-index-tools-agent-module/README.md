@@ -32,8 +32,7 @@ response = agent.chat(
 
 ## Getting an API Key
 
-**Free trial:** `https://agent-module.dev/waitlist`
-Or call the MCP tool `get_trial_key` if you have the Agent Module MCP server configured.
+**Free trial:** Get a free 24-hour trial key via `POST https://api.agent-module.dev/api/trial` or by calling the MCP tool `get_trial_key`.
 
 **Production keys:** `https://agent-module.dev` (Inaugural cohort: $19/month)
 
@@ -72,7 +71,7 @@ Agent Module also exposes an MCP server. For LlamaIndex + MCP:
 
 ```python
 # Configure via MCP server at https://api.agent-module.dev/mcp
-# Transport: streamable_http | Auth: X-AM-Key header
+# Transport: streamable_http | Auth: X-Agent-Module-Key header
 ```
 
 Full module list: `https://agent-module.dev/core-ethics.md`
