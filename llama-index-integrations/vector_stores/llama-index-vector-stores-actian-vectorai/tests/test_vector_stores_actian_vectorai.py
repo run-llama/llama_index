@@ -132,13 +132,9 @@ def test_basic_add_and_delete() -> None:
         )
         vectorStore = ActianVectorAIVectorStore(client, collection_name=collection_name)
 
-        print("Adding nodes to vector store...")
-
         vectorStore.add(nodes)
 
         assert vectorStore._client.points.count(collection_name) == len(nodes)
-
-        print("Nodes added. Deleting one node...")
 
         vectorStore.delete("doc_03")
 
@@ -155,6 +151,29 @@ def test_clear() -> None:
             vector_store.clear()
 
             assert not client.collections.exists(vector_store._collection_name)
+
+def test_query_vector_search() -> None:
+    with VectorAIClient(VECTORAI_SERVER_URL) as client:
+        with _managed_vector_store(client, nodes) as vector_store:
+            expected_node = nodes[2]
+            query = VectorStoreQuery(
+                query_embedding=expected_node.embedding,
+                similarity_top_k=3,
+                doc_ids=["doc_03"],
+                node_ids=["2bda1c3d-600d-46b3-9016-2709b0dcc4c7", "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e"]
+            )
+
+            result = vector_store.query(query)
+
+            assert result.ids is not None
+            assert result.nodes is not None
+            assert result.similarities is not None
+            assert len(result.ids) == 1
+            assert len(result.nodes) == 1
+            assert len(result.similarities) == 1
+            assert result.ids[0] == expected_node.node_id
+            assert result.nodes[0].node_id == expected_node.node_id
+            assert result.nodes[0].metadata == expected_node.metadata
 
 @pytest.mark.parametrize(
     ("filters", "expected_remaining_count"),

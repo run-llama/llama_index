@@ -33,6 +33,7 @@ from actian_vectorai import (
     WalConfigDiff,
     Filter,
     is_empty,
+    has_id,
 )
 
 from actian_vectorai.models import (
@@ -41,6 +42,7 @@ from actian_vectorai.models import (
     OptimizersConfigDiff,
     QuantizationConfig,
     PointStruct,
+    ScoredPoint,
     ShardingMethod,
     UpdateResult,
     UpdateStatus,
@@ -81,6 +83,25 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
     def client(self) -> Any:
         """Return Actian Vector AI client."""
         return self._client
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes by ids or metadata filters.
+
+        Args:
+            node_ids (List[str]): List of node ids to get.
+            filters (MetadataFilters): Metadata filters to apply to query.
+        Returns:
+            List[BaseNode]: List of nodes matching query.
+        """
+
+        raise NotImplementedError( # Waiting on implementation of scroll method in Actian Vector AI client
+            "ActianVectorAIVectorStore.get_nodes() is not implemented."
+        )
 
     def add(
         self,
@@ -155,9 +176,17 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             query: VectorStoreQuery object containing query parameters
 
         """
-        raise NotImplementedError(
-            "ActianVectorAIVectorStore.query() is not implemented."
+        if query.mode != VectorStoreQueryMode.DEFAULT:
+            raise NotImplementedError("Only DEFAULT query mode is supported for ActianVectorAIVectorStore.")
+        
+        results = self._client.points.search(
+            self._collection_name,
+            query.query_embedding,
+            limit=query.similarity_top_k,
+            filter=self._build_db_filter_from_vector_store_query(query),
+            **kwargs,
         )
+        return self._build_vector_store_query_result_from_scored_points(results)
 
     def _build_points_from_nodes(self, nodes: List[BaseNode]) -> tuple[List[PointStruct], List[str]]:
         """
@@ -257,3 +286,45 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             return Filter(should = conditions)
         elif filters.condition == FilterCondition.NOT:
             return Filter(must_not = conditions)
+        
+    def _build_db_filter_from_vector_store_query(self, query: VectorStoreQuery) -> Filter:
+        """
+        Build Actian Vector AI filter from LlamaIndex VectorStoreQuery.
+
+        Args:
+            query: VectorStoreQuery object containing query parameters
+        """
+        conditions = []
+
+        if query.node_ids is not None:
+            conditions.append(has_id(query.node_ids))
+
+        if query.doc_ids is not None:
+            conditions.append(Field("ref_doc_id").any_of(query.doc_ids))
+
+        if query.filters is not None:
+            conditions.append(Condition(self._build_db_filter_from_metadata_filters(query.filters)))
+
+        return Filter(must=conditions) if conditions else None
+    
+    def _build_vector_store_query_result_from_scored_points(self, scored_points: List[ScoredPoint]) -> VectorStoreQueryResult:
+        """
+        Build LlamaIndex VectorStoreQueryResult from list of Actian Vector AI ScoredPoint.
+
+        Args:
+            scored_points: List of ScoredPoints returned from Actian Vector AI search query
+        """
+        ids = []
+        nodes = []
+        similarities = []
+        for point in scored_points:
+            id = point.id
+            node = metadata_dict_to_node(point.payload)
+            node.embedding = point.vectors
+            similarity = point.score
+            
+            ids.append(id)
+            nodes.append(node)
+            similarities.append(similarity)
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
