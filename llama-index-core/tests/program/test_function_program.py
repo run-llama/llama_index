@@ -213,7 +213,8 @@ class SingleFieldIntModel(BaseModel):
 
 
 def test_single_field_list_with_default() -> None:
-    """Test that single-field list model with default receives correct value.
+    """
+    Test that single-field list model with default receives correct value.
 
     Regression test for https://github.com/run-llama/llama_index/issues/21024
     """
