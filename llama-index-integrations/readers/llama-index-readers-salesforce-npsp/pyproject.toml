@@ -8,6 +8,7 @@ dev = [
     "jupyter>=1.0.0,<2",
     "mypy>=1.0",
     "pytest>=7.0",
+    "pytest-cov>=4.0",
     "pytest-mock>=3.0",
     "ruff>=0.0.270",
     "black>=23.0",
@@ -17,8 +18,8 @@ dev = [
 name = "llama-index-readers-salesforce-npsp"
 version = "0.1.0"
 description = "LlamaIndex data reader for Salesforce Nonprofit Success Pack (NPSP). Ingests donor records, gift histories, and engagement metrics as structured LLM-ready Documents."
-authors = [{name = "Shivam Lalakiya", email = "shivamlalakiya@example.com"}]
-requires-python = ">=3.9,<4.0"
+authors = [{name = "Shivam Lalakiya", email = "Shivamlalakiya151299@gmail.com"}]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

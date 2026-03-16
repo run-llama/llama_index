@@ -1,47 +1,29 @@
-"""
-Salesforce NPSP (Nonprofit Success Pack) reader for LlamaIndex.
-
-Connects directly to Salesforce via simple_salesforce, fetches donor
-Contact records, Opportunity (gift) histories, and NPSP-specific engagement
-metrics, and structures them as LlamaIndex Document objects optimised for
-LLM reasoning and RAG pipelines.
-
-Unlike the generic llama-index-readers-airbyte-salesforce (which requires
-the Airbyte CDK and dumps raw JSON), this reader:
-  - Connects directly via simple_salesforce (lightweight, no CDK)
-  - Is NPSP-aware (npo02__, npsp__ field prefixes)
-  - Produces human-readable Document text, not raw JSON blobs
-  - Optionally injects ML-derived affinity scores via a pluggable callable
-"""
+"""Salesforce NPSP (Nonprofit Success Pack) reader for LlamaIndex."""
 
 from typing import Any, Callable, Dict, List, Optional
+import functools
 import os
+
+from simple_salesforce import Salesforce
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
 class SalesforceNPSPReader(BaseReader):
-    """
-    LlamaIndex data reader for Salesforce Nonprofit Success Pack (NPSP).
+    """LlamaIndex data reader for Salesforce Nonprofit Success Pack (NPSP).
 
-    Ingests donor Contact records, gift Opportunity histories, and NPSP
-    engagement metrics from a Salesforce org, returning one LlamaIndex
-    Document per donor. Each Document contains:
-
-    - Structured natural-language text an LLM can directly reason over
-    - Machine-readable metadata fields for filtering and retrieval
-    - An optional ML-derived affinity score (e.g. from the PhilanthroPy
-      sklearn toolkit) injected via the affinity_score_fn argument
+    Fetches donor Contact records, Opportunity gift histories, and NPSP
+    engagement metrics, returning one LlamaIndex Document per donor.
 
     Args:
-        username (str): Salesforce username. Falls back to SF_USERNAME env var.
-        password (str): Salesforce password. Falls back to SF_PASSWORD env var.
-        security_token (str): Salesforce security token. Falls back to SF_TOKEN.
-        domain (str): 'login' for production orgs, 'test' for sandboxes.
-        include_opportunities (bool): Whether to fetch full gift history per donor.
-        affinity_score_fn (Optional[Callable[[Dict], float]]): Callable that
-            accepts a metadata dict and returns a float score in [0, 100].
+        username: Salesforce username. Falls back to SF_USERNAME env var.
+        password: Salesforce password. Falls back to SF_PASSWORD env var.
+        security_token: Salesforce security token. Falls back to SF_TOKEN.
+        domain: 'login' for production, 'test' for sandbox. Default 'login'.
+        include_opportunities: Fetch gift history per donor. Default True.
+        affinity_score_fn: Optional callable (metadata_dict) -> float for
+            injecting ML-derived affinity scores at index time.
 
     Examples:
         .. code-block:: python
@@ -55,11 +37,6 @@ class SalesforceNPSPReader(BaseReader):
                 limit=500,
             )
             index = VectorStoreIndex.from_documents(docs)
-            engine = index.as_query_engine()
-            response = engine.query(
-                "Which donors haven't been contacted in 6 months?"
-            )
-
     """
 
     def __init__(
@@ -74,26 +51,18 @@ class SalesforceNPSPReader(BaseReader):
         self.username = username or os.environ.get("SF_USERNAME")
         self.password = password or os.environ.get("SF_PASSWORD")
         self.security_token = security_token or os.environ.get("SF_TOKEN")
-        self.domain = domain
-        self.include_opportunities = include_opportunities
-        self.affinity_score_fn = affinity_score_fn
-
-    def _get_sf_connection(self) -> Any:
-        """Establish and return a simple_salesforce Salesforce connection."""
-        try:
-            from simple_salesforce import Salesforce
-        except ImportError as e:
-            raise ImportError(
-                "The simple-salesforce package is required. "
-                "Install it with: pip install simple-salesforce"
-            ) from e
-
         if not all([self.username, self.password, self.security_token]):
             raise ValueError(
                 "Salesforce credentials must be provided as constructor "
                 "arguments or via SF_USERNAME, SF_PASSWORD, SF_TOKEN env vars."
             )
+        self.domain = domain
+        self.include_opportunities = include_opportunities
+        self.affinity_score_fn = affinity_score_fn
 
+    @functools.cached_property
+    def _sf(self) -> Any:
+        """Cached Salesforce connection. Created once on first access."""
         return Salesforce(
             username=self.username,
             password=self.password,
@@ -139,7 +108,6 @@ class SalesforceNPSPReader(BaseReader):
 
     def _build_opportunity_map(
         self,
-        sf: Any,
         contact_ids: List[str],
     ) -> Dict[str, List[Dict]]:
         if not contact_ids:
@@ -159,7 +127,7 @@ class SalesforceNPSPReader(BaseReader):
             ORDER BY CloseDate DESC
         """
         opp_map: Dict[str, List[Dict]] = {}
-        for opp in sf.query_all(opp_soql)["records"]:
+        for opp in self._sf.query_all(opp_soql)["records"]:
             cid = opp.get("Primary_Contact__c")
             if cid:
                 opp_map.setdefault(cid, []).append(opp)
@@ -275,14 +243,12 @@ Engagement:
             ValueError: If Salesforce credentials are missing.
 
         """
-        sf = self._get_sf_connection()
-
         soql = self._build_contact_soql(contact_ids, soql_filter, limit)
-        contacts = sf.query_all(soql)["records"]
+        contacts = self._sf.query_all(soql)["records"]
 
         opp_map: Dict[str, List[Dict]] = {}
         if self.include_opportunities and contacts:
             cids = [c["Id"] for c in contacts]
-            opp_map = self._build_opportunity_map(sf, cids)
+            opp_map = self._build_opportunity_map(cids)
 
         return [self._build_document(c, opp_map) for c in contacts]

@@ -3,7 +3,7 @@ Tests for SalesforceNPSPReader.
 All tests mock simple_salesforce.Salesforce — no real credentials needed.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 import pytest
 
 from llama_index.readers.salesforce_npsp import SalesforceNPSPReader
@@ -81,35 +81,37 @@ def test_reader_init_from_env(monkeypatch):
     assert r.username == "env_user"
 
 
-def test_missing_credentials_raises():
-    r = SalesforceNPSPReader()
+def test_missing_credentials_raises(monkeypatch):
+    monkeypatch.delenv("SF_USERNAME", raising=False)
+    monkeypatch.delenv("SF_PASSWORD", raising=False)
+    monkeypatch.delenv("SF_TOKEN", raising=False)
     with pytest.raises(ValueError, match="credentials"):
-        r._get_sf_connection()
+        SalesforceNPSPReader()
 
 
 def test_load_data_returns_documents(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert isinstance(docs, list)
     assert len(docs) == 1
     assert isinstance(docs[0], Document)
 
 
 def test_document_text_contains_donor_name(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert "Jane Smith" in docs[0].text
 
 
 def test_document_text_contains_gift_history(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert "$25,000" in docs[0].text
 
 
 def test_document_metadata_keys(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     required = {
         "donor_id",
         "donor_name",
@@ -125,8 +127,8 @@ def test_document_metadata_keys(reader, mock_sf):
 
 
 def test_document_metadata_values(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert docs[0].metadata["total_gift_amount"] == 50000.0
     assert docs[0].metadata["gift_count"] == 5
     assert docs[0].metadata["source"] == "salesforce_npsp"
@@ -143,8 +145,8 @@ def test_affinity_score_injected(mock_sf):
         {"records": MOCK_CONTACTS},
         {"records": MOCK_OPPORTUNITIES},
     ]
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert docs[0].metadata["affinity_score"] == 87.5
 
 
@@ -162,16 +164,16 @@ def test_affinity_score_exception_handled(mock_sf):
         {"records": MOCK_CONTACTS},
         {"records": MOCK_OPPORTUNITIES},
     ]
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert docs[0].metadata["affinity_score"] is None
 
 
 def test_empty_contacts_returns_empty_list(reader):
     mock_sf = MagicMock()
     mock_sf.query_all.return_value = {"records": []}
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert docs == []
 
 
@@ -184,14 +186,14 @@ def test_no_opportunities_mode():
     )
     mock_sf = MagicMock()
     mock_sf.query_all.return_value = {"records": MOCK_CONTACTS}
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        reader.load_data()
+    reader._sf = mock_sf
+    reader.load_data()
     assert mock_sf.query_all.call_count == 1
 
 
 def test_contact_ids_filter(reader, mock_sf):
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        reader.load_data(contact_ids=["003XXXXXXXXXXXXXXX"])
+    reader._sf = mock_sf
+    reader.load_data(contact_ids=["003XXXXXXXXXXXXXXX"])
     soql_used = mock_sf.query_all.call_args_list[0][0][0]
     assert "003XXXXXXXXXXXXXXX" in soql_used
 
@@ -218,7 +220,7 @@ def test_missing_npsp_fields_handled_gracefully(reader):
     }
     mock_sf = MagicMock()
     mock_sf.query_all.return_value = {"records": [sparse]}
-    with patch.object(reader, "_get_sf_connection", return_value=mock_sf):
-        docs = reader.load_data()
+    reader._sf = mock_sf
+    docs = reader.load_data()
     assert len(docs) == 1
     assert docs[0].metadata["total_gift_amount"] == 0.0
