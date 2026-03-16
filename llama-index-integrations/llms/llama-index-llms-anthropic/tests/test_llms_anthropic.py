@@ -32,6 +32,17 @@ def test_text_inference_embedding_class():
     assert BaseLLM.__name__ in names_of_base_classes
 
 
+def test_completion_response_from_chat_response_empty_blocks():
+    """Regression test: empty blocks must not cause a ValidationError on text field."""
+    from llama_index.llms.anthropic.base import AnthropicChatResponse
+
+    llm = Anthropic(model="claude-opus-4-6", api_key="dummy")
+    cm = ChatMessage(role="assistant", blocks=[])
+    acr = AnthropicChatResponse(message=cm)
+    result = llm._completion_response_from_chat_response(acr)
+    assert result.text == ""
+
+
 def test_get_default_headers_returns_user_agent():
     """Test that _get_default_headers returns a User-Agent header."""
     headers = _get_default_headers()
