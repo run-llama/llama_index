@@ -421,8 +421,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             node_id_filter = node_id_filter | (Tag(NODE_ID_FIELD_NAME) == node_id)
         return node_id_filter
 
-    def _build_legacy_node_id_filter(self, node_ids: list[str]) -> str:
-        """Build a legacy Redis filter string for one or more node IDs."""
+    def _build_node_id_filter_string(self, node_ids: list[str]) -> str:
+        """Build a Redis filter string for one or more node IDs."""
         tokenizer = TokenEscaper()
         values = "|".join(tokenizer.escape(str(node_id)) for node_id in node_ids)
         return f"(@{NODE_ID_FIELD_NAME}:{{{values}}})"
@@ -453,7 +453,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         if self.legacy_filters:
             selector_parts = []
             if node_ids:
-                selector_parts.append(self._build_legacy_node_id_filter(node_ids))
+                selector_parts.append(self._build_node_id_filter_string(node_ids))
             if filters:
                 selector_parts.append(self._to_redis_filters(filters))
             return " ".join(selector_parts) if selector_parts else "*"
