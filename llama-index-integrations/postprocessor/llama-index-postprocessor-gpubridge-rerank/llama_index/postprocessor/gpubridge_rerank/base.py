@@ -8,7 +8,7 @@ from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 
-GPUBRIDGE_API_URL = "https://api.gpubridge.xyz/run"
+GPUBRIDGE_API_URL = "https://api.gpubridge.io/run"
 
 
 class GPUBridgeRerank(BaseNodePostprocessor):
@@ -29,7 +29,7 @@ class GPUBridgeRerank(BaseNodePostprocessor):
 
     api_key: Optional[str] = Field(
         default=None,
-        description="GPU-Bridge API key. Register at https://gpubridge.xyz",
+        description="GPU-Bridge API key. Register at https://gpubridge.io",
     )
     service: str = Field(
         default="rerank",

@@ -17,4 +17,4 @@ reranker = GPUBridgeRerank(api_key="gpub_...", top_n=3)
 nodes = reranker.postprocess_nodes(nodes, query_bundle=query)
 ```
 
-Get an API key at https://gpubridge.xyz
+Get an API key at https://gpubridge.io

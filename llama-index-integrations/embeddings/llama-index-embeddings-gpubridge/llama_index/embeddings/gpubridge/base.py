@@ -8,8 +8,8 @@ from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Base
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 
-GPUBRIDGE_API_URL = "https://api.gpubridge.xyz/run"
-GPUBRIDGE_BASE_URL = "https://api.gpubridge.xyz"
+GPUBRIDGE_API_URL = "https://api.gpubridge.io/run"
+GPUBRIDGE_BASE_URL = "https://api.gpubridge.io"
 
 
 class GPUBridgeEmbedding(BaseEmbedding):
@@ -30,7 +30,7 @@ class GPUBridgeEmbedding(BaseEmbedding):
 
     api_key: Optional[str] = Field(
         default=None,
-        description="GPU-Bridge API key. Register at https://gpubridge.xyz",
+        description="GPU-Bridge API key. Register at https://gpubridge.io",
     )
     service: str = Field(
         default="embedding-l4",

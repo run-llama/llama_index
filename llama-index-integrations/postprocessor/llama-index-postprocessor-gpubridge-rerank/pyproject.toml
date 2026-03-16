@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "llama-index-postprocessor-gpubridge-rerank"
 version = "0.1.0"
 description = "LlamaIndex GPU-Bridge reranking integration"
-authors = ["GPU-Bridge <hello@gpubridge.xyz>"]
+authors = ["GPU-Bridge <hello@gpubridge.io>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index"}]

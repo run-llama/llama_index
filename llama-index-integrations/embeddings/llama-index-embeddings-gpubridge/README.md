@@ -17,4 +17,4 @@ embed_model = GPUBridgeEmbedding(api_key="gpub_...")
 vectors = embed_model.get_text_embedding_batch(["text 1", "text 2"])
 ```
 
-Get an API key at https://gpubridge.xyz
+Get an API key at https://gpubridge.io
