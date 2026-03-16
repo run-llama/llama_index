@@ -69,6 +69,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Vertex AI Vector Search    | cloud                   | ✓                  |               | ✓      | ✓               |                               |
 | Weaviate                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | WordLift                   | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓                             |
+| Zvec                       | in-memory               | ✓                  | ✓             | ✓      | ✓               |                               |
 
 For more details, see [Vector Store Integrations](/python/framework/community/integrations/vector_stores).
 
@@ -132,3 +133,4 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
 - [WordLift](/python/examples/vector_stores/wordliftdemo)
 - [Zep](/python/examples/vector_stores/zepindexdemo)
+- [Zvec](/python/examples/vector_stores/zvecindexdemo)
