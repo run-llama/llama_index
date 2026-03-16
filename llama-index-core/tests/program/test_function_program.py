@@ -7,12 +7,14 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     LLMMetadata,
 )
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from typing import List, Optional, Union, Any, Dict
 from llama_index.core.tools.types import BaseTool
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools import ToolOutput
 from llama_index.core.program import FunctionCallingProgram
+from llama_index.core.program.function_program import get_function_tool
+from llama_index.core.tools.calling import call_tool
 
 
 class MockSong(BaseModel):
@@ -187,3 +189,54 @@ async def test_async_function_program_forwards_tool_choice() -> None:
     await llm_program.acall(topic="songs")
     assert llm.last_apredict_kwargs is not None
     assert llm.last_apredict_kwargs["tool_choice"] == {"type": "any"}
+
+
+# Tests for issue #21024: single-field models with defaults
+
+
+class SingleFieldListModel(BaseModel):
+    """Single field list model with default."""
+
+    names: List[str] = Field(default_factory=list, description="List of names")
+
+
+class SingleFieldStrModel(BaseModel):
+    """Single field string model with default."""
+
+    value: str = Field(default="", description="A string value")
+
+
+class SingleFieldIntModel(BaseModel):
+    """Single field int model with default."""
+
+    count: int = Field(default=0, description="A count value")
+
+
+def test_single_field_list_with_default() -> None:
+    """Test that single-field list model with default receives correct value.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21024
+    """
+    tool = get_function_tool(SingleFieldListModel)
+    arguments = {"names": ["deep learning", "neural networks"]}
+    result = call_tool(tool, arguments)
+
+    assert result.raw_output.names == ["deep learning", "neural networks"]
+
+
+def test_single_field_str_with_default() -> None:
+    """Test that single-field string model with default receives correct value."""
+    tool = get_function_tool(SingleFieldStrModel)
+    arguments = {"value": "hello world"}
+    result = call_tool(tool, arguments)
+
+    assert result.raw_output.value == "hello world"
+
+
+def test_single_field_int_with_default() -> None:
+    """Test that single-field int model with default receives correct value."""
+    tool = get_function_tool(SingleFieldIntModel)
+    arguments = {"count": 42}
+    result = call_tool(tool, arguments)
+
+    assert result.raw_output.count == 42
