@@ -147,7 +147,10 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         return [
             n
             for n in retrieved_nodes
-            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+            if not (
+                (n.node.hash, n.node.ref_doc_id) in seen
+                or seen.add((n.node.hash, n.node.ref_doc_id))  # type: ignore[func-returns-value]
+            )
         ]
 
     async def _ahandle_recursive_retrieval(

@@ -3,7 +3,13 @@ import pytest
 from llama_index.core import MockEmbedding, VectorStoreIndex
 from llama_index.core.indices import SummaryIndex
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.schema import Document, IndexNode, TextNode
+from llama_index.core.schema import (
+    Document,
+    IndexNode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 
 
 def test_composable_retrieval() -> None:
@@ -57,3 +63,21 @@ async def test_query_engine_object_metadata_preserved_async() -> None:
     retriever = _build_retriever_with_query_engine_object()
     nodes = await retriever.aretrieve("Capital of France?")
     assert nodes[0].node.metadata
+
+
+@pytest.mark.asyncio
+async def test_dedup_preserves_nodes_from_different_docs() -> None:
+    node1 = TextNode(text="shared content", metadata={}, id_="node-1")
+    node1.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id="doc-1")
+    node2 = TextNode(text="shared content", metadata={}, id_="node-2")
+    node2.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id="doc-2")
+
+    retriever = SummaryIndex(nodes=[node1, node2]).as_retriever()
+
+    sync_nodes = retriever.retrieve("test")
+    assert len(sync_nodes) == 2
+    assert {n.node.ref_doc_id for n in sync_nodes} == {"doc-1", "doc-2"}
+
+    async_nodes = await retriever.aretrieve("test")
+    assert len(async_nodes) == 2
+    assert {n.node.ref_doc_id for n in async_nodes} == {"doc-1", "doc-2"}
