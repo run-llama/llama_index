@@ -4,7 +4,6 @@ from typing import Dict, List, Optional, Tuple, cast
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation.events.retrieval import (
@@ -321,88 +320,71 @@ class QueryFusionRetriever(BaseRetriever):
         else:
             raise ValueError(f"Invalid fusion mode: {self.mode}")
 
+    @dispatcher.span
+    def retrieve(
+        self,
+        str_or_query_bundle: QueryType,
+        out_queries: Optional[List[QueryBundle]] = None,
+    ) -> List[NodeWithScore]:
+        """
+        Retrieve nodes given query.
 
-@dispatcher.span
-def retrieve(
-    self,
-    str_or_query_bundle: QueryType,
-    out_queries: Optional[List[QueryBundle]] = None,
-) -> List[NodeWithScore]:
-    """
-    Retrieve nodes given query.
+        Args:
+            str_or_query_bundle (QueryType): Either a query string or
+                a QueryBundle object.
+            out_queries (List[QueryBundle], optional): If provided, the list
+                will be filled with all QueryBundles used internally during
+                retrieval (including any expanded queries). Defaults to None.
 
-    Args:
-        str_or_query_bundle (QueryType): Either a query string or
-            a QueryBundle object.
-        out_queries (List[QueryBundle], optional): If provided, the list
-            will be filled with all QueryBundles used internally during
-            retrieval (including any expanded queries). Defaults to None.
-
-    """
-    self._check_callback_manager()
-    dispatcher.event(
-        RetrievalStartEvent(
-            str_or_query_bundle=str_or_query_bundle,
-        )
-    )
-    if isinstance(str_or_query_bundle, str):
-        query_bundle = QueryBundle(str_or_query_bundle)
-    else:
-        query_bundle = str_or_query_bundle
-    with self.callback_manager.as_trace("query"):
-        with self.callback_manager.event(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.QUERY_STR: query_bundle.query_str},
-        ) as retrieve_event:
-            nodes = self._retrieve(query_bundle, out_queries)
-            nodes = self._handle_recursive_retrieval(query_bundle, nodes)
-            retrieve_event.on_end(
-                payload={EventPayload.NODES: nodes},
+        """
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
             )
-    dispatcher.event(
-        RetrievalEndEvent(
-            str_or_query_bundle=str_or_query_bundle,
-            nodes=nodes,
         )
-    )
-    return nodes
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
 
+        nodes = self._retrieve(query_bundle, out_queries)
+        nodes = self._handle_recursive_retrieval(query_bundle, nodes)
 
-@dispatcher.span
-async def aretrieve(
-    self,
-    str_or_query_bundle: QueryType,
-    out_queries: Optional[List[QueryBundle]] = None,
-) -> List[NodeWithScore]:
-    self._check_callback_manager()
-
-    dispatcher.event(
-        RetrievalStartEvent(
-            str_or_query_bundle=str_or_query_bundle,
+        dispatcher.event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
         )
-    )
-    if isinstance(str_or_query_bundle, str):
-        query_bundle = QueryBundle(str_or_query_bundle)
-    else:
-        query_bundle = str_or_query_bundle
-    with self.callback_manager.as_trace("query"):
-        with self.callback_manager.event(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.QUERY_STR: query_bundle.query_str},
-        ) as retrieve_event:
-            nodes = await self._aretrieve(
-                query_bundle=query_bundle, out_queries=out_queries
+        return nodes
+
+    @dispatcher.span
+    async def aretrieve(
+        self,
+        str_or_query_bundle: QueryType,
+        out_queries: Optional[List[QueryBundle]] = None,
+    ) -> List[NodeWithScore]:
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
             )
-            nodes = await self._ahandle_recursive_retrieval(
-                query_bundle=query_bundle, nodes=nodes
-            )
-            retrieve_event.on_end(
-                payload={EventPayload.NODES: nodes},
-            )
-    dispatcher.event(
-        RetrievalEndEvent(
-            str_or_query_bundle=str_or_query_bundle,
-            nodes=nodes,
         )
-    )
-    return nodes
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
+
+        nodes = await self._aretrieve(
+            query_bundle=query_bundle, out_queries=out_queries
+        )
+        nodes = await self._ahandle_recursive_retrieval(
+            query_bundle=query_bundle, nodes=nodes
+        )
+
+        dispatcher.event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
+        )
+        return nodes
