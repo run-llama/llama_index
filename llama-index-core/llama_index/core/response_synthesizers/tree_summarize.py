@@ -221,7 +221,7 @@ class TreeSummarize(BaseSynthesizer):
                         for text_chunk in text_chunks
                     ]
                 else:
-                    summaries = [
+                    summary_models = [
                         self._llm.structured_predict(
                             self._output_cls,
                             summary_template,
@@ -234,7 +234,7 @@ class TreeSummarize(BaseSynthesizer):
                         summary.model_dump_json()
                         if isinstance(summary, BaseModel)
                         else str(summary)
-                        for summary in summaries
+                        for summary in summary_models
                     ]
 
             # recursively summarize the summaries
