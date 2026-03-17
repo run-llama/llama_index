@@ -53,6 +53,9 @@ from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
 
 logger = logging.getLogger(__name__)
 NO_DOCS = "No docs found on index"
+NO_INDEXED_FILTERS = (
+    "One or more requested filter fields are not present in the Redis index schema."
+)
 
 
 class TokenEscaper:
@@ -408,39 +411,151 @@ class RedisVectorStore(BasePydanticVectorStore):
             key.strip(self._index.prefix + self._index.key_separator) for key in keys
         ]
 
-    def delete_nodes(self, node_ids: list):
-        for node_id in node_ids:
-            self._redis_client.delete(
-                "_".join([self._async_index.prefix, str(node_id)])
-            )
+    def _build_node_id_filter_expression(self, node_ids: list[str]) -> FilterExpression:
+        """Build a Redis filter expression for one or more node IDs."""
+        if not node_ids:
+            raise ValueError("node_ids must be provided.")
 
-    async def adelete_nodes(self, node_ids: list):
-        await self.async_index_exists()
-        for node_id in node_ids:
-            await self._redis_client_async.delete(
-                "_".join([self._async_index.prefix, str(node_id)])
-            )
+        node_id_filter = Tag(NODE_ID_FIELD_NAME) == node_ids[0]
+        for node_id in node_ids[1:]:
+            node_id_filter = node_id_filter | (Tag(NODE_ID_FIELD_NAME) == node_id)
+        return node_id_filter
 
-    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """
-        Delete nodes using the ref_doc_id.
+    def _build_node_id_filter_string(self, node_ids: list[str]) -> str:
+        """Build a Redis filter string for one or more node IDs."""
+        tokenizer = TokenEscaper()
+        values = "|".join(tokenizer.escape(str(node_id)) for node_id in node_ids)
+        return f"(@{NODE_ID_FIELD_NAME}:{{{values}}})"
 
-        Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+    def _has_unindexed_filters(
+        self, metadata_filters: Optional[MetadataFilters]
+    ) -> bool:
+        """Return True when any requested filter field is missing from the schema."""
+        if not metadata_filters or not metadata_filters.filters:
+            return False
 
-        """
-        await self.async_index_exists()
-        # build a filter to target specific docs by doc ID
-        doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
-        total = await self._async_index.query(CountQuery(doc_filter))
-        delete_query = FilterQuery(
-            return_fields=[NODE_ID_FIELD_NAME],
-            filter_expression=doc_filter,
+        for metadata_filter in metadata_filters.filters:
+            if isinstance(metadata_filter, MetadataFilters):
+                if self._has_unindexed_filters(metadata_filter):
+                    return True
+                continue
+            if not self._index.schema.fields.get(metadata_filter.key):
+                return True
+
+        return False
+
+    def _build_selection_filter(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> str | FilterExpression:
+        """Build a legacy or modern Redis selector; combine inputs with AND, or return match-all when none are provided."""
+        if self.legacy_filters:
+            selector_parts = []
+            if node_ids:
+                selector_parts.append(self._build_node_id_filter_string(node_ids))
+            if filters:
+                selector_parts.append(self._to_redis_filters(filters))
+            return " ".join(selector_parts) if selector_parts else "*"
+
+        selector = FilterExpression("*")
+        if node_ids:
+            selector = selector & self._build_node_id_filter_expression(node_ids)
+        if filters:
+            selector = selector & self._create_redis_filter_expression(filters)
+        return selector
+
+    def _get_filter_query(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Optional[FilterQuery]:
+        """Build a filter query sized to fetch all matching documents."""
+        selector = self._build_selection_filter(node_ids=node_ids, filters=filters)
+        total = self._index.query(CountQuery(selector))
+        if total == 0:
+            return None
+        return FilterQuery(
+            filter_expression=selector,
+            return_fields=self._return_fields,
             num_results=total,
         )
-        # fetch docs to delete and flush them
+
+    async def _aget_filter_query(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Optional[FilterQuery]:
+        """Build an async filter query sized to fetch all matching documents."""
+        selector = self._build_selection_filter(node_ids=node_ids, filters=filters)
+        total = await self._async_index.query(CountQuery(selector))
+        if total == 0:
+            return None
+        return FilterQuery(
+            filter_expression=selector,
+            return_fields=self._return_fields,
+            num_results=total,
+        )
+
+    def get_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> list[BaseNode]:
+        """Get nodes by node_ids or filters; at least one selector is required."""
+        if not node_ids and not filters:
+            raise ValueError("Either node_ids or filters must be provided.")
+        if filters and self._has_unindexed_filters(filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Node lookup returns no matches.")
+            return []
+        filter_query = self._get_filter_query(node_ids=node_ids, filters=filters)
+        if filter_query is None:
+            return []
+        results = self._index.query(filter_query)
+        return self._process_query_results(results, filter_query).nodes or []
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> list[BaseNode]:
+        """Async get nodes by node_ids or filters; at least one selector is required."""
+        await self.async_index_exists()
+        if not node_ids and not filters:
+            raise ValueError("Either node_ids or filters must be provided.")
+        if filters and self._has_unindexed_filters(filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Node lookup returns no matches.")
+            return []
+        filter_query = await self._aget_filter_query(node_ids=node_ids, filters=filters)
+        if filter_query is None:
+            return []
+        results = await self._async_index.query(filter_query)
+        return self._process_query_results(results, filter_query).nodes or []
+
+    def _delete_with_filter_query(self, filter_query: Optional[FilterQuery]) -> None:
+        """Delete documents matching the provided filter query."""
+        if filter_query is None:
+            return
+
+        docs_to_delete = self._index.search(filter_query.query, filter_query.params)
+        with self._index.client.pipeline(transaction=False) as pipe:
+            for doc in docs_to_delete.docs:
+                pipe.delete(doc.id)
+            pipe.execute()
+
+        logger.info(
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+        )
+
+    async def _adelete_with_filter_query(
+        self, filter_query: Optional[FilterQuery]
+    ) -> None:
+        """Asynchronously delete documents matching the provided filter query."""
+        if filter_query is None:
+            return
+
         docs_to_delete = await self._async_index.search(
-            delete_query.query, delete_query.params
+            filter_query.query, filter_query.params
         )
         async with self._async_index.client.pipeline(transaction=False) as pipe:
             for doc in docs_to_delete.docs:
@@ -451,6 +566,55 @@ class RedisVectorStore(BasePydanticVectorStore):
             f"Deleted {len(docs_to_delete.docs)} documents from index {self._async_index.name}"
         )
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete by node_ids or filters; unindexed filters are treated as a no-op."""
+        if not node_ids and not filters:
+            return
+        if filters and self._has_unindexed_filters(filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Delete operation is a no-op.")
+            return
+
+        filter_query = self._get_filter_query(node_ids=node_ids, filters=filters)
+        self._delete_with_filter_query(filter_query)
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Async delete by node_ids or filters; unindexed filters are treated as a no-op."""
+        if not node_ids and not filters:
+            return
+
+        await self.async_index_exists()
+        if filters and self._has_unindexed_filters(filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Delete operation is a no-op.")
+            return
+
+        filter_query = await self._aget_filter_query(node_ids=node_ids, filters=filters)
+        await self._adelete_with_filter_query(filter_query)
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using the ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        await self.async_index_exists()
+        await self.adelete_nodes(
+            filters=MetadataFilters(
+                filters=[MetadataFilter(key=DOC_ID_FIELD_NAME, value=ref_doc_id)]
+            )
+        )
+
     def delete(self, ref_doc_id: str) -> None:
         """
         Delete nodes using the ref_doc_id.
@@ -459,23 +623,10 @@ class RedisVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        # build a filter to target specific docs by doc ID
-        doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
-        total = self._index.query(CountQuery(doc_filter))
-        delete_query = FilterQuery(
-            return_fields=[NODE_ID_FIELD_NAME],
-            filter_expression=doc_filter,
-            num_results=total,
-        )
-        # fetch docs to delete and flush them
-        docs_to_delete = self._index.search(delete_query.query, delete_query.params)
-        with self._index.client.pipeline(transaction=False) as pipe:
-            for doc in docs_to_delete.docs:
-                pipe.delete(doc.id)
-            pipe.execute()
-
-        logger.info(
-            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+        self.delete_nodes(
+            filters=MetadataFilters(
+                filters=[MetadataFilter(key=DOC_ID_FIELD_NAME, value=ref_doc_id)]
+            )
         )
 
     def delete_index(self) -> None:
@@ -524,38 +675,41 @@ class RedisVectorStore(BasePydanticVectorStore):
         self, metadata_filters: MetadataFilters
     ) -> FilterExpression:
         """
-        Generate a Redis Filter Expression as a combination of metadata filters.
+        Build a Redis FilterExpression from metadata filters, combining nested filters recursively.
 
         Args:
-            metadata_filters (MetadataFilters): List of metadata filters to use.
+            metadata_filters (MetadataFilters): Metadata filters to translate.
 
         Returns:
-            FilterExpression: A Redis filter expression.
+            FilterExpression: The translated Redis filter expression.
 
         """
-        filter_expression = FilterExpression("*")
-        if metadata_filters:
-            if metadata_filters.filters:
-                for filter in metadata_filters.filters:
-                    # Handle nested MetadataFilters recursively
-                    if isinstance(filter, MetadataFilters):
-                        redis_filter = self._create_redis_filter_expression(filter)
-                    else:
-                        # Index must be created with the metadata field in the index schema
-                        field = self._index.schema.fields.get(filter.key)
-                        if not field:
-                            logger.warning(
-                                f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
-                            )
-                            continue
-                        # Extract redis filter
-                        redis_filter = self._to_redis_filter(field, filter)
+        if not metadata_filters or not metadata_filters.filters:
+            return FilterExpression("*")
 
-                    # Combine with conditional
-                    if metadata_filters.condition == "and":
-                        filter_expression = filter_expression & redis_filter
-                    else:
-                        filter_expression = filter_expression | redis_filter
+        filter_expressions = []
+        for filter in metadata_filters.filters:
+            if isinstance(filter, MetadataFilters):
+                filter_expressions.append(self._create_redis_filter_expression(filter))
+                continue
+
+            field = self._index.schema.fields.get(filter.key)
+            if not field:
+                logger.warning(
+                    f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
+                )
+                continue
+            filter_expressions.append(self._to_redis_filter(field, filter))
+
+        if not filter_expressions:
+            return FilterExpression("*")
+
+        filter_expression = filter_expressions[0]
+        for redis_filter in filter_expressions[1:]:
+            if metadata_filters.condition == "and":
+                filter_expression = filter_expression & redis_filter
+            else:
+                filter_expression = filter_expression | redis_filter
         return filter_expression
 
     def _to_redis_filters(self, metadata_filters: MetadataFilters) -> str:
@@ -591,12 +745,11 @@ class RedisVectorStore(BasePydanticVectorStore):
         # A space can be used for the AND operator: https://redis.io/docs/latest/develop/interact/search-and-query/query/combined/
         filter_strings_base = [f"({filter_string})" for filter_string in filter_strings]
         joined_filter_strings = " ".join(filter_strings_base)
-        print("Using filter string: ", joined_filter_strings)
         return f"({joined_filter_strings})"
 
     def _build_filter_expression(
         self, filters: Optional[MetadataFilters]
-    ) -> Optional[FilterExpression]:
+    ) -> str | FilterExpression:
         """Return the filter expression respecting legacy flag."""
         if self.legacy_filters:
             return self._to_redis_filters(filters)
@@ -683,6 +836,10 @@ class RedisVectorStore(BasePydanticVectorStore):
                 "Either query_embedding or metadata filters are required for querying."
             )
 
+        if query.filters and self._has_unindexed_filters(query.filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Query returns no matches.")
+            return VectorStoreQueryResult(nodes=[], ids=[])
+
         if query.query_embedding is None:
             redis_query = self._to_filter_query(query)
         else:
@@ -724,6 +881,10 @@ class RedisVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Either query_embedding or metadata filters are required for querying."
             )
+
+        if query.filters and self._has_unindexed_filters(query.filters):
+            logger.warning(f"{NO_INDEXED_FILTERS} Query returns no matches.")
+            return VectorStoreQueryResult(nodes=[], ids=[])
 
         if query.query_embedding is None:
             redis_query = self._to_filter_query(query)

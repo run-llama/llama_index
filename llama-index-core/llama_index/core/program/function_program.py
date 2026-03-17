@@ -44,6 +44,13 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
         """Model function."""
         if len(args) == 1 and isinstance(args[0], dict) and not kwargs:
             kwargs = args[0]
+        elif len(args) == 1 and not kwargs:
+            # Handle single-field models where the value is passed positionally.
+            # This happens when call_tool() extracts a single argument value.
+            properties = schema.get("properties", {})
+            if len(properties) == 1:
+                field_name = next(iter(properties.keys()))
+                kwargs = {field_name: args[0]}
         return output_cls(**kwargs)
 
     return FunctionTool.from_defaults(
