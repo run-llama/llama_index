@@ -1,5 +1,4 @@
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 from unittest import mock
 
 import pytest
@@ -132,7 +131,6 @@ def test_workers_parameter(
     mock_pool.assert_called_once_with(max_workers=16)
 
 
-@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor", ThreadPoolExecutor)
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -145,9 +143,9 @@ def test_coverage_failures(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {data_path / "package1"}
-    mock_get_changed_files.return_value = {data_path / "package1" / "file.py"}
-    mock_get_changed_packages.return_value = {data_path / "package1"}
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_coverage_failed)
@@ -173,7 +171,6 @@ def test_coverage_failures(
     assert "Error:\nCoverage below threshold" in result.stdout
 
 
-@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor", ThreadPoolExecutor)
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -186,9 +183,9 @@ def test_install_failures(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {data_path / "package1"}
-    mock_get_changed_files.return_value = {data_path / "package1" / "file.py"}
-    mock_get_changed_packages.return_value = {data_path / "package1"}
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_install_failed)
@@ -205,7 +202,6 @@ def test_install_failures(
     assert "Error:\nInstall failed" in result.stdout
 
 
-@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor", ThreadPoolExecutor)
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -218,9 +214,9 @@ def test_skip_failures_no_tests(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {data_path / "package1"}
-    mock_get_changed_files.return_value = {data_path / "package1" / "file.py"}
-    mock_get_changed_packages.return_value = {data_path / "package1"}
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed_no_tests)
@@ -236,7 +232,6 @@ def test_skip_failures_no_tests(
     assert "1 packages were skipped" in result.stdout
 
 
-@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor", ThreadPoolExecutor)
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -249,9 +244,9 @@ def test_skip_failures_unsupported_python(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {data_path / "package1"}
-    mock_get_changed_files.return_value = {data_path / "package1" / "file.py"}
-    mock_get_changed_packages.return_value = {data_path / "package1"}
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(
@@ -271,7 +266,6 @@ def test_skip_failures_unsupported_python(
     )
 
 
-@mock.patch("llama_dev.test.concurrent.futures.ProcessPoolExecutor", ThreadPoolExecutor)
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -284,9 +278,9 @@ def test_success(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {data_path / "package1"}
-    mock_get_changed_files.return_value = {data_path / "package1" / "file.py"}
-    mock_get_changed_packages.return_value = {data_path / "package1"}
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_success)
