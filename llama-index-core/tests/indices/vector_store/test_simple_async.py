@@ -199,4 +199,3 @@ async def test_adelete_ref_doc_nodes_removed_from_docstore(
     for node_id in ref_doc_info_2.node_ids:
         node = index.docstore.get_node(node_id, raise_error=False)
         assert node is not None
-
