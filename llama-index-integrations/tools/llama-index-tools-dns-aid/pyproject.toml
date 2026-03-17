@@ -1,0 +1,16 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-dns-aid"
+version = "0.1.0"
+description = "DNS-AID tools for LlamaIndex - discover AI agents via DNS"
+license = "Apache-2.0"
+readme = "README.md"
+packages = [{include = "llama_index/"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = ">=0.12.0"
+dns-aid = ">=0.12.0"
