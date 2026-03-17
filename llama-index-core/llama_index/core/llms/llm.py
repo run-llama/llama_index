@@ -361,7 +361,7 @@ class LLM(BaseLLM):
         assert not isinstance(result, list)
 
         if not isinstance(result, BaseModel):
-            raise ValueError(
+            raise TypeError(
                 f"structured_predict expected a {output_cls.__name__} instance "
                 f"but got {type(result).__name__}: {result!r}. "
                 f"The LLM failed to produce valid structured output."
@@ -429,7 +429,7 @@ class LLM(BaseLLM):
         assert not isinstance(result, list)
 
         if not isinstance(result, BaseModel):
-            raise ValueError(
+            raise TypeError(
                 f"astructured_predict expected a {output_cls.__name__} instance "
                 f"but got {type(result).__name__}: {result!r}. "
                 f"The LLM failed to produce valid structured output."

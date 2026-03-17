@@ -156,7 +156,7 @@ async def test_structured_llm_achat_success() -> None:
 
 def test_structured_llm_chat_raises_on_string_output() -> None:
     """
-    Test that StructuredLLM.chat raises a clear ValueError when
+    Test that StructuredLLM.chat raises a clear TypeError when
     structured_predict returns a string instead of a Pydantic model.
 
     This is the exact bug from issue #16604 where users see:
@@ -166,7 +166,7 @@ def test_structured_llm_chat_raises_on_string_output() -> None:
     llm = MockLLMReturnsString()
     structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
 
-    with pytest.raises(ValueError, match="expected a TestOutput instance"):
+    with pytest.raises(TypeError, match="expected a TestOutput instance"):
         structured_llm.chat(
             [ChatMessage(role=MessageRole.USER, content="give me a test")]
         )
@@ -175,14 +175,14 @@ def test_structured_llm_chat_raises_on_string_output() -> None:
 @pytest.mark.asyncio
 async def test_structured_llm_achat_raises_on_string_output() -> None:
     """
-    Test async: StructuredLLM.achat raises a clear ValueError when
+    Test async: StructuredLLM.achat raises a clear TypeError when
     astructured_predict returns a string.
 
     """
     llm = MockLLMReturnsString()
     structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
 
-    with pytest.raises(ValueError, match="expected a TestOutput instance"):
+    with pytest.raises(TypeError, match="expected a TestOutput instance"):
         await structured_llm.achat(
             [ChatMessage(role=MessageRole.USER, content="give me a test")]
         )
@@ -197,7 +197,7 @@ def test_structured_llm_error_message_is_descriptive() -> None:
     llm = MockLLMReturnsString()
     structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         structured_llm.chat(
             [ChatMessage(role=MessageRole.USER, content="give me a test")]
         )

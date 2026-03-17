@@ -209,9 +209,12 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         Parse tool outputs.
 
         Validates that each tool output is actually a Pydantic model instance.
-        Raises a clear error if the LLM failed to produce a valid structured
-        output (e.g. returned text instead of a tool call, or the tool call
-        produced a parsing error).
+
+        Raises:
+            ValueError: LLM did not return any tool calls, or a tool call
+                failed (e.g. Pydantic validation error).
+            TypeError: A tool call returned a non-BaseModel object.
+
         """
         if len(agent_response.sources) == 0:
             raise ValueError(
@@ -240,7 +243,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
                     f"Error: {error_detail}"
                 )
             if not isinstance(raw, BaseModel):
-                raise ValueError(
+                raise TypeError(
                     f"Structured output extraction failed: expected a "
                     f"{self._output_cls.__name__} instance but got "
                     f"{type(raw).__name__}: {raw!r}. "

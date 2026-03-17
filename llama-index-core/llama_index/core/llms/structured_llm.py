@@ -62,7 +62,7 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         if not isinstance(output, BaseModel):
-            raise ValueError(
+            raise TypeError(
                 f"StructuredLLM expected a {self.output_cls.__name__} instance "
                 f"from structured_predict, but got {type(output).__name__}: "
                 f"{output!r}. The underlying LLM failed to produce valid "
@@ -123,7 +123,7 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         if not isinstance(output, BaseModel):
-            raise ValueError(
+            raise TypeError(
                 f"StructuredLLM expected a {self.output_cls.__name__} instance "
                 f"from astructured_predict, but got {type(output).__name__}: "
                 f"{output!r}. The underlying LLM failed to produce valid "

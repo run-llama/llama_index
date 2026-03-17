@@ -449,7 +449,7 @@ async def test_async_function_program_raises_on_tool_error() -> None:
 
 def test_function_program_raises_on_string_raw_output() -> None:
     """
-    Test that FunctionCallingProgram raises a clear ValueError when raw_output
+    Test that FunctionCallingProgram raises a clear TypeError when raw_output
     is a string instead of a Pydantic model.
 
     """
@@ -458,14 +458,14 @@ def test_function_program_raises_on_string_raw_output() -> None:
         prompt_template_str="This is a test album with {topic}",
         llm=MockLLMReturnsStringRawOutput(),
     )
-    with pytest.raises(ValueError, match="expected a MockAlbum instance but got str"):
+    with pytest.raises(TypeError, match="expected a MockAlbum instance but got str"):
         llm_program(topic="songs")
 
 
 @pytest.mark.asyncio
 async def test_async_function_program_raises_on_string_raw_output() -> None:
     """
-    Test async: FunctionCallingProgram raises a clear ValueError when raw_output
+    Test async: FunctionCallingProgram raises a clear TypeError when raw_output
     is a string instead of a Pydantic model.
 
     """
@@ -474,7 +474,7 @@ async def test_async_function_program_raises_on_string_raw_output() -> None:
         prompt_template_str="This is a test album with {topic}",
         llm=MockLLMReturnsStringRawOutput(),
     )
-    with pytest.raises(ValueError, match="expected a MockAlbum instance but got str"):
+    with pytest.raises(TypeError, match="expected a MockAlbum instance but got str"):
         await llm_program.acall(topic="songs")
 
 
