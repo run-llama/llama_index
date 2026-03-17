@@ -1,8 +1,8 @@
 """Salesforce NPSP (Nonprofit Success Pack) reader for LlamaIndex."""
 
-from typing import Any, Callable, Dict, List, Optional
 import functools
 import os
+from typing import Any, Callable, Dict, List, Optional
 
 from simple_salesforce import Salesforce
 
@@ -94,10 +94,7 @@ class SalesforceNPSPReader(BaseReader):
 
         if contact_ids:
             id_list = ", ".join(f"'{cid}'" for cid in contact_ids)
-            return (
-                f"SELECT {base_fields} FROM Contact "
-                f"WHERE Id IN ({id_list}) LIMIT {limit}"
-            )
+            return f"SELECT {base_fields} FROM Contact WHERE Id IN ({id_list})"
 
         return (
             f"SELECT {base_fields} FROM Contact "
@@ -237,10 +234,6 @@ Engagement:
 
         Returns:
             List[Document]: One Document per donor Contact record.
-
-        Raises:
-            ImportError: If simple-salesforce is not installed.
-            ValueError: If Salesforce credentials are missing.
 
         """
         soql = self._build_contact_soql(contact_ids, soql_filter, limit)

@@ -112,18 +112,23 @@ def test_document_text_contains_gift_history(reader, mock_sf):
 def test_document_metadata_keys(reader, mock_sf):
     reader._sf = mock_sf
     docs = reader.load_data()
-    required = {
+    expected = {
         "donor_id",
         "donor_name",
         "email",
         "affiliation",
         "total_gift_amount",
         "gift_count",
+        "average_gift_amount",
+        "largest_gift_amount",
+        "first_gift_date",
         "last_gift_date",
         "last_activity_date",
+        "soft_credit_total",
+        "planned_giving_count",
         "source",
     }
-    assert required.issubset(set(docs[0].metadata.keys()))
+    assert expected == set(docs[0].metadata.keys())
 
 
 def test_document_metadata_values(reader, mock_sf):
@@ -224,3 +229,27 @@ def test_missing_npsp_fields_handled_gracefully(reader):
     docs = reader.load_data()
     assert len(docs) == 1
     assert docs[0].metadata["total_gift_amount"] == 0.0
+
+
+def test_soql_filter_passed_through(reader, mock_sf):
+    reader._sf = mock_sf
+    reader.load_data(soql_filter="npo02__TotalOppAmount__c > 10000", limit=50)
+    soql_used = mock_sf.query_all.call_args_list[0][0][0]
+    assert "npo02__TotalOppAmount__c > 10000" in soql_used
+    assert "LIMIT 50" in soql_used
+
+
+def test_contact_ids_ignores_soql_filter_and_limit(reader, mock_sf):
+    reader._sf = mock_sf
+    reader.load_data(
+        contact_ids=["003XXXXXXXXXXXXXXX"],
+        soql_filter="npo02__TotalOppAmount__c > 99999",
+        limit=1,
+    )
+    soql_used = mock_sf.query_all.call_args_list[0][0][0]
+    # The explicit ID must appear
+    assert "003XXXXXXXXXXXXXXX" in soql_used
+    # The soql_filter text must NOT appear
+    assert "npo02__TotalOppAmount__c > 99999" not in soql_used
+    # LIMIT must NOT appear (no silent ID truncation)
+    assert "LIMIT" not in soql_used

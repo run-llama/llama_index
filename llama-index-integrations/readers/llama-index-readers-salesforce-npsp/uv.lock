@@ -1763,7 +1763,6 @@ name = "llama-index-readers-salesforce-npsp"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "griffe" },
     { name = "llama-index-core" },
     { name = "simple-salesforce" },
 ]
@@ -1784,7 +1783,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "griffe", specifier = ">=0.40,<1" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "simple-salesforce", specifier = ">=1.12.5" },
 ]

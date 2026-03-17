@@ -25,7 +25,6 @@ license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "simple-salesforce>=1.12.5",
-    "griffe>=0.40,<1",
 ]
 
 [tool.codespell]
@@ -56,5 +55,5 @@ namespace_packages = true
 mypy_path = "."
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 88

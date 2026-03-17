@@ -50,29 +50,31 @@ response = engine.query(
 print(response)
 ```
 
-## With PhilanthroPy Affinity Scores
+## With Affinity Scores
 
-Inject ML propensity scores from the PhilanthroPy sklearn toolkit
-(https://github.com/PhilanthroPy-Project/PhilanthroPy):
+Pass any callable `(metadata: dict) -> float` as `affinity_score_fn`.
+The function is called once per donor at load time and the result is stored as
+`metadata["affinity_score"]` on every returned `Document`.
 
 ```python
-from philanthropy.models import DonorPropensityModel
-import numpy as np
-
-model = DonorPropensityModel(n_estimators=300, class_weight="balanced")
-model.fit(X_train, y_train)
-
-
-def affinity_scorer(meta):
-    X = np.array([[meta["total_gift_amount"], meta["gift_count"], 0]])
-    return model.predict_affinity_score(X)[0]
+def affinity_scorer(meta: dict) -> float:
+    """Simple heuristic: scale 0-100 from lifetime giving + gift frequency."""
+    total = meta.get("total_gift_amount", 0) or 0
+    count = meta.get("gift_count", 0) or 0
+    return round(min(50 + (total / 5_000) + count * 2, 100), 1)
 
 
 reader = SalesforceNPSPReader(
-    domain="login", affinity_score_fn=affinity_scorer
+    domain="login",
+    affinity_score_fn=affinity_scorer,
 )
 docs = reader.load_data(limit=1000)
+# docs[0].metadata["affinity_score"]  →  float
 ```
+
+In production, replace the body of `affinity_scorer` with a call to your
+trained propensity model. The function receives the full metadata dictionary
+so it has access to all donor fields listed in the API reference below.
 
 ## API Reference
 
@@ -89,14 +91,31 @@ docs = reader.load_data(limit=1000)
 
 ### load_data()
 
-| Parameter   | Type      | Default                        | Description                  |
-| ----------- | --------- | ------------------------------ | ---------------------------- |
-| contact_ids | List[str] | None                           | Specific Contact IDs to load |
-| soql_filter | str       | "npo02**TotalOppAmount**c > 0" | SOQL WHERE clause            |
-| limit       | int       | 500                            | Max records to return        |
+| Parameter     | Type        | Default                          | Description                                                                          |
+| ------------- | ----------- | -------------------------------- | ------------------------------------------------------------------------------------ |
+| `contact_ids` | `List[str]` | `None`                           | Explicit Contact IDs to fetch. When provided, `soql_filter` and `limit` are ignored. |
+| `soql_filter` | `str`       | `"npo02__TotalOppAmount__c > 0"` | SOQL `WHERE` clause applied to the `Contact` object.                                 |
+| `limit`       | `int`       | `500`                            | Maximum number of donor records to return (ignored when `contact_ids` is set).       |
 
-Each returned Document has:
+Each returned `Document` has:
 
-- `.text`: Human-readable donor narrative (name, giving summary, gift history)
-- `.metadata`: donor_id, total_gift_amount, gift_count, last_gift_date,
-  last_activity_date, affiliation, soft_credit_total, affinity_score (optional)
+- **`.text`** — human-readable donor narrative: name, giving summary, and up to 10 most-recent gifts.
+- **`.metadata`** — structured dictionary of donor fields:
+
+| Key                    | Type            | Description                                                           |
+| ---------------------- | --------------- | --------------------------------------------------------------------- |
+| `donor_id`             | `str`           | Salesforce Contact ID                                                 |
+| `donor_name`           | `str`           | First + Last name                                                     |
+| `email`                | `str`           | Contact email                                                         |
+| `affiliation`          | `str`           | Primary affiliated organisation (`npsp__Primary_Affiliation__r.Name`) |
+| `total_gift_amount`    | `float`         | Lifetime giving total (`npo02__TotalOppAmount__c`)                    |
+| `gift_count`           | `int`           | Number of closed gifts (`npo02__NumberOfClosedOpps__c`)               |
+| `average_gift_amount`  | `float`         | Average gift size (`npo02__AverageAmount__c`)                         |
+| `largest_gift_amount`  | `float`         | Largest single gift (`npo02__LargestAmount__c`)                       |
+| `first_gift_date`      | `str`           | Date of first gift (`npo02__FirstCloseDate__c`)                       |
+| `last_gift_date`       | `str`           | Date of most recent gift (`npo02__LastCloseDate__c`)                  |
+| `last_activity_date`   | `str`           | Last CRM activity date (`LastActivityDate`)                           |
+| `soft_credit_total`    | `float`         | Total soft credits (`npsp__Soft_Credit_Total__c`)                     |
+| `planned_giving_count` | `int`           | Number of planned gifts (`npsp__Planned_Giving_Count__c`)             |
+| `source`               | `str`           | Always `"salesforce_npsp"`                                            |
+| `affinity_score`       | `float \| None` | Set only when `affinity_score_fn` is provided                         |
