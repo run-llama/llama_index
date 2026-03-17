@@ -4,7 +4,6 @@ requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
     "python_full_version < '3.11'",
-    "python_version < '0'",
 ]
 
 [[package]]
@@ -1551,7 +1550,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-fireworks"
-version = "0.5.0"
+version = "0.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
