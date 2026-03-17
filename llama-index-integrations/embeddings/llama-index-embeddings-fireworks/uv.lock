@@ -1550,7 +1550,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-fireworks"
-version = "0.5.1"
+version = "0.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
