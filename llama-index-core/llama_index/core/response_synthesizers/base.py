@@ -61,6 +61,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         streaming: bool = False,
         output_cls: Optional[Type[BaseModel]] = None,
         empty_response: Optional[str] = None,
+        use_llm_when_empty: bool = True,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -81,6 +82,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         self._streaming = streaming
         self._output_cls = output_cls
         self._empty_response = empty_response or "Empty Response"
+        self._use_llm_when_empty = use_llm_when_empty
 
     def _empty_response_generator(self) -> Generator[str, None, None]:
         yield self._empty_response
@@ -203,7 +205,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             )
         )
 
-        if len(nodes) == 0:
+        if len(nodes) == 0 and not self._use_llm_when_empty:
             if self._streaming:
                 empty_response_stream = StreamingResponse(
                     response_gen=self._empty_response_generator()
@@ -232,11 +234,14 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
+            text_chunks = (
+                [n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes]
+                if nodes
+                else [""]
+            )
             response_str = self.get_response(
                 query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
+                text_chunks=text_chunks,
                 **response_kwargs,
             )
 
@@ -268,7 +273,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
                 query=query,
             )
         )
-        if len(nodes) == 0:
+        if len(nodes) == 0 and not self._use_llm_when_empty:
             if self._streaming:
                 empty_response_stream = AsyncStreamingResponse(
                     response_gen=self._empty_response_agenerator()
@@ -297,11 +302,14 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
+            text_chunks = (
+                [n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes]
+                if nodes
+                else [""]
+            )
             response_str = await self.aget_response(
                 query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
+                text_chunks=text_chunks,
                 **response_kwargs,
             )
 
