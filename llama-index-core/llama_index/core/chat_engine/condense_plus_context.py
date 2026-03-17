@@ -253,6 +253,21 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             refine_function_mappings=self._context_refine_prompt_template.function_mappings,
         )
 
+    def _build_fallback_messages(
+        self,
+        message: str,
+        chat_history: List[ChatMessage],
+    ) -> List[ChatMessage]:
+        """Build chat messages for direct LLM call when no context nodes are found."""
+        messages: List[ChatMessage] = []
+        if self._system_prompt:
+            messages.append(
+                ChatMessage(content=self._system_prompt, role=MessageRole.SYSTEM)
+            )
+        messages.extend(chat_history)
+        messages.append(ChatMessage(content=message, role=MessageRole.USER))
+        return messages
+
     def _run_c3(
         self,
         message: str,
@@ -325,17 +340,26 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ) -> AgentChatResponse:
         synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        if len(context_nodes) == 0:
+            # Fall back to direct LLM call when retriever returns no nodes,
+            # instead of returning a hardcoded "Empty Response".
+            chat_history_for_llm = self._memory.get(input=message)
+            messages = self._build_fallback_messages(message, chat_history_for_llm)
+            chat_response = self._llm.chat(messages)
+            response_str = str(chat_response.message.content)
+        else:
+            response = synthesizer.synthesize(message, context_nodes)
+            response_str = str(response)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
-            content=str(response), role=MessageRole.ASSISTANT
+            content=response_str, role=MessageRole.ASSISTANT
         )
         self._memory.put(user_message)
         self._memory.put(assistant_message)
 
         return AgentChatResponse(
-            response=str(response),
+            response=response_str,
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -348,27 +372,51 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
-        assert isinstance(response, StreamingResponse)
-
         self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
-        def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
-            full_response = ""
-            for token in response.response_gen:
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
-                        content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
-                )
+        if len(context_nodes) == 0:
+            # Fall back to streaming LLM call when retriever returns no nodes.
+            chat_history_for_llm = self._memory.get(input=message)
+            messages = self._build_fallback_messages(message, chat_history_for_llm)
 
-        chat_response = StreamingAgentChatResponse(
-            chat_stream=wrapped_gen(response),
-            sources=[context_source],
-            source_nodes=context_nodes,
-        )
+            def llm_stream_gen() -> ChatResponseGen:
+                full_response = ""
+                for chat_resp in self._llm.stream_chat(messages):
+                    delta = chat_resp.delta or ""
+                    full_response += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=delta,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                chat_stream=llm_stream_gen(),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+        else:
+            response = synthesizer.synthesize(message, context_nodes)
+            assert isinstance(response, StreamingResponse)
+
+            def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
+                full_response = ""
+                for token in response.response_gen:
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                chat_stream=wrapped_gen(response),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+
         thread = Thread(
             target=chat_response.write_response_to_history, args=(self._memory,)
         )
@@ -384,17 +432,25 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        if len(context_nodes) == 0:
+            # Fall back to direct LLM call when retriever returns no nodes.
+            chat_history_for_llm = await self._memory.aget(input=message)
+            messages = self._build_fallback_messages(message, chat_history_for_llm)
+            chat_response = await self._llm.achat(messages)
+            response_str = str(chat_response.message.content)
+        else:
+            response = await synthesizer.asynthesize(message, context_nodes)
+            response_str = str(response)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
-            content=str(response), role=MessageRole.ASSISTANT
+            content=response_str, role=MessageRole.ASSISTANT
         )
         await self._memory.aput(user_message)
         await self._memory.aput(assistant_message)
 
         return AgentChatResponse(
-            response=str(response),
+            response=response_str,
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -407,27 +463,53 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
-        assert isinstance(response, AsyncStreamingResponse)
-
         await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
-        async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
-            full_response = ""
-            async for token in response.async_response_gen():
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
-                        content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
-                )
+        if len(context_nodes) == 0:
+            # Fall back to streaming LLM call when retriever returns no nodes.
+            chat_history_for_llm = await self._memory.aget(input=message)
+            messages = self._build_fallback_messages(message, chat_history_for_llm)
 
-        chat_response = StreamingAgentChatResponse(
-            achat_stream=wrapped_gen(response),
-            sources=[context_source],
-            source_nodes=context_nodes,
-        )
+            async def llm_astream_gen() -> ChatResponseAsyncGen:
+                full_response = ""
+                async for chat_resp in await self._llm.astream_chat(messages):
+                    delta = chat_resp.delta or ""
+                    full_response += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=delta,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                achat_stream=llm_astream_gen(),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+        else:
+            response = await synthesizer.asynthesize(message, context_nodes)
+            assert isinstance(response, AsyncStreamingResponse)
+
+            async def wrapped_gen(
+                response: AsyncStreamingResponse,
+            ) -> ChatResponseAsyncGen:
+                full_response = ""
+                async for token in response.async_response_gen():
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                achat_stream=wrapped_gen(response),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+
         chat_response.awrite_response_to_history_task = asyncio.create_task(
             chat_response.awrite_response_to_history(self._memory)
         )
