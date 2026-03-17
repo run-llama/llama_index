@@ -61,7 +61,7 @@ class SalesforceNPSPReader(BaseReader):
         self.affinity_score_fn = affinity_score_fn
 
     @functools.cached_property
-    def _sf(self) -> Any:
+    def _sf(self) -> Salesforce:
         """Cached Salesforce connection. Created once on first access."""
         return Salesforce(
             username=self.username,

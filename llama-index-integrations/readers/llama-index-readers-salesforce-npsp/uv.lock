@@ -1100,14 +1100,14 @@ wheels = [
 
 [[package]]
 name = "griffe"
-version = "1.14.0"
+version = "0.49.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ec/d7/6c09dd7ce4c7837e4cdb11dce980cb45ae3cd87677298dc3b781b6bce7d3/griffe-1.14.0.tar.gz", hash = "sha256:9d2a15c1eca966d68e00517de5d69dd1bc5c9f2335ef6c1775362ba5b8651a13", size = 424684, upload-time = "2025-09-05T15:02:29.167Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/61/7ecb30d0f246f1fc378536e53d2fe523ee8e0a327e45a6cfc79ae1412a3e/griffe-0.49.0.tar.gz", hash = "sha256:a7e1235c27d8139e0fd24a5258deef6061bc876a9fda8117a5cf7b53ee940a91", size = 377276, upload-time = "2024-08-14T17:27:19.413Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/b1/9ff6578d789a89812ff21e4e0f80ffae20a65d5dd84e7a17873fe3b365be/griffe-1.14.0-py3-none-any.whl", hash = "sha256:0e9d52832cccf0f7188cfe585ba962d2674b241c01916d780925df34873bceb0", size = 144439, upload-time = "2025-09-05T15:02:27.511Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/7e/79c1337f56a4124eec149aaf23819430632faedc247e902fe4b9ccf03f65/griffe-0.49.0-py3-none-any.whl", hash = "sha256:c0d505f2a444ac342b22f4647d6444c8db64964b6a379c14f401fc467c0741a3", size = 143668, upload-time = "2024-08-14T17:27:10.533Z" },
 ]
 
 [[package]]
@@ -1784,7 +1784,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "griffe", specifier = ">=0.40,<2" },
+    { name = "griffe", specifier = ">=0.40,<1" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "simple-salesforce", specifier = ">=1.12.5" },
 ]
