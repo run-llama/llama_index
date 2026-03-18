@@ -173,7 +173,7 @@ class GoogleGenAI(FunctionCallingLLM):
         self,
         model: str = DEFAULT_MODEL,
         api_key: Optional[str] = None,
-        temperature: float = DEFAULT_TEMPERATURE,
+        temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         context_window: Optional[int] = None,
         max_retries: int = 3,
@@ -188,6 +188,11 @@ class GoogleGenAI(FunctionCallingLLM):
         file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
         **kwargs: Any,
     ):
+        if temperature is None:
+            if "gemini-3" in model:
+                temperature = 1.0
+            else:
+                temperature = DEFAULT_TEMPERATURE
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
