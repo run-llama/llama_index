@@ -11,20 +11,27 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator, Type
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Sequence, Type
 
+import llama_index.core.instrumentation as instrument
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
+    AsyncStreamingResponse,
     PydanticResponse,
     Response,
     StreamingResponse,
-    AsyncStreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.instrumentation.events.synthesis import (
+    SynthesizeEndEvent,
+    SynthesizeStartEvent,
+)
 from llama_index.core.llms import LLM
+from llama_index.core.llms.structured_llm import StructuredLLM
 from llama_index.core.prompts.mixin import PromptMixin
 from llama_index.core.schema import (
     BaseNode,
@@ -35,13 +42,6 @@ from llama_index.core.schema import (
 )
 from llama_index.core.settings import Settings
 from llama_index.core.types import RESPONSE_TEXT_TYPE
-from llama_index.core.instrumentation import DispatcherSpanMixin
-from llama_index.core.instrumentation.events.synthesis import (
-    SynthesizeStartEvent,
-    SynthesizeEndEvent,
-)
-from llama_index.core.llms.structured_llm import StructuredLLM
-import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
