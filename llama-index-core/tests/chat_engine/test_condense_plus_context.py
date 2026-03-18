@@ -148,9 +148,7 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
 async def test_astream_chat_calls_llm_when_retriever_returns_zero_nodes():
     """Regression test for #20894: astream_chat should call LLM with empty context,
     not silently return 'Empty Response' when retriever returns 0 nodes."""
-    index = VectorStoreIndex.from_documents(
-        [], embed_model=MockEmbedding(embed_dim=3)
-    )
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
     retriever = index.as_retriever(similarity_top_k=2)
     engine = CondensePlusContextChatEngine.from_defaults(
         retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
@@ -167,9 +165,7 @@ async def test_astream_chat_calls_llm_when_retriever_returns_zero_nodes():
 def test_chat_calls_llm_when_retriever_returns_zero_nodes():
     """Regression test for #20894: chat should call LLM with empty context,
     not silently return 'Empty Response' when retriever returns 0 nodes."""
-    index = VectorStoreIndex.from_documents(
-        [], embed_model=MockEmbedding(embed_dim=3)
-    )
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
     retriever = index.as_retriever(similarity_top_k=2)
     engine = CondensePlusContextChatEngine.from_defaults(
         retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
