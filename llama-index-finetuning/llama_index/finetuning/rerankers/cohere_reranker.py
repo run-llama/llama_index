@@ -2,10 +2,17 @@
 
 import importlib.util
 import os
+import time
 from typing import Optional
 
+from cohere.finetuning import (  # pyright: ignore[reportMissingImports]
+    BaseModel,
+    FinetunedModel,
+    Settings,
+)
+
 from llama_index.finetuning.types import BaseCohereRerankerFinetuningEngine
-from llama_index.postprocessor.cohere_rerank import CohereRerank
+from llama_index.postprocessor.cohere_rerank import CohereRerank  # pyright: ignore[reportMissingImports]
 
 
 class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
@@ -25,7 +32,7 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
         cohere_spec = importlib.util.find_spec("cohere")
 
         if cohere_spec is not None:
-            import cohere
+            import cohere  # pyright: ignore[reportMissingImports]
         else:
             # Raise an ImportError if 'cohere' is not installed
             raise ImportError(
@@ -49,22 +56,36 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
 
     def finetune(self) -> None:
         """Finetune model."""
-        from cohere.custom_model_dataset import JsonlDataset
-
+        dataset_kwargs = {
+            "name": self._model_name,
+            "type": "rerank-finetune-input",
+            "data": open(self._train_file_name, "rb"),
+        }
         if self._val_file_name:
-            # Uploading both train file and eval file
-            dataset = JsonlDataset(
-                train_file=self._train_file_name, eval_file=self._val_file_name
-            )
-        else:
-            # Single Train File Upload:
-            dataset = JsonlDataset(train_file=self._train_file_name)
+            dataset_kwargs["eval_data"] = open(self._val_file_name, "rb")
 
-        self._finetune_model = self._model.create_custom_model(
-            name=self._model_name,
-            dataset=dataset,
-            model_type=self._model_type,
-            base_model=self._base_model,
+        dataset = self._model.datasets.create(**dataset_kwargs)
+
+        while True:
+            current_dataset = self._model.datasets.get(dataset.dataset.id)
+            validation_status = current_dataset.dataset.validation_status
+            if validation_status == "validated":
+                break
+            if validation_status == "failed":
+                raise ValueError("Cohere dataset validation failed.")
+            time.sleep(5)
+
+        self._finetune_model = self._model.finetuning.create_finetuned_model(
+            request=FinetunedModel(
+                name=self._model_name,
+                settings=Settings(
+                    dataset_id=dataset.dataset.id,
+                    base_model=BaseModel(
+                        base_type="BASE_TYPE_RERANK",
+                        name=self._base_model,
+                    ),
+                ),
+            )
         )
 
     def get_finetuned_model(self, top_n: int = 5) -> CohereRerank:
