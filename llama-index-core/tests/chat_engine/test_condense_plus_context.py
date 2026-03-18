@@ -1,7 +1,6 @@
 import time
 
 import pytest
-
 from llama_index.core import MockEmbedding
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.chat_engine.condense_plus_context import (
