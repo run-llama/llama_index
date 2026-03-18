@@ -5,7 +5,7 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.minimax.utils import get_context_window, FUNCTION_CALLING_MODELS
 
 DEFAULT_API_BASE = "https://api.minimax.io/v1"
-DEFAULT_MODEL = "MiniMax-M2.5"
+DEFAULT_MODEL = "MiniMax-M2.7"
 
 
 class MiniMax(OpenAILike):
@@ -22,7 +22,7 @@ class MiniMax(OpenAILike):
         from llama_index.llms.minimax import MiniMax
 
         # Set up the MiniMax class with the required model and API key
-        llm = MiniMax(model="MiniMax-M2.5", api_key="your_api_key")
+        llm = MiniMax(model="MiniMax-M2.7", api_key="your_api_key")
 
         # Call the complete method with a query
         response = llm.complete("Explain the importance of low latency LLMs")
