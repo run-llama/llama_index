@@ -568,9 +568,13 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # Extract reasoning_content for chain-of-thought streaming.
+                # Extract reasoning/reasoning_content for chain-of-thought streaming.
                 # Many OpenAI-compatible providers surface this extra field.
-                raw_reasoning = getattr(delta, "reasoning_content", None)
+                # vLLM deprecated reasoning_content in favor of reasoning (see vllm#36730),
+                # so we check "reasoning" first, then fall back to "reasoning_content".
+                raw_reasoning = getattr(delta, "reasoning", None) or getattr(
+                    delta, "reasoning_content", None
+                )
                 reasoning_delta = (
                     raw_reasoning if isinstance(raw_reasoning, str) else ""
                 )
@@ -864,9 +868,13 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # Extract reasoning_content for chain-of-thought streaming.
+                # Extract reasoning/reasoning_content for chain-of-thought streaming.
                 # Many OpenAI-compatible providers surface this extra field.
-                raw_reasoning = getattr(delta, "reasoning_content", None)
+                # vLLM deprecated reasoning_content in favor of reasoning (see vllm#36730),
+                # so we check "reasoning" first, then fall back to "reasoning_content".
+                raw_reasoning = getattr(delta, "reasoning", None) or getattr(
+                    delta, "reasoning_content", None
+                )
                 reasoning_delta = (
                     raw_reasoning if isinstance(raw_reasoning, str) else ""
                 )

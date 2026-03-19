@@ -861,3 +861,54 @@ def test_from_openai_message_without_reasoning_content() -> None:
     assert len(thinking_blocks) == 0
     assert len(result.blocks) == 1
     assert result.blocks[0].text == "Hello!"
+
+
+def _make_reasoning_stream_chunks_vllm_new() -> list[ChatCompletionChunk]:
+    """Simulate vLLM streaming with new 'reasoning' field (vllm#36730).
+
+    vLLM deprecated reasoning_content in favor of reasoning.
+    """
+    return [
+        _make_chunk({"role": "assistant"}),
+        _make_chunk({"content": None, "__extra__": {"reasoning": "Let me think"}}),
+        _make_chunk({"content": None, "__extra__": {"reasoning": " about this."}}),
+        _make_chunk({"content": "The answer"}),
+        _make_chunk({"content": " is 42."}),
+        _make_chunk({}, finish_reason="stop"),
+    ]
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_reasoning_vllm_new_field(MockSyncOpenAI: MagicMock) -> None:
+    """Test that new vLLM 'reasoning' field is captured as ThinkingBlock.
+
+    vLLM deprecated reasoning_content in favor of reasoning (vllm#36730).
+    This test ensures the new field works correctly.
+    """
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = iter(
+            _make_reasoning_stream_chunks_vllm_new()
+        )
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+        final = responses[-1]
+        thinking_blocks = [
+            b for b in final.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        text_blocks = [b for b in final.message.blocks if isinstance(b, TextBlock)]
+
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].content == "Let me think about this."
+        assert len(text_blocks) == 1
+        assert text_blocks[0].text == "The answer is 42."
+
+        # Exactly 2 chunks carry thinking_delta (the two reasoning chunks)
+        reasoning_chunks = [
+            r for r in responses if r.additional_kwargs.get("thinking_delta")
+        ]
+        assert len(reasoning_chunks) == 2
+        assert reasoning_chunks[0].additional_kwargs["thinking_delta"] == "Let me think"
+        assert reasoning_chunks[1].additional_kwargs["thinking_delta"] == " about this."
