@@ -1,5 +1,9 @@
 """Evaluation modules."""
 
+from llama_index.core.evaluation.agent import (
+    AgentGoalSuccessEvaluator,
+    ToolCallCorrectnessEvaluator,
+)
 from llama_index.core.evaluation.answer_relevancy import AnswerRelevancyEvaluator
 from llama_index.core.evaluation.base import (
     BaseEvaluator,
@@ -83,4 +87,7 @@ __all__ = [
     "MRR",
     "get_retrieval_results_df",
     "LabelledQADataset",
+    # agent evaluation
+    "AgentGoalSuccessEvaluator",
+    "ToolCallCorrectnessEvaluator",
 ]
