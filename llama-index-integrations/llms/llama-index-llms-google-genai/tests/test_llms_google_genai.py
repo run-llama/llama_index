@@ -1,6 +1,6 @@
 import os
 from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from google.genai import types
@@ -1939,3 +1939,314 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+# -- Cache management tests --
+
+def _make_mock_llm(**kwargs: Any) -> tuple:
+    """Create a GoogleGenAI instance with a mocked Google client for testing."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_model = MagicMock()
+        mock_model.output_token_limit = 8192
+        mock_model.input_token_limit = 200000
+        mock_client.models.get.return_value = mock_model
+
+        llm = GoogleGenAI(
+            model=kwargs.pop("model", "gemini-2.0-flash-001"),
+            api_key=kwargs.pop("api_key", "fake-key"),
+            **kwargs,
+        )
+    return llm, mock_client
+
+
+def test_create_cache_from_params() -> None:
+    """Test creating a cache with individual parameters updates instance state."""
+    llm, mock_client = _make_mock_llm()
+    assert llm.cached_content is None
+
+    mock_cache = MagicMock()
+    mock_cache.name = "cachedContents/test-123"
+    mock_client.caches.create.return_value = mock_cache
+
+    result = llm.create_cache(
+        contents=["Large document content"],
+        system_instruction="Be helpful",
+        display_name="my-cache",
+        ttl="3600s",
+    )
+
+    mock_client.caches.create.assert_called_once()
+    call_kwargs = mock_client.caches.create.call_args
+    assert call_kwargs.kwargs["model"] == "gemini-2.0-flash-001"
+    assert result.name == "cachedContents/test-123"
+    assert llm.cached_content == "cachedContents/test-123"
+    assert llm._generation_config["cached_content"] == "cachedContents/test-123"
+
+
+def test_create_cache_with_config() -> None:
+    """Test creating a cache with a pre-built config passes it through."""
+    llm, mock_client = _make_mock_llm()
+
+    mock_cache = MagicMock()
+    mock_cache.name = "cachedContents/config-cache"
+    mock_client.caches.create.return_value = mock_cache
+
+    custom_config = types.CreateCachedContentConfig(
+        contents=["content"],
+        ttl="7200s",
+    )
+    llm.create_cache(config=custom_config)
+
+    call_kwargs = mock_client.caches.create.call_args
+    assert call_kwargs.kwargs["config"] is custom_config
+    assert llm.cached_content == "cachedContents/config-cache"
+
+
+@pytest.mark.asyncio
+async def test_acreate_cache() -> None:
+    """Test async cache creation updates instance state."""
+    llm, mock_client = _make_mock_llm()
+
+    mock_cache = MagicMock()
+    mock_cache.name = "cachedContents/async-cache"
+    mock_client.aio.caches.create = AsyncMock(return_value=mock_cache)
+
+    result = await llm.acreate_cache(contents=["content"], ttl="3600s")
+
+    mock_client.aio.caches.create.assert_called_once()
+    assert result.name == "cachedContents/async-cache"
+    assert llm.cached_content == "cachedContents/async-cache"
+
+
+def test_get_cache_defaults_to_instance() -> None:
+    """Test get_cache uses self.cached_content when no name is given."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/existing")
+
+    llm.get_cache()
+
+    mock_client.caches.get.assert_called_once_with(name="cachedContents/existing")
+
+
+def test_get_cache_with_explicit_name() -> None:
+    """Test get_cache with an explicit cache name."""
+    llm, mock_client = _make_mock_llm()
+
+    llm.get_cache(name="cachedContents/other")
+
+    mock_client.caches.get.assert_called_once_with(name="cachedContents/other")
+
+
+def test_get_cache_raises_without_name() -> None:
+    """Test get_cache raises ValueError when no name is available."""
+    llm, _ = _make_mock_llm()
+
+    with pytest.raises(ValueError, match="No cache name provided"):
+        llm.get_cache()
+
+
+@pytest.mark.asyncio
+async def test_aget_cache() -> None:
+    """Test async get_cache delegates to the SDK."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/existing")
+    mock_client.aio.caches.get = AsyncMock()
+
+    await llm.aget_cache()
+
+    mock_client.aio.caches.get.assert_called_once_with(
+        name="cachedContents/existing"
+    )
+
+
+def test_list_caches() -> None:
+    """Test list_caches delegates to the SDK."""
+    llm, mock_client = _make_mock_llm()
+
+    llm.list_caches()
+
+    mock_client.caches.list.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_alist_caches() -> None:
+    """Test async list_caches delegates to the SDK."""
+    llm, mock_client = _make_mock_llm()
+    mock_client.aio.caches.list = AsyncMock()
+
+    await llm.alist_caches()
+
+    mock_client.aio.caches.list.assert_called_once()
+
+
+def test_update_cache_with_ttl() -> None:
+    """Test updating a cache's TTL."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/to-update")
+
+    llm.update_cache(ttl="7200s")
+
+    mock_client.caches.update.assert_called_once()
+    call_kwargs = mock_client.caches.update.call_args
+    assert call_kwargs.kwargs["name"] == "cachedContents/to-update"
+
+
+def test_update_cache_with_config() -> None:
+    """Test updating a cache with a pre-built config."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/to-update")
+
+    custom_config = types.UpdateCachedContentConfig(ttl="14400s")
+    llm.update_cache(config=custom_config)
+
+    call_kwargs = mock_client.caches.update.call_args
+    assert call_kwargs.kwargs["config"] is custom_config
+
+
+def test_update_cache_raises_without_name() -> None:
+    """Test update_cache raises ValueError when no name is available."""
+    llm, _ = _make_mock_llm()
+
+    with pytest.raises(ValueError, match="No cache name provided"):
+        llm.update_cache(ttl="3600s")
+
+
+@pytest.mark.asyncio
+async def test_aupdate_cache() -> None:
+    """Test async update_cache delegates to the SDK."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/to-update")
+    mock_client.aio.caches.update = AsyncMock()
+
+    await llm.aupdate_cache(ttl="7200s")
+
+    mock_client.aio.caches.update.assert_called_once()
+
+
+def test_delete_cache_clears_instance_state() -> None:
+    """Test deleting the current cache clears cached_content on the instance."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/to-delete")
+    assert llm.cached_content == "cachedContents/to-delete"
+
+    llm.delete_cache()
+
+    mock_client.caches.delete.assert_called_once_with(
+        name="cachedContents/to-delete"
+    )
+    assert llm.cached_content is None
+    assert llm._generation_config.get("cached_content") is None
+
+
+def test_delete_cache_preserves_state_for_other_name() -> None:
+    """Test deleting a different cache does not clear the instance state."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/my-cache")
+
+    llm.delete_cache(name="cachedContents/other-cache")
+
+    mock_client.caches.delete.assert_called_once_with(
+        name="cachedContents/other-cache"
+    )
+    assert llm.cached_content == "cachedContents/my-cache"
+
+
+def test_delete_cache_raises_without_name() -> None:
+    """Test delete_cache raises ValueError when no name is available."""
+    llm, _ = _make_mock_llm()
+
+    with pytest.raises(ValueError, match="No cache name provided"):
+        llm.delete_cache()
+
+
+@pytest.mark.asyncio
+async def test_adelete_cache() -> None:
+    """Test async delete_cache clears instance state."""
+    llm, mock_client = _make_mock_llm(cached_content="cachedContents/to-delete")
+    mock_client.aio.caches.delete = AsyncMock()
+
+    await llm.adelete_cache()
+
+    mock_client.aio.caches.delete.assert_called_once_with(
+        name="cachedContents/to-delete"
+    )
+    assert llm.cached_content is None
+
+
+def test_create_then_delete_cache_lifecycle() -> None:
+    """Test the full lifecycle: create a cache, use it, then delete it."""
+    llm, mock_client = _make_mock_llm()
+    assert llm.cached_content is None
+
+    # Create
+    mock_cache = MagicMock()
+    mock_cache.name = "cachedContents/lifecycle-test"
+    mock_client.caches.create.return_value = mock_cache
+    llm.create_cache(contents=["content"], ttl="3600s")
+    assert llm.cached_content == "cachedContents/lifecycle-test"
+    assert llm._generation_config["cached_content"] == "cachedContents/lifecycle-test"
+
+    # Delete
+    llm.delete_cache()
+    assert llm.cached_content is None
+    assert llm._generation_config.get("cached_content") is None
+
+
+def test_cached_content_token_count_in_response() -> None:
+    """Test that cached_content_token_count is extracted from usage metadata."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
+    mock_response.candidates[0].content.parts[0].thought_signature = None
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = MagicMock()
+    mock_response.usage_metadata.prompt_token_count = 100
+    mock_response.usage_metadata.candidates_token_count = 50
+    mock_response.usage_metadata.total_token_count = 150
+    mock_response.usage_metadata.thoughts_token_count = None
+    mock_response.usage_metadata.cached_content_token_count = 80
+    mock_response.usage_metadata.model_dump.return_value = {
+        "prompt_token_count": 100,
+        "candidates_token_count": 50,
+        "total_token_count": 150,
+        "cached_content_token_count": 80,
+    }
+    del mock_response.cached_content
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.message.additional_kwargs["cached_content_token_count"] == 80
+
+
+def test_no_cached_content_token_count_when_absent() -> None:
+    """Test that cached_content_token_count is not set when the field is absent."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
+    mock_response.candidates[0].content.parts[0].thought_signature = None
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = MagicMock()
+    mock_response.usage_metadata.prompt_token_count = 100
+    mock_response.usage_metadata.candidates_token_count = 50
+    mock_response.usage_metadata.total_token_count = 150
+    mock_response.usage_metadata.thoughts_token_count = None
+    mock_response.usage_metadata.cached_content_token_count = None
+    mock_response.usage_metadata.model_dump.return_value = {
+        "prompt_token_count": 100,
+        "candidates_token_count": 50,
+        "total_token_count": 150,
+    }
+    del mock_response.cached_content
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert "cached_content_token_count" not in chat_response.message.additional_kwargs

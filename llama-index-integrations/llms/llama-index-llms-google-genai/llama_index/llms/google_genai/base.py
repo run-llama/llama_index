@@ -869,3 +869,180 @@ class GoogleGenAI(FunctionCallingLLM):
             return await super().astream_structured_predict(
                 output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
+
+    # -- Cache management --
+
+    def _apply_cached_content(self, cache_name: Optional[str]) -> None:
+        """Update the cached_content field and generation config together."""
+        self.cached_content = cache_name
+        if cache_name is not None:
+            self._generation_config["cached_content"] = cache_name
+        else:
+            self._generation_config.pop("cached_content", None)
+
+    def _resolve_cache_name(self, name: Optional[str]) -> str:
+        """Return the given name or fall back to self.cached_content."""
+        resolved = name or self.cached_content
+        if not resolved:
+            raise ValueError(
+                "No cache name provided and no cached_content is set on this instance."
+            )
+        return resolved
+
+    def _build_cache_config(
+        self,
+        contents: Optional[list],
+        system_instruction: Optional[str],
+        display_name: Optional[str],
+        ttl: Optional[str],
+        config: Optional[types.CreateCachedContentConfig],
+    ) -> types.CreateCachedContentConfig:
+        """Build a CreateCachedContentConfig, preferring an explicit config if given."""
+        if config is not None:
+            return config
+        return types.CreateCachedContentConfig(
+            contents=contents,
+            system_instruction=system_instruction,
+            display_name=display_name,
+            ttl=ttl,
+        )
+
+    def create_cache(
+        self,
+        contents: Optional[list] = None,
+        *,
+        system_instruction: Optional[str] = None,
+        display_name: Optional[str] = None,
+        ttl: Optional[str] = None,
+        config: Optional[types.CreateCachedContentConfig] = None,
+    ) -> types.CachedContent:
+        """
+        Create a cached content resource and configure this LLM to use it.
+
+        After creation, the cached_content field is updated so that subsequent
+        LLM calls automatically include the cache reference.
+
+        Provide individual parameters for simple cases, or pass a pre-built
+        config for full control over the CreateCachedContentConfig.
+
+        Args:
+            contents: Content to cache (text, Part objects, Content objects, etc.).
+            system_instruction: System instruction to include in the cache.
+            display_name: Human-readable identifier for the cache.
+            ttl: Time-to-live duration string (e.g. "3600s" for one hour).
+            config: Pre-built CreateCachedContentConfig. When provided, the
+                individual parameters above are ignored.
+
+        Returns:
+            The created CachedContent resource.
+
+        """
+        resolved = self._build_cache_config(
+            contents, system_instruction, display_name, ttl, config
+        )
+        cache = self._client.caches.create(model=self.model, config=resolved)
+        self._apply_cached_content(cache.name)
+        return cache
+
+    async def acreate_cache(
+        self,
+        contents: Optional[list] = None,
+        *,
+        system_instruction: Optional[str] = None,
+        display_name: Optional[str] = None,
+        ttl: Optional[str] = None,
+        config: Optional[types.CreateCachedContentConfig] = None,
+    ) -> types.CachedContent:
+        """Async version of create_cache."""
+        resolved = self._build_cache_config(
+            contents, system_instruction, display_name, ttl, config
+        )
+        cache = await self._client.aio.caches.create(
+            model=self.model, config=resolved
+        )
+        self._apply_cached_content(cache.name)
+        return cache
+
+    def get_cache(self, name: Optional[str] = None) -> types.CachedContent:
+        """
+        Get metadata for a cached content resource.
+
+        Args:
+            name: Cache resource name. Defaults to this instance's cached_content.
+
+        """
+        return self._client.caches.get(name=self._resolve_cache_name(name))
+
+    async def aget_cache(self, name: Optional[str] = None) -> types.CachedContent:
+        """Async version of get_cache."""
+        return await self._client.aio.caches.get(
+            name=self._resolve_cache_name(name)
+        )
+
+    def list_caches(self):
+        """List all cached content resources visible to the current credentials."""
+        return self._client.caches.list()
+
+    async def alist_caches(self):
+        """Async version of list_caches."""
+        return await self._client.aio.caches.list()
+
+    def update_cache(
+        self,
+        name: Optional[str] = None,
+        *,
+        ttl: Optional[str] = None,
+        config: Optional[types.UpdateCachedContentConfig] = None,
+    ) -> types.CachedContent:
+        """
+        Update a cached content resource (e.g. extend its TTL).
+
+        Args:
+            name: Cache resource name. Defaults to this instance's cached_content.
+            ttl: New time-to-live duration string (e.g. "7200s").
+            config: Pre-built UpdateCachedContentConfig. When provided, ttl
+                is ignored.
+
+        """
+        if config is None:
+            config = types.UpdateCachedContentConfig(ttl=ttl)
+        return self._client.caches.update(
+            name=self._resolve_cache_name(name), config=config
+        )
+
+    async def aupdate_cache(
+        self,
+        name: Optional[str] = None,
+        *,
+        ttl: Optional[str] = None,
+        config: Optional[types.UpdateCachedContentConfig] = None,
+    ) -> types.CachedContent:
+        """Async version of update_cache."""
+        if config is None:
+            config = types.UpdateCachedContentConfig(ttl=ttl)
+        return await self._client.aio.caches.update(
+            name=self._resolve_cache_name(name), config=config
+        )
+
+    def delete_cache(self, name: Optional[str] = None) -> None:
+        """
+        Delete a cached content resource.
+
+        If deleting the cache currently set on this instance, the cached_content
+        field is cleared automatically.
+
+        Args:
+            name: Cache resource name. Defaults to this instance's cached_content.
+
+        """
+        resolved = self._resolve_cache_name(name)
+        self._client.caches.delete(name=resolved)
+        if resolved == self.cached_content:
+            self._apply_cached_content(None)
+
+    async def adelete_cache(self, name: Optional[str] = None) -> None:
+        """Async version of delete_cache."""
+        resolved = self._resolve_cache_name(name)
+        await self._client.aio.caches.delete(name=resolved)
+        if resolved == self.cached_content:
+            self._apply_cached_content(None)
