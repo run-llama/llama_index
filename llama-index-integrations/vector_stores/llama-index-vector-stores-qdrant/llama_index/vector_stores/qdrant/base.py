@@ -215,7 +215,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         # Validate that native BM25 is not combined with client-side sparse encoders
-        if enable_native_bm25 and (sparse_doc_fn is not None or sparse_query_fn is not None):
+        if enable_native_bm25 and (
+            sparse_doc_fn is not None or sparse_query_fn is not None
+        ):
             raise ValueError(
                 "Cannot use enable_native_bm25 with sparse_doc_fn or sparse_query_fn. "
                 "Native BM25 handles sparse encoding server-side."
