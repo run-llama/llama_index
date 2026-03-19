@@ -181,9 +181,7 @@ def chat_from_gemini_response(
             response.usage_metadata, "cached_content_token_count", None
         )
         if cached_content_token_count:
-            additional_kwargs["cached_content_token_count"] = (
-                cached_content_token_count
-            )
+            additional_kwargs["cached_content_token_count"] = cached_content_token_count
 
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content

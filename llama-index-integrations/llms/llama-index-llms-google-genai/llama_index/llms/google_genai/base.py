@@ -957,9 +957,7 @@ class GoogleGenAI(FunctionCallingLLM):
         resolved = self._build_cache_config(
             contents, system_instruction, display_name, ttl, config
         )
-        cache = await self._client.aio.caches.create(
-            model=self.model, config=resolved
-        )
+        cache = await self._client.aio.caches.create(model=self.model, config=resolved)
         self._apply_cached_content(cache.name)
         return cache
 
@@ -975,9 +973,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
     async def aget_cache(self, name: Optional[str] = None) -> types.CachedContent:
         """Async version of get_cache."""
-        return await self._client.aio.caches.get(
-            name=self._resolve_cache_name(name)
-        )
+        return await self._client.aio.caches.get(name=self._resolve_cache_name(name))
 
     def list_caches(self):
         """List all cached content resources visible to the current credentials."""

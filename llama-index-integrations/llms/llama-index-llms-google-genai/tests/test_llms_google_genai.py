@@ -1943,6 +1943,7 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
 
 # -- Cache management tests --
 
+
 def _make_mock_llm(**kwargs: Any) -> tuple:
     """Create a GoogleGenAI instance with a mocked Google client for testing."""
     with patch("google.genai.Client") as mock_client_class:
@@ -2054,9 +2055,7 @@ async def test_aget_cache() -> None:
 
     await llm.aget_cache()
 
-    mock_client.aio.caches.get.assert_called_once_with(
-        name="cachedContents/existing"
-    )
+    mock_client.aio.caches.get.assert_called_once_with(name="cachedContents/existing")
 
 
 def test_list_caches() -> None:
@@ -2127,9 +2126,7 @@ def test_delete_cache_clears_instance_state() -> None:
 
     llm.delete_cache()
 
-    mock_client.caches.delete.assert_called_once_with(
-        name="cachedContents/to-delete"
-    )
+    mock_client.caches.delete.assert_called_once_with(name="cachedContents/to-delete")
     assert llm.cached_content is None
     assert llm._generation_config.get("cached_content") is None
 
@@ -2140,9 +2137,7 @@ def test_delete_cache_preserves_state_for_other_name() -> None:
 
     llm.delete_cache(name="cachedContents/other-cache")
 
-    mock_client.caches.delete.assert_called_once_with(
-        name="cachedContents/other-cache"
-    )
+    mock_client.caches.delete.assert_called_once_with(name="cachedContents/other-cache")
     assert llm.cached_content == "cachedContents/my-cache"
 
 
