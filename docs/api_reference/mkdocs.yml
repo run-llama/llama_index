@@ -734,6 +734,7 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-igpt-email
             - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-opensearch
             - ../../llama-index-integrations/tools/llama-index-tools-igpt-email
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-google-rerank
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:

@@ -68,7 +68,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-3-flash-preview"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -125,7 +125,7 @@ class GoogleGenAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = GoogleGenAI(model="gemini-2.0-flash", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="gemini-3-flash-preview", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
@@ -173,7 +173,7 @@ class GoogleGenAI(FunctionCallingLLM):
         self,
         model: str = DEFAULT_MODEL,
         api_key: Optional[str] = None,
-        temperature: float = DEFAULT_TEMPERATURE,
+        temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         context_window: Optional[int] = None,
         max_retries: int = 3,
@@ -188,6 +188,11 @@ class GoogleGenAI(FunctionCallingLLM):
         file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
         **kwargs: Any,
     ):
+        if temperature is None:
+            if "gemini-3" in model:
+                temperature = 1.0
+            else:
+                temperature = DEFAULT_TEMPERATURE
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
