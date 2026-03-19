@@ -54,6 +54,9 @@ from qdrant_client.http.models import (
 from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 from qdrant_client.http.exceptions import UnexpectedResponse
 
+# Default model name for Qdrant's built-in BM25 sparse encoder
+DEFAULT_NATIVE_BM25_MODEL = "Qdrant/bm25"
+
 logger = logging.getLogger(__name__)
 import_err_msg = (
     "`qdrant-client` package not found, please run `pip install qdrant-client`"
@@ -94,6 +97,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
+        enable_native_bm25 (bool): use Qdrant's built-in BM25 for sparse encoding instead of FastEmbed.
+            Requires Qdrant server v1.15.2+ and qdrant-client >= 1.16.0. Cannot be combined with
+            fastembed_sparse_model, sparse_doc_fn, or sparse_query_fn. Automatically enables hybrid search.
+        native_bm25_model (Optional[str]): model name for the Qdrant server-side BM25 encoder. Defaults to 'Qdrant/bm25'
+        bm25_config (Optional[rest.Bm25Config]): optional BM25 tuning parameters (k, b, avg_len, language, etc.)
         index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
         text_key (str): Name of the field holding the text information, Defaults to 'text'
         dense_vector_name (Optional[str]): Custom name for the dense vector field. Defaults to 'text-dense'
@@ -146,6 +154,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     text_key: Optional[str]
     dense_vector_name: str
     sparse_vector_name: str
+    enable_native_bm25: bool
+    native_bm25_model: str
 
     _client: QdrantClient = PrivateAttr()
     _aclient: AsyncQdrantClient = PrivateAttr()
@@ -157,6 +167,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
     _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
     _legacy_vector_format: Optional[bool] = PrivateAttr()
+    _bm25_config: Optional[rest.Bm25Config] = PrivateAttr()
     _shard_key_selector_fn: Optional[Callable[..., rest.ShardKeySelector]] = (
         PrivateAttr()
     )
@@ -197,9 +208,28 @@ class QdrantVectorStore(BasePydanticVectorStore):
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
         payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]] = None,
+        enable_native_bm25: bool = False,
+        native_bm25_model: Optional[str] = None,
+        bm25_config: Optional[rest.Bm25Config] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        # Validate that native BM25 is not combined with client-side sparse encoders
+        if enable_native_bm25 and (sparse_doc_fn is not None or sparse_query_fn is not None):
+            raise ValueError(
+                "Cannot use enable_native_bm25 with sparse_doc_fn or sparse_query_fn. "
+                "Native BM25 handles sparse encoding server-side."
+            )
+        if enable_native_bm25 and fastembed_sparse_model is not None:
+            raise ValueError(
+                "Cannot use enable_native_bm25 with fastembed_sparse_model. "
+                "Native BM25 replaces FastEmbed-based sparse encoding."
+            )
+
+        # Native BM25 implies hybrid search
+        if enable_native_bm25:
+            enable_hybrid = True
+
         # Set default vector names if not provided
         dense_vector_name = dense_vector_name or DEFAULT_DENSE_VECTOR_NAME
         sparse_vector_name = sparse_vector_name or DEFAULT_SPARSE_VECTOR_NAME
@@ -218,11 +248,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             dense_vector_name=dense_vector_name,
             sparse_vector_name=sparse_vector_name,
+            enable_native_bm25=enable_native_bm25,
+            native_bm25_model=native_bm25_model or DEFAULT_NATIVE_BM25_MODEL,
         )
         # Track if the user provided their own sparse functions. This is to prevent
         # them from being overwritten by the lazy-init correction for async clients.
         self._user_provided_sparse_doc_fn = sparse_doc_fn is not None
         self._user_provided_sparse_query_fn = sparse_query_fn is not None
+        self._bm25_config = bm25_config
 
         if (
             client is None
@@ -272,8 +305,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
             # Need to do lazy init for async clients
             self._collection_initialized = False
 
-        # Setup hybrid search if enabled
-        if enable_hybrid or fastembed_sparse_model is not None:
+        # Setup hybrid search if enabled.
+        # Native BM25 skips client-side sparse encoders entirely — the Qdrant server
+        # handles BM25 tokenization and scoring via the Document inference type.
+        if enable_native_bm25:
+            self._sparse_doc_fn = None
+            self._sparse_query_fn = None
+            self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
+                HybridFusionCallable, relative_score_fusion
+            )
+        elif enable_hybrid or fastembed_sparse_model is not None:
             enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
                 collection_name,
@@ -318,6 +359,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
+    def _make_bm25_document(self, text: str) -> rest.Document:
+        """Build a Qdrant Document for server-side BM25 inference."""
+        return rest.Document(
+            text=text,
+            model=self.native_bm25_model,
+            options=self._bm25_config,
+        )
+
     def _build_points(
         self, nodes: List[BaseNode], sparse_vector_name: str
     ) -> Tuple[List[Any], List[str]]:
@@ -331,7 +380,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
             sparse_indices: List[List[int]] = []
             payloads = []
 
-            if self.enable_hybrid and self._sparse_doc_fn is not None:
+            # Client-side sparse encoding (FastEmbed / custom function path)
+            if (
+                self.enable_hybrid
+                and not self.enable_native_bm25
+                and self._sparse_doc_fn is not None
+            ):
                 sparse_indices, sparse_vectors = self._sparse_doc_fn(
                     [
                         node.get_content(metadata_mode=MetadataMode.EMBED)
@@ -344,7 +398,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 node_ids.append(node.node_id)
 
                 if self.enable_hybrid:
-                    if (
+                    if self.enable_native_bm25:
+                        # Server-side BM25: send raw text via Document, let Qdrant tokenize it
+                        text = node.get_content(metadata_mode=MetadataMode.EMBED)
+                        vectors.append(
+                            {
+                                sparse_vector_name: self._make_bm25_document(text),
+                                self.dense_vector_name: node.get_embedding(),
+                            }
+                        )
+                    elif (
                         len(sparse_vectors) > 0
                         and len(sparse_indices) > 0
                         and len(sparse_vectors) == len(sparse_indices)
@@ -800,14 +863,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Return the Qdrant client."""
         return self._client
 
-    def _create_collection(self, collection_name: str, vector_size: int) -> None:
-        """Create a Qdrant collection."""
-        dense_config = self._dense_config or rest.VectorParams(
-            size=vector_size,
-            distance=rest.Distance.COSINE,
-        )
-
-        sparse_config = self._sparse_config or rest.SparseVectorParams(
+    def _build_default_sparse_config(self) -> rest.SparseVectorParams:
+        """Build default sparse vector config based on the active sparse backend."""
+        if self.enable_native_bm25:
+            # Native BM25 always uses IDF modifier for proper BM25 scoring
+            return rest.SparseVectorParams(
+                index=rest.SparseIndexParams(),
+                modifier=rest.Modifier.IDF,
+            )
+        return rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
@@ -815,6 +879,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 else None
             ),
         )
+
+    def _create_collection(self, collection_name: str, vector_size: int) -> None:
+        """Create a Qdrant collection."""
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or self._build_default_sparse_config()
 
         try:
             if self.enable_hybrid:
@@ -880,14 +953,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             distance=rest.Distance.COSINE,
         )
 
-        sparse_config = self._sparse_config or rest.SparseVectorParams(
-            index=rest.SparseIndexParams(),
-            modifier=(
-                rest.Modifier.IDF
-                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
-                else None
-            ),
-        )
+        sparse_config = self._sparse_config or self._build_default_sparse_config()
 
         try:
             if self.enable_hybrid:
@@ -1050,15 +1116,29 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
             )
-        elif (
+
+        # Determine the sparse query object based on the configured backend
+        sparse_query_obj = None
+        can_sparse_search = False
+        if self.enable_hybrid and query.query_str is not None:
+            if self.enable_native_bm25:
+                sparse_query_obj = self._make_bm25_document(query.query_str)
+                can_sparse_search = True
+            elif self._sparse_query_fn is not None:
+                sparse_indices, sparse_embedding = self._sparse_query_fn(
+                    [query.query_str],
+                )
+                sparse_query_obj = rest.SparseVector(
+                    indices=sparse_indices[0],
+                    values=sparse_embedding[0],
+                )
+                can_sparse_search = True
+
+        if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
+            and can_sparse_search
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = self._client.query_batch_points(
@@ -1074,10 +1154,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         params=search_params,
                     ),
                     rest.QueryRequest(
-                        query=rest.SparseVector(
-                            indices=sparse_indices[0],
-                            values=sparse_embedding[0],
-                        ),
+                        query=sparse_query_obj,
                         using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
@@ -1104,22 +1181,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
         elif (
             query.mode == VectorStoreQueryMode.SPARSE
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
+            and can_sparse_search
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = self._client.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
                     rest.QueryRequest(
-                        query=rest.SparseVector(
-                            indices=sparse_indices[0],
-                            values=sparse_embedding[0],
-                        ),
+                        query=sparse_query_obj,
                         using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
@@ -1208,15 +1278,29 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
             )
-        elif (
+
+        # Determine the sparse query object based on the configured backend
+        sparse_query_obj = None
+        can_sparse_search = False
+        if self.enable_hybrid and query.query_str is not None:
+            if self.enable_native_bm25:
+                sparse_query_obj = self._make_bm25_document(query.query_str)
+                can_sparse_search = True
+            elif self._sparse_query_fn is not None:
+                sparse_indices, sparse_embedding = self._sparse_query_fn(
+                    [query.query_str],
+                )
+                sparse_query_obj = rest.SparseVector(
+                    indices=sparse_indices[0],
+                    values=sparse_embedding[0],
+                )
+                can_sparse_search = True
+
+        if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
+            and can_sparse_search
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = await self._aclient.query_batch_points(
@@ -1232,10 +1316,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         params=search_params,
                     ),
                     rest.QueryRequest(
-                        query=rest.SparseVector(
-                            indices=sparse_indices[0],
-                            values=sparse_embedding[0],
-                        ),
+                        query=sparse_query_obj,
                         using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
@@ -1261,22 +1342,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
         elif (
             query.mode == VectorStoreQueryMode.SPARSE
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
+            and can_sparse_search
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = await self._aclient.query_batch_points(
                 collection_name=self.collection_name,
                 requests=[
                     rest.QueryRequest(
-                        query=rest.SparseVector(
-                            indices=sparse_indices[0],
-                            values=sparse_embedding[0],
-                        ),
+                        query=sparse_query_obj,
                         using=self.sparse_vector_name,
                         limit=sparse_top_k,
                         filter=query_filter,
