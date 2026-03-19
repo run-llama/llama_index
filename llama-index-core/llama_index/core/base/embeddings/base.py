@@ -22,6 +22,7 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
 from llama_index.core.async_utils import run_jobs
+from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
 
 # TODO: change to numpy array
 Embedding = List[float]
@@ -102,6 +103,149 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         description="Rate limiter instance to throttle API calls.",
         exclude=True,
     )
+
+    @property
+    def supports_mixed_embedding(self) -> bool:
+        """
+        Whether this embedding model supports joint embedding of interleaved
+        text and image content (mixed multimodal embedding).
+        When True, nodes with mixed content will use embed().
+        """
+        return False
+
+    def _get_mixed_content_embedding(self, content: MixedEmbeddingContent) -> Embedding:
+        """
+        Embed a single mixed content (interleaved text / image / audio / video) input.
+
+        Subclasses that support mixed embedding should override this.
+        Default raises NotImplementedError.
+        """
+        raise NotImplementedError(
+            "This embedding model does not support mixed (interleaved) multimodal embedding."
+        )
+
+    def _get_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[Embedding]:
+        """
+        Embed a batch of mixed content inputs.
+
+        Subclasses can override to use a native batch API when available.
+        Default implementation calls _get_mixed_content_embedding for each item.
+        """
+        return [self._get_mixed_content_embedding(content) for content in contents]
+
+    async def _aget_mixed_content_embedding(
+        self, content: MixedEmbeddingContent
+    ) -> Embedding:
+        """
+        Async embed a single mixed content input.
+
+        Subclasses can override for true async implementation.
+        Default falls back to sync _get_mixed_content_embedding.
+        """
+        return self._get_mixed_content_embedding(content)
+
+    async def _aget_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[Embedding]:
+        """
+        Async embed a batch of mixed content inputs.
+
+        Subclasses can override to use a native batch API when available.
+        Default implementation gathers _aget_mixed_content_embedding per item.
+        """
+        return await asyncio.gather(
+            *[self._aget_mixed_content_embedding(c) for c in contents]
+        )
+
+    @dispatcher.span
+    def embed(self, content: MixedEmbeddingContent) -> Embedding:
+        """Embed interleaved text + image/content (single item)."""
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+        if self.rate_limiter is not None:
+            self.rate_limiter.acquire()
+        embedding = self._get_mixed_content_embedding(content)
+        dispatcher.event(EmbeddingEndEvent(chunks=[content], embeddings=[embedding]))
+        return embedding
+
+    @dispatcher.span
+    async def aembed(self, content: MixedEmbeddingContent) -> Embedding:
+        """Async embed interleaved text + image/content."""
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+        if self.rate_limiter is not None:
+            await self.rate_limiter.async_acquire()
+        embedding = await self._aget_mixed_content_embedding(content)
+        dispatcher.event(EmbeddingEndEvent(chunks=[content], embeddings=[embedding]))
+        return embedding
+
+    @dispatcher.span
+    def embed_batch(
+        self,
+        contents: List[MixedEmbeddingContent],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[Embedding]:
+        """Embed a list of mixed contents, with batching."""
+        result_embeddings: List[Embedding] = []
+        queue_with_progress = enumerate(
+            get_tqdm_iterable(
+                contents, show_progress, "Generating mixed content embeddings"
+            )
+        )
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        cur_batch: List[MixedEmbeddingContent] = []
+        for idx, content in queue_with_progress:
+            cur_batch.append(content)
+            if idx == len(contents) - 1 or len(cur_batch) == self.embed_batch_size:
+                dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+                if self.rate_limiter is not None:
+                    self.rate_limiter.acquire()
+                embeddings = self._get_mixed_content_embeddings(cur_batch)
+                result_embeddings.extend(embeddings)
+                dispatcher.event(
+                    EmbeddingEndEvent(chunks=cur_batch, embeddings=embeddings)
+                )
+                cur_batch = []
+        return result_embeddings
+
+    @dispatcher.span
+    async def aembed_batch(
+        self,
+        contents: List[MixedEmbeddingContent],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[Embedding]:
+        """Async embed a list of mixed contents, with batching."""
+        result_embeddings: List[Embedding] = []
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        cur_batch: List[MixedEmbeddingContent] = []
+        embeddings_coroutines: List[Coroutine] = []
+        batch_payloads: List[List[MixedEmbeddingContent]] = []
+        for idx, content in enumerate(contents):
+            cur_batch.append(content)
+            if idx == len(contents) - 1 or len(cur_batch) == self.embed_batch_size:
+                dispatcher.event(EmbeddingStartEvent(model_dict=model_dict))
+                if self.rate_limiter is not None:
+                    await self.rate_limiter.async_acquire()
+                embeddings_coroutines.append(
+                    self._aget_mixed_content_embeddings(cur_batch)
+                )
+                batch_payloads.append(cur_batch)
+                cur_batch = []
+        if embeddings_coroutines:
+            nested = await asyncio.gather(*embeddings_coroutines)
+            for embeddings in nested:
+                result_embeddings.extend(embeddings)
+            for batch, embeddings in zip(batch_payloads, nested):
+                dispatcher.event(EmbeddingEndEvent(chunks=batch, embeddings=embeddings))
+        return result_embeddings
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
@@ -628,25 +772,114 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
     def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
-        embeddings = self.get_text_embedding_batch(
-            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
-            **kwargs,
-        )
+        show_progress = kwargs.pop("show_progress", False)
+        mixed_indices: List[int] = []
+        text_indices: List[int] = []
+        for i, node in enumerate(nodes):
+            mixed_content = node.get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if mixed_content is not None and self.supports_mixed_embedding:
+                mixed_indices.append(i)
+            else:
+                text_indices.append(i)
 
-        for node, embedding in zip(nodes, embeddings):
-            node.embedding = embedding
+        # Batch text embeddings
+        text_nodes = [nodes[i] for i in text_indices]
+        if text_nodes:
+            text_embeddings = self.get_text_embedding_batch(
+                [
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                    for node in text_nodes
+                ],
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            text_embeddings = []
+
+        # Mixed embeddings (batched)
+        mixed_contents: List[MixedEmbeddingContent] = []
+        for i in mixed_indices:
+            content = nodes[i].get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if content is not None:
+                mixed_contents.append(content)
+        if mixed_contents:
+            mixed_embeddings = self.embed_batch(
+                mixed_contents,
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            mixed_embeddings = []
+
+        # Assign in original order
+        text_pos = 0
+        mixed_pos = 0
+        for i, node in enumerate(nodes):
+            if i in mixed_indices:
+                node.embedding = mixed_embeddings[mixed_pos]
+                mixed_pos += 1
+            else:
+                node.embedding = text_embeddings[text_pos]
+                text_pos += 1
 
         return nodes
 
     async def acall(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> Sequence[BaseNode]:
-        embeddings = await self.aget_text_embedding_batch(
-            [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
-            **kwargs,
-        )
+        show_progress = kwargs.pop("show_progress", False)
+        mixed_indices = []
+        text_indices = []
+        for i, node in enumerate(nodes):
+            mixed_content = node.get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if mixed_content is not None and self.supports_mixed_embedding:
+                mixed_indices.append(i)
+            else:
+                text_indices.append(i)
 
-        for node, embedding in zip(nodes, embeddings):
-            node.embedding = embedding
+        text_nodes = [nodes[i] for i in text_indices]
+        if text_nodes:
+            text_embeddings = await self.aget_text_embedding_batch(
+                [
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                    for node in text_nodes
+                ],
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            text_embeddings = []
+
+        mixed_contents = []
+        for i in mixed_indices:
+            content = nodes[i].get_mixed_embedding_content(
+                metadata_mode=MetadataMode.EMBED
+            )
+            if content is not None:
+                mixed_contents.append(content)
+        if mixed_contents:
+            mixed_embeddings = await self.aembed_batch(
+                mixed_contents,
+                show_progress=show_progress,
+                **kwargs,
+            )
+        else:
+            mixed_embeddings = []
+
+        text_pos = 0
+        mixed_pos = 0
+        for i, node in enumerate(nodes):
+            if i in mixed_indices:
+                node.embedding = mixed_embeddings[mixed_pos]
+                mixed_pos += 1
+            else:
+                node.embedding = text_embeddings[text_pos]
+                text_pos += 1
 
         return nodes
