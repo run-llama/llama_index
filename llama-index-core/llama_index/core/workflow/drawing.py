@@ -1,5 +1,5 @@
 from deprecated import deprecated
-from typing import Optional
+from typing import Optional, Type, Union
 
 from .workflow import Workflow
 from .events import StartEvent, StopEvent
@@ -11,7 +11,7 @@ from .utils import get_steps_from_class, get_steps_from_instance
     reason="Install `llama-index-utils-workflow` and use the import `from llama_index.utils.workflow` instead."
 )
 def draw_all_possible_flows(
-    workflow: Workflow,
+    workflow: Union[Type[Workflow], Workflow],
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
 ) -> None:

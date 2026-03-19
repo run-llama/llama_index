@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type, Union
 
 from llama_index.core.workflow.events import (
     StartEvent,
@@ -15,7 +15,7 @@ from llama_index.core.workflow.workflow import Workflow
 
 
 def draw_all_possible_flows(
-    workflow: Workflow,
+    workflow: Union[Type[Workflow], Workflow],
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
 ) -> None:
