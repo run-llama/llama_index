@@ -25,11 +25,32 @@ logger = logging.getLogger(__name__)
 
 class AutoMergingRetriever(BaseRetriever):
     """
-    This retriever will try to merge context into parent context.
+    AutoMergingRetriever merges context nodes intelligently.
 
-    The retriever first retrieves chunks from a vector store.
-    Then, it will try to merge the chunks into a single context.
+    This retriever retrieves chunks from a vector store and attempts
+    to merge them into parent nodes based on the ratio of child nodes
+    present. It helps reduce redundancy and prioritize relevant context
+    for downstream RAG (Retrieval-Augmented Generation) pipelines.
 
+    Key Features:
+    - Retrieves initial nodes via a VectorIndexRetriever.
+    - Fills in missing intermediate nodes to maintain context flow.
+    - Merges child nodes into parent nodes if enough children are present.
+    - Computes an averaged score for merged nodes to preserve ranking.
+    - Logs merge actions for transparency and debugging.
+    - Works in iterative passes until no further merges are needed.
+
+    Parameters:
+    - vector_retriever: VectorIndexRetriever instance for initial node retrieval.
+    - storage_context: StorageContext containing documents and nodes.
+    - simple_ratio_thresh: Threshold to decide whether to merge children into parent.
+    - verbose: Enable detailed logging to stdout.
+    - callback_manager: Optional callback manager for tracking operations.
+    - object_map / objects: Optional internal objects for retrieval context.
+
+    Usage:
+        retriever = AutoMergingRetriever(vector_retriever, storage_context)
+        results = retriever.retrieve(query_bundle)
     """
 
     def __init__(
