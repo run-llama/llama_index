@@ -84,7 +84,8 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
         connection: Optional[sqlite3.Connection] = None,
         **kwargs: Any,
     ) -> None:
-        """Init params.
+        """
+        Init params.
 
         Args:
             database_path: Path to the SQLite database file, or ":memory:" for in-memory.
@@ -92,6 +93,7 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
             embed_dim: Dimension of the embedding vectors.
             distance_metric: Distance metric to use. One of "cosine" or "l2".
             connection: Optional pre-existing sqlite3 connection.
+
         """
         super().__init__(
             stores_text=True,
@@ -397,9 +399,7 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
             node = metadata_dict_to_node(metadata=metadata, text=text)
             if embedding_bytes is not None:
                 num_floats = len(embedding_bytes) // 4
-                node.embedding = list(
-                    struct.unpack(f"{num_floats}f", embedding_bytes)
-                )
+                node.embedding = list(struct.unpack(f"{num_floats}f", embedding_bytes))
             nodes.append(node)
 
         return nodes
@@ -447,10 +447,9 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _matches_filters(
-        self, metadata: dict, filters: MetadataFilters
-    ) -> bool:
-        """Check if metadata matches the given filters.
+    def _matches_filters(self, metadata: dict, filters: MetadataFilters) -> bool:
+        """
+        Check if metadata matches the given filters.
 
         Uses SQL NULL semantics for NOT conditions: if a key is missing,
         the comparison is NULL and NOT(NULL) -> NULL -> excluded.
@@ -465,9 +464,7 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
                 if isinstance(f, MetadataFilters):
                     results.append(self._matches_filters(metadata, f))
                 elif isinstance(f, MetadataFilter):
-                    results.append(
-                        self._matches_single_filter_nullable(metadata, f)
-                    )
+                    results.append(self._matches_single_filter_nullable(metadata, f))
 
             # SQL AND with NULLs: False if any False, NULL if any None, else True
             combined = True
@@ -505,10 +502,9 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
             return None
         return self._matches_single_filter(metadata, f)
 
-    def _matches_single_filter(
-        self, metadata: dict, f: MetadataFilter
-    ) -> bool:
-        """Check if metadata matches a single filter.
+    def _matches_single_filter(self, metadata: dict, f: MetadataFilter) -> bool:
+        """
+        Check if metadata matches a single filter.
 
         Follows SQL NULL semantics: comparisons with a missing key return False
         (like SQL NULL != 'x' -> NULL -> falsy).
@@ -542,10 +538,7 @@ class SqliteVecVectorStore(BasePydanticVectorStore):
         elif f.operator == FilterOperator.TEXT_MATCH:
             return value is not None and f.value in value
         elif f.operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
-            return (
-                value is not None
-                and f.value.lower() in value.lower()
-            )
+            return value is not None and f.value.lower() in value.lower()
         elif f.operator == FilterOperator.CONTAINS:
             return isinstance(value, list) and f.value in value
         elif f.operator == FilterOperator.ANY:
