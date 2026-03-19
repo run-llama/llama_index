@@ -1,0 +1,17 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-embeddings-gpubridge"
+version = "0.1.0"
+description = "LlamaIndex GPU-Bridge embeddings integration"
+authors = ["GPU-Bridge <hello@gpubridge.io>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "llama_index"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = ">=0.10.1,<0.13"
+requests = ">=2.28.0"
