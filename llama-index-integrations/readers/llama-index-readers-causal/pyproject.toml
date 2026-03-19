@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-readers-causal"
+version = "0.1.0"
+description = "LlamaIndex reader for .causal knowledge graph files with embedded inference"
+authors = [{name = "David Tom Foss", email = "david@foss.com.de"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "DT-Foss"}]
+keywords = [
+    "llama-index",
+    "knowledge-graph",
+    "causal-inference",
+    "rag",
+    "zero-hallucination",
+]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "dotcausal>=0.3.0",
+]
+
+[project.urls]
+Homepage = "https://dotcausal.com"
+Repository = "https://github.com/DT-Foss/dotcausal"
+Documentation = "https://dotcausal.com/docs"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.causal"
+
+[tool.llamahub.class_authors]
+CausalReader = "DT-Foss"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
+python_version = "3.9"
