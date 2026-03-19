@@ -1,11 +1,15 @@
 import json
 import os
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 import warnings
 
 import aiohttp
 import requests
-from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.base.llms.types import (
+    MessageRole,
+    TextBlock,
+    ToolCallBlock,
+)
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import (
     ChatMessage,
@@ -15,7 +19,6 @@ from llama_index.core.llms import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
-    CustomLLM,
     LLMMetadata,
 )
 from llama_index.core.llms.callbacks import (
@@ -23,6 +26,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 
 from llama_index.core.callbacks import CallbackManager
 from llama_index.llms.cortex.utils import (
@@ -38,10 +42,14 @@ DEFAULT_MODEL = "llama3.2-1b"
 DEFAULT_TEMP = 0.0
 DEFAULT_TOP_P = 1.0
 
+# Models that support tool/function calling on Snowflake Cortex
+TOOL_CALLING_MODELS = {"claude-3-5-sonnet", "claude-3-7-sonnet"}
+
 # https://docs.snowflake.com/en/user-guide/snowflake-cortex/llm-functions#model-restrictions
 # https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-llm-rest-api
 model_specs = {
     "claude-3-5-sonnet": {"context_window": 200_000, "max_output": None},
+    "claude-3-7-sonnet": {"context_window": 200_000, "max_output": None},
     "llama4-maverick": {"context_window": 128_000, "max_output": None},
     "llama3.2-1b": {"context_window": 128_000, "max_output": None},
     "llama3.2-3b": {"context_window": 128_000, "max_output": None},
@@ -69,14 +77,9 @@ model_specs = {
 }
 
 
-class Cortex(CustomLLM):
+class Cortex(FunctionCallingLLM):
     """
     Cortex LLM.
-
-    This class provides an interface to Snowflake's Cortex LLM service.
-    HTTP errors from the API (including invalid model names) will raise
-    requests.exceptions.HTTPError for synchronous methods or
-    aiohttp.ClientResponseError for asynchronous methods.
 
     This class provides an interface to Snowflake's Cortex LLM service.
     HTTP errors from the API (including invalid model names) will raise
@@ -215,34 +218,129 @@ class Cortex(CustomLLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            is_function_calling_model=False,
+            is_function_calling_model=self.model in TOOL_CALLING_MODELS,
         )
-
-    @property
-    def snowflake_api_endpoint(self) -> str:
-        if is_spcs_environment():
-            return get_spcs_base_url()
-        else:
-            base_url = f"https://{self.account}.snowflakecomputing.com"
-        return base_url
-
-    @property
-    def cortex_complete_endpoint(self) -> str:
-        append = "/api/v2/cortex/inference:complete"
-        return self.snowflake_api_endpoint + append
 
     @property
     def snowflake_api_endpoint(self) -> str:
         if is_spcs_environment():
             return "https://" + get_spcs_base_url()
         else:
-            base_url = f"https://{self.account}.snowflakecomputing.com"
-        return base_url
+            return f"https://{self.account}.snowflakecomputing.com"
 
     @property
     def cortex_complete_endpoint(self) -> str:
-        append = "/api/v2/cortex/inference:complete"
-        return self.snowflake_api_endpoint + append
+        return self.snowflake_api_endpoint + "/api/v2/cortex/inference:complete"
+
+    # ------------------------------------------------------------------ #
+    # Tool / function calling support
+    # ------------------------------------------------------------------ #
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        # Convert LlamaIndex tools to Snowflake Cortex tool_spec format
+        tool_specs = []
+        if tools:
+            for tool in tools:
+                tool_specs.append(
+                    {
+                        "tool_spec": {
+                            "type": "generic",
+                            "name": tool.metadata.name,
+                            "description": tool.metadata.description or "",
+                            "input_schema": tool.metadata.get_parameters_dict(),
+                        }
+                    }
+                )
+
+        # Map tool_choice -- Snowflake requires object format
+        tool_choice_dict = {}
+        if tools or tool_required:
+            if tool_required:
+                tool_choice_dict["tool_choice"] = {"type": "any"}
+            else:
+                tool_choice_dict["tool_choice"] = {"type": "auto"}
+
+        return {
+            "messages": chat_history,
+            "tools": tool_specs,
+            **tool_choice_dict,
+            **kwargs,
+        }
+
+    def get_tool_calls_from_response(
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Extract tool calls from a chat response."""
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            argument_dict = (
+                json.loads(tool_call.tool_kwargs)
+                if isinstance(tool_call.tool_kwargs, str)
+                else tool_call.tool_kwargs
+            )
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
+
+    # ------------------------------------------------------------------ #
+    # Auth
+    # ------------------------------------------------------------------ #
+
+    def _generate_auth_header(self) -> str:
+        # private key file has to be checked 2nd to last,
+        # it can be set merely due to an env variable existing
+        if self.jwt_token:
+            return f"Bearer {self.jwt_token}"
+        elif self.session:
+            return f'Snowflake Token="{self.session.connection.rest.token}"'
+        elif self.private_key_file:
+            return f"Bearer {generate_sf_jwt(self.account, self.user, self.private_key_file)}"
+        else:
+            raise ValueError(
+                "llama-index Cortex LLM Error: No authentication method set."
+            )
+
+    # ------------------------------------------------------------------ #
+    # Payload builders
+    # ------------------------------------------------------------------ #
 
     def _make_completion_payload(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -254,7 +352,6 @@ class Cortex(CustomLLM):
         if not formatted:
             prompt = prompt.format(**kwargs)
         return {
-            "url": self.cortex_complete_endpoint,
             "url": self.cortex_complete_endpoint,
             "headers": {
                 "Authorization": self._generate_auth_header(),
@@ -270,13 +367,148 @@ class Cortex(CustomLLM):
             },
         }
 
+    def _serialize_message(self, message: ChatMessage) -> dict:
+        """
+        Serialize a ChatMessage for the Snowflake Cortex API.
+
+        Handles regular messages and tool result messages.
+        """
+        role = (
+            message.role.lower()
+            if hasattr(message.role, "lower")
+            else str(message.role).lower()
+        )
+
+        # Check for tool result messages (role="tool")
+        if role == "tool":
+            msg = {"role": "tool", "content": message.content or ""}
+            # tool_use_id may be in additional_kwargs
+            tool_call_id = message.additional_kwargs.get("tool_call_id")
+            if tool_call_id:
+                msg["tool_use_id"] = tool_call_id
+            return msg
+
+        # Check for assistant messages that contain tool calls (for multi-turn)
+        if role == "assistant":
+            tool_call_blocks = [
+                b for b in message.blocks if isinstance(b, ToolCallBlock)
+            ]
+            if tool_call_blocks:
+                content_list = []
+                for block in message.blocks:
+                    if isinstance(block, TextBlock) and block.text:
+                        content_list.append({"type": "text", "text": block.text})
+                    elif isinstance(block, ToolCallBlock):
+                        content_list.append(
+                            {
+                                "type": "tool_use",
+                                "id": block.tool_call_id or "",
+                                "name": block.tool_name,
+                                "input": block.tool_kwargs
+                                if isinstance(block.tool_kwargs, dict)
+                                else json.loads(block.tool_kwargs),
+                            }
+                        )
+                return {"role": "assistant", "content": content_list}
+
+        return {"role": role, "content": message.content or ""}
+
+    def _make_chat_payload(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> dict:
+        """Create a payload for a chat."""
+        temperature = kwargs.pop("temperature", DEFAULT_TEMP)
+        top_p = kwargs.pop("top_p", DEFAULT_TOP_P)
+        max_tokens = kwargs.pop("max_tokens", self.max_tokens)
+        tools = kwargs.pop("tools", None)
+        tool_choice = kwargs.pop("tool_choice", None)
+
+        payload = {
+            "model": self.model,
+            "messages": [self._serialize_message(m) for m in messages],
+            "top_p": top_p,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+
+        if tools:
+            payload["tools"] = tools
+        if tool_choice:
+            payload["tool_choice"] = tool_choice
+
+        return {
+            "url": self.cortex_complete_endpoint,
+            "headers": {
+                "Authorization": self._generate_auth_header(),
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/event-stream",
+            },
+            "json": payload,
+        }
+
+    # ------------------------------------------------------------------ #
+    # Response parsing
+    # ------------------------------------------------------------------ #
+
+    def _parse_sse_responses(self, responses: list) -> ChatResponse:
+        """
+        Parse collected SSE response chunks into a ChatResponse.
+
+        Handles both plain text responses and tool_use responses from the
+        Snowflake Cortex API.
+        """
+        # Collect all content from delta chunks
+        text_parts = []
+        tool_use_blocks = []
+
+        for r in responses:
+            delta = r.get("choices", [{}])[0].get("delta", {})
+
+            # Text content
+            content = delta.get("content", "")
+            if content:
+                text_parts.append(content)
+
+            # Tool use content -- Cortex returns tool calls in content_list
+            for item in delta.get("content_list", []):
+                if item.get("type") == "tool_use":
+                    tool_use_blocks.append(item)
+                elif item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+
+        # Build response blocks
+        blocks = []
+        full_text = "".join(text_parts)
+        if full_text:
+            blocks.append(TextBlock(text=full_text))
+
+        for tool_use in tool_use_blocks:
+            blocks.append(
+                ToolCallBlock(
+                    tool_call_id=tool_use.get("id"),
+                    tool_name=tool_use.get("name", ""),
+                    tool_kwargs=tool_use.get("input", {}),
+                )
+            )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                blocks=blocks,
+            ),
+            raw=responses[-1] if responses else None,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Completion methods
+    # ------------------------------------------------------------------ #
+
     def _complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         api_response = requests.post(
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
-        api_response.raise_for_status()
         api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
@@ -297,8 +529,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_completion_payload(prompt, formatted, **kwargs)
             )
-            await api_response.raise_for_status()
-            await api_response.raise_for_status()
+            api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
                 line = line.decode()
@@ -321,7 +552,6 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
-        api_response.raise_for_status()
         api_response.raise_for_status()
 
         def gen() -> CompletionResponseGen:
@@ -360,37 +590,7 @@ class Cortex(CustomLLM):
                             text=text, delta=line_delta, raw=line_json
                         )
 
-        async def gen() -> CompletionResponseAsyncGen:
-            async with aiohttp.ClientSession() as session:
-                api_response = await session.post(
-                    **self._make_completion_payload(prompt, formatted, **kwargs)
-                )
-                text = ""
-                async for line in api_response.content:
-                    line = line.decode()
-                    if line and (line != "\n") and line.startswith("data: "):
-                        line_json = json.loads(line[len("data: ") :].strip("\n"))
-                        line_delta = line_json["choices"][0]["delta"].get("content", "")
-                        text += line_delta
-                        yield CompletionResponse(
-                            text=text, delta=line_delta, raw=line_json
-                        )
-
         return gen()
-
-    def _generate_auth_header(self) -> str:
-        # private key file has to be checked 2nd to last,
-        # it can be set merely due to an env variable existing
-        if self.jwt_token:
-            return f"Bearer {self.jwt_token}"
-        elif self.session:
-            return f'Snowflake Token="{self.session.connection.rest.token}"'
-        elif self.private_key_file:
-            return f"Bearer {generate_sf_jwt(self.account, self.user, self.private_key_file)}"
-        else:
-            raise ValueError(
-                "llama-index Cortex LLM Error: No authentication method set."
-            )
 
     @llm_completion_callback()
     async def astream_complete(
@@ -398,52 +598,20 @@ class Cortex(CustomLLM):
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, formatted, **kwargs)
 
-    def _make_chat_payload(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> dict:
-        """Create a payload for a chat."""
-        temperature = kwargs.pop("temperature", DEFAULT_TEMP)
-        top_p = kwargs.pop("top_p", DEFAULT_TOP_P)
-        max_tokens = kwargs.pop("max_tokens", self.max_tokens)
-        jwt = self._generate_auth_header()
-        return {
-            "url": self.cortex_complete_endpoint,
-            "url": self.cortex_complete_endpoint,
-            "headers": {
-                "Authorization": self._generate_auth_header(),
-                "Content-Type": "application/json",
-                "Accept": "application/json, text/event-stream",
-            },
-            "json": {
-                "model": self.model,
-                "messages": [
-                    {"role": message.role.lower(), "content": message.content}
-                    for message in messages
-                ],
-                "top_p": top_p,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
-        }
+    # ------------------------------------------------------------------ #
+    # Chat methods
+    # ------------------------------------------------------------------ #
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
         api_response.raise_for_status()
-        api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
             if line:
                 responses.append(json.loads(line[len("data: ") :]))
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content="".join(
-                    r["choices"][0]["delta"].get("content", "") for r in responses
-                ),
-            ),
-        )
+        return self._parse_sse_responses(responses)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -456,21 +624,13 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
-            await api_response.raise_for_status()
-            await api_response.raise_for_status()
+            api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
                 line = line.decode()
                 if line and (line != "\n"):
                     responses.append(json.loads(line[len("data: ") :].strip("\n")))
-            return ChatResponse(
-                message=ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="".join(
-                        r["choices"][0]["delta"].get("content", "") for r in responses
-                    ),
-                ),
-            )
+            return self._parse_sse_responses(responses)
 
     @llm_chat_callback()
     async def achat(
@@ -484,7 +644,6 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
-        api_response.raise_for_status()
         api_response.raise_for_status()
 
         def gen() -> ChatResponseGen:
@@ -515,8 +674,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
-            await api_response.raise_for_status()
-            await api_response.raise_for_status()
+            api_response.raise_for_status()
             # buffer data
             lines = []
             async for line in api_response.content:
