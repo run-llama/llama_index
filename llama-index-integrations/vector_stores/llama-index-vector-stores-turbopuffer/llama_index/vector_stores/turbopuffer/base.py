@@ -38,7 +38,8 @@ DEFAULT_BATCH_SIZE = 100
 
 # Keys managed by the integration that must not be overwritten by user metadata.
 # text_key is dynamic so it's added at call sites via `_RESERVED_KEYS | {self.text_key}`.
-_RESERVED_KEYS = frozenset({"id", "vector", "$dist"})
+_RESERVED_KEYS = frozenset({"id", "vector"})
+_RESERVED_PREFIX = "$"
 _METADATA_PREFIX = "_meta_"
 
 # Mapping from llama_index FilterOperator values to turbopuffer operator strings.
@@ -195,7 +196,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
 
             row: dict[str, object] = {}
             for key, value in metadata.items():
-                if key in reserved:
+                if key in reserved or key.startswith(_RESERVED_PREFIX):
                     logger.warning(
                         "Metadata key %r conflicts with a reserved "
                         "turbopuffer column. Storing as %r.",
@@ -298,7 +299,7 @@ class TurbopufferVectorStore(BasePydanticVectorStore):
         reserved = _RESERVED_KEYS | {self.text_key}
         attributes: dict[str, object] = {}
         for k, v in row_dict.items():
-            if k in reserved:
+            if k in reserved or k.startswith(_RESERVED_PREFIX):
                 continue
             if k.startswith(_METADATA_PREFIX):
                 attributes[k[len(_METADATA_PREFIX) :]] = v
