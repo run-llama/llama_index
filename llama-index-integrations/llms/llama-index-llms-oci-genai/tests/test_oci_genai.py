@@ -212,6 +212,169 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     assert actual.message.content == expected.message.content
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_achat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test async chat (achat) call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):  # type: ignore[no-untyped-def]
+        response_text = "Async assistant reply."
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": response_text,
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": None,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-async-123",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": response_text}
+                                                            )
+                                                        ]
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-async-456",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    messages = [ChatMessage(role="user", content="User message")]
+    actual = await llm.achat(messages, temperature=0.2)
+    assert actual.message.content == "Async assistant reply."
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_acomplete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test async complete (acomplete) call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):  # type: ignore[no-untyped-def]
+        response_text = "Async completion text."
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": response_text,
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": None,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-acomplete-123",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": response_text}
+                                                            )
+                                                        ]
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-acomplete-456",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    actual = await llm.acomplete("Hello", temperature=0.2)
+    assert actual.text == "Async completion text."
+
+
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command-r-16k", "cohere.command-r-plus", "xai.grok-4"]
 )
@@ -496,3 +659,549 @@ def test_llm_multimodal_chat_with_image(
     actual = llm.chat(messages)
 
     assert actual.message.content == expected.message.content
+
+
+# --- Stream event helpers for stream_chat / astream_chat tests ---
+
+
+def _make_cohere_stream_events() -> list:
+    """Create mock stream events for Cohere provider."""
+    events_data = [
+        {"text": "Stream "},
+        {"text": "chunk "},
+        {"text": "response", "finishReason": "stop"},
+    ]
+    result = []
+    for data in events_data:
+        event = type("Event", (), {})()
+        event.data = json.dumps(data)
+        result.append(event)
+    return result
+
+
+def _make_meta_stream_events() -> list:
+    """Create mock stream events for Meta/XAI provider."""
+    events_data = [
+        {"message": {"content": [{"text": "Stream "}]}},
+        {"message": {"content": [{"text": "chunk "}]}},
+        {"message": {"content": [{"text": "response"}]}, "finishReason": "stop"},
+    ]
+    result = []
+    for data in events_data:
+        event = type("Event", (), {})()
+        event.data = json.dumps(data)
+        result.append(event)
+    return result
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+def test_llm_stream_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test sync stream_chat call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mock_events():
+        if provider == "CohereProvider":
+            return _make_cohere_stream_events()
+        else:
+            return _make_meta_stream_events()
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = mock_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="User message")]
+    chunks = list(llm.stream_chat(messages, temperature=0.2))
+
+    assert len(chunks) >= 1
+    # Final chunk has full accumulated content
+    final_content = chunks[-1].message.content or ""
+    assert "Stream" in final_content and "chunk" in final_content and "response" in final_content
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+def test_llm_stream_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test sync stream_complete call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mock_events():
+        if provider == "CohereProvider":
+            return _make_cohere_stream_events()
+        else:
+            return _make_meta_stream_events()
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = mock_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = list(llm.stream_complete("Hello", temperature=0.2))
+
+    assert len(chunks) >= 1
+    final_text = chunks[-1].text or ""
+    assert "Stream" in final_text and "chunk" in final_text and "response" in final_text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_astream_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test async astream_chat call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mock_events():
+        if provider == "CohereProvider":
+            return _make_cohere_stream_events()
+        else:
+            return _make_meta_stream_events()
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = mock_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="User message")]
+    chunks = []
+    astream = llm.astream_chat(messages, temperature=0.2)
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) >= 1
+    final_content = chunks[-1].message.content or ""
+    assert "Stream" in final_content and "chunk" in final_content and "response" in final_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_astream_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test async astream_complete call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mock_events():
+        if provider == "CohereProvider":
+            return _make_cohere_stream_events()
+        else:
+            return _make_meta_stream_events()
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = mock_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = []
+    astream = llm.astream_complete("Hello", temperature=0.2)
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) >= 1
+    final_text = chunks[-1].text or ""
+    assert "Stream" in final_text and "chunk" in final_text and "response" in final_text
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    [
+        "cohere.command-r-16k",
+        "cohere.command-r-plus",
+        "meta.llama-3-70b-instruct",
+        "xai.grok-3-mini",
+    ],
+)
+def test_llm_complete_with_models(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test sync complete call with various model IDs (uses chat API)."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_chat(*args, **kwargs):
+        response_text = "Completion output for model."
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": response_text,
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": None,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-complete",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": response_text}
+                                                            )
+                                                        ]
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-complete",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    output = llm.complete("Test prompt", temperature=0.2)
+    assert output.text == "Completion output for model."
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "xai.grok-4"],
+)
+async def test_llm_achat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test async chat (achat) with tools to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+    provider = llm._provider.__class__.__name__
+
+    def mock_tool_function(param1: str) -> str:
+        """Mock tool function for testing."""
+        return f"Result for {param1}"
+
+    mock_tool = FunctionTool.from_defaults(fn=mock_tool_function)
+    tools = [mock_tool]
+    messages = [ChatMessage(role="user", content="User message")]
+
+    def mocked_response(*args, **kwargs):
+        response_text = "Async tool reply."
+        tool_calls = []
+        if provider == "CohereProvider":
+            tool_calls = [
+                MockResponseDict(
+                    {"name": "mock_tool_function", "parameters": {"param1": "test"}}
+                )
+            ]
+        elif provider == "XAIProvider":
+            tool_calls = [
+                MockResponseDict(
+                    {
+                        "arguments": '{"param1": "test"}',
+                        "name": "mock_tool_function",
+                        "id": "call_async_123",
+                    }
+                )
+            ]
+
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": response_text,
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": tool_calls,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-async-tools",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": response_text}
+                                                            )
+                                                        ],
+                                                        "role": "ASSISTANT",
+                                                        "tool_calls": tool_calls,
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-async-tools-xai",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    actual = await llm.achat(messages, tools=tools)
+    assert actual.message.content == "Async tool reply."
+    if provider == "CohereProvider":
+        assert "tool_calls" in actual.message.additional_kwargs
+        assert len(actual.message.additional_kwargs["tool_calls"]) == 1
+        assert actual.message.additional_kwargs["tool_calls"][0]["name"] == "mock_tool_function"
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct", "xai.grok-4"],
+)
+def test_llm_chat_message_roles(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test chat with different message roles (system, user, assistant)."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):
+        response_text = "Response to multi-role conversation."
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": response_text,
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": None,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-multi-role",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": response_text}
+                                                            )
+                                                        ]
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-multi-role",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    messages = [
+        ChatMessage(role="system", content="You are a helpful assistant."),
+        ChatMessage(role="user", content="First user message"),
+        ChatMessage(role="assistant", content="Assistant reply"),
+        ChatMessage(role="user", content="Second user message"),
+    ]
+
+    actual = llm.chat(messages, temperature=0.2)
+    assert actual.message.content == "Response to multi-role conversation."
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_acomplete_temperature_and_max_tokens(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Test acomplete with custom temperature and max_tokens parameters."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "text": "Custom params response.",
+                                    "finish_reason": "stop",
+                                    "documents": [],
+                                    "citations": [],
+                                    "search_queries": [],
+                                    "is_search_required": False,
+                                    "tool_calls": None,
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-params",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+        else:
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "chat_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "message": MockResponseDict(
+                                                    {
+                                                        "content": [
+                                                            MockResponseDict(
+                                                                {"text": "Custom params response."}
+                                                            )
+                                                        ]
+                                                    }
+                                                ),
+                                                "finish_reason": "stop",
+                                            }
+                                        )
+                                    ],
+                                    "time_created": "2024-11-03T12:00:00Z",
+                                }
+                            ),
+                            "model_id": test_model_id,
+                            "model_version": "1.0",
+                        }
+                    ),
+                    "request_id": "req-params",
+                    "headers": {"content-length": "1234"},
+                }
+            )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    result = await llm.acomplete(
+        "Test prompt", temperature=0.9, max_tokens=100
+    )
+    assert result.text == "Custom params response."
