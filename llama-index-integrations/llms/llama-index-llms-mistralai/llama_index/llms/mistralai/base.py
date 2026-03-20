@@ -378,25 +378,30 @@ class MistralAI(FunctionCallingLLM):
         self, response: Union[str, List["ContentChunk"]]
     ) -> Tuple[str, str]:
         """Separate the thinking from the response."""
-        content = ""
         if isinstance(response, str):
-            content = response
+            # For raw text responses, use regex to split thinking tags
+            match = THINKING_REGEX.search(response)
+            if match:
+                return match.group(1), response.replace(match.group(0), "")
+
+            match = THINKING_START_REGEX.search(response)
+            if match:
+                return match.group(0), ""
+
+            return "", response
         else:
+            # For structured responses, separate ThinkChunk and TextChunk directly
+            thinking_text = ""
+            response_text = ""
             for chunk in response:
                 if isinstance(chunk, self._models.ThinkChunk):
                     for c in chunk.thinking:
                         if isinstance(c, self._models.TextChunk):
-                            content += c.text + "\n"
+                            thinking_text += c.text + "\n"
+                elif isinstance(chunk, self._models.TextChunk):
+                    response_text += chunk.text
 
-        match = THINKING_REGEX.search(content)
-        if match:
-            return match.group(1), content.replace(match.group(0), "")
-
-        match = THINKING_START_REGEX.search(content)
-        if match:
-            return match.group(0), ""
-
-        return "", content
+            return thinking_text.rstrip("\n"), response_text
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
