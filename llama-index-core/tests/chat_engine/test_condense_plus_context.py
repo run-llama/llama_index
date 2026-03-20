@@ -1,7 +1,6 @@
 import time
 
 import pytest
-
 from llama_index.core import MockEmbedding
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.chat_engine.condense_plus_context import (
@@ -142,3 +141,34 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_calls_llm_when_retriever_returns_zero_nodes():
+    """Regression test for #20894: astream_chat should call LLM with empty context,
+    not silently return 'Empty Response' when retriever returns 0 nodes."""
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    retriever = index.as_retriever(similarity_top_k=2)
+    engine = CondensePlusContextChatEngine.from_defaults(
+        retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+    response = await engine.astream_chat("Hello, can you help me?")
+    full_text = ""
+    async for token in response.async_response_gen():
+        full_text += token
+    assert full_text != "Empty Response"
+    assert SYSTEM_PROMPT in full_text
+    assert "Hello" in full_text or "help" in full_text
+
+
+def test_chat_calls_llm_when_retriever_returns_zero_nodes():
+    """Regression test for #20894: chat should call LLM with empty context,
+    not silently return 'Empty Response' when retriever returns 0 nodes."""
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    retriever = index.as_retriever(similarity_top_k=2)
+    engine = CondensePlusContextChatEngine.from_defaults(
+        retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+    response = engine.chat("Hello, can you help me?")
+    assert str(response) != "Empty Response"
+    assert SYSTEM_PROMPT in str(response)
