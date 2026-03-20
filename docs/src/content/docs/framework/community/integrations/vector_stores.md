@@ -51,6 +51,7 @@ as the storage backend for `VectorStoreIndex`.
 - Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](/python/examples/vector_stores/tablestoredemo). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
 - TiDB (`TiDBVectorStore`). [Quickstart](/python/examples/vector_stores/tidbvector). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- turbopuffer (`TurbopufferVectorStore`). [Quickstart](https://turbopuffer.com/docs)
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - VectorX DB (`VectorXVectorStore`). [Quickstart](https://docs.vectorxdb.ai/quickstart)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
@@ -902,6 +903,18 @@ from llama_index.vector_stores.upstash import UpstashVectorStore
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
 ```
 
+**turbopuffer**
+
+```python
+from turbopuffer import Turbopuffer
+from llama_index.vector_stores.turbopuffer import TurbopufferVectorStore
+
+tpuf = Turbopuffer(api_key="your-api-key", region="gcp-us-central1")
+ns = tpuf.namespace("my-namespace")
+
+vector_store = TurbopufferVectorStore(namespace=ns)
+```
+
 **VectorX DB**
 
 ```python
@@ -1250,6 +1263,7 @@ documents = reader.load_data(
 - [Tair](/python/examples/vector_stores/tairindexdemo)
 - [Tencent](/python/examples/vector_stores/tencentvectordbindexdemo)
 - [Timesacle](/python/examples/vector_stores/timescalevector)
+- [turbopuffer](/python/examples/vector_stores/turbopufferdemo)
 - [Upstash](/python/examples/vector_stores/upstashvectordemo)
 - [VectorX DB](/python/examples/vector_stores/vectorxdbdemo)
 - [Weaviate](/python/examples/vector_stores/weaviateindexdemo)

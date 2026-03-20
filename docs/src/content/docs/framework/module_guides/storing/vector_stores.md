@@ -62,6 +62,7 @@ We are actively adding more integrations and improving feature coverage for each
 | TencentVectorDB            | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
 | Timescale                  |                         | ✓                  |               | ✓      | ✓               | ✓                             |
 | Typesense                  | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
+| turbopuffer                | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
 | Upstash                    | cloud                   |                    |               |        | ✓               |                               |
 | VectorX DB                 | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Vearch                     | self-hosted             | ✓                  |               | ✓      | ✓               |                               |
@@ -123,6 +124,7 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [TiDB](/python/examples/vector_stores/tidbvector)
 - [Tencent](/python/examples/vector_stores/tencentvectordbindexdemo)
 - [Timesacle](/python/examples/vector_stores/timescalevector)
+- [turbopuffer](/python/examples/vector_stores/turbopufferdemo)
 - [Upstash](/python/examples/vector_stores/upstashvectordemo)
 - [VectorX DB](/python/examples/vector_stores/vectorxdbdemo)
 - [Vearch](/python/examples/vector_stores/vearchdemo)
