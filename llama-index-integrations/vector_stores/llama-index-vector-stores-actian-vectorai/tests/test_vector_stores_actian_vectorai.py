@@ -24,69 +24,98 @@ from actian_vectorai import Distance, VectorAIClient, VectorParams, AsyncVectorA
 
 VECTORAI_SERVER_URL = os.getenv("VECTORAI_SERVER_URL", "localhost:50051")
 
+EMBED_DIM = 128
+
 
 def get_mock_embedding() -> list[float]:
-    return [random.gauss(-1, 1) for _ in range(128)]
+    return [random.gauss(-1, 1) for _ in range(EMBED_DIM)]
 
 
 @contextmanager
-def _managed_vector_store(nodes_to_add: list[TextNode]) -> Iterator[ActianVectorAIVectorStore]:
+def _managed_vector_store(
+    nodes_to_add: list[TextNode],
+) -> Iterator[ActianVectorAIVectorStore]:
     collection_name = f"test_collection_{uuid.uuid4().hex}"
-    with ActianVectorAIVectorStore(VECTORAI_SERVER_URL, collection_name=collection_name) as vector_store:
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
         vector_store.add(nodes_to_add)
-        assert vector_store._client.points.count(collection_name) == len(nodes_to_add)
+        assert vector_store.client.points.count(collection_name) == len(nodes_to_add)
         try:
             yield vector_store
         finally:
-            if vector_store._client.collections.exists(collection_name):
-                vector_store._client.collections.delete(collection_name)
+            if vector_store.client.collections.exists(collection_name):
+                vector_store.client.collections.delete(collection_name)
 
 
 @contextmanager
 def _empty_vector_store() -> Iterator[ActianVectorAIVectorStore]:
     collection_name = f"test_collection_{uuid.uuid4().hex}"
-    with ActianVectorAIVectorStore(VECTORAI_SERVER_URL, collection_name=collection_name) as vector_store:
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
         try:
             yield vector_store
         finally:
-            if vector_store._client.collections.exists(collection_name):
-                vector_store._client.collections.delete(collection_name)
+            if vector_store.client.collections.exists(collection_name):
+                vector_store.client.collections.delete(collection_name)
+
 
 @asynccontextmanager
-async def _amanaged_vector_store(nodes_to_add: list[TextNode]) -> AsyncIterator[ActianVectorAIVectorStore]:
+async def _amanaged_vector_store(
+    nodes_to_add: list[TextNode],
+) -> AsyncIterator[ActianVectorAIVectorStore]:
     collection_name = f"test_collection_{uuid.uuid4().hex}"
-    async with ActianVectorAIVectorStore(VECTORAI_SERVER_URL, collection_name=collection_name) as vector_store:
+    async with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
         await vector_store.aadd(nodes_to_add)
-        assert await vector_store._async_client.points.count(collection_name) == len(nodes_to_add)
+        assert await vector_store.async_client.points.count(collection_name) == len(
+            nodes_to_add
+        )
         try:
             yield vector_store
         finally:
-            if await vector_store._async_client.collections.exists(collection_name):
-                await vector_store._async_client.collections.delete(collection_name)
+            if await vector_store.async_client.collections.exists(collection_name):
+                await vector_store.async_client.collections.delete(collection_name)
+
 
 @asynccontextmanager
 async def _aempty_vector_store() -> AsyncIterator[ActianVectorAIVectorStore]:
     collection_name = f"test_collection_{uuid.uuid4().hex}"
-    async with ActianVectorAIVectorStore(VECTORAI_SERVER_URL,collection_name=collection_name) as vector_store:
+    async with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
         try:
             yield vector_store
         finally:
-            if await vector_store._async_client.collections.exists(collection_name):
-                await vector_store._async_client.collections.delete(collection_name)
+            if await vector_store.async_client.collections.exists(collection_name):
+                await vector_store.async_client.collections.delete(collection_name)
+
 
 nodes = [
     TextNode(
         id_="c7ed938f-f8ef-4970-bf74-c240f33522f2",
         text="The 'uv' package manager provides a high-performance interface for Python dependency resolution.",
         embedding=get_mock_embedding(),
-        metadata={"category": "tools", "score": 0.1, "tag": "alpha_token", "optional": "x"},
+        metadata={
+            "category": "tools",
+            "score": 0.1,
+            "tag": "alpha_token",
+            "optional": "x",
+        },
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc_01")},
     ),
     TextNode(
         id_="0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
         text="PostgreSQL utilizes HugePages to reduce TLB miss overhead in high-concurrency environments.",
         embedding=get_mock_embedding(),
-        metadata={"category": "database", "score": 0.5, "tag": "beta_token", "optional": "x"},
+        metadata={
+            "category": "database",
+            "score": 0.5,
+            "tag": "beta_token",
+            "optional": "x",
+        },
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc_02")},
     ),
     TextNode(
@@ -100,7 +129,12 @@ nodes = [
         id_="cd617e5a-fb20-4f6e-a616-259a711268bb",
         text="NMC batteries offer higher energy density compared to LFP cells but require careful thermal management.",
         embedding=get_mock_embedding(),
-        metadata={"category": "energy", "score": 0.7, "tag": "unique_phrase_42", "optional": "y"},
+        metadata={
+            "category": "energy",
+            "score": 0.7,
+            "tag": "unique_phrase_42",
+            "optional": "y",
+        },
         relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="doc_03")},
     ),
     TextNode(
@@ -120,7 +154,7 @@ def test_class_name() -> None:
 def test_init_vector_store() -> None:
     with _empty_vector_store() as vector_store:
         assert vector_store.collection_name.startswith("test_collection_")
-        info = vector_store._client.health_check()
+        info = vector_store.client.health_check()
         assert info["title"] == "Actian VectorAI DB"
 
 
@@ -145,23 +179,23 @@ def test_basic_add_and_delete() -> None:
         collection_name = vector_store.collection_name
         vector_store.add(nodes)
 
-        assert vector_store._client.points.count(collection_name) == len(nodes)
+        assert vector_store.client.points.count(collection_name) == len(nodes)
 
         vector_store.delete("doc_03")
 
-        assert vector_store._client.points.count(collection_name) == len(nodes) - 2
+        assert vector_store.client.points.count(collection_name) == len(nodes) - 2
 
-        if vector_store._client.collections.exists(collection_name):
-            vector_store._client.collections.delete(collection_name)
+        if vector_store.client.collections.exists(collection_name):
+            vector_store.client.collections.delete(collection_name)
 
 
 def test_clear() -> None:
     with _managed_vector_store(nodes) as vector_store:
-        assert vector_store._client.collections.exists(vector_store.collection_name)
+        assert vector_store.client.collections.exists(vector_store.collection_name)
 
         vector_store.clear()
 
-        assert not vector_store._client.collections.exists(vector_store.collection_name)
+        assert not vector_store.client.collections.exists(vector_store.collection_name)
 
 
 def test_query_vector_search() -> None:
@@ -226,7 +260,11 @@ def test_delete_nodes_with_external_client() -> None:
         vector_store.add(nodes)
         vector_store.delete_nodes(
             filters=MetadataFilters(
-                filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai")]
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
             )
         )
 
@@ -286,7 +324,11 @@ def test_query_with_external_client() -> None:
     [
         (
             MetadataFilters(
-                filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai")]
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
             ),
             len(nodes) - 1,
         ),
@@ -294,7 +336,9 @@ def test_query_with_external_client() -> None:
             MetadataFilters(
                 filters=[
                     MetadataFilter(
-                        key="category", operator=FilterOperator.IN, value=["tools", "database"]
+                        key="category",
+                        operator=FilterOperator.IN,
+                        value=["tools", "database"],
                     )
                 ]
             ),
@@ -303,8 +347,12 @@ def test_query_with_external_client() -> None:
         (
             MetadataFilters(
                 filters=[
-                    MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai"),
-                    MetadataFilter(key="category", operator=FilterOperator.EQ, value="textile"),
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    ),
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="textile"
+                    ),
                 ],
                 condition=FilterCondition.OR,
             ),
@@ -313,8 +361,12 @@ def test_query_with_external_client() -> None:
         (
             MetadataFilters(
                 filters=[
-                    MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai"),
-                    MetadataFilter(key="ref_doc_id", operator=FilterOperator.EQ, value="doc_03"),
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    ),
+                    MetadataFilter(
+                        key="ref_doc_id", operator=FilterOperator.EQ, value="doc_03"
+                    ),
                 ],
                 condition=FilterCondition.AND,
             ),
@@ -323,8 +375,12 @@ def test_query_with_external_client() -> None:
         (
             MetadataFilters(
                 filters=[
-                    MetadataFilter(key="ref_doc_id", operator=FilterOperator.EQ, value="doc_03"),
-                    MetadataFilter(key="category", operator=FilterOperator.EQ, value="energy"),
+                    MetadataFilter(
+                        key="ref_doc_id", operator=FilterOperator.EQ, value="doc_03"
+                    ),
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="energy"
+                    ),
                 ],
                 condition=FilterCondition.NOT,
             ),
@@ -362,7 +418,7 @@ def test_delete_nodes_with_metadata_filters(
         vector_store.delete_nodes(filters=filters)
 
         assert (
-            vector_store._client.points.count(vector_store.collection_name)
+            vector_store.client.points.count(vector_store.collection_name)
             == expected_remaining_count
         )
 
@@ -402,7 +458,9 @@ def test_delete_nodes_with_each_supported_filter_operator(
             with pytest.raises(NotImplementedError):
                 vector_store.delete_nodes(
                     filters=MetadataFilters(
-                        filters=[MetadataFilter(key=key, operator=operator, value=value)]
+                        filters=[
+                            MetadataFilter(key=key, operator=operator, value=value)
+                        ]
                     )
                 )
         else:
@@ -413,7 +471,7 @@ def test_delete_nodes_with_each_supported_filter_operator(
             )
 
             assert (
-                vector_store._client.points.count(vector_store.collection_name)
+                vector_store.client.points.count(vector_store.collection_name)
                 == expected_remaining_count
             )
 
@@ -435,8 +493,9 @@ async def test_aadd() -> None:
         ids = await vector_store.aadd(nodes)
 
         assert ids == [node.node_id for node in nodes]
-        assert await vector_store._async_client.points.count(collection_name) == len(nodes)
-
+        assert await vector_store.async_client.points.count(collection_name) == len(
+            nodes
+        )
 
 
 @pytest.mark.asyncio
@@ -445,7 +504,10 @@ async def test_adelete() -> None:
         await vector_store.aadd(nodes)
         await vector_store.adelete("doc_03")
 
-        assert await vector_store._async_client.points.count(vector_store.collection_name) == len(nodes) - 2
+        assert (
+            await vector_store.async_client.points.count(vector_store.collection_name)
+            == len(nodes) - 2
+        )
 
 
 @pytest.mark.asyncio
@@ -455,18 +517,27 @@ async def test_adelete_nodes() -> None:
         await vector_store.aadd(nodes)
         await vector_store.adelete_nodes(
             filters=MetadataFilters(
-                filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai")]
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
             )
         )
 
-        assert await vector_store._async_client.points.count(vector_store.collection_name) == len(nodes) - 1
+        assert (
+            await vector_store.async_client.points.count(vector_store.collection_name)
+            == len(nodes) - 1
+        )
 
 
 @pytest.mark.asyncio
 async def test_aclear() -> None:
     async with _amanaged_vector_store(nodes) as vector_store:
         await vector_store.aclear()
-        assert not await vector_store._async_client.collections.exists(vector_store.collection_name)
+        assert not await vector_store.async_client.collections.exists(
+            vector_store.collection_name
+        )
 
 
 @pytest.mark.asyncio
@@ -495,6 +566,7 @@ async def test_aquery_vector_search() -> None:
         assert result.nodes[0].node_id == expected_node.node_id
         assert result.nodes[0].metadata == expected_node.metadata
 
+
 @pytest.mark.asyncio
 async def test_adelete_nodes_parallel() -> None:
     async with _amanaged_vector_store(nodes) as vector_store:
@@ -502,23 +574,39 @@ async def test_adelete_nodes_parallel() -> None:
         await asyncio.gather(
             vector_store.adelete_nodes(
                 filters=MetadataFilters(
-                    filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai")]
+                    filters=[
+                        MetadataFilter(
+                            key="category", operator=FilterOperator.EQ, value="ai"
+                        )
+                    ]
                 )
             ),
             vector_store.adelete_nodes(
                 filters=MetadataFilters(
-                    filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="energy")]
+                    filters=[
+                        MetadataFilter(
+                            key="category", operator=FilterOperator.EQ, value="energy"
+                        )
+                    ]
                 )
             ),
             vector_store.adelete_nodes(
                 filters=MetadataFilters(
-                    filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="tools")]
+                    filters=[
+                        MetadataFilter(
+                            key="category", operator=FilterOperator.EQ, value="tools"
+                        )
+                    ]
                 )
             ),
         )
 
         # After deleting "ai", "energy", and "tools" categories, only "database" and "textile" should remain
-        assert await vector_store._async_client.points.count(vector_store.collection_name) == 2
+        assert (
+            await vector_store.async_client.points.count(vector_store.collection_name)
+            == 2
+        )
+
 
 @pytest.mark.asyncio
 async def test_aadd_with_external_client() -> None:
@@ -528,7 +616,9 @@ async def test_aadd_with_external_client() -> None:
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
         await vector_store.aadd(nodes)
-        assert await async_client.points.count(vector_store.collection_name) == len(nodes)
+        assert await async_client.points.count(vector_store.collection_name) == len(
+            nodes
+        )
         await async_client.collections.delete(vector_store.collection_name)
 
 
@@ -542,7 +632,10 @@ async def test_adelete_with_external_client() -> None:
         await vector_store.aadd(nodes)
         await vector_store.adelete("doc_03")
 
-        assert await async_client.points.count(vector_store.collection_name) == len(nodes) - 2
+        assert (
+            await async_client.points.count(vector_store.collection_name)
+            == len(nodes) - 2
+        )
 
         await async_client.collections.delete(vector_store.collection_name)
 
@@ -557,11 +650,18 @@ async def test_adelete_nodes_with_external_client() -> None:
         await vector_store.aadd(nodes)
         await vector_store.adelete_nodes(
             filters=MetadataFilters(
-                filters=[MetadataFilter(key="category", operator=FilterOperator.EQ, value="ai")]
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
             )
         )
 
-        assert await async_client.points.count(vector_store.collection_name) == len(nodes) - 1
+        assert (
+            await async_client.points.count(vector_store.collection_name)
+            == len(nodes) - 1
+        )
 
         await async_client.collections.delete(vector_store.collection_name)
 
@@ -612,3 +712,119 @@ async def test_aquery_with_external_client() -> None:
         assert result.nodes[0].metadata == expected_node.metadata
 
         await async_client.collections.delete(vector_store.collection_name)
+
+
+def test_query_with_connect_and_close_client() -> None:
+
+    vector_store = ActianVectorAIVectorStore(
+        url=VECTORAI_SERVER_URL,
+        collection_name=f"test_collection_{uuid.uuid4().hex}",
+    )
+
+    vector_store.connect()
+
+    vector_store.add(nodes)
+
+    expected_node = nodes[2]
+    query = VectorStoreQuery(
+        query_embedding=expected_node.embedding,
+        similarity_top_k=3,
+        doc_ids=["doc_03"],
+        node_ids=[
+            "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+            "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
+        ],
+    )
+
+    result = vector_store.query(query)
+
+    assert result.ids is not None
+    assert result.nodes is not None
+    assert result.similarities is not None
+    assert len(result.ids) == 1
+    assert len(result.nodes) == 1
+    assert len(result.similarities) == 1
+    assert result.ids[0] == expected_node.node_id
+    assert result.nodes[0].node_id == expected_node.node_id
+    assert result.nodes[0].metadata == expected_node.metadata
+
+    vector_store.clear()
+    vector_store.close()
+
+
+@pytest.mark.asyncio
+async def test_aquery_with_connect_and_close_async_client() -> None:
+
+    vector_store = ActianVectorAIVectorStore(
+        url=VECTORAI_SERVER_URL,
+        collection_name=f"test_collection_{uuid.uuid4().hex}",
+    )
+    await vector_store.aconnect()
+
+    await vector_store.aadd(nodes)
+
+    expected_node = nodes[2]
+    query = VectorStoreQuery(
+        query_embedding=expected_node.embedding,
+        similarity_top_k=3,
+        doc_ids=["doc_03"],
+        node_ids=[
+            "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+            "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
+        ],
+    )
+
+    result = await vector_store.aquery(query)
+
+    assert result.ids is not None
+    assert result.nodes is not None
+    assert result.similarities is not None
+    assert len(result.ids) == 1
+    assert len(result.nodes) == 1
+    assert len(result.similarities) == 1
+    assert result.ids[0] == expected_node.node_id
+    assert result.nodes[0].node_id == expected_node.node_id
+    assert result.nodes[0].metadata == expected_node.metadata
+
+    await vector_store.aclear()
+    await vector_store.aclose()
+
+
+def test_query_with_existing_colletion() -> None:
+    collection_name = f"test_collection_{uuid.uuid4().hex}"
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL,
+        collection_name=collection_name,
+        collection_kwargs={
+            "vectors_config": VectorParams(size=EMBED_DIM, distance=Distance.Cosine)
+        },
+    ) as vector_store:
+        vector_store.add(nodes)
+
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
+        expected_node = nodes[2]
+        query = VectorStoreQuery(
+            query_embedding=expected_node.embedding,
+            similarity_top_k=3,
+            doc_ids=["doc_03"],
+            node_ids=[
+                "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+                "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
+            ],
+        )
+
+        result = vector_store.query(query)
+
+        assert result.ids is not None
+        assert result.nodes is not None
+        assert result.similarities is not None
+        assert len(result.ids) == 1
+        assert len(result.nodes) == 1
+        assert len(result.similarities) == 1
+        assert result.ids[0] == expected_node.node_id
+        assert result.nodes[0].node_id == expected_node.node_id
+        assert result.nodes[0].metadata == expected_node.metadata
+
+        vector_store.clear()
