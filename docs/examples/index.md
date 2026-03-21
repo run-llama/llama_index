@@ -61,6 +61,7 @@ Store and retrieve vector embeddings:
 - [Qdrant](/python/examples/vector_stores/qdrantindexdemo) - Qdrant vector database
 - [MongoDB Atlas](/python/examples/vector_stores/mongodbatlasvectorsearch) - MongoDB Atlas Vector Search
 - [Redis](/python/examples/vector_stores/redisindexdemo) - Redis vector database
+- [Valkey](/python/examples/vector_stores/valkeyindexdemo) - Valkey vector database
 - [Milvus](/python/examples/vector_stores/milvusindexdemo) - Milvus vector database
 - [Azure AI Search](/python/examples/vector_stores/azureaisearchindexdemo) - Azure AI Search vector database
 
