@@ -1205,3 +1205,341 @@ async def test_llm_acomplete_temperature_and_max_tokens(
         "Test prompt", temperature=0.9, max_tokens=100
     )
     assert result.text == "Custom params response."
+
+
+def _make_invalid_json_stream_event() -> list:
+    """Create one invalid JSON stream event."""
+    event = type("Event", (), {})()
+    event.data = "{not-valid-json"
+    return [event]
+
+
+def _make_mixed_stream_events_for_provider(provider: str) -> list:
+    """Create a valid-invalid-valid stream sequence."""
+    if provider == "CohereProvider":
+        valid_prefix = _make_cohere_stream_events()[:1]
+        valid_suffix = _make_cohere_stream_events()[1:]
+    else:
+        valid_prefix = _make_meta_stream_events()[:1]
+        valid_suffix = _make_meta_stream_events()[1:]
+    return valid_prefix + _make_invalid_json_stream_event() + valid_suffix
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+def test_llm_stream_chat_handles_invalid_json_event(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure stream_chat yields and continues when one event is invalid JSON."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+    provider = llm._provider.__class__.__name__
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = lambda: _make_mixed_stream_events_for_provider(provider)
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="User message")]
+    chunks = list(llm.stream_chat(messages))
+
+    assert len(chunks) >= 2
+    # Invalid JSON chunk should not break stream and should have empty delta.
+    assert any((chunk.delta or "") == "" for chunk in chunks)
+    final_content = chunks[-1].message.content or ""
+    assert "Stream" in final_content and "response" in final_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_astream_chat_handles_invalid_json_event(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure astream_chat yields and continues when one event is invalid JSON."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+    provider = llm._provider.__class__.__name__
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = lambda: _make_mixed_stream_events_for_provider(provider)
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="User message")]
+    chunks = []
+    astream = llm.astream_chat(messages)
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) >= 2
+    assert any((chunk.delta or "") == "" for chunk in chunks)
+    final_content = chunks[-1].message.content or ""
+    assert "Stream" in final_content and "response" in final_content
+
+
+def _make_cohere_tool_stream_events() -> list:
+    """Create Cohere-like streaming events with incremental tool calls."""
+    events_data = [
+        {
+            "text": "Calling ",
+            "toolCalls": [
+                {"name": "search_tool", "parameters": {"q": "llamaindex"}},
+            ],
+        },
+        {
+            "text": "tool",
+            "toolCalls": [
+                {"name": "search_tool", "parameters": {"q": "llamaindex docs"}},
+            ],
+            "finishReason": "tool_calls",
+        },
+    ]
+    result = []
+    for data in events_data:
+        event = type("Event", (), {})()
+        event.data = json.dumps(data)
+        result.append(event)
+    return result
+
+
+@pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
+def test_llm_stream_chat_accumulates_tool_calls(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure stream_chat accumulates and merges tool calls by tool name."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = _make_cohere_tool_stream_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="Find docs")]
+    chunks = list(llm.stream_chat(messages))
+    assert len(chunks) == 2
+
+    final_kwargs = chunks[-1].message.additional_kwargs
+    assert "tool_calls" in final_kwargs
+    assert len(final_kwargs["tool_calls"]) == 1
+    assert final_kwargs["tool_calls"][0]["name"] == "search_tool"
+    # Latest parameters should win due to merge/update behavior.
+    assert "llamaindex docs" in final_kwargs["tool_calls"][0]["input"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
+async def test_llm_astream_chat_accumulates_tool_calls(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure astream_chat accumulates and merges tool calls by tool name."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = _make_cohere_tool_stream_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="Find docs")]
+    chunks = []
+    astream = llm.astream_chat(messages)
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) == 2
+    final_kwargs = chunks[-1].message.additional_kwargs
+    assert "tool_calls" in final_kwargs
+    assert len(final_kwargs["tool_calls"]) == 1
+    assert final_kwargs["tool_calls"][0]["name"] == "search_tool"
+    assert "llamaindex docs" in final_kwargs["tool_calls"][0]["input"]
+
+
+@pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
+def test_llm_stream_complete_propagates_tool_calls(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure stream_complete keeps tool call metadata via conversion helpers."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = _make_cohere_tool_stream_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = list(llm.stream_complete("Find docs"))
+    assert len(chunks) == 2
+    final_kwargs = chunks[-1].additional_kwargs
+    assert "tool_calls" in final_kwargs
+    assert len(final_kwargs["tool_calls"]) == 1
+    assert final_kwargs["tool_calls"][0]["name"] == "search_tool"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
+async def test_llm_astream_complete_propagates_tool_calls(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure astream_complete keeps tool call metadata via conversion helpers."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = _make_cohere_tool_stream_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = []
+    astream = llm.astream_complete("Find docs")
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) == 2
+    final_kwargs = chunks[-1].additional_kwargs
+    assert "tool_calls" in final_kwargs
+    assert len(final_kwargs["tool_calls"]) == 1
+    assert final_kwargs["tool_calls"][0]["name"] == "search_tool"
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+def test_llm_stream_complete_handles_invalid_json_event(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure stream_complete continues when one stream event is invalid JSON."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+    provider = llm._provider.__class__.__name__
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = lambda: _make_mixed_stream_events_for_provider(provider)
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = list(llm.stream_complete("hello"))
+    assert len(chunks) >= 2
+    assert any((chunk.delta or "") == "" for chunk in chunks)
+    final_text = chunks[-1].text or ""
+    assert "Stream" in final_text and "response" in final_text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_model_id",
+    ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
+)
+async def test_llm_astream_complete_handles_invalid_json_event(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Ensure astream_complete continues when one stream event is invalid JSON."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+    provider = llm._provider.__class__.__name__
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = lambda: _make_mixed_stream_events_for_provider(provider)
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    chunks = []
+    astream = llm.astream_complete("hello")
+    agen = await astream if hasattr(astream, "__await__") else astream
+    async for chunk in agen:
+        chunks.append(chunk)
+
+    assert len(chunks) >= 2
+    assert any((chunk.delta or "") == "" for chunk in chunks)
+    final_text = chunks[-1].text or ""
+    assert "Stream" in final_text and "response" in final_text
+
+
+def _make_cohere_function_calls_events() -> list:
+    """Create stream events using functionCalls alias for tool events."""
+    events_data = [
+        {
+            "text": "Use ",
+            "functionCalls": [
+                {"name": "search_tool", "parameters": {"q": "alpha"}},
+            ],
+        },
+        {
+            "text": "alias",
+            "functionCalls": [
+                {"name": "search_tool", "parameters": {"q": "beta"}},
+            ],
+            "finishReason": "tool_calls",
+        },
+    ]
+    result = []
+    for data in events_data:
+        event = type("Event", (), {})()
+        event.data = json.dumps(data)
+        result.append(event)
+    return result
+
+
+@pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
+def test_llm_stream_chat_function_calls_alias(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Ensure stream_chat supports functionCalls key alias for tool calls."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_chat(*args, **kwargs):
+        mock_data = MagicMock()
+        mock_data.events = _make_cohere_function_calls_events
+        mock_response = MagicMock()
+        mock_response.data = mock_data
+        return mock_response
+
+    monkeypatch.setattr(llm._client, "chat", mocked_chat)
+
+    messages = [ChatMessage(role="user", content="Find docs")]
+    chunks = list(llm.stream_chat(messages))
+    assert len(chunks) == 2
+    final_kwargs = chunks[-1].message.additional_kwargs
+    assert "tool_calls" in final_kwargs
+    assert final_kwargs["tool_calls"][0]["name"] == "search_tool"
+    assert "beta" in final_kwargs["tool_calls"][0]["input"]

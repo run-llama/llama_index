@@ -290,13 +290,10 @@ class OCIGenAI(FunctionCallingLLM):
             tool_calls_accumulated = []
 
             for event in response.data.events():
-                content_delta = self._provider.chat_stream_to_text(
-                    json.loads(event.data)
-                )
-                content += content_delta
-
                 try:
                     event_data = json.loads(event.data)
+                    content_delta = self._provider.chat_stream_to_text(event_data)
+                    content += content_delta
 
                     tool_calls_data = None
                     for key in ["toolCalls", "tool_calls", "functionCalls"]:
@@ -337,6 +334,7 @@ class OCIGenAI(FunctionCallingLLM):
                     )
 
                 except json.JSONDecodeError:
+                    content_delta = ""
                     yield ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=content
@@ -347,6 +345,7 @@ class OCIGenAI(FunctionCallingLLM):
 
                 except Exception as e:
                     print(f"Error processing stream chunk: {e}")
+                    content_delta = ""
                     yield ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=content
