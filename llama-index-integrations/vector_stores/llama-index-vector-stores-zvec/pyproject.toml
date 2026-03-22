@@ -25,14 +25,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-zvec"
-version = "0.1.0"
+version = "0.2.1"
 description = "llama-index vector_stores zvec integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "zvec>=0.1.0,<2",
+    "zvec>=0.2.1",
     "dashtext==0.0.7",
     "llama-index-core>=0.13.0,<0.15",
 ]
