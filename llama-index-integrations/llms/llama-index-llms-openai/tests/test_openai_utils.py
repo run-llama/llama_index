@@ -1,7 +1,18 @@
 import json
+import logging
 from typing import List
 
 import pytest
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ImageBlock,
+    LogProb,
+    MessageRole,
+    TextBlock,
+    ToolCallBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_param import (
     ChatCompletionMessageParam,
@@ -13,16 +24,6 @@ from openai.types.chat.chat_completion_message_tool_call import (
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
 from openai.types.completion_choice import Logprobs
 
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ImageBlock,
-    LogProb,
-    MessageRole,
-    TextBlock,
-    ToolCallBlock,
-)
-from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
@@ -628,3 +629,67 @@ def test_gpt_5_4_pro_responses_api_only() -> None:
     assert is_json_schema_supported(model_name) is True, (
         f"{model_name} should support JSON schema"
     )
+
+
+# ---------------------------------------------------------------------------
+# Tests for OpenAI-compatible proxy / unknown model behaviour (issue #18691)
+# ---------------------------------------------------------------------------
+
+
+def test_openai_modelname_to_contextsize_unknown_model_returns_default(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Unknown models must not raise; they should log a warning and return the
+    default context window so OpenAI-compatible proxies work out of the box."""
+    from llama_index.llms.openai.utils import DEFAULT_CONTEXT_WINDOW
+
+    proxy_model = "us.meta.llama3-3-70b-instruct-v1:0"
+
+    with caplog.at_level(logging.WARNING, logger="llama_index.llms.openai.utils"):
+        result = openai_modelname_to_contextsize(proxy_model)
+
+    assert result == DEFAULT_CONTEXT_WINDOW
+    assert any(proxy_model in record.message for record in caplog.records), (
+        "Expected a warning mentioning the unknown model name"
+    )
+
+
+def test_openai_modelname_to_contextsize_litellm_proxy_model(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """LiteLLM-style model names (e.g. 'bedrock/anthropic.claude-3') should
+    return the default context size instead of raising."""
+    from llama_index.llms.openai.utils import DEFAULT_CONTEXT_WINDOW
+
+    litellm_model = "bedrock/anthropic.claude-3-sonnet-20240229-v1:0"
+
+    with caplog.at_level(logging.WARNING, logger="llama_index.llms.openai.utils"):
+        result = openai_modelname_to_contextsize(litellm_model)
+
+    assert result == DEFAULT_CONTEXT_WINDOW
+
+
+def test_openai_modelname_to_contextsize_discontinued_model_still_raises() -> None:
+    """Discontinued models must still raise so users get a clear message."""
+    with pytest.raises(ValueError, match="discontinued"):
+        openai_modelname_to_contextsize("code-davinci-002")
+
+
+def test_is_chat_model_unknown_model_returns_true() -> None:
+    """Unknown models should be treated as chat models (proxy-friendly default)."""
+    assert is_chat_model("some-custom-proxy-model") is True
+    assert is_chat_model("us.meta.llama3-3-70b-instruct-v1:0") is True
+
+
+def test_is_function_calling_model_unknown_model_returns_true() -> None:
+    """Unknown models already default to True; confirm this is still the case."""
+    assert is_function_calling_model("some-custom-proxy-model") is True
+
+
+def test_known_models_unaffected_by_proxy_fallback() -> None:
+    """Existing known-model lookups must still return the correct context size."""
+    assert openai_modelname_to_contextsize("gpt-4o") == 128000
+    assert openai_modelname_to_contextsize("gpt-4") == 8192
+    assert openai_modelname_to_contextsize("o1") == 200000
+    assert is_chat_model("gpt-4o") is True
+    assert is_chat_model("gpt-3.5-turbo") is True
