@@ -167,7 +167,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         """Persist the graph store to a file."""
         if fs is None:
             fs = fsspec.filesystem("file")
-        with fs.open(persist_path, "w") as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             f.write(self.graph.model_dump_json())
 
     @classmethod
