@@ -2,13 +2,7 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import openai
 from deprecated import deprecated
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -22,20 +16,26 @@ from tenacity import (
 from tenacity.stop import stop_base
 from tenacity.wait import wait_base
 
+import openai
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
+    AudioBlock,
     ChatMessage,
+    ContentBlock,
+    DocumentBlock,
     ImageBlock,
     LogProb,
     MessageRole,
     TextBlock,
-    AudioBlock,
-    DocumentBlock,
     ThinkingBlock,
     ToolCallBlock,
-    ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -75,14 +75,16 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
-    "gpt-5.4": 400000,
+    "gpt-5.4": 1050000,
+    "gpt-5.4-mini": 400000,
+    "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
     "gpt-5.2-pro": 400000,
     "gpt-5.2-pro-2025-12-11": 400000,
-    "gpt-5.4-pro": 400000,
+    "gpt-5.4-pro": 1050000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
