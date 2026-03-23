@@ -41,7 +41,7 @@ And that's it! Executions will get seamlessly piped to downstream service and yo
 
 ### OpenTelemetry
 
-[OpenTelemetry](https://openetelemetry.io) is a widely used open-source service for tracing and observability, with numerous backend integrations (such as Jaeger, Zipkin or Prometheus).
+[OpenTelemetry](https://opentelemetry.io) is a widely used open-source service for tracing and observability, with numerous backend integrations (such as Jaeger, Zipkin or Prometheus).
 
 Our OpenTelemetry integration traces all the events produced by pieces of LlamaIndex code, including LLMs, Agents, RAG pipeline components and many more: everything you would get out with LlamaIndex native instrumentation you can export in OpenTelemetry format!
 

@@ -454,3 +454,24 @@ def test_function_tool_output_document_and_nodes():
     tool = FunctionTool.from_defaults(get_nodes)
     assert "Hello" * 1024 in tool.call().content
     assert "World" * 1024 in tool.call().content
+
+
+def test_function_tool_field_default() -> None:
+    """Test that Field(default=...) defaults are respected in FunctionTool."""
+
+    def get_weather(
+        location: Optional[str] = Field(default="Berlin"),
+    ) -> str:
+        """Useful for getting the weather for a given location."""
+        if location == "Berlin":
+            return "nice weather in Berlin"
+        return f"weather in {location}"
+
+    tool = FunctionTool.from_defaults(get_weather)
+    # Calling without args should use the Field default "Berlin"
+    result = tool.call()
+    assert result.content == "nice weather in Berlin"
+
+    # Calling with an explicit arg should override the default
+    result = tool.call(location="Munich")
+    assert result.content == "weather in Munich"

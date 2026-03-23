@@ -18,7 +18,6 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.llms.openai.base import OpenAI, Tokenizer
-from transformers import AutoTokenizer
 
 
 class OpenAILike(OpenAI):
@@ -122,6 +121,18 @@ class OpenAILike(OpenAI):
         ),
     )
 
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        if isinstance(self.tokenizer, str):
+            try:
+                import transformers  # noqa: F401
+            except ImportError:
+                raise ImportError(
+                    "The `transformers` package is required when passing a string "
+                    "tokenizer name. Install it with: "
+                    "`pip install llama-index-llms-openai-like[transformers]`"
+                )
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
@@ -135,6 +146,8 @@ class OpenAILike(OpenAI):
     @property
     def _tokenizer(self) -> Optional[Tokenizer]:
         if isinstance(self.tokenizer, str):
+            from transformers import AutoTokenizer
+
             return AutoTokenizer.from_pretrained(self.tokenizer)
         return self.tokenizer
 

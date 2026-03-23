@@ -118,10 +118,25 @@ To enable streaming, you simply need to call the `stream_chat` endpoint instead 
 !!! warning
 This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent!
 
+**Synchronous (`stream_chat`):**
+
 ```python
 chat_engine = index.as_chat_engine()
 streaming_response = chat_engine.stream_chat("Tell me a joke.")
+
 for token in streaming_response.response_gen:
+    print(token, end="")
+```
+
+**Asynchronous (`astream_chat`):**
+
+When using async frameworks (like FastAPI), use astream_chat. Note that you must await the call and iterate over the provided async streaming interface (e.g., async_response_gen() or achat_stream).
+
+```python
+chat_engine = index.as_chat_engine()
+streaming_response = await chat_engine.astream_chat("Tell me a joke.")
+
+async for token in streaming_response.async_response_gen():
     print(token, end="")
 ```
 

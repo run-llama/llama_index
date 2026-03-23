@@ -6,35 +6,36 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
-    Literal,
     Union,
 )
-from typing_extensions import TypedDict
+
+from botocore.exceptions import ClientError
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    CachePoint,
+    ChatMessage,
+    ChatResponse,
+    ContentBlock,
+    DocumentBlock,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
+)
 from tenacity import (
     before_sleep_log,
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    MessageRole,
-    ImageBlock,
-    TextBlock,
-    ContentBlock,
-    AudioBlock,
-    DocumentBlock,
-    CachePoint,
-    ThinkingBlock,
-    ToolCallBlock,
-)
-
+from typing_extensions import NotRequired, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ BEDROCK_MODELS = {
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
+    "amazon.nova-2-lite-v1:0": 1000000,
+    "amazon.nova-2-pro-preview-20251202-v1:0": 1000000,
     "amazon.titan-text-express-v1": 8192,
     "amazon.titan-text-lite-v1": 4096,
     "amazon.titan-text-premier-v1:0": 3072,
@@ -63,8 +66,10 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -102,6 +107,8 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -112,8 +119,10 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-sonnet-4-6",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
@@ -135,6 +144,8 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -145,8 +156,10 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-sonnet-4-6",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
@@ -166,8 +179,10 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-sonnet-4-6",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
@@ -176,14 +191,23 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
 )
 
 BEDROCK_REASONING_MODELS = (
+    "amazon.nova-2-lite-v1:0",
+    "amazon.nova-2-pro-preview-20251202-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "anthropic.claude-opus-4-20250514-v1:0",
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
+    "anthropic.claude-opus-4-6-v1",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "anthropic.claude-sonnet-4-6",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
+)
+
+BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
+    "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-sonnet-4-6",
 )
 
 
@@ -222,6 +246,10 @@ def is_bedrock_prompt_caching_supported_model(model_name: str) -> bool:
     return get_model_name(model_name) in BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS
 
 
+def is_bedrock_adaptive_thinking_supported_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS
+
+
 def bedrock_modelname_to_context_size(model_name: str) -> int:
     translated_model_name = get_model_name(model_name)
 
@@ -250,6 +278,32 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+BEDROCK_DOC_MIMETYPE_TO_FORMAT = {
+    "application/pdf": "pdf",
+    "text/csv": "csv",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/html": "html",
+    "text/plain": "txt",
+    "text/markdown": "md",
+}
+
+
+def _get_bedrock_doc_format(mimetype: Optional[str]) -> str:
+    """Map a document mimetype to a Bedrock Converse document format."""
+    if mimetype and mimetype in BEDROCK_DOC_MIMETYPE_TO_FORMAT:
+        return BEDROCK_DOC_MIMETYPE_TO_FORMAT[mimetype]
+    if mimetype:
+        logger.warning(
+            f"Unsupported document mimetype for Bedrock Converse: {mimetype}. "
+            f"Supported types: {', '.join(BEDROCK_DOC_MIMETYPE_TO_FORMAT.keys())}. "
+            "Falling back to 'txt'."
+        )
+    return "txt"
+
+
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
@@ -261,6 +315,12 @@ def _content_block_to_bedrock_format(
             "text": block.text,
         }
     elif isinstance(block, ThinkingBlock):
+        if role != MessageRole.ASSISTANT:
+            logger.warning(
+                "Bedrock Converse API only supports reasoning content for assistant messages."
+            )
+            return {"text": block.content}
+
         if block.content:
             thinking_data = {
                 "reasoningContent": {"reasoningText": {"text": block.content}}
@@ -284,9 +344,10 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        # NOTE: At the time of writing, "txt" format works for all file types
-        # The API then infers the format from the file type based on the bytes
-        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+        doc_format = _get_bedrock_doc_format(block.document_mimetype)
+        return {
+            "document": {"format": doc_format, "name": title, "source": {"bytes": data}}
+        }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -523,7 +584,10 @@ def tools_to_converse_tools(
         converse_tools.append({"cachePoint": {"type": "default"}})
 
     if tool_choice:
-        tool_choice = tool_choice
+        if isinstance(tool_choice, str):
+            tool_choice = {"tool": {"name": tool_choice}}
+        else:
+            tool_choice = tool_choice
     elif supports_forced_tool_calls and tool_required:
         tool_choice = {"any": {}}
     else:
@@ -566,9 +630,36 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
+        retry=(
+            retry_if_exception_type(
+                (
+                    client.exceptions.ThrottlingException,
+                    client.exceptions.InternalServerException,
+                    client.exceptions.ServiceUnavailableException,
+                    client.exceptions.ModelTimeoutException,
+                )
+            )
+        ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+RETRYABLE_ERROR_CODES = frozenset(
+    {
+        "ThrottlingException",
+        "InternalServerException",
+        "ServiceUnavailableException",
+        "ModelTimeoutException",
+    }
+)
+
+
+def _is_retryable_client_error(exception: BaseException) -> bool:
+    """Check if an exception is a retryable ClientError from botocore."""
+    if isinstance(exception, ClientError):
+        error_code = exception.response.get("Error", {}).get("Code", "")
+        return error_code in RETRYABLE_ERROR_CODES
+    return False
 
 
 def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
@@ -588,9 +679,7 @@ def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type()
-        ),  # TODO: Add throttling exception in async version
+        retry=retry_if_exception(_is_retryable_client_error),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -826,5 +915,5 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
 
 class ThinkingDict(TypedDict):
-    type: Literal["enabled"]
-    budget_tokens: int
+    type: Literal["enabled", "adaptive"]
+    budget_tokens: NotRequired[int]

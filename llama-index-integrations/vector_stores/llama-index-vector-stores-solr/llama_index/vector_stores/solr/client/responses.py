@@ -41,7 +41,7 @@ class SolrResponseHeader(BaseModel):
     """Echoes the request parameters corresponding to the response."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
-        extra="allow",  # allow extra fields, for forward-compatability
+        extra="allow",  # allow extra fields, for forward-compatibility
         populate_by_name=True,  # allow both name and alias forms when building
     )
 
@@ -77,7 +77,7 @@ class SolrSelectResponseBody(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         alias_generator=alias_generators.to_camel,  # generate camelCase aliases
-        extra="allow",  # allow extra fields, for forward-compatability
+        extra="allow",  # allow extra fields, for forward-compatibility
         populate_by_name=True,  # allow both name and alias forms when building
     )
 
@@ -105,7 +105,7 @@ class SolrSelectResponse(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         alias_generator=alias_generators.to_camel,  # generate camelCase aliases
-        extra="allow",  # allow extra fields, for forward-compatability
+        extra="allow",  # allow extra fields, for forward-compatibility
         populate_by_name=True,  # allow both name and alias forms when building
     )
 
@@ -164,7 +164,7 @@ class SolrUpdateResponse(BaseModel):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         alias_generator=alias_generators.to_camel,  # generate camelCase aliases
-        extra="allow",  # allow extra fields, for forward-compatability
+        extra="allow",  # allow extra fields, for forward-compatibility
         populate_by_name=True,  # allow both name and alias forms when building
     )
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Type, Union
 from unittest import mock
 import os
+import time
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -11,6 +12,7 @@ from llama_index.core.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
+    aretry_on_exceptions_with_backoff,
     _get_colored_text,
     get_cache_dir,
     get_color_mapping,
@@ -155,6 +157,33 @@ async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     with pytest.raises(TypeError):
         result = await async_fn_with_exception(TypeError, 2)
     assert call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_aretry_does_not_call_time_sleep(monkeypatch):
+    def _fail_sleep(_):
+        raise AssertionError(
+            "time.sleep() should not be called in aretry_on_exceptions_with_backoff"
+        )
+
+    monkeypatch.setattr(time, "sleep", _fail_sleep)
+
+    attempts = {"n": 0}
+
+    async def flaky():
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("transient")
+        return "ok"
+
+    out = await aretry_on_exceptions_with_backoff(
+        flaky,
+        errors_to_retry=[ErrorToRetry(RuntimeError)],
+        max_tries=2,
+        min_backoff_secs=0.01,
+        max_backoff_secs=0.01,
+    )
+    assert out == "ok"
 
 
 def test_retry_on_conditional_exceptions() -> None:

@@ -55,6 +55,7 @@ class BaseToolSpec:
         func = getattr(self, fn_name)
         name = fn_name
         docstring = func.__doc__ or ""
+
         description = f"{name}{signature(func)}\n{docstring}"
         fn_schema = self.get_fn_schema_from_fn_name(
             fn_name, spec_functions=spec_functions

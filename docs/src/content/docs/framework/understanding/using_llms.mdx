@@ -53,7 +53,29 @@ messages = [
 chat_response = llm.chat(messages)
 ```
 
-`stream_chat` and `astream_chat` are also available.
+For streaming responses (where tokens are yielded as they are generated), `stream_chat` and `astream_chat` are available.
+
+**Synchronous (`stream_chat`):**
+
+Use this in standard Python scripts or notebooks where blocking operations are acceptable. It returns a generator directly.
+
+```python
+stream_response = llm.stream_chat(messages)
+
+for token in stream_response:
+    print(token.delta, end="", flush=True)
+```
+
+**Asynchronous (`astream_chat`):**
+
+When using async frameworks (like FastAPI), remember to `await` the method call and iterate over the returned async stream.
+
+```python
+stream_response = await llm.astream_chat(messages)
+
+async for token in stream_response:
+    print(token.delta, end="", flush=True)
+```
 
 ## Specifying models
 

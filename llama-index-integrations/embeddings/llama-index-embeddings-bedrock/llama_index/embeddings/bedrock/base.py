@@ -147,6 +147,12 @@ class BedrockEmbedding(BaseEmbedding):
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ):
+        if "model" in kwargs:
+            raise ValueError(
+                "The 'model' parameter is not supported. "
+                "Please use 'model_name' instead to specify the Bedrock model ID."
+            )
+
         additional_kwargs = additional_kwargs or {}
 
         session_kwargs = {

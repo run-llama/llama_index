@@ -328,7 +328,7 @@ async def aretry_on_exceptions_with_backoff(
             check_fn = error_checks.get(e.__class__)
             if check_fn and not check_fn(e):
                 raise
-            time.sleep(backoff_secs)
+            await asyncio.sleep(backoff_secs)
             backoff_secs = min(backoff_secs * 2, max_backoff_secs)
 
 
@@ -646,12 +646,6 @@ def resolve_binary(
 
     """
     if raw_bytes is not None:
-        # check if raw_bytes is base64 encoded
-        try:
-            decoded_bytes = base64.b64decode(raw_bytes)
-        except Exception:
-            decoded_bytes = raw_bytes
-
         try:
             # Check if raw_bytes is already base64 encoded.
             # b64decode() can succeed on random binary data, so we

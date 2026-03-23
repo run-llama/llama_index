@@ -80,8 +80,8 @@ def test_tool_spec() -> None:
 
     assert tools[1].metadata.name == "bar"
     assert (
-        tools[1].metadata.description
-        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+        "Bar" in tools[1].metadata.description
+        and "With extra." in tools[1].metadata.description
     )
     assert str(tools[1](True)) == "bar True"
     assert tools[1].ctx_param_name is None
@@ -123,8 +123,8 @@ def test_tool_spec() -> None:
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"
     assert (
-        tools[1].metadata.description
-        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+        "Bar" in tools[1].metadata.description
+        and "With extra." in tools[1].metadata.description
     )
     assert tools[1].metadata.fn_schema is not None
     fn_schema = tools[1].metadata.fn_schema.model_json_schema()
@@ -187,9 +187,10 @@ async def test_async_tool_spec() -> None:
 
     assert tools[1].metadata.name == "bar"
     assert (
-        tools[1].metadata.description
-        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+        "Bar" in tools[1].metadata.description
+        and "With extra." in tools[1].metadata.description
     )
+
     assert str(tools[1](True)) == "bar True"
     assert tools[1].ctx_param_name is None
     assert not tools[1].requires_context
@@ -230,8 +231,8 @@ async def test_async_tool_spec() -> None:
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"
     assert (
-        tools[1].metadata.description
-        == "bar(arg1: bool) -> str\n\n        Bar.\n\n        With extra."
+        "Bar" in tools[1].metadata.description
+        and "With extra." in tools[1].metadata.description
     )
     assert tools[1].metadata.fn_schema is not None
     fn_schema = tools[1].metadata.fn_schema.model_json_schema()

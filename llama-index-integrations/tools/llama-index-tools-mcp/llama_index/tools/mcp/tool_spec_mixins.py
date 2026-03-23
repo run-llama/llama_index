@@ -74,6 +74,8 @@ class TypeResolutionMixin:
         """Resolve a single option in a union type."""
         if "$ref" in option:
             return self._resolve_reference(option, defs)
+        if "enum" in option:
+            return Literal[tuple(option["enum"])]
         if option.get("type") == "null":
             return type(None)
         return self._resolve_basic_type(option, defs)

@@ -40,7 +40,6 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.core.base.llms.types import ContentBlock, TextBlock
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.utils import get_template_vars, format_string
 from llama_index.core.types import BaseOutputParser
@@ -233,7 +232,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         template_vars = []
         for message_template in message_templates:
-            template_vars.extend(get_template_vars(message_template.content or ""))
+            template_vars.extend(message_template.get_template_vars())
 
         super().__init__(
             message_templates=message_templates,
@@ -293,25 +292,12 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         for message_template in self.message_templates:
             # Handle messages with multiple blocks
             if message_template.blocks:
-                formatted_blocks: List[ContentBlock] = []
-                for block in message_template.blocks:
-                    if isinstance(block, TextBlock):
-                        template_vars = get_template_vars(block.text)
-                        relevant_kwargs = {
-                            k: v
-                            for k, v in mapped_all_kwargs.items()
-                            if k in template_vars
-                        }
-                        formatted_text = format_string(block.text, **relevant_kwargs)
-                        formatted_blocks.append(TextBlock(text=formatted_text))
-                    else:
-                        # For non-text blocks (like images), keep them as is
-                        # TODO: can images be formatted as variables?
-                        formatted_blocks.append(block)
-
-                message = message_template.model_copy()
-                message.blocks = formatted_blocks
-                messages.append(message)
+                template_vars = message_template.get_template_vars()
+                relevant_kwargs = {
+                    k: v for k, v in mapped_all_kwargs.items() if k in template_vars
+                }
+                formatted_message = message_template.format_vars(**relevant_kwargs)
+                messages.append(formatted_message)
             else:
                 # Handle empty messages (if any)
                 messages.append(message_template.model_copy())

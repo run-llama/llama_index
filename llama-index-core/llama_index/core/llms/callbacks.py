@@ -72,6 +72,9 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
+
                 try:
                     f_return_val = await f(_self, messages, **kwargs)
                 except BaseException as e:
@@ -171,6 +174,9 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
+
                 try:
                     f_return_val = f(_self, messages, **kwargs)
                 except BaseException as e:
@@ -333,6 +339,9 @@ def llm_completion_callback() -> Callable:
                     },
                 )
 
+                if _self.rate_limiter is not None:
+                    await _self.rate_limiter.async_acquire()
+
                 try:
                     f_return_val = await f(_self, *args, **kwargs)
                 except BaseException as e:
@@ -431,6 +440,9 @@ def llm_completion_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
+                if _self.rate_limiter is not None:
+                    _self.rate_limiter.acquire()
+
                 try:
                     f_return_val = f(_self, *args, **kwargs)
                 except BaseException as e:

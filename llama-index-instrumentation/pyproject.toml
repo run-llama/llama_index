@@ -7,12 +7,12 @@ dev = ["pytest>=8.4.0", "pytest-asyncio>=1.0.0", "pytest-cov>=6.1.1"]
 
 [project]
 name = "llama-index-instrumentation"
-version = "0.4.2"
+version = "0.5.0"
 description = "Instrumentation and Observability for LlamaIndex"
 license = "MIT"
 readme = "README.md"
 authors = [{name = "Massimiliano Pippi", email = "mpippi@gmail.com"}]
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.10, <4.0"
 dependencies = ["deprecated>=1.2.18", "pydantic>=2.11.5"]
 
 [project.scripts]

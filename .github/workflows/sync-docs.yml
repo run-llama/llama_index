@@ -1,0 +1,83 @@
+name: Sync Docs to Developer Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+
+  # Allow manual trigger (with option to skip API docs for faster iteration)
+  workflow_dispatch:
+    inputs:
+      skip_api_docs:
+        description: "Skip API docs build (faster, only syncs markdown)"
+        type: boolean
+        default: false
+      skip_examples:
+        description: "Skip examples conversion (faster, only syncs framework docs)"
+        type: boolean
+        default: false
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo (llama_index)
+        uses: actions/checkout@v6
+
+      # Fetch the base commit so git diff works for incremental example conversion
+      - name: Fetch base commit for diff
+        if: github.event_name == 'push'
+        run: git fetch --depth=1 origin ${{ github.event.before }}
+
+      - name: Checkout docs repo (developer hub)
+        uses: actions/checkout@v6
+        with:
+          repository: run-llama/developers
+          token: ${{ secrets.DEVELOPER_HUB_TOKEN }}
+          path: developer-hub
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Sync docs
+        run: |
+          ARGS="developer-hub"
+          if [ "${{ inputs.skip_api_docs }}" = "true" ]; then
+            ARGS="$ARGS --skip-api-docs"
+          fi
+          if [ "${{ inputs.skip_examples }}" = "true" ]; then
+            ARGS="$ARGS --skip-examples"
+          fi
+          # On push events, pass the before SHA for incremental example conversion.
+          # On manual dispatch, omit --since so all examples are reconverted.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="$ARGS --since=${{ github.event.before }}"
+          fi
+          ./scripts/sync-docs-to-developer-hub.sh $ARGS
+
+      - name: Commit and push
+        working-directory: developer-hub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage first, then check for changes
+          git add src/content/docs/python/framework/
+          git add src/content/docs/python/examples/
+          git add api-reference/python/framework/
+
+          if git diff --staged --quiet; then
+            echo "No docs changes to sync."
+            exit 0
+          fi
+
+          SOURCE_SHA="${GITHUB_SHA::8}"
+          git commit -m "sync: python docs from run-llama/llama_index@${SOURCE_SHA}"
+          git push

@@ -3,6 +3,7 @@ from typing import List, Sequence, Optional, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.prompts import CONTEXT_REACT_CHAT_SYSTEM_HEADER
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -59,6 +60,9 @@ class ReActAgent(BaseWorkflowAgent):
             )
         elif not self.formatter.context and self.system_prompt:
             self.formatter.context = self.system_prompt
+
+        if self.formatter.context and "{context}" not in self.formatter.system_header:
+            self.formatter.system_header = CONTEXT_REACT_CHAT_SYSTEM_HEADER
 
         return self
 
@@ -158,7 +162,32 @@ class ReActAgent(BaseWorkflowAgent):
         # Parse reasoning step and check if done
         message_content = last_chat_response.message.content
         if not message_content:
-            raise ValueError("Got empty message")
+            error_msg = (
+                "FAILURE: Your previous response was empty.\n"
+                "You must output a thought and an action/answer.\n\n"
+                "Please follow this structure exactly:\n"
+                "Thought: <what you are thinking>\n"
+                "Action: <tool_name>\n"
+                "Action Input: <json_params>\n\n"
+                "OR:\n\n"
+                "Thought: <what you are thinking>\n"
+                "Answer: <your final response to the user>"
+            )
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+
+            return AgentOutput(
+                response=last_chat_response.message,
+                raw=raw,
+                current_agent_name=self.name,
+                retry_messages=[
+                    last_chat_response.message,
+                    ChatMessage(role="user", content=error_msg),
+                ],
+            )
 
         try:
             reasoning_step = output_parser.parse(message_content, is_streaming=False)

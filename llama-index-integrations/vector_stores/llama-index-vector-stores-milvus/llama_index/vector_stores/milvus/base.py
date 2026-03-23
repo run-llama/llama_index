@@ -41,7 +41,6 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from pymilvus import (
-    Collection,
     CollectionSchema,
     MilvusClient,
     AsyncMilvusClient,
@@ -191,7 +190,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   These weights are used to adjust the importance of the dense and sparse components of the embeddings
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
-
+        use_asyc_client (bool, optional): Whether or not to set the async client. Setting this to `True` outside of asynchronous environments will cause errors.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -250,10 +249,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
     index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS
     scalar_field_names: Optional[List[str]]
     scalar_field_types: Optional[List[DataType]]
+    use_async_client: bool = True
 
     _milvusclient: MilvusClient = PrivateAttr()
-    _async_milvusclient: AsyncMilvusClient = PrivateAttr()
-    _collection: Any = PrivateAttr()
+    _async_milvusclient: Optional[AsyncMilvusClient] = PrivateAttr()
+    _collection_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -283,6 +283,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields: Optional[List[str]] = None,
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
+        use_async_client: bool = True,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -310,6 +311,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             index_management=index_management,
             scalar_field_names=scalar_field_names,
             scalar_field_types=scalar_field_types,
+            use_async_client=use_async_client,
         )
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
@@ -321,23 +323,25 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # As of writing, milvus sets alias internally in the async client.
         # This will cause an error if not removed.
         kwargs.pop("alias", None)
-
-        self._async_milvusclient = AsyncMilvusClient(
-            uri=uri,
-            token=token,
-            **kwargs,  # pass additional arguments such as server_pem_path
-        )
+        if use_async_client:
+            self._async_milvusclient = AsyncMilvusClient(
+                uri=uri,
+                token=token,
+                **kwargs,  # pass additional arguments such as server_pem_path
+            )
+        else:
+            self._async_milvusclient = None
 
         # Delete previous collection if overwriting
         if overwrite and collection_name in self.client.list_collections():
             self.client.drop_collection(collection_name)
 
-        # Get the collection
+        # Check if the collection exists
         if collection_name in self.client.list_collections():
-            self._collection = Collection(collection_name, using=self.client._using)
+            self._collection_initialized = True
             self._create_index_if_required()
         else:
-            self._collection = None
+            self._collection_initialized = False
 
         # Set default args
         self.similarity_metric = similarity_metrics_map.get(
@@ -356,14 +360,19 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 logger.warning(
                     "Sparse embedding function is not provided, using default."
                 )
+                collection_info = (
+                    self.client.describe_collection(collection_name)
+                    if self._collection_initialized
+                    else None
+                )
                 self.sparse_embedding_function = get_default_sparse_embedding_function(
                     input_field_names=self.text_key,
                     output_field_names=self.sparse_embedding_field,
-                    collection=self._collection,
+                    collection_info=collection_info,
                 )
 
         # Create the collection & index if it does not exist
-        if self._collection is None:
+        if not self._collection_initialized:
             # Prepare schema
             schema = self.client.create_schema(auto_id=False, enable_dynamic_field=True)
             schema = self._add_fields_to_schema(schema)  # add fields
@@ -388,16 +397,22 @@ class MilvusVectorStore(BasePydanticVectorStore):
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"
             )
-            self._collection = Collection(collection_name, using=self.client._using)
+            self._collection_initialized = True
 
         # Set properties
         if collection_properties:
             if self.client.get_load_state(collection_name) == LoadState.Loaded:
-                self._collection.release()
-                self._collection.set_properties(properties=collection_properties)
-                self._collection.load()
+                self.client.release_collection(collection_name)
+                self.client.alter_collection_properties(
+                    collection_name=collection_name,
+                    properties=collection_properties,
+                )
+                self.client.load_collection(collection_name)
             else:
-                self._collection.set_properties(properties=collection_properties)
+                self.client.alter_collection_properties(
+                    collection_name=collection_name,
+                    properties=collection_properties,
+                )
 
         logger.debug(
             f"Successfully set properties for collection: {self.collection_name}"
@@ -414,7 +429,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return self._milvusclient
 
     @property
-    def aclient(self) -> AsyncMilvusClient:
+    def aclient(self) -> Optional[AsyncMilvusClient]:
         """Get async client."""
         return self._async_milvusclient
 
@@ -491,6 +506,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous version of the add method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         insert_list = []
         insert_ids = []
 
@@ -579,6 +597,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Asynchronous version of the delete method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
         if isinstance(ref_doc_id, list):
@@ -644,6 +665,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         """Asynchronous version of the delete_nodes method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
         if node_ids:
@@ -670,6 +694,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     async def aclear(self) -> None:
         """Asynchronous version of the clear method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         await self.aclient.drop_collection(self.collection_name)
 
     def get_nodes(
@@ -741,6 +768,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **kwargs,
     ) -> List[BaseNode]:
         """Asynchronous version of the get_nodes method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         if node_ids is None and filters is None:
             raise ValueError("Either node_ids or filters must be provided.")
 
@@ -848,6 +878,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         """Asynchronous version of the query method."""
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         if query.mode == VectorStoreQueryMode.DEFAULT:
             pass
         elif query.mode in [
@@ -970,6 +1003,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous default search.
         """
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         res = await self.aclient.search(
             collection_name=self.collection_name,
             data=[query.query_embedding],
@@ -1057,6 +1093,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
@@ -1150,6 +1189,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous sparse search.
         """
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         search_params = {"params": {"drop_ratio_search": 0.2}}
         if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
             sparse_emb = self.sparse_embedding_function.encode_queries(
@@ -1253,6 +1295,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous hybrid search.
         """
+        assert self._async_milvusclient is not None, (
+            "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
+        )
         if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
             sparse_emb = (
                 await self.sparse_embedding_function.async_encode_queries(

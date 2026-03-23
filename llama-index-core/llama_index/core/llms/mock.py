@@ -1,6 +1,5 @@
 from typing import (
     Any,
-    Optional,
     Sequence,
     List,
     Literal,
@@ -56,10 +55,12 @@ if TYPE_CHECKING:
 
 class MockLLM(CustomLLM):
     max_tokens: Optional[int]
+    is_chat_model: Optional[bool] = False
 
     def __init__(
         self,
         max_tokens: Optional[int] = None,
+        is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[MessagesToPromptType] = None,
@@ -74,6 +75,7 @@ class MockLLM(CustomLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
+        self.is_chat_model = is_chat_model
 
     @classmethod
     def class_name(cls) -> str:
@@ -81,7 +83,9 @@ class MockLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(num_output=self.max_tokens or -1)
+        return LLMMetadata(
+            num_output=self.max_tokens or -1, is_chat_model=self.is_chat_model
+        )
 
     def _generate_text(self, length: int) -> str:
         return " ".join(["text" for _ in range(length)])

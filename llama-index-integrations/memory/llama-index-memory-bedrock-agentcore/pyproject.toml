@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-memory-bedrock-agentcore"
-version = "0.1.1"
+version = "0.1.2"
 description = "llama-index memory bedrock agentcore integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = "<4.0,>=3.9"

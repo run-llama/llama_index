@@ -141,6 +141,30 @@ class BaseSpanHandler(BaseModel, Generic[T]):
             with self.lock:
                 del self.open_spans[id_]
 
+    def capture_propagation_context(self) -> Dict[str, Any]:
+        """
+        Capture trace propagation context for serialization across process boundaries.
+
+        Returns a dict that can be serialized and passed to restore_propagation_context()
+        in another process to re-establish trace continuity.
+        """
+        return {}
+
+    def restore_propagation_context(self, context: Dict[str, Any]) -> None:
+        """
+        Restore trace propagation context received from another process.
+
+        Should be called BEFORE span_enter so that new spans parent correctly.
+        """
+
+    def close(self) -> None:
+        """
+        Optional cleanup hook called during dispatcher shutdown.
+
+        Subclasses can override to flush buffers, release resources, etc.
+        Default is a no-op.
+        """
+
     @abstractmethod
     def new_span(
         self,

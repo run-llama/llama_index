@@ -116,6 +116,57 @@ def retry_calculator_agent():
     )
 
 
+@pytest.fixture()
+def retry_empty_calculator_agent():
+    return ReActAgent(
+        name="calculator",
+        description="Performs basic arithmetic operations",
+        system_prompt="You are a calculator assistant.",
+        tools=[
+            FunctionTool.from_defaults(fn=add),
+            FunctionTool.from_defaults(fn=subtract),
+        ],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="",
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 7, "b": 23}\n',
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=r"Thought: The result is 30\nAnswer: The sum is 30",
+                    ),
+                ]
+            )
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_empty_calculator_agent(retry_empty_calculator_agent):
+    """Test agent for empty messages"""
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = retry_empty_calculator_agent.run(
+        user_msg="Can you add 7 and 23?", memory=memory
+    )
+    contains_error_message = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentInput):
+            if "FAILURE: Your previous response was empty" in event.input[-1].content:
+                contains_error_message = True
+
+    assert contains_error_message
+
+    response = await handler
+
+    assert "30" in str(response.response)
+
+
 @pytest.mark.asyncio
 async def test_single_function_agent(function_agent):
     """Test single agent with state management."""
@@ -435,3 +486,21 @@ async def test_function_agent_with_context_and_chat_message():
     response_str = str(response)
     assert "Can you help me with a calculation?" in response_str
     assert "It's one plus one." in response_str
+
+
+@pytest.mark.asyncio
+async def test_run_id_passthrough(function_agent: FunctionAgent) -> None:
+    """Test that run_id kwarg is forwarded to the WorkflowHandler."""
+    custom_run_id = "test-run-id-12345"
+    handler = function_agent.run(user_msg="hello", run_id=custom_run_id)
+    assert handler.run_id == custom_run_id
+    handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_run_id_default(function_agent: FunctionAgent) -> None:
+    """Test that omitting run_id still generates one automatically."""
+    handler = function_agent.run(user_msg="hello")
+    assert handler.run_id is not None
+    assert isinstance(handler.run_id, str)
+    handler.cancel()
