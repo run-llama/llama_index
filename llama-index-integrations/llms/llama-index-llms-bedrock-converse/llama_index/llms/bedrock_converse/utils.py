@@ -584,7 +584,10 @@ def tools_to_converse_tools(
         converse_tools.append({"cachePoint": {"type": "default"}})
 
     if tool_choice:
-        tool_choice = tool_choice
+        if isinstance(tool_choice, str):
+            tool_choice = {"tool": {"name": tool_choice}}
+        else:
+            tool_choice = tool_choice
     elif supports_forced_tool_calls and tool_required:
         tool_choice = {"any": {}}
     else:
