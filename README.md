@@ -51,7 +51,7 @@ from llama_index.llms.openai import OpenAI
 - **Extract** — Structured data extraction from documents. [Docs](https://developers.llamaindex.ai/python/cloud/llamaextract/)
 - **Index** — Ingest, index, and RAG pipelines. [Docs](https://developers.llamaindex.ai/python/cloud/llamacloud/) · [Web UI](https://cloud.llamaindex.ai/)
 - **Split** - Split large documents into subcategories. [Docs](https://developers.llamaindex.ai/python/cloud/split/getting_started/)
-- **Agents** - Builde end-to-end document agents with `Workflows` and Agent Builder. [Docs](https://developers.llamaindex.ai/python/llamaagents/overview/)
+- **Agents** - Build end-to-end document agents with `Workflows` and Agent Builder. [Docs](https://developers.llamaindex.ai/python/llamaagents/overview/)
 
 ### Important Links
 

@@ -414,7 +414,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
-                    self._vector_store.delete(node_id)
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -438,7 +437,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
-                    self._vector_store.delete(node_id)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""
