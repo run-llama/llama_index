@@ -270,7 +270,7 @@ class MediaWikiReader(BasePydanticReader):
                     "title": title,
                     "url": url,
                     "last_modified": last_modified,
-                    "pageid": page.revision,
+                    "pageid": page.pageid,
                     "namespace": page.namespace,
                 }
 
@@ -283,7 +283,7 @@ class MediaWikiReader(BasePydanticReader):
 
         """
         try:
-            result = self.site.get(
+            result = self.site.post(
                 "parse",
                 page=page_title,
                 prop="text",
