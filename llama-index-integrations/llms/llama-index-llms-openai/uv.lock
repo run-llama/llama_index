@@ -1582,7 +1582,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.7.0"
+version = "0.7.3"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
