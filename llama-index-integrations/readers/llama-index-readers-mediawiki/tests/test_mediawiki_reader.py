@@ -236,12 +236,12 @@ class TestGetAllPages:
         page_ns0 = MagicMock()
         page_ns0.name = "Main Page"
         page_ns0.revision = True
-        page_ns0.last_rev_time = (2024, 1, 1, 0, 0, 0, 0, 0, 0)
+        page_ns0.touched = (2024, 1, 1, 0, 0, 0, 0, 0, 0)
 
         page_ns4 = MagicMock()
         page_ns4.name = "Project:About"
         page_ns4.revision = True
-        page_ns4.last_rev_time = (2024, 2, 1, 0, 0, 0, 0, 0, 0)
+        page_ns4.touched = (2024, 2, 1, 0, 0, 0, 0, 0, 0)
 
         mock_site.allpages.side_effect = [[page_ns0], [page_ns4]]
         mock_site_cls.return_value = mock_site
@@ -268,7 +268,7 @@ class TestGetAllPages:
         page = MagicMock()
         page.name = "Test"
         page.revision = True
-        page.last_rev_time = (2024, 6, 1, 0, 0, 0, 0, 0, 0)
+        page.touched = (2024, 6, 1, 0, 0, 0, 0, 0, 0)
         mock_site.allpages.return_value = [page]
         mock_site_cls.return_value = mock_site
 
