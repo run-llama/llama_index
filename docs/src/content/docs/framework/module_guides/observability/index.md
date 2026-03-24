@@ -704,6 +704,116 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### Respan
+
+[Respan](https://respan.ai) is an LLM engineering platform for observability, evaluation, and prompt management. With the Respan integration, you can trace your LlamaIndex workflows — all internal steps including embedding, retrieval, and synthesis are auto-instrumented and can be inspected in the Respan dashboard.
+
+#### Usage Pattern
+
+Install the required packages:
+
+```bash
+pip install llama-index respan-ai openinference-instrumentation-llama-index python-dotenv
+```
+
+Sign up at [platform.respan.ai](https://platform.respan.ai), generate an API key, and set your environment variables:
+
+```bash
+export RESPAN_API_KEY="YOUR_RESPAN_API_KEY"
+export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
+```
+
+Initialize Respan with the LlamaIndex instrumentor and run your application as usual:
+
+```python
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from respan import Respan
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+from llama_index.core import VectorStoreIndex, Document
+
+# Initialize Respan with LlamaIndex instrumentation
+respan = Respan(instrumentations=[LlamaIndexInstrumentor()])
+
+# Create a simple index from documents
+documents = [
+    Document(text="Respan is an LLM engineering platform for observability."),
+    Document(text="LlamaIndex helps you build RAG applications."),
+]
+index = VectorStoreIndex.from_documents(documents)
+
+# Query the index
+query_engine = index.as_query_engine()
+response = query_engine.query("What is Respan?")
+print(response)
+respan.flush()
+```
+
+You can add structure to your traces using the `@workflow` and `@task` decorators, and override attributes per-request using `propagate_attributes`:
+
+```python
+from respan import Respan, workflow, task, propagate_attributes
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+from llama_index.core import VectorStoreIndex, Document
+
+respan = Respan(instrumentations=[LlamaIndexInstrumentor()])
+
+
+@task(name="build_index")
+def build_index(texts: list[str]):
+    documents = [Document(text=t) for t in texts]
+    return VectorStoreIndex.from_documents(documents)
+
+
+@task(name="query_index")
+def query_index(index, question: str) -> str:
+    engine = index.as_query_engine()
+    return str(engine.query(question))
+
+
+@workflow(name="rag_pipeline")
+def pipeline(user_id: str, texts: list[str], question: str):
+    with propagate_attributes(
+        customer_identifier=user_id,
+        metadata={"plan": "pro"},
+    ):
+        index = build_index(texts)
+        answer = query_index(index, question)
+        print(answer)
+
+
+pipeline(
+    user_id="user_123",
+    texts=["Respan provides LLM observability.", "LlamaIndex enables RAG."],
+    question="What does Respan do?",
+)
+respan.flush()
+```
+
+Respan also provides an [AI gateway](https://respan.ai/docs/integrations/llama-index) that lets you route LLM calls through an OpenAI-compatible endpoint. You can use it with LlamaIndex by pointing the `api_base` to Respan:
+
+```python
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(
+    model="gpt-4o",
+    api_key=os.getenv("RESPAN_API_KEY"),
+    api_base="https://api.respan.ai/api",
+)
+
+response = llm.complete("What is LlamaIndex?")
+print(response)
+```
+
+#### Guides
+
+- [Respan LlamaIndex Tracing Docs](https://respan.ai/docs/integrations-v2/agent-frameworks/llamaindex)
+- [Respan LlamaIndex Gateway Docs](https://respan.ai/docs/integrations/llama-index)
+- [Trace and Evaluate a RAG Pipeline](https://respan.ai/docs/documentation/resources/cookbooks/trace-rag-pipeline)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
