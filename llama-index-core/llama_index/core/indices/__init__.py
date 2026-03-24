@@ -21,6 +21,7 @@ from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
 from llama_index.core.indices.knowledge_graph import (
+    GPTKnowledgeGraphIndex,
     KnowledgeGraphIndex,
 )
 from llama_index.core.indices.list import GPTListIndex, ListIndex, SummaryIndex

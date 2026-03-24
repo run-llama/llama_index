@@ -8,8 +8,11 @@ from llama_index.core.indices.knowledge_graph.retrievers import (
     KnowledgeGraphRAGRetriever,
 )
 
+GPTKnowledgeGraphIndex = KnowledgeGraphIndex
+
 __all__ = [
     "KnowledgeGraphIndex",
     "KGTableRetriever",
     "KnowledgeGraphRAGRetriever",
+    "GPTKnowledgeGraphIndex",
 ]
