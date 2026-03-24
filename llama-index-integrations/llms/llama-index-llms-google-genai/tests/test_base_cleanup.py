@@ -1,8 +1,12 @@
 from types import SimpleNamespace
 import pytest
+from unittest.mock import MagicMock, AsyncMock
+from pydantic import BaseModel
+from llama_index.core.prompts import PromptTemplate
 
 from llama_index.llms.google_genai import base as base_mod
 from llama_index.llms.google_genai.base import GoogleGenAI
+from llama_index.llms.google_genai.utils import extract_token_usage_from_response
 
 
 class FakeChat:
@@ -47,6 +51,25 @@ def _make_llm(file_mode="fileapi"):
     object.__setattr__(llm, "file_mode", file_mode)
     object.__setattr__(llm, "max_retries", 0)
     object.__setattr__(llm, "_generation_config", {})
+    return llm
+
+
+def _make_usage_metadata(prompt=10, completion=20, total=30):
+    m = SimpleNamespace(
+        prompt_token_count=prompt,
+        candidates_token_count=completion,
+        total_token_count=total,
+        thoughts_token_count=None,
+    )
+    m.model_dump = lambda: {}
+    return m
+
+
+def _make_structured_llm():
+    from llama_index.core.types import PydanticProgramMode
+
+    llm = _make_llm(file_mode="inline")
+    object.__setattr__(llm, "pydantic_program_mode", PydanticProgramMode.DEFAULT)
     return llm
 
 
@@ -185,3 +208,201 @@ async def test_astream_chat_runs_cleanup(monkeypatch):
         await agen.__anext__()
 
     assert deleted["called"] is True
+
+
+def test_extract_token_usage_returns_empty_when_no_metadata():
+    response = SimpleNamespace(usage_metadata=None)
+    assert extract_token_usage_from_response(response) == {}
+
+
+def test_extract_token_usage_returns_correct_keys():
+    response = SimpleNamespace(usage_metadata=_make_usage_metadata())
+    result = extract_token_usage_from_response(response)
+    assert result["prompt_tokens"] == 10
+    assert result["completion_tokens"] == 20
+    assert result["total_tokens"] == 30
+    assert "usage_metadata" not in result
+
+
+def test_structured_predict_sets_span_attributes(monkeypatch):
+    class Out(BaseModel):
+        answer: str
+
+    llm = _make_structured_llm()
+
+    fake_response = SimpleNamespace(
+        parsed=Out(answer="42"),
+        usage_metadata=_make_usage_metadata(),
+        text='{"answer": "42"}',
+    )
+
+    async def fake_chat_message_to_gemini(*args, **kwargs):
+        return (SimpleNamespace(), [])
+
+    monkeypatch.setattr(
+        base_mod,
+        "chat_message_to_gemini",
+        fake_chat_message_to_gemini,
+    )
+
+    fake_client = MagicMock()
+    fake_client.models.generate_content.return_value = fake_response
+    llm._client = fake_client
+
+    span_attrs = {}
+    fake_span = SimpleNamespace(set_attribute=lambda k, v: span_attrs.update({k: v}))
+
+    mock_dispatcher = MagicMock()
+    mock_dispatcher.get_current_span.return_value = fake_span
+    monkeypatch.setattr(base_mod, "dispatcher", mock_dispatcher)
+
+    prompt = PromptTemplate("{question}")
+    llm.structured_predict(Out, prompt, question="What is 6x7?")
+
+    assert span_attrs.get("llm.token_usage.prompt_tokens") == 10
+    assert span_attrs.get("llm.token_usage.completion_tokens") == 20
+    assert span_attrs.get("llm.token_usage.total_tokens") == 30
+
+
+@pytest.mark.asyncio
+async def test_astructured_predict_sets_span_attributes(monkeypatch):
+    class Out(BaseModel):
+        answer: str
+
+    llm = _make_structured_llm()
+
+    fake_response = SimpleNamespace(
+        parsed=Out(answer="42"),
+        usage_metadata=_make_usage_metadata(),
+        text='{"answer": "42"}',
+    )
+
+    async def fake_chat_message_to_gemini(*args, **kwargs):
+        return (MagicMock(), ())
+
+    monkeypatch.setattr(base_mod, "chat_message_to_gemini", fake_chat_message_to_gemini)
+
+    fake_client = MagicMock()
+    fake_aio = MagicMock()
+    fake_aio.models.generate_content = AsyncMock(return_value=fake_response)
+    fake_client.aio = fake_aio
+    llm._client = fake_client
+
+    span_attrs = {}
+    fake_span = SimpleNamespace(set_attribute=lambda k, v: span_attrs.update({k: v}))
+
+    mock_dispatcher = MagicMock()
+    mock_dispatcher.get_current_span.return_value = fake_span
+    monkeypatch.setattr(base_mod, "dispatcher", mock_dispatcher)
+
+    prompt = PromptTemplate("{question}")
+    await llm.astructured_predict(Out, prompt, question="What is 6x7?")
+
+    assert span_attrs.get("llm.token_usage.prompt_tokens") == 10
+    assert span_attrs.get("llm.token_usage.completion_tokens") == 20
+    assert span_attrs.get("llm.token_usage.total_tokens") == 30
+
+
+def test_stream_structured_predict_sets_span_from_final_chunk(monkeypatch):
+    class Out(BaseModel):
+        answer: str
+
+    llm = _make_structured_llm()
+
+    final_chunk = SimpleNamespace(
+        parsed=None,
+        candidates=[
+            SimpleNamespace(
+                content=SimpleNamespace(parts=[SimpleNamespace(text='{"answer":"42"}')])
+            )
+        ],
+        usage_metadata=_make_usage_metadata(),
+    )
+
+    async def fake_chat_message_to_gemini(*args, **kwargs):
+        return (SimpleNamespace(), [])
+
+    monkeypatch.setattr(base_mod, "chat_message_to_gemini", fake_chat_message_to_gemini)
+
+    monkeypatch.setattr(
+        base_mod,
+        "handle_streaming_flexible_model",
+        lambda *a, **kw: (Out(answer="42"), '{"answer":"42"}'),
+    )
+
+    fake_client = MagicMock()
+    fake_client.models.generate_content_stream.return_value = iter([final_chunk])
+    llm._client = fake_client
+
+    span_attrs = {}
+    fake_span = SimpleNamespace(set_attribute=lambda k, v: span_attrs.update({k: v}))
+
+    mock_dispatcher = MagicMock()
+    mock_dispatcher.get_current_span.return_value = fake_span
+    monkeypatch.setattr(base_mod, "dispatcher", mock_dispatcher)
+
+    prompt = PromptTemplate("{question}")
+    gen = llm.stream_structured_predict(Out, prompt, question="What is 6x7?")
+    results = list(gen)
+
+    assert len(results) > 0
+    assert span_attrs.get("llm.token_usage.prompt_tokens") == 10
+    assert span_attrs.get("llm.token_usage.completion_tokens") == 20
+
+
+@pytest.mark.asyncio
+async def test_astream_structured_predict_sets_span_from_final_chunk(monkeypatch):
+    class Out(BaseModel):
+        answer: str
+
+    llm = _make_structured_llm()
+
+    final_chunk = SimpleNamespace(
+        parsed=None,
+        candidates=[
+            SimpleNamespace(
+                content=SimpleNamespace(parts=[SimpleNamespace(text='{"answer":"42"}')])
+            )
+        ],
+        usage_metadata=_make_usage_metadata(),
+    )
+
+    # Mock chat_message_to_gemini as an async function
+    async def fake_chat_message_to_gemini(*args, **kwargs):
+        return (SimpleNamespace(), [])
+
+    monkeypatch.setattr(
+        base_mod,
+        "chat_message_to_gemini",
+        fake_chat_message_to_gemini,
+    )
+
+    monkeypatch.setattr(
+        base_mod,
+        "handle_streaming_flexible_model",
+        lambda *a, **kw: (Out(answer="42"), '{"answer":"42"}'),
+    )
+
+    async def fake_stream():
+        yield final_chunk
+
+    fake_client = MagicMock()
+    fake_aio = MagicMock()
+    fake_aio.models.generate_content_stream = AsyncMock(return_value=fake_stream())
+    fake_client.aio = fake_aio
+    llm._client = fake_client
+
+    span_attrs = {}
+    fake_span = SimpleNamespace(set_attribute=lambda k, v: span_attrs.update({k: v}))
+
+    mock_dispatcher = MagicMock()
+    mock_dispatcher.get_current_span.return_value = fake_span
+    monkeypatch.setattr(base_mod, "dispatcher", mock_dispatcher)
+
+    prompt = PromptTemplate("{question}")
+    gen = await llm.astream_structured_predict(Out, prompt, question="What is 6x7?")
+    results = [item async for item in gen]
+
+    assert len(results) > 0
+    assert span_attrs.get("llm.token_usage.prompt_tokens") == 10
+    assert span_attrs.get("llm.token_usage.completion_tokens") == 20
