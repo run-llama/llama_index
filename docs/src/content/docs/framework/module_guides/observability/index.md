@@ -726,7 +726,6 @@ export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 Initialize Respan with the LlamaIndex instrumentor and run your application as usual:
 
 ```python
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -796,6 +795,8 @@ respan.flush()
 Respan also provides an [AI gateway](https://respan.ai/docs/integrations/llama-index) that lets you route LLM calls through an OpenAI-compatible endpoint. You can use it with LlamaIndex by pointing the `api_base` to Respan:
 
 ```python
+import os
+
 from llama_index.llms.openai import OpenAI
 
 llm = OpenAI(
