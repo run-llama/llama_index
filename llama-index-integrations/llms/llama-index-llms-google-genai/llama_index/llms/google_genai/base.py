@@ -53,6 +53,7 @@ from llama_index.core.program.utils import FlexibleModel, create_flexible_model
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
+    extract_token_usage_from_response,
     chat_message_to_gemini,
     convert_schema_to_function_declaration,
     prepare_chat_params,
@@ -639,6 +640,17 @@ class GoogleGenAI(FunctionCallingLLM):
         if self.file_mode in ("fileapi", "hybrid"):
             delete_uploaded_files(file_api_names, self._client)
 
+        token_usage = extract_token_usage_from_response(response)
+        if token_usage:
+            try:
+                current_span = dispatcher.get_current_span()
+                if current_span:
+                    for key, value in token_usage.items():
+                        if isinstance(value, (int, float, str, bool)):
+                            current_span.set_attribute(f"llm.token_usage.{key}", value)
+            except AttributeError:
+                pass
+
         if isinstance(response.parsed, BaseModel):
             return response.parsed
         else:
@@ -683,6 +695,19 @@ class GoogleGenAI(FunctionCallingLLM):
 
             if self.file_mode in ("fileapi", "hybrid"):
                 delete_uploaded_files(file_api_names, self._client)
+
+            token_usage = extract_token_usage_from_response(response)
+            if token_usage:
+                try:
+                    current_span = dispatcher.get_current_span()
+                    if current_span:
+                        for key, value in token_usage.items():
+                            if isinstance(value, (int, float, str, bool)):
+                                current_span.set_attribute(
+                                    f"llm.token_usage.{key}", value
+                                )
+                except AttributeError:
+                    pass
 
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
@@ -735,6 +760,19 @@ class GoogleGenAI(FunctionCallingLLM):
             if self.file_mode in ("fileapi", "hybrid"):
                 await adelete_uploaded_files(file_api_names, self._client)
 
+            token_usage = extract_token_usage_from_response(response)
+            if token_usage:
+                try:
+                    current_span = dispatcher.get_current_span()
+                    if current_span:
+                        for key, value in token_usage.items():
+                            if isinstance(value, (int, float, str, bool)):
+                                current_span.set_attribute(
+                                    f"llm.token_usage.{key}", value
+                                )
+                except AttributeError:
+                    pass
+
             if isinstance(response.parsed, BaseModel):
                 return response.parsed
             else:
@@ -777,6 +815,12 @@ class GoogleGenAI(FunctionCallingLLM):
             contents = [it[0] for it in contents_and_names]
             file_api_names = [name for it in contents_and_names for name in it[1]]
 
+            current_span = None
+            try:
+                current_span = dispatcher.get_current_span()
+            except AttributeError:
+                pass
+
             def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
                 flexible_model = create_flexible_model(output_cls)
                 response_gen = self._client.models.generate_content_stream(
@@ -786,6 +830,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 )
 
                 current_json = ""
+                final_response = None
                 for chunk in response_gen:
                     if chunk.parsed:
                         yield chunk.parsed
@@ -798,6 +843,16 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+                        final_response = chunk
+
+                if final_response:
+                    token_usage = extract_token_usage_from_response(final_response)
+                    if token_usage and current_span:
+                        for key, value in token_usage.items():
+                            if isinstance(value, (int, float, str, bool)):
+                                current_span.set_attribute(
+                                    f"llm.token_usage.{key}", value
+                                )
 
                 if self.file_mode in ("fileapi", "hybrid"):
                     delete_uploaded_files(file_api_names, self._client)
@@ -839,6 +894,12 @@ class GoogleGenAI(FunctionCallingLLM):
             contents = [it[0] for it in contents_and_names]
             file_api_names = [name for it in contents_and_names for name in it[1]]
 
+            current_span = None
+            try:
+                current_span = dispatcher.get_current_span()
+            except AttributeError:
+                pass
+
             async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
                 flexible_model = create_flexible_model(output_cls)
                 response_gen = await self._client.aio.models.generate_content_stream(
@@ -848,6 +909,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 )
 
                 current_json = ""
+                final_response = None
                 async for chunk in response_gen:
                     if chunk.parsed:
                         yield chunk.parsed
@@ -860,6 +922,16 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+                        final_response = chunk
+
+                if final_response:
+                    token_usage = extract_token_usage_from_response(final_response)
+                    if token_usage and current_span:
+                        for key, value in token_usage.items():
+                            if isinstance(value, (int, float, str, bool)):
+                                current_span.set_attribute(
+                                    f"llm.token_usage.{key}", value
+                                )
 
                 if self.file_mode in ("fileapi", "hybrid"):
                     await adelete_uploaded_files(file_api_names, self._client)
