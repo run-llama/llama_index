@@ -102,14 +102,14 @@ print(f"Scraped {len(batch_docs)} pages")
 
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `scrape_url` | Scrape a single URL and extract its content (markdown, HTML, text, or JSON) |
-| `crawl_website` | Crawl an entire website or section with URL filtering and search queries |
-| `map_website` | Discover all URLs on a website from sitemaps and links |
-| `search_web` | Search the web and return relevant links with titles and descriptions |
-| `answer_question` | Search the web and synthesize an AI-powered answer from verified sources |
-| `batch_scrape` | Scrape multiple URLs concurrently (most efficient for 50-10,000 URLs) |
+| Tool              | Description                                                                 |
+| ----------------- | --------------------------------------------------------------------------- |
+| `scrape_url`      | Scrape a single URL and extract its content (markdown, HTML, text, or JSON) |
+| `crawl_website`   | Crawl an entire website or section with URL filtering and search queries    |
+| `map_website`     | Discover all URLs on a website from sitemaps and links                      |
+| `search_web`      | Search the web and return relevant links with titles and descriptions       |
+| `answer_question` | Search the web and synthesize an AI-powered answer from verified sources    |
+| `batch_scrape`    | Scrape multiple URLs concurrently (most efficient for 50-10,000 URLs)       |
 
 ## Advanced Features
 
@@ -126,6 +126,7 @@ tool_spec.scrape_url(
 ```
 
 Available parsers:
+
 - `@olostep/google-search` - Extract Google search results
 - `@olostep/amazon-it-product` - Extract Amazon product details
 - `@olostep/extract-emails` - Extract email addresses from pages
