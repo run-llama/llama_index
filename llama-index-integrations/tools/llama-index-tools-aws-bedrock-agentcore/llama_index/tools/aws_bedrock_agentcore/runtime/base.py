@@ -50,7 +50,11 @@ class AgentCoreRuntime:
             async def streaming_entrypoint(
                 payload: dict, context: RequestContext
             ) -> AsyncGenerator[dict, None]:
-                async for chunk in runtime._streaming_handler(payload, context):
+                # Validate eagerly (before the first yield) so that
+                # HTTPException propagates before streaming begins.
+                prompt = runtime._extract_prompt(payload)
+                memory = runtime._get_memory(context)
+                async for chunk in runtime._stream_events(prompt, memory):
                     yield chunk
 
             self._app.entrypoint(streaming_entrypoint)
@@ -116,12 +120,15 @@ class AgentCoreRuntime:
         result = await handler
         return {"response": str(result)}
 
-    async def _streaming_handler(
-        self, payload: dict, context: RequestContext
+    async def _stream_events(
+        self, prompt: str, memory: Optional[Any]
     ) -> AsyncGenerator[dict, None]:
-        """Handle streaming invocation. Yields SSE event dicts."""
-        prompt = self._extract_prompt(payload)
-        memory = self._get_memory(context)
+        """
+        Yield SSE event dicts for a validated prompt.
+
+        Callers should validate the prompt (via _extract_prompt) before
+        calling this method so that validation errors are raised eagerly.
+        """
         handler = self._agent.run(user_msg=prompt, memory=memory)
 
         try:
