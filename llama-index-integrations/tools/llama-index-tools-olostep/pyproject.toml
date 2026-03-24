@@ -29,7 +29,7 @@ name = "llama-index-tools-olostep"
 version = "0.1.0"
 description = "LlamaIndex Tools integration for Olostep web scraping, crawling, search and AI answers"
 authors = [{name = "Olostep", email = "support@olostep.com"}]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
