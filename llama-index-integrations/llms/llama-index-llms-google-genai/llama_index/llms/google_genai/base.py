@@ -1,34 +1,36 @@
 """Google's hosted Gemini API."""
 
 import asyncio
-import inspect
 import functools
+import inspect
 import os
-from importlib.metadata import PackageNotFoundError, version
 import typing
+from importlib.metadata import PackageNotFoundError, version
 from typing import (
     TYPE_CHECKING,
-    cast,
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
     Union,
-    Callable,
-    Literal,
+    cast,
 )
 
-
+import google.auth
+import google.genai
+import google.genai.types as types
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
     achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
     astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -44,27 +46,23 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
-from llama_index.core.prompts import PromptTemplate
+from llama_index.core.llms.llm import Model, ToolSelection
 from llama_index.core.program.utils import FlexibleModel, create_flexible_model
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
+    adelete_uploaded_files,
     chat_from_gemini_response,
     chat_message_to_gemini,
     convert_schema_to_function_declaration,
-    prepare_chat_params,
-    handle_streaming_flexible_model,
     create_retry_decorator,
-    adelete_uploaded_files,
     delete_uploaded_files,
+    handle_streaming_flexible_model,
+    prepare_chat_params,
 )
-
-import google.genai
-import google.auth
-import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -163,6 +161,9 @@ class GoogleGenAI(FunctionCallingLLM):
         default="hybrid",
         description="Whether to use inline-only, FileAPI-only or both for handling files.",
     )
+    service_tier: Literal["flex", "standard", "priority"] = Field(
+        default="standard", description="Service tier for the Gemini API."
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -186,6 +187,7 @@ class GoogleGenAI(FunctionCallingLLM):
         cached_content: Optional[str] = None,
         built_in_tool: Optional[types.Tool] = None,
         file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
+        service_tier: Literal["flex", "standard", "priority"] = "standard",
         **kwargs: Any,
     ):
         if temperature is None:
@@ -258,6 +260,7 @@ class GoogleGenAI(FunctionCallingLLM):
             cached_content=cached_content,
             built_in_tool=built_in_tool,
             file_mode=file_mode,
+            service_tier=service_tier,
             **kwargs,
         )
 
@@ -352,7 +355,12 @@ class GoogleGenAI(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs, file_api_names = asyncio.run(
             prepare_chat_params(
-                self.model, messages, self.file_mode, self._client, **params
+                self.model,
+                messages,
+                self.file_mode,
+                self._client,
+                self.service_tier,
+                **params,
             )
         )
         chat = self._client.chats.create(**chat_kwargs)
@@ -374,7 +382,12 @@ class GoogleGenAI(FunctionCallingLLM):
         }
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
-            self.model, messages, self.file_mode, self._client, **params
+            self.model,
+            messages,
+            self.file_mode,
+            self._client,
+            self.service_tier,
+            **params,
         )
         chat = self._client.aio.chats.create(**chat_kwargs)
         try:
@@ -407,7 +420,12 @@ class GoogleGenAI(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs, file_api_names = asyncio.run(
             prepare_chat_params(
-                self.model, messages, self.file_mode, self._client, **params
+                self.model,
+                messages,
+                self.file_mode,
+                self._client,
+                self.service_tier,
+                **params,
             )
         )
         chat = self._client.chats.create(**chat_kwargs)
@@ -613,6 +631,7 @@ class GoogleGenAI(FunctionCallingLLM):
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
+        llm_kwargs.pop("service_tier")
 
         messages = prompt.format_messages(**prompt_args)
         contents_and_names = [
@@ -625,6 +644,7 @@ class GoogleGenAI(FunctionCallingLLM):
         response = self._client.models.generate_content(
             model=self.model,
             contents=contents,
+            service_tier=self.service_tier,
             **{
                 **llm_kwargs,
                 **{
@@ -679,6 +699,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 model=self.model,
                 contents=contents,
                 config=generation_config,
+                service_tier=self.service_tier,
             )
 
             if self.file_mode in ("fileapi", "hybrid"):
@@ -730,6 +751,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 model=self.model,
                 contents=contents,
                 config=generation_config,
+                service_tier=self.service_tier,
             )
 
             if self.file_mode in ("fileapi", "hybrid"):
