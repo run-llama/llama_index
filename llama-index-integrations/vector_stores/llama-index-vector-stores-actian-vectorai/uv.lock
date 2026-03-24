@@ -12,23 +12,30 @@ version = "0.1.0b2"
 source = { path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0b2-py3-none-any.whl" }
 dependencies = [
     { name = "grpcio" },
+    { name = "httpx" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "protobuf" },
     { name = "pydantic" },
 ]
 wheels = [
-    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:060266b1ecc291df8e7f951c5c09d2f063660c72be855d6bdab584c15658aaff" },
+    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:fa99a3d4474959a305e441613d5fbfa21429f4eb091cea5c4fb26c2df4a8ab95" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "actian-vectorai", extras = ["fast", "telemetry"], marker = "extra == 'all'" },
     { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.6.0" },
     { name = "grpcio", specifier = ">=1.70.0,<2.0.0" },
     { name = "grpcio", marker = "extra == 'dev'", specifier = ">=1.70.0,<2.0.0" },
     { name = "grpcio-tools", marker = "extra == 'dev'", specifier = ">=1.70.0,<2.0.0" },
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "msgspec", marker = "extra == 'fast'", specifier = ">=0.18.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.0" },
     { name = "numpy", specifier = ">=1.26.0" },
+    { name = "opentelemetry-api", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
+    { name = "opentelemetry-sdk", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
+    { name = "orjson", marker = "extra == 'fast'", specifier = ">=3.10.0" },
     { name = "protobuf", specifier = ">=5.29.2" },
     { name = "pydantic", specifier = ">=2.10.0,<3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.0" },
@@ -38,7 +45,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
     { name = "types-protobuf", marker = "extra == 'dev'", specifier = ">=5.29.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["fast", "telemetry", "all", "dev"]
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -926,6 +933,7 @@ dependencies = [
     { name = "griffecli" },
     { name = "griffelib" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/04/56/28a0accac339c164b52a92c6cfc45a903acc0c174caa5c1713803467b533/griffe-2.0.0.tar.gz", hash = "sha256:c68979cd8395422083a51ea7cf02f9c119d889646d99b7b656ee43725de1b80f", size = 293906, upload-time = "2026-03-23T21:06:53.402Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/94/ee21d41e7eb4f823b94603b9d40f86d3c7fde80eacc2c3c71845476dddaa/griffe-2.0.0-py3-none-any.whl", hash = "sha256:5418081135a391c3e6e757a7f3f156f1a1a746cc7b4023868ff7d5e2f9a980aa", size = 5214, upload-time = "2026-02-09T19:09:44.105Z" },
 ]
@@ -938,6 +946,7 @@ dependencies = [
     { name = "colorama" },
     { name = "griffelib" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/a4/f8/2e129fd4a86e52e58eefe664de05e7d502decf766e7316cc9e70fdec3e18/griffecli-2.0.0.tar.gz", hash = "sha256:312fa5ebb4ce6afc786356e2d0ce85b06c1c20d45abc42d74f0cda65e159f6ef", size = 56213, upload-time = "2026-03-23T21:06:54.8Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/ed/d93f7a447bbf7a935d8868e9617cbe1cadf9ee9ee6bd275d3040fbf93d60/griffecli-2.0.0-py3-none-any.whl", hash = "sha256:9f7cd9ee9b21d55e91689358978d2385ae65c22f307a63fb3269acf3f21e643d", size = 9345, upload-time = "2026-02-09T19:09:42.554Z" },
 ]
@@ -946,6 +955,7 @@ wheels = [
 name = "griffelib"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/06/eccbd311c9e2b3ca45dbc063b93134c57a1ccc7607c5e545264ad092c4a9/griffelib-2.0.0.tar.gz", hash = "sha256:e504d637a089f5cab9b5daf18f7645970509bf4f53eda8d79ed71cce8bd97934", size = 166312, upload-time = "2026-03-23T21:06:55.954Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/51/c936033e16d12b627ea334aaaaf42229c37620d0f15593456ab69ab48161/griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f", size = 142004, upload-time = "2026-02-09T19:09:40.561Z" },
 ]

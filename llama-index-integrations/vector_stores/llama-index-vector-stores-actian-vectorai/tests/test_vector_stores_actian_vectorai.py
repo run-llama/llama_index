@@ -828,3 +828,35 @@ def test_query_with_existing_colletion() -> None:
         assert result.nodes[0].metadata == expected_node.metadata
 
         vector_store.clear()
+
+def test_store_text_and_metadata() -> None:
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=f"test_collection_{uuid.uuid4().hex}", stores_text=True
+    ) as vector_store:
+        vector_store.add(nodes)
+
+        expected_node = nodes[2]
+        query = VectorStoreQuery(
+            query_embedding=expected_node.embedding,
+            similarity_top_k=3,
+            doc_ids=["doc_03"],
+            node_ids=[
+                "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+                "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
+            ],
+        )
+
+        result = vector_store.query(query)
+
+        assert result.ids is not None
+        assert result.nodes is not None
+        assert result.similarities is not None
+        assert len(result.ids) == 1
+        assert len(result.nodes) == 1
+        assert len(result.similarities) == 1
+        assert result.ids[0] == expected_node.node_id
+        assert result.nodes[0].node_id == expected_node.node_id
+        assert result.nodes[0].metadata == expected_node.metadata
+        assert result.nodes[0].get_content() == expected_node.text
+
+        vector_store.clear()
