@@ -14,6 +14,7 @@ class TestOlostepToolSpec:
         """Fixture to create OlostepToolSpec instance."""
         with patch("olostep.Olostep"):
             from llama_index.tools.olostep import OlostepToolSpec
+
             return OlostepToolSpec(api_key="test-key")
 
     def test_scrape_url_success(self, tool_spec):

@@ -19,10 +19,12 @@ class OlostepToolSpec(BaseToolSpec):
     ]
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """Initialize with Olostep API key.
-        
+        """
+        Initialize with Olostep API key.
+
         Args:
             api_key: Olostep API key. If not provided, falls back to OLOSTEP_API_KEY env var.
+
         """
         from olostep import Olostep
 
@@ -37,7 +39,8 @@ class OlostepToolSpec(BaseToolSpec):
         country: Optional[str] = None,
         parser_id: Optional[str] = None,
     ) -> List[Document]:
-        """Scrape a single URL and return its content as a Document.
+        """
+        Scrape a single URL and return its content as a Document.
 
         Use this to extract the content of any webpage. Returns clean
         markdown by default. Supports JS-rendered sites.
@@ -53,6 +56,7 @@ class OlostepToolSpec(BaseToolSpec):
 
         Returns:
             List with a single Document containing the page content.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -101,7 +105,7 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error scraping URL: {str(e)}",
+                        text=f"Error scraping URL: {e!s}",
                         extra_info={"url": url, "error": str(e)},
                     )
                 ]
@@ -115,7 +119,8 @@ class OlostepToolSpec(BaseToolSpec):
         exclude_urls: Optional[str] = None,
         search_query: Optional[str] = None,
     ) -> List[Document]:
-        """Crawl a website and return content from all crawled pages as Documents.
+        """
+        Crawl a website and return content from all crawled pages as Documents.
 
         Use this to gather content from an entire website or a section of it.
         Each crawled page becomes a separate Document. Best for building
@@ -130,6 +135,7 @@ class OlostepToolSpec(BaseToolSpec):
 
         Returns:
             List of Documents, one per crawled page.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -168,7 +174,7 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error crawling website: {str(e)}",
+                        text=f"Error crawling website: {e!s}",
                         extra_info={"url": url, "error": str(e)},
                     )
                 ]
@@ -181,7 +187,8 @@ class OlostepToolSpec(BaseToolSpec):
         exclude_urls: Optional[str] = None,
         top_n: Optional[int] = None,
     ) -> List[Document]:
-        """Discover all URLs on a website and return them as a Document.
+        """
+        Discover all URLs on a website and return them as a Document.
 
         Use this to explore a site's structure before deciding which pages
         to scrape. Returns URLs from sitemaps and discovered links.
@@ -194,6 +201,7 @@ class OlostepToolSpec(BaseToolSpec):
 
         Returns:
             List with a single Document containing all discovered URLs.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -232,14 +240,15 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error mapping website: {str(e)}",
+                        text=f"Error mapping website: {e!s}",
                         extra_info={"url": url, "error": str(e)},
                     )
                 ]
             raise
 
     def search_web(self, query: str) -> List[Document]:
-        """Search the web and return relevant links as Documents.
+        """
+        Search the web and return relevant links as Documents.
 
         Use this to find web pages on a topic. Unlike answer_question
         (which synthesizes an answer), this returns raw links for further
@@ -251,6 +260,7 @@ class OlostepToolSpec(BaseToolSpec):
         Returns:
             List of Documents, one per search result, each containing
             the page title and description with the URL in extra_info.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -262,7 +272,11 @@ class OlostepToolSpec(BaseToolSpec):
             documents = []
             if result.result and result.result.links:
                 for link in result.result.links:
-                    text = f"{link.title}\n{link.description}" if link.description else link.title
+                    text = (
+                        f"{link.title}\n{link.description}"
+                        if link.description
+                        else link.title
+                    )
                     documents.append(
                         Document(
                             text=text,
@@ -278,7 +292,7 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error searching web: {str(e)}",
+                        text=f"Error searching web: {e!s}",
                         extra_info={"query": query, "error": str(e)},
                     )
                 ]
@@ -289,7 +303,8 @@ class OlostepToolSpec(BaseToolSpec):
         task: str,
         json_schema: Optional[str] = None,
     ) -> List[Document]:
-        """Search the web and return an AI-synthesized answer as a Document.
+        """
+        Search the web and return an AI-synthesized answer as a Document.
 
         Use this for research tasks and fact-checking where you need a
         synthesized answer with sources rather than raw links. Olostep
@@ -303,6 +318,7 @@ class OlostepToolSpec(BaseToolSpec):
 
         Returns:
             List with a single Document containing the answer and sources.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -334,7 +350,7 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error answering question: {str(e)}",
+                        text=f"Error answering question: {e!s}",
                         extra_info={"task": task, "error": str(e)},
                     )
                 ]
@@ -346,7 +362,8 @@ class OlostepToolSpec(BaseToolSpec):
         formats: str = "markdown",
         parser_id: Optional[str] = None,
     ) -> List[Document]:
-        """Scrape multiple URLs concurrently and return each as a Document.
+        """
+        Scrape multiple URLs concurrently and return each as a Document.
 
         Use this when you have many URLs to scrape at once (50-10,000).
         Processing takes ~5-8 minutes regardless of batch size, making it
@@ -359,6 +376,7 @@ class OlostepToolSpec(BaseToolSpec):
 
         Returns:
             List of Documents, one per URL scraped.
+
         """
         try:
             from olostep import Olostep_BaseError
@@ -408,7 +426,7 @@ class OlostepToolSpec(BaseToolSpec):
             if isinstance(e, Olostep_BaseError):
                 return [
                     Document(
-                        text=f"Error batch scraping: {str(e)}",
+                        text=f"Error batch scraping: {e!s}",
                         extra_info={"urls": urls, "error": str(e)},
                     )
                 ]
