@@ -23,8 +23,10 @@ from llama_index.protocols.ag_ui.utils import (
     validate_tool,
 )
 
+
 def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
-    """Convert an AG-UI Tool definition to a LlamaIndex FunctionTool.
+    """
+    Convert an AG-UI Tool definition to a LlamaIndex FunctionTool.
 
     The returned function is a no-op — these tools are treated as frontend
     tools (pass-through) so they are never executed server-side. The LLM sees
@@ -49,9 +51,16 @@ def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
         if prop_name in required_fields:
             pydantic_fields[prop_name] = (str, Field(description=field_description))
         else:
-            pydantic_fields[prop_name] = (Optional[str], Field(default=None, description=field_description))
+            pydantic_fields[prop_name] = (
+                Optional[str],
+                Field(default=None, description=field_description),
+            )
 
-    fn_schema = create_model(f"{tool_name}_schema", **pydantic_fields) if pydantic_fields else create_model(f"{tool_name}_schema")
+    fn_schema = (
+        create_model(f"{tool_name}_schema", **pydantic_fields)
+        if pydantic_fields
+        else create_model(f"{tool_name}_schema")
+    )
 
     def _noop(**kwargs: Any) -> str:
         return ""
@@ -210,11 +219,16 @@ class AGUIChatWorkflow(Workflow):
         if isinstance(ev, InputEvent):
             dynamic_frontend_tool_names: List[str] = []
             for ag_ui_tool in ev.input_data.tools or []:
-                if ag_ui_tool.name not in self.frontend_tools and ag_ui_tool.name not in self.backend_tools:
+                if (
+                    ag_ui_tool.name not in self.frontend_tools
+                    and ag_ui_tool.name not in self.backend_tools
+                ):
                     llama_tool = _ag_ui_tool_to_llama_index(ag_ui_tool)
                     tools.append(llama_tool)
                     dynamic_frontend_tool_names.append(ag_ui_tool.name)
-            await ctx.store.set("dynamic_frontend_tool_names", dynamic_frontend_tool_names)
+            await ctx.store.set(
+                "dynamic_frontend_tool_names", dynamic_frontend_tool_names
+            )
 
         resp_gen = await self.llm.astream_chat_with_tools(
             tools=tools,
@@ -246,8 +260,12 @@ class AGUIChatWorkflow(Workflow):
             await ctx.store.set("num_tool_calls", len(tool_calls))
             # Include dynamically injected tools (from input_data.tools) in the
             # frontend set so they are treated as pass-through, not executed.
-            dynamic_frontend_tool_names = await ctx.store.get("dynamic_frontend_tool_names", default=[])
-            all_frontend_names = set(self.frontend_tools) | set(dynamic_frontend_tool_names)
+            dynamic_frontend_tool_names = await ctx.store.get(
+                "dynamic_frontend_tool_names", default=[]
+            )
+            all_frontend_names = set(self.frontend_tools) | set(
+                dynamic_frontend_tool_names
+            )
             frontend_tool_calls = [
                 tool_call
                 for tool_call in tool_calls
@@ -356,7 +374,9 @@ class AGUIChatWorkflow(Workflow):
 
         # organize tool results so that frontend tools are last
         # for backend tools, update the messages snapshot with the tool output
-        dynamic_frontend_tool_names = await ctx.store.get("dynamic_frontend_tool_names", default=[])
+        dynamic_frontend_tool_names = await ctx.store.get(
+            "dynamic_frontend_tool_names", default=[]
+        )
         all_frontend_names = set(self.frontend_tools) | set(dynamic_frontend_tool_names)
         frontend_tool_calls = [
             tool_result
