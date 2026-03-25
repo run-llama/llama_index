@@ -1,3 +1,3 @@
 ::: llama_index.llms.azure_openai
 options:
-members: - AsyncAzureOpenAI - AzureOpenAI - SyncAzureOpenAI
+members: - AsyncAzureOpenAI - AzureOpenAI - AzureOpenAIResponses - SyncAzureOpenAI
