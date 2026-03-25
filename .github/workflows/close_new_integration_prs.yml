@@ -42,7 +42,7 @@ jobs:
               "",
               fileList,
               "",
-              "New integrations should be maintained in their own repositories and published to PyPI independently. See our [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for more details.",
+              "New integrations are not being accepted at this time.",
               "",
               "If you believe this was closed in error (e.g., you are modifying an existing package), please comment on this PR and a maintainer will review it.",
             ].join("\n");
