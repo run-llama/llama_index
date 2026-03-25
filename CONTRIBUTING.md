@@ -56,9 +56,9 @@ We suggest working on:
 - Core modules (`llama-index-core` and `llama-index-instrumentation`), contributing with refactoring, bug fixes and extensions
 - Documentation (`docs`), helping us improve our current docs and keep them updated.
 - Main integrations, such as `llama-index-llms`, `llama-index-embeddings` or `llama-index-vector-stores`, providing help with maintaining them
-- New integrations with third party services
+  While we welcome contributions, **we are no longer accepting new integration packages** in this repository. New integrations should be maintained in their own repositories and published to PyPI independently. PRs that add a new `pyproject.toml` will be automatically closed.
 
-While we welcome contributions, we do not recommend to work on these areas:
+We also do not recommend working on these areas:
 
 - Experimental features (`llama-index-experimental`)
 - Packs (`llama-index-packs`)

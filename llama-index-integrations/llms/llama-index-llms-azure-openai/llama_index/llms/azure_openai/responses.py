@@ -130,6 +130,41 @@ class AzureOpenAIResponses(OpenAIResponses):
                 "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
             )
 
+        # Resolve the API key before building clients
+        if use_azure_ad:
+            if azure_ad_token_provider:
+                api_key = azure_ad_token_provider()
+            else:
+                self._azure_ad_token = refresh_openai_azuread_token(None)
+                api_key = self._azure_ad_token.token
+        else:
+            api_key = api_key or os.getenv("AZURE_OPENAI_API_KEY")
+
+        if api_key is None:
+            raise ValueError(
+                "You must set an `api_key` parameter. "
+                "Alternatively, you can set the AZURE_OPENAI_API_KEY env var OR set `use_azure_ad=True`."
+            )
+
+        # Build Azure clients before calling super().__init__() to avoid the
+        # parent trying to create plain OpenAI clients with Azure-specific kwargs.
+        credential_kwargs = {
+            "api_key": api_key,
+            "max_retries": max_retries,
+            "timeout": timeout,
+            "azure_endpoint": azure_endpoint,
+            "azure_deployment": azure_deployment,
+            "base_url": api_base if api_base else None,
+            "azure_ad_token_provider": azure_ad_token_provider,
+            "api_version": api_version,
+            "default_headers": default_headers,
+        }
+
+        sync_client = SyncAzureOpenAI(**credential_kwargs, http_client=http_client)
+        async_client = AsyncAzureOpenAI(
+            **credential_kwargs, http_client=async_http_client
+        )
+
         super().__init__(
             engine=engine,
             model=model,
@@ -161,13 +196,13 @@ class AzureOpenAIResponses(OpenAIResponses):
             async_http_client=async_http_client,
             default_headers=default_headers,
             context_window=context_window,
+            openai_client=sync_client,
+            async_openai_client=async_client,
             **kwargs,
         )
 
         self._http_client = http_client
         self._async_http_client = async_http_client
-        self._client = SyncAzureOpenAI(**self._get_credential_kwargs())
-        self._aclient = AsyncAzureOpenAI(**self._get_credential_kwargs(is_async=True))
 
     def _get_credential_kwargs(
         self, is_async: bool = False, **kwargs: Any
