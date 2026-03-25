@@ -1,3 +1,4 @@
 ::: llama_index.tools.metaphor
-options:
-members: - MetaphorToolSpec
+    options:
+      members:
+        - MetaphorToolSpec
