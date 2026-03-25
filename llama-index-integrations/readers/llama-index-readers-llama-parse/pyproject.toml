@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-llama-parse"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index readers llama-parse integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.10,<4.0"
