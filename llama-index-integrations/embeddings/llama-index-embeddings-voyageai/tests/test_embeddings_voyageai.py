@@ -1,8 +1,16 @@
-from unittest.mock import Mock, patch
+from io import BytesIO
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from PIL import Image
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    ImageBlock,
+    TextBlock,
+    VideoBlock,
+)
 from llama_index.embeddings.voyageai import VoyageEmbedding
 from llama_index.embeddings.voyageai.base import (
     CONTEXT_MODELS,
@@ -591,3 +599,157 @@ def test_multimodal_embed_text_with_batching():
     assert mock_multimodal_embed.call_count == 2
     # Should return all 4 embeddings
     assert len(result) == 4
+
+
+def _tiny_png_bytes() -> bytes:
+    img = Image.new("RGB", (1, 1), color=(0, 255, 0))
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_supports_mixed_embedding_voyage():
+    mm = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    assert mm.supports_mixed_embedding is True
+    other = VoyageEmbedding(model_name="voyage-2", voyage_api_key="NOT_A_VALID_KEY")
+    assert other.supports_mixed_embedding is False
+
+
+def test_mixed_content_voyage_supported_and_blocks_to_api_format():
+    png = _tiny_png_bytes()
+    vb = VideoBlock.model_construct(
+        block_type="video",
+        video=b"x",
+        video_mimetype="video/mp4",
+    )
+    vb.inline_url = lambda: "data:video/mp4;base64,xx"  # type: ignore[method-assign]
+    content = [
+        TextBlock(text="cap"),
+        ImageBlock(image=png),
+        AudioBlock(audio=b"a"),
+        vb,
+    ]
+    supported = VoyageEmbedding._mixed_content_voyage_supported(content)
+    assert len(supported) == 3
+    api = VoyageEmbedding._blocks_to_voyage_api_format(supported)
+    assert api[0]["type"] == "text"
+    assert api[1]["type"] == "image_url"
+    assert api[2]["type"] == "video_url"
+
+
+def test_get_mixed_content_embedding_voyage():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    mock_result = Mock()
+    mock_result.embeddings = [[0.1, 0.2, 0.3]]
+    emb._client.multimodal_embed = Mock(return_value=mock_result)  # type: ignore[method-assign]
+    blocks = [TextBlock(text="hi"), ImageBlock(image=_tiny_png_bytes())]
+    out = emb._get_mixed_content_embedding(blocks)
+    assert out == [0.1, 0.2, 0.3]
+    emb._client.multimodal_embed.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_aget_mixed_content_embedding_voyage():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    mock_result = Mock()
+    mock_result.embeddings = [[0.4, 0.5]]
+    emb._aclient.multimodal_embed = AsyncMock(return_value=mock_result)  # type: ignore[method-assign]
+    blocks = [TextBlock(text="hi"), ImageBlock(image=_tiny_png_bytes())]
+    out = await emb._aget_mixed_content_embedding(blocks)
+    assert out == [0.4, 0.5]
+
+
+def test_get_mixed_content_embeddings_voyage_batch():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    mock_result = Mock()
+    mock_result.embeddings = [[0.1], [0.2]]
+    emb._client.multimodal_embed = Mock(return_value=mock_result)  # type: ignore[method-assign]
+    png = _tiny_png_bytes()
+    contents = [
+        [TextBlock(text="a"), ImageBlock(image=png)],
+        [TextBlock(text="b"), ImageBlock(image=png)],
+    ]
+    out = emb._get_mixed_content_embeddings(contents)
+    assert out == [[0.1], [0.2]]
+
+
+@pytest.mark.asyncio
+async def test_aget_mixed_content_embeddings_voyage_batch():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    mock_result = Mock()
+    mock_result.embeddings = [[0.3], [0.4]]
+    emb._aclient.multimodal_embed = AsyncMock(return_value=mock_result)  # type: ignore[method-assign]
+    png = _tiny_png_bytes()
+    contents = [
+        [TextBlock(text="a"), ImageBlock(image=png)],
+        [TextBlock(text="b"), ImageBlock(image=png)],
+    ]
+    out = await emb._aget_mixed_content_embeddings(contents)
+    assert out == [[0.3], [0.4]]
+
+
+def test_get_mixed_content_embeddings_voyage_empty_list():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    assert emb._get_mixed_content_embeddings([]) == []
+
+
+@pytest.mark.asyncio
+async def test_aget_mixed_content_embeddings_voyage_empty_list():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    assert await emb._aget_mixed_content_embeddings([]) == []
+
+
+def test_get_mixed_content_embedding_voyage_no_supported_raises():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    with pytest.raises(ValueError, match="Voyage-supported"):
+        emb._get_mixed_content_embedding([AudioBlock(audio=b"x")])
+
+
+def test_get_mixed_content_embedding_voyage_wrong_model_raises():
+    emb = VoyageEmbedding(model_name="voyage-2", voyage_api_key="NOT_A_VALID_KEY")
+    png = _tiny_png_bytes()
+    with pytest.raises(ValueError, match="not a valid multi-modal"):
+        emb._get_mixed_content_embedding([TextBlock(text="a"), ImageBlock(image=png)])
+
+
+def test_get_mixed_content_embeddings_voyage_batch_empty_after_filter_raises():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    with pytest.raises(ValueError, match="Every mixed content item"):
+        emb._get_mixed_content_embeddings(
+            [
+                [TextBlock(text="a"), ImageBlock(image=_tiny_png_bytes())],
+                [AudioBlock(audio=b"x")],
+            ]
+        )
+
+
+@pytest.mark.asyncio
+async def test_aget_mixed_content_embeddings_voyage_batch_empty_after_filter_raises():
+    emb = VoyageEmbedding(
+        model_name="voyage-multimodal-3", voyage_api_key="NOT_A_VALID_KEY"
+    )
+    with pytest.raises(ValueError, match="Every mixed content item"):
+        await emb._aget_mixed_content_embeddings(
+            [
+                [TextBlock(text="a"), ImageBlock(image=_tiny_png_bytes())],
+                [AudioBlock(audio=b"x")],
+            ]
+        )

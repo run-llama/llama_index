@@ -61,6 +61,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from llama_index.core.base.llms.types import BaseContentBlock
     from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
+    from llama_index.core.embeddings.mixed_embedding_utils import (
+        MixedEmbeddingContent,
+    )
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -376,7 +379,7 @@ class BaseNode(BaseComponent):
 
     def get_mixed_embedding_content(
         self, metadata_mode: MetadataMode = MetadataMode.EMBED
-    ) -> Optional["MixedEmbeddingContent"]:
+    ) -> Optional[MixedEmbeddingContent]:
         """
         Get content as a sequence of embeddable content blocks (text, image, audio, video)
         for models that support joint multimodal embedding.
