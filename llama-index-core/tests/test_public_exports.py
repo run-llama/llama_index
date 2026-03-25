@@ -1,38 +1,47 @@
 from importlib import import_module
 
-
-LEGACY_PROMPT_EXPORTS = [
-    "SummaryPrompt",
-    "TreeInsertPrompt",
-    "TreeSelectPrompt",
-    "TreeSelectMultiplePrompt",
-    "RefinePrompt",
-    "QuestionAnswerPrompt",
-    "KeywordExtractPrompt",
-    "QueryKeywordExtractPrompt",
-]
+import pytest
 
 
-def test_core_legacy_exports_are_bound() -> None:
-    core = import_module("llama_index.core")
+MODULES_WITH_PUBLIC_EXPORTS = (
+    "llama_index.core",
+    "llama_index.core.indices",
+    "llama_index.core.prompts",
+    "llama_index.core.indices.knowledge_graph",
+)
 
-    assert core.GPTKnowledgeGraphIndex is core.KnowledgeGraphIndex
-    for export_name in LEGACY_PROMPT_EXPORTS:
-        assert getattr(core, export_name) is core.PromptTemplate
+REMOVED_EXPORTS = {
+    "llama_index.core": {
+        "GPTKnowledgeGraphIndex",
+        "SummaryPrompt",
+        "TreeInsertPrompt",
+        "TreeSelectPrompt",
+        "TreeSelectMultiplePrompt",
+        "RefinePrompt",
+        "QuestionAnswerPrompt",
+        "KeywordExtractPrompt",
+        "QueryKeywordExtractPrompt",
+    },
+    "llama_index.core.indices": {"GPTKnowledgeGraphIndex"},
+}
 
 
-def test_prompts_legacy_exports_are_bound() -> None:
-    prompts = import_module("llama_index.core.prompts")
+@pytest.mark.parametrize("module_name", MODULES_WITH_PUBLIC_EXPORTS)
+def test_public_exports_are_bound(module_name: str) -> None:
+    module = import_module(module_name)
 
-    for export_name in LEGACY_PROMPT_EXPORTS:
-        assert getattr(prompts, export_name) is prompts.PromptTemplate
+    missing_exports = [name for name in module.__all__ if not hasattr(module, name)]
+
+    assert missing_exports == []
 
 
-def test_core_import_star_includes_legacy_exports() -> None:
-    namespace: dict[str, object] = {}
+@pytest.mark.parametrize(
+    ("module_name", "removed_exports"),
+    REMOVED_EXPORTS.items(),
+)
+def test_removed_stale_exports_are_not_listed(
+    module_name: str, removed_exports: set[str]
+) -> None:
+    module = import_module(module_name)
 
-    exec("from llama_index.core import *", namespace)
-
-    assert namespace["GPTKnowledgeGraphIndex"] is namespace["KnowledgeGraphIndex"]
-    for export_name in LEGACY_PROMPT_EXPORTS:
-        assert namespace[export_name] is namespace["PromptTemplate"]
+    assert removed_exports.isdisjoint(module.__all__)

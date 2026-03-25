@@ -12,16 +12,6 @@ from llama_index.core.prompts.base import (
 )
 from llama_index.core.prompts.rich import RichPromptTemplate
 from llama_index.core.prompts.display_utils import display_prompt_dict
-from llama_index.core.prompts.prompts import (
-    KeywordExtractPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SummaryPrompt,
-    TreeInsertPrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
 
 __all__ = [
     "Prompt",
@@ -35,12 +25,4 @@ __all__ = [
     "MessageRole",
     "display_prompt_dict",
     "RichPromptTemplate",
-    "SummaryPrompt",
-    "TreeInsertPrompt",
-    "TreeSelectPrompt",
-    "TreeSelectMultiplePrompt",
-    "RefinePrompt",
-    "QuestionAnswerPrompt",
-    "KeywordExtractPrompt",
-    "QueryKeywordExtractPrompt",
 ]

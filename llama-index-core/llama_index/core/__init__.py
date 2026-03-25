@@ -27,7 +27,6 @@ from llama_index.core.indices import (
     ComposableGraph,
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
-    GPTKnowledgeGraphIndex,
     GPTKeywordTableIndex,
     GPTListIndex,
     GPTRAKEKeywordTableIndex,
@@ -60,18 +59,10 @@ from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
-    KeywordExtractPrompt,
     # backwards compatibility
     Prompt,
     PromptTemplate,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
     SelectorPromptTemplate,
-    SummaryPrompt,
-    TreeInsertPrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
 )
 from llama_index.core.readers import SimpleDirectoryReader, download_loader
 
@@ -115,7 +106,6 @@ __all__ = [
     "PropertyGraphIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
-    "GPTKnowledgeGraphIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
@@ -128,14 +118,6 @@ __all__ = [
     "BasePromptTemplate",
     "ChatPromptTemplate",
     "SelectorPromptTemplate",
-    "SummaryPrompt",
-    "TreeInsertPrompt",
-    "TreeSelectPrompt",
-    "TreeSelectMultiplePrompt",
-    "RefinePrompt",
-    "QuestionAnswerPrompt",
-    "KeywordExtractPrompt",
-    "QueryKeywordExtractPrompt",
     "Response",
     "Document",
     "SimpleDirectoryReader",
