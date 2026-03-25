@@ -398,8 +398,8 @@ class CohereEmbedding(MultiModalEmbedding):
             )
         if not contents:
             return []
-        contents = [self._mixed_content_cohere_supported(c) for c in contents]
-        if any(not c for c in contents):
+        filtered = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in filtered):
             raise ValueError(
                 "Every mixed content item must contain at least one Cohere-supported "
                 "block (text or image_url)."

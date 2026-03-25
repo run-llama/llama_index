@@ -624,7 +624,6 @@ def test_mixed_content_voyage_supported_and_blocks_to_api_format():
         video=b"x",
         video_mimetype="video/mp4",
     )
-    vb.inline_url = lambda: "data:video/mp4;base64,xx"  # type: ignore[method-assign]
     content = [
         TextBlock(text="cap"),
         ImageBlock(image=png),
@@ -633,10 +632,13 @@ def test_mixed_content_voyage_supported_and_blocks_to_api_format():
     ]
     supported = VoyageEmbedding._mixed_content_voyage_supported(content)
     assert len(supported) == 3
-    api = VoyageEmbedding._blocks_to_voyage_api_format(supported)
-    assert api[0]["type"] == "text"
-    assert api[1]["type"] == "image_url"
-    assert api[2]["type"] == "video_url"
+    with patch.object(
+        VideoBlock, "inline_url", return_value="data:video/mp4;base64,xx"
+    ):
+        api = VoyageEmbedding._blocks_to_voyage_api_format(supported)
+        assert api[0]["type"] == "text"
+        assert api[1]["type"] == "image_url"
+        assert api[2]["type"] == "video_url"
 
 
 def test_get_mixed_content_embedding_voyage():
