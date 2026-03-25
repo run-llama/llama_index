@@ -861,7 +861,8 @@ async def test_prepare_chat_params_with_system_message():
 
 @pytest.mark.asyncio
 async def test_prepare_chat_params_does_not_mutate_messages():
-    """Ensure prepare_chat_params does not pop the system message from the
+    """
+    Ensure prepare_chat_params does not pop the system message from the
     caller's list, which would break retry logic (e.g. after a 429).
 
     See: https://github.com/run-llama/llama_index/issues/21137
