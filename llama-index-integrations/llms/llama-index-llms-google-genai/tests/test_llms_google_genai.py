@@ -859,6 +859,49 @@ async def test_prepare_chat_params_with_system_message():
     )
 
 
+@pytest.mark.asyncio
+async def test_prepare_chat_params_does_not_mutate_messages():
+    """Ensure prepare_chat_params does not pop the system message from the
+    caller's list, which would break retry logic (e.g. after a 429).
+
+    See: https://github.com/run-llama/llama_index/issues/21137
+    """
+    model_name = "models/gemini-test"
+    system_prompt = "You are a helpful assistant."
+    user_text = "Hi there."
+
+    messages = [
+        ChatMessage(content=system_prompt, role=MessageRole.SYSTEM),
+        ChatMessage(content=user_text, role=MessageRole.USER),
+    ]
+    original_length = len(messages)
+
+    # First call -- should extract the system message internally
+    next_msg, chat_kwargs, _ = await prepare_chat_params(model_name, messages)
+
+    # The caller's list must be unchanged
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
+    assert messages[0].content == system_prompt
+
+    # The system message should still have been forwarded correctly
+    cfg = chat_kwargs["config"]
+    assert isinstance(cfg, GenerateContentConfig)
+    assert cfg.system_instruction == system_prompt
+
+    # Simulate a retry: calling again with the same messages list
+    next_msg2, chat_kwargs2, _ = await prepare_chat_params(model_name, messages)
+
+    # System message should still be extracted on the retry
+    cfg2 = chat_kwargs2["config"]
+    assert isinstance(cfg2, GenerateContentConfig)
+    assert cfg2.system_instruction == system_prompt
+
+    # And the caller's list must still be intact
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_cached_content_initialization() -> None:
     """Test GoogleGenAI initialization with cached_content parameter."""
