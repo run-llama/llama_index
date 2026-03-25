@@ -1,4 +1,3 @@
 ::: llama_index.llms.alephalpha
-    options:
-      members:
-        - AlephAlpha
+options:
+members: - AlephAlpha
