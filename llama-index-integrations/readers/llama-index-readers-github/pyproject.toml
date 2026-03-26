@@ -22,14 +22,15 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "PyJWT[crypto]>=2.8.0",
 ]
 
 [project]
 name = "llama-index-readers-github"
-version = "0.6.1"
+version = "0.11.2"
 description = "llama-index readers github integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [
@@ -48,9 +49,14 @@ keywords = [
     "source code",
 ]
 dependencies = [
-    "llama-index-readers-file>=0.4.0,<0.5",
+    "llama-index-embeddings-openai>=0.6.0,<0.7",
     "httpx>=0.26.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[project.optional-dependencies]
+github-app = [
+    "PyJWT[crypto]>=2.8.0",
 ]
 
 [tool.codespell]

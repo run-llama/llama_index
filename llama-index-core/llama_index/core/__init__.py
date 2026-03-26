@@ -1,16 +1,17 @@
 """Top-level imports for LlamaIndex."""
 
-__version__ = "0.12.52.post1"
-
 import logging
+from importlib.metadata import PackageNotFoundError, version
 from logging import NullHandler
 from typing import Callable, Optional
 
 try:
-    # Force pants to install eval_type_backport on 3.9
-    import eval_type_backport  # noqa  # type: ignore
-except ImportError:
-    pass
+    __version__ = version("llama-index-core")
+except PackageNotFoundError:
+    # This might happen when running tests or scripts directly without
+    # an editable install.
+    __version__ = "0.0.0"
+
 
 # response
 from llama_index.core.base.response.schema import Response

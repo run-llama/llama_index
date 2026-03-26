@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import (
     Any,
     List,
+    Optional,
     Sequence,
 )
 
@@ -16,21 +17,24 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     TextBlock,
 )
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-)
 from llama_index.core.bridge.pydantic import Field, model_validator, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
 
 
-class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
+class BaseLLM(BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
+    )
+    # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
+    rate_limiter: Optional[Any] = Field(
+        default=None,
+        description="Rate limiter instance to throttle API calls.",
+        exclude=True,
     )
 
     @model_validator(mode="after")

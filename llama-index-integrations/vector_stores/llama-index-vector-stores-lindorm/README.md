@@ -1,7 +1,7 @@
 # LlamaIndex Vector_Stores Integration: Lindorm
 
 - LindormVectorStore support pure vector search, search with metadata filtering, hybrid search, async, etc.
-- Please refer to the [notebook](../../../docs/docs/examples/vector_stores/LindormDemo.ipynb) for usage of Lindorm as vector store in LlamaIndex.
+- Please refer to the [notebook](../../../docs/examples/vector_stores/LindormDemo.ipynb) for usage of Lindorm as vector store in LlamaIndex.
 
 # Example Usage
 

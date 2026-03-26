@@ -1,7 +1,8 @@
-import pytest
 from unittest import mock
-from llama_index.readers.gitlab import GitLabRepositoryReader
+
+import pytest
 from llama_index.core import Document
+from llama_index.readers.gitlab import GitLabRepositoryReader
 
 
 @pytest.fixture()

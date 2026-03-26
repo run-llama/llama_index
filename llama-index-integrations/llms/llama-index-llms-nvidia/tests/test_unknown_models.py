@@ -7,11 +7,11 @@ from llama_index.llms.nvidia import NVIDIA
 def test_unknown_model_is_chat_model_parameter(is_chat_model) -> None:
     """Test that is_chat_model parameter is respected for unknown models."""
     mock_model = MagicMock()
-    mock_model.id = "nvidia/llama-3.3-nemotron-super-49b-v1"
+    mock_model.id = "nvidia/llama-3.3-nemotron-super-49b-v2"
 
     with patch.object(NVIDIA, "available_models", [mock_model]):
         llm = NVIDIA(
-            model="nvidia/llama-3.3-nemotron-super-49b-v1",
+            model="nvidia/llama-3.3-nemotron-super-49b-v2",
             is_chat_model=is_chat_model,
             api_key="fake-key",
         )
@@ -21,10 +21,10 @@ def test_unknown_model_is_chat_model_parameter(is_chat_model) -> None:
 def test_unknown_model_default_is_chat_model() -> None:
     """Test that default (no parameter) defaults to False for unknown models."""
     mock_model = MagicMock()
-    mock_model.id = "nvidia/llama-3.3-nemotron-super-49b-v1"
+    mock_model.id = "nvidia/llama-3.3-nemotron-super-49b-v2"
 
     with patch.object(NVIDIA, "available_models", [mock_model]):
-        llm = NVIDIA(model="nvidia/llama-3.3-nemotron-super-49b-v1", api_key="fake-key")
+        llm = NVIDIA(model="nvidia/llama-3.3-nemotron-super-49b-v2", api_key="fake-key")
         # Should default to False for unknown models
         assert llm.is_chat_model is False
 

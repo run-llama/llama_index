@@ -1,0 +1,3 @@
+::: llama_index.readers.s3
+options:
+members: - S3Reader

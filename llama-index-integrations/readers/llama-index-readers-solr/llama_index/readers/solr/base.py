@@ -2,7 +2,10 @@
 Solr reader over REST api.
 """
 
-from typing import Any
+from typing import Any, Optional
+
+import pysolr
+
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
@@ -24,31 +27,28 @@ class SolrReader(BasePydanticReader):
     ):
         """Initialize with parameters."""
         super().__init__(endpoint=endpoint)
-
-        try:
-            import pysolr
-        except ImportError as e:  # pragma: no cover
-            raise ImportError(
-                "`pysolr` package not found. Install via `pip install pysolr`."
-            ) from e
-
         self._client = pysolr.Solr(endpoint)
 
     def load_data(
         self,
         query: dict[str, Any],
         field: str,
-        metadata_fields: list[str] | None = None,
-        embedding: str | None = None,
+        id_field: str = "id",
+        metadata_fields: Optional[list[str]] = None,
+        embedding: Optional[str] = None,
     ) -> list[Document]:
         r"""
         Read data from the Solr index. At least one field argument must be specified.
 
         Args:
-            query (dict): The Solr query parameters. "q" is required.
-                          "rows" should be specified or will default to 10 by Solr.
-                          "fl" will be replaced by the explicit fields arguments.
+            query (dict): The Solr query parameters.
+                - "q" is required.
+                - "rows" should be specified or will default to 10 by Solr.
+                - If "fl" is provided, it is respected exactly as given.
+                  If "fl" is NOT provided, a default `fl` is constructed from
+                  {id_field, field, embedding?, metadata_fields?}.
             field (str): Field in Solr to retrieve as document text.
+            id_field (str): Field in Solr to retrieve as the document identifier. Defaults to "id".
             metadata_fields (list[str], optional): Fields to include as metadata. Defaults to None.
             embedding (str, optional): Field to use for embeddings. Defaults to None.
 
@@ -62,21 +62,23 @@ class SolrReader(BasePydanticReader):
         if "q" not in query:
             raise ValueError("Query parameters must include a 'q' field for the query.")
 
-        SOLR_ID_FIELD: str = "id"
-        fields: list[str] = [SOLR_ID_FIELD, field]
-        if embedding:
-            fields.append(embedding)
-        if metadata_fields:
-            fields.extend(metadata_fields)
+        fl_default = {}
+        if "fl" not in query:
+            fields = [id_field, field]
+            if embedding:
+                fields.append(embedding)
+            if metadata_fields:
+                fields.extend(metadata_fields)
+            fl_default = {"fl": ",".join(fields)}
 
         try:
             query_params = {
                 **query,
-                "fl": ",".join(fields),  # override fl based on fields of interest
+                **fl_default,
             }
             results = self._client.search(**query_params)
         except Exception as e:  # pragma: no cover
-            raise ValueError(f"Failed to query Solr endpoint: {e!s}")
+            raise ValueError(f"Failed to query Solr endpoint: {e!s}") from e
 
         documents: list[Document] = []
         for doc in results.docs:
@@ -84,11 +86,11 @@ class SolrReader(BasePydanticReader):
                 continue
 
             doc_kwargs: dict[str, Any] = {
-                "id_": doc[SOLR_ID_FIELD],
+                "id_": str(doc[id_field]),
                 "text": doc[field],
-                "embedding": doc.get(embedding),
+                **({"embedding": doc.get(embedding)} if embedding else {}),
                 "metadata": {
-                    metadata_field: doc.get(metadata_field, {})
+                    metadata_field: doc[metadata_field]
                     for metadata_field in (metadata_fields or [])
                     if metadata_field in doc
                 },

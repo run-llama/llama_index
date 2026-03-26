@@ -10,17 +10,32 @@ Another example showcases retrieval augmentation over a knowledge corpus with te
 
 ```python
 from llama_index.tools.text_to_image import TextToImageToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 openai.api_key = "sk-your-key"
 tool_spec = TextToImageToolSpec()
 # OR
 tool_spec = TextToImageToolSpec(api_key="sk-your-key")
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("show 2 images of a beautiful beach with a palm tree at sunset")
-agent.chat("make the second image higher quality")
+# Context to store chat history
+from llama_index.core.workflow import Context
+
+ctx = Context(agent)
+
+
+print(
+    await agent.run(
+        "show 2 images of a beautiful beach with a palm tree at sunset",
+        ctx=ctx,
+    )
+)
+print(await agent.run("make the second image higher quality", ctx=ctx))
 ```
 
 `generate_images`: Generate images from a prompt, specifying the number of images and resolution

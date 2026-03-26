@@ -26,12 +26,12 @@ class FireworksEmbedding(OpenAIEmbedding):
     """
 
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the OpenAI API."
+        default_factory=dict, description="Additional kwargs for the Fireworks API."
     )
 
     api_key: str = Field(description="The Fireworks API key.")
     api_base: str = Field(description="The base URL for Fireworks API.")
-    api_version: str = Field(description="The version for OpenAI API.")
+    api_version: str = Field(description="The version for Fireworks API.")
 
     def __init__(
         self,

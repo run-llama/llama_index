@@ -13,6 +13,8 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ImageBlock,
     AudioBlock,
+    VideoBlock,
+    DocumentBlock,
 )
 from llama_index.core.llms import ChatMessage
 from llama_index.core.prompts.base import BasePromptTemplate
@@ -106,8 +108,12 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
                     elif bank_block.type == BanksContentBlockType.image_url:
                         llama_blocks.append(ImageBlock(url=bank_block.image_url.url))
                     elif bank_block.type == BanksContentBlockType.audio:
+                        llama_blocks.append(AudioBlock(url=bank_block.input_audio.data))
+                    elif bank_block.type == BanksContentBlockType.video:
+                        llama_blocks.append(VideoBlock(url=bank_block.input_video.data))
+                    elif bank_block.type == BanksContentBlockType.document:
                         llama_blocks.append(
-                            AudioBlock(audio=bank_block.input_audio.data)
+                            DocumentBlock(url=bank_block.input_document.data)
                         )
                     else:
                         raise ValueError(

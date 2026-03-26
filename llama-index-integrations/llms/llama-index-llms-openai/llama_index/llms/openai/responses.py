@@ -26,6 +26,7 @@ from openai.types.responses import (
     ResponseReasoningItem,
     ResponseCodeInterpreterToolCall,
     ResponseImageGenCallPartialImageEvent,
+    ResponseOutputItemDoneEvent,
 )
 from openai.types.responses.response_output_item import ImageGenerationCall, McpCall
 from typing import (
@@ -43,6 +44,7 @@ from typing import (
     Type,
     Union,
     runtime_checkable,
+    cast,
 )
 
 import llama_index.core.instrumentation as instrument
@@ -65,6 +67,8 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     TextBlock,
     ImageBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -129,9 +133,15 @@ class Tokenizer(Protocol):
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class OpenAIResponses(FunctionCallingLLM):
@@ -252,7 +262,7 @@ class OpenAIResponses(FunctionCallingLLM):
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
-    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
     context_window: Optional[int] = Field(
@@ -382,7 +392,7 @@ class OpenAIResponses(FunctionCallingLLM):
         return model_name
 
     def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
+        return isinstance(self._client, AzureOpenAI)
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
@@ -405,7 +415,7 @@ class OpenAIResponses(FunctionCallingLLM):
             "previous_response_id": self._previous_response_id,
             "store": self.store,
             "temperature": self.temperature,
-            "tools": [*initial_tools, *kwargs.pop("tools", [])],
+            "tools": [*initial_tools, *(kwargs.pop("tools", []) or [])],
             "top_p": self.top_p,
             "truncation": self.truncation,
             "user": self.user,
@@ -413,6 +423,16 @@ class OpenAIResponses(FunctionCallingLLM):
 
         if self.model in O1_MODELS and self.reasoning_options is not None:
             model_kwargs["reasoning"] = self.reasoning_options
+
+        if self.reasoning_options is not None or self.model in O1_MODELS:
+            params_to_exclude_for_reasoning = {
+                "top_p",
+                "temperature",
+                "presence_penalty",
+                "frequency_penalty",
+            }
+            for param in params_to_exclude_for_reasoning:
+                model_kwargs.pop(param, None)
 
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)
@@ -448,10 +468,10 @@ class OpenAIResponses(FunctionCallingLLM):
 
         return stream_complete_fn(prompt, **kwargs)
 
-    def _parse_response_output(self, output: List[ResponseOutputItem]) -> ChatResponse:
+    @staticmethod
+    def _parse_response_output(output: List[ResponseOutputItem]) -> ChatResponse:
         message = ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
         additional_kwargs = {"built_in_tool_calls": []}
-        tool_calls = []
         blocks: List[ContentBlock] = []
         for item in output:
             if isinstance(item, ResponseOutputMessage):
@@ -478,16 +498,34 @@ class OpenAIResponses(FunctionCallingLLM):
             elif isinstance(item, ResponseFileSearchToolCall):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseFunctionToolCall):
-                tool_calls.append(item)
+                message.blocks.append(
+                    ToolCallBlock(
+                        tool_name=item.name,
+                        tool_call_id=item.call_id,
+                        tool_kwargs=item.arguments,
+                    )
+                )
             elif isinstance(item, ResponseFunctionWebSearch):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseComputerToolCall):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseReasoningItem):
-                additional_kwargs["reasoning"] = item
-
-        if tool_calls and message:
-            message.additional_kwargs["tool_calls"] = tool_calls
+                content: Optional[str] = None
+                if item.content:
+                    content = "\n".join([i.text for i in item.content])
+                if item.summary:
+                    if content:
+                        content += "\n" + "\n".join([i.text for i in item.summary])
+                    else:
+                        content = "\n".join([i.text for i in item.summary])
+                message.blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
+                    )
+                )
 
         return ChatResponse(message=message, additional_kwargs=additional_kwargs)
 
@@ -498,6 +536,7 @@ class OpenAIResponses(FunctionCallingLLM):
             messages,
             model=self.model,
             is_responses_api=True,
+            store=kwargs_dict.get("store"),
         )
 
         response: Response = self._client.responses.create(
@@ -509,16 +548,21 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.track_previous_responses:
             self._previous_response_id = response.id
 
-        chat_response = self._parse_response_output(response.output)
+        chat_response = OpenAIResponses._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
+        if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
+            for block in chat_response.message.blocks:
+                if isinstance(block, ThinkingBlock):
+                    block.num_tokens = (
+                        response.usage.output_tokens_details.reasoning_tokens
+                    )
 
         return chat_response
 
     @staticmethod
     def process_response_event(
         event: ResponseStreamEvent,
-        tool_calls: List[ResponseFunctionToolCall],
         built_in_tool_calls: List[Any],
         additional_kwargs: Dict[str, Any],
         current_tool_call: Optional[ResponseFunctionToolCall],
@@ -526,7 +570,6 @@ class OpenAIResponses(FunctionCallingLLM):
         previous_response_id: Optional[str] = None,
     ) -> Tuple[
         List[ContentBlock],
-        List[ResponseFunctionToolCall],
         List[Any],
         Dict[str, Any],
         Optional[ResponseFunctionToolCall],
@@ -586,10 +629,12 @@ class OpenAIResponses(FunctionCallingLLM):
             if current_tool_call is not None:
                 current_tool_call.arguments = event.arguments
                 current_tool_call.status = "completed"
-
-                # append a copy of the tool call to the list
-                tool_calls.append(
-                    ResponseFunctionToolCall(**current_tool_call.model_dump())
+                blocks.append(
+                    ToolCallBlock(
+                        tool_name=current_tool_call.name,
+                        tool_kwargs=current_tool_call.arguments,
+                        tool_call_id=current_tool_call.call_id,
+                    )
                 )
 
                 # clear the current tool call
@@ -605,17 +650,36 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseWebSearchCallCompletedEvent):
             # Web search tool call completed
             built_in_tool_calls.append(event)
-        elif isinstance(event, ResponseReasoningItem):
+        elif isinstance(event, ResponseOutputItemDoneEvent):
             # Reasoning information
-            additional_kwargs["reasoning"] = event
+            if isinstance(event.item, ResponseReasoningItem):
+                content: Optional[str] = None
+                if event.item.content:
+                    content = "\n".join([i.text for i in event.item.content])
+                if event.item.summary:
+                    if content:
+                        content += "\n" + "\n".join(
+                            [i.text for i in event.item.summary]
+                        )
+                    else:
+                        content = "\n".join([i.text for i in event.item.summary])
+                blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=event.item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
+                    )
+                )
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):
                 additional_kwargs["usage"] = event.response.usage
+            resp = OpenAIResponses._parse_response_output(event.response.output)
+            blocks = resp.message.blocks
 
         return (
             blocks,
-            tool_calls,
             built_in_tool_calls,
             additional_kwargs,
             current_tool_call,
@@ -634,7 +698,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
@@ -648,7 +711,6 @@ class OpenAIResponses(FunctionCallingLLM):
                 # Process the event and update state
                 (
                     blocks,
-                    tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
                     current_tool_call,
@@ -656,7 +718,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
                     current_tool_call=current_tool_call,
@@ -678,9 +739,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
                         blocks=blocks,
-                        additional_kwargs={"tool_calls": tool_calls}
-                        if tool_calls
-                        else {},
                     ),
                     delta=delta,
                     raw=event,
@@ -741,7 +799,7 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.track_previous_responses:
             self._previous_response_id = response.id
 
-        chat_response = self._parse_response_output(response.output)
+        chat_response = OpenAIResponses._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
 
@@ -758,7 +816,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
@@ -774,7 +831,6 @@ class OpenAIResponses(FunctionCallingLLM):
                 # Process the event and update state
                 (
                     blocks,
-                    tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
                     current_tool_call,
@@ -782,7 +838,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
                     current_tool_call=current_tool_call,
@@ -804,9 +859,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
                         blocks=blocks,
-                        additional_kwargs={"tool_calls": tool_calls}
-                        if tool_calls
-                        else {},
                     ),
                     delta=delta,
                     raw=event,
@@ -872,9 +924,11 @@ class OpenAIResponses(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[ResponseFunctionToolCall] = (
-            response.message.additional_kwargs.get("tool_calls", [])
-        )
+        tool_calls: List[ToolCallBlock] = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -888,14 +942,14 @@ class OpenAIResponses(FunctionCallingLLM):
         for tool_call in tool_calls:
             # this should handle both complete and partial jsons
             try:
-                argument_dict = parse_partial_json(tool_call.arguments)
-            except ValueError:
+                argument_dict = parse_partial_json(cast(str, tool_call.tool_kwargs))
+            except Exception:
                 argument_dict = {}
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.call_id,
-                    tool_name=tool_call.name,
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )
@@ -910,17 +964,26 @@ class OpenAIResponses(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        """Structured predict using constrained decoding via responses.parse.
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
+        adherence at the API level, rather than best-effort function calling.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        response = self._client.responses.parse(
+            model=self.model,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
         )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     async def astructured_predict(
@@ -930,17 +993,26 @@ class OpenAIResponses(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        """Async structured predict using constrained decoding via responses.parse.
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        Uses `text_format` with `tool_choice="none"` to guarantee JSON schema
+        adherence at the API level, rather than best-effort function calling.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        response = await self._aclient.responses.parse(
+            model=self.model,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
         )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
 
     @dispatcher.span
     def stream_structured_predict(

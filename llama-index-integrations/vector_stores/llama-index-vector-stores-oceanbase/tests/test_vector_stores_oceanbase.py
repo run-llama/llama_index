@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List
+from typing import List, Dict
 
 import pytest
 from llama_index.vector_stores.oceanbase import OceanBaseVectorStore
@@ -37,6 +37,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
 )
 
 ADA_TOKEN_COUNT = 1536
@@ -175,9 +176,8 @@ def test_search_with_neg_ip_distance(node_embeddings: List[TextNode]):
         result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
         == node_embeddings[0].text
     )
-    assert (
-        result.similarities is not None and result.similarities[0] == 0.9999999701976776
-    )
+    assert result.similarities is not None
+    assert result.similarities[0] == pytest.approx(0.9999999701976776, rel=1e-6)
     assert result.ids is not None and result.ids[0] == node_embeddings[0].node_id
 
 
@@ -219,9 +219,8 @@ def test_delete_doc(node_embeddings: List[TextNode]):
         result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
         == node_embeddings[2].text
     )
-    assert (
-        result.similarities is not None and result.similarities[0] == 0.9315029757824523
-    )
+    assert result.similarities is not None
+    assert result.similarities[0] == pytest.approx(0.9315029757824523, rel=1e-6)
     assert result.ids is not None and result.ids[0] == node_embeddings[2].node_id
 
 
@@ -379,3 +378,134 @@ def test_search_with_filter(node_embeddings: List[TextNode]):
         and result.nodes[2].get_content(metadata_mode=MetadataMode.NONE)
         == node_embeddings[2].text
     )
+
+
+@pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
+def test_query_with_doc_ids_and_node_ids(node_embeddings: List[TextNode]):
+    client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
+
+    oceanbase = OceanBaseVectorStore(
+        client=client,
+        dim=1536,
+        drop_old=True,
+        normalize=True,
+        table_name="llama_vector_doc_ids",
+    )
+
+    oceanbase.add(node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=text_to_embedding("foo"),
+        similarity_top_k=3,
+        doc_ids=["test-2"],
+    )
+    result = oceanbase.query(q)
+    assert result.nodes is not None and len(result.nodes) == 1
+    assert result.ids is not None and result.ids[0] == node_embeddings[2].node_id
+
+    q = VectorStoreQuery(
+        query_embedding=text_to_embedding("foo"),
+        similarity_top_k=3,
+        node_ids=[node_embeddings[1].id_],
+    )
+    result = oceanbase.query(q)
+    assert result.nodes is not None and len(result.nodes) == 1
+    assert result.ids is not None and result.ids[0] == node_embeddings[1].node_id
+
+
+@pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
+def test_sparse_search(node_embeddings: List[TextNode]):
+    client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
+
+    oceanbase = OceanBaseVectorStore(
+        client=client,
+        dim=1536,
+        drop_old=True,
+        normalize=True,
+        include_sparse=True,
+        table_name="llama_vector_sparse",
+    )
+
+    sparse_embeddings: List[Dict[int, float]] = [
+        {1: 1.0, 2: 0.5},
+        {3: 1.0},
+        {4: 1.0},
+    ]
+    oceanbase.add_sparse_nodes(node_embeddings, sparse_embeddings)
+
+    q = VectorStoreQuery(
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    result = oceanbase.query(q, sparse_query={1: 1.0})
+    assert result.nodes is not None and len(result.nodes) == 1
+    assert result.ids is not None and result.ids[0] == node_embeddings[0].node_id
+
+
+@pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
+def test_fulltext_search(node_embeddings: List[TextNode]):
+    client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
+
+    oceanbase = OceanBaseVectorStore(
+        client=client,
+        dim=1536,
+        drop_old=True,
+        normalize=True,
+        include_sparse=True,
+        include_fulltext=True,
+        table_name="llama_vector_fulltext",
+    )
+
+    fulltext_content = ["foo content", "bar content", "baz content"]
+    oceanbase.add_nodes_with_fulltext(node_embeddings, fulltext_content)
+
+    q = VectorStoreQuery(
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+        query_str="foo",
+        similarity_top_k=1,
+    )
+    result = oceanbase.query(q)
+    assert result.nodes is not None and len(result.nodes) == 1
+    assert result.ids is not None and result.ids[0] == node_embeddings[0].node_id
+
+
+@pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
+def test_hybrid_search(node_embeddings: List[TextNode]):
+    client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
+
+    oceanbase = OceanBaseVectorStore(
+        client=client,
+        dim=1536,
+        drop_old=True,
+        normalize=True,
+        include_sparse=True,
+        include_fulltext=True,
+        table_name="llama_vector_hybrid",
+    )
+
+    sparse_embeddings = [
+        {1: 1.0},
+        {3: 1.0},
+        {4: 1.0},
+    ]
+    fulltext_content = ["foo hybrid", "bar hybrid", "baz hybrid"]
+    oceanbase.add_nodes_with_hybrid_fields(
+        node_embeddings,
+        sparse_embeddings=sparse_embeddings,
+        fulltext_content=fulltext_content,
+    )
+
+    q = VectorStoreQuery(
+        mode=VectorStoreQueryMode.HYBRID,
+        query_embedding=text_to_embedding("foo"),
+        query_str="foo",
+        similarity_top_k=3,
+        hybrid_top_k=1,
+    )
+    result = oceanbase.query(q, sparse_query={1: 1.0})
+    assert result.nodes is not None and len(result.nodes) == 1
+    assert result.ids is not None and result.ids[0] == node_embeddings[0].node_id

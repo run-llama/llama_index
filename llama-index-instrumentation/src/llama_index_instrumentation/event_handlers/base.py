@@ -19,3 +19,6 @@ class BaseEventHandler(BaseModel):
     @abstractmethod
     def handle(self, event: BaseEvent, **kwargs: Any) -> Any:
         """Logic for handling event."""
+
+    async def ahandle(self, event: BaseEvent, **kwargs: Any) -> Any:
+        return self.handle(event, **kwargs)

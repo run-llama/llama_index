@@ -1,1 +1,1 @@
-firecrawl-py
+firecrawl-py>=4.3.3

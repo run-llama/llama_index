@@ -1,10 +1,11 @@
 from typing import Any, Dict, List
 
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.core.schema import BaseNode
 from llama_index.llms.openai import OpenAI
 from llama_index.core.tools import QueryEngineTool
+from llama_index.core.async_utils import asyncio_run
 
 
 class CodeHierarchyAgentPack(BaseLlamaPack):
@@ -24,7 +25,7 @@ class CodeHierarchyAgentPack(BaseLlamaPack):
             description="Search the code hierarchy for a specific code element, using keywords or IDs.",
         )
 
-        self.agent = OpenAIAgent.from_tools(
+        self.agent = FunctionAgent(
             tools=[self.tool],
             llm=llm,
             system_prompt=self.query_engine.get_tool_instructions(),
@@ -40,4 +41,8 @@ class CodeHierarchyAgentPack(BaseLlamaPack):
 
     def run(self, user_message: str) -> str:
         """Run the agent on the user message."""
-        return str(self.agent.chat(user_message))
+        return asyncio_run(self.arun(user_message))
+
+    async def arun(self, user_message: str) -> str:
+        """Run the agent on the user message."""
+        return str(await self.agent.run(user_message))

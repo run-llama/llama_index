@@ -66,18 +66,18 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
 
     if doc_type == Document.get_type():
         doc = Document(
-            text=text, metadata=metadata, id=id_, relationships=relationships
+            text=text, metadata=metadata, id_=id_, relationships=relationships
         )
     elif doc_type == TextNode.get_type():
         doc = TextNode(
-            text=text, metadata=metadata, id=id_, relationships=relationships
+            text=text, metadata=metadata, id_=id_, relationships=relationships
         )
     elif doc_type == ImageNode.get_type():
         image = data_dict.get("image", None)
         doc = ImageNode(
             text=text,
             metadata=metadata,
-            id=id_,
+            id_=id_,
             relationships=relationships,
             image=image,
         )
@@ -86,7 +86,7 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
         doc = IndexNode(
             text=text,
             metadata=metadata,
-            id=id_,
+            id_=id_,
             relationships=relationships,
             index_id=index_id,
         )

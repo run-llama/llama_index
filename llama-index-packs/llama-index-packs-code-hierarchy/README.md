@@ -88,7 +88,8 @@ For example:
 You can create a tool for any agent using the nodes from the node parser:
 
 ```python
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 from llama_index.core.tools import QueryEngineTool
 from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
 
@@ -102,8 +103,10 @@ tool = QueryEngineTool.from_defaults(
     description="Useful for looking up information about the code hierarchy codebase.",
 )
 
-agent = OpenAIAgent.from_tools(
-    [tool], system_prompt=query_engine.get_tool_instructions(), verbose=True
+agent = FunctionAgent(
+    tools=[tool],
+    system_prompt=query_engine.get_tool_instructions(),
+    llm=OpenAI(model="gpt-4.1"),
 )
 ```
 

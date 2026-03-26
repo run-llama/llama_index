@@ -4,17 +4,25 @@ import pytest
 
 CI = os.getenv("CI", "").lower() in ("1", "true", "yes")
 
+try:
+    from llama_index.llms.openai import OpenAI  # noqa: F401
 
-@pytest.mark.skipif(CI, reason="Skipping in CI environment")
+    has_openai = True
+except ImportError:
+    has_openai = False
+
+
+@pytest.mark.skipif(CI or not has_openai, reason="Skipping in CI environment")
 @pytest.mark.asyncio
 async def test_return_direct_e2e():
     from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
     from llama_index.core.tools import FunctionTool
-    from llama_index.core.workflow import Context
     from llama_index.llms.openai import OpenAI
 
-    if not os.getenv("OPENAI_API_KEY"):
-        raise KeyError("Please provide OPENAI_API_KEY as a Environment Variables")
+    if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "sk-" + (
+        "a" * 48
+    ):
+        pytest.skip("OPENAI_API_KEY is not defined")
 
     llm = OpenAI()
 
@@ -45,11 +53,9 @@ async def test_return_direct_e2e():
         llm=llm,
         system_prompt="You are a test agent for testing function call. Execute the tools requested as-is so that the results can be evaluated",
     )
-    ctx = Context(agent)
 
     handler = agent.run(
         "Run the return_direct_tool(False), observe the output. if error, retry based on the error message",
-        ctx=ctx,
     )
 
     ever_error = False

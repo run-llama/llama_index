@@ -1,70 +1,75 @@
-# NVIDIA NIMs
+# LlamaIndex Embeddings Integration: NVIDIA NIM Microservices
 
-The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations building applications with models on
-NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models
-from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA
-accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single
-command on NVIDIA accelerated infrastructure.
+The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations for building applications with [NVIDIA NIM microservices](https://developer.nvidia.com/nim).
+With the NVIDIA embeddings connector, you can connect to, and generate content from, compatible models.
 
-NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing,
-NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud,
-giving enterprises ownership and full control of their IP and AI application.
+NVIDIA NIM supports models across domains like chat, embedding, and re-ranking, from the community as well as from NVIDIA.
+Each model is optimized by NVIDIA to deliver the best performance on NVIDIA-accelerated infrastructure and is packaged as a NIM,
+an easy-to-use, prebuilt container that deploys anywhere using a single command on NVIDIA accelerated infrastructure.
+At their core, NIM microservices are containers that provide interactive APIs for running inference on an AI Model.
 
-NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog.
-At their core, NIMs provide easy, consistent, and familiar APIs for running inference on an AI model.
+NVIDIA-hosted deployments are available on the [NVIDIA API catalog](https://build.nvidia.com/) to test each NIM.
+After you explore, you can download NIM microservices from the API catalog, which is included with the NVIDIA AI Enterprise license.
+The ability to run models on-premises or in your own cloud gives your enterprise ownership of your customizations and full control of your IP and AI application.
 
-# NVIDIA's Embeddings connector
+Use this documentation to learn how to install the `llama-index-embeddings-nvidia` package and use it to connect to a model.
+The following example connects to the NVIDIA Retrieval QA E5 Embedding Model.
 
-With this connector, you'll be able to connect to and generate from compatible models available and hosted on [NVIDIA API Catalog](https://build.nvidia.com/), such as:
+<!-- Don't link to the model yet because until the reader signs in at a following step, the link might 404 -->
 
-- NVIDIA's Retrieval QA Embedding Model [embed-qa-4](https://build.nvidia.com/nvidia/embed-qa-4)
+## Install the Package
 
-## Installation
+To install the `llama-index-embeddings-nvidia` package, run the following code.
 
 ```bash
 pip install llama-index-embeddings-nvidia
 ```
 
-## Setup
+## Access the NVIDIA API Catalog
 
-**To get started:**
+To get access to the NVIDIA API Catalog, do the following:
 
-1. Create a free account with [NVIDIA](https://build.nvidia.com/), which hosts NVIDIA AI Foundation models.
+1. Create a free account on the [NVIDIA API Catalog](https://build.nvidia.com/) and log in.
+2. Click your profile icon, and then click **API Keys**. The **API Keys** page appears.
+3. Click **Generate API Key**. The **Generate API Key** window appears.
+4. Click **Generate Key**. You should see **API Key Granted**, and your key appears.
+5. Copy and save the key as `NVIDIA_API_KEY`.
+6. To verify your key, use the following code.
 
-2. Select the `Retrieval` tab, then select your model of choice.
+   ```python
+   import getpass
+   import os
 
-3. Under `Input` select the `Python` tab, and click `Get API Key`. Then click `Generate Key`.
+   if os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
+       print("Valid NVIDIA_API_KEY already in environment. Delete to reset")
+   else:
+       nvapi_key = getpass.getpass("NVAPI Key (starts with nvapi-): ")
+       assert nvapi_key.startswith(
+           "nvapi-"
+       ), f"{nvapi_key[:5]}... is not a valid key"
+       os.environ["NVIDIA_API_KEY"] = nvapi_key
+   ```
 
-4. Copy and save the generated key as `NVIDIA_API_KEY`. From there, you should have access to the endpoints.
+You can now use your key to access endpoints on the NVIDIA API Catalog.
 
-```python
-import getpass
-import os
+## Work with the API Catalog
 
-if os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
-    print("Valid NVIDIA_API_KEY already in environment. Delete to reset")
-else:
-    nvapi_key = getpass.getpass("NVAPI Key (starts with nvapi-): ")
-    assert nvapi_key.startswith(
-        "nvapi-"
-    ), f"{nvapi_key[:5]}... is not a valid key"
-    os.environ["NVIDIA_API_KEY"] = nvapi_key
-```
-
-## Working with API Catalog
+To submit a query to the [nv-embedqa-e5-v5](https://build.nvidia.com/nvidia/nv-embedqa-e5-v5/modelcard) model,
+run the following code.
 
 ```python
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
 
-embedder = NVIDIAEmbedding()
+embedder = NVIDIAEmbedding(model="nv-embedqa-e5-v5")
 embedder.get_query_embedding("What's the weather like in Komchatka?")
 ```
 
-## Working with NVIDIA NIMs
+## Self-host with NVIDIA NIM Microservices
 
-When ready to deploy, you can self-host models with NVIDIA NIM—which is included with the NVIDIA AI Enterprise software license—and run them anywhere, giving you ownership of your customizations and full control of your intellectual property (IP) and AI applications.
+When you are ready to deploy your AI application, you can self-host models with NVIDIA NIM.
+For more information, refer to [NVIDIA AI Enterprise](https://www.nvidia.com/en-us/data-center/products/ai-enterprise/).
 
-[Learn more about NIMs](https://developer.nvidia.com/blog/nvidia-nim-offers-optimized-inference-microservices-for-deploying-ai-models-at-scale/)
+The following example code connects to a locally-hosted NIM Microservice.
 
 ```python
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
@@ -72,3 +77,7 @@ from llama_index.embeddings.nvidia import NVIDIAEmbedding
 # connect to an embedding NIM running at localhost:8080
 embedder = NVIDIAEmbeddings(base_url="http://localhost:8080/v1")
 ```
+
+## Related Topics
+
+- [Overview of NeMo Retriever Text Embedding NIM](https://docs.nvidia.com/nim/nemo-retriever/text-embedding/latest/overview.html)

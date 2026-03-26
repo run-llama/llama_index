@@ -10,6 +10,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 
 SUPPORTED_MODELS = {
+    "cohere.embed-v4.0",
     "cohere.embed-english-v3.0",
     "cohere.embed-english-light-v3.0",
     "cohere.embed-multilingual-v3.0",

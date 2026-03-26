@@ -1,10 +1,12 @@
 import asyncio
 import numpy as np
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Literal, Optional, TYPE_CHECKING
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
-from fastembed import TextEmbedding
+
+if TYPE_CHECKING:
+    from fastembed import TextEmbedding
 
 
 class FastEmbedEmbedding(BaseEmbedding):
@@ -57,7 +59,7 @@ class FastEmbedEmbedding(BaseEmbedding):
         default=None, description="The ONNX providers to use for the embedding model."
     )
 
-    _model: TextEmbedding = PrivateAttr()
+    _model: "TextEmbedding" = PrivateAttr()
 
     def __init__(
         self,
@@ -76,6 +78,15 @@ class FastEmbedEmbedding(BaseEmbedding):
             cache_dir=cache_dir,
             **kwargs,
         )
+
+        try:
+            from fastembed import TextEmbedding
+        except ImportError as e:
+            raise ImportError(
+                "Could not import FastEmbed. "
+                "Please install it with `pip install fastembed` or "
+                "`pip install fastembed-gpu` for GPU support"
+            ) from e
 
         self._model = TextEmbedding(
             model_name=model_name,

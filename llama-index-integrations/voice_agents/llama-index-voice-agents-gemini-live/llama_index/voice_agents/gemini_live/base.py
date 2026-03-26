@@ -1,4 +1,5 @@
 import asyncio
+from importlib.metadata import PackageNotFoundError, version
 import logging
 from typing import Optional, Any, List, Dict, Callable
 from typing_extensions import override
@@ -17,7 +18,7 @@ from llama_index.core.llms import ChatMessage, AudioBlock, TextBlock
 from llama_index.core.voice_agents import BaseVoiceAgent
 from llama_index.core.tools import BaseTool
 
-DEFAULT_MODEL = "models/gemini-2.0-flash-live-001"
+DEFAULT_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -56,8 +57,17 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
     @property
     def client(self) -> Client:
         if not self._client:
+            try:
+                package_v = version("llama-index-voice-agents-gemini-live")
+            except PackageNotFoundError:
+                package_v = "0.0.0"
+
             self._client = Client(
-                api_key=self.api_key, http_options={"api_version": "v1beta"}
+                api_key=self.api_key,
+                http_options={
+                    "api_version": "v1beta",
+                    "headers": {"x-goog-api-client": f"llamaindex/{package_v}"},
+                },
             )
         return self._client
 

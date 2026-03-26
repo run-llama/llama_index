@@ -12,13 +12,17 @@ Here's an example of how to use this tool:
 
 ```python
 from llama_index.tools.yahoo_finance import YahooFinanceToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 tool_spec = YahooFinanceToolSpec()
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("What is the price of Apple stock?")
-agent.chat("What is the latest news about Apple?")
+print(await agent.run("What is the price of Apple stock?"))
+print(await agent.run("What is the latest news about Apple?"))
 ```
 
 The tools available are:

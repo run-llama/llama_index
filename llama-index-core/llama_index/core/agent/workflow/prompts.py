@@ -13,3 +13,7 @@ Current message:
 """
 
 DEFAULT_HANDOFF_OUTPUT_PROMPT = "Agent {to_agent} is now handling the request due to the following reason: {reason}.\nPlease continue with the current request."
+
+DEFAULT_EARLY_STOPPING_PROMPT = """You have reached the maximum number of iterations ({max_iterations}).
+Based on the information gathered so far, please provide a helpful final response to the user's original query.
+Do not attempt to use any more tools. Simply summarize what you have learned and provide the best possible answer."""

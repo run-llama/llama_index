@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Sequence
-from typing import Annotated, Any, ClassVar, Optional
+from typing import Annotated, Any, ClassVar, Optional, Union
 
 from annotated_types import MinLen
 from pydantic import (
@@ -65,77 +65,64 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
     """
 
     # Core client properties
-    sync_client: SkipValidation[Any] = Field(..., exclude=True)
-    """Synchronous Solr client instance for blocking operations."""
-
-    async_client: SkipValidation[Any] = Field(..., exclude=True)
-    """Asynchronous Solr client instance for non-blocking operations."""
+    sync_client: SkipValidation[Any] = Field(
+        ...,
+        exclude=True,
+        description="Synchronous Solr client instance for blocking operations.",
+    )
+    async_client: SkipValidation[Any] = Field(
+        ...,
+        exclude=True,
+        description="Asynchronous Solr client instance for non-blocking operations.",
+    )
 
     # Essential field mappings
-    nodeid_field: str
-    """Solr field name that uniquely identifies a node (required).
-
-    This field must be unique across all documents in the collection
-    and maps to the LlamaIndex ``node.id_`` attribute.
-    """
-
-    docid_field: Optional[str] = None
-    """Solr field name for the document ID (optional).
-
-    Maps to ``node.ref_doc_id`` and is used for document-level operations
-    like deletion. Required if you plan to use :py:meth:`delete` method.
-    """
-
-    content_field: Optional[str] = None
-    """Solr field name for storing the node's text content (optional).
-
-    Maps to ``node.get_content()`` and stores the main textual content
-    of the document. Required for text search functionality.
-    """
-
-    embedding_field: Optional[str] = None
-    """Solr field name for storing embedding vectors (optional).
-
-    Maps to ``node.get_embedding()`` and stores dense vector representations.
-    Required for vector similarity search. Field should be configured
-    as a dense vector field in Solr schema.
-    """
-
-    metadata_to_solr_field_mapping: Optional[list[tuple[str, str]]] = None
-    """Mapping from node metadata keys to Solr field names (optional).
-
-     List of ``(metadata_key, solr_field)`` tuples that define how LlamaIndex
-    node metadata should be mapped to specific Solr fields. Enables
-    structured metadata search and filtering.
-
-    Example:
-
-        [("author", "author_name"), ("date", "publication_date")]
-    """
+    nodeid_field: str = Field(
+        ...,
+        description=(
+            "Solr field name that uniquely identifies a node (required). Must be unique across all documents and maps to the LlamaIndex `node.id_`."
+        ),
+    )
+    docid_field: Optional[str] = Field(
+        default=None,
+        description=(
+            "Solr field name for the document ID (optional). Maps to `node.ref_doc_id` and is required for document-level operations like deletion."
+        ),
+    )
+    content_field: Optional[str] = Field(
+        default=None,
+        description=(
+            "Solr field name for storing the node's text content (optional). Maps to `node.get_content()`; required for BM25 / text search."
+        ),
+    )
+    embedding_field: Optional[str] = Field(
+        default=None,
+        description=(
+            "Solr field name for storing embedding vectors (optional). Maps to `node.get_embedding()`; required for vector similarity (KNN) search."
+        ),
+    )
+    metadata_to_solr_field_mapping: Optional[list[tuple[str, str]]] = Field(
+        default=None,
+        description=(
+            "Mapping from node metadata keys to Solr field names (optional). Each tuple is (metadata_key, solr_field). Enables structured metadata filtering."
+        ),
+    )
 
     # Configuration options
     text_search_fields: Optional[Annotated[Sequence[BoostedTextField], MinLen(1)]] = (
-        None
+        Field(
+            default=None,
+            description=(
+                "Fields used for BM25 text search with optional boosting. Sequence of BoostedTextField; required for TEXT_SEARCH mode."
+            ),
+        )
     )
-    """Fields used for BM25 text search with optional boosting (optional).
-
-    Sequence of :py:class:`BoostedTextField` objects that define which fields to search
-    and their relative importance (boost values) for text search queries.
-    Required for ``TEXT_SEARCH`` query mode.
-
-    Example:
-
-        [BoostedTextField(field="title", boost_factor=2.0),
-         BoostedTextField(field="content", boost_factor=1.0)]
-    """
-
-    output_fields: Annotated[Sequence[str], MinLen(1)] = ["*", "score"]
-    """Default fields to return in query results.
-
-    List of field names to include in search results. The ``'score'`` field
-    is automatically included for relevance scoring. Use ``"*"`` to return
-    all stored fields, or specify individual field names for efficiency.
-    """
+    output_fields: Annotated[Sequence[str], MinLen(1)] = Field(
+        default=["*", "score"],
+        description=(
+            "Default fields to return in query results. Include 'score' automatically for relevance; use '*' for all stored fields or list specific ones."
+        ),
+    )
 
     # Serialization configuration
     model_config: ClassVar[ConfigDict] = ConfigDict(
@@ -163,6 +150,21 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
         if "score" not in result:
             result.append("score")
         return result
+
+    @field_validator("text_search_fields", mode="before")
+    def _validate_text_search_fields(
+        cls, v: Optional[list[Union[str, BoostedTextField]]]
+    ) -> Optional[list[BoostedTextField]]:
+        """Validate and convert text search fields to BoostedTextField instances."""
+        if v is None:
+            return None
+
+        def to_boosted(item: Union[str, BoostedTextField]) -> BoostedTextField:
+            if isinstance(item, str):
+                return BoostedTextField(field=item)
+            return item
+
+        return [to_boosted(item) for item in v]
 
     @property
     def client(self) -> Any:
@@ -280,12 +282,10 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
             solr_query["fq"].append(
                 f"{self.docid_field}:({' OR '.join(query.doc_ids)})"
             )
-
-        if query.node_ids is not None:
+        if query.node_ids is not None and len(query.node_ids) > 0:
             solr_query["fq"].append(
                 f"{self.nodeid_field}:({' OR '.join(query.node_ids)})"
             )
-
         if query.output_fields is not None:
             # Use output fields from query, ensuring score is always included
             output_fields = self._validate_output_fields(query.output_fields)
@@ -432,12 +432,11 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
         * ``EQ``, ``NE``: Equality and inequality comparisons
         * ``GT``, ``GTE``, ``LT``, ``LTE``: Numeric range comparisons
         * ``IN``, ``NIN``: List membership tests
-        * ``TEXT_MATCH``: Exact text matching
+        * ``TEXT_MATCH``, ``TEXT_MATCH_INSENSITIVE``: Exact text matching
 
         Unsupported Filter Operations:
 
         * ``ANY``, ``ALL``: Complex logical operations
-        * ``TEXT_MATCH_INSENSITIVE``: Case-insensitive text matching
         * ``CONTAINS``: Substring matching
 
         Args:
@@ -500,12 +499,11 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
         * ``EQ``, ``NE``: Equality and inequality comparisons
         * ``GT``, ``GTE``, ``LT``, ``LTE``: Numeric range comparisons
         * ``IN``, ``NIN``: List membership tests
-        * ``TEXT_MATCH``: Exact text matching
+        * ``TEXT_MATCH``, ``TEXT_MATCH_INSENSITIVE``: Exact text matching
 
         Unsupported Filter Operations:
 
         * ``ANY``, ``ALL``: Complex logical operations
-        * ``TEXT_MATCH_INSENSITIVE``: Case-insensitive text matching
         * ``CONTAINS``: Substring matching
 
         Args:

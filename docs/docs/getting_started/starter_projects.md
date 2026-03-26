@@ -1,3 +1,0 @@
-# Starter Projects
-
-TODO

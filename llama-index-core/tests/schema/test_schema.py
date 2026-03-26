@@ -11,6 +11,7 @@ from llama_index.core.schema import (
     ImageDocument,
     ImageNode,
     MediaResource,
+    MetadataMode,
     NodeWithScore,
     ObjectType,
     TextNode,
@@ -83,6 +84,75 @@ def test_text_node_with_text_resource():
     tr_dict = tr.model_dump()
     text_node = TextNode(text_resource=tr_dict)
     assert text_node.text == "This is a test"
+
+
+def test_text_node_metadata_separator_consistency() -> None:
+    """
+    Test that metadata_separator works consistently on TextNode.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/20645.
+    Previously, TextNode defined its own `metadata_seperator` field that
+    shadowed the parent BaseNode's `metadata_separator` (with alias
+    `metadata_seperator`), causing the correctly-spelled kwarg to be ignored
+    when generating content.
+    """
+    metadata = {"name": "Foo", "uuid": "Bar"}
+
+    # Using the correctly-spelled kwarg should work on TextNode
+    node_correct = TextNode(
+        text="content",
+        metadata=metadata,
+        metadata_separator="::SEP::",
+    )
+    # Using the alias (typo) kwarg should also work
+    node_alias = TextNode(
+        text="content",
+        metadata=metadata,
+        metadata_seperator="::SEP::",
+    )
+
+    content_correct = node_correct.get_content(MetadataMode.LLM)
+    content_alias = node_alias.get_content(MetadataMode.LLM)
+
+    # Both should produce identical output with the custom separator
+    assert "::SEP::" in content_correct, (
+        f"metadata_separator='::SEP::' was ignored: {content_correct!r}"
+    )
+    assert content_correct == content_alias
+
+    # Verify the separator attribute is accessible and consistent
+    assert node_correct.metadata_separator == "::SEP::"
+    assert node_alias.metadata_separator == "::SEP::"
+
+    # Also verify Document and TextNode behave the same way
+    doc = Document(
+        text="content",
+        metadata=metadata,
+        metadata_separator="::SEP::",
+    )
+    doc_content = doc.get_content(MetadataMode.LLM)
+    assert content_correct == doc_content
+
+
+def test_text_node_metadata_separator_roundtrip() -> None:
+    """Test that TextNode with custom metadata_separator survives serialization roundtrip."""
+    node = TextNode(
+        text="hello",
+        metadata={"key": "value"},
+        metadata_separator=" | ",
+    )
+    assert node.metadata_separator == " | "
+
+    # Roundtrip through model_dump
+    dumped = node.model_dump()
+    restored = TextNode(**dumped)
+    assert restored.metadata_separator == " | "
+    assert restored.get_content(MetadataMode.LLM) == node.get_content(MetadataMode.LLM)
+
+    # Roundtrip through JSON
+    json_str = node.model_dump_json()
+    restored_json = TextNode.model_validate_json(json_str)
+    assert restored_json.metadata_separator == " | "
 
 
 def test_image_node_hash() -> None:
@@ -318,3 +388,46 @@ def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     img = doc.resolve_image(as_base64=True)
     assert isinstance(img, BytesIO)
     assert img.read() == png_1px_b64
+
+
+def test_media_resource_hash_distinguishes_empty_string_from_none() -> None:
+    """Test that MediaResource.hash distinguishes between text='' and text=None."""
+    resource_empty_text = MediaResource(text="")
+    resource_none_text = MediaResource(text=None)
+
+    # Both should have different hashes
+    assert resource_empty_text.hash != resource_none_text.hash
+
+    # None should return empty string (no content)
+    assert resource_none_text.hash == ""
+
+    # Empty string should return a valid hash (empty string is valid content)
+    assert resource_empty_text.hash != ""
+    assert len(resource_empty_text.hash) == 64  # SHA256 hex digest length
+
+
+def test_media_resource_hash_with_various_content() -> None:
+    """Test MediaResource.hash with different content types."""
+    # Test with text content
+    resource_text = MediaResource(text="hello")
+    assert resource_text.hash != ""
+    assert len(resource_text.hash) == 64
+
+    # Test with path
+    resource_path = MediaResource(path=Path("/tmp/test.txt"))
+    assert resource_path.hash != ""
+    assert len(resource_path.hash) == 64
+
+    # Test with url
+    resource_url = MediaResource(url="https://example.com")
+    assert resource_url.hash != ""
+    assert len(resource_url.hash) == 64
+
+    # All different content should produce different hashes
+    assert resource_text.hash != resource_path.hash
+    assert resource_text.hash != resource_url.hash
+    assert resource_path.hash != resource_url.hash
+
+    # Same content should produce same hash
+    resource_text2 = MediaResource(text="hello")
+    assert resource_text.hash == resource_text2.hash

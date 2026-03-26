@@ -13,16 +13,17 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the AzureTranslateToolSpec.
 
 ```python
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 from llama_index.tools.azure_translate import AzureTranslateToolSpec
 
 translate_tool = AzureTranslateToolSpec(api_key="your-key", region="eastus")
 
-agent = OpenAIAgent.from_tools(
-    translate_tool.to_tool_list(),
-    verbose=True,
+agent = FunctionAgent(
+    tools=translate_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
 )
-print(agent.chat('Say "hello world" in 5 different languages'))
+print(await agent.run('Say "hello world" in 5 different languages'))
 ```
 
 `translate`: Translate text to a target language

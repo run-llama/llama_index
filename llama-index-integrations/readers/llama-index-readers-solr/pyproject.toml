@@ -26,14 +26,29 @@ dev = [
 
 [project]
 name = "llama-index-readers-solr"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index readers solr integration"
-authors = [{name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"}]
-requires-python = ">=3.9,<4.0"
+authors = [
+    {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
+    {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
+    {name = "Steven Butler", email = "sbutler81@bloomberg.net"},
+    {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
+    {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
+]
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "xiaoyuouyang"}]
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+maintainers = [
+    {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
+    {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
+    {name = "Steven Butler", email = "sbutler81@bloomberg.net"},
+    {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
+    {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
+]
+dependencies = [
+    "llama-index-core>=0.14.0,<0.15",
+    "pysolr>=3.10.0",
+]
 
 [tool.codespell]
 check-filenames = true
@@ -53,7 +68,7 @@ contains_example = false
 import_path = "llama_index.readers.solr"
 
 [tool.llamahub.class_authors]
-SolrReader = "xiaoyuouyang"
+SolrReader = "xouyang1"
 
 [tool.mypy]
 disallow_untyped_defs = true

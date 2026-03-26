@@ -250,3 +250,125 @@ def _resolve_tool_choice(
     if isinstance(tool_choice, str) and tool_choice not in SUPPORTED_TOOL_CHOICES:
         return {"type": "function", "function": {"name": tool_choice}}
     return tool_choice
+
+
+_KNOWN_SUFFIXES = ("/predict", "/predictWithStreamResponse")
+
+
+def _strip_md_endpoint_suffix(endpoint: str) -> str:
+    """
+    Normalize a user-provided OCI Model Deployment endpoint into its base form.
+
+    Users may configure the endpoint in multiple valid ways, for example:
+
+        https://<MD_OCID>
+        https://<MD_OCID>/predict
+        https://<MD_OCID>/predictWithStreamResponse
+
+    This helper removes any known suffix ("/predict" or
+    "/predictWithStreamResponse") and returns only the base endpoint:
+
+        https://<MD_OCID>
+
+    This ensures downstream URL construction is consistent and avoids
+    incorrect paths such as:
+
+        .../predict/predictWithStreamResponse
+
+    Args:
+        endpoint (str): User-provided endpoint URL.
+
+    Returns:
+        str: Base endpoint URL without any known prediction suffix.
+
+    """
+    ep = (endpoint or "").rstrip("/")
+    for sfx in _KNOWN_SUFFIXES:
+        if ep.endswith(sfx):
+            return ep[: -len(sfx)]
+    return ep
+
+
+def _endpoint_suffix(endpoint: str) -> str:
+    """
+    Detect which known suffix is present in the configured endpoint.
+
+    This function inspects the endpoint string and returns:
+
+        - "predict" if the endpoint ends with "/predict"
+        - "predictWithStreamResponse" if it ends with "/predictWithStreamResponse"
+        - "" if no known suffix is present (base-only endpoint)
+
+    This allows the client to infer whether the user explicitly configured
+    v1 streaming (/predict) or v2 streaming (/predictWithStreamResponse).
+
+    Args:
+        endpoint (str): User-provided endpoint URL.
+
+    Returns:
+        str: The detected suffix name, or an empty string if none is found.
+
+    """
+    ep = (endpoint or "").rstrip("/")
+    if ep.endswith("/predictWithStreamResponse"):
+        return "predictWithStreamResponse"
+    if ep.endswith("/predict"):
+        return "predict"
+    return ""
+
+
+def _resolve_invoke_url(endpoint: str, *, stream: bool) -> str:
+    """
+    Resolve the final URL to invoke for a given request type (streaming vs non-streaming).
+
+    OCI Data Science Model Deployments support:
+
+    - Standard request/response inference:
+        POST <base>/predict
+
+    - Legacy streaming inference (v1):
+        POST <base>/predict   with stream=True and SSE-style response chunks
+
+    - GA streaming inference (v2):
+        POST <base>/predictWithStreamResponse
+
+    Users may configure the client endpoint in any of these forms:
+
+        https://<MD_OCID>
+        https://<MD_OCID>/predict
+        https://<MD_OCID>/predictWithStreamResponse
+
+    This resolver ensures:
+
+    Non-streaming calls:
+        Always go to <base>/predict
+
+    Streaming calls:
+        - Use /predict if the user configured endpoint with "/predict"
+        - Use /predictWithStreamResponse if user configured that endpoint
+        - If user provided only the base endpoint, streaming defaults to v2
+
+    This guarantees backward compatibility while allowing GA streaming support,
+    without mutating the stored endpoint configuration.
+
+    Args:
+        endpoint (str): User-configured endpoint URL.
+        stream (bool): Whether the current request is a streaming request.
+
+    Returns:
+        str: The resolved URL that should be invoked for this request.
+
+    """
+    base = _strip_md_endpoint_suffix(endpoint)
+
+    if not stream:
+        return f"{base}/predict"
+
+    suffix = _endpoint_suffix(endpoint)
+    if suffix == "predict":
+        return f"{base}/predict"
+    if suffix == "predictWithStreamResponse":
+        return f"{base}/predictWithStreamResponse"
+
+    # base only => default streaming to v2
+    return f"{base}/predictWithStreamResponse"

@@ -1,4 +1,9 @@
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 from typing import Any, Union
 from zoneinfo import ZoneInfo
 

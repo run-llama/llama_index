@@ -102,7 +102,8 @@ def generate_qa_embedding_pairs(
         if num_questions_generated < num_questions_per_chunk:
             warnings.warn(
                 f"Fewer questions generated ({num_questions_generated}) "
-                f"than requested ({num_questions_per_chunk})."
+                f"than requested ({num_questions_per_chunk}).",
+                stacklevel=2,
             )
 
         for question in questions:

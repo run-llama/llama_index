@@ -19,7 +19,7 @@ pip install llama-index llama-index-graph-stores-tidb
 
 NOTE: `TiDBPropertyGraphStore` requires the Vector Search feature in TiDB, but now it is only available in [TiDB Cloud Serverless](https://tidb.cloud/ai).
 
-Please checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/property_graph/property_graph_tidb.ipynb) to learn how to use `TiDBPropertyGraphStore` with LlamaIndex.
+Please checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/examples/property_graph/property_graph_tidb.ipynb) to learn how to use `TiDBPropertyGraphStore` with LlamaIndex.
 
 Simple example to use `TiDBPropertyGraphStore`:
 
@@ -57,7 +57,7 @@ print(response)
 
 ### Knowledge Graph Store
 
-Checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/index_structs/knowledge_graph/TiDBKGIndexDemo.ipynb) to learn how to use `TiDBGraphStore` with LlamaIndex.
+Checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/examples/index_structs/knowledge_graph/TiDBKGIndexDemo.ipynb) to learn how to use `TiDBGraphStore` with LlamaIndex.
 
 For `TiDBGraphStore`, you can use either Self-Hosted TiDB or TiDB Cloud Serverless(Recommended).
 

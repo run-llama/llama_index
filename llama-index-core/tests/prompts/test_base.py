@@ -3,7 +3,15 @@
 from typing import Any
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    TextBlock,
+    ImageBlock,
+    AudioBlock,
+    VideoBlock,
+    DocumentBlock,
+)
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts import (
     ChatPromptTemplate,
@@ -55,7 +63,7 @@ def test_template_output_parser(output_parser: BaseOutputParser) -> None:
     assert prompt_fmt == "hello world bar\noutput_instruction"
 
 
-def test_chat_template() -> None:
+def test_chat_template_content() -> None:
     chat_template = ChatPromptTemplate(
         message_templates=[
             ChatMessage(
@@ -73,11 +81,89 @@ def test_chat_template() -> None:
     assert messages[0] == ChatMessage(
         content="This is a system message with a sys_arg", role=MessageRole.SYSTEM
     )
+    assert messages[1] == ChatMessage(content="hello world bar", role=MessageRole.USER)
 
     assert partial_template.format(text="world", foo="bar") == (
         "system: This is a system message with a sys_arg\n"
         "user: hello world bar\n"
         "assistant: "
+    )
+
+
+def test_chat_template_blocks():
+    chat_template = ChatPromptTemplate(
+        message_templates=[
+            ChatMessage(
+                blocks=[TextBlock(text="This is a system message with a {sys_param}")],
+                role=MessageRole.SYSTEM,
+            ),
+            ChatMessage(
+                blocks=[
+                    TextBlock(text="hello {text} {foo}"),
+                    ImageBlock(image=b"{image_bytes}"),
+                    AudioBlock(audio=b"{audio_bytes}"),
+                    VideoBlock(video=b"{video_bytes}"),
+                    DocumentBlock(data=b"{pdf_bytes}"),
+                ],
+                role=MessageRole.USER,
+            ),
+        ],
+        prompt_type=PromptType.CONVERSATION,
+    )
+
+    partial_template = chat_template.partial_format(sys_param="sys_arg")
+    partially_formatted_messages = partial_template.format_messages()
+    messages = partial_template.format_messages(
+        text="world",
+        foo="bar",
+        image_bytes=b"fake_image",
+        audio_bytes=b"fake_audio",
+        video_bytes=b"fake_video",
+        pdf_bytes=b"fake_pdf",
+    )
+
+    assert set(chat_template.template_vars) == {
+        "sys_param",
+        "text",
+        "foo",
+        "image_bytes",
+        "audio_bytes",
+        "video_bytes",
+        "pdf_bytes",
+    }
+    assert messages[0] == ChatMessage(
+        blocks=[TextBlock(text="This is a system message with a sys_arg")],
+        role=MessageRole.SYSTEM,
+    )
+    assert messages[1] == ChatMessage(
+        blocks=[
+            TextBlock(text="hello world bar"),
+            ImageBlock(image=b"fake_image"),
+            AudioBlock(audio=b"fake_audio"),
+            VideoBlock(video=b"fake_video"),
+            DocumentBlock(data=b"fake_pdf"),
+        ],
+        role=MessageRole.USER,
+    )
+
+    assert partial_template.format(text="world", foo="bar") == (
+        "system: This is a system message with a sys_arg\n"
+        "user: hello world bar\n"
+        "assistant: "
+    )
+    assert partially_formatted_messages[0] == ChatMessage(
+        blocks=[TextBlock(text="This is a system message with a sys_arg")],
+        role=MessageRole.SYSTEM,
+    )
+    assert partially_formatted_messages[1] == ChatMessage(
+        blocks=[
+            TextBlock(text="hello {text} {foo}"),
+            ImageBlock(image=b"{image_bytes}"),
+            AudioBlock(audio=b"{audio_bytes}"),
+            VideoBlock(video=b"{video_bytes}"),
+            DocumentBlock(data=b"{pdf_bytes}"),
+        ],
+        role=MessageRole.USER,
     )
 
 

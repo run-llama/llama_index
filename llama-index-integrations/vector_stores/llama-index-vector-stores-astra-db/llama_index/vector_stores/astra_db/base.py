@@ -197,6 +197,50 @@ class AstraDBVectorStore(BasePydanticVectorStore):
                 # other exception
                 raise
 
+    @classmethod
+    def from_params(
+        cls,
+        collection_name: str,
+        token: str,
+        api_endpoint: str,
+        embedding_dimension: int,
+        keyspace: Optional[str] = None,
+        namespace: Optional[str] = None,
+        ttl_seconds: Optional[int] = None,
+        **kwargs: Any,
+    ) -> "AstraDBVectorStore":
+        """
+        Create an AstraDBVectorStore from parameters.
+
+        Args:
+            collection_name (str): collection name to use. If not existing, it will be created.
+            token (str): The Astra DB Application Token to use.
+            api_endpoint (str): The Astra DB JSON API endpoint for your database.
+            embedding_dimension (int): length of the embedding vectors in use.
+            keyspace (Optional[str]): The keyspace to use. If not provided, 'default_keyspace'
+            namespace (Optional[str]): [DEPRECATED] The keyspace to use. If not provided, 'default_keyspace'
+            ttl_seconds (Optional[int]): TTL in seconds (not supported, will be ignored).
+
+        Returns:
+            AstraDBVectorStore: A new instance of AstraDBVectorStore.
+
+        """
+        return cls(
+            collection_name=collection_name,
+            token=token,
+            api_endpoint=api_endpoint,
+            embedding_dimension=embedding_dimension,
+            keyspace=keyspace,
+            namespace=namespace,
+            ttl_seconds=ttl_seconds,
+            **kwargs,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Return the class name."""
+        return "AstraDBVectorStore"
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -311,6 +355,111 @@ class AstraDBVectorStore(BasePydanticVectorStore):
             )
 
         self._collection.delete_one({"_id": ref_doc_id})
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: int = 100,
+    ) -> List[BaseNode]:
+        """
+        Get nodes by node IDs or filters.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (int): Maximum number of nodes to retrieve. Defaults to 100.
+
+        Returns:
+            List[BaseNode]: List of retrieved nodes.
+
+        """
+        if node_ids is not None and filters is not None:
+            raise ValueError("Cannot specify both node_ids and filters")
+
+        if node_ids is None and filters is None:
+            raise ValueError("Must specify either node_ids or filters")
+
+        # Build the filter query
+        if node_ids is not None:
+            # Query by node IDs
+            if len(node_ids) == 1:
+                filter_query = {"_id": node_ids[0]}
+            else:
+                filter_query = {"_id": {"$in": node_ids}}
+        else:
+            # Query by metadata filters
+            filter_query = self._query_filters_to_dict(filters)
+
+        # Perform the query
+        matches = list(
+            self._collection.find(
+                filter=filter_query,
+                projection={"*": True},
+                limit=limit,
+            )
+        )
+
+        # Convert to nodes
+        nodes = []
+        for match in matches:
+            # Check whether we have a llama-generated node content field
+            if "_node_content" not in match["metadata"]:
+                match["metadata"]["_node_content"] = json.dumps(match)
+
+            # Create a new node object from the node metadata
+            node = metadata_dict_to_node(match["metadata"], text=match["content"])
+            nodes.append(node)
+
+        return nodes
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes by node IDs or filters.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to delete.
+            filters (Optional[MetadataFilters]): Metadata filters to apply for deletion.
+
+        """
+        if delete_kwargs:
+            args_desc = ", ".join(
+                f"'{kwarg}'" for kwarg in sorted(delete_kwargs.keys())
+            )
+            warn(
+                (
+                    "AstraDBVectorStore.delete_nodes call got unsupported "
+                    f"named argument(s): {args_desc}."
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
+
+        if node_ids is not None and filters is not None:
+            raise ValueError("Cannot specify both node_ids and filters")
+
+        if node_ids is None and filters is None:
+            raise ValueError("Must specify either node_ids or filters")
+
+        # Build the filter query
+        if node_ids is not None:
+            # Delete by node IDs
+            if len(node_ids) == 1:
+                delete_result = self._collection.delete_one({"_id": node_ids[0]})
+                _logger.debug(f"Deleted {delete_result.deleted_count} documents")
+            else:
+                delete_result = self._collection.delete_many({"_id": {"$in": node_ids}})
+                _logger.debug(f"Deleted {delete_result.deleted_count} documents")
+        else:
+            # Delete by metadata filters
+            filter_query = self._query_filters_to_dict(filters)
+            delete_result = self._collection.delete_many(filter_query)
+            _logger.debug(f"Deleted {delete_result.deleted_count} documents")
 
     @property
     def client(self) -> Any:

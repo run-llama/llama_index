@@ -2,17 +2,9 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Any, Dict, Optional, cast
+from typing import Dict, Optional, cast
 
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -35,7 +27,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 
-class BaseQueryTransform(ChainableMixin, PromptMixin, DispatcherSpanMixin):
+class BaseQueryTransform(PromptMixin, DispatcherSpanMixin):
     """
     Base class for query transform.
 
@@ -79,10 +71,6 @@ class BaseQueryTransform(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     ) -> QueryBundle:
         """Run query processor."""
         return self.run(query_bundle_or_str, metadata=metadata)
-
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """As query component."""
-        return QueryTransformComponent(query_transform=self)
 
 
 class IdentityQueryTransform(BaseQueryTransform):
@@ -331,47 +319,3 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
             query_str=new_query_str,
             custom_embedding_strs=query_bundle.custom_embedding_strs,
         )
-
-
-class QueryTransformComponent(QueryComponent):
-    """Query transform component."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    query_transform: BaseQueryTransform = Field(..., description="Query transform.")
-
-    def set_callback_manager(self, callback_manager: Any) -> None:
-        """Set callback manager."""
-        # TODO: not implemented yet
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "query_str" not in input:
-            raise ValueError("Input must have key 'query_str'")
-        input["query_str"] = validate_and_convert_stringable(input["query_str"])
-
-        input["metadata"] = input.get("metadata", {})
-
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        output = self.query_transform.run(
-            kwargs["query_str"],
-            metadata=kwargs["metadata"],
-        )
-        return {"query_str": output.query_str}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: true async not implemented yet
-        return self._run_component(**kwargs)
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"query_str"}, optional_keys={"metadata"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"query_str"})

@@ -223,3 +223,59 @@ def test_model_incompatible_client_known_model() -> None:
     with pytest.warns(UserWarning) as warning:
         model = NVIDIARerank(api_key="BOGUS", model=model_name)
     assert "Unable to determine validity" in str(warning[0].message)
+
+
+@pytest.fixture()
+def mock_ranking_endpoint(respx_mock: respx.MockRouter, known_unknown: str) -> None:
+    respx_mock.get("http://localhost:8000/v1/models").respond(
+        json={"data": [{"id": known_unknown}]}
+    )
+
+    respx_mock.post("http://localhost:8000/v1/ranking").respond(
+        json={"rankings": [{"index": 0, "logit": 1.0}]}
+    )
+
+
+@pytest.fixture()
+def mock_hosted_endpoint(respx_mock: respx.MockRouter) -> None:
+    from llama_index.postprocessor.nvidia_rerank.utils import BASE_URL
+
+    # Mock the hosted ranking endpoint (no /ranking suffix appended)
+    respx_mock.post(BASE_URL).respond(json={"rankings": [{"index": 0, "logit": 1.0}]})
+
+
+def test_local_appends_ranking_to_url(
+    mock_ranking_endpoint: None, known_unknown: str
+) -> None:
+    """Test that a locally hosted model appends /ranking to the base URL."""
+    with pytest.warns(UserWarning, match="Default model is set"):
+        client = NVIDIARerank(base_url="http://localhost:8000/v1/")
+
+    assert not client._is_hosted
+
+    client.postprocess_nodes(
+        [NodeWithScore(node=Document(text="test document"))],
+        query_str="test query",
+    )
+
+    post_calls = [call for call in respx.calls if call.request.method == "POST"]
+    assert len(post_calls) == 1
+    assert str(post_calls[0].request.url) == "http://localhost:8000/v1/ranking"
+
+
+def test_hosted_does_not_append_ranking_to_url(mock_hosted_endpoint: None) -> None:
+    """Test that hosted model uses the base URL directly without /ranking suffix."""
+    from llama_index.postprocessor.nvidia_rerank.utils import BASE_URL
+
+    client = NVIDIARerank(api_key="BOGUS")
+
+    assert client._is_hosted
+
+    client.postprocess_nodes(
+        [NodeWithScore(node=Document(text="test document"))],
+        query_str="test query",
+    )
+
+    post_calls = [call for call in respx.calls if call.request.method == "POST"]
+    assert len(post_calls) == 1
+    assert str(post_calls[0].request.url) == BASE_URL

@@ -444,7 +444,11 @@ class SnowKBReader(BaseReader):
             gr.add_query("number", "IN", ",".join(numbers))
         else:
             raise ValueError("Must provide article_sys_id or number")
-        gr.add_query("latest", "true")  # Only fetch latest version
+
+        # Handle latest field: include records where latest is true OR latest field is not present/empty
+        latest_condition = gr.add_query("latest", "true")
+        latest_condition.add_or_condition("latest", "ISEMPTY")
+
         gr.add_query(
             "workflow_state", status or DEFAULT_WORKFLOW_STATE
         )  # Include only published articles

@@ -3,10 +3,10 @@
 import aiohttp
 import base64
 import functools
+import inspect
 import requests
 import struct
 import tenacity
-import asyncio
 from typing import Any, Callable, List, Optional
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -100,7 +100,7 @@ def embedding_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
 
         return await _wrapped()
 
-    return async_wrapper if asyncio.iscoroutinefunction(f) else wrapper
+    return async_wrapper if inspect.iscoroutinefunction(f) else wrapper
 
 
 def base64_to_float_list(encoded_str: str) -> List[float]:

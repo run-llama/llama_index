@@ -7,6 +7,8 @@ from enum import Enum, auto
 from pathlib import Path
 
 import click
+from rich.live import Live
+from rich.table import Table
 
 from llama_dev.utils import (
     find_all_packages,
@@ -33,6 +35,38 @@ class ResultStatus(Enum):
 
 NO_TESTS_INDICATOR = "no tests ran"
 MAX_CONSOLE_PRINT_LINES = 50
+
+
+def _generate_status_table(
+    total: int,
+    completed: int,
+    passed: int,
+    failed: int,
+    skipped: int,
+    running_packages: list[str],
+) -> Table:
+    """Generate a Rich table showing test progress."""
+    table = Table(title="Test Progress", show_header=True, header_style="bold cyan")
+    table.add_column("Status", style="dim", width=20)
+    table.add_column("Count", justify="right")
+
+    table.add_row("Total Packages", str(total))
+    table.add_row("Completed", f"{completed}/{total}")
+    table.add_row("✅ Passed", str(passed), style="green")
+    table.add_row("❌ Failed", str(failed), style="red")
+    table.add_row("⏭️  Skipped", str(skipped), style="yellow")
+    table.add_row("", "")
+
+    if running_packages:
+        table.add_row("Currently Running:", "", style="bold blue")
+        for pkg in running_packages[:10]:  # Show max 10
+            table.add_row("  →", pkg, style="blue")
+        if len(running_packages) > 10:
+            table.add_row(
+                "  →", f"... and {len(running_packages) - 10} more", style="dim blue"
+            )
+
+    return table
 
 
 @click.command(short_help="Run tests across the monorepo")
@@ -106,6 +140,10 @@ def test(
 
     # Test the packages using a process pool
     results = []
+    passed_count = 0
+    failed_count = 0
+    skipped_count = 0
+
     with concurrent.futures.ProcessPoolExecutor(max_workers=int(workers)) as executor:
         future_to_package = {
             executor.submit(
@@ -119,11 +157,120 @@ def test(
             for package_path in sorted(packages_to_test)
         }
 
-        for future in concurrent.futures.as_completed(future_to_package):
-            result = future.result()
-            results.append(result)
+        # Detect if we're in a CI environment (GitHub Actions, etc.)
+        is_ci = (
+            os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
+        )
 
-            # Print results as they complete
+        if is_ci:
+            # In CI: print periodic status updates instead of live display
+            console.print(
+                f"🚀 Starting tests for {len(packages_to_test)} packages with {workers} workers...\n"
+            )
+            last_update_time = time.time()
+            update_interval = 30  # Print status every 30 seconds
+
+            for future in concurrent.futures.as_completed(future_to_package):
+                result = future.result()
+                results.append(result)
+
+                # Update counts
+                if result["status"] == ResultStatus.TESTS_PASSED:
+                    passed_count += 1
+                elif result["status"] in (
+                    ResultStatus.TESTS_FAILED,
+                    ResultStatus.COVERAGE_FAILED,
+                    ResultStatus.INSTALL_FAILED,
+                ):
+                    failed_count += 1
+                else:
+                    skipped_count += 1
+
+                # Print status update periodically
+                current_time = time.time()
+                if (
+                    current_time - last_update_time >= update_interval
+                    or len(results) % 10 == 0
+                    or len(results) == len(packages_to_test)
+                ):
+                    running_packages = [
+                        str(future_to_package[f].relative_to(repo_root))
+                        for f in future_to_package
+                        if not f.done()
+                    ]
+
+                    console.print(
+                        f"\n📊 Progress: {len(results)}/{len(packages_to_test)} | ✅ {passed_count} | ❌ {failed_count} | ⏭️ {skipped_count}"
+                    )
+                    if running_packages:
+                        console.print(
+                            f"🔄 Currently running ({len(running_packages)}):"
+                        )
+                        for pkg in running_packages[:15]:  # Show up to 15 in CI
+                            console.print(f"   → {pkg}")
+                        if len(running_packages) > 15:
+                            console.print(
+                                f"   ... and {len(running_packages) - 15} more"
+                            )
+                    console.print()
+                    last_update_time = current_time
+        else:
+            # Local: Use Rich Live display to show progress
+            with Live(
+                _generate_status_table(
+                    len(packages_to_test),
+                    0,
+                    0,
+                    0,
+                    0,
+                    [
+                        str(p.relative_to(repo_root))
+                        for p in sorted(packages_to_test)[: int(workers)]
+                    ],
+                ),
+                console=console,
+                refresh_per_second=2,
+            ) as live:
+                for future in concurrent.futures.as_completed(future_to_package):
+                    result = future.result()
+                    results.append(result)
+
+                    # Update counts
+                    if result["status"] == ResultStatus.TESTS_PASSED:
+                        passed_count += 1
+                    elif result["status"] in (
+                        ResultStatus.TESTS_FAILED,
+                        ResultStatus.COVERAGE_FAILED,
+                        ResultStatus.INSTALL_FAILED,
+                    ):
+                        failed_count += 1
+                    else:
+                        skipped_count += 1
+
+                    # Get currently running packages and update display
+                    running_packages = [
+                        str(future_to_package[f].relative_to(repo_root))
+                        for f in future_to_package
+                        if not f.done()
+                    ]
+
+                    live.update(
+                        _generate_status_table(
+                            len(packages_to_test),
+                            len(results),
+                            passed_count,
+                            failed_count,
+                            skipped_count,
+                            running_packages,
+                        )
+                    )
+
+        # Print detailed results after completion
+        console.print("\n" + "=" * 60 + "\n")
+        console.print("Detailed Results:", style="bold")
+        console.print()
+
+        for result in results:
             package: Path = result["package"]
             package_name = package.relative_to(repo_root)
             if result["status"] == ResultStatus.INSTALL_FAILED:
@@ -132,19 +279,22 @@ def test(
                     _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
                 )
             elif result["status"] == ResultStatus.TESTS_PASSED:
-                console.print(f"✅ {package_name} succeeded in {result['time']}")
+                if debug:  # Only print passed tests in debug mode
+                    console.print(f"✅ {package_name} succeeded in {result['time']}")
             elif result["status"] == ResultStatus.UNSUPPORTED_PYTHON_VERSION:
-                console.print(
-                    f"⏭️ {package_name} skipped due to python version incompatibility"
-                )
-                console.print(
-                    _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
-                )
+                if debug:
+                    console.print(
+                        f"⏭️ {package_name} skipped due to python version incompatibility"
+                    )
+                    console.print(
+                        _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
+                    )
             elif result["status"] == ResultStatus.NO_TESTS:
-                console.print(f"⏭️ {package_name} skipped due to no tests")
-                console.print(
-                    _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
-                )
+                if debug:
+                    console.print(f"⏭️ {package_name} skipped due to no tests")
+                    console.print(
+                        _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
+                    )
             else:
                 console.print(f"❌ {package_name} failed")
                 console.print(
@@ -268,6 +418,7 @@ def _pytest(
         text=True,
         capture_output=True,
         env=env,
+        timeout=300,  # 5 minute timeout per package
     )
 
 
@@ -361,7 +512,18 @@ def _run_tests(
             }
 
     # Run pytest
-    result = _pytest(package_path, env, cov)
+    try:
+        result = _pytest(package_path, env, cov)
+    except subprocess.TimeoutExpired:
+        elapsed_time = time.perf_counter() - start
+        return {
+            "package": package_path,
+            "status": ResultStatus.NO_TESTS,
+            "stdout": "",
+            "stderr": "Test execution timed out after 300s",
+            "time": f"{elapsed_time:.2f}s",
+        }
+
     # Only fail if there are tests and they failed
     if result.returncode != 0 and NO_TESTS_INDICATOR not in str(result.stdout).lower():
         elapsed_time = time.perf_counter() - start

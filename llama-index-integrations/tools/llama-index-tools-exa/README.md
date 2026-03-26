@@ -1,6 +1,6 @@
 # LlamaIndex Tools Integration: Exa
 
-This tool connects to [Exa](https://exa.ai/) to easily enable
+This tool connects to [Exa](https://exa.ai/), one of the best web search APIs for AI, to easily enable
 your agent to search and get HTML content from the Internet.
 
 To begin, you need to obtain an API key on the [Exa developer dashboard](https://dashboard.exa.ai).
@@ -15,19 +15,25 @@ Here's an example usage of the ExaToolSpec.
 # %pip install llama-index llama-index-core llama-index-tools-exa
 
 from llama_index.tools.exa import ExaToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 exa_tool = ExaToolSpec(
     api_key=os.environ["EXA_API_KEY"],
 )
-agent = OpenAIAgent.from_tools(exa_tool.to_tool_list())
+agent = FunctionAgent(
+    tools=exa_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat(
-    "Can you summarize the news published in the last month on superconductors"
+print(
+    await agent.run(
+        "Can you summarize the news published in the last month on superconductors"
+    )
 )
 ```
 
-`search`: Search for a list of articles relating to a natural language query
+`search`: Search the web using Exa for a list of articles relating to a natural language query
 
 `retrieve_documents`: Retrieve a list of documents returned from `exa_search`.
 

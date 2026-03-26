@@ -1,5 +1,4 @@
 import logging
-import sys
 import uuid
 from typing import Any, Generator, List
 import clickhouse_connect
@@ -74,6 +73,7 @@ def clickhouse_store(table_name: str, clickhouse_client: Any) -> ClickHouseVecto
         database=TEST_DB,
         table=table_name,
         metric="l2",
+        dimension=3,
     )
 
 
@@ -151,6 +151,7 @@ def test_instance_creation(table_name: str, clickhouse_client: Any) -> None:
         clickhouse_client,
         database=TEST_DB,
         table=table_name,
+        dimension=3,
     )
     assert isinstance(ch_store, ClickHouseVectorStore)
 
@@ -161,6 +162,7 @@ def test_table_creation(table_name: str, clickhouse_client: Any) -> None:
         clickhouse_client,
         database=TEST_DB,
         table=table_name,
+        dimension=3,
     )
     ch_store.create_table(3)
     ch_store.drop()
@@ -197,33 +199,6 @@ def test_add_to_ch_and_text_query(
 
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
-@pytest.mark.skipif(sys.platform == "darwin", reason="annoy not supported on osx")
-def test_add_to_ch_and_text_query_annoy(
-    clickhouse_client: Any,
-    table_name: str,
-    node_embeddings: List[TextNode],
-) -> None:
-    clickhouse_store = ClickHouseVectorStore(
-        clickhouse_client,
-        database=TEST_DB,
-        table=table_name,
-        metric="l2",
-        index_type="ANNOY",
-        index_params={"NumTrees": 100},
-    )
-    clickhouse_store.add(node_embeddings)
-    res = clickhouse_store.query(
-        VectorStoreQuery(
-            query_str="lorem",
-            mode=VectorStoreQueryMode.TEXT_SEARCH,
-            similarity_top_k=1,
-        )
-    )
-    assert res.nodes
-    assert res.nodes[0].get_content() == "lorem ipsum"
-
-
-@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_text_query_hnsw(
     clickhouse_client: Any,
     table_name: str,
@@ -235,7 +210,8 @@ def test_add_to_ch_and_text_query_hnsw(
         table=table_name,
         metric="l2",
         index_type="HNSW",
-        index_params={"ScalarKind": "f16"},
+        index_params={"quantization": "f16"},
+        dimension=3,
     )
     clickhouse_store.add(node_embeddings)
     res = clickhouse_store.query(
@@ -307,6 +283,8 @@ def test_add_to_ch_query_with_where_filters(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_query_and_delete(
+    clickhouse_client: Any,
+    table_name: str,
     clickhouse_store: ClickHouseVectorStore,
     node_embeddings: List[TextNode],
 ) -> None:
@@ -319,6 +297,11 @@ def test_add_to_ch_query_and_delete(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
     clickhouse_store.delete("test-0")
+
+    clickhouse_client.command(
+        f"OPTIMIZE TABLE {TEST_DB}.{table_name} FINAL SETTINGS mutations_sync=2"
+    )
+
     res = clickhouse_store.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
@@ -405,3 +388,82 @@ def check_top_match(
     # test the nodes are return in the expected order
     for i, node in enumerate(expected_nodes):
         assert res.nodes[i].node_id == node
+
+
+@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
+def test_table_not_dropped_by_default(
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
+) -> None:
+    """Test that existing table is not dropped when drop_existing_table=False."""
+    # Create first store and add data
+    store1 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+    store1.add(node_embeddings[:2])
+
+    # Query to verify data exists
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    res1 = store1.query(query)
+    assert len(res1.nodes) == 2
+
+    # Create second store with same table - should NOT drop existing data
+    store2 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+
+    # Verify data still exists
+    res2 = store2.query(query)
+    assert len(res2.nodes) == 2
+    assert res2.nodes[0].node_id == res1.nodes[0].node_id
+
+    # Clean up
+    store2.drop()
+
+
+@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
+def test_table_dropped_when_requested(
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
+) -> None:
+    """Test that table IS dropped when drop_existing_table=True."""
+    # Create first store and add data
+    store1 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=False,
+    )
+    store1.add(node_embeddings[:2])
+
+    # Verify data exists
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    res1 = store1.query(query)
+    assert len(res1.nodes) == 2
+
+    # Create second store with drop_existing_table=True - should drop table
+    store2 = ClickHouseVectorStore(
+        clickhouse_client,
+        database=TEST_DB,
+        table=table_name,
+        dimension=3,
+        drop_existing_table=True,
+    )
+
+    # Table should be empty now
+    res2 = store2.query(query)
+    assert len(res2.nodes) == 0
+
+    # Clean up
+    store2.drop()

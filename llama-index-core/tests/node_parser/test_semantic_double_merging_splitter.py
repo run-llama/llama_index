@@ -1,5 +1,6 @@
 import pytest
 
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     SemanticDoubleMergingSplitterNodeParser,
     LanguageConfig,
@@ -106,3 +107,40 @@ def test_chunk_size_3() -> None:
     nodes = splitter.get_nodes_from_documents([doc_same])
     for node in nodes:
         assert len(node.get_content()) < 500
+
+
+def test_embed_model_path_returns_nodes() -> None:
+    """With embed_model set, chunking uses embeddings instead of Spacy (no Spacy required)."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+        initial_threshold=0.6,
+        appending_threshold=0.8,
+        merging_threshold=0.8,
+        max_chunk_size=1000,
+    )
+    nodes = splitter.get_nodes_from_documents([doc])
+    assert len(nodes) >= 1
+    assert all(len(n.get_content()) > 0 for n in nodes)
+
+
+def test_embed_model_similarity_in_range() -> None:
+    """_similarity with embed_model returns a value in [0, 1] (cosine-like)."""
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+    )
+    sim = splitter._similarity("first sentence.", "second sentence.")
+    assert 0 <= sim <= 1
+
+
+def test_embed_model_single_sentence_document() -> None:
+    """Single-sentence document yields one node when using embed_model."""
+    single_doc = Document(text="Only one sentence here.")
+    embed = MockEmbedding(embed_dim=4)
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=embed,
+    )
+    nodes = splitter.get_nodes_from_documents([single_doc])
+    assert len(nodes) == 1
+    assert nodes[0].get_content() == "Only one sentence here."

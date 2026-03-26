@@ -1,6 +1,6 @@
 """Test OSS Apache Solr vector store."""
 
-from typing import Any
+from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -419,10 +419,10 @@ def test_vector_store_aclient_property(
 def test_to_solr_query_dense(
     mock_sync_client: MagicMock,
     mock_async_client: AsyncMock,
-    store_embedding_field: str | None,
-    query_embedding_field: str | None,
-    query_embedding: list[float] | None,
-    similarity_top_k: int | None,
+    store_embedding_field: Optional[str],
+    query_embedding_field: Optional[str],
+    query_embedding: Optional[list[float]],
+    similarity_top_k: Optional[int],
     should_succeed: bool,
 ) -> None:
     """Test _to_solr_query for dense vector queries - both success and failure cases."""
@@ -496,9 +496,9 @@ def test_to_solr_query_dense(
 def test_to_solr_query_bm25(
     mock_sync_client: MagicMock,
     mock_async_client: AsyncMock,
-    text_search_fields: list[BoostedTextField] | None,
-    query_str: str | None,
-    sparse_top_k: int | None,
+    text_search_fields: Optional[list[BoostedTextField]],
+    query_str: Optional[str],
+    sparse_top_k: Optional[int],
     should_succeed: bool,
 ) -> None:
     """Test _to_solr_query for BM25 text search queries - both success and failure cases."""
@@ -575,10 +575,10 @@ def test_to_solr_query_bm25(
 )
 def test_to_solr_query_optional_params(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    doc_ids: list[str] | None,
-    node_ids: list[str] | None,
-    filters: MetadataFilters | None,
-    output_fields: list[str] | None,
+    doc_ids: Optional[list[str]],
+    node_ids: Optional[list[str]],
+    filters: Optional[MetadataFilters],
+    output_fields: Optional[list[str]],
 ) -> None:
     """Test _to_solr_query handles optional parameters correctly."""
     query = VectorStoreQuery(
@@ -650,8 +650,8 @@ def test_vector_store_process_query_results(
     mock_sync_client: MagicMock,
     mock_async_client: AsyncMock,
     mock_solr_response_docs: list[dict[str, Any]],
-    content_field: str | None,
-    embedding_field: str | None,
+    content_field: Optional[str],
+    embedding_field: Optional[str],
 ) -> None:
     """Test _process_query_results method."""
     store = ApacheSolrVectorStore(
@@ -796,15 +796,15 @@ async def test_vector_store_aquery(
 def test_apache_solr_vector_store_get_data_from_node(
     mock_sync_client: MagicMock,
     mock_async_client: AsyncMock,
-    nodeid_field: str | None,
+    nodeid_field: Optional[str],
     nodeid_data: dict[str, Any],
-    content_field: str | None,
+    content_field: Optional[str],
     content_data: dict[str, Any],
-    embedding_field: str | None,
+    embedding_field: Optional[str],
     embedding_data: dict[str, Any],
-    docid_field: str | None,
+    docid_field: Optional[str],
     docid_data: dict[str, Any],
-    metadata_to_solr_field_mapping: list[tuple[str, str]] | None,
+    metadata_to_solr_field_mapping: Optional[list[tuple[str, str]]],
     solr_field_data: dict[str, Any],
 ) -> None:
     """Test _get_data_from_node method with various field configurations."""
@@ -964,8 +964,8 @@ async def test_vector_store_adelete(
 @params_delete_kwargs
 def test_vector_store_delete_nodes_by_id(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    input_nodes: list[str] | None,
-    input_filters: MetadataFilters | None,
+    input_nodes: Optional[list[str]],
+    input_filters: Optional[MetadataFilters],
     delete_kwargs: dict[str, Any],
 ) -> None:
     """Test synchronous delete_nodes method using delete_by_id."""
@@ -1025,8 +1025,8 @@ def test_vector_store_delete_nodes_by_id(
 @params_delete_kwargs
 def tes_vector_store_delete_nodes(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    input_nodes: list[str] | None,
-    input_filters: MetadataFilters | None,
+    input_nodes: Optional[list[str]],
+    input_filters: Optional[MetadataFilters],
     expected_query: str,
     delete_kwargs: dict[str, Any],
 ) -> None:
@@ -1055,8 +1055,8 @@ def tes_vector_store_delete_nodes(
 @pytest.mark.asyncio
 async def test_vector_store_adelete_nodes_by_id(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    input_nodes: list[str] | None,
-    input_filters: MetadataFilters | None,
+    input_nodes: Optional[list[str]],
+    input_filters: Optional[MetadataFilters],
     delete_kwargs: dict[str, Any],
 ) -> None:
     """Test asynchronous delete_nodes method using delete_by_id."""
@@ -1097,8 +1097,8 @@ async def test_vector_store_adelete_nodes_by_id(
 @pytest.mark.asyncio
 async def test_vector_store_adelete_nodes(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    input_nodes: list[str] | None,
-    input_filters: MetadataFilters | None,
+    input_nodes: Optional[list[str]],
+    input_filters: Optional[MetadataFilters],
     expected_query: str,
     delete_kwargs: dict[str, Any],
 ) -> None:
@@ -1138,8 +1138,8 @@ async def test_vector_store_adelete_nodes(
 @params_delete_kwargs
 def test_vector_store_delete_nodes_invalid_input(
     mock_solr_vector_store: ApacheSolrVectorStore,
-    input_nodes: list[str] | None,
-    input_filters: MetadataFilters | None,
+    input_nodes: Optional[list[str]],
+    input_filters: Optional[MetadataFilters],
     delete_kwargs: dict[str, Any],
     error_match: str,
 ) -> None:

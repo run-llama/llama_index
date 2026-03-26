@@ -53,6 +53,7 @@ CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
 CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
+CREATE EDGE IF NOT EXISTS `MENTIONS` ();
 
 CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING, `props_json` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` STRING);
@@ -65,6 +66,7 @@ CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`(256));
 CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`(256));
 CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`(256));
 CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_MENTIONS ON `MENTIONS`();
 
 CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`(256));
 CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`(256));
@@ -277,6 +279,18 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                     f"entity_{i}": entity.name for i, entity in enumerate(entity_list)
                 },
             )
+            mention_list = []  # Use a fresh variable name to be safe
+            for entity in entity_list:
+                if "triplet_source_id" in entity.properties:
+                    chunk_id = entity.properties["triplet_source_id"]
+                    mention_list.append(f'"{chunk_id}"->"{entity.id}"')  # Just the IDs
+
+            if mention_list:  # Check if empty!
+                values_str = ",".join(
+                    [f"{pair}:()" for pair in mention_list]
+                )  # Add the :() here
+                edge_query = f"INSERT EDGE `MENTIONS` () VALUES {values_str}"
+                self.structured_query(edge_query)
 
         # Create tags for each LabelledNode
         # This could be revisited, if we don't have any properties for labels, mapping labels to

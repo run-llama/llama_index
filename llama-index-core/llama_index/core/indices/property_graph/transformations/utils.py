@@ -6,13 +6,33 @@ except ImportError:
     # python 3.8 and 3.9 compatibility
     from typing import Any as TypeAlias  # type: ignore
 
-from llama_index.core.bridge.pydantic import create_model, Field
+from llama_index.core.bridge.pydantic import ConfigDict, create_model, Field
+
+
+def _clean_additional_properties(schema: Dict[str, Any]) -> None:
+    """
+    Recursively set ``additionalProperties: true`` to ``false`` in a JSON schema.
+
+    Pydantic generates ``additionalProperties: true`` for ``Dict[str, Any]``
+    fields. This is incompatible with OpenAI structured outputs (which require
+    ``false``) and Google Gemini (which rejects the field entirely when set to
+    ``true``). Setting it to ``false`` satisfies both APIs.
+    """
+    if isinstance(schema, dict):
+        if schema.get("additionalProperties") is True:
+            schema["additionalProperties"] = False
+        for value in schema.values():
+            _clean_additional_properties(value)
+    elif isinstance(schema, list):
+        for item in schema:
+            _clean_additional_properties(item)
 
 
 def get_entity_class(
     possible_entities: TypeAlias,
     possible_entity_props: Optional[List[str]],
     strict: bool,
+    clean_additional_properties: bool = False,
 ) -> Any:
     """Get entity class."""
     if not possible_entity_props:
@@ -31,8 +51,14 @@ def get_entity_class(
             name=(str, ...),
         )
     else:
+        config = (
+            ConfigDict(json_schema_extra=_clean_additional_properties)
+            if clean_additional_properties
+            else None
+        )
         return create_model(
             "Entity",
+            __config__=config,
             type=(
                 possible_entities if strict else str,
                 Field(
@@ -61,6 +87,7 @@ def get_relation_class(
     possible_relations: TypeAlias,
     possible_relation_props: Optional[List[str]],
     strict: bool,
+    clean_additional_properties: bool = False,
 ) -> Any:
     """Get relation class."""
     if not possible_relation_props:
@@ -78,8 +105,14 @@ def get_relation_class(
             ),
         )
     else:
+        config = (
+            ConfigDict(json_schema_extra=_clean_additional_properties)
+            if clean_additional_properties
+            else None
+        )
         return create_model(
             "Relation",
+            __config__=config,
             type=(
                 possible_relations if strict else str,
                 Field(

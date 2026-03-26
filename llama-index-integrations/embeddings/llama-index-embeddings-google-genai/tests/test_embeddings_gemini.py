@@ -282,3 +282,24 @@ def test_no_retry_on_auth_error(mock_client_class):
 
     # Verify embed_content was called exactly once (no retries)
     mock_embed_content.assert_called_once()
+
+
+@patch("google.genai.Client")
+def test_client_header_initialization(mock_client_class):
+    """Test that the client header is correctly passed to the GoogleGenAIEmbedding."""
+    # Setup mock client
+    mock_client = mock_client_class.return_value
+    mock_client_class.return_value = mock_client
+
+    # Initialize embedding model
+    GoogleGenAIEmbedding(api_key="fake_key")
+
+    # Check if http_options were passed to the client constructor
+    call_args = mock_client_class.call_args
+    _, kwargs = call_args
+
+    http_options = kwargs["http_options"]
+    headers = http_options.headers
+
+    assert "x-goog-api-client" in headers
+    assert headers["x-goog-api-client"].startswith("llamaindex/")

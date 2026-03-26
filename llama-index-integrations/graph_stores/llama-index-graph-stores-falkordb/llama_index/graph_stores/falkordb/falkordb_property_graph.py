@@ -237,12 +237,26 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                         SET e.embedding = vecf32($data.embedding)
                         RETURN count(*) AS count
                     }}
-                    WITH e WHERE $data.properties.triplet_source_id IS NOT NULL
-                    MERGE (c:Chunk {{id: $data.properties.triplet_source_id}})
-                    MERGE (e)<-[:MENTIONS]-(c)
+                    RETURN count(e) AS cnt
                     """,
                     param_map={"data": entity_dict},
                 )
+                # Create MENTIONS relationship if entity has triplet_source_id
+                triplet_source_id = entity_dict.get("properties", {}).get(
+                    "triplet_source_id"
+                )
+                if triplet_source_id:
+                    self.structured_query(
+                        """
+                        MATCH (e:`__Entity__` {id: $entity_id})
+                        MERGE (c:Chunk {id: $chunk_id})
+                        MERGE (e)<-[:MENTIONS]-(c)
+                        """,
+                        param_map={
+                            "entity_id": entity_dict["id"],
+                            "chunk_id": triplet_source_id,
+                        },
+                    )
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""

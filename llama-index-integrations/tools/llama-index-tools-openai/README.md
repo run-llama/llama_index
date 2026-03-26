@@ -10,21 +10,23 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 
 ```python
 from llama_index.tools.openai import OpenAIImageGenerationToolSpec
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 image_generation_tool = OpenAIImageGenerationToolSpec(
     api_key=os.environ["OPENAI_API_KEY"]
 )
 
-agent = OpenAIAgent.from_tools(
-    [*image_generation_tool.to_tool_list()],
-    verbose=True,
+agent = FunctionAgent(
+    tools=[*image_generation_tool.to_tool_list()],
+    llm=OpenAI(model="gpt-4.1"),
 )
 
-response = agent.query(
-    "A pink and blue llama in a black background with the output"
+print(
+    await agent.run(
+        "A pink and blue llama in a black background with the output"
+    )
 )
-
-print(response)
 ```
 
 ### Usage directly

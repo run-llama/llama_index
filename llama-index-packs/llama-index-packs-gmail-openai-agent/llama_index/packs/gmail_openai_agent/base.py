@@ -5,10 +5,9 @@ from typing import Any, Dict
 from llama_index.core.llama_pack.base import BaseLlamaPack
 
 # backwards compatibility
-try:
-    from llama_index.agent.legacy.openai_agent import OpenAIAgent
-except ImportError:
-    from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
+from llama_index.core.async_utils import asyncio_run
 
 
 class GmailOpenAIAgentPack(BaseLlamaPack):
@@ -20,7 +19,10 @@ class GmailOpenAIAgentPack(BaseLlamaPack):
             raise ImportError("llama_hub not installed.")
 
         self.tool_spec = GmailToolSpec(**gmail_tool_kwargs)
-        self.agent = OpenAIAgent.from_tools(self.tool_spec.to_tool_list())
+        self.agent = FunctionAgent(
+            tools=self.tool_spec.to_tool_list(),
+            llm=OpenAI(model="gpt-4.1"),
+        )
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
@@ -28,4 +30,8 @@ class GmailOpenAIAgentPack(BaseLlamaPack):
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline."""
-        return self.agent.chat(*args, **kwargs)
+        return asyncio_run(self.arun(*args, **kwargs))
+
+    async def arun(self, *args: Any, **kwargs: Any) -> Any:
+        """Run the pipeline asynchronously."""
+        return await self.agent.run(*args, **kwargs)

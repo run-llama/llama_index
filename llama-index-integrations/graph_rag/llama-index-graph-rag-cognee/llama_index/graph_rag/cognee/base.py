@@ -1,5 +1,7 @@
 from abc import abstractmethod
-from typing import Protocol
+from typing import Protocol, Union, List
+
+from llama_index.core import Document
 
 
 # NOTE: This is a bare-bone suggestion for an abstract protocol to define GraphRAG for llama-index
@@ -22,19 +24,21 @@ class GraphRAG(Protocol):
     """
 
     @abstractmethod
-    async def add(self, data, dataset_name):
+    async def add(
+        self, data: Union[Document, List[Document]], dataset_name: str = "main_dataset"
+    ) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
-             data (Any): The data to be added to the graph.
-             dataset_name (str): Name of the dataset or node set where the data will be added.
+            data (Union[Document, List[Document]]): The document(s) to be added to the graph.
+            dataset_name (str): Name of the dataset or node set where the data will be added.
 
         """
 
     @abstractmethod
-    async def process_data(self, dataset_name: str):
+    async def process_data(self, dataset_name: str = "main_dataset") -> None:
         """
         Process and structure data in the dataset and make a knowledge graph out of it.
 
@@ -44,21 +48,44 @@ class GraphRAG(Protocol):
         """
 
     @abstractmethod
-    async def search(self, query: str):
+    async def search(self, query: str) -> list:
         """
-        Search the graph for relevant information based on a query.
+        Search the knowledge graph for relevant information using graph-based retrieval.
 
         Args:
-            query (str): The query string to match against data from the graph.
+            query (str): The query string to match against entities and relationships in the graph.
+
+        Returns:
+            list: Search results containing graph-based insights and related information.
 
         """
 
     @abstractmethod
-    async def get_related_nodes(self, node_id: str):
+    async def get_related_nodes(self, node_id: str) -> list:
         """
-        Search the graph for relevant nodes or relationships based on node id.
+        Find nodes and relationships connected to a specific node in the knowledge graph.
 
         Args:
-            node_id (str): The name of the node to match against nodes in the graph.
+            node_id (str): The identifier or name of the node to find connections for.
+
+        Returns:
+            list: Related nodes, relationships, and insights connected to the specified node.
+
+        """
+
+    @abstractmethod
+    async def visualize_graph(
+        self, open_browser: bool = False, output_file_path: str | None = None
+    ) -> str:
+        """
+        Generate HTML visualization of the knowledge graph.
+
+        Args:
+            open_browser (bool): Whether to automatically open the visualization in the default browser.
+            output_file_path (str | None): Directory path where the HTML file will be saved.
+                                         If None, saves to user's home directory.
+
+        Returns:
+            str: Full path to the generated HTML visualization file.
 
         """

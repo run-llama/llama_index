@@ -1,12 +1,59 @@
 import re
 import subprocess
 import sys
+from enum import Enum
 from pathlib import Path
 
 import tomli
 from packaging import specifiers, version
+from packaging.version import Version
 
 DEP_NAME_REGEX = re.compile(r"([^<>=\[\];\s]+)")
+
+
+class BumpType(str, Enum):
+    MAJOR = "major"
+    MINOR = "minor"
+    PATCH = "patch"
+
+
+def bump_version(current_version: str, bump_type: BumpType) -> str:
+    """Bump a version string according to semver rules."""
+    v = Version(current_version)
+
+    # Parse the version components
+    release = v.release
+    major = release[0] if len(release) > 0 else 0
+    minor = release[1] if len(release) > 1 else 0
+    micro = release[2] if len(release) > 2 else 0
+
+    version_str = ""
+    if bump_type == BumpType.MAJOR:
+        version_str = f"{major + 1}.0.0"
+    elif bump_type == BumpType.MINOR:
+        version_str = f"{major}.{minor + 1}.0"
+    elif bump_type == BumpType.PATCH:
+        version_str = f"{major}.{minor}.{micro + 1}"
+
+    return version_str
+
+
+def update_pyproject_version(package_path: Path, new_version: str) -> None:
+    """Update the version in a pyproject.toml file."""
+    pyproject_path = package_path / "pyproject.toml"
+
+    # Read the file content
+    with open(pyproject_path, "r") as f:
+        content = f.read()
+
+    pattern = r'^version = "[^"]+"'
+    new_content = re.sub(
+        pattern, f'version = "{new_version}"', content, flags=re.MULTILINE
+    )
+
+    # Write the updated content back
+    with open(pyproject_path, "w") as f:
+        f.write(new_content)
 
 
 def package_has_tests(package_path: Path) -> bool:
@@ -80,7 +127,6 @@ def find_all_packages(root_path: Path) -> list[Path]:
     return [
         root_path / "llama-index-core",
         *find_integrations(root_path),
-        root_path / "llama-index-networks",
         *find_packs(root_path),
         *find_utils(root_path),
         root_path / "llama-index-instrumentation",

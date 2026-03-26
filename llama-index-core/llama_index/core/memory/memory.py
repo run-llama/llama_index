@@ -23,10 +23,13 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     AudioBlock,
     ImageBlock,
+    VideoBlock,
     DocumentBlock,
     CachePoint,
     CitableBlock,
     CitationBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -222,6 +225,10 @@ class Memory(BaseMemory):
         default=256,
         description="The token size estimate for audio.",
     )
+    video_token_size_estimate: int = Field(
+        default=256,
+        description="The token size estimate for video.",
+    )
     tokenizer_fn: Callable[[str], List] = Field(
         default_factory=get_tokenizer,
         exclude=True,
@@ -279,10 +286,12 @@ class Memory(BaseMemory):
         insert_method: InsertMethod = InsertMethod.SYSTEM,
         image_token_size_estimate: int = 256,
         audio_token_size_estimate: int = 256,
+        video_token_size_estimate: int = 256,
         # SQLAlchemyChatStore parameters
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
         async_engine: Optional[AsyncEngine] = None,
+        db_schema: Optional[str] = None,
     ) -> "Memory":
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
@@ -292,6 +301,7 @@ class Memory(BaseMemory):
             table_name=table_name,
             async_database_uri=async_database_uri,
             async_engine=async_engine,
+            db_schema=db_schema,
         )
 
         if chat_history is not None:
@@ -312,6 +322,7 @@ class Memory(BaseMemory):
             insert_method=insert_method,
             image_token_size_estimate=image_token_size_estimate,
             audio_token_size_estimate=audio_token_size_estimate,
+            video_token_size_estimate=video_token_size_estimate,
         )
 
     def _estimate_token_count(
@@ -329,15 +340,17 @@ class Memory(BaseMemory):
                 Union[
                     TextBlock,
                     ImageBlock,
+                    VideoBlock,
                     AudioBlock,
                     DocumentBlock,
                     CitableBlock,
                     CitationBlock,
+                    ThinkingBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, CachePoint):
+                if not isinstance(block, (CachePoint, ToolCallBlock)):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -355,7 +368,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, CachePoint):
+                        if not isinstance(block, (CachePoint, ToolCallBlock)):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -366,7 +379,15 @@ class Memory(BaseMemory):
                 )
             elif all(
                 isinstance(
-                    item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock, CachePoint)
+                    item,
+                    (
+                        TextBlock,
+                        ImageBlock,
+                        AudioBlock,
+                        VideoBlock,
+                        DocumentBlock,
+                        CachePoint,
+                    ),
                 )
                 for item in message_or_blocks
             ):
@@ -375,7 +396,13 @@ class Memory(BaseMemory):
                     if not isinstance(item, CachePoint):
                         blocks.append(
                             cast(
-                                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                                Union[
+                                    TextBlock,
+                                    ImageBlock,
+                                    AudioBlock,
+                                    VideoBlock,
+                                    DocumentBlock,
+                                ],
                                 item,
                             )
                         )
@@ -392,6 +419,8 @@ class Memory(BaseMemory):
                 token_count += len(self.tokenizer_fn(block.text))
             elif isinstance(block, ImageBlock):
                 token_count += self.image_token_size_estimate
+            elif isinstance(block, VideoBlock):
+                token_count += self.video_token_size_estimate
             elif isinstance(block, AudioBlock):
                 token_count += self.audio_token_size_estimate
 
@@ -699,30 +728,38 @@ class Memory(BaseMemory):
                         else:
                             break
 
-                    # If we end up with an empty queue, keep at least one full conversation turn
-                    if not reversed_queue and messages_to_flush:
-                        # Find the most recent complete conversation turn
-                        # (user → assistant/tool sequence) in messages_to_flush
-                        found_user = False
-                        turn_messages: List[ChatMessage] = []
+                    # If we end up with an empty queue or only a non-user message,
+                    # keep at least one full conversation turn
+                    if (
+                        not reversed_queue
+                        or (
+                            len(reversed_queue) == 1
+                            and reversed_queue[0].role != "user"
+                        )
+                    ) and messages_to_flush:
+                        # If reversed_queue has a non-user message, move it to messages_to_flush
+                        if reversed_queue and reversed_queue[0].role != "user":
+                            messages_to_flush.append(reversed_queue.pop(0))
 
-                        # Go through messages_to_flush in reverse (newest first)
-                        for msg in reversed(messages_to_flush):
-                            if msg.role == "user" and not found_user:
-                                found_user = True
-                                turn_messages.insert(0, msg)
-                            elif found_user:
-                                turn_messages.insert(0, msg)
-                            else:
+                        # Find the most recent complete conversation turn in messages_to_flush
+                        # A complete turn is: user message + all subsequent assistant/tool responses
+                        # This correctly handles tool calling: user → assistant → tool → assistant
+                        # Search from end to find the last user message
+                        turn_start_idx = -1
+
+                        for i in range(len(messages_to_flush) - 1, -1, -1):
+                            if messages_to_flush[i].role == "user":
+                                turn_start_idx = i
                                 break
 
-                        # If we found a complete turn, keep it
-                        if found_user and turn_messages:
-                            # Remove these messages from messages_to_flush
-                            for msg in turn_messages:
-                                messages_to_flush.remove(msg)
-                            # Add them back to the queue
+                        # If we found a user message, keep everything from that user to the end
+                        if turn_start_idx >= 0:
+                            turn_messages = messages_to_flush[turn_start_idx:]
+                            # Keep only messages before the turn for flushing
+                            messages_to_flush = messages_to_flush[:turn_start_idx]
+                            # Add the complete turn back to the queue
                             reversed_queue = turn_messages[::-1] + reversed_queue
+                        # else: No user message found - queue may remain empty (defensive)
 
                 # Archive the flushed messages
                 if messages_to_flush:
@@ -805,6 +842,10 @@ class Memory(BaseMemory):
     def put(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
         return asyncio_run(self.aput(message))
+
+    def put_messages(self, messages: List[ChatMessage]) -> None:
+        """Add a list of messages to the chat store and process waterfall logic if needed."""
+        return asyncio_run(self.aput_messages(messages))
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""

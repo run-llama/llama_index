@@ -1,6 +1,6 @@
 # LlamaIndex Vector_Stores Integration: Hologres
 
-Please refer to the [notebook](../../../docs/docs/examples/vector_stores/HologresDemo.ipynb) for usage of Hologres as vector store in LlamaIndex.
+Please refer to the [notebook](../../../docs/examples/vector_stores/HologresDemo.ipynb) for usage of Hologres as vector store in LlamaIndex.
 
 ## Example Usage
 

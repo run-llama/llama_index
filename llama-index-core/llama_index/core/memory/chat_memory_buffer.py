@@ -127,7 +127,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
-            while chat_history[-message_count].role in (
+            while message_count > 1 and chat_history[-message_count].role in (
                 MessageRole.TOOL,
                 MessageRole.ASSISTANT,
             ):
@@ -144,9 +144,11 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
                 self._token_count_for_messages(cur_messages) + initial_token_count
             )
 
-        # catch one message longer than token limit
+        # catch one message longer than token limit, return the most recent message
+        # this allows the LLM to raise an error about the message being too long,
+        # rather than having a silent/less obvious failure mode
         if token_count > self.token_limit or message_count <= 0:
-            return []
+            return chat_history[-1:]
 
         return chat_history[-message_count:]
 

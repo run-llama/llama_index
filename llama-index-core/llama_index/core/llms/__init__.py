@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     AudioBlock,
+    VideoBlock,
     DocumentBlock,
     CachePoint,
     CacheControl,
@@ -19,7 +20,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.mock import MockLLM
+from llama_index.core.llms.mock import MockLLM, MockFunctionCallingLLM
 
 __all__ = [
     "CustomLLM",
@@ -34,9 +35,11 @@ __all__ = [
     "LLMMetadata",
     "MessageRole",
     "MockLLM",
+    "MockFunctionCallingLLM",
     "ImageBlock",
     "TextBlock",
     "AudioBlock",
+    "VideoBlock",
     "DocumentBlock",
     "CachePoint",
     "CacheControl",

@@ -279,6 +279,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 temporary directory will be created and used.
 
         """
+        _default_persist_dir = False
         if persist_dir is None:
             persist_dir = f"{self._wandb.run.dir}/storage"  # type: ignore
             _default_persist_dir = True

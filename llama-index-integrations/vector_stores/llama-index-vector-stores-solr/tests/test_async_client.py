@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from typing import Any, Optional
 from unittest import mock
 from unittest.mock import MagicMock, patch
@@ -491,6 +492,12 @@ async def test_async_solr_client_build_client(
     _ = await client._build_client()
 
     # THEN
+    # handle py3.9
+    if sys.version_info < (3, 10):
+        expected_args["timeout"] = expected_args["read_timeout"]
+        del expected_args["read_timeout"]
+        del expected_args["write_timeout"]
+
     mock_aiosolr_client_init.assert_called_once_with(**expected_args)
     assert mock_aiosolr_client_instance.session.headers == expected_headers
 

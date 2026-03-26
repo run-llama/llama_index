@@ -118,7 +118,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
                 else CONTEXT_REACT_CHAT_SYSTEM_HEADER
             )
 
-        return ReActChatFormatter(
+        return cls(
             system_header=system_header,
             context=context or "",
             observation_role=observation_role,
@@ -135,6 +135,6 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         logger.warning(
             "ReActChatFormatter.from_context is deprecated, please use `from_defaults` instead."
         )
-        return ReActChatFormatter.from_defaults(
+        return cls.from_defaults(
             system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER, context=context
         )

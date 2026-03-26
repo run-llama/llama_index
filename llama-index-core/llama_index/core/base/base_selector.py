@@ -1,10 +1,6 @@
 from abc import abstractmethod
-from typing import Any, List, Sequence, Union
+from typing import List, Sequence, Union
 
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-    QueryComponent,
-)
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
@@ -73,7 +69,7 @@ def _wrap_query(query: QueryType) -> QueryBundle:
         raise ValueError(f"Unexpected type: {type(query)}")
 
 
-class BaseSelector(PromptMixin, ChainableMixin, DispatcherSpanMixin):
+class BaseSelector(PromptMixin, DispatcherSpanMixin):
     """Base selector."""
 
     def _get_prompt_modules(self) -> PromptMixinType:
@@ -105,11 +101,3 @@ class BaseSelector(PromptMixin, ChainableMixin, DispatcherSpanMixin):
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         pass
-
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """As query component."""
-        from llama_index.core.query_pipeline.components.router import (
-            SelectorComponent,
-        )
-
-        return SelectorComponent(selector=self)

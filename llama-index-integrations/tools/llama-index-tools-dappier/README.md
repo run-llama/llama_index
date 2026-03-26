@@ -66,16 +66,16 @@ Here's an example usage of the DappierRealTimeSearchToolSpec.
 from llama_index.tools.dappier import (
     DappierRealTimeSearchToolSpec,
 )
-from llama_index.core.agent import FunctionCallingAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
 dappier_tool = DappierRealTimeSearchToolSpec()
-agent = FunctionCallingAgent.from_tools(
-    dappier_tool.to_tool_list(),
+agent = FunctionAgent(
+    tools=dappier_tool.to_tool_list(),
     llm=OpenAI(model="gpt-4o"),
 )
 
-agent.chat(
+await agent.run(
     "How is the weather in Boston today ? Create a detailed analysis in markdown format."
 )
 ```
@@ -95,16 +95,16 @@ Here's an example usage of the DappierAIRecommendationsToolSpec.
 from llama_index.tools.dappier import (
     DappierAIRecommendationsToolSpec,
 )
-from llama_index.core.agent import FunctionCallingAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
 dappier_tool = DappierAIRecommendationsToolSpec()
-agent = FunctionCallingAgent.from_tools(
-    dappier_tool.to_tool_list(),
+agent = FunctionAgent(
+    tools=dappier_tool.to_tool_list(),
     llm=OpenAI(model="gpt-4o"),
 )
 
-agent.chat(
+await agent.run(
     "Get latest sports news, lifestyle news, breaking news, dog care advice and summarize it into different sections, with source links."
 )
 ```

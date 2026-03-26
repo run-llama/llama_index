@@ -235,6 +235,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         distance_strategy: str = "cosine",
         hybrid_search: bool = False,
         retrieval_query: str = "",
+        user_agent: str = "LLAMAINDEX-VECTOR",
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -252,7 +253,9 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         if distance_strategy not in ["cosine", "euclidean"]:
             raise ValueError("distance_strategy must be either 'euclidean' or 'cosine'")
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password), user_agent=user_agent
+        )
         self._database = database
 
         # Verify connection
@@ -565,6 +568,11 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
         for record in results:
+            # Handle missing metadata
+            metadata = record.setdefault("metadata", {})
+            metadata.setdefault("_node_type", "TextNode")
+            metadata.setdefault("_node_content", "{}")
+
             node = metadata_dict_to_node(record["metadata"])
             node.set_content(str(record["text"]))
             nodes.append(node)

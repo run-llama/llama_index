@@ -59,9 +59,9 @@ Initialize the WatsonxLLM class with the previously set parameters.
 from llama_index.llms.ibm import WatsonxLLM
 
 watsonx_llm = WatsonxLLM(
-    model_id="PASTE THE CHOSEN MODEL_ID HERE",
-    url="PASTE YOUR URL HERE",
-    project_id="PASTE YOUR PROJECT_ID HERE",
+    model_id="ibm/granite-4-h-small",
+    url="PASTE_YOUR_URL_HERE",
+    project_id="PASTE_YOUR_PROJECT_ID_HERE",
     temperature=temperature,
     max_new_tokens=max_new_tokens,
     additional_params=additional_params,
@@ -78,13 +78,13 @@ Alternatively, you can use Cloud Pak for Data credentials. For more details, ref
 
 ```python
 watsonx_llm = WatsonxLLM(
-    model_id="ibm/granite-13b-instruct-v2",
+    model_id="ibm/granite-4-h-small",
     url="PASTE YOUR URL HERE",
-    username="PASTE YOUR USERNAME HERE",
-    password="PASTE YOUR PASSWORD HERE",
+    username="PASTE_YOUR_USERNAME_HERE",
+    password="PASTE_YOUR_PASSWORD_HERE",
     instance_id="openshift",
-    version="4.8",
-    project_id="PASTE YOUR PROJECT_ID HERE",
+    version="5.2",
+    project_id="PASTE_YOUR_PROJECT_ID_HERE",
     temperature=temperature,
     max_new_tokens=max_new_tokens,
     additional_params=additional_params,

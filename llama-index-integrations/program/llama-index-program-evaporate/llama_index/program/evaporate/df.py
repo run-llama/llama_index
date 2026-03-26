@@ -4,7 +4,7 @@ import pandas as pd
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.core.types import BasePydanticProgram
-from llama_index.program.openai import OpenAIPydanticProgram
+from llama_index.core.program.function_program import FunctionCallingProgram
 
 
 class DataFrameRow(BaseModel):
@@ -121,7 +121,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         input_key: str = "input_str",
     ) -> "DFFullProgram":
         """Full DF output parser."""
-        pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
+        pydantic_program_cls = pydantic_program_cls or FunctionCallingProgram
 
         return cls(
             pydantic_program_cls,
@@ -192,7 +192,7 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         **kwargs: Any,
     ) -> "DFRowsProgram":
         """Rows DF output parser."""
-        pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
+        pydantic_program_cls = pydantic_program_cls or FunctionCallingProgram
 
         # either one of df or column_schema needs to be specified
         if df is None and column_schema is None:

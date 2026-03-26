@@ -196,8 +196,8 @@ class AgentOpsEventHandler(BaseEventHandler):
                 }
                 if event.response.raw:
                     usage = dict(event.response.raw.get("usage", {}))
-                    completion_tokens = usage.get("completion_tokens", None)
-                    prompt_tokens = usage.get("prompt_tokens", None)
+                    completion_tokens = usage.get("completion_tokens")
+                    prompt_tokens = usage.get("prompt_tokens")
                     usage["prompt_tokens"] = prompt_tokens
                     usage["completion_tokens"] = completion_tokens
 

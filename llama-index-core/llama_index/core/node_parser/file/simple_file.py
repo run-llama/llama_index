@@ -1,5 +1,6 @@
 """Simple file node parser."""
 
+import os
 from typing import Any, Dict, List, Optional, Sequence, Type
 
 from llama_index.core.callbacks.base import CallbackManager
@@ -70,8 +71,14 @@ class SimpleFileNodeParser(NodeParser):
         )
 
         for document in documents_with_progress:
-            ext = document.metadata.get("extension", "None")
-            if ext in FILE_NODE_PARSERS:
+            # Try to get extension from metadata, or extract from file_path
+            ext = document.metadata.get("extension")
+            if ext is None and "file_path" in document.metadata:
+                # Extract extension from file_path
+                _, ext = os.path.splitext(document.metadata["file_path"])
+                ext = ext.lower()
+
+            if ext and ext in FILE_NODE_PARSERS:
                 parser = FILE_NODE_PARSERS[ext](
                     include_metadata=self.include_metadata,
                     include_prev_next_rel=self.include_prev_next_rel,

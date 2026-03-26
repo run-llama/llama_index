@@ -22,8 +22,8 @@ import io
 
 
 def test_model_context_size():
-    assert openai_modelname_to_contextsize("gpt-4") == 4096
-    assert openai_modelname_to_contextsize("gpt-3.5-turbo") == 4096
+    assert openai_modelname_to_contextsize("gpt-4") == 8192
+    assert openai_modelname_to_contextsize("gpt-3.5-turbo") == 16385
     assert openai_modelname_to_contextsize("unknown-model") == 2048
 
 

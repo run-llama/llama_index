@@ -7,6 +7,7 @@ import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
 
@@ -425,3 +426,52 @@ def test_docstring_with_self_and_context():
     assert "a" in fields
     assert fields["a"].description == "some input value"
     assert "self" not in fields
+
+
+def test_function_tool_output_document_and_nodes():
+    def get_document() -> Document:
+        return Document(text="Hello" * 1024)
+
+    def get_node() -> TextNode:
+        return TextNode(text="Hello" * 1024)
+
+    def get_documents() -> List[Document]:
+        return [Document(text="Hello" * 1024), Document(text="World" * 1024)]
+
+    def get_nodes() -> List[TextNode]:
+        return [TextNode(text="Hello" * 1024), TextNode(text="World" * 1024)]
+
+    tool = FunctionTool.from_defaults(get_document)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_node)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_documents)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content
+
+    tool = FunctionTool.from_defaults(get_nodes)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content
+
+
+def test_function_tool_field_default() -> None:
+    """Test that Field(default=...) defaults are respected in FunctionTool."""
+
+    def get_weather(
+        location: Optional[str] = Field(default="Berlin"),
+    ) -> str:
+        """Useful for getting the weather for a given location."""
+        if location == "Berlin":
+            return "nice weather in Berlin"
+        return f"weather in {location}"
+
+    tool = FunctionTool.from_defaults(get_weather)
+    # Calling without args should use the Field default "Berlin"
+    result = tool.call()
+    assert result.content == "nice weather in Berlin"
+
+    # Calling with an explicit arg should override the default
+    result = tool.call(location="Munich")
+    assert result.content == "weather in Munich"

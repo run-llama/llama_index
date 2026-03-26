@@ -12,7 +12,8 @@ This tool works best when the Agent has access to the GraphQL schema for the ser
 
 ```python
 from llama_index.tools.graphql import GraphQLToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 tool_spec = GraphQLToolSpec(
     url="https://spacex-production.up.railway.app/",
@@ -21,9 +22,12 @@ tool_spec = GraphQLToolSpec(
     },
 )
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat(
+await agent.run(
     "get the id, model, name and type of the Ships from the graphql endpoint"
 )
 ```

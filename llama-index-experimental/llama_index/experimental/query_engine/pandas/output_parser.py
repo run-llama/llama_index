@@ -1,12 +1,15 @@
 """Pandas output parser."""
 
+import ast
 import logging
+import sys
+import traceback
 from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
 from llama_index.experimental.exec_utils import safe_eval, safe_exec
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import parse_code_markdown
 
 logger = logging.getLogger(__name__)
@@ -16,10 +19,6 @@ def default_output_processor(
     output: str, df: pd.DataFrame, **output_kwargs: Any
 ) -> str:
     """Process outputs in a default manner."""
-    import ast
-    import sys
-    import traceback
-
     if sys.version_info < (3, 9):
         logger.warning(
             "Python version must be >= 3.9 in order to use "
@@ -76,7 +75,7 @@ def default_output_processor(
         return err_string
 
 
-class PandasInstructionParser(ChainableOutputParser):
+class PandasInstructionParser(BaseOutputParser):
     """
     Pandas instruction parser.
 

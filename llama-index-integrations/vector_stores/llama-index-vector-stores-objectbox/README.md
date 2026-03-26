@@ -49,7 +49,7 @@ Download a sample text file,
 
 ```commandline
 mkdir -p 'data/paul_graham/'
-wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
+wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
 ```
 
 This example will require a Gemini API key. You can get an API-key from the [Gemini developer console](https://aistudio.google.com/app/apikey). Execute the following Python script to generate an answer for `Who is Paul Graham?` from the text file,

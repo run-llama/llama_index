@@ -179,7 +179,9 @@ class KVDocumentStore(BaseDocumentStore):
                 )
             ref_doc_info = None
             if node.source_node is not None:
-                ref_doc_info = self.get_ref_doc_info(node.source_node.node_id) or RefDocInfo()
+                ref_doc_info = (
+                    self.get_ref_doc_info(node.source_node.node_id) or RefDocInfo()
+                )
 
             (
                 node_kv_pair,
@@ -281,7 +283,8 @@ class KVDocumentStore(BaseDocumentStore):
             ref_doc_info = None
             if node.source_node is not None:
                 ref_doc_info = (
-                    await self.aget_ref_doc_info(node.source_node.node_id) or RefDocInfo()
+                    await self.aget_ref_doc_info(node.source_node.node_id)
+                    or RefDocInfo()
                 )
 
             (
@@ -390,7 +393,10 @@ class KVDocumentStore(BaseDocumentStore):
             ref_doc_info_dict["metadata"] = ref_doc_info_dict.get("extra_info", {})
             ref_doc_info_dict.pop("extra_info")
 
-        return RefDocInfo(**ref_doc_info_dict)
+        return RefDocInfo(
+            metadata=ref_doc_info_dict.get("metadata", {}),
+            node_ids=ref_doc_info_dict.get("node_ids", []),
+        )
 
     def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
@@ -642,12 +648,13 @@ class KVDocumentStore(BaseDocumentStore):
         else:
             return None
 
-
     def get_all_document_hashes(self) -> Dict[str, str]:
         """Get the stored hash for all documents."""
         return {
             doc_hash: doc_id
-            for doc_id, doc in (self._kvstore.get_all(collection=self._metadata_collection)).items()
+            for doc_id, doc in (
+                self._kvstore.get_all(collection=self._metadata_collection)
+            ).items()
             if (doc_hash := doc.get("doc_hash"))
         }
 
@@ -655,6 +662,8 @@ class KVDocumentStore(BaseDocumentStore):
         """Get the stored hash for all documents."""
         return {
             doc_hash: doc_id
-            for doc_id, doc in (await self._kvstore.aget_all(collection=self._metadata_collection)).items()
+            for doc_id, doc in (
+                await self._kvstore.aget_all(collection=self._metadata_collection)
+            ).items()
             if (doc_hash := doc.get("doc_hash"))
         }

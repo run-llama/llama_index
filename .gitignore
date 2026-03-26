@@ -1,13 +1,18 @@
 # Build
 .pants.d/
 dist/
+.docs-preview/
 migration_scripts/
+/uv.lock
 
 # IDEs
 .idea
 .vscode
 .zed
 *.code-workspace
+**/.claude
+!/.claude
+/.claude/settings.local.json
 
 # Local development
 venv/
@@ -16,6 +21,11 @@ venv/
 .__pycache__
 __pycache__
 dev_notebooks/
+
+# test cruft
+**/storage/*.json
+**/storage/*.pickle
+
 
 # Other
 llamaindex_registry.txt
@@ -28,3 +38,12 @@ token.json
 *.sqlite3
 *.db
 llama-index-core/llama_index/core/_static
+
+**/.coverage
+**/coverage.xml
+**/*.egg-info/
+
+**/*.egg-info/
+**/.coverage
+**/coverage.xml
+\nstorage/

@@ -22,14 +22,13 @@ chat_store = MongoChatStore(
 )
 ```
 
-You can also initialize the chat store with a `MongoClient` or `AsyncIOMotorClient` and a database name and collection name.
+You can also initialize the chat store with a `MongoClient` or `AsyncMongoClient` and a database name and collection name.
 
 ```python
-from pymongo import MongoClient
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient, AsyncMongoClient
 
 client = MongoClient("mongodb://localhost:27017/")
-async_client = AsyncIOMotorClient("mongodb://localhost:27017/")
+async_client = AsyncMongoClient("mongodb://localhost:27017/")
 
 chat_store = MongoChatStore(
     client=client,
@@ -39,14 +38,14 @@ chat_store = MongoChatStore(
 )
 ```
 
-You can also initialize the chat store with a `Collection` or `AsyncIOMotorCollection`.
+You can also initialize the chat store with a `Collection` or `AsyncCollection`.
 
 ```python
 from pymongo import Collection
-from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo.asynchronous import AsyncCollection
 
 client = MongoClient("mongodb://localhost:27017/")
-async_client = AsyncIOMotorClient("mongodb://localhost:27017/")
+async_client = AsyncMongoClient("mongodb://localhost:27017/")
 
 collection = client["llama_index"]["chat_sessions"]
 async_collection = async_client["llama_index"]["chat_sessions"]

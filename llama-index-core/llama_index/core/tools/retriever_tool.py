@@ -110,7 +110,7 @@ class RetrieverTool(AsyncBaseTool):
             raise ValueError("Cannot call query engine without inputs")
         docs = await self._retriever.aretrieve(query_str)
         content = ""
-        docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
+        docs = await self._async_apply_node_postprocessors(docs, QueryBundle(query_str))
         for doc in docs:
             assert isinstance(doc.node, (Node, TextNode))
             node_copy = doc.node.model_copy()
@@ -130,6 +130,15 @@ class RetrieverTool(AsyncBaseTool):
     ) -> List[NodeWithScore]:
         for node_postprocessor in self._node_postprocessors:
             nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
+        return nodes
+
+    async def _async_apply_node_postprocessors(
+        self, nodes: List[NodeWithScore], query_bundle: QueryBundle
+    ) -> List[NodeWithScore]:
+        for node_postprocessor in self._node_postprocessors:
+            nodes = await node_postprocessor.apostprocess_nodes(
                 nodes, query_bundle=query_bundle
             )
         return nodes

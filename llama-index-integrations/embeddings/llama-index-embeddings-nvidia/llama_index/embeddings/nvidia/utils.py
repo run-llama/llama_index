@@ -83,6 +83,26 @@ EMBEDDING_MODEL_TABLE = {
         id="baai/bge-m3",
         model_type="embedding",
     ),
+    "nvidia/embed-qa-4": Model(
+        id="nvidia/embed-qa-4",
+        model_type="embedding",
+    ),
+    "nvidia/llama-3.2-nv-embedqa-1b-v1": Model(
+        id="nvidia/llama-3.2-nv-embedqa-1b-v1",
+        model_type="embedding",
+    ),
+    "nvidia/llama-3.2-nv-embedqa-1b-v2": Model(
+        id="nvidia/llama-3.2-nv-embedqa-1b-v2",
+        model_type="embedding",
+    ),
+    "nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": Model(
+        id="nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1",
+        model_type="embedding",
+    ),
+    "nvidia/nv-embedcode-7b-v1": Model(
+        id="nvidia/nv-embedcode-7b-v1",
+        model_type="embedding",
+    ),
 }
 
 

@@ -41,7 +41,7 @@ def test_load_pyproject(data_path):
 
 
 def test_find_all_packages(data_path):
-    assert len(find_all_packages(data_path)) == 8
+    assert len(find_all_packages(data_path)) == 7
 
 
 @mock.patch("subprocess.run")

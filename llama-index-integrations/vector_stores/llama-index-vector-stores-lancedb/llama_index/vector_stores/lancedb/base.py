@@ -44,32 +44,36 @@ class TableNotFoundError(Exception):
     """Raised when the specified table does not exist."""
 
 
-def _to_lance_filter(standard_filters: MetadataFilters, metadata_keys: list) -> Any:
+def _to_lance_filter(
+    standard_filters: MetadataFilters,
+    metadata_keys: Optional[list],
+) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
     for filter in standard_filters.filters:
         key = filter.key
-        if filter.key in metadata_keys:
+        if metadata_keys is None or filter.key in metadata_keys:
             key = f"metadata.{filter.key}"
+        operator = sql_operator_mapper[filter.operator]
         if (
             filter.operator == FilterOperator.TEXT_MATCH
             or filter.operator == FilterOperator.NE
         ):
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"'%{filter.value}%'"
-            )
-        if isinstance(filter.value, list):
-            val = ",".join(filter.value)
-            filters.append(key + sql_operator_mapper[filter.operator] + f"({val})")
-        elif isinstance(filter.value, int):
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"{filter.value}"
-            )
+            filters.append(f"{key}{operator}'%{filter.value}%'")
+        elif isinstance(filter.value, list):
+            processed_values = []
+            for v in filter.value:
+                if isinstance(v, str):
+                    safe_v = v.replace("'", "''")
+                    processed_values.append(f"'{safe_v}'")
+                else:
+                    processed_values.append(str(v))
+            val = ",".join(processed_values)
+            filters.append(f"{key}{operator}({val})")
+        elif isinstance(filter.value, (int, float)):
+            filters.append(f"{key}{operator}{filter.value}")
         else:
-            filters.append(
-                key + sql_operator_mapper[filter.operator] + f"'{filter.value!s}'"
-            )
-
+            filters.append(f"{key}{operator}'{filter.value!s}'")
     if standard_filters.condition == FilterCondition.OR:
         return " OR ".join(filters)
     else:
@@ -164,7 +168,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
-    _fts_index: Any = PrivateAttr()
+    _fts_index_ready: bool = PrivateAttr()
     _reranker: Any = PrivateAttr()
 
     def __init__(
@@ -205,7 +209,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         self._table_name = table_name
         self._metadata_keys = None
-        self._fts_index = None
+        self._fts_index_ready = False
 
         if isinstance(reranker, lancedb.rerankers.Reranker):
             self._reranker = reranker
@@ -302,7 +306,29 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         self._reranker = reranker
 
     def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
-        return (tbl_name or self._table_name) in self._connection.table_names()
+        table_name = tbl_name or self._table_name
+        if table_name is None:
+            return False
+
+        # Use page_token pagination to iterate through all table names.
+        page_token: Optional[str] = None
+        seen_page_tokens: set[Optional[str]] = set()
+        while page_token not in seen_page_tokens:
+            seen_page_tokens.add(page_token)
+            # table_names() defaults to limit=10 in LanceDB.
+            page = list(self._connection.table_names(page_token))
+
+            if table_name in page:
+                return True
+            if not page:
+                return False
+
+            next_page_token = page[-1]
+            if next_page_token == page_token:
+                return False
+            page_token = next_page_token
+
+        return False
 
     def create_index(
         self,
@@ -380,7 +406,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             self._table.add(data)
 
-        self._fts_index = None  # reset fts index
+        # new data requires re-creating the fts index
+        self._fts_index_ready = False
 
         return ids
 
@@ -453,8 +480,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]
@@ -495,10 +522,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "creating FTS index is not supported for LanceDB Cloud yet. "
                     "Please use a local table for FTS/Hybrid search."
                 )
-            if self._fts_index is None:
-                self._fts_index = self.table.create_fts_index(
-                    self.text_key, replace=True
-                )
+            if not self._fts_index_ready:
+                self.table.create_fts_index(self.text_key, replace=True)
+                self._fts_index_ready = True
 
             if query_type == "hybrid":
                 _query = (query.query_embedding, query.query_str)
@@ -557,8 +583,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
+                    start_char_idx=node_info.get("start"),
+                    end_char_idx=node_info.get("end"),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(
                             node_id=item[self.doc_id_key]

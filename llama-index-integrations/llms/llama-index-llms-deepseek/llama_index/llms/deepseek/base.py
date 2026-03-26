@@ -45,6 +45,7 @@ class DeepSeek(OpenAILike):
             is_function_calling_model=openai_llm_kwargs.pop(
                 "is_function_calling_model", model in FUNCTION_CALLING_MODELS
             ),
+            context_window=context_window,
             **openai_llm_kwargs,
         )
 

@@ -6,6 +6,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.utilities.aws_utils import get_aws_service_client
+import aioboto3  # NEW IMPORT
 
 
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
@@ -62,6 +63,7 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
         aws_session_token: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
+        # Keep existing sync client for backward compatibility
         self._client = get_aws_service_client(
             service_name="bedrock-agent-runtime",
             profile_name=profile_name,
@@ -70,26 +72,32 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
         )
+
+        # Create async session with the same credentials
+        self._async_session = aioboto3.Session(
+            profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+        )
+
         self.knowledge_base_id = knowledge_base_id
         self.retrieval_config = retrieval_config
         super().__init__(callback_manager)
 
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        query = query_bundle.query_str
-
-        response = self._client.retrieve(
-            retrievalQuery={"text": query.strip()},
-            knowledgeBaseId=self.knowledge_base_id,
-            retrievalConfiguration=self.retrieval_config,
-        )
+    def _parse_response(self, response: Dict[str, Any]) -> List[NodeWithScore]:
+        """Parse Knowledge Base response into NodeWithScore objects."""
         results = response["retrievalResults"]
         node_with_score = []
+
         for result in results:
             metadata = {}
             if "location" in result:
                 metadata["location"] = result["location"]
             if "metadata" in result:
                 metadata["sourceMetadata"] = result["metadata"]
+
             node_with_score.append(
                 NodeWithScore(
                     node=TextNode(
@@ -99,4 +107,30 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
                     score=result["score"] if "score" in result else 0,
                 )
             )
+
         return node_with_score
+
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Synchronous retrieve method."""
+        query = query_bundle.query_str
+
+        response = self._client.retrieve(
+            retrievalQuery={"text": query.strip()},
+            knowledgeBaseId=self.knowledge_base_id,
+            retrievalConfiguration=self.retrieval_config,
+        )
+
+        return self._parse_response(response)
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Asynchronous retrieve method."""
+        query = query_bundle.query_str
+
+        async with self._async_session.client("bedrock-agent-runtime") as client:
+            response = await client.retrieve(
+                retrievalQuery={"text": query.strip()},
+                knowledgeBaseId=self.knowledge_base_id,
+                retrievalConfiguration=self.retrieval_config,
+            )
+
+            return self._parse_response(response)

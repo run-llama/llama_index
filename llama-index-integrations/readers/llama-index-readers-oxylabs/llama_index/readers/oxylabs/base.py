@@ -44,6 +44,18 @@ class OxylabsBaseReader(BasePydanticReader, abc.ABC):
         return Document(text=processed_content)
 
     def load_data(self, payload: dict[str, Any]) -> list[Document]:
+        """
+        Load data from Oxylabs API into the list of Documents.
+
+        Args:
+            payload (dict): Oxylabs API parameters as described
+                [here](https://developers.oxylabs.io/scraper-apis/
+                web-scraper-api/targets/generic-target#additional).
+
+        Returns:
+            List[Document]: List of documents.
+
+        """
         response = self.get_response(payload)
         validated_responses = self._validate_response(response)
 
