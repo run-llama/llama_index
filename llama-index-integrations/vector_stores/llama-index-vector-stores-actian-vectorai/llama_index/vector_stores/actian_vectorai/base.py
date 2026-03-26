@@ -63,6 +63,8 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
     collection_name: str
     client_kwargs: Optional[Dict[str, Any]]
     collection_kwargs: Optional[Dict[str, Any]]
+    dense_vector_name: str
+    dense_vector_params: Optional[VectorParams]
 
     _client: VectorAIClient = PrivateAttr(None)
     _async_client: AsyncVectorAIClient = PrivateAttr(None)
@@ -80,6 +82,8 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         async_client: Optional[AsyncVectorAIClient] = None,
         clear_existing_collection: bool = False,
         stores_text: bool = False,
+        dense_vector_name: str = "llama_dense_vector",
+        dense_vector_params: Optional[VectorParams] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -88,6 +92,8 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             client_kwargs=client_kwargs,
             collection_kwargs=collection_kwargs,
             stores_text=stores_text,
+            dense_vector_name=dense_vector_name,
+            dense_vector_params=dense_vector_params,
             **kwargs,
         )
 
@@ -377,19 +383,20 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         if not self._collection_exists:
             return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
-        if query.mode != VectorStoreQueryMode.DEFAULT:
-            raise NotImplementedError(
-                "Only DEFAULT query mode is supported for ActianVectorAIVectorStore."
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            results = self.client.points.search(
+                self.collection_name,
+                query.query_embedding,
+                using=self.dense_vector_name,
+                limit=query.similarity_top_k,
+                filter=self._build_db_filter_from_vector_store_query(query),
+                **kwargs,
             )
+            return self._build_vector_store_query_result_from_scored_points(results)
 
-        results = self._client.points.search(
-            self.collection_name,
-            query.query_embedding,
-            limit=query.similarity_top_k,
-            filter=self._build_db_filter_from_vector_store_query(query),
-            **kwargs,
+        raise NotImplementedError(
+            "Only DEFAULT query mode is supported for ActianVectorAIVectorStore."
         )
-        return self._build_vector_store_query_result_from_scored_points(results)
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -400,19 +407,20 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         if not self._collection_exists:
             return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
 
-        if query.mode != VectorStoreQueryMode.DEFAULT:
-            raise NotImplementedError(
-                "Only DEFAULT query mode is supported for ActianVectorAIVectorStore."
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            results = await self._async_client.points.search(
+                self.collection_name,
+                query.query_embedding,
+                using=self.dense_vector_name,
+                limit=query.similarity_top_k,
+                filter=self._build_db_filter_from_vector_store_query(query),
+                **kwargs,
             )
+            return self._build_vector_store_query_result_from_scored_points(results)
 
-        results = await self._async_client.points.search(
-            self.collection_name,
-            query.query_embedding,
-            limit=query.similarity_top_k,
-            filter=self._build_db_filter_from_vector_store_query(query),
-            **kwargs,
+        raise NotImplementedError(
+            "Only DEFAULT query mode is supported for ActianVectorAIVectorStore."
         )
-        return self._build_vector_store_query_result_from_scored_points(results)
 
     def connect(self) -> None:
         """Connect to Actian Vector AI client."""
@@ -462,9 +470,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
                 node, remove_text=not self.stores_text, flat_metadata=self.flat_metadata
             )
 
+            _vector = {}
+
+            _vector[self.dense_vector_name] = node.get_embedding()
+
             point = PointStruct(
                 id=node.node_id,
-                vector=node.get_embedding(),
+                vector=_vector,
                 payload=metadata,
             )
 
@@ -538,13 +550,9 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
                     FilterOperator.LTE: lambda key, value: Field(key).lte(float(value)),
                     FilterOperator.IN: filter_operation_to_condition_in,
                     FilterOperator.NIN: filter_operation_to_condition_nin,
-                    # FilterOperator.ANY: raise NotImplementedError
-                    # FilterOperator.ALL: raise NotImplementedError
                     FilterOperator.TEXT_MATCH: lambda key, value: Field(key).text(
                         value
                     ),
-                    # FilterOperator.TEXT_MATCH_INSENSITIVE: raise NotImplementedError
-                    # FilterOperator.CONTAINS: raise NotImplementedError
                     FilterOperator.IS_EMPTY: lambda key, value: is_empty(key),
                 }
 
@@ -667,32 +675,29 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
 
     def _create_collection_if_not_exists(self, embed_dim: int) -> None:
         if not self._collection_exists:
-            if self.collection_kwargs is not None:
-                self._client.collections.create(
-                    self.collection_name, **self.collection_kwargs or {}
-                )
-            else:
-                # Default to creating collection with cosine distance and HNSW index if no collection kwargs provided
-                self._client.collections.create(
-                    self.collection_name,
-                    vectors_config=VectorParams(
-                        size=embed_dim, distance=Distance.Cosine
-                    ),
-                )
-        self._collection_exists = True
+            _collection_kwargs = self._prepare_collection_kwargs(embed_dim)
+            self._client.collections.create(self.collection_name, **_collection_kwargs)
+            self._collection_exists = True
 
     async def _acreate_collection_if_not_exists(self, embed_dim: int) -> None:
         if not self._collection_exists:
-            if self.collection_kwargs is not None:
-                await self._async_client.collections.create(
-                    self.collection_name, **self.collection_kwargs or {}
-                )
-            else:
-                # Default to creating collection with cosine distance and HNSW index if no collection kwargs provided
-                await self._async_client.collections.create(
-                    self.collection_name,
-                    vectors_config=VectorParams(
-                        size=embed_dim, distance=Distance.Cosine
-                    ),
-                )
-        self._collection_exists = True
+            _collection_kwargs = self._prepare_collection_kwargs(embed_dim)
+            await self._async_client.collections.create(
+                self.collection_name, **_collection_kwargs
+            )
+            self._collection_exists = True
+
+    def _prepare_collection_kwargs(self, embed_dim: int) -> Dict[str, Any]:
+        if self.collection_kwargs is None:
+            self.collection_kwargs = {}
+
+        if self.dense_vector_params is None:
+            self.dense_vector_params = VectorParams(
+                size=embed_dim, distance=Distance.Cosine
+            )
+
+        self.collection_kwargs["vectors_config"] = {
+            self.dense_vector_name: self.dense_vector_params
+        }
+
+        return self.collection_kwargs
