@@ -167,13 +167,8 @@ class TestStreamingHandler:
         ):
             runtime = AgentCoreRuntime(agent=mock_agent, stream=True)
 
-        mock_context = MagicMock()
-        mock_context.session_id = None
-
         collected = []
-        async for chunk in runtime._streaming_handler(
-            {"message": "hello"}, mock_context
-        ):
+        async for chunk in runtime._stream_events("hello", None):
             collected.append(chunk)
 
         assert len(collected) == 4
@@ -217,13 +212,8 @@ class TestStreamingHandler:
         ):
             runtime = AgentCoreRuntime(agent=mock_agent, stream=True)
 
-        mock_context = MagicMock()
-        mock_context.session_id = None
-
         collected = []
-        async for chunk in runtime._streaming_handler(
-            {"prompt": "think"}, mock_context
-        ):
+        async for chunk in runtime._stream_events("think", None):
             collected.append(chunk)
 
         assert collected[0]["thinking_delta"] == "Let me think..."
@@ -254,13 +244,8 @@ class TestStreamingErrorHandling:
         ):
             runtime = AgentCoreRuntime(agent=mock_agent, stream=True)
 
-        mock_context = MagicMock()
-        mock_context.session_id = None
-
         collected = []
-        async for chunk in runtime._streaming_handler(
-            {"prompt": "hello"}, mock_context
-        ):
+        async for chunk in runtime._stream_events("hello", None):
             collected.append(chunk)
 
         assert len(collected) == 2
@@ -280,13 +265,8 @@ class TestStreamingErrorHandling:
         ):
             runtime = AgentCoreRuntime(agent=mock_agent, stream=True)
 
-        mock_context = MagicMock()
-        mock_context.session_id = None
-
         collected = []
-        async for chunk in runtime._streaming_handler(
-            {"prompt": "hello"}, mock_context
-        ):
+        async for chunk in runtime._stream_events("hello", None):
             collected.append(chunk)
 
         assert len(collected) == 1
@@ -305,13 +285,8 @@ class TestStreamingErrorHandling:
         ):
             runtime = AgentCoreRuntime(agent=mock_agent, stream=True)
 
-        mock_context = MagicMock()
-        mock_context.session_id = None
-
         collected = []
-        async for chunk in runtime._streaming_handler(
-            {"prompt": "hello"}, mock_context
-        ):
+        async for chunk in runtime._stream_events("hello", None):
             collected.append(chunk)
 
         # Should complete without raising (error is logged, not propagated)
