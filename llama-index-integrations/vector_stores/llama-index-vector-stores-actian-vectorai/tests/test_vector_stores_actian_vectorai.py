@@ -69,7 +69,7 @@ async def _amanaged_vector_store(
     async with ActianVectorAIVectorStore(
         VECTORAI_SERVER_URL, collection_name=collection_name
     ) as vector_store:
-        await vector_store.aadd(nodes_to_add)
+        await vector_store.async_add(nodes_to_add)
         assert await vector_store.async_client.points.count(collection_name) == len(
             nodes_to_add
         )
@@ -487,10 +487,10 @@ async def test_aget_nodes_not_implemented() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aadd() -> None:
+async def test_async_add() -> None:
     async with _aempty_vector_store() as vector_store:
         collection_name = vector_store.collection_name
-        ids = await vector_store.aadd(nodes)
+        ids = await vector_store.async_add(nodes)
 
         assert ids == [node.node_id for node in nodes]
         assert await vector_store.async_client.points.count(collection_name) == len(
@@ -501,7 +501,7 @@ async def test_aadd() -> None:
 @pytest.mark.asyncio
 async def test_adelete() -> None:
     async with _aempty_vector_store() as vector_store:
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         await vector_store.adelete("doc_03")
 
         assert (
@@ -514,7 +514,7 @@ async def test_adelete() -> None:
 async def test_adelete_nodes() -> None:
     async with _aempty_vector_store() as vector_store:
         collection_name = vector_store.collection_name
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         await vector_store.adelete_nodes(
             filters=MetadataFilters(
                 filters=[
@@ -609,13 +609,13 @@ async def test_adelete_nodes_parallel() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aadd_with_external_client() -> None:
+async def test_async_add_with_external_client() -> None:
     async with AsyncVectorAIClient(VECTORAI_SERVER_URL) as async_client:
         vector_store = ActianVectorAIVectorStore(
             async_client=async_client,
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         assert await async_client.points.count(vector_store.collection_name) == len(
             nodes
         )
@@ -629,7 +629,7 @@ async def test_adelete_with_external_client() -> None:
             async_client=async_client,
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         await vector_store.adelete("doc_03")
 
         assert (
@@ -647,7 +647,7 @@ async def test_adelete_nodes_with_external_client() -> None:
             async_client=async_client,
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         await vector_store.adelete_nodes(
             filters=MetadataFilters(
                 filters=[
@@ -673,7 +673,7 @@ async def test_aclear_with_external_client() -> None:
             async_client=async_client,
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
         await vector_store.aclear()
 
         assert not await async_client.collections.exists(vector_store.collection_name)
@@ -686,7 +686,7 @@ async def test_aquery_with_external_client() -> None:
             async_client=async_client,
             collection_name=f"test_collection_{uuid.uuid4().hex}",
         )
-        await vector_store.aadd(nodes)
+        await vector_store.async_add(nodes)
 
         expected_node = nodes[2]
         query = VectorStoreQuery(
@@ -715,7 +715,6 @@ async def test_aquery_with_external_client() -> None:
 
 
 def test_query_with_connect_and_close_client() -> None:
-
     vector_store = ActianVectorAIVectorStore(
         url=VECTORAI_SERVER_URL,
         collection_name=f"test_collection_{uuid.uuid4().hex}",
@@ -754,14 +753,13 @@ def test_query_with_connect_and_close_client() -> None:
 
 @pytest.mark.asyncio
 async def test_aquery_with_connect_and_close_async_client() -> None:
-
     vector_store = ActianVectorAIVectorStore(
         url=VECTORAI_SERVER_URL,
         collection_name=f"test_collection_{uuid.uuid4().hex}",
     )
     await vector_store.aconnect()
 
-    await vector_store.aadd(nodes)
+    await vector_store.async_add(nodes)
 
     expected_node = nodes[2]
     query = VectorStoreQuery(
@@ -795,14 +793,15 @@ def test_query_with_existing_colletion() -> None:
     with ActianVectorAIVectorStore(
         VECTORAI_SERVER_URL,
         collection_name=collection_name,
-        collection_kwargs={
-            "vectors_config": VectorParams(size=EMBED_DIM, distance=Distance.Cosine)
-        },
+        dense_vector_name="dense_vector",
+        dense_vector_params=VectorParams(size=EMBED_DIM, distance=Distance.Cosine),
     ) as vector_store:
         vector_store.add(nodes)
 
     with ActianVectorAIVectorStore(
-        VECTORAI_SERVER_URL, collection_name=collection_name
+        VECTORAI_SERVER_URL,
+        collection_name=collection_name,
+        dense_vector_name="dense_vector",
     ) as vector_store:
         expected_node = nodes[2]
         query = VectorStoreQuery(
@@ -829,9 +828,12 @@ def test_query_with_existing_colletion() -> None:
 
         vector_store.clear()
 
+
 def test_store_text_and_metadata() -> None:
     with ActianVectorAIVectorStore(
-        VECTORAI_SERVER_URL, collection_name=f"test_collection_{uuid.uuid4().hex}", stores_text=True
+        VECTORAI_SERVER_URL,
+        collection_name=f"test_collection_{uuid.uuid4().hex}",
+        stores_text=True,
     ) as vector_store:
         vector_store.add(nodes)
 
@@ -860,3 +862,32 @@ def test_store_text_and_metadata() -> None:
         assert result.nodes[0].get_content() == expected_node.text
 
         vector_store.clear()
+
+
+def test_clear_existing_collection() -> None:
+    collection_name = f"test_collection_{uuid.uuid4().hex}"
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL, collection_name=collection_name
+    ) as vector_store:
+        vector_store.add(nodes)
+
+    with ActianVectorAIVectorStore(
+        VECTORAI_SERVER_URL,
+        collection_name=collection_name,
+        clear_existing_collection=True,
+    ) as vector_store:
+        query = VectorStoreQuery(
+            query_embedding=nodes[0].embedding,
+            similarity_top_k=3,
+            doc_ids=["doc_03"],
+            node_ids=[
+                "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+                "0fc53ba5-bf74-40f2-bc26-cda9ed5b3b3e",
+            ],
+        )
+
+        result = vector_store.query(query)
+
+        assert result.ids == []
+        assert result.nodes == []
+        assert result.similarities == []

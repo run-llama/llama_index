@@ -65,4 +65,4 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.uv.sources]
-actian-vectorai = { path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0b2-py3-none-any.whl" }
+actian-vectorai = {path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0b2-py3-none-any.whl"}
