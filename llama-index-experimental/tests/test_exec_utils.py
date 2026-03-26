@@ -77,8 +77,10 @@ def test_blocks_pandas_io(code: str) -> None:
         'np.genfromtxt("data.csv")',
         'np.fromfile("raw.bin")',
         'arr.tofile("out.bin")',
+        "np.memmap('/etc/passwd', dtype='uint8', mode='r')",
+        "bytes(np.memmap('/etc/passwd', dtype='uint8', mode='r')[:1000])",
     ],
-    ids=["load", "save", "loadtxt", "savetxt", "genfromtxt", "fromfile", "tofile"],
+    ids=["load", "save", "loadtxt", "savetxt", "genfromtxt", "fromfile", "tofile", "memmap", "memmap_bytes"],
 )
 def test_blocks_numpy_io(code: str) -> None:
     assert _contains_protected_access(code)

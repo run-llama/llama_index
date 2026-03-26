@@ -78,9 +78,14 @@ _DANGEROUS_ATTR_CALLS = frozenset(
         "genfromtxt",
         "fromfile",
         "tofile",
+        "memmap",
+        "open",
         # general dangerous calls
         "system",
         "popen",
+        "subprocess",
+        "exec",
+        "eval",
     }
 )
 
