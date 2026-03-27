@@ -86,9 +86,21 @@ class QueryFusionRetriever(BaseRetriever):
             query=original_query,
         )
         response = self._llm.complete(prompt_str)
+        return self._parse_query_response(response.text)
 
+    async def _aget_queries(self, original_query: str) -> List[QueryBundle]:
+        """Async version of _get_queries that doesn't block the event loop."""
+        prompt_str = self.query_gen_prompt.format(
+            num_queries=self.num_queries - 1,
+            query=original_query,
+        )
+        response = await self._llm.acomplete(prompt_str)
+        return self._parse_query_response(response.text)
+
+    def _parse_query_response(self, text: str) -> List[QueryBundle]:
+        """Parse LLM response text into query bundles."""
         # Strip code block and assume LLM properly put each query on a newline
-        queries = response.text.strip("`").split("\n")
+        queries = text.strip("`").split("\n")
         queries = [q.strip() for q in queries if q.strip()]
         if self._verbose:
             queries_str = "\n".join(queries)
@@ -286,7 +298,7 @@ class QueryFusionRetriever(BaseRetriever):
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         queries: List[QueryBundle] = [query_bundle]
         if self.num_queries > 1:
-            queries.extend(self._get_queries(query_bundle.query_str))
+            queries.extend(await self._aget_queries(query_bundle.query_str))
 
         results = await self._run_async_queries(queries)
 
