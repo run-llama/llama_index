@@ -1,6 +1,4 @@
-"""
-Actian Vector AI Vector store index.
-"""
+"""Actian Vector AI vector store index."""
 
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -44,6 +42,11 @@ from actian_vectorai.models import (
 
 
 class ActianVectorAIVectorStore(BasePydanticVectorStore):
+    """
+    Vector store backend backed by an Actian Vector AI collection.
+
+    """
+
     stores_text: bool = False
     flat_metadata: bool = False
 
@@ -74,6 +77,46 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         async_client: Optional[AsyncVectorAIClient] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize an Actian Vector AI-backed vector store.
+
+        Args:
+            url: Actian Vector AI endpoint in host:port format. Ignored when
+                explicit sync or async clients are provided. Defaults to
+                "localhost:50051".
+            collection_name: Name of the collection used to store vectors and
+                metadata. Defaults to "llama_index_collection".
+            client_kwargs: Optional keyword arguments forwarded to internally
+                created sync/async clients when explicit client instances are
+                not provided. Ignored if client or async_client is supplied.
+            dense_vector_name: Dense vector name in the collection. Defaults to
+                "llama_index_dense_vector".
+            dense_vector_params: Optional vector configuration for the dense
+                vector field (size, distance metric). If omitted, defaults are
+                inferred from the first inserted embedding (inferred size) and
+                cosine distance.
+            collection_kwargs: Optional keyword arguments passed to collection
+                creation. The vectors_config will be replaced by the dense_vector_name
+                and dense_vector_params arguments and should not be included here.
+            stores_text: Whether node text should be stored in payload metadata.
+                Defaults to False.
+            clear_existing_collection: Whether to delete an existing collection
+                with the same name before the first operation. Defaults to False.
+            client: Optional pre-configured synchronous VectorAIClient instance.
+                If provided, url and client_kwargs are ignored. Mutually
+                exclusive with async_client only.
+            async_client: Optional pre-configured asynchronous AsyncVectorAIClient
+                instance. If provided, url and client_kwargs are ignored. Must not
+                be the same instance as the internal async client of a provided
+                synchronous client.
+            **kwargs: Additional arguments forwarded to BasePydanticVectorStore.
+
+        Raises:
+            ValueError: If client is not a VectorAIClient instance, if async_client
+                is not an AsyncVectorAIClient instance, or if async_client is the
+                same instance used internally by the provided synchronous client.
+
+        """
         super().__init__(
             url=url,
             collection_name=collection_name,
@@ -107,6 +150,16 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
                 self._async_client = async_client
 
     def __enter__(self) -> Self:
+        """
+        Enter synchronous context and ensure the client is connected.
+
+        Returns:
+            This vector store instance.
+
+        Raises:
+            ValueError: If the synchronous client is not initialized.
+
+        """
         if self._client is None:
             raise ValueError(
                 "Synchronous client is not initialized. Please initialize the ActianVectorAIVectorStore with a VectorAIClient to use synchronous methods."
@@ -116,11 +169,33 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> Self:
+        """
+        Exit synchronous context and close the client connection.
+
+        Args:
+            exc_type: Exception class raised in the context, if any.
+            exc_val: Exception instance raised in the context, if any.
+            exc_tb: Traceback associated with the raised exception, if any.
+
+        Returns:
+            This vector store instance.
+
+        """
         if self._client.is_connected:
             self._client.shutdown()
         return self
 
     async def __aenter__(self) -> Self:
+        """
+        Enter asynchronous context and ensure the async client is connected.
+
+        Returns:
+            This vector store instance.
+
+        Raises:
+            ValueError: If the asynchronous client is not initialized.
+
+        """
         if self._async_client is None:
             raise ValueError(
                 "Async client is not initialized. Please initialize the ActianVectorAIVectorStore with an AsyncVectorAIClient to use asynchronous methods."
@@ -130,6 +205,18 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> Self:
+        """
+        Exit asynchronous context and close the async client connection.
+
+        Args:
+            exc_type: Exception class raised in the context, if any.
+            exc_val: Exception instance raised in the context, if any.
+            exc_tb: Traceback associated with the raised exception, if any.
+
+        Returns:
+            This vector store instance.
+
+        """
         if self._async_client is not None and self._async_client.is_connected:
             await self._async_client.close()
         return self
@@ -162,14 +249,18 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """
-        Get nodes by ids or metadata filters.
+        Fetch nodes by id and/or metadata filters.
 
         Args:
-            node_ids (List[str]): List of node ids to get.
-            filters (MetadataFilters): Metadata filters to apply to query.
+            node_ids: Optional list of node IDs to match.
+            filters: Optional metadata filters to apply.
 
         Returns:
-            List[BaseNode]: List of nodes matching query.
+            Matching nodes in the collection.
+
+        Note:
+            This method is currently unimplemented because the underlying
+            Actian Vector AI client does not yet expose a scroll API.
 
         """
         self._lazy_client_operation_check()
@@ -177,7 +268,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         if not self._collection_exists:
             return []
 
-        raise NotImplementedError(  # Waiting on implementation of scroll method in Actian Vector AI client
+        raise NotImplementedError(  # Waiting on scroll API support in the Actian Vector AI client
             "ActianVectorAIVectorStore.get_nodes() is not implemented."
         )
 
@@ -186,13 +277,27 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Asynchronously get nodes from vector store."""
+        """
+        Async version of get_nodes.
+
+        Args:
+            node_ids: Optional list of node IDs to match.
+            filters: Optional metadata filters to apply.
+
+        Returns:
+            Matching nodes in the collection.
+
+        Note:
+            This method is currently unimplemented because the underlying
+            Actian Vector AI client does not yet expose a scroll API.
+
+        """
         await self._lazy_async_client_operation_check()
 
         if not self._collection_exists:
             return []
 
-        raise NotImplementedError(  # Waiting on implementation of scroll method in Actian Vector AI client
+        raise NotImplementedError(  # Waiting on scroll API support in the Actian Vector AI client
             "ActianVectorAIVectorStore.aget_nodes() is not implemented."
         )
 
@@ -202,10 +307,15 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> List[str]:
         """
-        Add nodes to index.
+        Insert nodes into the collection.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
+            nodes: Nodes with embeddings to upsert.
+            **kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
+
+        Returns:
+            IDs of inserted/updated nodes.
 
         """
         self._lazy_client_operation_check()
@@ -227,7 +337,18 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
-        """Asynchronously add nodes to index."""
+        """
+        Async version of add.
+
+        Args:
+            nodes: Nodes with embeddings to upsert.
+            **kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
+
+        Returns:
+            IDs of inserted/updated nodes.
+
+        """
         await self._lazy_async_client_operation_check()
 
         if not len(nodes) > 0:
@@ -244,10 +365,12 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete all nodes associated with a document ID.
 
         Args:
-            ref_doc_id (str): The id of the document to delete.
+            ref_doc_id: Reference document ID to match.
+            **delete_kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
 
         """
         self._lazy_client_operation_check()
@@ -265,7 +388,15 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         )
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Asynchronously delete nodes using with ref_doc_id."""
+        """
+        Async version of delete by reference document ID.
+
+        Args:
+            ref_doc_id: Reference document ID to match.
+            **delete_kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
+
+        """
         await self._lazy_async_client_operation_check()
 
         if not self._collection_exists:
@@ -287,10 +418,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         """
-        Delete nodes using list of node ids.
+        Delete nodes by IDs and/or metadata filters.
 
         Args:
-            node_ids (List[str]): The list of node ids to delete.
+            node_ids: Optional list of node IDs to delete.
+            filters: Optional metadata filters to constrain deletion.
+            **delete_kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
 
         """
         self._lazy_client_operation_check()
@@ -314,7 +448,16 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Asynchronously delete nodes using list of node ids."""
+        """
+        Async version of delete_nodes.
+
+        Args:
+            node_ids: Optional list of node IDs to delete.
+            filters: Optional metadata filters to constrain deletion.
+            **delete_kwargs: Additional keyword arguments accepted for interface
+                compatibility. Currently unused.
+
+        """
         await self._lazy_async_client_operation_check()
 
         if not self._collection_exists:
@@ -331,9 +474,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         )
 
     def clear(self) -> None:
-        """
-        Clear all nodes from index.
-        """
+        """Delete the entire collection and reset local existence state."""
         self._lazy_client_operation_check()
 
         if not self._collection_exists:
@@ -347,9 +488,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         self._collection_exists = False
 
     async def aclear(self) -> None:
-        """
-        Clear all nodes from index.
-        """
+        """Async version of clear collection state and data."""
         await self._lazy_async_client_operation_check()
 
         if not self._collection_exists:
@@ -364,10 +503,18 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
-        Query index for top k most similar nodes.
+        Run similarity search and return matching nodes.
 
         Args:
-            query: VectorStoreQuery object containing query parameters
+            query: Query payload containing embedding, filters, and top-k.
+            **kwargs: Additional keyword arguments forwarded to the underlying
+                Actian search API.
+
+        Returns:
+            Search result containing nodes, scores, and IDs.
+
+        Note:
+            Only VectorStoreQueryMode.DEFAULT is currently supported.
 
         """
         self._lazy_client_operation_check()
@@ -393,7 +540,21 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Asynchronously query index for top k most similar nodes."""
+        """
+        Async version of query.
+
+        Args:
+            query: Query payload containing embedding, filters, and top-k.
+            **kwargs: Additional keyword arguments forwarded to the underlying
+                Actian search API.
+
+        Returns:
+            Search result containing nodes, scores, and IDs.
+
+        Note:
+            Only VectorStoreQueryMode.DEFAULT is currently supported.
+
+        """
         await self._lazy_async_client_operation_check()
 
         if not self._collection_exists:
@@ -446,13 +607,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         self, nodes: List[BaseNode]
     ) -> tuple[List[PointStruct], List[str]]:
         """
-        Build list of points to add to Actian Vector AI collection from list of nodes.
+        Convert nodes to Actian Vector AI PointStruct objects.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
+            nodes: Nodes with embeddings and metadata.
 
         Returns:
-            tuple[List[PointStruct], List[str]]: list of points to add to Actian Vector AI collection and their corresponding IDs
+            Tuple of points for upsert and their corresponding node IDs.
 
         """
         points = []
@@ -481,10 +642,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         self, filters: MetadataFilters
     ) -> Filter:
         """
-        Build Actian Vector AI filter from LlamaIndex MetadataFilters.
+        Translate LlamaIndex metadata filters to an Actian filter.
 
         Args:
-            filters: MetadataFilters object containing list of filter groups
+            filters: Nested metadata filter expression.
+
+        Returns:
+            Equivalent Actian filter object, or None when filters is None.
 
         """
         if filters is None:
@@ -571,10 +735,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery
     ) -> Filter:
         """
-        Build Actian Vector AI filter from LlamaIndex VectorStoreQuery.
+        Build an Actian filter from query-level constraints.
 
         Args:
-            query: VectorStoreQuery object containing query parameters
+            query: Vector store query with optional node/doc IDs and metadata filters.
+
+        Returns:
+            Actian filter that combines all supplied constraints.
 
         """
         conditions = []
@@ -596,10 +763,13 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         self, scored_points: List[ScoredPoint]
     ) -> VectorStoreQueryResult:
         """
-        Build LlamaIndex VectorStoreQueryResult from list of Actian Vector AI ScoredPoint.
+        Convert scored Actian search points into LlamaIndex query results.
 
         Args:
-            scored_points: List of ScoredPoints returned from Actian Vector AI search query
+            scored_points: Search hits returned by Actian Vector AI.
+
+        Returns:
+            LlamaIndex query result containing nodes, similarity scores, and IDs.
 
         """
         ids = []
@@ -618,6 +788,14 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     def _lazy_client_operation_check(self) -> None:
+        """
+        Validate synchronous client state and lazily initialize collection flags.
+
+        Raises:
+            ValueError: If the synchronous client is not initialized.
+            ConnectionError: If the synchronous client is not connected.
+
+        """
         if self._client is None:
             raise ValueError(
                 "Synchronous client is not initialized. Please initialize the ActianVectorAIVectorStore with a VectorAIClient to use synchronous methods."
@@ -639,6 +817,14 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             self._lazy_collection_exist_check = True
 
     async def _lazy_async_client_operation_check(self) -> None:
+        """
+        Validate async client state and lazily initialize collection flags.
+
+        Raises:
+            ValueError: If the async client is not initialized.
+            ConnectionError: If the async client is not connected.
+
+        """
         if self._async_client is None:
             raise ValueError(
                 "Async client is not initialized. Please initialize the ActianVectorAIVectorStore with an AsyncVectorAIClient to use asynchronous methods."
@@ -660,12 +846,28 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             self._lazy_collection_exist_check = True
 
     def _create_collection_if_not_exists(self, embed_dim: int) -> None:
+        """
+        Create collection when missing using the configured vector schema.
+
+        Args:
+            embed_dim: Embedding dimensionality used to initialize default vector
+                parameters when not explicitly configured.
+
+        """
         if not self._collection_exists:
             _collection_kwargs = self._prepare_collection_kwargs(embed_dim)
             self._client.collections.create(self.collection_name, **_collection_kwargs)
             self._collection_exists = True
 
     async def _acreate_collection_if_not_exists(self, embed_dim: int) -> None:
+        """
+        Async version of _create_collection_if_not_exists.
+
+        Args:
+            embed_dim: Embedding dimensionality used to initialize default vector
+                parameters when not explicitly configured.
+
+        """
         if not self._collection_exists:
             _collection_kwargs = self._prepare_collection_kwargs(embed_dim)
             await self._async_client.collections.create(
@@ -674,6 +876,17 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             self._collection_exists = True
 
     def _prepare_collection_kwargs(self, embed_dim: int) -> Dict[str, Any]:
+        """
+        Build collection creation kwargs, including vectors configuration.
+
+        Args:
+            embed_dim: Embedding dimensionality used when deriving default dense
+                vector parameters.
+
+        Returns:
+            Collection keyword arguments ready for create() calls.
+
+        """
         if self.collection_kwargs is None:
             self.collection_kwargs = {}
 
