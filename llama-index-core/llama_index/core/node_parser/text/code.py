@@ -255,10 +255,16 @@ class CodeSplitter(TextSplitter):
 
         """
         suffix = Path(filename).suffix.lower()
+        if not suffix:
+            raise ValueError(
+                f"'{filename}' has no file extension — cannot infer language. "
+                "Pass the language explicitly via CodeSplitter(language=...) "
+                "or CodeSplitter.from_defaults(language=...)."
+            )
         language = EXTENSION_TO_LANGUAGE.get(suffix)
         if language is None:
             raise ValueError(
-                f"Could not infer language from file extension '{suffix}'. "
+                f"Unrecognised file extension '{suffix}'. "
                 f"Supported extensions: {sorted(EXTENSION_TO_LANGUAGE)}. "
                 "Pass the language explicitly via CodeSplitter(language=...) "
                 "or CodeSplitter.from_defaults(language=...)."
@@ -377,4 +383,3 @@ class CodeSplitter(TextSplitter):
                 return chunks
             else:
                 raise ValueError(f"Could not parse code with language {self.language}.")
-

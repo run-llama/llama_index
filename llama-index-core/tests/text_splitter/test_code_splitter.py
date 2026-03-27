@@ -459,8 +459,18 @@ def test_from_filename_unknown_extension() -> None:
     if "CI" in os.environ:
         return
 
-    with pytest.raises(ValueError, match="Could not infer language"):
+    with pytest.raises(ValueError, match="Unrecognised file extension"):
         CodeSplitter.from_filename("unknown.xyz")
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_no_extension() -> None:
+    """Test that from_filename raises ValueError for files with no extension."""
+    if "CI" in os.environ:
+        return
+
+    with pytest.raises(ValueError, match="has no file extension"):
+        CodeSplitter.from_filename("Makefile")
 
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
