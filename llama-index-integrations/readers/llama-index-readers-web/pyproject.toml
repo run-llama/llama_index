@@ -107,10 +107,12 @@ contains_example = false
 import_path = "llama_index.readers.web"
 
 [tool.llamahub.class_authors]
+CrwReader = "rainbowgore"
 AgentQLWebReader = "jayfish0"
 AsyncWebPageReader = "Hironsan"
 BeautifulSoupWebReader = "thejessezhang"
 BrowserbaseWebReader = "llama-index"
+CrwWebReader = "rainbowgore"
 FireCrawlWebReader = "llama-index"
 HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
