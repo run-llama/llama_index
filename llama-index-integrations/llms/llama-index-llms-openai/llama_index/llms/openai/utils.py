@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
@@ -659,11 +660,14 @@ def to_openai_responses_message_dict(
                         }
                     )
         elif isinstance(block, ToolCallBlock):
+            arguments = block.tool_kwargs
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
             tool_calls.extend(
                 [
                     {
                         "type": "function_call",
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                         "call_id": block.tool_call_id,
                         "name": block.tool_name,
                     }
@@ -679,9 +683,17 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
-        return [*reasoning, *message_dicts]
+        items = [*reasoning]
+        if content_txt:
+            items.append({"role": "assistant", "content": content_txt})
+        items.extend(message_dicts)
+        return items
     elif tool_calls:
-        return [*reasoning, *tool_calls]
+        items = [*reasoning]
+        if content_txt:
+            items.append({"role": "assistant", "content": content_txt})
+        items.extend(tool_calls)
+        return items
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed

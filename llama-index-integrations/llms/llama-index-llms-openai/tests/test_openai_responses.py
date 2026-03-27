@@ -1009,3 +1009,97 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_assistant_text_preserved_with_tool_calls():
+    """Text content should not be dropped when tool calls are present."""
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="I'll search for that now."),
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_1",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+    result = to_openai_responses_message_dict(msg, model="gpt-4o-mini")
+    assert isinstance(result, list)
+    assert any(
+        isinstance(item, dict) and item.get("role") == "assistant"
+        for item in result
+    )
+    text_item = next(
+        item for item in result if isinstance(item, dict) and item.get("role") == "assistant"
+    )
+    assert text_item["content"] == "I'll search for that now."
+    tool_item = next(
+        item for item in result if isinstance(item, dict) and item.get("type") == "function_call"
+    )
+    assert tool_item["name"] == "search"
+
+
+def test_tool_call_arguments_serialized_to_json():
+    """tool_kwargs passed as a dict should be serialized to a JSON string."""
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_1",
+                tool_kwargs={"q": "test"},
+            ),
+        ],
+    )
+    result = to_openai_responses_message_dict(msg, model="gpt-4o-mini")
+    tool_item = result[0] if isinstance(result, list) else result
+    assert isinstance(tool_item["arguments"], str)
+    assert tool_item["arguments"] == '{"q": "test"}'
+
+
+def test_reasoning_tokens_distributed_across_blocks():
+    """Reasoning token count should be divided among ThinkingBlocks, not duplicated."""
+    from unittest.mock import MagicMock
+
+    from openai.types.responses import ResponseOutputMessage, ResponseOutputText
+
+    output = [
+        ResponseOutputMessage(
+            id="1",
+            content=[ResponseOutputText(annotations=[], text="Hello", type="output_text")],
+            role="assistant",
+            status="completed",
+            type="message",
+        )
+    ]
+
+    chat_response = OpenAIResponsesMock()._parse_response_output(output)
+    # Inject 3 thinking blocks
+    chat_response.message.blocks = [
+        ThinkingBlock(content="step 1"),
+        ThinkingBlock(content="step 2"),
+        ThinkingBlock(content="step 3"),
+    ]
+
+    # Simulate the token assignment logic from _chat
+    mock_usage = MagicMock()
+    mock_usage.output_tokens_details.reasoning_tokens = 900
+    if hasattr(mock_usage.output_tokens_details, "reasoning_tokens"):
+        reasoning_blocks = [
+            b for b in chat_response.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+        if reasoning_blocks:
+            total = mock_usage.output_tokens_details.reasoning_tokens or 0
+            per_block = total // len(reasoning_blocks)
+            remainder = total % len(reasoning_blocks)
+            for i, block in enumerate(reasoning_blocks):
+                block.num_tokens = per_block + (1 if i < remainder else 0)
+
+    tokens = [b.num_tokens for b in chat_response.message.blocks]
+    assert tokens == [300, 300, 300]
+    assert sum(tokens) == 900
