@@ -1,6 +1,7 @@
 """Code splitter."""
 
-from typing import Any, Callable, List, Literal, Optional
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -14,6 +15,52 @@ DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
 DEFAULT_MAX_CHARS = 1500
 DEFAULT_MAX_TOKENS = 512
+
+# Mapping of file extensions to tree-sitter language names.
+# Covers the most common languages supported by tree-sitter-language-pack.
+EXTENSION_TO_LANGUAGE: Dict[str, str] = {
+    ".py": "python",
+    ".pyi": "python",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".hpp": "cpp",
+    ".cs": "c_sharp",
+    ".rb": "ruby",
+    ".php": "php",
+    ".swift": "swift",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".scala": "scala",
+    ".r": "r",
+    ".lua": "lua",
+    ".ex": "elixir",
+    ".exs": "elixir",
+    ".hs": "haskell",
+    ".ml": "ocaml",
+    ".sh": "bash",
+    ".bash": "bash",
+    ".zsh": "bash",
+    ".toml": "toml",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".json": "json",
+    ".html": "html",
+    ".htm": "html",
+    ".css": "css",
+    ".sql": "sql",
+    ".md": "markdown",
+    ".markdown": "markdown",
+}
 
 
 class CodeSplitter(TextSplitter):
@@ -160,6 +207,75 @@ class CodeSplitter(TextSplitter):
         )
 
     @classmethod
+    def from_filename(
+        cls,
+        filename: str,
+        chunk_lines: int = DEFAULT_CHUNK_LINES,
+        chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
+        max_chars: int = DEFAULT_MAX_CHARS,
+        count_mode: Literal["token", "char"] = "char",
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        tokenizer: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        parser: Any = None,
+    ) -> "CodeSplitter":
+        """
+        Create a CodeSplitter by inferring the language from a file extension.
+
+        This is a convenience constructor that removes the need to manually
+        specify the ``language`` parameter when the programming language can
+        be determined from the file name.
+
+        Args:
+            filename: Path or file name whose extension is used to infer the
+                programming language (e.g. ``"main.py"``, ``"/src/app.ts"``).
+            chunk_lines: The number of lines to include in each chunk.
+            chunk_lines_overlap: How many lines of code each chunk overlaps with.
+            max_chars: Maximum number of characters per chunk.
+            count_mode: Mode for counting chunk size: ``'char'`` for characters,
+                ``'token'`` for tokens.
+            max_tokens: Maximum number of tokens per chunk (used when
+                ``count_mode='token'``).
+            tokenizer: Optional tokenizer function for token-based counting.
+            callback_manager: Optional callback manager.
+            parser: Optional tree-sitter Parser object.
+
+        Returns:
+            CodeSplitter: A configured ``CodeSplitter`` instance.
+
+        Raises:
+            ValueError: If the file extension is not recognised.  See
+                :data:`EXTENSION_TO_LANGUAGE` for the list of supported
+                extensions, or pass the ``language`` argument to
+                :meth:`from_defaults` directly.
+
+        Example:
+            >>> splitter = CodeSplitter.from_filename("app.py")
+            >>> splitter = CodeSplitter.from_filename("/project/src/index.ts")
+
+        """
+        suffix = Path(filename).suffix.lower()
+        language = EXTENSION_TO_LANGUAGE.get(suffix)
+        if language is None:
+            raise ValueError(
+                f"Could not infer language from file extension '{suffix}'. "
+                f"Supported extensions: {sorted(EXTENSION_TO_LANGUAGE)}. "
+                "Pass the language explicitly via CodeSplitter(language=...) "
+                "or CodeSplitter.from_defaults(language=...)."
+            )
+        return cls(
+            language=language,
+            chunk_lines=chunk_lines,
+            chunk_lines_overlap=chunk_lines_overlap,
+            max_chars=max_chars,
+            count_mode=count_mode,
+            max_tokens=max_tokens,
+            tokenizer=tokenizer,
+            callback_manager=callback_manager,
+            parser=parser,
+        )
+
+    @classmethod
     def class_name(cls) -> str:
         return "CodeSplitter"
 
@@ -262,4 +378,3 @@ class CodeSplitter(TextSplitter):
             else:
                 raise ValueError(f"Could not parse code with language {self.language}.")
 
-        # TODO: set up auto-language detection using something like https://github.com/yoeo/guesslang.
