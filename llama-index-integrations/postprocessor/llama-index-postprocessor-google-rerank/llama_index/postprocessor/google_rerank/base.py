@@ -53,7 +53,6 @@ class GoogleRerank(BaseNodePostprocessor):
     )
 
     _client: Any = PrivateAttr()
-    _async_client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -82,9 +81,6 @@ class GoogleRerank(BaseNodePostprocessor):
             self.project_id = resolved_project
 
         self._client = discoveryengine.RankServiceClient(credentials=credentials)
-        self._async_client = discoveryengine.RankServiceAsyncClient(
-            credentials=credentials
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -154,48 +150,4 @@ class GoogleRerank(BaseNodePostprocessor):
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
 
-    @dispatcher.span
-    async def _apostprocess_nodes(
-        self,
-        nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
-    ) -> List[NodeWithScore]:
-        dispatcher.event(
-            ReRankStartEvent(
-                query=query_bundle,
-                nodes=nodes,
-                top_n=self.top_n,
-                model_name=self.model,
-            )
-        )
 
-        if query_bundle is None:
-            raise ValueError("Missing query bundle in extra info.")
-        if len(nodes) == 0:
-            return []
-
-        records = self._build_records(nodes)
-        top_n = min(self.top_n, len(nodes))
-
-        request = discoveryengine.RankRequest(
-            ranking_config=self._build_ranking_config_path(),
-            model=self.model,
-            top_n=top_n,
-            query=query_bundle.query_str,
-            records=records,
-        )
-
-        response = await self._async_client.rank(request=request)
-
-        new_nodes = []
-        for record in response.records:
-            index = int(record.id)
-            new_nodes.append(
-                NodeWithScore(
-                    node=nodes[index].node,
-                    score=record.score,
-                )
-            )
-
-        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
-        return new_nodes
