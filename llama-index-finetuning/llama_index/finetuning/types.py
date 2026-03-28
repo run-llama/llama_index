@@ -14,7 +14,13 @@ class BaseLLMFinetuneEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Goes off and does stuff."""
+        """Run the finetuning process for the LLM.
+
+        Implementations should submit or execute the training job using the
+        configured dataset and hyperparameters. This method blocks until the
+        finetuning job completes. After a successful call, `get_finetuned_model`
+        should return the resulting model.
+        """
 
     @abstractmethod
     def get_finetuned_model(self, **model_kwargs: Any) -> LLM:
@@ -26,7 +32,13 @@ class BaseEmbeddingFinetuneEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Goes off and does stuff."""
+        """Run the finetuning process for the embedding model.
+
+        Implementations should submit or execute the training job using the
+        configured dataset and hyperparameters. This method blocks until the
+        finetuning job completes. After a successful call, `get_finetuned_model`
+        should return the resulting model.
+        """
 
     @abstractmethod
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
@@ -38,7 +50,13 @@ class BaseCrossEncoderFinetuningEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Goes off and does stuff."""
+        """Run the finetuning process for the cross-encoder model.
+
+        Implementations should submit or execute the training job using the
+        configured dataset and hyperparameters. This method blocks until the
+        finetuning job completes. After a successful call, `get_finetuned_model`
+        should return the resulting re-ranker model.
+        """
 
     @abstractmethod
     def get_finetuned_model(
@@ -52,7 +70,13 @@ class BaseCohereRerankerFinetuningEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Goes off and does stuff."""
+        """Run the finetuning process for the Cohere reranker model.
+
+        Implementations should submit or execute the training job using the
+        configured dataset and hyperparameters. This method blocks until the
+        finetuning job completes. After a successful call, `get_finetuned_model`
+        should return the resulting reranker model.
+        """
 
     @abstractmethod
     def get_finetuned_model(self, top_n: int = 5) -> CohereRerank:
