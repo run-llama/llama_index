@@ -15,16 +15,10 @@ def _create_reranker(**kwargs):
         create=True,
     ):
         with mock.patch("google.auth.default", return_value=(None, "test-project")):
-            with (
-                mock.patch(
-                    "google.cloud.discoveryengine_v1.RankServiceClient"
-                ) as mock_client_cls,
-                mock.patch(
-                    "google.cloud.discoveryengine_v1.RankServiceAsyncClient"
-                ) as mock_async_client_cls,
-            ):
+            with mock.patch(
+                "google.cloud.discoveryengine_v1.RankServiceClient"
+            ) as mock_client_cls:
                 mock_client_cls.return_value = MagicMock()
-                mock_async_client_cls.return_value = MagicMock()
                 reranker = GoogleRerank(
                     project_id="test-project",
                     **kwargs,
@@ -82,6 +76,7 @@ def test_google_rerank():
 
 @pytest.mark.asyncio
 async def test_google_rerank_async():
+    """Test that async postprocessing works by delegating to sync method."""
     reranker = _create_reranker(top_n=2)
 
     mock_response = _make_mock_response(
@@ -90,7 +85,7 @@ async def test_google_rerank_async():
             {"index": 0, "score": 0.70},
         ]
     )
-    reranker._async_client.rank = AsyncMock(return_value=mock_response)
+    reranker._client.rank.return_value = mock_response
 
     input_nodes = [
         NodeWithScore(node=TextNode(id_="1", text="hello world")),
@@ -107,7 +102,7 @@ async def test_google_rerank_async():
     assert actual_nodes[0].score == pytest.approx(0.90)
     assert actual_nodes[1].node.get_content() == "hello world"
     assert actual_nodes[1].score == pytest.approx(0.70)
-    reranker._async_client.rank.assert_called_once()
+    reranker._client.rank.assert_called_once()
 
 
 def test_google_rerank_empty_nodes():
