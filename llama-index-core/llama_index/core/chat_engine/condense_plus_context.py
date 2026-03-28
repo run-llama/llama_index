@@ -102,6 +102,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        fallback_to_llm: bool = False,
     ):
         self._retriever = retriever
         self._llm = llm
@@ -133,6 +134,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         self._token_counter = TokenCounter()
         self._verbose = verbose
+        self._fallback_to_llm = fallback_to_llm
 
     @classmethod
     def from_defaults(
@@ -148,6 +150,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        fallback_to_llm: bool = False,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
@@ -170,6 +173,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
+            fallback_to_llm=fallback_to_llm,
         )
 
     def _condense_question(
@@ -319,23 +323,49 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         return response_synthesizer, context_source, context_nodes
 
+    def _build_fallback_messages(
+        self, message: str, chat_history: List[ChatMessage]
+    ) -> List[ChatMessage]:
+        """Build messages for direct LLM fallback when no nodes are retrieved."""
+        messages: List[ChatMessage] = []
+        if self._system_prompt:
+            messages.append(
+                ChatMessage(content=self._system_prompt, role=MessageRole.SYSTEM)
+            )
+        messages.extend(chat_history)
+        messages.append(ChatMessage(content=message, role=MessageRole.USER))
+        return messages
+
+    def _should_fallback(self, context_nodes: List[NodeWithScore]) -> bool:
+        """Check whether to bypass the synthesizer and call the LLM directly."""
+        return self._fallback_to_llm and len(context_nodes) == 0
+
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        if self._should_fallback(context_nodes):
+            chat_history_for_fallback = self._memory.get(input=message)
+            fallback_messages = self._build_fallback_messages(
+                message, chat_history_for_fallback
+            )
+            llm_response = self._llm.chat(fallback_messages)
+            response_text = str(llm_response)
+        else:
+            response = synthesizer.synthesize(message, context_nodes)
+            response_text = str(response)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
-            content=str(response), role=MessageRole.ASSISTANT
+            content=response_text, role=MessageRole.ASSISTANT
         )
         self._memory.put(user_message)
         self._memory.put(assistant_message)
 
         return AgentChatResponse(
-            response=str(response),
+            response=response_text,
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -348,27 +378,47 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
-        assert isinstance(response, StreamingResponse)
-
         self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
-        def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
-            full_response = ""
-            for token in response.response_gen:
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
-                        content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
-                )
+        if self._should_fallback(context_nodes):
+            chat_history_for_fallback = self._memory.get(input=message)
+            fallback_messages = self._build_fallback_messages(
+                message, chat_history_for_fallback
+            )
+            llm_stream = self._llm.stream_chat(fallback_messages)
 
-        chat_response = StreamingAgentChatResponse(
-            chat_stream=wrapped_gen(response),
-            sources=[context_source],
-            source_nodes=context_nodes,
-        )
+            def fallback_gen(
+                stream: ChatResponseGen,
+            ) -> ChatResponseGen:
+                for chat_resp in stream:
+                    yield chat_resp
+
+            chat_response = StreamingAgentChatResponse(
+                chat_stream=fallback_gen(llm_stream),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+        else:
+            response = synthesizer.synthesize(message, context_nodes)
+            assert isinstance(response, StreamingResponse)
+
+            def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
+                full_response = ""
+                for token in response.response_gen:
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                chat_stream=wrapped_gen(response),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+
         thread = Thread(
             target=chat_response.write_response_to_history, args=(self._memory,)
         )
@@ -384,17 +434,26 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        if self._should_fallback(context_nodes):
+            chat_history_for_fallback = await self._memory.aget(input=message)
+            fallback_messages = self._build_fallback_messages(
+                message, chat_history_for_fallback
+            )
+            llm_response = await self._llm.achat(fallback_messages)
+            response_text = str(llm_response)
+        else:
+            response = await synthesizer.asynthesize(message, context_nodes)
+            response_text = str(response)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
-            content=str(response), role=MessageRole.ASSISTANT
+            content=response_text, role=MessageRole.ASSISTANT
         )
         await self._memory.aput(user_message)
         await self._memory.aput(assistant_message)
 
         return AgentChatResponse(
-            response=str(response),
+            response=response_text,
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -407,27 +466,49 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
-        assert isinstance(response, AsyncStreamingResponse)
-
         await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
-        async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
-            full_response = ""
-            async for token in response.async_response_gen():
-                full_response += token
-                yield ChatResponse(
-                    message=ChatMessage(
-                        content=full_response, role=MessageRole.ASSISTANT
-                    ),
-                    delta=token,
-                )
+        if self._should_fallback(context_nodes):
+            chat_history_for_fallback = await self._memory.aget(input=message)
+            fallback_messages = self._build_fallback_messages(
+                message, chat_history_for_fallback
+            )
+            llm_stream = await self._llm.astream_chat(fallback_messages)
 
-        chat_response = StreamingAgentChatResponse(
-            achat_stream=wrapped_gen(response),
-            sources=[context_source],
-            source_nodes=context_nodes,
-        )
+            async def fallback_async_gen(
+                stream: ChatResponseAsyncGen,
+            ) -> ChatResponseAsyncGen:
+                async for chat_resp in stream:
+                    yield chat_resp
+
+            chat_response = StreamingAgentChatResponse(
+                achat_stream=fallback_async_gen(llm_stream),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+        else:
+            response = await synthesizer.asynthesize(message, context_nodes)
+            assert isinstance(response, AsyncStreamingResponse)
+
+            async def wrapped_gen(
+                response: AsyncStreamingResponse,
+            ) -> ChatResponseAsyncGen:
+                full_response = ""
+                async for token in response.async_response_gen():
+                    full_response += token
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            content=full_response, role=MessageRole.ASSISTANT
+                        ),
+                        delta=token,
+                    )
+
+            chat_response = StreamingAgentChatResponse(
+                achat_stream=wrapped_gen(response),
+                sources=[context_source],
+                source_nodes=context_nodes,
+            )
+
         chat_response.awrite_response_to_history_task = asyncio.create_task(
             chat_response.awrite_response_to_history(self._memory)
         )
