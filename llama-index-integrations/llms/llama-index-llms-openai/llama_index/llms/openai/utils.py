@@ -3,20 +3,6 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-from tenacity import (
-    RetryCallState,
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    stop_after_delay,
-    wait_exponential,
-    wait_random_exponential,
-)
-from tenacity.stop import stop_base
-from tenacity.wait import wait_base
-
-import openai
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
     AudioBlock,
@@ -31,6 +17,20 @@ from llama_index.core.base.llms.types import (
     ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from tenacity import (
+    RetryCallState,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_random_exponential,
+)
+from tenacity.stop import stop_base
+from tenacity.wait import wait_base
+
+import openai
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -40,6 +40,11 @@ from openai.types.completion_choice import Logprobs
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
+
+# Fallback context window used when the model name is not in ALL_AVAILABLE_MODELS.
+# This allows OpenAI-compatible proxies (e.g. LiteLLM, AWS Bedrock Gateway,
+# vLLM, Ollama) to work without hard-coding every possible model name here.
+DEFAULT_CONTEXT_WINDOW = 4096
 
 O1_MODELS: Dict[str, int] = {
     "o1": 200000,
@@ -376,14 +381,24 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
     if modelname not in ALL_AVAILABLE_MODELS:
-        raise ValueError(
-            f"Unknown model {modelname!r}. Please provide a valid OpenAI model name in:"
-            f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
+        logger.warning(
+            "Unknown model %r. This model is not in the known OpenAI model list. "
+            "If you are using an OpenAI-compatible proxy (e.g. LiteLLM, AWS Bedrock "
+            "Gateway, vLLM, Ollama), this is expected. Falling back to a default "
+            "context window of %d tokens. Set `context_window` explicitly on your "
+            "LLM to avoid this warning.",
+            modelname,
+            DEFAULT_CONTEXT_WINDOW,
         )
+        return DEFAULT_CONTEXT_WINDOW
     return ALL_AVAILABLE_MODELS[modelname]
 
 
 def is_chat_model(model: str) -> bool:
+    # Default to True for unknown models so that OpenAI-compatible proxies
+    # (e.g. LiteLLM, AWS Bedrock Gateway, vLLM, Ollama) work out of the box.
+    if model not in CHAT_MODELS and model not in ALL_AVAILABLE_MODELS:
+        return True
     return model in CHAT_MODELS
 
 
