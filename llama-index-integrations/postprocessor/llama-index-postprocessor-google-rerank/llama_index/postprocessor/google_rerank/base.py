@@ -55,6 +55,8 @@ class GoogleRerank(BaseNodePostprocessor):
     _client: Any = PrivateAttr()
     _async_client: Any = PrivateAttr()
 
+    _credentials: Any = PrivateAttr()
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL,
@@ -81,10 +83,18 @@ class GoogleRerank(BaseNodePostprocessor):
             _, resolved_project = google.auth.default()
             self.project_id = resolved_project
 
+        self._credentials = credentials
         self._client = discoveryengine.RankServiceClient(credentials=credentials)
-        self._async_client = discoveryengine.RankServiceAsyncClient(
-            credentials=credentials
-        )
+        self._async_client = None
+
+    def _get_async_client(self) -> Any:
+        if self._async_client is None:
+            # Only instantiate when actually used (inside event loop)
+            # Use same credentials logic
+            self._async_client = discoveryengine.RankServiceAsyncClient(
+                credentials=self._credentials
+            )
+        return self._async_client
 
     @classmethod
     def class_name(cls) -> str:
@@ -185,7 +195,8 @@ class GoogleRerank(BaseNodePostprocessor):
             records=records,
         )
 
-        response = await self._async_client.rank(request=request)
+        async_client = self._get_async_client()
+        response = await async_client.rank(request=request)
 
         new_nodes = []
         for record in response.records:
