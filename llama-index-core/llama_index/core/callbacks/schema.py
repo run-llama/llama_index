@@ -27,6 +27,10 @@ class CBEventType(str, Enum):
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
         SUB_QUESTION: Logs for a generated sub question and answer.
+        CONTEXT_COMPACTION: Fires when the agent compacts its context window
+            (summarizes and drops older messages). Carries pre/post token counts
+            and the summary text so observability tools can compare agent behavior
+            across the compaction boundary.
 
     """
 
@@ -44,6 +48,7 @@ class CBEventType(str, Enum):
     RERANKING = "reranking"
     EXCEPTION = "exception"
     AGENT_STEP = "agent_step"
+    CONTEXT_COMPACTION = "context_compaction"
 
 
 class EventPayload(str, Enum):
@@ -69,6 +74,11 @@ class EventPayload(str, Enum):
     SYSTEM_PROMPT = "system_prompt"  # system prompt used in LLM call
     QUERY_WRAPPER_PROMPT = "query_wrapper_prompt"  # query wrapper prompt used in LLM
     EXCEPTION = "exception"  # exception raised in an event
+    # CONTEXT_COMPACTION payloads
+    PRE_COMPACTION_TOKEN_COUNT = "pre_compaction_token_count"  # tokens before compaction
+    POST_COMPACTION_TOKEN_COUNT = "post_compaction_token_count"  # tokens after compaction
+    COMPACTION_SUMMARY = "compaction_summary"  # summary text produced by compaction
+    DROPPED_MESSAGE_COUNT = "dropped_message_count"  # number of messages removed
 
 
 # events that will never have children events
