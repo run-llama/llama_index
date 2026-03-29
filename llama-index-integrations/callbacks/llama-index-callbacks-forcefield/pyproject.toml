@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-callbacks-forcefield"
+version = "0.1.0"
+description = "llama-index callbacks forcefield integration -- AI security scanning for LLM prompts and outputs"
+authors = [{name = "Data Science Technologies", email = "security@datasciencetech.ca"}]
+requires-python = ">=3.9"
+readme = "README.md"
+license = "Apache-2.0"
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "forcefield>=0.7.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.callbacks.forcefield"
+
+[tool.llamahub.class_authors]
+ForceFieldCallbackHandler = "Data-ScienceTech"
