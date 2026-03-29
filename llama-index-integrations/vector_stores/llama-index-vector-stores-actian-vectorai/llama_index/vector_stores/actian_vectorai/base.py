@@ -746,15 +746,17 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         """
         conditions = []
 
-        if query.node_ids is not None:
+        if query.node_ids is not None and len(query.node_ids) > 0:
             conditions.append(has_id(query.node_ids))
 
-        if query.doc_ids is not None:
+        if query.doc_ids is not None and len(query.doc_ids) > 0:
             conditions.append(Field("ref_doc_id").any_of(query.doc_ids))
 
         if query.filters is not None:
             conditions.append(
-                Condition(self._build_db_filter_from_metadata_filters(query.filters))
+                Condition(
+                    filter=self._build_db_filter_from_metadata_filters(query.filters)
+                )
             )
 
         return Filter(must=conditions) if conditions else None
