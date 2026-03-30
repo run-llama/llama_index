@@ -120,6 +120,8 @@ class OpenVINOGenAILLM(CustomLLM):
                 for storing decoded text chunks.
                 print_len (int): The length of the printed text
                 to manage incremental decoding.
+                decoded_lengths (list): Tracks decoded text lengths
+                for each token position.
 
             """
 
@@ -137,8 +139,9 @@ class OpenVINOGenAILLM(CustomLLM):
                 self.tokens_cache: list[int] = []
                 self.text_queue: Any = queue.Queue()
                 self.print_len = 0
+                self.decoded_lengths: list[int] = []
 
-            def __iter__(self) -> self:
+            def __iter__(self):
                 """
                 Returns the iterator object itself.
                 """
@@ -162,17 +165,20 @@ class OpenVINOGenAILLM(CustomLLM):
                     raise StopIteration
                 return value
 
-            def get_stop_flag(self) -> bool:
+            def get_stop_flag(
+                self,
+            ) -> openvino_genai.StreamingStatus:
                 """
                 Checks whether the generation process should be stopped.
 
                 Returns:
-                    bool: Always returns False in this implementation.
+                    openvino_genai.StreamingStatus: Always returns RUNNING
+                    in this implementation.
 
                 """
-                return False
+                return openvino_genai.StreamingStatus.RUNNING
 
-            def put_word(self, word: Any) -> None:
+            def write_word(self, word: str) -> None:
                 """
                 Puts a word into the text queue.
 
@@ -182,55 +188,96 @@ class OpenVINOGenAILLM(CustomLLM):
                 """
                 self.text_queue.put(word)
 
-            def put(self, token_id: int) -> bool:
+            def write(
+                self, token: Union[int, list[int]]
+            ) -> openvino_genai.StreamingStatus:
                 """
                 Processes a token and manages the decoding buffer.
                 Adds decoded text to the queue.
 
                 Args:
-                    token_id (int): The token_id to process.
+                    token (Union[int, list[int]]): The token(s) to process.
 
                 Returns:
-                    bool: True if generation should be stopped, False otherwise.
+                    openvino_genai.StreamingStatus: RUNNING to continue,
+                    CANCEL to stop generation.
 
                 """
-                self.tokens_cache.append(token_id)
-                text = self.tokenizer.decode(
-                    self.tokens_cache, skip_special_tokens=True
-                )
+                if isinstance(token, list):
+                    self.tokens_cache += token
+                    self.decoded_lengths += [
+                        -2 for _ in range(len(token) - 1)
+                    ]
+                else:
+                    self.tokens_cache.append(token)
+
+                text = self.tokenizer.decode(self.tokens_cache)
+                self.decoded_lengths.append(len(text))
 
                 word = ""
+                delay_n_tokens = 3
                 if len(text) > self.print_len and text[-1] == "\n":
                     word = text[self.print_len :]
                     self.tokens_cache = []
+                    self.decoded_lengths = []
                     self.print_len = 0
-                elif len(text) >= 3 and text[-3:] == chr(65533):
-                    pass
-                elif len(text) > self.print_len:
-                    word = text[self.print_len :]
-                    self.print_len = len(text)
-                self.put_word(word)
+                elif len(text) > 0 and text[-1] == chr(65533):
+                    self.decoded_lengths[-1] = -1
+                elif len(self.tokens_cache) >= delay_n_tokens:
+                    self._compute_decoded_length(
+                        len(self.decoded_lengths) - delay_n_tokens
+                    )
+                    print_until = self.decoded_lengths[-delay_n_tokens]
+                    if (
+                        print_until != -1
+                        and print_until > self.print_len
+                    ):
+                        word = text[self.print_len : print_until]
+                        self.print_len = print_until
+                self.write_word(word)
 
-                if self.get_stop_flag():
+                stop_flag = self.get_stop_flag()
+                if stop_flag != openvino_genai.StreamingStatus.RUNNING:
                     self.end()
-                    return True
+                return stop_flag
+
+            def _compute_decoded_length(
+                self, cache_position: int
+            ) -> None:
+                """
+                Lazily compute decoded length for a position
+                (needed when tokens arrive in batches).
+                """
+                if self.decoded_lengths[cache_position] != -2:
+                    return
+                cache_for_position = self.tokens_cache[
+                    : cache_position + 1
+                ]
+                text_for_position = self.tokenizer.decode(
+                    cache_for_position
+                )
+                if (
+                    len(text_for_position) > 0
+                    and text_for_position[-1] == chr(65533)
+                ):
+                    self.decoded_lengths[cache_position] = -1
                 else:
-                    return False
+                    self.decoded_lengths[cache_position] = len(
+                        text_for_position
+                    )
 
             def end(self) -> None:
                 """
                 Flushes residual tokens from the buffer
                 and puts a None value in the queue to signal the end.
                 """
-                text = self.tokenizer.decode(
-                    self.tokens_cache, skip_special_tokens=True
-                )
+                text = self.tokenizer.decode(self.tokens_cache)
                 if len(text) > self.print_len:
                     word = text[self.print_len :]
-                    self.put_word(word)
+                    self.write_word(word)
                     self.tokens_cache = []
                     self.print_len = 0
-                self.put_word(None)
+                self.write_word(None)
 
             def reset(self) -> None:
                 """
@@ -239,17 +286,23 @@ class OpenVINOGenAILLM(CustomLLM):
                 self.tokens_cache = []
                 self.text_queue = queue.Queue()
                 self.print_len = 0
+                self.decoded_lengths = []
 
         class ChunkStreamer(IterableStreamer):
             def __init__(self, tokenizer: Any, tokens_len: int = 4) -> None:
                 super().__init__(tokenizer)
                 self.tokens_len = tokens_len
 
-            def put(self, token_id: int) -> bool:
+            def write(
+                self, token: Union[int, list[int]]
+            ) -> openvino_genai.StreamingStatus:
+                if isinstance(token, list):
+                    return super().write(token)
                 if (len(self.tokens_cache) + 1) % self.tokens_len != 0:
-                    self.tokens_cache.append(token_id)
-                    return False
-                return super().put(token_id)
+                    self.tokens_cache.append(token)
+                    self.decoded_lengths.append(-2)
+                    return openvino_genai.StreamingStatus.RUNNING
+                return super().write(token)
 
         """Initialize params."""
         pipe = openvino_genai.LLMPipeline(model_path, device, config, **kwargs)
