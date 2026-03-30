@@ -44,14 +44,14 @@ from llama_index.llms.openai import OpenAI
 
 ### LlamaParse (document agent platform)
 
-**LlamaParse** is its own platform—focused on document agents and agentic OCR. It includes **Parse** (parsing), **LlamaAgents** (deployed document agents),**Extract** (structured extraction), and **Index** (ingest and RAG). You can use it with the LlamaIndex framework or standalone.
+**LlamaParse** is its own platform—focused on document agents and agentic OCR. It includes **Parse** (parsing), **LlamaAgents** (deployed document agents), **Extract** (structured extraction), and **Index** (ingest and RAG). You can use it with the LlamaIndex framework or standalone.
 
 - **[Sign up for LlamaParse](https://cloud.llamaindex.ai/login)** — Create an account and get your API key.
 - **Parse** — Agentic OCR and document parsing (130+ formats). [Docs](https://developers.llamaindex.ai/python/cloud/llamaparse/) · [Parse in the cloud](https://cloud.llamaindex.ai/parse)
 - **Extract** — Structured data extraction from documents. [Docs](https://developers.llamaindex.ai/python/cloud/llamaextract/)
 - **Index** — Ingest, index, and RAG pipelines. [Docs](https://developers.llamaindex.ai/python/cloud/llamacloud/) · [Web UI](https://cloud.llamaindex.ai/)
-- **Split** - Split large documents into subcategories. [Docs](https://developers.llamaindex.ai/python/cloud/split/getting_started/)
-- **Agents** - Build end-to-end document agents with `Workflows` and Agent Builder. [Docs](https://developers.llamaindex.ai/python/llamaagents/overview/)
+- **Split** — Split large documents into subcategories. [Docs](https://developers.llamaindex.ai/python/cloud/split/getting_started/)
+- **Agents** — Build end-to-end document agents with `Workflows` and Agent Builder. [Docs](https://developers.llamaindex.ai/python/llamaagents/overview/)
 
 ### Important Links
 
