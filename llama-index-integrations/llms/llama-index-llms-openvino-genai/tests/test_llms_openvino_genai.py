@@ -90,9 +90,11 @@ def test_chunk_streamer_write_caches_tokens():
     reason="openvino-genai not installed",
 )
 def test_chunk_streamer_delegates_to_iterable_on_token_boundary():
-    """Test ChunkStreamer.write delegates to IterableStreamer.write on
+    """
+    Test ChunkStreamer.write delegates to IterableStreamer.write on
     tokens_len boundary (line 289), covering IterableStreamer.write
-    single-token path (lines 212-213, 216, 224-232, 234-235, 237)."""
+    single-token path (lines 212-213, 216, 224-232, 234-235, 237).
+    """
     import openvino_genai
 
     llm, mock_tokenizer = _create_llm_with_mock()
@@ -155,8 +157,6 @@ def test_iterable_streamer_write_list_tokens():
 )
 def test_iterable_streamer_write_newline_resets():
     """Test IterableStreamer.write resets on newline (line 220)."""
-    import openvino_genai
-
     llm, mock_tokenizer = _create_llm_with_mock()
     streamer = llm._streamer
 
@@ -179,8 +179,6 @@ def test_iterable_streamer_write_newline_resets():
 )
 def test_iterable_streamer_write_replacement_char():
     """Test IterableStreamer.write handles replacement character (lines 222-223)."""
-    import openvino_genai
-
     llm, mock_tokenizer = _create_llm_with_mock()
     streamer = llm._streamer
 
@@ -201,8 +199,6 @@ def test_iterable_streamer_write_replacement_char():
 )
 def test_iterable_streamer_compute_decoded_length():
     """Test _compute_decoded_length (lines 244-251)."""
-    import openvino_genai
-
     llm, mock_tokenizer = _create_llm_with_mock()
     streamer = llm._streamer
 
