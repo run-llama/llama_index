@@ -79,6 +79,7 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.3": 400000,
     "gpt-5.3-chat-latest": 128000,
     "gpt-5.4": 1050000,
+    "gpt-5.4-2026-03-05": 1050000,
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
