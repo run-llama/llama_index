@@ -28,7 +28,7 @@ def test_streamer_uses_write_method():
     from llama_index.llms.openvino_genai.base import OpenVINOGenAILLM
 
     source = inspect.getsource(OpenVINOGenAILLM)
-    assert "def write(self, token" in source
+    assert "def write(" in source
     assert "StreamingStatus" in source
     # Ensure old deprecated 'put' method is not present
-    assert "def put(self, token" not in source
+    assert "def put(" not in source
