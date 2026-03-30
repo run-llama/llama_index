@@ -205,9 +205,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 """
                 if isinstance(token, list):
                     self.tokens_cache += token
-                    self.decoded_lengths += [
-                        -2 for _ in range(len(token) - 1)
-                    ]
+                    self.decoded_lengths += [-2 for _ in range(len(token) - 1)]
                 else:
                     self.tokens_cache.append(token)
 
@@ -228,10 +226,7 @@ class OpenVINOGenAILLM(CustomLLM):
                         len(self.decoded_lengths) - delay_n_tokens
                     )
                     print_until = self.decoded_lengths[-delay_n_tokens]
-                    if (
-                        print_until != -1
-                        and print_until > self.print_len
-                    ):
+                    if print_until != -1 and print_until > self.print_len:
                         word = text[self.print_len : print_until]
                         self.print_len = print_until
                 self.write_word(word)
@@ -241,30 +236,19 @@ class OpenVINOGenAILLM(CustomLLM):
                     self.end()
                 return stop_flag
 
-            def _compute_decoded_length(
-                self, cache_position: int
-            ) -> None:
+            def _compute_decoded_length(self, cache_position: int) -> None:
                 """
                 Lazily compute decoded length for a position
                 (needed when tokens arrive in batches).
                 """
                 if self.decoded_lengths[cache_position] != -2:
                     return
-                cache_for_position = self.tokens_cache[
-                    : cache_position + 1
-                ]
-                text_for_position = self.tokenizer.decode(
-                    cache_for_position
-                )
-                if (
-                    len(text_for_position) > 0
-                    and text_for_position[-1] == chr(65533)
-                ):
+                cache_for_position = self.tokens_cache[: cache_position + 1]
+                text_for_position = self.tokenizer.decode(cache_for_position)
+                if len(text_for_position) > 0 and text_for_position[-1] == chr(65533):
                     self.decoded_lengths[cache_position] = -1
                 else:
-                    self.decoded_lengths[cache_position] = len(
-                        text_for_position
-                    )
+                    self.decoded_lengths[cache_position] = len(text_for_position)
 
             def end(self) -> None:
                 """
