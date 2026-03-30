@@ -369,6 +369,13 @@ class IngestionPipeline(BaseModel):
             Settings.embed_model,
         ]
 
+    def _propagate_callback_manager(self) -> None:
+        """Propagate Settings.callback_manager to transformations that support it."""
+        callback_manager = Settings.callback_manager
+        for transform in self.transformations:
+            if hasattr(transform, "callback_manager"):
+                transform.callback_manager = callback_manager
+
     def _prepare_inputs(
         self,
         documents: Optional[Sequence[Document]],
@@ -513,6 +520,10 @@ class IngestionPipeline(BaseModel):
 
         """
         input_nodes = self._prepare_inputs(documents, nodes)
+
+        # Propagate Settings.callback_manager to transformations so that
+        # handlers such as TokenCountingHandler receive embedding events.
+        self._propagate_callback_manager()
 
         effective_strategy = self.docstore_strategy
         if (
@@ -714,6 +725,10 @@ class IngestionPipeline(BaseModel):
 
         """
         input_nodes = self._prepare_inputs(documents, nodes)
+
+        # Propagate Settings.callback_manager to transformations so that
+        # handlers such as TokenCountingHandler receive embedding events.
+        self._propagate_callback_manager()
 
         effective_strategy = self.docstore_strategy
         if (
