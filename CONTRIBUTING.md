@@ -138,7 +138,7 @@ We welcome AI-assisted contributions, but we ask you to follow some core princip
 - repetitive, self-explanatory or excessively long comments, docstrings or documentation
 - secrets handling or security-related code
 
-Overall, our suggestion is use AI by starting with **small changes**, validating often, making sure tests pass and quality criteria are met, and build incrementally.
+Overall, our suggestion is to use AI by starting with **small changes**, validating often, making sure tests pass and quality criteria are met, and build incrementally.
 
 ---
 
