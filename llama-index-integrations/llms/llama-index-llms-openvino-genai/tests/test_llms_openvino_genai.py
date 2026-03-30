@@ -89,7 +89,7 @@ def test_chunk_streamer_write_caches_tokens():
     not has_openvino_genai,
     reason="openvino-genai not installed",
 )
-def test_chunk_streamer_write_delegates_on_boundary():
+def test_chunk_streamer_delegates_to_iterable_on_token_boundary():
     """Test ChunkStreamer.write delegates to IterableStreamer.write on
     tokens_len boundary (line 289), covering IterableStreamer.write
     single-token path (lines 212-213, 216, 224-232, 234-235, 237)."""
@@ -199,7 +199,7 @@ def test_iterable_streamer_write_replacement_char():
     not has_openvino_genai,
     reason="openvino-genai not installed",
 )
-def test_compute_decoded_length():
+def test_iterable_streamer_compute_decoded_length():
     """Test _compute_decoded_length (lines 244-251)."""
     import openvino_genai
 
