@@ -19,12 +19,12 @@ dependencies = [
     { name = "pydantic" },
 ]
 wheels = [
-    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:fa99a3d4474959a305e441613d5fbfa21429f4eb091cea5c4fb26c2df4a8ab95" },
+    { filename = "actian_vectorai-0.1.0b2-py3-none-any.whl", hash = "sha256:63939ccbc00ae05f9c9935ba1de2aab4e6487c194182d2a3b40af9a74126b17c" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "actian-vectorai", extras = ["fast", "telemetry"], marker = "extra == 'all'" },
+    { name = "actian-vectorai", extras = ["fast", "openai", "telemetry"], marker = "extra == 'all'" },
     { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.6.0" },
     { name = "grpcio", specifier = ">=1.70.0,<2.0.0" },
     { name = "grpcio", marker = "extra == 'dev'", specifier = ">=1.70.0,<2.0.0" },
@@ -33,6 +33,7 @@ requires-dist = [
     { name = "msgspec", marker = "extra == 'fast'", specifier = ">=0.18.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.0" },
     { name = "numpy", specifier = ">=1.26.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "opentelemetry-api", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
     { name = "opentelemetry-sdk", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
     { name = "orjson", marker = "extra == 'fast'", specifier = ">=3.10.0" },
@@ -45,7 +46,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
     { name = "types-protobuf", marker = "extra == 'dev'", specifier = ">=5.29.0" },
 ]
-provides-extras = ["fast", "telemetry", "all", "dev"]
+provides-extras = ["fast", "telemetry", "openai", "all", "dev"]
 
 [[package]]
 name = "aiohappyeyeballs"

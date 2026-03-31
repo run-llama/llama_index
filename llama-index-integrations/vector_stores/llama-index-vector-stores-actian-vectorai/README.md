@@ -184,7 +184,6 @@ vector_store.delete_nodes(
 
 ## Limitations
 
-- `get_nodes()` and `aget_nodes()` are not implemented (pending scroll API support in the Actian VectorAI client).
 - Only `VectorStoreQueryMode.DEFAULT` (dense vector search) is supported.
 
 ## Running Tests

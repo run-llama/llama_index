@@ -477,16 +477,6 @@ def test_delete_nodes_with_each_supported_filter_operator(
 
 
 @pytest.mark.asyncio
-async def test_aget_nodes_not_implemented() -> None:
-    async with _amanaged_vector_store(nodes) as vector_store:
-        with pytest.raises(
-            NotImplementedError,
-            match=r"ActianVectorAIVectorStore\.aget_nodes\(\) is not implemented\.",
-        ):
-            await vector_store.aget_nodes()
-
-
-@pytest.mark.asyncio
 async def test_async_add() -> None:
     async with _aempty_vector_store() as vector_store:
         collection_name = vector_store.collection_name
@@ -891,3 +881,95 @@ def test_clear_existing_collection() -> None:
         assert result.ids == []
         assert result.nodes == []
         assert result.similarities == []
+
+
+def test_get_nodes_all() -> None:
+    with _managed_vector_store(nodes) as vector_store:
+        result = vector_store.get_nodes()
+
+        assert len(result) == len(nodes)
+        returned_ids = {n.node_id for n in result}
+        assert returned_ids == {n.node_id for n in nodes}
+
+
+def test_get_nodes_by_node_ids() -> None:
+    target_ids = [
+        "c7ed938f-f8ef-4970-bf74-c240f33522f2",
+        "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+    ]
+    with _managed_vector_store(nodes) as vector_store:
+        result = vector_store.get_nodes(node_ids=target_ids)
+
+        assert len(result) == 2
+        assert {n.node_id for n in result} == set(target_ids)
+
+
+def test_get_nodes_with_filter() -> None:
+    with _managed_vector_store(nodes) as vector_store:
+        result = vector_store.get_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
+            )
+        )
+
+        assert len(result) == 1
+        assert result[0].node_id == "2bda1c3d-600d-46b3-9016-2709b0dcc4c7"
+
+
+def test_get_nodes_empty_collection() -> None:
+    with _empty_vector_store() as vector_store:
+        result = vector_store.get_nodes()
+
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_aget_nodes_all() -> None:
+    async with _amanaged_vector_store(nodes) as vector_store:
+        result = await vector_store.aget_nodes()
+
+        assert len(result) == len(nodes)
+        returned_ids = {n.node_id for n in result}
+        assert returned_ids == {n.node_id for n in nodes}
+
+
+@pytest.mark.asyncio
+async def test_aget_nodes_by_node_ids() -> None:
+    target_ids = [
+        "c7ed938f-f8ef-4970-bf74-c240f33522f2",
+        "2bda1c3d-600d-46b3-9016-2709b0dcc4c7",
+    ]
+    async with _amanaged_vector_store(nodes) as vector_store:
+        result = await vector_store.aget_nodes(node_ids=target_ids)
+
+        assert len(result) == 2
+        assert {n.node_id for n in result} == set(target_ids)
+
+
+@pytest.mark.asyncio
+async def test_aget_nodes_with_filter() -> None:
+    async with _amanaged_vector_store(nodes) as vector_store:
+        result = await vector_store.aget_nodes(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="category", operator=FilterOperator.EQ, value="ai"
+                    )
+                ]
+            )
+        )
+
+        assert len(result) == 1
+        assert result[0].node_id == "2bda1c3d-600d-46b3-9016-2709b0dcc4c7"
+
+
+@pytest.mark.asyncio
+async def test_aget_nodes_empty_collection() -> None:
+    async with _aempty_vector_store() as vector_store:
+        result = await vector_store.aget_nodes()
+
+        assert result == []
