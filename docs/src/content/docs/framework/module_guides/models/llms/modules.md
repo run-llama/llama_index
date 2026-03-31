@@ -38,6 +38,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [LocalAI](/python/examples/llm/localai)
 - [MariTalk](/python/examples/llm/maritalk)
 - [MistralAI](/python/examples/llm/mistralai)
+- [MLflow Gateway](/python/examples/llm/mlflow_gateway)
 - [Modelscope](/python/examples/llm/modelscope)
 - [MonsterAPI](/python/examples/llm/monsterapi)
 - [MyMagic](/python/examples/llm/mymagic)
