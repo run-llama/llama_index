@@ -60,3 +60,25 @@ def test_delete_nodes(
     assert len(index.index_struct.summary_id_to_node_ids) == 2
 
     assert len(index.vector_store._data.embedding_dict) == 2  # type: ignore
+
+
+def test_delete_nodes_with_invalid_ids(
+    docs: List[Document],
+    index: DocumentSummaryIndex,
+) -> None:
+    """Test that delete_nodes gracefully handles invalid node IDs.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21066
+    Previously, this would raise a KeyError due to mutating the list during
+    iteration and then passing invalid IDs to _index_struct.delete_nodes().
+    """
+    nodes = list(index.index_struct.node_id_to_summary_id.keys())
+    original_count = len(nodes)
+
+    # Should not raise KeyError when all IDs are invalid
+    index.delete_nodes(["does_not_exist_1", "does_not_exist_2"])
+    assert len(index.index_struct.node_id_to_summary_id) == original_count
+
+    # Should not raise when mixing valid and invalid IDs
+    index.delete_nodes([nodes[0], "does_not_exist_3"])
+    assert len(index.index_struct.node_id_to_summary_id) == original_count - 1
