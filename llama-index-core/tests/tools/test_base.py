@@ -1,12 +1,13 @@
 """Test tools."""
 
 import json
+from contextvars import ContextVar
 from typing import List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
-from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.function_tool import DynamicValue, FunctionTool
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
@@ -237,6 +238,143 @@ async def test_function_tool_partial_params_async() -> None:
         "args": (),
         "kwargs": {"x": 1, "y": 3},
     }
+
+
+def test_function_tool_protected_params_schema() -> None:
+    """Protected params should be hidden from the tool schema."""
+
+    def test_function(x: int, y: int, secret: str) -> str:
+        return f"x: {x}, y: {y}, secret: {secret}"
+
+    tool = FunctionTool.from_defaults(
+        test_function, protected_params={"secret": "s3cret"}
+    )
+    assert tool.metadata.fn_schema is not None
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "x" in actual_schema["properties"]
+    assert "y" in actual_schema["properties"]
+    assert "secret" not in actual_schema["properties"]
+
+
+def test_function_tool_protected_params_override() -> None:
+    """Protected params must always win over LLM-provided kwargs."""
+
+    def test_function(x: int, user_id: str) -> str:
+        return f"x: {x}, user_id: {user_id}"
+
+    tool = FunctionTool.from_defaults(
+        test_function, protected_params={"user_id": "trusted_123"}
+    )
+    # Even if LLM provides user_id, protected value wins
+    result = tool(x=1, user_id="hallucinated_456")
+    assert result.raw_output == "x: 1, user_id: trusted_123"
+    # Protected params excluded from raw_input
+    assert "user_id" not in result.raw_input["kwargs"]
+    assert result.raw_input["kwargs"]["x"] == 1
+
+
+def test_function_tool_protected_params_with_partial() -> None:
+    """Protected params win over both partial_params and kwargs."""
+
+    def test_function(x: int, y: int, z: str) -> str:
+        return f"x: {x}, y: {y}, z: {z}"
+
+    tool = FunctionTool.from_defaults(
+        test_function,
+        partial_params={"y": 2},
+        protected_params={"z": "enforced"},
+    )
+    assert tool.metadata.fn_schema is not None
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "x" in actual_schema["properties"]
+    assert "y" not in actual_schema["properties"]
+    assert "z" not in actual_schema["properties"]
+
+    result = tool(x=1, z="overridden_by_llm")
+    assert result.raw_output == "x: 1, y: 2, z: enforced"
+    assert "z" not in result.raw_input["kwargs"]
+    assert result.raw_input["kwargs"] == {"x": 1, "y": 2}
+
+
+@pytest.mark.asyncio
+async def test_function_tool_protected_params_async() -> None:
+    """Protected params work correctly in async path."""
+
+    async def test_function(x: int, api_key: str) -> str:
+        return f"x: {x}, api_key: {api_key}"
+
+    tool = FunctionTool.from_defaults(
+        test_function, protected_params={"api_key": "real_key"}
+    )
+    result = await tool.acall(x=1, api_key="fake_key")
+    assert result.raw_output == "x: 1, api_key: real_key"
+    assert "api_key" not in result.raw_input["kwargs"]
+
+
+def test_function_tool_dynamic_value() -> None:
+    """DynamicValue factory is resolved at call time, not at creation time."""
+    call_count = 0
+    counter: ContextVar[int] = ContextVar("counter", default=0)
+
+    def test_function(x: int, req_id: int) -> str:
+        return f"x: {x}, req_id: {req_id}"
+
+    def get_req_id() -> int:
+        nonlocal call_count
+        call_count += 1
+        return counter.get()
+
+    tool = FunctionTool.from_defaults(
+        test_function,
+        protected_params={"req_id": DynamicValue(get_req_id)},
+    )
+
+    # First call
+    counter.set(42)
+    result1 = tool(x=1)
+    assert result1.raw_output == "x: 1, req_id: 42"
+
+    # Second call with different context value
+    counter.set(99)
+    result2 = tool(x=2)
+    assert result2.raw_output == "x: 2, req_id: 99"
+
+    # Factory was called twice (once per tool call)
+    assert call_count == 4  # 2 calls x 2 (__call__ resolves + call resolves)
+
+
+@pytest.mark.asyncio
+async def test_function_tool_dynamic_value_async() -> None:
+    """DynamicValue works correctly in the async path."""
+    session_var: ContextVar[str] = ContextVar("session_var", default="default")
+
+    async def test_function(x: int, session_id: str) -> str:
+        return f"x: {x}, session_id: {session_id}"
+
+    tool = FunctionTool.from_defaults(
+        test_function,
+        protected_params={"session_id": DynamicValue(lambda: session_var.get())},
+    )
+
+    session_var.set("sess_abc")
+    result = await tool.acall(x=1)
+    assert result.raw_output == "x: 1, session_id: sess_abc"
+    assert "session_id" not in result.raw_input["kwargs"]
+
+
+def test_function_tool_protected_params_same_key_as_partial() -> None:
+    """When both partial_params and protected_params have the same key, protected wins."""
+
+    def test_function(x: int, shared: str) -> str:
+        return f"x: {x}, shared: {shared}"
+
+    tool = FunctionTool.from_defaults(
+        test_function,
+        partial_params={"shared": "from_partial"},
+        protected_params={"shared": "from_protected"},
+    )
+    result = tool(x=1)
+    assert result.raw_output == "x: 1, shared: from_protected"
 
 
 def test_function_tool_ctx_param() -> None:
