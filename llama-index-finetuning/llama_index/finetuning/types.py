@@ -14,7 +14,8 @@ class BaseLLMFinetuneEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Run the finetuning process for the LLM.
+        """
+        Run the finetuning process for the LLM.
 
         Implementations should submit or execute the training job using the
         configured dataset and hyperparameters. This method blocks until the
@@ -32,7 +33,8 @@ class BaseEmbeddingFinetuneEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Run the finetuning process for the embedding model.
+        """
+        Run the finetuning process for the embedding model.
 
         Implementations should submit or execute the training job using the
         configured dataset and hyperparameters. This method blocks until the
@@ -50,7 +52,8 @@ class BaseCrossEncoderFinetuningEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Run the finetuning process for the cross-encoder model.
+        """
+        Run the finetuning process for the cross-encoder model.
 
         Implementations should submit or execute the training job using the
         configured dataset and hyperparameters. This method blocks until the
@@ -70,7 +73,8 @@ class BaseCohereRerankerFinetuningEngine(ABC):
 
     @abstractmethod
     def finetune(self) -> None:
-        """Run the finetuning process for the Cohere reranker model.
+        """
+        Run the finetuning process for the Cohere reranker model.
 
         Implementations should submit or execute the training job using the
         configured dataset and hyperparameters. This method blocks until the
