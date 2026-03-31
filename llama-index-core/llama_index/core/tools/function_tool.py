@@ -343,11 +343,7 @@ class FunctionTool(AsyncBaseTool):
             return [TextBlock(text=str(raw_output))]
 
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        all_kwargs = {
-            **self.partial_params,
-            **kwargs,
-            **self._resolve_protected_params(),
-        }
+        all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
@@ -366,7 +362,9 @@ class FunctionTool(AsyncBaseTool):
         raw_output = self._fn(*args, **all_kwargs)
 
         # Exclude Context and protected params from the serialized tool output
-        excluded_keys = {self.ctx_param_name} | set(self.protected_params.keys())
+        excluded_keys = set(self.protected_params.keys())
+        if self.ctx_param_name:
+            excluded_keys.add(self.ctx_param_name)
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k not in excluded_keys
         }
@@ -412,7 +410,9 @@ class FunctionTool(AsyncBaseTool):
         raw_output = await self._async_fn(*args, **all_kwargs)
 
         # Exclude Context and protected params from the serialized tool output
-        excluded_keys = {self.ctx_param_name} | set(self.protected_params.keys())
+        excluded_keys = set(self.protected_params.keys())
+        if self.ctx_param_name:
+            excluded_keys.add(self.ctx_param_name)
         tool_output_kwargs = {
             k: v for k, v in all_kwargs.items() if k not in excluded_keys
         }
