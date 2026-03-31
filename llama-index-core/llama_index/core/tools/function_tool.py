@@ -64,6 +64,28 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 CallbackReturn = Optional[Union[ToolOutput, str]]
 
 
+class DynamicValue:
+    """
+    Wraps a callable factory for per-request parameter resolution in protected_params.
+
+    Use this when a protected parameter's value must be determined at call time
+    (e.g., from a ContextVar holding the current request's session ID) rather than
+    being fixed when the tool is created.
+
+    Example:
+        >>> from contextvars import ContextVar
+        >>> session_var: ContextVar[str] = ContextVar("session_var")
+        >>> tool = FunctionTool.from_defaults(
+        ...     fn=my_fn,
+        ...     protected_params={"user_id": DynamicValue(lambda: session_var.get())},
+        ... )
+
+    """
+
+    def __init__(self, factory: Callable[[], Any]) -> None:
+        self.factory = factory
+
+
 class FunctionTool(AsyncBaseTool):
     """
     Function Tool.
@@ -81,6 +103,7 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[..., Any]] = None,
         async_callback: Optional[Callable[..., Any]] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        protected_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -134,6 +157,7 @@ class FunctionTool(AsyncBaseTool):
             self._async_callback = sync_to_async(self._callback)
 
         self.partial_params = partial_params or {}
+        self.protected_params = protected_params or {}
 
         # Extract actual default values from FieldInfo defaults so they are
         # applied when the function is called without those arguments.
@@ -164,6 +188,13 @@ class FunctionTool(AsyncBaseTool):
             return ret
         return None
 
+    def _resolve_protected_params(self) -> Dict[str, Any]:
+        """Resolve protected_params, calling DynamicValue factories."""
+        resolved: Dict[str, Any] = {}
+        for k, v in self.protected_params.items():
+            resolved[k] = v.factory() if isinstance(v, DynamicValue) else v
+        return resolved
+
     @classmethod
     def from_defaults(
         cls,
@@ -177,8 +208,10 @@ class FunctionTool(AsyncBaseTool):
         callback: Optional[Callable[[Any], Any]] = None,
         async_callback: Optional[AsyncCallable] = None,
         partial_params: Optional[Dict[str, Any]] = None,
+        protected_params: Optional[Dict[str, Any]] = None,
     ) -> "FunctionTool":
         partial_params = partial_params or {}
+        protected_params = protected_params or {}
 
         if tool_metadata is None:
             fn_to_parse = fn or async_fn
@@ -206,13 +239,14 @@ class FunctionTool(AsyncBaseTool):
                     continue
                 filtered_params.append(param)
 
-            # 3. Remove FieldInfo defaults and partial_params
+            # 3. Remove FieldInfo defaults, partial_params, and protected_params
+            hidden_params = set(partial_params.keys()) | set(protected_params.keys())
             final_params = [
                 param.replace(default=inspect.Parameter.empty)
                 if isinstance(param.default, FieldInfo)
                 else param
                 for param in filtered_params
-                if param.name not in (partial_params or {})
+                if param.name not in hidden_params
             ]
 
             # 4. Replace signature in one go
@@ -234,6 +268,7 @@ class FunctionTool(AsyncBaseTool):
                 if has_self:
                     ignore_fields.append("self")
                 ignore_fields.extend(partial_params.keys())
+                ignore_fields.extend(protected_params.keys())
 
                 fn_schema = create_schema_from_function(
                     f"{name}",
@@ -259,6 +294,7 @@ class FunctionTool(AsyncBaseTool):
             callback=callback,
             async_callback=async_callback,
             partial_params=partial_params,
+            protected_params=protected_params,
         )
 
     @property
@@ -307,21 +343,32 @@ class FunctionTool(AsyncBaseTool):
             return [TextBlock(text=str(raw_output))]
 
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        all_kwargs = {**self.partial_params, **kwargs}
+        all_kwargs = {
+            **self.partial_params,
+            **kwargs,
+            **self._resolve_protected_params(),
+        }
         return self.call(*args, **all_kwargs)
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
+        resolved_protected = self._resolve_protected_params()
+        all_kwargs = {
+            **self._field_defaults,
+            **self.partial_params,
+            **kwargs,
+            **resolved_protected,
+        }
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
         raw_output = self._fn(*args, **all_kwargs)
 
-        # Exclude the Context param from the tool output so that the Context can be serialized
+        # Exclude Context and protected params from the serialized tool output
+        excluded_keys = {self.ctx_param_name} | set(self.protected_params.keys())
         tool_output_kwargs = {
-            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+            k: v for k, v in all_kwargs.items() if k not in excluded_keys
         }
 
         # Parse tool output into content blocks
@@ -351,16 +398,23 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
+        resolved_protected = self._resolve_protected_params()
+        all_kwargs = {
+            **self._field_defaults,
+            **self.partial_params,
+            **kwargs,
+            **resolved_protected,
+        }
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
 
-        # Exclude the Context param from the tool output so that the Context can be serialized
+        # Exclude Context and protected params from the serialized tool output
+        excluded_keys = {self.ctx_param_name} | set(self.protected_params.keys())
         tool_output_kwargs = {
-            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+            k: v for k, v in all_kwargs.items() if k not in excluded_keys
         }
 
         # Parse tool output into content blocks
