@@ -339,8 +339,8 @@ def test_function_tool_dynamic_value() -> None:
     result2 = tool(x=2)
     assert result2.raw_output == "x: 2, req_id: 99"
 
-    # Factory was called twice (once per tool call)
-    assert call_count == 4  # 2 calls x 2 (__call__ resolves + call resolves)
+    # Factory was called once per tool invocation (only call() resolves)
+    assert call_count == 2
 
 
 @pytest.mark.asyncio
@@ -360,6 +360,21 @@ async def test_function_tool_dynamic_value_async() -> None:
     result = await tool.acall(x=1)
     assert result.raw_output == "x: 1, session_id: sess_abc"
     assert "session_id" not in result.raw_input["kwargs"]
+
+
+def test_function_tool_dynamic_value_factory_error() -> None:
+    """DynamicValue factory errors propagate clearly."""
+    no_default: ContextVar[str] = ContextVar("no_default")
+
+    def test_function(x: int, val: str) -> str:
+        return f"{x}, {val}"
+
+    tool = FunctionTool.from_defaults(
+        test_function,
+        protected_params={"val": DynamicValue(lambda: no_default.get())},
+    )
+    with pytest.raises(LookupError):
+        tool(x=1)
 
 
 def test_function_tool_protected_params_same_key_as_partial() -> None:
