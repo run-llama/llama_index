@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython>=8.10.0,<9",
+    "mypy>=0.991,<2",
+    "pre-commit>=3.2.0,<4",
+    "pytest>=7.2.1,<9",
+    "pytest-mock>=3.11.1,<4",
+    "ruff>=0.11.0,<1",
+]
+
+[project]
+name = "llama-index-tools-octen"
+version = "0.1.0"
+description = "llama-index tools Octen web search integration"
+authors = [{name = "Octen Team", email = "support@octen.ai"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = ["llama-index", "octen", "search", "web-search", "ai", "tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "octen>=0.2.0,<1",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.octen"
+
+[tool.llamahub.class_authors]
+OctenToolSpec = "octen-team"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
