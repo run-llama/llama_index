@@ -103,9 +103,41 @@ def test_get_model_name_translates_us():
     )
 
 
+def test_get_model_name_translates_us_gov():
+    assert (
+        get_model_name("us-gov.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_eu():
+    assert (
+        get_model_name("eu.meta.llama3-2-3b-instruct-v1:0")
+        == "meta.llama3-2-3b-instruct-v1:0"
+    )
+
+
 def test_get_model_name_translates_global():
     assert (
         get_model_name("global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+        == "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+
+
+def test_get_model_name_translates_apac():
+    assert (
+        get_model_name("apac.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_ca():
+    assert get_model_name("ca.amazon.nova-lite-v1:0") == "amazon.nova-lite-v1:0"
+
+
+def test_get_model_name_translates_au():
+    assert (
+        get_model_name("au.anthropic.claude-sonnet-4-5-20250929-v1:0")
         == "anthropic.claude-sonnet-4-5-20250929-v1:0"
     )
 
