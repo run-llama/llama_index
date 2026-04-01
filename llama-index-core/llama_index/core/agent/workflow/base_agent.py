@@ -603,7 +603,7 @@ class BaseWorkflowAgent(
                         stacklevel=2,
                     )
 
-            await ctx.store.set('current_tool_calls', [])
+            await ctx.store.set("current_tool_calls", [])
 
             return StopEvent(result=output)
 
