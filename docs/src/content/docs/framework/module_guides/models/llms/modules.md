@@ -27,6 +27,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Gradient Model Adapter](/python/examples/llm/gradient_model_adapter)
 - [Groq](/python/examples/llm/groq)
 - [Heroku](/python/examples/llm/heroku)
+- [HPC-AI](/python/examples/llm/hpc_ai)
 - [HuggingFace Camel-7B](/python/examples/customization/llms/simpleindexdemo-huggingface_camel)
 - [HuggingFace StableLM](/python/examples/customization/llms/simpleindexdemo-huggingface_stablelm)
 - [HuggingFace Llama2](/python/examples/vector_stores/simpleindexdemollama-local)
