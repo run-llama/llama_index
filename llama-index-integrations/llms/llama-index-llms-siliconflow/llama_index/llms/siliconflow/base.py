@@ -464,6 +464,7 @@ class SiliconFlow(FunctionCallingLLM):
                     json=input_json,
                     headers=self._headers,
                     timeout=self.timeout,
+                    stream=True,
                 )
                 response.raise_for_status()
                 response_txt = ""
