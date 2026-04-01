@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.11",
+    "ruff>=0.11",
+    "mypy>=1.0",
+    "respx>=0.21",
+]
+
+[project]
+name = "llama-index-tools-maxia"
+version = "0.1.0"
+description = "LlamaIndex tools for MAXIA — AI-to-AI Marketplace on 14 blockchains"
+authors = [{name = "MAXIA", email = "contact@maxiaworld.app"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "majorelalexis-stack"}]
+keywords = [
+    "ai-marketplace",
+    "solana",
+    "crypto",
+    "defi",
+    "gpu-rental",
+    "tokenized-stocks",
+    "agent",
+    "a2a",
+    "blockchain",
+    "usdc",
+]
+dependencies = [
+    "httpx>=0.27",
+    "llama-index-core>=0.13.0,<0.15",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.maxia"
+
+[tool.llamahub.class_authors]
+MaxiaToolSpec = "majorelalexis-stack"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
