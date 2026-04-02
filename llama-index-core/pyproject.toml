@@ -60,7 +60,7 @@ dependencies = [
     "fsspec>=2023.5.0",
     "httpx",
     "nest-asyncio>=1.5.8,<2",
-    "nltk>3.8.1",
+    "nltk>=3.9.3",
     "numpy",
     "tenacity>=8.2.0,!=8.4.0,<10.0.0",
     "tiktoken>=0.7.0",
