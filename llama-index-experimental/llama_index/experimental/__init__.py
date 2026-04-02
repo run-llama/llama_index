@@ -1,3 +1,12 @@
+import warnings
+
+warnings.warn(
+    "llama-index-experimental is deprecated and no longer maintained. "
+    "It will not receive any further updates.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from llama_index.experimental.query_engine.pandas.pandas_query_engine import (
     PandasQueryEngine,
 )

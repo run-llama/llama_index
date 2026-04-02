@@ -1,3 +1,12 @@
+import warnings
+
+warnings.warn(
+    "llama-index-finetuning is deprecated and no longer maintained. "
+    "It will not receive any further updates.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 """Finetuning modules."""
 
 from llama_index.finetuning.embeddings.adapter import (

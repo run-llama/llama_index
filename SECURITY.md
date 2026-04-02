@@ -8,17 +8,10 @@ Only the main umbrella package `llama-index` is eligible for bug bounties throug
 [Huntr platform](https://huntr.com/repos/run-llama/llama_index), along with its first-degree dependencies part of this
 Github repository:
 
-- llama-index-agent-openai
-- llama-index-cli
 - llama-index-core
 - llama-index-embeddings-openai
-- llama-index-indices-managed-llama-cloud
 - llama-index-llms-openai
-- llama-index-multi-modal-llms-openai
-- llama-index-program-openai
-- llama-index-question-gen-openai
-- llama-index-readers-file
-- llama-index-readers-llama-parse
+- llama-index-cli
 
 ## Out of Scope Targets
 

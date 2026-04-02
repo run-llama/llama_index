@@ -27,12 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-gmail-openai-agent"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index packs gmail_openai_agent integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "logan-markewich"}]
 keywords = [
     "math",
