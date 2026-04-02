@@ -46,6 +46,10 @@ for full tracing integrations.
 - [Vector Stores](/python/framework/community/integrations/vector_stores)
 - [Managed Indices](/python/framework/community/integrations/managed_indices)
 
+## Memory
+
+- [Hindsight](/python/framework/community/integrations/hindsight)
+
 ## Application Frameworks
 
 - [Streamlit](https://blog.streamlit.io/build-a-chatbot-with-custom-data-sources-powered-by-llamaindex/)
