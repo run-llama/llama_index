@@ -4,7 +4,29 @@ import multiprocessing
 import os
 import re
 import warnings
+import signal
+import atexit
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import polars as pl
 from concurrent.futures import ProcessPoolExecutor
+
+
+def _cleanup_workers(signum=None, frame=None):
+    """Ensure all child processes are terminated on exit or signal."""
+    for child in multiprocessing.active_children():
+        child.terminate()
+    if signum:
+        import sys
+
+        sys.exit(1)
+
+
+atexit.register(_cleanup_workers)
+signal.signal(signal.SIGTERM, _cleanup_workers)
+signal.signal(signal.SIGINT, _cleanup_workers)
+
 from enum import Enum
 from functools import partial, reduce
 from hashlib import sha256
@@ -153,6 +175,38 @@ async def arun_transformations(
             nodes = await transform.acall(nodes, **kwargs)
 
     return nodes
+
+
+def run_transformations_resilient(
+    nodes: Sequence[BaseNode],
+    transformations: Union[Sequence[TransformComponent], bytes],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+    **kwargs: Any,
+) -> Sequence[BaseNode]:
+    """
+    Resilient wrapper for run_transformations to be used in parallel workers.
+    Supports dill-pickled transformations for robust serialization.
+    """
+    try:
+        # Unpickle transformations if they were sent as bytes
+        if isinstance(transformations, bytes):
+            import dill
+
+            transformations = dill.loads(transformations)
+
+        return run_transformations(
+            nodes=nodes,
+            transformations=transformations,
+            in_place=in_place,
+            cache=cache,
+            cache_collection=cache_collection,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error(f"Worker failed during transformations: {e}")
+        return []
 
 
 def arun_transformations_wrapper(
@@ -391,23 +445,69 @@ class IngestionPipeline(BaseModel):
 
         return input_nodes
 
+    def _get_nodes_as_df(self, nodes: Sequence[BaseNode]) -> "pl.DataFrame":
+        """Get nodes as a Polars DataFrame for vectorized operations."""
+        try:
+            import polars as pl
+        except ImportError:
+            raise ImportError(
+                "Polars is required for vectorized metadata processing. Please install it with `pip install polars`."
+            )
+
+        node_dicts = []
+        for node in nodes:
+            node_dicts.append(
+                {
+                    "id": node.id_,
+                    "hash": node.hash,
+                    "content_len": len(node.get_content()),
+                }
+            )
+        return pl.DataFrame(node_dicts)
+
     def _handle_duplicates(
         self,
         nodes: Sequence[BaseNode],
     ) -> Sequence[BaseNode]:
-        """Handle docstore duplicates by checking all hashes."""
+        """Handle docstore duplicates by checking all hashes using vectorized Polars ops."""
         assert self.docstore is not None
+        if not nodes:
+            return []
 
-        existing_hashes = self.docstore.get_all_document_hashes()
-        current_hashes = []
-        nodes_to_run = []
-        for node in nodes:
-            if node.hash not in existing_hashes and node.hash not in current_hashes:
+        try:
+            df = self._get_nodes_as_df(nodes)
+            # existing_hashes should be the VALUES (hashes), not the KEYS (node IDs)
+            existing_hashes = set(self.docstore.get_all_document_hashes().values())
+
+            # Vectorized filter for hashes not in docstore and not duplicated in current batch
+            # We use Polars to find unique hashes in the current batch first
+            df_unique = df.unique(subset=["hash"], keep="first")
+
+            # Filter matches against docstore
+            mask = ~df_unique["hash"].is_in(list(existing_hashes))
+            filtered_df = df_unique.filter(mask)
+
+            # Map back to nodes
+            allowed_ids = set(filtered_df["id"].to_list())
+            nodes_to_run = [n for n in nodes if n.id_ in allowed_ids]
+
+            # Update docstore hashes for the selected nodes
+            for node in nodes_to_run:
                 self.docstore.set_document_hash(node.id_, node.hash)
-                nodes_to_run.append(node)
-                current_hashes.append(node.hash)
 
-        return nodes_to_run
+            return nodes_to_run
+
+        except ImportError:
+            # Fallback to sequential if Polars is not available
+            existing_hashes = self.docstore.get_all_document_hashes()
+            current_hashes = []
+            nodes_to_run = []
+            for node in nodes:
+                if node.hash not in existing_hashes and node.hash not in current_hashes:
+                    self.docstore.set_document_hash(node.id_, node.hash)
+                    nodes_to_run.append(node)
+                    current_hashes.append(node.hash)
+            return nodes_to_run
 
     def _handle_upserts(
         self,
@@ -453,10 +553,72 @@ class IngestionPipeline(BaseModel):
     def _node_batcher(
         num_batches: int, nodes: Union[Sequence[BaseNode], List[Document]]
     ) -> Generator[Union[Sequence[BaseNode], List[Document]], Any, Any]:
-        """Yield successive n-sized chunks from lst."""
-        batch_size = max(1, int(len(nodes) / num_batches))
-        for i in range(0, len(nodes), batch_size):
-            yield nodes[i : i + batch_size]
+        """
+        Yield successive chunks from nodes balanced by text length.
+        Ensures each worker gets a roughly equal amount of characters to process.
+        Uses Polars for vectorized batch boundary calculation.
+        """
+        if not nodes:
+            return
+        if num_batches <= 1:
+            yield nodes
+            return
+
+        try:
+            import polars as pl
+
+            # Get lengths as a Series
+            lengths = pl.Series([len(n.get_content()) for n in nodes])
+            total_len = lengths.sum()
+            avg_batch_len = total_len / num_batches
+
+            # Use cumulative sum to find batch boundaries
+            cum_sum = lengths.cumsum()
+
+            batch_start = 0
+            for i in range(1, num_batches):
+                target = i * avg_batch_len
+                # Find the first index where cum_sum >= target
+                mask = cum_sum >= target
+                batch_end = mask.arg_true().first()
+
+                if batch_end is not None and batch_end > batch_start:
+                    yield nodes[batch_start : batch_end + 1]
+                    batch_start = batch_end + 1
+                else:
+                    # Not enough data for this batch, or already at the end
+                    continue
+
+            if batch_start < len(nodes):
+                yield nodes[batch_start:]
+
+        except ImportError:
+            # Fallback to character-count-based balancing without Polars
+            total_len = sum(len(n.get_content()) for n in nodes)
+            avg_batch_len = total_len / num_batches
+
+            current_batch = []
+            current_batch_len = 0
+
+            for node in nodes:
+                node_len = len(node.get_content())
+                if (
+                    current_batch_len + node_len > avg_batch_len * 1.1
+                    and current_batch
+                    and num_batches > 1
+                ):
+                    yield current_batch
+                    num_batches -= 1
+                    total_len -= current_batch_len
+                    avg_batch_len = total_len / num_batches
+                    current_batch = [node]
+                    current_batch_len = node_len
+                else:
+                    current_batch.append(node)
+                    current_batch_len += node_len
+
+            if current_batch:
+                yield current_batch
 
     def _update_docstore(
         self,
@@ -556,15 +718,25 @@ class IngestionPipeline(BaseModel):
                 )
                 num_workers = num_cpus
 
+            # Use dill to pickle transformations once for all workers
+            # This avoids "Removing unpickleable private attribute" warnings
+            # and significantly reduces serialization overhead.
+            try:
+                import dill
+
+                serialized_transformations = dill.dumps(self.transformations)
+            except ImportError:
+                serialized_transformations = self.transformations
+
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                node_batches = self._node_batcher(
-                    num_batches=num_workers, nodes=nodes_to_run
+                node_batches = list(
+                    self._node_batcher(num_batches=num_workers, nodes=nodes_to_run)
                 )
                 nodes_parallel = p.starmap(
-                    run_transformations,
+                    run_transformations_resilient,
                     zip(
                         node_batches,
-                        repeat(self.transformations),
+                        repeat(serialized_transformations),
                         repeat(in_place),
                         repeat(self.cache if not self.disable_cache else None),
                         repeat(cache_collection),
@@ -624,19 +796,43 @@ class IngestionPipeline(BaseModel):
         nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
     ) -> Sequence[BaseNode]:
-        """Handle docstore duplicates by checking all hashes."""
+        """Handle docstore duplicates by checking all hashes using vectorized Polars ops."""
         assert self.docstore is not None
+        if not nodes:
+            return []
 
-        existing_hashes = await self.docstore.aget_all_document_hashes()
-        current_hashes = []
-        nodes_to_run = []
-        for node in nodes:
-            if node.hash not in existing_hashes and node.hash not in current_hashes:
+        try:
+            df = self._get_nodes_as_df(nodes)
+            # existing_hashes should be the VALUES (hashes)
+            existing_hashes = set(
+                (await self.docstore.aget_all_document_hashes()).values()
+            )
+
+            # Vectorized filter for hashes not in docstore and not duplicated in current batch
+            df_unique = df.unique(subset=["hash"], keep="first")
+
+            mask = ~df_unique["hash"].is_in(list(existing_hashes))
+            filtered_df = df_unique.filter(mask)
+
+            allowed_ids = set(filtered_df["id"].to_list())
+            nodes_to_run = [n for n in nodes if n.id_ in allowed_ids]
+
+            for node in nodes_to_run:
                 await self.docstore.aset_document_hash(node.id_, node.hash)
-                nodes_to_run.append(node)
-                current_hashes.append(node.hash)
 
-        return nodes_to_run
+            return nodes_to_run
+
+        except ImportError:
+            # Fallback to sequential
+            existing_hashes = await self.docstore.aget_all_document_hashes()
+            current_hashes = []
+            nodes_to_run = []
+            for node in nodes:
+                if node.hash not in existing_hashes and node.hash not in current_hashes:
+                    await self.docstore.aset_document_hash(node.id_, node.hash)
+                    nodes_to_run.append(node)
+                    current_hashes.append(node.hash)
+            return nodes_to_run
 
     async def _ahandle_upserts(
         self,
