@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-zenguard"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index packs zenguard integration"
 authors = [{name = "ZenGuard Team", email = "hello@zenguard.ai"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 keywords = [
     "detector",
     "guard",

@@ -43,7 +43,6 @@ dependencies = [
     "llama-index-core>=0.14.19,<0.15.0",
     "llama-index-embeddings-openai>=0.6.0,<0.7",
     "llama-index-llms-openai>=0.7.0,<0.8",
-    "llama-index-embeddings-openai>=0.6.0,<0.7",
     "nltk>=3.9.3",
 ]
 description = "Interface between LLMs and your data"
