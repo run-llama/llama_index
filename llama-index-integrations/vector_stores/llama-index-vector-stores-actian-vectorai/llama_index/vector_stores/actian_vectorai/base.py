@@ -169,7 +169,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             self._client.connect()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> Self:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Exit synchronous context and close the client connection.
 
@@ -178,13 +178,9 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             exc_val: Exception instance raised in the context, if any.
             exc_tb: Traceback associated with the raised exception, if any.
 
-        Returns:
-            This vector store instance.
-
         """
         if self._client.is_connected:
             self._client.shutdown()
-        return self
 
     async def __aenter__(self) -> Self:
         """
@@ -205,7 +201,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             await self._async_client.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> Self:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Exit asynchronous context and close the async client connection.
 
@@ -214,13 +210,9 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
             exc_val: Exception instance raised in the context, if any.
             exc_tb: Traceback associated with the raised exception, if any.
 
-        Returns:
-            This vector store instance.
-
         """
         if self._async_client is not None and self._async_client.is_connected:
             await self._async_client.close()
-        return self
 
     @classmethod
     def class_name(cls) -> str:
@@ -270,11 +262,12 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         result = self._client.points.scroll(
             self.collection_name,
             filter=self._build_db_filter_from_node_ids_doc_ids_and_metadata_filters(
-                node_ids=node_ids, doc_ids=None, filters=filters, limit=limit
+                node_ids=node_ids, doc_ids=None, filters=filters
             ),
+            limit=limit,
         )
 
-        return self._build_base_nodes_from_retrieved_points(result)
+        return self._build_base_nodes_from_retrieved_points(result[0])
 
     async def aget_nodes(
         self,
@@ -302,11 +295,12 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         result = await self._async_client.points.scroll(
             self.collection_name,
             filter=self._build_db_filter_from_node_ids_doc_ids_and_metadata_filters(
-                node_ids=node_ids, doc_ids=None, filters=filters, limit=limit
+                node_ids=node_ids, doc_ids=None, filters=filters
             ),
+            limit=limit,
         )
 
-        return self._build_base_nodes_from_retrieved_points(result)
+        return self._build_base_nodes_from_retrieved_points(result[0])
 
     def add(
         self,
