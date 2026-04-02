@@ -105,6 +105,131 @@ class DefaultInMemoryTokenStorage(TokenStorage):
         self._client_info = client_info
 
 
+def _decode_mcp_base64(data: str) -> bytes:
+    """
+    Decode an MCP base64 payload robustly.
+    """
+    clean = re.sub(r"\s+", "", data)
+    if not clean:
+        raise BinasciiError("empty base64 payload")
+    # Some non-spec servers embed a data URI prefix, so strip it.
+    if clean.startswith("data:") and ";base64," in clean:
+        clean = clean.split(";base64,", 1)[1]
+        if not clean:
+            raise BinasciiError("empty base64 payload after data URI prefix")
+    clean = clean.replace("-", "+").replace("_", "/")
+    pad = (-len(clean)) % 4
+    clean += "=" * pad
+    return base64.b64decode(clean, validate=True)
+
+
+def _embedded_resource_to_blocks(content: types.EmbeddedResource) -> List:
+    """
+    Convert an MCP EmbeddedResource to a list of llama-index content blocks.
+    TextResourceContents           -> TextBlock
+    BlobResourceContents (image/*) -> ImageBlock
+    BlobResourceContents (audio/*) -> AudioBlock
+    BlobResourceContents (other)   -> DocumentBlock
+    """
+    res = content.resource
+
+    if isinstance(res, types.TextResourceContents):
+        uri = str(res.uri)
+        return [TextBlock(text=f"[Embedded resource: {uri}]\n{res.text}")]
+
+    if isinstance(res, types.BlobResourceContents):
+        uri = str(res.uri)
+        mime = res.mimeType.lower() if res.mimeType else None
+        try:
+            raw = _decode_mcp_base64(res.blob)
+        except BinasciiError:
+            warnings.warn(
+                f"Failed to decode embedded blob resource ({uri}); rendering as text placeholder.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return [TextBlock(text=f"[Binary resource: {uri}]")]
+
+        if mime and mime.startswith("image/") and mime != "image/":
+            return [ImageBlock(image=raw, image_mimetype=mime)]
+        if mime and mime.startswith("audio/") and mime != "audio/":
+            audio_format = mime.split("/", 1)[1].split(";", 1)[0].strip()
+            return [AudioBlock(audio=raw, format=audio_format)]
+        last_segment = uri.rstrip("/").rsplit("/", 1)[-1] or None
+        return [
+            DocumentBlock(
+                data=raw,
+                document_mimetype=mime,
+                title=last_segment,
+            )
+        ]
+
+    warnings.warn(
+        f"Unknown EmbeddedResource.resource type: {type(res).__name__}; "
+        "rendering as text placeholder.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return [TextBlock(text="[Embedded resource: unsupported payload type]")]
+
+
+def _content_to_blocks(content: types.ContentBlock) -> List:
+    """
+    Dispatch any MCP ContentBlock variant to llama-index content blocks.
+    Handles all variants defined in the MCP spec ContentBlock:
+    TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource.
+    Unknown future variants produce a warning and a TextBlock placeholder.
+    """
+    if isinstance(content, types.TextContent):
+        return [TextBlock(text=content.text)]
+
+    if isinstance(content, types.ImageContent):
+        try:
+            raw = _decode_mcp_base64(content.data)
+            return [ImageBlock(image=raw, image_mimetype=content.mimeType)]
+        except BinasciiError:
+            warnings.warn(
+                "Invalid base64 in ImageContent; rendering as placeholder.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return [TextBlock(text="[ImageContent: invalid base64]")]
+
+    if isinstance(content, types.AudioContent):
+        try:
+            raw = _decode_mcp_base64(content.data)
+            audio_format = (
+                content.mimeType.split("/", 1)[1].split(";", 1)[0].strip()
+                if "/" in content.mimeType
+                else None
+            )
+            return [AudioBlock(audio=raw, format=audio_format)]
+        except BinasciiError:
+            warnings.warn(
+                "Invalid base64 in AudioContent; rendering as placeholder.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return [TextBlock(text="[AudioContent: invalid base64]")]
+
+    if isinstance(content, types.ResourceLink):
+        display = content.title or content.name or str(content.uri)
+        lines = [f"[ResourceLink] {display}", f"URI: {content.uri}"]
+        if content.description:
+            lines.append(content.description)
+        return [TextBlock(text="\n".join(lines))]
+
+    if isinstance(content, types.EmbeddedResource):
+        return _embedded_resource_to_blocks(content)
+
+    warnings.warn(
+        f"Unsupported MCP content type: {type(content).__name__}; rendering placeholder.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return [TextBlock(text=f"[Unsupported MCP content: {type(content).__name__}]")]
+
+
 class BasicMCPClient(ClientSession):
     """
     Basic MCP client that can be used to connect to an MCP server.
@@ -365,133 +490,6 @@ class BasicMCPClient(ClientSession):
 
     ## ----- Prompt methods -----
 
-    @staticmethod
-    def _decode_mcp_base64(data: str) -> bytes:
-        """
-        Decode an MCP base64 payload robustly.
-        """
-        clean = re.sub(r"\s+", "", data or "")
-        if not clean:
-            raise BinasciiError("empty base64 payload")
-        # Some non-spec servers embed a data URI prefix, so strip it.
-        if clean.startswith("data:") and ";base64," in clean:
-            clean = clean.split(";base64,", 1)[1]
-            if not clean:
-                raise BinasciiError("empty base64 payload after data URI prefix")
-        clean = clean.replace("-", "+").replace("_", "/")
-        pad = (-len(clean)) % 4
-        clean += "=" * pad
-        return base64.b64decode(clean, validate=True)
-
-    @staticmethod
-    def _embedded_resource_to_blocks(content: types.EmbeddedResource) -> List:
-        """
-        Convert an MCP EmbeddedResource to a list of llama-index content blocks.
-        TextResourceContents  → TextBlock
-        BlobResourceContents (image/*)  → ImageBlock
-        BlobResourceContents (audio/*)  → AudioBlock
-        BlobResourceContents (other)    → DocumentBlock
-        """
-        res = content.resource
-        # res.uri / res.text / res.blob are required fields in the MCP schema.
-        # spec-violating server payloads raise Pydantic ValidationError before
-        # execution reaches this method.
-
-        if isinstance(res, types.TextResourceContents):
-            uri = str(res.uri)
-            return [TextBlock(text=f"[Embedded resource: {uri}]\n{res.text}")]
-
-        if isinstance(res, types.BlobResourceContents):
-            uri = str(res.uri)
-            mime = (res.mimeType or "").lower()
-            try:
-                raw = BasicMCPClient._decode_mcp_base64(res.blob)
-            except BinasciiError:
-                warnings.warn(
-                    f"Failed to decode embedded blob resource ({uri}); rendering as text placeholder.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return [TextBlock(text=f"[Binary resource: {uri}]")]
-
-            if mime.startswith("image/") and len(mime) > len("image/"):
-                return [ImageBlock(image=raw, image_mimetype=mime)]
-            if mime.startswith("audio/") and len(mime) > len("audio/"):
-                return [AudioBlock(audio=raw)]
-            last_segment = uri.rstrip("/").rsplit("/", 1)[-1] or None
-            # DocumentBlock support is provider-dependent
-            # downstream LLM adapters may not serialise this for all providers.
-            return [
-                DocumentBlock(
-                    data=raw,
-                    document_mimetype=mime or None,
-                    title=last_segment,
-                )
-            ]
-
-        warnings.warn(
-            f"Unknown EmbeddedResource.resource type: {type(res).__name__}; "
-            "rendering as text placeholder.",
-            UserWarning,
-            stacklevel=2,
-        )
-        return [TextBlock(text="[Embedded resource: unsupported payload type]")]
-
-    @staticmethod
-    def _content_to_blocks(content: types.ContentBlock) -> List:
-        """
-        Dispatch any MCP ContentBlock variant to llama-index content blocks.
-        Handles all variants defined in the MCP spec ContentBlock :
-        TextContent, ImageContent, AudioContent, ResourceLink, EmbeddedResource.
-        Unknown future variants produce a warning and a TextBlock placeholder.
-        """
-        if isinstance(content, types.TextContent):
-            return [TextBlock(text=content.text)]
-
-        if isinstance(content, types.ImageContent):
-            try:
-                raw = BasicMCPClient._decode_mcp_base64(content.data)
-                return [ImageBlock(image=raw, image_mimetype=content.mimeType)]
-            except BinasciiError:
-                warnings.warn(
-                    "Invalid base64 in ImageContent; rendering as placeholder.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return [TextBlock(text="[ImageContent: invalid base64]")]
-
-        if isinstance(content, types.AudioContent):
-            try:
-                raw = BasicMCPClient._decode_mcp_base64(content.data)
-                return [AudioBlock(audio=raw)]
-            except BinasciiError:
-                warnings.warn(
-                    "Invalid base64 in AudioContent; rendering as placeholder.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                return [TextBlock(text="[AudioContent: invalid base64]")]
-
-        if isinstance(content, types.ResourceLink):
-            display = (
-                getattr(content, "title", None) or content.name or str(content.uri)
-            )
-            lines = [f"[ResourceLink] {display}", f"URI: {content.uri}"]
-            desc = getattr(content, "description", None)
-            if desc:
-                lines.append(desc)
-            return [TextBlock(text="\n".join(lines))]
-
-        if isinstance(content, types.EmbeddedResource):
-            return BasicMCPClient._embedded_resource_to_blocks(content)
-
-        warnings.warn(
-            f"Unsupported MCP content type: {type(content).__name__}; rendering placeholder.",
-            UserWarning,
-            stacklevel=2,
-        )
-        return [TextBlock(text=f"[Unsupported MCP content: {type(content).__name__}]")]
-
     async def list_prompts(self) -> List[types.Prompt]:
         """List all available prompts on the MCP server."""
         async with self._run_session() as session:
@@ -515,6 +513,6 @@ class BasicMCPClient(ClientSession):
             prompt = await session.get_prompt(prompt_name, arguments)
             llama_messages = []
             for message in prompt.messages:
-                blocks = self._content_to_blocks(message.content)
+                blocks = _content_to_blocks(message.content)
                 llama_messages.append(ChatMessage(role=message.role, blocks=blocks))
             return llama_messages

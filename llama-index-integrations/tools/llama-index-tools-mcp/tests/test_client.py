@@ -7,7 +7,7 @@ import pytest
 
 from llama_index.core.llms import AudioBlock, DocumentBlock, ImageBlock, TextBlock
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.tools.mcp.client import _content_to_blocks, enable_sse
 from mcp import types
 
 
@@ -266,10 +266,6 @@ def test_enable_sse():
 
 
 def _make_session_mock(messages):
-    """
-    Return a mock async context manager that yields a session whose
-    get_prompt() returns a GetPromptResult built from *messages*.
-    """
     prompt_result = types.GetPromptResult(messages=messages)
     mock_session = AsyncMock()
     mock_session.get_prompt = AsyncMock(return_value=prompt_result)
@@ -363,6 +359,29 @@ async def test_get_prompt_audio_content():
     block = result[0].blocks[0]
     assert isinstance(block, AudioBlock)
     assert block.resolve_audio(as_base64=False).read() == raw
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_audio_content_mime_params_stripped():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.AudioContent(
+                    type="audio", data=b64, mimeType="audio/wav; codecs=pcm"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.format == "wav"
 
 
 @pytest.mark.asyncio
@@ -392,7 +411,6 @@ async def test_get_prompt_resource_link():
 
 @pytest.mark.asyncio
 async def test_get_prompt_resource_link_title_preferred():
-    """When ResourceLink has both title and name, title takes precedence."""
     client = BasicMCPClient("python", args=[])
     mock_cm = _make_session_mock(
         [
@@ -493,6 +511,34 @@ async def test_get_prompt_embedded_audio_blob():
     block = result[0].blocks[0]
     assert isinstance(block, AudioBlock)
     assert block.resolve_audio(as_base64=False).read() == raw
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_audio_blob_mime_params_stripped():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///sound.wav",
+                        mimeType="audio/wav; codecs=pcm",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.format == "wav"
 
 
 @pytest.mark.asyncio
@@ -580,7 +626,6 @@ async def test_get_prompt_embedded_invalid_b64():
 
 @pytest.mark.asyncio
 async def test_get_prompt_embedded_blob_data_uri_prefix():
-    """Blobs sent as data URIs (non-spec but seen in the wild) are decoded correctly."""
     client = BasicMCPClient("python", args=[])
     raw = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
     b64 = base64.b64encode(raw).decode()
@@ -609,7 +654,6 @@ async def test_get_prompt_embedded_blob_data_uri_prefix():
 
 @pytest.mark.asyncio
 async def test_get_prompt_embedded_bare_image_mime_falls_through_to_document():
-    """A blob with mimeType='image/' (no subtype) falls through to DocumentBlock."""
     client = BasicMCPClient("python", args=[])
     raw = b"\x00\x01\x02\x03"
     b64 = base64.b64encode(raw).decode()
@@ -676,12 +720,11 @@ async def test_get_prompt_audio_content_invalid_b64():
 
 
 def test_content_to_blocks_unknown_type():
-    """An unknown ContentBlock type produces a UserWarning and a TextBlock placeholder."""
     unknown = MagicMock(spec=[])  # won't match any isinstance check
     with pytest.warns(
         UserWarning, match="Unsupported MCP content type.*rendering placeholder"
     ):
-        blocks = BasicMCPClient._content_to_blocks(unknown)
+        blocks = _content_to_blocks(unknown)
     assert len(blocks) == 1
     assert isinstance(blocks[0], TextBlock)
     assert "Unsupported" in blocks[0].text
