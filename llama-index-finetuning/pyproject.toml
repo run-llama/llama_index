@@ -42,6 +42,7 @@ dependencies = [
     "llama-index-embeddings-adapter>=0.4.0,<0.5",
     "mistralai>=1.7.0",
     "sentence-transformers>=2.3.0",
+    "faiss-cpu>=1.7.0",
 ]
 
 [tool.codespell]
