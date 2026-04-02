@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 from llama_index.core.download.utils import (
+    _validate_path_component,
     get_exports,
     get_file_content,
     initialize_directory,
@@ -58,6 +59,10 @@ def get_module_info(
         if module_class in library:
             module_id = library[module_class]["id"]
             extra_files = library[module_class].get("extra_files", [])
+            # Validate even cached values — cache file could be tampered
+            _validate_path_component(module_id, "module_id")
+            for ef in extra_files:
+                _validate_path_component(ef, "extra_file")
 
     # Fetch up-to-date library from remote repo if module_id not found
     if module_id is None:
@@ -70,6 +75,11 @@ def get_module_info(
 
         module_id = library[module_class]["id"]
         extra_files = library[module_class].get("extra_files", [])
+
+        # Validate path components from remote manifest to prevent traversal
+        _validate_path_component(module_id, "module_id")
+        for ef in extra_files:
+            _validate_path_component(ef, "extra_file")
 
         # create cache dir if needed
         local_library_dir = os.path.dirname(local_library_path)
