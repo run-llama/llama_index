@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -1333,7 +1333,7 @@ requires-dist = [
     { name = "llama-index-core", specifier = ">=0.14.19,<0.15.0" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.7" },
     { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.8" },
-    { name = "nltk", specifier = ">3.8.1" },
+    { name = "nltk", specifier = ">=3.9.3" },
 ]
 
 [package.metadata.requires-dev]

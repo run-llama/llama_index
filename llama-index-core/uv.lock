@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1212,7 +1212,7 @@ requires-dist = [
     { name = "llama-index-workflows", specifier = ">=2,!=2.9.0,<3" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
-    { name = "nltk", specifier = ">3.8.1" },
+    { name = "nltk", specifier = ">=3.9.3" },
     { name = "numpy" },
     { name = "pillow", specifier = ">=9.0.0" },
     { name = "platformdirs" },
