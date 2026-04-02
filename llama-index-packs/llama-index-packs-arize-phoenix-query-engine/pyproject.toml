@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-arize-phoenix-query-engine"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index packs arize_phoenix_query_engine integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.12"
 readme = "README.md"
 license = "GPL-3.0-or-later"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "axiomofjoy"}]
 keywords = [
     "arize",

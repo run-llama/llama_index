@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-dense-x-retrieval"
-version = "0.6.1"
+version = "0.6.2"
 description = "llama-index packs dense_x_retrieval integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "logan-markewich"}]
 dependencies = [
     "llama-index-embeddings-openai>=0.6.0,<0.7",
