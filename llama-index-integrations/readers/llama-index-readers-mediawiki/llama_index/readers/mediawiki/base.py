@@ -8,18 +8,29 @@ MediaWiki API interactions.
 
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterator, List, Literal, Optional, Tuple
+from typing import Any, Iterator, List, Literal, Optional, Tuple
 from urllib.parse import urlparse
 
 import html2text
 import mwclient
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 _internal_logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Page:
+    """Lightweight record for a single wiki page entry from allpages."""
+
+    title: str
+    url: Optional[str]
+    last_modified: Optional[datetime]
+    pageid: Optional[int]
+    namespace: Optional[int]
 
 
 class MediaWikiReader(BasePydanticReader):
@@ -30,26 +41,20 @@ class MediaWikiReader(BasePydanticReader):
     and returns LlamaIndex Documents with metadata (title, URL, last_modified).
 
     Uses `mwclient` for all API interactions. Supports authentication via
-    :meth:`login`.
+    `login`.
 
-    **Ingestion scale:** Full ingestion (e.g. :meth:`lazy_load_data`) lists
-    pages via the allpages API, then fetches parsed content with one
-    ``parse`` API call per page. MediaWiki's parse API does not support
-    batch requests, so large wikis require many HTTP requests. This is a
-    known limitation of the MediaWiki API.
-
-    Example::
-
+    Example:
         reader = MediaWikiReader(host="en.wikipedia.org")
         docs = reader.load_data()
 
-    With authentication::
+    With authentication:
 
         reader = MediaWikiReader(host="my.private.wiki")
         reader.login("username", "password")
         docs = reader.load_data()
 
     Implements BasePydanticReader (for serialization / LlamaHub compatibility).
+
     """
 
     FILTERREDIR_NONREDIRECTS: str = "nonredirects"
@@ -121,29 +126,23 @@ class MediaWikiReader(BasePydanticReader):
         """Return the mwclient Site, creating one lazily if needed."""
         if self._site is None:
             self._site = mwclient.Site(
-                self.host,
-                path=self.path,
-                scheme=self.scheme,
+                self.host, path=self.path, scheme=self.scheme
             )
         return self._site
 
     def login(self, username: str, password: str) -> None:
         """
-        Authenticate to the wiki using user credentials.
-
-        Uses ``clientlogin`` (MW 1.27+). For bot passwords, use the bot
-        password as the ``password`` argument with the full bot-username
-        (e.g. ``User@BotName``).
+        Authenticate to the wiki using a user or bot credentials.
 
         Args:
-            username: MediaWiki username.
+            username: MediaWiki username or bot username.
             password: MediaWiki password or bot password.
 
         Raises:
             mwclient.errors.LoginError: If login fails.
 
         """
-        self.site.clientlogin(username=username, password=password)
+        self.site.login(username=username, password=password)
         self.logger.info("Logged in as %s", username)
 
     # -- Internal helpers -----------------------------------------------------
@@ -154,10 +153,10 @@ class MediaWikiReader(BasePydanticReader):
 
         Queries ``action=query&meta=siteinfo&siprop=namespaces`` and filters
         for namespaces that carry the ``content`` flag.
-        Falls back to ``[0]`` (main namespace) if none are found.
 
         Raises:
             mwclient.errors.APIError: If the siteinfo query fails.
+            RuntimeError: If no content namespaces are found in siteinfo.
 
         """
         result = self.site.get("query", meta="siteinfo", siprop="namespaces")
@@ -171,10 +170,10 @@ class MediaWikiReader(BasePydanticReader):
         ]
 
         if not ids:
-            self.logger.warning(
-                "No content namespaces found in siteinfo; defaulting to main namespace (0)."
+            raise RuntimeError(
+                "No content namespaces found in siteinfo; "
+                "the MediaWiki API may be unreachable or misconfigured."
             )
-            return [0]
         return sorted(ids)
 
     def _resolve_namespace_list(self) -> List[int]:
@@ -189,6 +188,7 @@ class MediaWikiReader(BasePydanticReader):
 
         Raises:
             RuntimeError: If the URL base cannot be determined from siteinfo.
+
         """
         site_info = self.site.site
         base_url = site_info.get("base", "")
@@ -211,7 +211,9 @@ class MediaWikiReader(BasePydanticReader):
         origin, article_path = url_base
         return origin + article_path.replace("$1", title.replace(" ", "_"))
 
-    def _extract_revision_time(self, page: Any, title: str) -> Optional[datetime]:
+    def _extract_revision_time(
+        self, page: Any, title: str
+    ) -> Optional[datetime]:
         """Extract last_modified from page revision timestamp (struct_time)."""
         try:
             ts = page.touched
@@ -227,28 +229,12 @@ class MediaWikiReader(BasePydanticReader):
             )
             return None
 
-    def _get_all_pages_generator(self) -> Iterator[Dict[str, Any]]:
-        """
-        Yield rich dicts for all pages via mwclient's allpages.
-
-        Each yielded dict contains:
-            - title (str)
-            - url (str or None)
-            - last_modified (datetime or None)
-            - pageid (int or None)
-            - namespace (int or None)
-        """
+    def _get_all_pages_generator(self) -> Iterator[Page]:
+        """Yield a Page record for every page in the wiki via mwclient's allpages."""
         ns_list = self._resolve_namespace_list()
 
         # Parse site base URL once; origin + article_path are constant per site
-        url_base: Optional[Tuple[str, str]] = None
-        try:
-            url_base = self._get_url_base()
-        except RuntimeError as e:
-            raise RuntimeError(
-                "Cannot list pages: failed to determine site URL base. "
-                "Check that the MediaWiki API is reachable and siteinfo is accessible."
-            ) from e
+        url_base = self._get_url_base()
 
         filterredir = (
             self.FILTERREDIR_NONREDIRECTS
@@ -264,15 +250,13 @@ class MediaWikiReader(BasePydanticReader):
                 filterredir=filterredir,
             ):
                 title = page.name
-                url = self._build_page_url(title, url_base)
-                last_modified = self._extract_revision_time(page, title)
-                yield {
-                    "title": title,
-                    "url": url,
-                    "last_modified": last_modified,
-                    "pageid": page.pageid,
-                    "namespace": page.namespace,
-                }
+                yield Page(
+                    title=title,
+                    url=self._build_page_url(title, url_base),
+                    last_modified=self._extract_revision_time(page, title),
+                    pageid=page.pageid,
+                    namespace=page.namespace,
+                )
 
     def _get_page_contents(self, page_title: str) -> Optional[str]:
         """
@@ -292,7 +276,9 @@ class MediaWikiReader(BasePydanticReader):
                 disabletoc=True,
             )
         except mwclient.errors.APIError as exc:
-            self.logger.warning("Parse API failed for '%s': %s", page_title, exc)
+            self.logger.warning(
+                "Parse API failed for '%s': %s", page_title, exc
+            )
             return None
 
         if not result:
@@ -301,7 +287,9 @@ class MediaWikiReader(BasePydanticReader):
 
         html_content = result.get("parse", {}).get("text", {}).get("*", "")
         if not html_content:
-            self.logger.warning("No content in parse result for page '%s'", page_title)
+            self.logger.warning(
+                "No content in parse result for page '%s'", page_title
+            )
             return None
 
         return html_content
@@ -318,13 +306,15 @@ class MediaWikiReader(BasePydanticReader):
             h.emphasis_mark = "*"
             h.strong_mark = "**"
             return h.handle(html_content).strip()
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             _internal_logger.debug(
                 "html2text failed, using tag-strip fallback: %s",
                 e,
                 exc_info=True,
             )
-            return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html_content)).strip()
+            return re.sub(
+                r"\s+", " ", re.sub(r"<[^>]+>", "", html_content)
+            ).strip()
 
     def _page_to_document(
         self,
@@ -376,11 +366,11 @@ class MediaWikiReader(BasePydanticReader):
         """
         for page_record in self._get_all_pages_generator():
             doc = self._page_to_document(
-                title=page_record["title"],
-                url=page_record.get("url"),
-                last_modified=page_record.get("last_modified"),
-                pageid=page_record.get("pageid"),
-                namespace=page_record.get("namespace"),
+                title=page_record.title,
+                url=page_record.url,
+                last_modified=page_record.last_modified,
+                pageid=page_record.pageid,
+                namespace=page_record.namespace,
             )
             if doc is not None:
                 yield doc

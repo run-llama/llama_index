@@ -114,17 +114,17 @@ class TestSiteProperty:
 
 
 class TestLogin:
-    """Authentication via clientlogin."""
+    """Authentication via login (supports both user accounts and bot passwords)."""
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_login_calls_clientlogin(self, mock_site_cls):
+    def test_login_calls_login(self, mock_site_cls):
         mock_site = _mock_site()
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
         reader.login("testuser", "testpass")
 
-        mock_site.clientlogin.assert_called_once_with(
+        mock_site.login.assert_called_once_with(
             username="testuser", password="testpass"
         )
 
@@ -133,7 +133,7 @@ class TestLogin:
         import mwclient.errors
 
         mock_site = _mock_site()
-        mock_site.clientlogin.side_effect = mwclient.errors.LoginError(
+        mock_site.login.side_effect = mwclient.errors.LoginError(
             mock_site, "FAIL", "Bad credentials"
         )
         mock_site_cls.return_value = mock_site
@@ -151,7 +151,7 @@ class TestLogin:
         reader = _make_reader()
         reader.login("User@BotName", "bot-password-token")
 
-        mock_site.clientlogin.assert_called_once_with(
+        mock_site.login.assert_called_once_with(
             username="User@BotName", password="bot-password-token"
         )
 
@@ -183,13 +183,14 @@ class TestGetContentNamespaceIds:
         assert ids == [0, 4]
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
-    def test_defaults_to_zero_on_empty(self, mock_site_cls):
+    def test_raises_on_empty(self, mock_site_cls):
         mock_site = _mock_site()
         mock_site.get.return_value = {"query": {"namespaces": {}}}
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader()
-        assert reader._get_content_namespace_ids() == [0]
+        with pytest.raises(RuntimeError, match="No content namespaces"):
+            reader._get_content_namespace_ids()
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_raises_on_api_error(self, mock_site_cls):
@@ -226,9 +227,9 @@ class TestGetAllPages:
         pages = list(reader._get_all_pages_generator())
 
         assert len(pages) == 1
-        assert pages[0]["title"] == "Page 1"
-        assert pages[0]["url"] == "https://example.com/wiki/Page_1"
-        assert pages[0]["last_modified"].year == 2024
+        assert pages[0].title == "Page 1"
+        assert pages[0].url == "https://example.com/wiki/Page_1"
+        assert pages[0].last_modified.year == 2024
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_multiple_namespaces(self, mock_site_cls):
@@ -250,8 +251,8 @@ class TestGetAllPages:
         pages = list(reader._get_all_pages_generator())
 
         assert len(pages) == 2
-        assert pages[0]["title"] == "Main Page"
-        assert pages[1]["title"] == "Project:About"
+        assert pages[0].title == "Main Page"
+        assert pages[1].title == "Project:About"
         assert mock_site.allpages.call_count == 2
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
@@ -312,7 +313,7 @@ class TestGetAllPages:
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader(namespaces=[0])
-        with pytest.raises(RuntimeError, match="site URL base"):
+        with pytest.raises(RuntimeError, match="base URL from siteinfo"):
             list(reader._get_all_pages_generator())
 
 
@@ -410,7 +411,7 @@ class TestHtmlToCleanText:
     @patch("llama_index.readers.mediawiki.base.html2text.HTML2Text")
     def test_fallback_when_html2text_raises(self, mock_html2text_cls):
         """When html2text raises, fallback strips tags with regex and normalizes space."""
-        mock_html2text_cls.return_value.handle.side_effect = RuntimeError(
+        mock_html2text_cls.return_value.handle.side_effect = ValueError(
             "html2text fail"
         )
         result = MediaWikiReader._html_to_clean_text("<p>Hello</p> <b>world</b>")
@@ -463,7 +464,7 @@ class TestLazyLoadData:
         mock_site_cls.return_value = mock_site
 
         reader = _make_reader(host="wiki.example.com", namespaces=[0])
-        with pytest.raises(RuntimeError, match="site URL base"):
+        with pytest.raises(RuntimeError, match="base URL from siteinfo"):
             list(reader.lazy_load_data())
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
