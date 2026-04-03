@@ -33,7 +33,3 @@ Check them out below.
 ### RAGs
 
 [RAGs Repo](https://github.com/run-llama/rags)
-
-### RAG CLI
-
-[RAG CLI](/python/framework/getting_started/starter_tools/rag_cli/)
