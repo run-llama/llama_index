@@ -1,4 +1,5 @@
-# LlamaIndex Finetuning
+# llama-index-finetuning
 
-A LlamaIndex extension package that contains classes and features for carrying
-out finetuning of OpenAI LLMs and Embedding models.
+> **DEPRECATED**: This package is deprecated and no longer maintained.
+> It will not receive any further updates or bug fixes.
+> Please consider alternative solutions.
