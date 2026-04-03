@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-trulens-eval-packs"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index packs trulens_eval_packs integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "joshreini1"}]
 keywords = [
     "eval",

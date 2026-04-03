@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-searchain"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index packs searchain integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "mmaatouk"}]
 keywords = [
     "llm",
