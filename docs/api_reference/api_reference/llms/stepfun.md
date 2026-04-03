@@ -1,3 +1,4 @@
 ::: llama_index.llms.stepfun
-options:
-members: - StepFun
+    options:
+      members:
+        - StepFun
