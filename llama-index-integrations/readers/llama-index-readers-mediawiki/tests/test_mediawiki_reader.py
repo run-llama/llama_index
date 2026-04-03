@@ -441,6 +441,8 @@ class TestLazyLoadData:
         page.name = "Test Page"
         page.revision = True
         page.touched = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
+        page.pageid = 42
+        page.namespace = 0
         mock_site.allpages.return_value = [page]
 
         mock_site.post.return_value = {"parse": {"text": {"*": "<p>Hello world</p>"}}}
@@ -454,6 +456,8 @@ class TestLazyLoadData:
         assert "Hello world" in docs[0].text
         assert docs[0].metadata["title"] == "Test Page"
         assert "example.com" in docs[0].metadata["url"]
+        assert docs[0].metadata["pageid"] == 42
+        assert docs[0].metadata["namespace"] == 0
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_raises_when_siteinfo_base_missing(self, mock_site_cls):

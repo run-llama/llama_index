@@ -61,7 +61,6 @@ class MediaWikiReader(BasePydanticReader):
     FILTERREDIR_ALL: str = "all"
 
     is_remote: bool = True
-    model_config = {"arbitrary_types_allowed": True}
 
     # -- Pydantic fields (serialisable config) --------------------------------
 
@@ -143,7 +142,7 @@ class MediaWikiReader(BasePydanticReader):
 
         """
         self.site.login(username=username, password=password)
-        self.logger.info("Logged in as %s", username)
+        self.logger.info("Successfully logged into MediaWiki")
 
     # -- Internal helpers -----------------------------------------------------
 
@@ -336,6 +335,7 @@ class MediaWikiReader(BasePydanticReader):
 
         Returns:
             A Document, or None if the page content could not be fetched.
+
         """
         content = self._get_page_contents(title)
         if not content:
@@ -348,7 +348,9 @@ class MediaWikiReader(BasePydanticReader):
             metadata={
                 "title": title,
                 "url": url,
-                "last_modified": (last_modified.isoformat() if last_modified else None),
+                "last_modified": (
+                    last_modified.isoformat() if last_modified else None
+                ),
                 "pageid": pageid,
                 "namespace": namespace,
             },
