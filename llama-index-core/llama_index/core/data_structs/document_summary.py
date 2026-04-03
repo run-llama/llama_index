@@ -64,7 +64,9 @@ class IndexDocumentSummary(IndexStruct):
 
     def delete_nodes(self, node_ids: List[str]) -> None:
         for node_id in node_ids:
-            summary_id = self.node_id_to_summary_id[node_id]
+            summary_id = self.node_id_to_summary_id.get(node_id)
+            if summary_id is None:
+                continue
             self.summary_id_to_node_ids[summary_id].remove(node_id)
             del self.node_id_to_summary_id[node_id]
 

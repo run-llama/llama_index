@@ -257,12 +257,14 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
         """
         index_nodes = self._index_struct.node_id_to_summary_id.keys()
-        for node in node_ids:
-            if node not in index_nodes:
-                logger.warning(f"node_id {node} not found, will not be deleted.")
-                node_ids.remove(node)
+        valid_node_ids = []
+        for node_id in node_ids:
+            if node_id not in index_nodes:
+                logger.warning(f"node_id {node_id} not found, will not be deleted.")
+            else:
+                valid_node_ids.append(node_id)
 
-        self._index_struct.delete_nodes(node_ids)
+        self._index_struct.delete_nodes(valid_node_ids)
 
         remove_summary_ids = [
             summary_id
