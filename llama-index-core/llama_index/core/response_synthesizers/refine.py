@@ -189,7 +189,7 @@ class Refine(BaseSynthesizer):
             if self._output_cls is not None:
                 try:
                     response = self._output_cls.model_validate_json(response)
-                except ValidationError:
+                except (ValidationError, ValueError, TypeError):
                     pass
             else:
                 response = response or "Empty Response"
