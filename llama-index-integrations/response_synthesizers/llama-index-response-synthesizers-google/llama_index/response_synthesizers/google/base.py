@@ -195,7 +195,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
             will follow with the originally provided passages, which will have
             a score from the retrieval.
 
-            Response's `metadata` may also have have an entry with key
+            Response's `metadata` may also have an entry with key
             `answerable_probability`, which is the model's estimate of the
             probability that its answer is correct and grounded in the input
             passages.

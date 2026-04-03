@@ -18,7 +18,7 @@ REQUEST_ORIGIN = "llamaindex"
 
 class AgentQLWebReader(BasePydanticReader):
     """
-    Scrape a URL with or without a agentql query and returns document in json format.
+    Scrape a URL with or without an AgentQL query and returns document in json format.
 
     Args:
         api_key (str): The AgentQL API key, get one at https://dev.agentql.com
