@@ -1,5 +1,3 @@
 ::: llama_index.indices.managed.postgresml
-    options:
-      members:
-        - PostgresMLRetriever
-        - PostgresmlIndex
+options:
+members: - PostgresMLRetriever - PostgresmlIndex

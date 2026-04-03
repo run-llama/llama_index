@@ -5,78 +5,92 @@
 ## [2026-04-03]
 
 ### llama-index-agent-agentmesh [0.2.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-agentops [0.5.0]
+
 - chore(deps): bump the uv group across 50 directories with 2 updates ([#21164](https://github.com/run-llama/llama_index/pull/21164))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-aim [0.4.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-argilla [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-arize-phoenix [0.7.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-honeyhive [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-langfuse [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-literalai [1.4.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-openinference [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-opik [1.3.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-promptlayer [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-uptrain [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-callbacks-wandb [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-core [0.14.20]
+
 - chore(deps): bump the uv group across 46 directories with 2 updates ([#21153](https://github.com/run-llama/llama_index/pull/21153))
 - fix(core): use async query generation in `QueryFusionRetriever._aretrieve` ([#21160](https://github.com/run-llama/llama_index/pull/21160))
 - chore(deps): bump the uv group across 50 directories with 2 updates ([#21164](https://github.com/run-llama/llama_index/pull/21164))
@@ -84,338 +98,427 @@
 - fix: fix extra bracket in data_sources and typo in data_sinks ([#21251](https://github.com/run-llama/llama_index/pull/21251))
 - chore(deps): bump the uv group across 47 directories with 1 update ([#21254](https://github.com/run-llama/llama_index/pull/21254))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 - Update llama-index-workflows dependency to >=2.14.0 ([#21277](https://github.com/run-llama/llama_index/pull/21277))
 - Delete old folders ([#21286](https://github.com/run-llama/llama_index/pull/21286))
 
 ### llama-index-embeddings-adapter [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-alephalpha [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-alibabacloud-aisearch [0.4.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-anyscale [0.5.1]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-autoembeddings [0.3.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-azure-inference [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-azure-openai [0.5.2]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - azure vbump ([#21168](https://github.com/run-llama/llama_index/pull/21168))
 - fix: Azure OpenAI embeddings' dependencies ([#21170](https://github.com/run-llama/llama_index/pull/21170))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-baseten [0.2.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-bedrock [0.8.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-clarifai [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-clip [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-cloudflare-workersai [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-cohere [0.8.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-dashscope [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-databricks [0.5.1]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-deepinfra [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-elasticsearch [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-fastembed [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-fireworks [0.5.2]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-gaudi [0.4.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-gigachat [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-google-genai [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-heroku [0.2.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-huggingface [0.7.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-huggingface-api [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-huggingface-openvino [0.7.0]
+
 - chore(deps): bump the uv group across 2 directories with 1 update ([#21240](https://github.com/run-llama/llama_index/pull/21240))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-huggingface-optimum [0.4.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-huggingface-optimum-intel [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 2 directories with 1 update ([#21240](https://github.com/run-llama/llama_index/pull/21240))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-ibm [0.6.0.post1]
+
 - chore(deps): bump the uv group across 50 directories with 2 updates ([#21164](https://github.com/run-llama/llama_index/pull/21164))
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-instructor [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-isaacus [0.2.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-jinaai [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-langchain [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-litellm [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-llamafile [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-llm-rails [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-mistralai [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-mixedbreadai [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-modelscope [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-nebius [0.5.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-netmind [0.3.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-nomic [0.8.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-nvidia [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-oci-data-science [0.3.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-oci-genai [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-ollama [0.9.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-opea [0.3.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-openai [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-openai-like [0.3.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-openvino-genai [0.7.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-oracleai [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-premai [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-sagemaker-endpoint [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-siliconflow [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-text-embeddings-inference [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-textembed [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-together [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-upstage [0.6.1]
+
 - chore(deps): bump the uv group across 50 directories with 2 updates ([#21164](https://github.com/run-llama/llama_index/pull/21164))
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-vertex [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-vertex-endpoint [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-vllm [0.1.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-voyageai [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-xinference [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-yandexgpt [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-embeddings-zhipuai [0.4.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-evaluation-tonic-validate [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-extractors-entity [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-extractors-marvin [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-extractors-relik [0.4.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-rag-cognee [0.3.1]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-ApertureDB [0.3.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-falkordb [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-memgraph [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-nebula [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-neo4j [0.7.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-neptune [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-graph-stores-tidb [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-indices-managed-bge-m3 [0.7.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-indices-managed-colbert [0.6.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-indices-managed-dashscope [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-instrumentation [0.5.0]
-- fix vulnerabilty with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
+
+- fix vulnerability with nltk ([#21275](https://github.com/run-llama/llama_index/pull/21275))
 
 ### llama-index-llms-anthropic [0.11.2]
+
 - feat(llms/anthropic): add claude-sonnet-4-6 and claude-opus-4-6 to structured output list ([#21113](https://github.com/run-llama/llama_index/pull/21113))
 
 ### llama-index-llms-bedrock-converse [0.14.5]
+
 - feat: add support for deepseek v3 models in bedrock converse ([#21212](https://github.com/run-llama/llama_index/pull/21212))
 - feat (llama-index-llms-bedrock-converse): Add region prefixes to LLM model name extraction in Bedrock Converse ([#21227](https://github.com/run-llama/llama_index/pull/21227))
 
 ### llama-index-llms-cohere [0.8.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-llms-dashscope [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-llms-google-genai [0.9.1]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
 
 ### llama-index-llms-ibm [0.7.0.post1]
+
 - chore(deps): bump the uv group across 50 directories with 2 updates ([#21164](https://github.com/run-llama/llama_index/pull/21164))
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-llms-oci-data-science [1.1.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-llms-openai [0.7.5]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - Fix input_file serialization in Responses API message dict ([#21172](https://github.com/run-llama/llama_index/pull/21172))
 - vbump openai ([#21176](https://github.com/run-llama/llama_index/pull/21176))
@@ -426,79 +529,98 @@
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
 
 ### llama-index-llms-openai-like [0.7.1]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-llms-openvino-genai [0.3.1]
+
 - fix run stream llm request using ov genai will report std::runtime_error(ISSUE 20802) ([#20803](https://github.com/run-llama/llama_index/pull/20803))
 
 ### llama-index-memory-mem0 [1.0.0]
+
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-observability-otel [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 24 directories with 1 update ([#21219](https://github.com/run-llama/llama_index/pull/21219))
 - chore(deps): bump the uv group across 21 directories with 2 updates ([#21221](https://github.com/run-llama/llama_index/pull/21221))
 
 ### llama-index-postprocessor-cohere-rerank [0.8.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-postprocessor-nvidia-rerank [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-protocols-ag-ui [0.3.1]
+
 - feat: add the ability to take dynamic tools from outside (ag-ui) ([#21149](https://github.com/run-llama/llama_index/pull/21149))
 
 ### llama-index-readers-datasets [0.2.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-readers-github [0.11.2]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-readers-microsoft-sharepoint [0.9.1]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-readers-patentsview [1.1.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-readers-service-now [0.3.0]
+
 - chore(deps): bump aiohttp from 3.13.3 to 3.13.4 in /llama-index-integrations/readers/llama-index-readers-service-now in the pip group across 1 directory ([#21253](https://github.com/run-llama/llama_index/pull/21253))
 
 ### llama-index-readers-whatsapp [0.5.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-retrievers-you [1.1.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-storage-chat-store-redis [0.7.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-vector-stores-milvus [1.1.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-vector-stores-oceanbase [0.4.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 - chore(deps): bump the uv group across 53 directories with 1 update ([#21255](https://github.com/run-llama/llama_index/pull/21255))
 
 ### llama-index-vector-stores-opensearch [1.2.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 
 ### llama-index-vector-stores-yugabytedb [0.6.0]
+
 - chore(deps): bump the uv group across 58 directories with 1 update ([#21166](https://github.com/run-llama/llama_index/pull/21166))
 - chore(deps): bump the uv group across 67 directories with 1 update ([#21205](https://github.com/run-llama/llama_index/pull/21205))
 

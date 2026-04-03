@@ -1,4 +1,3 @@
 ::: llama_index.readers.dad_jokes
-    options:
-      members:
-        - DadJokesReader
+options:
+members: - DadJokesReader

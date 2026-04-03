@@ -1,4 +1,3 @@
 ::: llama_index.llms.opea
-    options:
-      members:
-        - OPEA
+options:
+members: - OPEA
