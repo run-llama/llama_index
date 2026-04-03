@@ -5,7 +5,6 @@ import pytest
 from llama_dev.utils import (
     find_all_packages,
     find_integrations,
-    find_packs,
     find_utils,
     get_changed_files,
     get_changed_packages,
@@ -18,10 +17,6 @@ from llama_dev.utils import (
 
 def test_find_integrations(data_path):
     assert {p.name for p in find_integrations(data_path)} == {"pkg1", "pkg2"}
-
-
-def test_find_packs(data_path):
-    assert {p.name for p in find_packs(data_path)} == {"pack1", "pack2"}
 
 
 def test_find_utils(data_path):
