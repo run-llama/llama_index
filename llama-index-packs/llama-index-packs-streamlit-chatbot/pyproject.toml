@@ -26,12 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-packs-streamlit-chatbot"
-version = "0.5.2"
+version = "0.5.3"
 description = "llama-index packs streamlit_chatbot integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 maintainers = [{name = "carolinedlu"}]
 keywords = [
     "chatbot",

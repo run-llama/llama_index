@@ -25,12 +25,15 @@ dev = [
 
 [project]
 name = "llama-index-finetuning"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index finetuning"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Development Status :: 7 - Inactive",
+]
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "llama-index-llms-azure-openai>=0.4.0,<0.5",
