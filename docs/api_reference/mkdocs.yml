@@ -685,6 +685,7 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-igpt-email
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-google-rerank
             - ../../llama-index-integrations/llms/llama-index-llms-minimax
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-actian-vectorai
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:
