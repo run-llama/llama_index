@@ -223,8 +223,8 @@ def is_reasoning(model_name: str) -> bool:
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
-    # Check for region prefixes (us, eu, apac, jp, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
+    # Check for region prefixes (us, us-gov, eu, apac, jp, global, ca, au)
+    REGION_PREFIXES = ["us.", "us-gov.", "eu.", "apac.", "jp.", "global.", "ca.", "au."]
 
     # If no region prefix, return the original model name
     if not any(prefix in model_name for prefix in REGION_PREFIXES):
