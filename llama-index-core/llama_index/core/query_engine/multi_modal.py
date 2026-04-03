@@ -234,7 +234,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         return response
 
     def image_query(self, image_path: QueryType, prompt_str: str) -> RESPONSE_TYPE:
-        """Answer a image query."""
+        """Answer an image query."""
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: str(image_path)}
         ) as query_event:

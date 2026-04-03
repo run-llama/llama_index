@@ -139,7 +139,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         upsert_mode (bool, optional): Whether to upsert documents into existing collection with same node id. Defaults to False.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
-        text_key (str, optional): What key text is stored in in the passed collection.
+        text_key (str, optional): What key text is stored in the passed collection.
             Used when bringing your own collection. Defaults to DEFAULT_TEXT_KEY.
         scalar_field_names (list, optional): The names of the extra scalar fields to be included in the collection schema.
         scalar_field_types (list, optional): The types of the extra scalar fields.
