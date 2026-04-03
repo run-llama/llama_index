@@ -246,9 +246,9 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
-                except ValidationError as e:
+                except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(
-                        f"Validation error on structured response: {e}", exc_info=True
+                        f"Error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
                 response = self._llm.stream(
@@ -326,9 +326,9 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
-                except ValidationError as e:
+                except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(
-                        f"Validation error on structured response: {e}", exc_info=True
+                        f"Error on structured response: {e}", exc_info=True
                     )
             else:
                 # TODO: structured response not supported for streaming
@@ -435,9 +435,9 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
-                except ValidationError as e:
+                except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(
-                        f"Validation error on structured response: {e}", exc_info=True
+                        f"Error on structured response: {e}", exc_info=True
                     )
             else:
                 if isinstance(response, Generator):
@@ -494,9 +494,9 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
-                except ValidationError as e:
+                except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(
-                        f"Validation error on structured response: {e}", exc_info=True
+                        f"Error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
                 response = await self._llm.astream(
