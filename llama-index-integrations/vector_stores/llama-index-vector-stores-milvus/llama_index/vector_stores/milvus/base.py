@@ -1194,8 +1194,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         search_params = {"params": {"drop_ratio_search": 0.2}}
         if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
-            sparse_emb = self.sparse_embedding_function.encode_queries(
-                [query.query_str]
+            sparse_emb = (
+                await self.sparse_embedding_function.async_encode_queries(
+                    [query.query_str]
+                )
             )[0]
             query_data = [sparse_emb]
         elif isinstance(self.sparse_embedding_function, BaseMilvusBuiltInFunction):
