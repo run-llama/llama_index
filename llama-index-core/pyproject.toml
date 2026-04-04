@@ -29,11 +29,12 @@ dev = [
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-requests>=2.28.11.8",
+    "types-setuptools",
 ]
 
 [project]
 name = "llama-index-core"
-version = "0.14.19"
+version = "0.14.20"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.10,<4.0"

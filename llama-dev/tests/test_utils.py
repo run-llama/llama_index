@@ -5,7 +5,6 @@ import pytest
 from llama_dev.utils import (
     find_all_packages,
     find_integrations,
-    find_packs,
     find_utils,
     get_changed_files,
     get_changed_packages,
@@ -13,7 +12,6 @@ from llama_dev.utils import (
     get_dependants_packages,
     is_python_version_compatible,
     load_pyproject,
-    package_has_tests,
 )
 
 
@@ -21,16 +19,8 @@ def test_find_integrations(data_path):
     assert {p.name for p in find_integrations(data_path)} == {"pkg1", "pkg2"}
 
 
-def test_find_packs(data_path):
-    assert {p.name for p in find_packs(data_path)} == {"pack1", "pack2"}
-
-
 def test_find_utils(data_path):
     assert {p.name for p in find_utils(data_path)} == {"util"}
-
-
-def test_package_has_tests(data_path):
-    assert not package_has_tests(data_path / "llama-index-packs" / "pack2")
 
 
 def test_load_pyproject(data_path):
@@ -41,7 +31,7 @@ def test_load_pyproject(data_path):
 
 
 def test_find_all_packages(data_path):
-    assert len(find_all_packages(data_path)) == 7
+    assert len(find_all_packages(data_path)) == 5
 
 
 @mock.patch("subprocess.run")
@@ -88,7 +78,6 @@ def test_get_changed_packages():
     all_packages = [
         Path("./llama-index-core"),
         Path("./llama-index-integrations/vector_stores/pkg1"),
-        Path("./llama-index-packs/pkg2"),
     ]
 
     result = get_changed_packages(changed_files, all_packages)
@@ -192,7 +181,6 @@ def test_get_dependants_packages(mock_load_pyproject):
     all_packages = [
         Path("llama-index-core"),
         Path("llama-index-integrations/vector_stores/pkg1"),
-        Path("llama-index-packs/pkg2"),
         Path("llama-index-integrations/llm/pkg3"),
     ]
 
@@ -205,12 +193,6 @@ def test_get_dependants_packages(mock_load_pyproject):
             "project": {
                 "name": "llama-index-integrations-vector-stores-pkg1",
                 "dependencies": ["foo==1.0.0"],
-            }
-        },
-        "llama-index-packs/pkg2": {
-            "project": {
-                "name": "pkg2",
-                "dependencies": ["llama-index-core==0.8.0", "numpy<1.20.0"],
             }
         },
         "llama-index-integrations/llm/pkg3": {
@@ -235,6 +217,5 @@ def test_get_dependants_packages(mock_load_pyproject):
 
     result = get_dependants_packages(changed_packages, all_packages)
     assert result == {
-        Path("llama-index-packs/pkg2"),
         Path("llama-index-integrations/llm/pkg3"),
     }
