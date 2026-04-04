@@ -40,6 +40,17 @@ class S3VectorStore(BasePydanticVectorStore):
 
     It is recommended to create a vector bucket in S3 first.
 
+    **Important**: LlamaIndex automatically stores the full node content in a
+    metadata field called ``_node_content``. AWS S3 Vectors enforces a 2048-byte
+    limit on *filterable* metadata fields, so ``_node_content`` and ``_node_type``
+    **must** be configured as non-filterable keys in your S3 Vectors index.
+
+    The easiest way to ensure correct configuration is to use
+    :meth:`create_index_from_bucket`, which sets these keys as non-filterable
+    automatically. If you create the index via the AWS console or another tool,
+    add ``_node_content`` and ``_node_type`` to the index's
+    ``metadataConfiguration.nonFilterableMetadataKeys`` before inserting vectors.
+
     Args:
         index_name (str): The name of the index.
         bucket_name_or_arn (str): The name or ARN of the vector bucket.
@@ -266,6 +277,7 @@ class S3VectorStore(BasePydanticVectorStore):
         start_time = time.time()
         available_requests = 5
         added_ids = []
+        _warned_about_node_content = False
         for node_batch in iter_batch(nodes, self.insert_batch_size):
             vectors = []
             for node in node_batch:
@@ -275,6 +287,25 @@ class S3VectorStore(BasePydanticVectorStore):
                 node_metadata.pop("document_id", None)
                 node_metadata.pop("doc_id", None)
                 node_metadata.pop("embedding", None)
+
+                # Warn once if _node_content may exceed S3 Vectors' 2048-byte
+                # filterable metadata limit.  The field is required for node
+                # reconstruction, so it must be configured as a non-filterable
+                # key in the index (done automatically by create_index_from_bucket).
+                if not _warned_about_node_content:
+                    node_content = node_metadata.get("_node_content", "")
+                    if len(node_content.encode("utf-8")) > 2048:
+                        logger.warning(
+                            "The '_node_content' metadata field is larger than "
+                            "2048 bytes. AWS S3 Vectors enforces a 2048-byte limit "
+                            "on filterable metadata fields. Ensure that "
+                            "'_node_content' and '_node_type' are configured as "
+                            "non-filterable keys in your S3 Vectors index to avoid "
+                            "a ValidationException. Use "
+                            "S3VectorStore.create_index_from_bucket() to create an "
+                            "index with the correct configuration automatically."
+                        )
+                        _warned_about_node_content = True
 
                 vectors.append(
                     {
