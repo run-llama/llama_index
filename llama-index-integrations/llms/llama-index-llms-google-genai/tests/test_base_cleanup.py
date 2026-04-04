@@ -1,4 +1,6 @@
+import asyncio
 from types import SimpleNamespace
+
 import pytest
 
 from llama_index.llms.google_genai import base as base_mod
@@ -57,10 +59,10 @@ def test_chat_bubbles_up_cleanup_error_if_delete_fails(monkeypatch):
     any exception that occurred in 'try'.
     """
 
-    async def fake_prepare_chat_params(*_args, **_kwargs):
+    def fake_prepare_chat_params_sync(*_args, **_kwargs):
         return "hello", {}, ["file1"]
 
-    monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
+    monkeypatch.setattr(base_mod, "prepare_chat_params_sync", fake_prepare_chat_params_sync)
 
     # 1. Force the model call to fail (ValueError)
     chat = FakeChat(send_message_exc=ValueError("boom"))
@@ -101,10 +103,10 @@ async def test_achat_bubbles_up_cleanup_error_if_delete_fails(monkeypatch):
 
 
 def test_stream_chat_runs_cleanup(monkeypatch):
-    async def fake_prepare_chat_params(*_args, **_kwargs):
+    def fake_prepare_chat_params_sync(*_args, **_kwargs):
         return "hello", {}, ["file1"]
 
-    monkeypatch.setattr(base_mod, "prepare_chat_params", fake_prepare_chat_params)
+    monkeypatch.setattr(base_mod, "prepare_chat_params_sync", fake_prepare_chat_params_sync)
 
     class Chunk:
         def __init__(self):
@@ -185,3 +187,32 @@ async def test_astream_chat_runs_cleanup(monkeypatch):
         await agen.__anext__()
 
     assert deleted["called"] is True
+
+
+@pytest.mark.asyncio
+async def test_sync_chat_works_inside_running_event_loop(monkeypatch):
+    """Regression test: sync _chat() must not raise RuntimeError when called
+    from inside an already-running event loop (the original asyncio.run() bug)."""
+
+    def fake_prepare_chat_params_sync(*_args, **_kwargs):
+        return "hello", {}, []
+
+    monkeypatch.setattr(
+        base_mod, "prepare_chat_params_sync", fake_prepare_chat_params_sync
+    )
+
+    chat = FakeChat()
+    aio_chat = FakeAioChat()
+    llm = _make_llm(file_mode="inline")
+    llm._client = FakeClient(chat=chat, aio_chat=aio_chat)
+
+    monkeypatch.setattr(
+        base_mod,
+        "chat_from_gemini_response",
+        lambda *_args, **_kwargs: SimpleNamespace(message="ok"),
+    )
+
+    # This is the key assertion: calling sync _chat from inside an async
+    # context (running event loop) must NOT raise RuntimeError.
+    result = llm._chat([])
+    assert result is not None

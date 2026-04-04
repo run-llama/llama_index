@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 from collections.abc import Sequence
 from io import IOBase
 from typing import (
@@ -314,6 +315,47 @@ async def create_file_part(
     ), file.name
 
 
+def create_file_part_sync(
+    file_buffer: IOBase,
+    mime_type: str,
+    file_mode: Literal["inline", "fileapi", "hybrid"],
+    client: Optional[Client],
+) -> tuple[types.Part, Optional[str]]:
+    """Create a Part or File object for the given file depending on its size (sync version)."""
+    if file_mode in ("inline", "hybrid"):
+        file_buffer.seek(0, 2)  # Seek to end
+        size = file_buffer.tell()  # Get file size
+        file_buffer.seek(0)  # Reset to beginning
+
+        if size < 20 * 1024 * 1024:  # 20MB is the Gemini inline data size limit
+            return types.Part.from_bytes(
+                data=file_buffer.read(),
+                mime_type=mime_type,
+            ), None
+        elif file_mode == "inline":
+            raise ValueError("Files in inline mode must be smaller than 20MB.")
+
+    if client is None:
+        raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
+
+    file = client.files.upload(
+        file=file_buffer, config=types.UploadFileConfig(mime_type=mime_type)
+    )
+
+    # Wait for file processing
+    while file.state.name == "PROCESSING":
+        time.sleep(2)
+        file = client.files.get(name=file.name)
+
+    if file.state.name == "FAILED":
+        raise ValueError("Failed to upload the file with FileAPI")
+
+    return types.Part.from_uri(
+        file_uri=file.uri,
+        mime_type=mime_type,
+    ), file.name
+
+
 async def adelete_uploaded_files(file_api_names: list[str], client: Client) -> None:
     """Delete files uploaded with File API."""
     await asyncio.gather(
@@ -378,6 +420,126 @@ async def chat_message_to_gemini(
             )
 
             part, file_api_name = await create_file_part(
+                file_buffer, mime_type, file_mode, client
+            )
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                part = types.Part.from_text(text=block.content)
+                part.thought = True
+                part.thought_signature = block.additional_information.get(
+                    "thought_signature", None
+                )
+        elif isinstance(block, ToolCallBlock):
+            part = types.Part.from_function_call(
+                name=block.tool_name, args=cast(Dict[str, Any], block.tool_kwargs)
+            )
+            unique_tool_calls.append((block.tool_name, str(block.tool_kwargs)))
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+        if file_api_name is not None:
+            file_api_names.append(file_api_name)
+
+        if part is not None:
+            if message.role == MessageRole.MODEL:
+                thought_signatures = message.additional_kwargs.get(
+                    "thought_signatures", []
+                )
+                part.thought_signature = (
+                    thought_signatures[index]
+                    if index < len(thought_signatures)
+                    else None
+                )
+            parts.append(part)
+
+    for tool_call in message.additional_kwargs.get("tool_calls", []):
+        if isinstance(tool_call, dict):
+            if (
+                tool_call.get("name", ""),
+                str(tool_call.get("args", {})),
+            ) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.get("name", ""), args=tool_call.get("args", {})
+                )
+                part.thought_signature = tool_call.get("thought_signature")
+        else:
+            if (tool_call.name, str(tool_call.args)) not in unique_tool_calls:
+                part = types.Part.from_function_call(
+                    name=tool_call.name, args=tool_call.args
+                )
+                part.thought_signature = tool_call.thought_signature
+        parts.append(part)
+
+    # the tool call id is the name of the tool
+    # the tool call response is the content of the message, overriding the existing content
+    # (the only content before this should be the tool call)
+    if message.additional_kwargs.get("tool_call_id"):
+        function_response_part = types.Part.from_function_response(
+            name=message.additional_kwargs.get("tool_call_id"),
+            response={"result": message.content},
+        )
+        return types.Content(
+            role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
+        ), file_api_names
+
+    return types.Content(
+        role=ROLES_TO_GEMINI[message.role],
+        parts=parts,
+    ), file_api_names
+
+
+def chat_message_to_gemini_sync(
+    message: ChatMessage,
+    file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
+    client: Optional[Client] = None,
+) -> tuple[types.Content, list[str]]:
+    """Convert ChatMessages to Gemini-specific history, including ImageDocuments (sync version)."""
+    unique_tool_calls = []
+    parts = []
+    file_api_names = []
+    part = None
+    for index, block in enumerate(message.blocks):
+        file_api_name = None
+
+        if isinstance(block, TextBlock):
+            if block.text:
+                part = types.Part.from_text(text=block.text)
+        elif isinstance(block, ImageBlock):
+            file_buffer = block.resolve_image(as_base64=False)
+
+            mime_type = (
+                block.image_mimetype
+                if block.image_mimetype is not None
+                else "image/jpeg"  # TODO: Fail?
+            )
+
+            part, file_api_name = create_file_part_sync(
+                file_buffer, mime_type, file_mode, client
+            )
+        elif isinstance(block, VideoBlock):
+            file_buffer = block.resolve_video(as_base64=False)
+
+            mime_type = (
+                block.video_mimetype
+                if block.video_mimetype is not None
+                else "video/mp4"  # TODO: Fail?
+            )
+
+            part, file_api_name = create_file_part_sync(
+                file_buffer, mime_type, file_mode, client
+            )
+            part.video_metadata = types.VideoMetadata(fps=block.fps)
+        elif isinstance(block, DocumentBlock):
+            file_buffer = block.resolve_document()
+
+            mime_type = (
+                block.document_mimetype
+                if block.document_mimetype is not None
+                else "application/pdf"
+            )
+
+            part, file_api_name = create_file_part_sync(
                 file_buffer, mime_type, file_mode, client
             )
         elif isinstance(block, ThinkingBlock):
@@ -519,6 +681,114 @@ async def prepare_chat_params(
             for message in merged_messages
         ]
     )
+    initial_history = [it[0] for it in initial_history_and_names]
+    file_api_names = [name for it in initial_history_and_names for name in it[1]]
+
+    # merge tool messages into a single tool message
+    # while maintaining the tool names
+    history = []
+    for idx, msg in enumerate(initial_history):
+        if idx < 1:
+            history.append(msg)
+            continue
+
+        # Skip if the role is different or not a tool message
+        if msg.parts and not any(
+            part.function_response is not None for part in msg.parts
+        ):
+            history.append(msg)
+            continue
+
+        last_msg = history[-1]
+
+        # Skip if the last message is not a tool message
+        if last_msg.parts and not any(
+            part.function_response is not None for part in last_msg.parts
+        ):
+            history.append(msg)
+            continue
+
+        # Skip if the role is different
+        if last_msg.role != msg.role:
+            history.append(msg)
+            continue
+
+        # Merge the tool messages
+        last_msg.parts.extend(msg.parts or [])
+
+    # Separate the next message from the history
+    next_msg = history.pop()
+
+    tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+    if tools and not isinstance(tools, list):
+        tools = [tools]
+
+    config: Union[types.GenerateContentConfig, dict] = kwargs.pop(
+        "generation_config", {}
+    )
+    if not isinstance(config, dict):
+        config = config.model_dump()
+
+    # Add system message as system_instruction if present
+    if system_message:
+        config["system_instruction"] = system_message
+
+    chat_kwargs: ChatParams = {"model": model, "history": history}
+
+    if tools:
+        if not config.get("automatic_function_calling"):
+            config["automatic_function_calling"] = types.AutomaticFunctionCallingConfig(
+                disable=True, maximum_remote_calls=None
+            )
+
+        if not config.get("tool_config"):
+            config["tool_config"] = kwargs.pop("tool_config", None)
+
+        if not config.get("tools"):
+            config["tools"] = tools
+
+    chat_kwargs["config"] = types.GenerateContentConfig(**config)
+
+    return next_msg, chat_kwargs, file_api_names
+
+
+def prepare_chat_params_sync(
+    model: str,
+    messages: Sequence[ChatMessage],
+    file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
+    client: Optional[Client] = None,
+    **kwargs: Any,
+) -> tuple[types.Content, "ChatParams", list[str]]:
+    """
+    Prepare common parameters for chat creation (sync version).
+
+    Args:
+        model: The model name
+        messages: Sequence of chat messages
+        file_mode: The mode for file uploading
+        client: Google Genai client used for uploading large files.
+        **kwargs: Additional keyword arguments
+
+    Returns:
+        tuple containing:
+        - next_msg: the next message to send
+        - chat_kwargs: processed keyword arguments for chat creation
+        - file_api_names: list of file api names to delete after chat call
+
+    """
+    # Extract system message if present
+    system_message: str | None = None
+    if messages and messages[0].role == MessageRole.SYSTEM:
+        sys_msg = messages.pop(0)
+        system_message = sys_msg.content
+    # Now messages contains the rest of the chat history
+
+    # Merge messages with the same role
+    merged_messages = merge_neighboring_same_role_messages(messages)
+    initial_history_and_names = [
+        chat_message_to_gemini_sync(message, file_mode, client)
+        for message in merged_messages
+    ]
     initial_history = [it[0] for it in initial_history_and_names]
     file_api_names = [name for it in initial_history_and_names for name in it[1]]
 
