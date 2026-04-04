@@ -378,15 +378,21 @@ class MistralAI(FunctionCallingLLM):
         self, response: Union[str, List["ContentChunk"]]
     ) -> Tuple[str, str]:
         """Separate the thinking from the response."""
-        content = ""
         if isinstance(response, str):
             content = response
         else:
+            # When the API returns structured chunks, directly separate
+            # ThinkChunk text from TextChunk text without regex.
+            thinking_parts: List[str] = []
+            response_parts: List[str] = []
             for chunk in response:
                 if isinstance(chunk, self._models.ThinkChunk):
                     for c in chunk.thinking:
                         if isinstance(c, self._models.TextChunk):
-                            content += c.text + "\n"
+                            thinking_parts.append(c.text)
+                elif isinstance(chunk, self._models.TextChunk):
+                    response_parts.append(chunk.text)
+            return "\n".join(thinking_parts), "\n".join(response_parts)
 
         match = THINKING_REGEX.search(content)
         if match:
