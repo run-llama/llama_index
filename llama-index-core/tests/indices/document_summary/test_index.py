@@ -60,3 +60,16 @@ def test_delete_nodes(
     assert len(index.index_struct.summary_id_to_node_ids) == 2
 
     assert len(index.vector_store._data.embedding_dict) == 2  # type: ignore
+
+
+def test_delete_nodes_with_invalid_ids(
+    docs: List[Document],
+    index: DocumentSummaryIndex,
+) -> None:
+    """Regression test for #21066: invalid node_ids should not crash."""
+    nodes = list(index.index_struct.node_id_to_summary_id.keys())
+    initial_count = len(nodes)
+    index.delete_nodes([nodes[0], "nonexistent-id"])
+
+    remaining = len(index.index_struct.node_id_to_summary_id)
+    assert remaining == initial_count - 1
