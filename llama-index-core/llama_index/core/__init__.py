@@ -64,7 +64,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.core.readers import SimpleDirectoryReader, download_loader
+from llama_index.core.readers import SimpleDirectoryReader
 
 # Response Synthesizer
 from llama_index.core.response_synthesizers.factory import get_response_synthesizer
@@ -136,7 +136,6 @@ __all__ = [
     "SQLContextBuilder",
     "PromptHelper",
     "IndexStructType",
-    "download_loader",
     "load_graph_from_storage",
     "load_index_from_storage",
     "load_indices_from_storage",
