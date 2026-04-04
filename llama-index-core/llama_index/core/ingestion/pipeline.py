@@ -455,9 +455,10 @@ class IngestionPipeline(BaseModel):
             )
 
         node_dicts = []
-        for node in nodes:
+        for i, node in enumerate(nodes):
             node_dicts.append(
                 {
+                    "index": i,
                     "id": node.id_,
                     "hash": node.hash,
                     "content_len": len(node.get_content()),
@@ -477,7 +478,7 @@ class IngestionPipeline(BaseModel):
         try:
             df = self._get_nodes_as_df(nodes)
             # existing_hashes should be the VALUES (hashes), not the KEYS (node IDs)
-            existing_hashes = set(self.docstore.get_all_document_hashes().values())
+            existing_hashes = set(self.docstore.get_all_document_hashes().keys())
 
             # Vectorized filter for hashes not in docstore and not duplicated in current batch
             # We use Polars to find unique hashes in the current batch first
@@ -488,8 +489,8 @@ class IngestionPipeline(BaseModel):
             filtered_df = df_unique.filter(mask)
 
             # Map back to nodes
-            allowed_ids = set(filtered_df["id"].to_list())
-            nodes_to_run = [n for n in nodes if n.id_ in allowed_ids]
+            allowed_indices = set(filtered_df["index"].to_list())
+            nodes_to_run = [nodes[i] for i in range(len(nodes)) if i in allowed_indices]
 
             # Update docstore hashes for the selected nodes
             for node in nodes_to_run:
@@ -573,7 +574,7 @@ class IngestionPipeline(BaseModel):
             avg_batch_len = total_len / num_batches
 
             # Use cumulative sum to find batch boundaries
-            cum_sum = lengths.cumsum()
+            cum_sum = lengths.cum_sum()
 
             batch_start = 0
             for i in range(1, num_batches):
@@ -805,7 +806,7 @@ class IngestionPipeline(BaseModel):
             df = self._get_nodes_as_df(nodes)
             # existing_hashes should be the VALUES (hashes)
             existing_hashes = set(
-                (await self.docstore.aget_all_document_hashes()).values()
+                (await self.docstore.aget_all_document_hashes()).keys()
             )
 
             # Vectorized filter for hashes not in docstore and not duplicated in current batch
@@ -814,9 +815,11 @@ class IngestionPipeline(BaseModel):
             mask = ~df_unique["hash"].is_in(list(existing_hashes))
             filtered_df = df_unique.filter(mask)
 
-            allowed_ids = set(filtered_df["id"].to_list())
-            nodes_to_run = [n for n in nodes if n.id_ in allowed_ids]
+            # Map back to nodes
+            allowed_indices = set(filtered_df["index"].to_list())
+            nodes_to_run = [nodes[i] for i in range(len(nodes)) if i in allowed_indices]
 
+            # Update docstore hashes for the selected nodes
             for node in nodes_to_run:
                 await self.docstore.aset_document_hash(node.id_, node.hash)
 
