@@ -1,4 +1,15 @@
-class HtmlTextParser:
+from abc import ABC, abstractmethod
+
+
+class HtmlParserBase(ABC):
+    """Base interface for converting Confluence HTML page content into text."""
+
+    @abstractmethod
+    def convert(self, html: str) -> str:
+        """Convert HTML content to text."""
+
+
+class DefaultHtmlTextParser(HtmlParserBase):
     def __init__(self):
         try:
             from markdownify import markdownify  # noqa: F401

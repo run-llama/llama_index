@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 import pytest
-from llama_index.readers.confluence import ConfluenceReader
+from llama_index.readers.confluence import ConfluenceReader, HtmlParserBase
 from llama_index.readers.confluence.event import (
     FileType,
     PageDataFetchStartedEvent,
@@ -278,6 +278,79 @@ def test_confluence_reader_fail_on_error_setting():
     )
     assert reader2.fail_on_error is False
 
+
+def test_confluence_reader_with_custom_html_parser():
+    class CustomHtmlParser(HtmlParserBase):
+        def convert(self, html: str) -> str:
+            return f"custom::{html}"
+
+    custom_parser = CustomHtmlParser()
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+        html_parser=custom_parser,
+    )
+
+    assert reader.html_parser is custom_parser
+
+
+def test_load_data_uses_injected_html_parser():
+    custom_parser = MagicMock(spec=HtmlParserBase)
+    custom_parser.convert.return_value = "custom parsed text"
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+        html_parser=custom_parser,
+    )
+
+    reader.confluence = MagicMock()
+    reader.confluence.get_all_pages_from_space.return_value = [
+        {
+            "id": "123",
+            "title": "Test page",
+            "status": "current",
+            "body": {"export_view": {"value": "<p>hello</p>"}},
+            "_links": {"webui": "/pages/123"},
+        }
+    ]
+
+    docs = reader.load_data(space_key="TEST", max_num_results=1)
+
+    assert len(docs) == 1
+    assert docs[0].text == "custom parsed text"
+    custom_parser.convert.assert_called_once_with("<p>hello</p>")
+
+
+@patch("llama_index.readers.confluence.html_parser.DefaultHtmlTextParser")
+def test_load_data_uses_default_html_parser_when_not_provided(mock_html_parser_class):
+    mock_text_maker = MagicMock()
+    mock_text_maker.convert.return_value = "default parsed text"
+    mock_html_parser_class.return_value = mock_text_maker
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
+
+    reader.confluence = MagicMock()
+    reader.confluence.get_all_pages_from_space.return_value = [
+        {
+            "id": "456",
+            "title": "Default parser page",
+            "status": "current",
+            "body": {"export_view": {"value": "<p>default</p>"}},
+            "_links": {"webui": "/pages/456"},
+        }
+    ]
+
+    docs = reader.load_data(space_key="TEST", max_num_results=1)
+
+    assert len(docs) == 1
+    assert docs[0].text == "default parsed text"
+    mock_html_parser_class.assert_called_once()
+    mock_text_maker.convert.assert_called_once_with("<p>default</p>")
+
     # Test explicit True
     reader3 = ConfluenceReader(
         base_url="https://example.atlassian.net/wiki",
@@ -287,7 +360,7 @@ def test_confluence_reader_fail_on_error_setting():
     assert reader3.fail_on_error is True
 
 
-@patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
+@patch("llama_index.readers.confluence.html_parser.DefaultHtmlTextParser")
 def test_confluence_reader_process_page_with_callbacks(mock_html_parser_class):
     """Test that callbacks are properly used during page processing."""
     mock_text_maker = MagicMock()

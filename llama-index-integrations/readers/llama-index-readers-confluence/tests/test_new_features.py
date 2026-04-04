@@ -134,7 +134,7 @@ class TestCallbacks:
         assert document_filter("page1") is False
         assert document_filter("page2") is False
 
-    @patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
+    @patch("llama_index.readers.confluence.html_parser.DefaultHtmlTextParser")
     def test_document_callback_in_process_page(self, mock_html_parser_class):
         """Test that document callback is used during page processing."""
         mock_text_maker = MagicMock()

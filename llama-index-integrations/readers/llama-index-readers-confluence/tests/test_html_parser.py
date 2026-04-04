@@ -1,10 +1,10 @@
 import pytest
-from llama_index.readers.confluence.html_parser import HtmlTextParser
+from llama_index.readers.confluence.html_parser import DefaultHtmlTextParser
 
 
 class TestHtmlTextParser:
     def test_parser_initialization(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         assert parser is not None
 
     @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ class TestHtmlTextParser:
         ],
     )
     def test_basic_formatting(self, html_input, expected_contains):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert(html_input)
         assert expected_contains in result
 
@@ -39,7 +39,7 @@ class TestHtmlTextParser:
         ],
     )
     def test_markdown_style_conversion(self, html_input, expected_marker):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert(html_input)
         assert expected_marker in result
 
@@ -55,12 +55,12 @@ class TestHtmlTextParser:
         ],
     )
     def test_lists(self, html_input, expected_contains):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert(html_input)
         assert expected_contains in result
 
     def test_unordered_list_structure(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>"
         result = parser.convert(html)
         assert "Item 1" in result
@@ -69,7 +69,7 @@ class TestHtmlTextParser:
         assert any(marker in result for marker in ["*", "-", "+"])
 
     def test_ordered_list_structure(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<ol><li>First item</li><li>Second item</li></ol>"
         result = parser.convert(html)
         assert "First item" in result
@@ -84,13 +84,13 @@ class TestHtmlTextParser:
         ],
     )
     def test_links(self, html_input, expected_text, expected_marker):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert(html_input)
         assert expected_text in result
         assert expected_marker in result
 
     def test_link_markdown_format(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = '<a href="https://example.com">Example</a>'
         result = parser.convert(html)
         assert "[Example](https://example.com)" in result
@@ -104,12 +104,12 @@ class TestHtmlTextParser:
         ],
     )
     def test_code_blocks(self, html_input, expected_contains):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert(html_input)
         assert expected_contains in result
 
     def test_table_basic(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <table>
             <thead>
@@ -127,7 +127,7 @@ class TestHtmlTextParser:
         assert "Cell 2" in result
 
     def test_table_multiple_rows(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <table>
             <tr><th>Name</th><th>Age</th></tr>
@@ -144,7 +144,7 @@ class TestHtmlTextParser:
         assert "25" in result
 
     def test_mixed_formatting(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <h1>Main Title</h1>
         <p>This is a paragraph with <strong>bold</strong> and <em>italic</em> text.</p>
@@ -165,7 +165,7 @@ class TestHtmlTextParser:
         assert "[link](https://example.com)" in result
 
     def test_nested_lists(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <ul>
             <li>Parent item 1
@@ -184,25 +184,25 @@ class TestHtmlTextParser:
         assert "Parent item 2" in result
 
     def test_empty_paragraph(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<p></p>"
         result = parser.convert(html)
         assert result is not None
 
     def test_empty_string(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert("")
         assert result is not None
 
     def test_special_characters(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<p>&lt;div&gt; &amp; &quot;test&quot;</p>"
         result = parser.convert(html)
         assert result is not None
         assert len(result) > 0
 
     def test_line_breaks(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<p>Line 1<br/>Line 2<br/>Line 3</p>"
         result = parser.convert(html)
         assert "Line 1" in result
@@ -210,19 +210,19 @@ class TestHtmlTextParser:
         assert "Line 3" in result
 
     def test_div_elements(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<div>Content in div</div>"
         result = parser.convert(html)
         assert "Content in div" in result
 
     def test_nested_formatting(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<p><strong><em>Bold and italic</em></strong></p>"
         result = parser.convert(html)
         assert "Bold and italic" in result
 
     def test_confluence_style_content(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <h1>Page Title</h1>
         <p>Introduction paragraph with <strong>important</strong> information.</p>
@@ -249,19 +249,19 @@ class TestHtmlTextParser:
         assert "def example():" in result
 
     def test_whitespace_handling(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = "<p>Text   with   multiple   spaces</p>"
         result = parser.convert(html)
         assert "Text" in result
         assert "spaces" in result
 
     def test_convert_returns_string(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         result = parser.convert("<p>Test</p>")
         assert isinstance(result, str)
 
     def test_multiple_headings(self):
-        parser = HtmlTextParser()
+        parser = DefaultHtmlTextParser()
         html = """
         <h1>H1 Title</h1>
         <h2>H2 Subtitle</h2>

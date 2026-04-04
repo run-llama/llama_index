@@ -108,6 +108,34 @@ reader = ConfluenceReader(
 )
 ```
 
+**Custom HTML Parser for Page Content**: You can replace the default HTML-to-text conversion used for page content by passing a custom implementation of `HtmlParserBase` to `ConfluenceReader`.
+
+```python
+from llama_index.readers.confluence import ConfluenceReader, HtmlParserBase
+
+
+class CustomHtmlParser(HtmlParserBase):
+    def convert(self, html: str) -> str:
+        # Add your own cleaning/conversion logic here.
+        # This simple example strips tags very conservatively.
+        import re
+
+        if not html:
+            return ""
+
+        text = re.sub(r"<[^>]+>", " ", html)
+        return " ".join(text.split())
+
+
+reader = ConfluenceReader(
+    base_url="https://yoursite.atlassian.com/wiki",
+    api_token="your_token",
+    html_parser=CustomHtmlParser(),
+)
+
+documents = reader.load_data(space_key="MYSPACE")
+```
+
 **Processing Callbacks**:
 
 - `process_attachment_callback`: A callback function to control which attachments should be processed. The function receives the media type and file size as parameters and should return a tuple of `(should_process: bool, reason: str)`.
