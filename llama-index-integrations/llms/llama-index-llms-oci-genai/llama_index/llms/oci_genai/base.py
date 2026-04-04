@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Callable, Dict, Optional, Sequence, List, Union, TYPE_CHECKING
 
@@ -13,7 +14,10 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_response_to_completion_response,
     chat_to_completion_decorator,
+    prompt_to_messages,
     stream_chat_to_completion_decorator,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -286,13 +290,10 @@ class OCIGenAI(FunctionCallingLLM):
             tool_calls_accumulated = []
 
             for event in response.data.events():
-                content_delta = self._provider.chat_stream_to_text(
-                    json.loads(event.data)
-                )
-                content += content_delta
-
                 try:
                     event_data = json.loads(event.data)
+                    content_delta = self._provider.chat_stream_to_text(event_data)
+                    content += content_delta
 
                     tool_calls_data = None
                     for key in ["toolCalls", "tool_calls", "functionCalls"]:
@@ -333,6 +334,7 @@ class OCIGenAI(FunctionCallingLLM):
                     )
 
                 except json.JSONDecodeError:
+                    content_delta = ""
                     yield ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=content
@@ -343,6 +345,7 @@ class OCIGenAI(FunctionCallingLLM):
 
                 except Exception as e:
                     print(f"Error processing stream chunk: {e}")
+                    content_delta = ""
                     yield ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=content
@@ -353,25 +356,56 @@ class OCIGenAI(FunctionCallingLLM):
 
         return gen()
 
+    @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError("Async chat is not implemented yet.")
+        """Async chat by delegating to sync chat in a thread."""
+        return await asyncio.to_thread(self.chat, messages, **kwargs)
 
+    @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise NotImplementedError("Async complete is not implemented yet.")
+        """Async complete by delegating to achat."""
+        acomplete_fn = achat_to_completion_decorator(self.achat)
+        return await acomplete_fn(prompt, **kwargs)
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError("Async stream chat is not implemented yet.")
+        """Async stream chat by delegating sync generator in a thread."""
 
+        async def _agen() -> ChatResponseAsyncGen:
+            sync_gen = self.stream_chat(messages, **kwargs)
+            sentinel = object()
+
+            def get_next() -> Any:
+                try:
+                    return next(sync_gen)
+                except StopIteration:
+                    return sentinel
+
+            while True:
+                chunk = await asyncio.to_thread(get_next)
+                if chunk is sentinel:
+                    break
+                yield chunk
+
+        return _agen()
+
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError("Async stream complete is not implemented yet.")
+        """Async stream complete by delegating to astream_chat."""
+        messages = prompt_to_messages(prompt)
+        chat_response_agen = self.astream_chat(messages, **kwargs)
+        # astream_chat may be wrapped by decorator and return coroutine
+        if hasattr(chat_response_agen, "__await__"):
+            chat_response_agen = await chat_response_agen
+        return astream_chat_response_to_completion_response(chat_response_agen)
 
     # Function tooling integration methods
     def _prepare_chat_with_tools(
