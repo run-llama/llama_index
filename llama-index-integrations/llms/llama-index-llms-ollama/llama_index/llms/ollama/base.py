@@ -472,7 +472,14 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             for r in response:
-                if r["message"]["content"] is None:
+                # Some Ollama chunks may have content=None but still contain thinking
+                # or tool_calls. We should not skip those.
+                message = r.get("message", {})
+                if (
+                    message.get("content") is None
+                    and not message.get("thinking")
+                    and not message.get("tool_calls")
+                ):
                     continue
 
                 r = dict(r)
@@ -498,31 +505,38 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                # Build blocks from *current* chunk only (not accumulated)
+                # This prevents "dropping" content in some streaming consumers
+                current_content = r["message"].get("content", "") or ""
+                current_thinking = r["message"].get("thinking", "") or ""
+
                 output_blocks: List[ToolCallBlock | ThinkingBlock | TextBlock] = [
-                    TextBlock(text=response_txt)
+                    TextBlock(text=current_content)
                 ]
-                if thinking_txt:
-                    output_blocks.insert(0, ThinkingBlock(content=thinking_txt))
-                if all_tool_calls:
-                    for tool_call in all_tool_calls:
-                        output_blocks.append(
-                            ToolCallBlock(
-                                tool_name=tool_call.get("function", {}).get("name", ""),
-                                tool_kwargs=tool_call.get("function", {}).get(
-                                    "arguments", {}
-                                ),
-                            )
+                if current_thinking:
+                    output_blocks.insert(0, ThinkingBlock(content=current_thinking))
+
+                # Only include tool calls that appeared in this chunk
+                current_tool_calls = r["message"].get("tool_calls") or []
+                for tool_call in current_tool_calls:
+                    output_blocks.append(
+                        ToolCallBlock(
+                            tool_name=tool_call.get("function", {}).get("name", ""),
+                            tool_kwargs=tool_call.get("function", {}).get(
+                                "arguments", {}
+                            ),
                         )
+                    )
 
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=output_blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                     ),
-                    delta=r["message"].get("content", ""),
+                    delta=current_content,
                     raw=r,
                     additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
+                        "thinking_delta": current_thinking,
                     },
                 )
 
@@ -556,57 +570,66 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             async for r in response:
-                if r["message"]["content"] is None:
+                # Some Ollama chunks may have content=None but still contain thinking
+                # or tool_calls. We should not skip those.
+                message = r.get("message", {})
+                if (
+                    message.get("content") is None
+                    and not message.get("thinking")
+                    and not message.get("tool_calls")
+                ):
                     continue
 
                 r = dict(r)
 
-                response_txt += r["message"].get("content", "") or ""
-                thinking_txt += r["message"].get("thinking", "") or ""
+                current_content = r["message"].get("content", "") or ""
+                current_thinking = r["message"].get("thinking", "") or ""
+
+                # Still accumulate for compatibility with some consumers
+                response_txt += current_content
+                thinking_txt += current_thinking
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
-                    if (
-                        str(tool_call["function"]["name"]),
-                        str(tool_call["function"]["arguments"]),
-                    ) in seen_tool_calls:
-                        continue
-                    seen_tool_calls.add(
-                        (
-                            str(tool_call["function"]["name"]),
-                            str(tool_call["function"]["arguments"]),
-                        )
+                    key = (
+                        str(tool_call.get("function", {}).get("name", "")),
+                        str(tool_call.get("function", {}).get("arguments", {})),
                     )
+                    if key in seen_tool_calls:
+                        continue
+                    seen_tool_calls.add(key)
                     all_tool_calls.append(tool_call)
+
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
 
+                # Build blocks from *current chunk* (main bugfix)
                 output_blocks: List[ThinkingBlock | ToolCallBlock | TextBlock] = [
-                    TextBlock(text=response_txt)
+                    TextBlock(text=current_content)
                 ]
-                if thinking_txt:
-                    output_blocks.insert(0, ThinkingBlock(content=thinking_txt))
-                if all_tool_calls:
-                    for tool_call in all_tool_calls:
-                        output_blocks.append(
-                            ToolCallBlock(
-                                tool_name=tool_call.get("function", {}).get("name", ""),
-                                tool_kwargs=tool_call.get("function", {}).get(
-                                    "arguments", {}
-                                ),
-                            )
+                if current_thinking:
+                    output_blocks.insert(0, ThinkingBlock(content=current_thinking))
+
+                for tool_call in new_tool_calls:  # only this chunk's tool calls
+                    output_blocks.append(
+                        ToolCallBlock(
+                            tool_name=tool_call.get("function", {}).get("name", ""),
+                            tool_kwargs=tool_call.get("function", {}).get(
+                                "arguments", {}
+                            ),
                         )
+                    )
 
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=output_blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                     ),
-                    delta=r["message"].get("content", ""),
+                    delta=current_content,
                     raw=r,
                     additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
+                        "thinking_delta": current_thinking,
                     },
                 )
 
