@@ -43,7 +43,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.llms import ChatMessage, ChatResponse, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
 from llama_index.core.tools import (
     BaseTool,
@@ -113,7 +113,7 @@ class BaseWorkflowAgent(
     )
     initial_state: Dict[str, Any] = Field(
         default_factory=dict,
-        description="The initial state of the agent, can be used by accessed under `await ctx.store.get('state')`",
+        description="The initial state of the agent, which can be accessed under `await ctx.store.get('state')`",
     )
     state_prompt: Union[str, BasePromptTemplate] = Field(
         default=DEFAULT_STATE_PROMPT,
@@ -272,7 +272,7 @@ class BaseWorkflowAgent(
     async def get_tools(
         self, input_str: Optional[str] = None
     ) -> Sequence[AsyncBaseTool]:
-        """Get tools for the given agent."""
+        """Get tools for the agent, potentially retrieving them based on the input string."""
         tools = [*self.tools] if self.tools else []
         if self.tool_retriever is not None:
             retrieved_tools = await self.tool_retriever.aretrieve(input_str or "")
