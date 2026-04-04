@@ -2,7 +2,6 @@
 
 import base64
 from io import BytesIO
-from typing import cast
 
 from PIL import Image
 from PIL.ImageFile import ImageFile
@@ -22,7 +21,7 @@ def img_2_b64(image: ImageFile, format: str = "JPEG") -> str:
     """
     buff = BytesIO()
     image.save(buff, format=format)
-    return cast(str, base64.b64encode(buff.getvalue()))
+    return base64.b64encode(buff.getvalue()).decode("utf-8")
 
 
 def b64_2_img(data: str) -> ImageFile:
@@ -37,4 +36,4 @@ def b64_2_img(data: str) -> ImageFile:
 
     """
     buff = BytesIO(base64.b64decode(data))
-    return cast(ImageFile, Image.open(buff))
+    return Image.open(buff)
