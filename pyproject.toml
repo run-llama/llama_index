@@ -23,6 +23,7 @@ dev = [
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
     "tomli>=2.2.1",
+    "polars>=1.39.3",
 ]
 
 [lint.flake8-annotations]
