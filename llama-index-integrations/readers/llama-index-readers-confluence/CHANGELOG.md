@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.7.1] - 2026-04-04
+
+- Added an injectable HTML parser interface for page content processing.
+- Added support for supplying a custom HTML parser to `ConfluenceReader` during initialization.
+- Exported the HTML parser base type (`HtmlParserBase`) as part of the public package API.
+
 ## [0.1.8] - 2024-08-20
 
 - Added observability events for ConfluenceReader

@@ -24,7 +24,7 @@ from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 class TestIntegration:
     """Integration tests for all new features working together."""
 
-    @patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
+    @patch("llama_index.readers.confluence.html_parser.DefaultHtmlTextParser")
     def test_full_feature_integration(self, mock_html_parser_class):
         """Test all new features working together in a realistic scenario."""
         mock_text_maker = MagicMock()

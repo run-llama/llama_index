@@ -26,6 +26,8 @@ from .event import (
     PageSkippedEvent,
     TotalPagesToProcessEvent,
 )
+from .html_parser import HtmlParserBase
+
 
 CONFLUENCE_API_TOKEN = "CONFLUENCE_API_TOKEN"
 CONFLUENCE_PASSWORD = "CONFLUENCE_PASSWORD"
@@ -94,6 +96,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         custom_parsers (dict): Optional custom parsers for different file types. Maps FileType enum values to BaseReader instances.
         process_attachment_callback (callable): Optional callback function to determine whether to process an attachment. Should return tuple[bool, str] where bool indicates whether to process and str provides reason if not.
         process_document_callback (callable): Optional callback function to determine whether to process a document. Should return bool indicating whether to process.
+        html_parser (HtmlParserBase): Optional parser implementation for converting page HTML content to text.
         custom_folder (str): Optional custom folder path for storing temporary files. Can only be used when custom_parsers are provided. Defaults to current working directory if custom_parsers are used.
         logger (Logger): Optional custom logger instance. If not provided, uses internal logger.
         fail_on_error (bool): Whether to raise exceptions on processing errors or continue with warnings. Default is True.
@@ -130,7 +133,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
 
     def __init__(
         self,
-        base_url: str = None,
+        base_url: str,
         oauth2: Optional[Dict] = None,
         cloud: bool = True,
         api_token: Optional[str] = None,
@@ -143,6 +146,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             Callable[[str, int], tuple[bool, str]]
         ] = None,
         process_document_callback: Optional[Callable[[str], bool]] = None,
+        html_parser: Optional[HtmlParserBase] = None,
         custom_folder: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         fail_on_error: bool = True,
@@ -168,6 +172,13 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         self.logger = logger or internal_logger
         self.process_attachment_callback = process_attachment_callback
         self.process_document_callback = process_document_callback
+        if html_parser is None:
+            from .html_parser import DefaultHtmlTextParser
+
+            self.html_parser = DefaultHtmlTextParser()
+        else:
+            self.html_parser = html_parser
+
         self.fail_on_error = fail_on_error
 
         try:
@@ -313,10 +324,6 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 " please use `max_num_results` instead."
             )
 
-        from .html_parser import HtmlTextParser
-
-        text_maker = HtmlTextParser()
-
         if not start:
             start = 0
 
@@ -405,7 +412,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
 
         for page in pages:
             try:
-                doc = self.process_page(page, include_attachments, text_maker)
+                doc = self.process_page(page, include_attachments, self.html_parser)
                 if doc:
                     docs.append(doc)
             except Exception as e:
@@ -547,7 +554,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         return function(**kwargs)
 
     @dispatcher.span
-    def process_page(self, page, include_attachments, text_maker):
+    def process_page(self, page, include_attachments: bool, text_maker: HtmlParserBase):
         self.logger.info("Processing " + self.base_url + page["_links"]["webui"])
 
         if self.process_document_callback:
