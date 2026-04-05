@@ -41,6 +41,9 @@ for full tracing integrations.
 - [Guardrails](/python/examples/output_parsing/guardrailsdemo)
 - [OpenAI Function Calling](/python/examples/output_parsing/openai_pydantic_program)
 
+
+## Security & Guardrails
+- [SupraWall](https://github.com/wiserautomation/SupraWall): Enterprise-grade security middleware for AI agents. Protects against prompt injection, data exfiltration, and unauthorized tool execution.
 ## Storage and Managed Indexes
 
 - [Vector Stores](/python/framework/community/integrations/vector_stores)
