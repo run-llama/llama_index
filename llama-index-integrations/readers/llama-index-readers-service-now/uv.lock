@@ -1760,7 +1760,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.19"
+version = "0.14.20"
 source = { directory = "../../../llama-index-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -1855,6 +1855,7 @@ dev = [
     { name = "types-deprecated", specifier = ">=0.1.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
     { name = "types-requests", specifier = ">=2.28.11.8" },
+    { name = "types-setuptools" },
 ]
 
 [[package]]
@@ -1872,7 +1873,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-service-now"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1906,7 +1907,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", directory = "../../../llama-index-core" },
-    { name = "pysnc", specifier = ">=1.0.0,<2" },
+    { name = "pysnc", specifier = ">=1.2.1,<2" },
     { name = "requests", specifier = ">=2.25.0,<3" },
 ]
 
