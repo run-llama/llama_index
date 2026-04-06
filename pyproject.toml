@@ -40,7 +40,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "llama-index-core>=0.14.20,<0.15.0",
+    "llama-index-core>=0.14.19,<0.15.0",
     "llama-index-embeddings-openai>=0.6.0,<0.7",
     "llama-index-llms-openai>=0.7.0,<0.8",
     "nltk>=3.9.3",
@@ -67,7 +67,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-version = "0.14.20"
+version = "0.14.19"
 
 [project.urls]
 Documentation = "https://docs.llamaindex.ai/en/stable/"

@@ -34,7 +34,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.14.20"
+version = "0.14.19"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.10,<4.0"
@@ -84,8 +84,11 @@ dependencies = [
     "setuptools>=80.9.0",
     "platformdirs",
     "tinytag>=2.2.0",
-    "polars>=1.39.3",
+    "dill",
 ]
+
+[project.optional-dependencies]
+parallel = ["polars>=1.39.3"]
 
 [project.urls]
 Homepage = "https://llamaindex.ai"

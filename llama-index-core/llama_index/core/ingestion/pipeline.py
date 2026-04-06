@@ -451,7 +451,8 @@ class IngestionPipeline(BaseModel):
             import polars as pl
         except ImportError:
             raise ImportError(
-                "Polars is required for vectorized metadata processing. Please install it with `pip install polars`."
+                "Polars is required for vectorized metadata processing. "
+                "Please install it with `pip install llama-index-core[parallel]`."
             )
 
         node_dicts = []
@@ -478,7 +479,7 @@ class IngestionPipeline(BaseModel):
         try:
             df = self._get_nodes_as_df(nodes)
             # existing_hashes should be the VALUES (hashes), not the KEYS (node IDs)
-            existing_hashes = set(self.docstore.get_all_document_hashes().keys())
+            existing_hashes = set(self.docstore.get_all_document_hashes().values())
 
             # Vectorized filter for hashes not in docstore and not duplicated in current batch
             # We use Polars to find unique hashes in the current batch first
@@ -806,7 +807,7 @@ class IngestionPipeline(BaseModel):
             df = self._get_nodes_as_df(nodes)
             # existing_hashes should be the VALUES (hashes)
             existing_hashes = set(
-                (await self.docstore.aget_all_document_hashes()).keys()
+                (await self.docstore.aget_all_document_hashes()).values()
             )
 
             # Vectorized filter for hashes not in docstore and not duplicated in current batch
