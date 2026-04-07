@@ -586,7 +586,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
 
         if query.node_ids:
-            filters = wvc.query.Filter.by_property("id").contains_any(query.node_ids)
+            filters = wvc.query.Filter.by_id().contains_any(query.node_ids)
 
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
