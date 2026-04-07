@@ -120,9 +120,7 @@ class McpToolSpec(
             if isinstance(item, mcp_types.TextContent):
                 blocks.append(TextBlock(text=item.text))
             elif isinstance(item, mcp_types.ImageContent):
-                blocks.append(
-                    ImageBlock(image=item.data, image_mimetype=item.mimeType)
-                )
+                blocks.append(ImageBlock(image=item.data, image_mimetype=item.mimeType))
             elif hasattr(mcp_types, "AudioContent") and isinstance(
                 item, mcp_types.AudioContent
             ):
@@ -150,14 +148,17 @@ class McpToolSpec(
             elif isinstance(item, mcp_types.BlobResourceContents):
                 mime = item.mimeType or ""
                 if mime.startswith("image/"):
-                    blocks.append(
-                        ImageBlock(image=item.blob, image_mimetype=mime)
-                    )
+                    blocks.append(ImageBlock(image=item.blob, image_mimetype=mime))
                 elif mime.startswith("audio/"):
                     fmt = mime.split("/")[-1]
                     blocks.append(AudioBlock(audio=item.blob, format=fmt))
                 else:
-                    blocks.append(TextBlock(text=item.blob))
+                    blocks.append(
+                        TextBlock(
+                            text=f"[Binary resource: {mime or 'unknown type'}, "
+                            f"{len(item.blob)} bytes (base64)]"
+                        )
+                    )
             else:
                 blocks.append(TextBlock(text=str(item)))
         return blocks
