@@ -172,6 +172,7 @@ class FunctionTool(AsyncBaseTool):
         description: Optional[str] = None,
         return_direct: bool = False,
         fn_schema: Optional[Type[BaseModel]] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
         async_fn: Optional[AsyncCallable] = None,
         tool_metadata: Optional[ToolMetadata] = None,
         callback: Optional[Callable[[Any], Any]] = None,
@@ -251,6 +252,7 @@ class FunctionTool(AsyncBaseTool):
                 description=description,
                 fn_schema=fn_schema,
                 return_direct=return_direct,
+                output_schema=output_schema,
             )
         return cls(
             fn=fn,
@@ -318,6 +320,8 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = self._fn(*args, **all_kwargs)
+        if self.metadata.output_schema is not None:
+            raw_output = self.metadata.output_schema.model_validate(raw_output)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {
@@ -357,6 +361,8 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
+        if self.metadata.output_schema is not None:
+            raw_output = self.metadata.output_schema.model_validate(raw_output)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
         tool_output_kwargs = {

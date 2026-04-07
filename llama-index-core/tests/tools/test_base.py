@@ -475,3 +475,81 @@ def test_function_tool_field_default() -> None:
     # Calling with an explicit arg should override the default
     result = tool.call(location="Munich")
     assert result.content == "weather in Munich"
+
+
+def test_function_tool_output_schema_validation() -> None:
+    """Test that FunctionTool validates output against output_schema."""
+
+    class OutputSchema(BaseModel):
+        name: str
+        age: int
+
+    def get_user_info() -> dict:
+        return {"name": "Alice", "age": 30}
+
+    tool = FunctionTool.from_defaults(get_user_info, output_schema=OutputSchema)
+    result = tool.call()
+
+    # The raw output should be evaluated into the OutputSchema instance
+    assert isinstance(result.raw_output, OutputSchema)
+    assert result.raw_output.name == "Alice"
+    assert result.raw_output.age == 30
+
+
+def test_function_tool_output_schema_validation_error() -> None:
+    """Test that FunctionTool raises ValidationError when output DOES NOT match output_schema."""
+    from pydantic import ValidationError
+
+    class OutputSchema(BaseModel):
+        name: str
+        age: int
+
+    def get_bad_user_info() -> dict:
+        return {"name": "Alice", "age": "thirty"}
+
+    tool = FunctionTool.from_defaults(get_bad_user_info, output_schema=OutputSchema)
+
+    with pytest.raises(ValidationError):
+        tool.call()
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_schema_validation_async() -> None:
+    """Test that FunctionTool validates output against output_schema asynchronously."""
+
+    class OutputSchema(BaseModel):
+        name: str
+        age: int
+
+    async def get_user_info() -> dict:
+        return {"name": "Alice", "age": 30}
+
+    tool = FunctionTool.from_defaults(
+        async_fn=get_user_info, output_schema=OutputSchema
+    )
+    result = await tool.acall()
+
+    # The raw output should be evaluated into the OutputSchema instance
+    assert isinstance(result.raw_output, OutputSchema)
+    assert result.raw_output.name == "Alice"
+    assert result.raw_output.age == 30
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_schema_validation_error_async() -> None:
+    """Test that FunctionTool raises ValidationError when async output DOES NOT match output_schema."""
+    from pydantic import ValidationError
+
+    class OutputSchema(BaseModel):
+        name: str
+        age: int
+
+    async def get_bad_user_info() -> dict:
+        return {"name": "Alice", "age": "thirty"}
+
+    tool = FunctionTool.from_defaults(
+        async_fn=get_bad_user_info, output_schema=OutputSchema
+    )
+
+    with pytest.raises(ValidationError):
+        await tool.acall()
