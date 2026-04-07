@@ -27,7 +27,13 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import (
+    AudioBlock,
+    ChatMessage,
+    DocumentBlock,
+    ImageBlock,
+    TextBlock,
+)
 
 
 class StreamingHandler(logging.Handler):
@@ -379,32 +385,48 @@ class BasicMCPClient(ClientSession):
             prompt = await session.get_prompt(prompt_name, arguments)
             llama_messages = []
             for message in prompt.messages:
-                if isinstance(message.content, types.TextContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[TextBlock(text=message.content.text)],
-                        )
+                content = message.content
+                if isinstance(content, types.TextContent):
+                    block = TextBlock(text=content.text)
+                elif isinstance(content, types.ImageContent):
+                    block = ImageBlock(
+                        image=content.data,
+                        image_mimetype=content.mimeType,
                     )
-                elif isinstance(message.content, types.ImageContent):
-                    llama_messages.append(
-                        ChatMessage(
-                            role=message.role,
-                            blocks=[
-                                ImageBlock(
-                                    image=message.content.data,
-                                    image_mimetype=message.content.mimeType,
-                                )
-                            ],
-                        )
+                elif isinstance(content, types.AudioContent):
+                    block = AudioBlock(
+                        audio=content.data,
+                        format=content.mimeType,
                     )
-                elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
+                elif isinstance(content, types.EmbeddedResource):
+                    # EmbeddedResource wraps either TextResourceContents
+                    # (uri + text) or BlobResourceContents (uri + base64 blob).
+                    resource = content.resource
+                    if isinstance(resource, types.TextResourceContents):
+                        block = TextBlock(text=resource.text)
+                    elif isinstance(resource, types.BlobResourceContents):
+                        block = DocumentBlock(
+                            data=resource.blob,
+                            url=str(resource.uri),
+                            document_mimetype=resource.mimeType,
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unsupported embedded resource type: {type(resource)}"
+                        )
+                elif isinstance(content, types.ResourceLink):
+                    block = DocumentBlock(
+                        url=str(content.uri),
+                        title=content.name,
+                        document_mimetype=content.mimeType,
                     )
                 else:
                     raise ValueError(
-                        f"Unsupported content type: {type(message.content)}"
+                        f"Unsupported content type: {type(content)}"
                     )
+
+                llama_messages.append(
+                    ChatMessage(role=message.role, blocks=[block])
+                )
 
             return llama_messages
