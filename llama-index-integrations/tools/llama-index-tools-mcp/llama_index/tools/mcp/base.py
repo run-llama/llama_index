@@ -2,10 +2,17 @@ import asyncio
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
 
+from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.types import Resource
 from pydantic import BaseModel, create_model
 
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    ContentBlock,
+    ImageBlock,
+    TextBlock,
+)
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
@@ -103,13 +110,66 @@ class McpToolSpec(
         )
         return []
 
+    @staticmethod
+    def _parse_call_tool_result(
+        result: mcp_types.CallToolResult,
+    ) -> List[ContentBlock]:
+        """Convert MCP CallToolResult content to llama_index ContentBlock list."""
+        blocks: List[ContentBlock] = []
+        for item in result.content:
+            if isinstance(item, mcp_types.TextContent):
+                blocks.append(TextBlock(text=item.text))
+            elif isinstance(item, mcp_types.ImageContent):
+                blocks.append(
+                    ImageBlock(image=item.data, image_mimetype=item.mimeType)
+                )
+            elif hasattr(mcp_types, "AudioContent") and isinstance(
+                item, mcp_types.AudioContent
+            ):
+                # Extract format from mimeType, e.g. "audio/mp3" -> "mp3"
+                fmt = (
+                    item.mimeType.split("/")[-1]
+                    if getattr(item, "mimeType", None)
+                    else None
+                )
+                blocks.append(AudioBlock(audio=item.data, format=fmt))
+            else:
+                # EmbeddedResource or other unknown content types
+                blocks.append(TextBlock(text=str(item)))
+        return blocks
+
+    @staticmethod
+    def _parse_read_resource_result(
+        result: mcp_types.ReadResourceResult,
+    ) -> List[ContentBlock]:
+        """Convert MCP ReadResourceResult content to llama_index ContentBlock list."""
+        blocks: List[ContentBlock] = []
+        for item in result.contents:
+            if isinstance(item, mcp_types.TextResourceContents):
+                blocks.append(TextBlock(text=item.text))
+            elif isinstance(item, mcp_types.BlobResourceContents):
+                mime = item.mimeType or ""
+                if mime.startswith("image/"):
+                    blocks.append(
+                        ImageBlock(image=item.blob, image_mimetype=mime)
+                    )
+                elif mime.startswith("audio/"):
+                    fmt = mime.split("/")[-1]
+                    blocks.append(AudioBlock(audio=item.blob, format=fmt))
+                else:
+                    blocks.append(TextBlock(text=item.blob))
+            else:
+                blocks.append(TextBlock(text=str(item)))
+        return blocks
+
     def _create_tool_fn(self, tool_name: str) -> Callable:
         """
         Create a tool call function for a specified MCP tool name. The function internally wraps the call_tool call to the MCP Client.
         """
 
         async def async_tool_fn(**kwargs):
-            return await self.client.call_tool(tool_name, kwargs)
+            result = await self.client.call_tool(tool_name, kwargs)
+            return McpToolSpec._parse_call_tool_result(result)
 
         return async_tool_fn
 
@@ -119,7 +179,8 @@ class McpToolSpec(
         """
 
         async def async_resource_fn():
-            return await self.client.read_resource(resource_uri)
+            result = await self.client.read_resource(resource_uri)
+            return McpToolSpec._parse_read_resource_result(result)
 
         return async_resource_fn
 
