@@ -106,6 +106,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
     stores_text: bool = True
     text_column: Optional[str]
     columns: Optional[List[str]]
+    doc_id_column: str = "doc_id"
 
     _index: VectorSearchIndex = PrivateAttr()
     _primary_key: str = PrivateAttr()
@@ -119,8 +120,9 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         index: VectorSearchIndex,
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
+        doc_id_column: str = "doc_id",
     ) -> None:
-        super().__init__(text_column=text_column, columns=columns)
+        super().__init__(text_column=text_column, columns=columns, doc_id_column=doc_id_column)
 
         try:
             from databricks.vector_search.client import VectorSearchIndex
@@ -149,8 +151,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
 
         if columns is None:
             columns = []
-        if "doc_id" not in columns:
-            columns = columns[:19] + ["doc_id"]
+        if doc_id_column not in columns:
+            columns = columns[:19] + [doc_id_column]
 
         # initialize the column name for the text column in the delta table
         if self._is_databricks_managed_embeddings():
@@ -216,8 +218,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             metadata_columns = self.columns or []
 
             # explicitly record doc_id as metadata (for delete)
-            if "doc_id" not in metadata_columns:
-                metadata_columns.append("doc_id")
+            if self.doc_id_column not in metadata_columns:
+                metadata_columns.append(self.doc_id_column)
 
             entry = {
                 self._primary_key: node_id,
@@ -232,7 +234,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
                     )
                 },
             }
-            doc_id = metadata.get("doc_id")
+            doc_id = metadata.get(self.doc_id_column)
             self._doc_id_to_pk[doc_id] = list(
                 set(self._doc_id_to_pk.get(doc_id, []) + [node_id])  # noqa: RUF005
             )  # associate this node_id with this doc_id
