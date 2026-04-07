@@ -472,7 +472,7 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             for r in response:
-                if r["message"]["content"] is None:
+                if r["message"]["content"] is None and not r["message"].get("thinking"):
                     continue
 
                 r = dict(r)
@@ -556,7 +556,7 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             async for r in response:
-                if r["message"]["content"] is None:
+                if r["message"]["content"] is None and not r["message"].get("thinking"):
                     continue
 
                 r = dict(r)
