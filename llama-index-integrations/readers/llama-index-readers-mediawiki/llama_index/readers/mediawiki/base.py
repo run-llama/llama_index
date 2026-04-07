@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterator, List, Literal, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import html2text
 import mwclient
@@ -76,12 +76,14 @@ class MediaWikiReader(BasePydanticReader):
         default="https",
         description="URL scheme: 'https' or 'http'",
     )
-    page_limit: int = Field(
-        default=500,
+    page_limit: Optional[int] = Field(
+        default=None,
         gt=0,
         description=(
-            "Max page titles per allpages API call. Pagination continues "
-            "until the wiki is fully listed."
+            "Max pages to yield per namespace. None (default) means unlimited, "
+            "matching mwclient's own default for max_items. "
+            "When multiple namespaces are iterated, this limit applies to each "
+            "namespace independently."
         ),
     )
     namespaces: Optional[List[int]] = Field(
@@ -208,12 +210,13 @@ class MediaWikiReader(BasePydanticReader):
         if not url_base:
             return None
         origin, article_path = url_base
-        return origin + article_path.replace("$1", title.replace(" ", "_"))
+        encoded_title = quote(title.replace(" ", "_"), safe="/:")
+        return origin + article_path.replace("$1", encoded_title)
 
     def _extract_revision_time(
         self, page: Any, title: str
     ) -> Optional[datetime]:
-        """Extract last_modified from page revision timestamp (struct_time)."""
+        """Extract last_modified from page.touched (cache-invalidation timestamp, struct_time)."""
         try:
             ts = page.touched
             if ts:
@@ -245,7 +248,7 @@ class MediaWikiReader(BasePydanticReader):
             for page in self.site.allpages(
                 namespace=ns,
                 generator=True,
-                api_chunk_size=self.page_limit,
+                max_items=self.page_limit,
                 filterredir=filterredir,
             ):
                 title = page.name
@@ -315,44 +318,44 @@ class MediaWikiReader(BasePydanticReader):
                 r"\s+", " ", re.sub(r"<[^>]+>", "", html_content)
             ).strip()
 
-    def _page_to_document(
-        self,
-        title: str,
-        url: Optional[str],
-        last_modified: Optional[datetime],
-        pageid: Optional[int] = None,
-        namespace: Optional[int] = None,
-    ) -> Optional[Document]:
+    def _page_to_document(self, page: Page) -> Optional[Document]:
         """
         Fetch and convert a single wiki page into a Document.
 
         Args:
-            title: Page title.
-            url: Canonical URL for the page (may be None).
-            last_modified: Last-modified timestamp (may be None).
-            pageid: Numeric page ID (may be None).
-            namespace: Namespace ID for the page (may be None).
+            page: Page record with title, url, last_modified, pageid, namespace.
 
         Returns:
             A Document, or None if the page content could not be fetched.
 
         """
-        content = self._get_page_contents(title)
+        content = self._get_page_contents(page.title)
         if not content:
             return None
 
         text = self._html_to_clean_text(content)
+        if not text.strip():
+            self.logger.debug(
+                "Skipping page %r because extracted text is empty", page.title
+            )
+            return None
+        wiki_id = self.site.site.get("wikiid", f"{self.host}{self.path}")
+        doc_id = (
+            f"mediawiki:{wiki_id}:{page.pageid}"
+            if page.pageid is not None
+            else f"mediawiki:{wiki_id}:{page.title}"
+        )
         return Document(
             text=text,
-            id_=f"mediawiki:{title}",
+            id_=doc_id,
             metadata={
-                "title": title,
-                "url": url,
+                "title": page.title,
+                "url": page.url,
                 "last_modified": (
-                    last_modified.isoformat() if last_modified else None
+                    page.last_modified.isoformat() if page.last_modified else None
                 ),
-                "pageid": pageid,
-                "namespace": namespace,
+                "pageid": page.pageid,
+                "namespace": page.namespace,
             },
         )
 
@@ -367,12 +370,6 @@ class MediaWikiReader(BasePydanticReader):
         has no batch parse API; see class docstring for scale notes).
         """
         for page_record in self._get_all_pages_generator():
-            doc = self._page_to_document(
-                title=page_record.title,
-                url=page_record.url,
-                last_modified=page_record.last_modified,
-                pageid=page_record.pageid,
-                namespace=page_record.namespace,
-            )
+            doc = self._page_to_document(page_record)
             if doc is not None:
                 yield doc

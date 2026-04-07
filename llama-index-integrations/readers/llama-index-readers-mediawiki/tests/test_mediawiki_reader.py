@@ -71,7 +71,7 @@ class TestMediaWikiReaderInit:
         assert reader.host == "example.com"
         assert reader.path == "/w/"
         assert reader.scheme == "https"
-        assert reader.page_limit == 500
+        assert reader.page_limit is None
         assert reader.namespaces is None
         assert reader.filter_redirects is True
 
@@ -327,11 +327,11 @@ class TestBuildPageUrl:
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_special_characters_in_title(self, _mock_site_cls):
-        """Titles with & and spaces are normalized (spaces to underscores)."""
+        """Titles with & and spaces are URL-encoded."""
         reader = _make_reader()
         url_base = ("https://example.com", "/wiki/$1")
         result = reader._build_page_url("Page & FAQ", url_base)
-        assert result == "https://example.com/wiki/Page_&_FAQ"
+        assert result == "https://example.com/wiki/Page_%26_FAQ"
 
 
 # ---------------------------------------------------------------------------
