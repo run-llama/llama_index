@@ -75,7 +75,7 @@ jobs:
     steps:
       - name: Generate GitHub App Token
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
@@ -100,7 +100,7 @@ jobs:
       - name: Install uv and set python version
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Get version
         id: get_version

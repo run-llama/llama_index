@@ -66,10 +66,10 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
-    "anthropic.claude-opus-4-6-v1": 200000,
+    "anthropic.claude-opus-4-6-v1": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
-    "anthropic.claude-sonnet-4-6": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
@@ -100,6 +100,8 @@ BEDROCK_MODELS = {
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
+    "deepseek.v3-v1:0": 128000,
+    "deepseek.v3.2": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
@@ -137,6 +139,8 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama4-scout-17b-instruct-v1:0",
     "openai.gpt-oss-120b-1:0",
     "openai.gpt-oss-20b-1:0",
+    "deepseek.v3-v1:0",
+    "deepseek.v3.2",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
@@ -203,6 +207,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-sonnet-4-6",
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
+    "deepseek.v3-v1:0",
 )
 
 BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
@@ -218,8 +223,8 @@ def is_reasoning(model_name: str) -> bool:
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
-    # Check for region prefixes (us, eu, apac, jp, global)
-    REGION_PREFIXES = ["us.", "eu.", "apac.", "jp.", "global."]
+    # Check for region prefixes (us, us-gov, eu, apac, jp, global, ca, au)
+    REGION_PREFIXES = ["us.", "us-gov.", "eu.", "apac.", "jp.", "global.", "ca.", "au."]
 
     # If no region prefix, return the original model name
     if not any(prefix in model_name for prefix in REGION_PREFIXES):
@@ -278,6 +283,32 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+BEDROCK_DOC_MIMETYPE_TO_FORMAT = {
+    "application/pdf": "pdf",
+    "text/csv": "csv",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "text/html": "html",
+    "text/plain": "txt",
+    "text/markdown": "md",
+}
+
+
+def _get_bedrock_doc_format(mimetype: Optional[str]) -> str:
+    """Map a document mimetype to a Bedrock Converse document format."""
+    if mimetype and mimetype in BEDROCK_DOC_MIMETYPE_TO_FORMAT:
+        return BEDROCK_DOC_MIMETYPE_TO_FORMAT[mimetype]
+    if mimetype:
+        logger.warning(
+            f"Unsupported document mimetype for Bedrock Converse: {mimetype}. "
+            f"Supported types: {', '.join(BEDROCK_DOC_MIMETYPE_TO_FORMAT.keys())}. "
+            "Falling back to 'txt'."
+        )
+    return "txt"
+
+
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
@@ -318,9 +349,10 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
-        # NOTE: At the time of writing, "txt" format works for all file types
-        # The API then infers the format from the file type based on the bytes
-        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+        doc_format = _get_bedrock_doc_format(block.document_mimetype)
+        return {
+            "document": {"format": doc_format, "name": title, "source": {"bytes": data}}
+        }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -557,7 +589,10 @@ def tools_to_converse_tools(
         converse_tools.append({"cachePoint": {"type": "default"}})
 
     if tool_choice:
-        tool_choice = tool_choice
+        if isinstance(tool_choice, str):
+            tool_choice = {"tool": {"name": tool_choice}}
+        else:
+            tool_choice = tool_choice
     elif supports_forced_tool_calls and tool_required:
         tool_choice = {"any": {}}
     else:

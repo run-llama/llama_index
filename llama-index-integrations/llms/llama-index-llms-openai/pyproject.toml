@@ -27,10 +27,10 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.6.26"
+version = "0.7.5"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["openai>=1.108.1,<3", "llama-index-core>=0.14.5,<0.15"]

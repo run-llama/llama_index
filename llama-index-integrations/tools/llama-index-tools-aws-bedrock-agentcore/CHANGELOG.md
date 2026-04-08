@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.3.0] - 2026-03-14
+
+- Add `AgentCoreRuntime` adapter for deploying LlamaIndex agents to AWS Bedrock AgentCore Runtime
+- Supports streaming (SSE) and non-streaming JSON responses via `POST /invocations`
+- Automatic session ID propagation from `X-Amzn-Bedrock-AgentCore-Runtime-Session-Id` header to `AgentCoreMemory`
+- One-liner deployment: `AgentCoreRuntime.serve(agent)`
+- Accepts `prompt`, `message`, or `input` as payload keys
+
 ## [0.2.0] - 2026-02-26
 
 - Add `upload_file`, `upload_files`, `install_packages`, `download_file`, `download_files` tools to Code Interpreter

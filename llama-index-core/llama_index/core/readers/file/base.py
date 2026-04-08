@@ -753,7 +753,8 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
-                    "Setting `num_workers` down to the maximum CPU count."
+                    "Setting `num_workers` down to the maximum CPU count.",
+                    stacklevel=2,
                 )
                 num_workers = num_cpus
 

@@ -768,6 +768,9 @@ class DocumentBlock(BaseContentBlock):
         return Path(str(path)).suffix.replace(".", "")
 
     def _guess_mimetype(self) -> str | None:
+        if self.document_mimetype:
+            return self.document_mimetype
+
         if self.data:
             guess = filetype.guess(self.data)
             return str(guess.mime) if guess else None

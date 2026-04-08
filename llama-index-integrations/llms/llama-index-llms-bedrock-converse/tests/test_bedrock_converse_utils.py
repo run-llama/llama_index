@@ -17,12 +17,16 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_MODELS,
     ThinkingDict,
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
+    bedrock_modelname_to_context_size,
     converse_with_retry,
     converse_with_retry_async,
     get_model_name,
+    is_bedrock_function_calling_model,
+    is_reasoning,
     messages_to_converse_messages,
     tools_to_converse_tools,
 )
@@ -99,9 +103,41 @@ def test_get_model_name_translates_us():
     )
 
 
+def test_get_model_name_translates_us_gov():
+    assert (
+        get_model_name("us-gov.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_eu():
+    assert (
+        get_model_name("eu.meta.llama3-2-3b-instruct-v1:0")
+        == "meta.llama3-2-3b-instruct-v1:0"
+    )
+
+
 def test_get_model_name_translates_global():
     assert (
         get_model_name("global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+        == "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+
+
+def test_get_model_name_translates_apac():
+    assert (
+        get_model_name("apac.anthropic.claude-3-haiku-20240307-v1:0")
+        == "anthropic.claude-3-haiku-20240307-v1:0"
+    )
+
+
+def test_get_model_name_translates_ca():
+    assert get_model_name("ca.amazon.nova-lite-v1:0") == "amazon.nova-lite-v1:0"
+
+
+def test_get_model_name_translates_au():
+    assert (
+        get_model_name("au.anthropic.claude-sonnet-4-5-20250929-v1:0")
         == "anthropic.claude-sonnet-4-5-20250929-v1:0"
     )
 
@@ -127,6 +163,43 @@ def test_get_model_name_does_nottranslate_unsupported():
 def test_get_model_name_throws_inference_profile_exception():
     with pytest.raises(ValueError):
         assert get_model_name("us.cohere.command-r-plus-v1:0")
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected_context"),
+    [
+        ("deepseek.r1-v1:0", 128000),
+        ("deepseek.v3-v1:0", 128000),
+        ("deepseek.v3.2", 128000),
+    ],
+)
+def test_deepseek_models_registered(model_id, expected_context):
+    assert model_id in BEDROCK_MODELS
+    assert bedrock_modelname_to_context_size(model_id) == expected_context
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected"),
+    [
+        ("deepseek.r1-v1:0", True),
+        ("deepseek.v3-v1:0", True),
+        ("deepseek.v3.2", False),
+    ],
+)
+def test_deepseek_reasoning_models(model_id, expected):
+    assert is_reasoning(model_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("model_id", "expected"),
+    [
+        ("deepseek.r1-v1:0", False),
+        ("deepseek.v3-v1:0", True),
+        ("deepseek.v3.2", True),
+    ],
+)
+def test_deepseek_function_calling_models(model_id, expected):
+    assert is_bedrock_function_calling_model(model_id) == expected
 
 
 def test_get_img_format_jpeg():
