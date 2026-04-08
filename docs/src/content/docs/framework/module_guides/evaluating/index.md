@@ -68,11 +68,3 @@ For full usage details, see the usage pattern below.
 ## Modules
 
 Notebooks with usage of these components can be found in the [module guides](/python/framework/module_guides/evaluating/modules).
-
-## Evaluating with `LabelledRagDataset`'s
-
-For details on how to perform evaluation of a RAG system with various evaluation
-datasets, called `LabelledRagDataset`'s see below:
-
-- [Evaluating](/python/framework/module_guides/evaluating/evaluating_with_llamadatasets)
-- [Contributing](/python/framework/module_guides/evaluating/contributing_llamadatasets)

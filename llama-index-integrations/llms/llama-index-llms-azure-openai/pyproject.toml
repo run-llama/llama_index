@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-azure-openai"
-version = "0.5.1"
+version = "0.5.3"
 description = "llama-index llms azure openai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -59,6 +59,7 @@ import_path = "llama_index.llms.azure_openai"
 [tool.llamahub.class_authors]
 AsyncAzureOpenAI = "llama-index"
 AzureOpenAI = "llama-index"
+AzureOpenAIResponses = "llama-index"
 SyncAzureOpenAI = "llama-index"
 
 [tool.mypy]

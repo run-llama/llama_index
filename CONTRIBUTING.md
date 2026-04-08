@@ -45,7 +45,7 @@ uv run -- pytest
 
 **That’s it!** The package you're working on is already installed in editable mode, so you can go on, change the code and run the tests!
 
-Once you get familiar with the project, scroll down to the [Development Guidelines](#-Development-Guidelines) for more details.
+Once you get familiar with the project, scroll down to the [Development Guidelines](#development-guidelines) for more details.
 
 ---
 
@@ -56,9 +56,9 @@ We suggest working on:
 - Core modules (`llama-index-core` and `llama-index-instrumentation`), contributing with refactoring, bug fixes and extensions
 - Documentation (`docs`), helping us improve our current docs and keep them updated.
 - Main integrations, such as `llama-index-llms`, `llama-index-embeddings` or `llama-index-vector-stores`, providing help with maintaining them
-- New integrations with third party services
+  While we welcome contributions, **we are no longer accepting new integration packages** in this repository. New integrations should be maintained in their own repositories and published to PyPI independently. PRs that add a new `pyproject.toml` will be automatically closed.
 
-While we welcome contributions, we do not recommend to work on these areas:
+We also do not recommend working on these areas:
 
 - Experimental features (`llama-index-experimental`)
 - Packs (`llama-index-packs`)
@@ -78,7 +78,7 @@ While we welcome contributions, we do not recommend to work on these areas:
    ```bash
    git checkout -b your-feature-branch
    ```
-4. **Set up your environment** (follow the [Quick Start Guide](#-quick-start-guide)).
+4. **Set up your environment** (follow the [Quick Start Guide](#quick-start-guide)).
 5. **Work on your feature or bugfix**, ensuring you have unit tests covering your code.
 6. **Commit** your changes, then push them to your fork.
    ```bash
@@ -138,7 +138,7 @@ We welcome AI-assisted contributions, but we ask you to follow some core princip
 - repetitive, self-explanatory or excessively long comments, docstrings or documentation
 - secrets handling or security-related code
 
-Overall, our suggestion is use AI by starting with **small changes**, validating often, making sure tests pass and quality criteria are met, and build incrementally.
+Overall, our suggestion is to use AI by starting with **small changes**, validating often, making sure tests pass and quality criteria are met, and build incrementally.
 
 ---
 

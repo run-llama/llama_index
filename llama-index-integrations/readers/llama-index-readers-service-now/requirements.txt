@@ -5,7 +5,7 @@
     # via llama-index-readers-service-now
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.3
+aiohttp==3.13.4
     # via llama-index-core
 aiosignal==1.4.0
     # via aiohttp
@@ -306,7 +306,7 @@ networkx==3.4.2 ; python_full_version == '3.10.*'
     # via llama-index-core
 networkx==3.5 ; python_full_version >= '3.11'
     # via llama-index-core
-nltk==3.9.1
+nltk==3.9.3
     # via llama-index-core
 nodeenv==1.9.1
     # via pre-commit

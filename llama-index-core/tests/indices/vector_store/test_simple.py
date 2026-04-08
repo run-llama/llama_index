@@ -258,6 +258,34 @@ def test_simple_insert_save(
     assert index.index_struct == loaded_index.index_struct
 
 
+def test_delete_ref_doc_calls_vector_store_with_ref_doc_id_only(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    delete_log: List[str] = []
+
+    class TrackingVectorStore(SimpleVectorStore):
+        def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            delete_log.append(ref_doc_id)
+            super().delete(ref_doc_id, **kwargs)
+
+        @property
+        def client(self) -> Any:
+            return None
+
+    store = TrackingVectorStore()
+    index = VectorStoreIndex.from_documents(
+        [Document(text="Hello world.", id_="my-doc-id")],
+        storage_context=StorageContext.from_defaults(vector_store=store),
+        embed_model=mock_embed_model,
+    )
+
+    index.delete_ref_doc("my-doc-id")
+
+    assert delete_log == ["my-doc-id"], (
+        f"Expected delete() called once with ref_doc_id only, got: {delete_log}"
+    )
+
+
 def test_simple_pickle(
     patch_llm_predictor,
     patch_token_text_splitter,

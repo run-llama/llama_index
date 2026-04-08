@@ -4,8 +4,6 @@ title: Ingestion Pipeline
 
 An `IngestionPipeline` uses a concept of `Transformations` that are applied to input data. These `Transformations` are applied to your input data, and the resulting nodes are either returned or inserted into a vector database (if given). Each node+transformation pair is cached, so that subsequent runs (if the cache is persisted) with the same node+transformation combination can use the cached result and save you time.
 
-To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](/python/framework/getting_started/starter_tools/rag_cli).
-
 ## Usage Pattern
 
 The simplest usage is to instantiate an `IngestionPipeline` like so:
