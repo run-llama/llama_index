@@ -97,6 +97,53 @@ async def test_answer_filtering_one_answer() -> None:
     assert res == "input2"
 
 
+class FailingStub(BasePydanticProgram):
+    """Stub that always raises the given exception."""
+
+    def __init__(self, exc: Exception) -> None:
+        self._exc = exc
+
+    @property
+    def output_cls(self) -> Type[BaseModel]:
+        return StructuredRefineResponse
+
+    def __call__(self, *args: Any, **kwargs: Any) -> StructuredRefineResponse:
+        raise self._exc
+
+
+def test_refine_handles_valueerror_from_program() -> None:
+    refine = Refine(
+        structured_answer_filtering=True,
+        program_factory=lambda _: FailingStub(
+            ValueError("LLM did not return any tool calls")
+        ),
+    )
+    assert refine.get_response("question", ["chunk1", "chunk2"]) == "Empty Response"
+
+
+def test_refine_handles_typeerror_from_program() -> None:
+    refine = Refine(
+        structured_answer_filtering=True,
+        program_factory=lambda _: FailingStub(
+            TypeError("Expected BaseModel but got str")
+        ),
+    )
+    assert refine.get_response("question", ["chunk1", "chunk2"]) == "Empty Response"
+
+
+@pytest.mark.asyncio
+async def test_refine_handles_valueerror_from_program_async() -> None:
+    refine = Refine(
+        structured_answer_filtering=True,
+        program_factory=lambda _: FailingStub(
+            ValueError("LLM did not return any tool calls")
+        ),
+    )
+    assert (
+        await refine.aget_response("question", ["chunk1", "chunk2"])
+    ) == "Empty Response"
+
+
 @pytest.mark.asyncio
 async def test_answer_filtering_no_answers() -> None:
     input_to_query_satisfied = OrderedDict(
