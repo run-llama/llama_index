@@ -4,7 +4,7 @@ import asyncio
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
-import nest_asyncio
+from elasticsearch import AsyncElasticsearch, Elasticsearch
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -17,8 +17,12 @@ from llama_index.core.vector_stores.types import (
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
-from elasticsearch.helpers.vectorstore import AsyncVectorStore
+from elasticsearch.helpers.vectorstore import AsyncVectorStore, VectorStore
 from elasticsearch.helpers.vectorstore import (
+    BM25Strategy,
+    DenseVectorStrategy,
+    RetrievalStrategy,
+    SparseVectorStrategy,
     AsyncBM25Strategy,
     AsyncSparseVectorStrategy,
     AsyncDenseVectorStrategy,
@@ -27,9 +31,11 @@ from elasticsearch.helpers.vectorstore import (
 )
 
 from llama_index.vector_stores.elasticsearch.utils import (
-    get_elasticsearch_client,
-    get_user_agent,
     convert_es_hit_to_node,
+    get_elasticsearch_client,
+    get_elasticsearch_clients,
+    get_sync_elasticsearch_client,
+    get_user_agent,
 )
 
 logger = getLogger(__name__)
@@ -39,6 +45,27 @@ DISTANCE_STRATEGIES = Literal[
     "DOT_PRODUCT",
     "EUCLIDEAN_DISTANCE",
 ]
+
+
+def _to_sync_retrieval_strategy(
+    retrieval_strategy: AsyncRetrievalStrategy,
+) -> RetrievalStrategy:
+    if isinstance(retrieval_strategy, AsyncDenseVectorStrategy):
+        return DenseVectorStrategy(
+            distance=retrieval_strategy.distance,
+            model_id=retrieval_strategy.model_id,
+            hybrid=retrieval_strategy.hybrid,
+            rrf=retrieval_strategy.rrf,
+            text_field=retrieval_strategy.text_field,
+        )
+    if isinstance(retrieval_strategy, AsyncSparseVectorStrategy):
+        return SparseVectorStrategy(model_id=retrieval_strategy.model_id)
+    if isinstance(retrieval_strategy, AsyncBM25Strategy):
+        return BM25Strategy(k1=retrieval_strategy.k1, b=retrieval_strategy.b)
+
+    raise TypeError(
+        f"Unsupported retrieval strategy type for sync operations: {type(retrieval_strategy)}"
+    )
 
 
 def _to_elasticsearch_filter(
@@ -127,7 +154,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
     Args:
         index_name: Name of the Elasticsearch index.
-        es_client: Optional. Pre-existing AsyncElasticsearch client.
+        es_client: Optional. Pre-existing Elasticsearch or AsyncElasticsearch client.
+        es_async_client: Optional. Pre-existing AsyncElasticsearch client.
         es_url: Optional. Elasticsearch URL.
         es_cloud_id: Optional. Elasticsearch cloud ID.
         es_api_key: Optional. Elasticsearch API key.
@@ -192,6 +220,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
     stores_text: bool = True
     index_name: str
     es_client: Optional[Any]
+    es_async_client: Optional[Any]
     es_url: Optional[str]
     es_cloud_id: Optional[str]
     es_api_key: Optional[str]
@@ -204,11 +233,15 @@ class ElasticsearchStore(BasePydanticVectorStore):
     retrieval_strategy: AsyncRetrievalStrategy
 
     _store = PrivateAttr()
+    _sync_store = PrivateAttr()
+    _owns_sync_client = PrivateAttr()
+    _owns_async_client = PrivateAttr()
 
     def __init__(
         self,
         index_name: str,
         es_client: Optional[Any] = None,
+        es_async_client: Optional[Any] = None,
         es_url: Optional[str] = None,
         es_cloud_id: Optional[str] = None,
         es_api_key: Optional[str] = None,
@@ -222,20 +255,76 @@ class ElasticsearchStore(BasePydanticVectorStore):
         metadata_mappings: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
-        nest_asyncio.apply()
+        if retrieval_strategy is None:
+            retrieval_strategy = AsyncDenseVectorStrategy(
+                distance=DistanceMetric[distance_strategy]
+            )
+        sync_retrieval_strategy = _to_sync_retrieval_strategy(retrieval_strategy)
 
-        if not es_client:
-            es_client = get_elasticsearch_client(
+        sync_client = None
+        async_client = es_async_client
+
+        if es_client is not None:
+            if isinstance(es_client, AsyncElasticsearch):
+                async_client = es_client
+            elif isinstance(es_client, Elasticsearch):
+                sync_client = es_client
+            else:
+                raise TypeError(
+                    f"`es_client` must be Elasticsearch or AsyncElasticsearch, got {type(es_client)}"
+                )
+
+        if es_async_client is not None and not isinstance(
+            es_async_client, AsyncElasticsearch
+        ):
+            raise TypeError(
+                f"`es_async_client` must be AsyncElasticsearch, got {type(es_async_client)}"
+            )
+
+        has_connection_settings = any(
+            [es_url, es_cloud_id, es_api_key, es_user, es_password]
+        )
+        if sync_client is None and async_client is None:
+            sync_client, async_client = get_elasticsearch_clients(
                 url=es_url,
                 cloud_id=es_cloud_id,
                 api_key=es_api_key,
                 username=es_user,
                 password=es_password,
             )
+            self._owns_sync_client = True
+            self._owns_async_client = True
+        else:
+            self._owns_sync_client = False
+            self._owns_async_client = False
+            if sync_client is None and has_connection_settings:
+                sync_client = get_sync_elasticsearch_client(
+                    url=es_url,
+                    cloud_id=es_cloud_id,
+                    api_key=es_api_key,
+                    username=es_user,
+                    password=es_password,
+                )
+                self._owns_sync_client = True
+            if async_client is None and has_connection_settings:
+                async_client = get_elasticsearch_client(
+                    url=es_url,
+                    cloud_id=es_cloud_id,
+                    api_key=es_api_key,
+                    username=es_user,
+                    password=es_password,
+                )
+                self._owns_async_client = True
 
-        if retrieval_strategy is None:
-            retrieval_strategy = AsyncDenseVectorStrategy(
-                distance=DistanceMetric[distance_strategy]
+        if sync_client is None:
+            raise ValueError(
+                "Synchronous Elasticsearch client is required for sync methods. "
+                "Provide `es_client` as `Elasticsearch` or connection settings."
+            )
+        if async_client is None:
+            raise ValueError(
+                "Asynchronous Elasticsearch client is required for async methods. "
+                "Provide `es_async_client`/`es_client` as `AsyncElasticsearch` or connection settings."
             )
 
         base_metadata_mappings = {
@@ -249,7 +338,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         super().__init__(
             index_name=index_name,
-            es_client=es_client,
+            es_client=sync_client,
+            es_async_client=async_client,
             es_url=es_url,
             es_cloud_id=es_cloud_id,
             es_api_key=es_api_key,
@@ -262,9 +352,18 @@ class ElasticsearchStore(BasePydanticVectorStore):
             retrieval_strategy=retrieval_strategy,
         )
 
+        self._sync_store = VectorStore(
+            user_agent=get_user_agent(),
+            client=sync_client,
+            index=index_name,
+            retrieval_strategy=sync_retrieval_strategy,
+            text_field=text_field,
+            vector_field=vector_field,
+            metadata_mappings=metadata_mappings,
+        )
         self._store = AsyncVectorStore(
             user_agent=get_user_agent(),
-            client=es_client,
+            client=async_client,
             index=index_name,
             retrieval_strategy=retrieval_strategy,
             text_field=text_field,
@@ -283,7 +382,20 @@ class ElasticsearchStore(BasePydanticVectorStore):
         return self._store.client
 
     def close(self) -> None:
-        return asyncio.get_event_loop().run_until_complete(self._store.close())
+        if self._owns_sync_client:
+            self._sync_store.close()
+        if self._owns_async_client:
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._store.close())
+            except RuntimeError:
+                asyncio.run(self._store.close())
+
+    async def aclose(self) -> None:
+        if self._owns_sync_client:
+            self._sync_store.close()
+        if self._owns_async_client:
+            await self._store.close()
 
     def add(
         self,
@@ -306,16 +418,37 @@ class ElasticsearchStore(BasePydanticVectorStore):
             List of node IDs that were added to the index.
 
         Raises:
-            ImportError: If elasticsearch['async'] python package is not installed.
-            BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
+            ImportError: If elasticsearch python package is not installed.
+            BulkIndexError: If Elasticsearch bulk indexing fails.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.async_add(
-                nodes,
-                create_index_if_not_exists=create_index_if_not_exists,
-                **add_kwargs,
-            )
+        if len(nodes) == 0:
+            return []
+
+        embeddings: Optional[List[List[float]]] = None
+        texts: List[str] = []
+        metadatas: List[dict] = []
+        ids: List[str] = []
+        for node in nodes:
+            ids.append(node.node_id)
+            texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
+            metadatas.append(node_to_metadata_dict(node, remove_text=True))
+
+        if isinstance(self.retrieval_strategy, AsyncDenseVectorStrategy):
+            embeddings = []
+            for node in nodes:
+                embeddings.append(node.get_embedding())
+
+            if not self._sync_store.num_dimensions:
+                self._sync_store.num_dimensions = len(embeddings[0])
+
+        return self._sync_store.add_texts(
+            texts=texts,
+            metadatas=metadatas,
+            vectors=embeddings,
+            ids=ids,
+            create_index_if_not_exists=create_index_if_not_exists,
+            bulk_kwargs=add_kwargs,
         )
 
     async def async_add(
@@ -387,8 +520,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Exception: If Elasticsearch delete_by_query fails.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.adelete(ref_doc_id, **delete_kwargs)
+        self._sync_store.delete(
+            query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
         )
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -423,9 +556,26 @@ class ElasticsearchStore(BasePydanticVectorStore):
             delete_kwargs: Optional additional arguments to pass to delete operation.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.adelete_nodes(node_ids, filters, **delete_kwargs)
-        )
+        if not node_ids and not filters:
+            return
+
+        if node_ids and not filters:
+            self._sync_store.delete(ids=node_ids, **delete_kwargs)
+            return
+
+        query = {"bool": {"must": []}}
+
+        if node_ids:
+            query["bool"]["must"].append({"terms": {"_id": node_ids}})
+
+        if filters:
+            es_filter = _to_elasticsearch_filter(filters)
+            if "bool" in es_filter and "must" in es_filter["bool"]:
+                query["bool"]["must"].extend(es_filter["bool"]["must"])
+            else:
+                query["bool"]["must"].append(es_filter)
+
+        self._sync_store.delete(query=query, **delete_kwargs)
 
     async def adelete_nodes(
         self,
@@ -494,8 +644,36 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Exception: If Elasticsearch query fails.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.aquery(query, custom_query, es_filter, **kwargs)
+        _mode_must_match_retrieval_strategy(query.mode, self.retrieval_strategy)
+
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
+            filter = [_to_elasticsearch_filter(query.filters, metadata_keyword_suffix)]
+        else:
+            filter = es_filter or []
+
+        hits = self._sync_store.search(
+            query=query.query_str,
+            query_vector=query.query_embedding,
+            k=query.similarity_top_k,
+            num_candidates=query.similarity_top_k * 10,
+            filter=filter,
+            custom_query=custom_query,
+        )
+
+        top_k_nodes = []
+        top_k_ids = []
+        top_k_scores = []
+
+        for hit in hits:
+            node = convert_es_hit_to_node(hit, self.text_field)
+            top_k_nodes.append(node)
+            top_k_ids.append(hit["_id"])
+            top_k_scores.append(hit["_score"])
+
+        return VectorStoreQueryResult(
+            nodes=top_k_nodes,
+            ids=top_k_ids,
+            similarities=_to_llama_similarities(top_k_scores),
         )
 
     async def aquery(
@@ -577,9 +755,33 @@ class ElasticsearchStore(BasePydanticVectorStore):
             List[BaseNode]: List of nodes retrieved from the index.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.aget_nodes(node_ids, filters)
+        if not node_ids and not filters:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        query = {"bool": {"must": []}}
+
+        if node_ids is not None:
+            query["bool"]["must"].append({"terms": {"_id": node_ids}})
+
+        if filters:
+            es_filter = _to_elasticsearch_filter(filters)
+            if "bool" in es_filter and "must" in es_filter["bool"]:
+                query["bool"]["must"].extend(es_filter["bool"]["must"])
+            else:
+                query["bool"]["must"].append(es_filter)
+
+        response = self._sync_store.client.search(
+            index=self.index_name,
+            body={"query": query, "size": 10000},
         )
+
+        hits = response.get("hits", {}).get("hits", [])
+        nodes = []
+
+        for hit in hits:
+            nodes.append(convert_es_hit_to_node(hit, self.text_field))
+
+        return nodes
 
     async def aget_nodes(
         self,
@@ -633,7 +835,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
         Clear all nodes from Elasticsearch index.
         This method deletes and recreates the index.
         """
-        return asyncio.get_event_loop().run_until_complete(self.aclear())
+        if self._sync_store.client.indices.exists(index=self.index_name):
+            self._sync_store.client.indices.delete(index=self.index_name)
 
     async def aclear(self) -> None:
         """
