@@ -740,13 +740,12 @@ async def test_clear(
 
 
 def test_query_forwards_suffix_without_class() -> None:
-    captured = {}
-
     async_mock = AsyncMock(return_value="ok")
+    testing_dict = {}
 
     async def wrapper(*args, **kwargs):
-        captured["args"] = args
-        captured["kwargs"] = kwargs
+        testing_dict["args"] = args
+        testing_dict["kwargs"] = kwargs
         return await async_mock(*args, **kwargs)
 
     store = type("Store", (), {})()
@@ -755,20 +754,21 @@ def test_query_forwards_suffix_without_class() -> None:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    try:
-        q = VectorStoreQuery(query_embedding=[1.0], similarity_top_k=1)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-        result = ElasticsearchStore.query(
-            store,
-            q,
-            metadata_keyword_suffix="__custom",
-            test_flag=True,
-        )
-    finally:
-        loop.close()
-        asyncio.set_event_loop(None)
+    q = VectorStoreQuery(query_embedding=[1.0], similarity_top_k=1)
+    result = ElasticsearchStore.query(
+        store,
+        q,
+        metadata_keyword_suffix="__custom",
+        test_flag=True,
+    )
 
+    loop.close()
+    asyncio.set_event_loop(None)
+
+    assert testing_dict["kwargs"]["query"] == q
+    assert testing_dict["kwargs"]["metadata_keyword_suffix"] == "__custom"
+    assert testing_dict["kwargs"]["test_flag"] is True
     assert result == "ok"
-    assert captured["kwargs"]["query"] == q
-    assert captured["kwargs"]["metadata_keyword_suffix"] == "__custom"
-    assert captured["kwargs"]["test_flag"] is True
