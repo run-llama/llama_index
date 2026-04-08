@@ -27,7 +27,10 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.utils import get_cache_dir
 from tqdm import tqdm
 
-from llama_cpp import Llama
+try:
+    from llama_cpp import Llama  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    Llama = None  # type: ignore[assignment]
 
 DEFAULT_LLAMA_CPP_GGML_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"
@@ -116,7 +119,7 @@ class LlamaCPP(CustomLLM):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
-        gt=0,
+        ge=0,
     )
     generate_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Kwargs used for generation."
@@ -148,10 +151,19 @@ class LlamaCPP(CustomLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
+        # If llama-cpp-python isn't installed, allow tests to monkeypatch `Llama`
+        # on this module before instantiation.
+        if Llama is None:
+            raise ModuleNotFoundError(
+                "The 'llama-cpp-python' package is required to use LlamaCPP. "
+                "Please install it with `pip install llama-cpp-python`."
+            )
+
         model_kwargs = {
             **{"n_ctx": context_window, "verbose": verbose},
             **(model_kwargs or {}),  # Override defaults via model_kwargs
         }
+        using_model_default_context = model_kwargs.get("n_ctx", context_window) == 0
 
         # check if model is cached
         if model_path is not None:
@@ -179,6 +191,8 @@ class LlamaCPP(CustomLLM):
         generate_kwargs.update(
             {"temperature": temperature, "max_tokens": max_new_tokens}
         )
+        if using_model_default_context:
+            context_window = model.n_ctx()
 
         super().__init__(
             model_path=model_path,
@@ -197,6 +211,8 @@ class LlamaCPP(CustomLLM):
             output_parser=output_parser,
         )
         self._model = model
+        if using_model_default_context:
+            object.__setattr__(self, "context_window", model.n_ctx())
 
     @classmethod
     def class_name(cls) -> str:
