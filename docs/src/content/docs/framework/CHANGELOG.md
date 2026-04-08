@@ -4,6 +4,980 @@ title: ChangeLog
 
 <!--- generated changelog --->
 
+## [2026-03-25]
+
+### llama-index-agent-agentmesh [0.2.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+
+### llama-index-callbacks-argilla [0.5.0]
+
+- chore(deps): bump the uv group across 3 directories with 1 update ([#21069](https://github.com/run-llama/llama_index/pull/21069))
+
+### llama-index-core [0.14.19]
+
+- fix: pass `delete_from_docstore` parameter in `BaseIndex.delete_ref_doc` ([#20990](https://github.com/run-llama/llama_index/pull/20990))
+- fix(core): preserve CTE names during schema prefixing in SQLDatabase.run_sql ([#21028](https://github.com/run-llama/llama_index/pull/21028))
+- fix(core): align sync retrieval dedup key with async (hash + ref_doc_id) ([#21034](https://github.com/run-llama/llama_index/pull/21034))
+- fix(core): raise ValueError instead of returning string from structured_predict ([#21036](https://github.com/run-llama/llama_index/pull/21036))
+- fix(core): remove incorrect per-node delete calls in index helpers ([#21050](https://github.com/run-llama/llama_index/pull/21050))
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+- enable llama-cloud>1.0 install ([#21140](https://github.com/run-llama/llama_index/pull/21140))
+
+### llama-index-embeddings-fireworks [0.5.2]
+
+- test(embeddings-fireworks): add test suite and fix docs ([#20977](https://github.com/run-llama/llama_index/pull/20977))
+
+### llama-index-embeddings-upstage [0.6.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+
+### llama-index-indices-managed-llama-cloud [0.11.1]
+
+- fix: llama-cloud managed index and remove llamaparse reader ([#21043](https://github.com/run-llama/llama_index/pull/21043))
+- enable llama-cloud>1.0 install ([#21140](https://github.com/run-llama/llama_index/pull/21140))
+
+### llama-index-llms-azure-openai [0.5.3]
+
+- azure openai responses support ([#21088](https://github.com/run-llama/llama_index/pull/21088))
+- fix azure openai responses ([#21099](https://github.com/run-llama/llama_index/pull/21099))
+
+### llama-index-llms-bedrock-converse [0.14.3]
+
+- use proper tool choice format in bedrock converse ([#21098](https://github.com/run-llama/llama_index/pull/21098))
+
+### llama-index-llms-cohere [0.8.0]
+
+- docs(cohere): update first basic usage example to chat API ([#21108](https://github.com/run-llama/llama_index/pull/21108))
+
+### llama-index-llms-google-genai [0.9.1]
+
+- feat: gemini 3 default and temperature ([#21060](https://github.com/run-llama/llama_index/pull/21060))
+- fix(google-genai): avoid mutating messages list in prepare_chat_params ([#21141](https://github.com/run-llama/llama_index/pull/21141))
+
+### llama-index-llms-litellm [0.7.1]
+
+- Add support for custom LLM provider in model kwargs ([#21095](https://github.com/run-llama/llama_index/pull/21095))
+
+### llama-index-llms-minimax [0.1.0]
+
+- feat: add MiniMax LLM provider integration with M2.7 default ([#20955](https://github.com/run-llama/llama_index/pull/20955))
+
+### llama-index-llms-ollama [0.10.1]
+
+- fix(ollama): pass custom headers to auto-created clients ([#21091](https://github.com/run-llama/llama_index/pull/21091))
+
+### llama-index-llms-openai [0.7.3]
+
+- feat(llms/openai): Add support for Mini and Nano variants of GPT 5.4 ([#21065](https://github.com/run-llama/llama_index/pull/21065))
+
+### llama-index-llms-ovhcloud [0.2.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+
+### llama-index-packs-agent-search-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-amazon-product-extraction [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-arize-phoenix-query-engine [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-auto-merging-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-code-hierarchy [0.7.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-cohere-citation-chat [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-deeplake-deepmemory-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-deeplake-multimodal-retrieval [0.4.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-dense-x-retrieval [0.6.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-diff-private-simple-dataset [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-evaluator-benchmarker [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-fusion-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-fuzzy-citation [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-gmail-openai-agent [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-koda-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-llama-dataset-metadata [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-llama-guard-moderator [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-llava-completion [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-longrag [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-mixture-of-agents [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-multi-tenancy-rag [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-multidoc-autoretrieval [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-nebulagraph-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-neo4j-query-engine [0.5.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-node-parser-semantic-chunking [0.5.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-ollama-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-panel-chatbot [0.5.0]
+
+- chore(deps): bump the uv group across 3 directories with 1 update ([#21069](https://github.com/run-llama/llama_index/pull/21069))
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-raft-dataset [0.5.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-ragatouille-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-raptor [0.4.1]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-recursive-retriever [0.8.1]
+
+- chore(deps): bump the uv group across 3 directories with 1 update ([#21069](https://github.com/run-llama/llama_index/pull/21069))
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-searchain [0.3.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-self-discover [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-self-rag [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-sentence-window-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-snowflake-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-stock-market-data-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-streamlit-chatbot [0.5.2]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-sub-question-weaviate [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-packs-timescale-vector-autoretrieval [0.5.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+- chore(deps): bump the uv group across 44 directories with 1 update ([#21097](https://github.com/run-llama/llama_index/pull/21097))
+
+### llama-index-postprocessor-google-rerank [0.1.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+
+### llama-index-readers-llama-parse [0.6.1]
+
+- enable llama-cloud>1.0 install ([#21140](https://github.com/run-llama/llama_index/pull/21140))
+
+### llama-index-readers-service-now [0.3.0]
+
+- chore(deps): bump nltk from 3.9.1 to 3.9.3 in /llama-index-integrations/readers/llama-index-readers-service-now in the uv group across 1 directory ([#21080](https://github.com/run-llama/llama_index/pull/21080))
+
+### llama-index-storage-chat-store-opensearch [0.2.0]
+
+- chore(deps): bump the uv group across 49 directories with 1 update ([#21083](https://github.com/run-llama/llama_index/pull/21083))
+
+### llama-index-tools-aws-bedrock-agentcore [0.3.1]
+
+- feat(tools/agentcore): add AgentCoreRuntime adapter ([#21008](https://github.com/run-llama/llama_index/pull/21008))
+- fix bedrock tests ([#21129](https://github.com/run-llama/llama_index/pull/21129))
+
+### llama-index-tools-exa [0.5.1]
+
+- update exa tool description and default search type ([#21096](https://github.com/run-llama/llama_index/pull/21096))
+
+### llama-index-vector-stores-redis [0.8.0]
+
+- feat(redis): implement safe get_nodes and delete_nodes support ([#20972](https://github.com/run-llama/llama_index/pull/20972))
+
+### llama-index-voice-agents-gemini-live [0.4.0]
+
+- feat: latest gemini model default ([#21061](https://github.com/run-llama/llama_index/pull/21061))
+
+## [2026-03-16]
+
+### llama-index-agent-agentmesh [0.2.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-agent-azure [0.3.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-agentops [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-argilla [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-arize-phoenix [0.7.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-honeyhive [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+
+### llama-index-callbacks-langfuse [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-literalai [1.4.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-openinference [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-opik [1.3.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-promptlayer [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-uptrain [0.6.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-callbacks-wandb [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-core [0.14.18]
+
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+- fix(chat_engine): preserve chat history on incomplete stream consumption ([#20897](https://github.com/run-llama/llama_index/pull/20897))
+- fix: guard against ZeroDivisionError in LlamaDebugHandler.\_get_time_stats_from_event_pairs ([#20937](https://github.com/run-llama/llama_index/pull/20937))
+- fix: add stacklevel=2 to warnings.warn() for accurate caller reporting ([#20939](https://github.com/run-llama/llama_index/pull/20939))
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- Release 0.14.17 ([#20957](https://github.com/run-llama/llama_index/pull/20957))
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- fix: use `apostprocess_nodes()` in async retrieval paths ([#20974](https://github.com/run-llama/llama_index/pull/20974))
+- fix (test) : use >= 1 to avoid racy `stream_chat` memory assertion ([#20980](https://github.com/run-llama/llama_index/pull/20980))
+- fix(core): preserve response metadata in `async _aretrieve_from_object` ([#20995](https://github.com/run-llama/llama_index/pull/20995))
+- fix: preserve non-ASCII schema descriptions in `PydanticOutputParser` ([#21016](https://github.com/run-llama/llama_index/pull/21016))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+- fix(core): structured_predict() returns default values for single-field models ([#21025](https://github.com/run-llama/llama_index/pull/21025))
+- fix openai mimetype guess ([#21030](https://github.com/run-llama/llama_index/pull/21030))
+
+### llama-index-embeddings-adapter [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-alephalpha [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-alibabacloud-aisearch [0.4.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-anyscale [0.5.1]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-autoembeddings [0.3.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-azure-inference [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-azure-openai [0.5.1]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-baseten [0.2.1]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-bedrock [0.8.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-clarifai [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-clip [0.6.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-cloudflare-workersai [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-cohere [0.8.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-dashscope [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-databricks [0.5.1]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-deepinfra [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-elasticsearch [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-fastembed [0.6.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-fireworks [0.5.1]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-gaudi [0.4.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-gigachat [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-google-genai [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-heroku [0.2.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface [0.7.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-api [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-openvino [0.7.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-huggingface-optimum-intel [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-instructor [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-isaacus [0.2.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-jinaai [0.6.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-langchain [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-litellm [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-llamafile [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-llm-rails [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-mistralai [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-embeddings-modelscope [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+
+### llama-index-embeddings-nebius [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-opea [0.3.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-openai-like [0.3.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-embeddings-upstage [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-indices-managed-lancedb [0.3.1]
+
+- drop the mutable default in **init** ([#20998](https://github.com/run-llama/llama_index/pull/20998))
+
+### llama-index-instrumentation [0.5.0]
+
+- chore: deprecate python 3.9 once and for all ([#20956](https://github.com/run-llama/llama_index/pull/20956))
+
+### llama-index-llms-anthropic [0.11.1]
+
+- Bugfix: Pydantic validation error in AnthropicCompletionResponse ([#21027](https://github.com/run-llama/llama_index/pull/21027))
+
+### llama-index-llms-anyscale [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-azure-openai [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-baseten [0.2.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-bedrock-converse [0.14.2]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- feat(bedrock-converse): Set context window size to 1M for Opus 4.6 & Sonnet 4.6 ([#20982](https://github.com/run-llama/llama_index/pull/20982))
+
+### llama-index-llms-deepinfra [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-everlyai [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-fireworks [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-keywordsai [1.2.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-monsterapi [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-openai [0.7.2]
+
+- fix openai document block format ([#20975](https://github.com/run-llama/llama_index/pull/20975))
+- feat(openai): add support for GPT-5.4 and GPT-5.4-pro models ([#20976](https://github.com/run-llama/llama_index/pull/20976))
+
+### llama-index-llms-openai-like [0.7.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-ovhcloud [0.2.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-perplexity [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-portkey [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-upstage [0.8.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-llms-yi [0.5.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-packs-agent-search-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-amazon-product-extraction [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-arize-phoenix-query-engine [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-auto-merging-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-code-hierarchy [0.7.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-cohere-citation-chat [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-deeplake-deepmemory-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-deeplake-multimodal-retrieval [0.4.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+
+### llama-index-packs-dense-x-retrieval [0.6.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-diff-private-simple-dataset [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-evaluator-benchmarker [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-fusion-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-fuzzy-citation [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-gmail-openai-agent [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-koda-retriever [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-llama-dataset-metadata [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-llama-guard-moderator [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-llava-completion [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-longrag [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-mixture-of-agents [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-multi-tenancy-rag [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-multidoc-autoretrieval [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-nebulagraph-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-neo4j-query-engine [0.5.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-node-parser-semantic-chunking [0.5.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-ollama-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-panel-chatbot [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-raft-dataset [0.5.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-rag-evaluator [0.5.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-ragatouille-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-raptor [0.4.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+
+### llama-index-packs-recursive-retriever [0.8.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-resume-screener [0.10.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-retry-engine-weaviate [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-searchain [0.3.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-self-discover [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-self-rag [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-sentence-window-retriever [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-snowflake-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-stock-market-data-query-engine [0.6.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-streamlit-chatbot [0.5.2]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+
+### llama-index-packs-sub-question-weaviate [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-timescale-vector-autoretrieval [0.5.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+- chore(deps): bump the uv group across 42 directories with 2 updates ([#21020](https://github.com/run-llama/llama_index/pull/21020))
+
+### llama-index-packs-trulens-eval-packs [0.4.1]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+- chore(deps): bump langchain-community from 0.0.38 to 0.3.27 in /llama-index-packs/llama-index-packs-trulens-eval-packs ([#20983](https://github.com/run-llama/llama_index/pull/20983))
+- chore(deps): bump the uv group across 43 directories with 5 updates ([#20988](https://github.com/run-llama/llama_index/pull/20988))
+
+### llama-index-postprocessor-google-rerank [0.1.0]
+
+- feat(postprocessor): add Google Discovery Engine rerank integration ([#20893](https://github.com/run-llama/llama_index/pull/20893))
+
+### llama-index-readers-gcs [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-github [0.11.2]
+
+- fix(github-reader): replace run_until_complete with asyncio_run for async compatibility ([#20963](https://github.com/run-llama/llama_index/pull/20963))
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-joplin [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-mbox [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-microsoft-sharepoint [0.9.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-obsidian [0.7.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-pandas-ai [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-pebblo [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-s3 [0.6.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-readers-service-now [0.3.0]
+
+- chore(deps): bump the uv group across 51 directories with 3 updates ([#20962](https://github.com/run-llama/llama_index/pull/20962))
+
+### llama-index-retrievers-bm25 [0.7.1]
+
+- fix: handle empty corpus after metadata filtering in BM25Retriever ([#20926](https://github.com/run-llama/llama_index/pull/20926))
+
+### llama-index-storage-docstore-postgres [0.5.0]
+
+- Expose Postgres KVStore engine settings for timeouts (fix #15888) ([#20951](https://github.com/run-llama/llama_index/pull/20951))
+
+### llama-index-storage-kvstore-postgres [0.5.0]
+
+- Expose Postgres KVStore engine settings for timeouts (fix #15888) ([#20951](https://github.com/run-llama/llama_index/pull/20951))
+
+### llama-index-tools-google [0.7.1]
+
+- feat(google-tools): support service account and cloud auth for Calendar and Gmail ([#20879](https://github.com/run-llama/llama_index/pull/20879))
+
+### llama-index-vector-stores-couchbase [0.7.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-vector-stores-mongodb [0.10.1]
+
+- vbump all the things ([#20978](https://github.com/run-llama/llama_index/pull/20978))
+
+### llama-index-vector-stores-opensearch [1.2.0]
+
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+
+### llama-index-vector-stores-postgres [0.8.1]
+
+- feat(postgres): add MMR (Maximal Marginal Relevance) query support ([#20860](https://github.com/run-llama/llama_index/pull/20860))
+
+### llama-index-vector-stores-qdrant [0.10.0]
+
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+
+### llama-index-vector-stores-solr [0.2.0]
+
+- feat: align text match filters across core and vector backends ([#20883](https://github.com/run-llama/llama_index/pull/20883))
+- fix: correct typo 'compatability' to 'compatibility' in Solr client ([#21029](https://github.com/run-llama/llama_index/pull/21029))
+
 ## [2026-03-12]
 
 ### llama-index-agent-agentmesh [0.2.0]
