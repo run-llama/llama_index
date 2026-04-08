@@ -744,7 +744,6 @@ def test_query_forwards_suffix_without_class() -> None:
 
     async_mock = AsyncMock(return_value="ok")
 
-    # wrapper, żeby przechwycić argumenty
     async def wrapper(*args, **kwargs):
         captured["args"] = args
         captured["kwargs"] = kwargs
@@ -770,6 +769,6 @@ def test_query_forwards_suffix_without_class() -> None:
         asyncio.set_event_loop(None)
 
     assert result == "ok"
-    assert captured["args"][0] == q
+    assert captured["kwargs"]["query"] == q
     assert captured["kwargs"]["metadata_keyword_suffix"] == "__custom"
     assert captured["kwargs"]["test_flag"] is True
