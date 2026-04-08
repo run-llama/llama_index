@@ -10,7 +10,8 @@ from elasticsearch import AsyncElasticsearch, ConnectionError
 import pandas as pd
 import pytest
 import pytest_asyncio
-
+from unittest.mock import AsyncMock
+import asyncio
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
@@ -736,3 +737,39 @@ async def test_clear(
 
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == node_embeddings[0].node_id
+
+
+def test_query_forwards_suffix_without_class() -> None:
+    captured = {}
+
+    async_mock = AsyncMock(return_value="ok")
+
+    # wrapper, żeby przechwycić argumenty
+    async def wrapper(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+        return await async_mock(*args, **kwargs)
+
+    store = type("Store", (), {})()
+    store.aquery = wrapper
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        q = VectorStoreQuery(query_embedding=[1.0], similarity_top_k=1)
+
+        result = ElasticsearchStore.query(
+            store,
+            q,
+            metadata_keyword_suffix="__custom",
+            test_flag=True,
+        )
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+    assert result == "ok"
+    assert captured["args"][0] == q
+    assert captured["kwargs"]["metadata_keyword_suffix"] == "__custom"
+    assert captured["kwargs"]["test_flag"] is True

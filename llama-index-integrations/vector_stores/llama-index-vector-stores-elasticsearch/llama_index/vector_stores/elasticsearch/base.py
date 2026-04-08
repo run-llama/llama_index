@@ -495,7 +495,13 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         """
         return asyncio.get_event_loop().run_until_complete(
-            self.aquery(query, custom_query, es_filter, **kwargs)
+            self.aquery(
+                query=query,
+                custom_query=custom_query,
+                es_filter=es_filter,
+                metadata_keyword_suffix=metadata_keyword_suffix,
+                **kwargs,
+            )
         )
 
     async def aquery(
