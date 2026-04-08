@@ -335,6 +335,8 @@ class LiteLLM(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+        if self._custom_llm_provider:
+            base_kwargs["custom_llm_provider"] = self._custom_llm_provider
         return {
             **base_kwargs,
             **self.additional_kwargs,

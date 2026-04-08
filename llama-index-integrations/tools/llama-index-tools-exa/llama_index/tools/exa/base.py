@@ -1,4 +1,4 @@
-"""Exa tool spec."""
+"""Exa tool spec - web search API for AI."""
 
 import datetime
 from typing import List, Optional
@@ -8,7 +8,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class ExaToolSpec(BaseToolSpec):
-    """Exa tool spec."""
+    """Exa tool spec - web search API for AI."""
 
     spec_functions = [
         "search",
@@ -42,10 +42,10 @@ class ExaToolSpec(BaseToolSpec):
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
         use_autoprompt: bool = True,
-        type: str = "magic",
+        type: str = "auto",
     ) -> List:
         """
-        Exa allows you to use a natural language query to search the internet.
+        Exa allows you to use a natural language query to search the web.
 
         Args:
             query (str): A natural language query phrased as an answer for what the link provides, ie: "This is the latest news about space:"
@@ -121,7 +121,7 @@ class ExaToolSpec(BaseToolSpec):
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
         use_autoprompt: bool = True,
-        type: str = "magic",
+        type: str = "auto",
     ) -> List[Document]:
         """
         Combines the functionality of `search` and `retrieve_documents`.
@@ -159,7 +159,7 @@ class ExaToolSpec(BaseToolSpec):
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
         use_autoprompt: bool = True,
-        type: str = "magic",
+        type: str = "auto",
     ) -> List[Document]:
         """
         Searches and retrieves highlights (intelligent snippets from the document).

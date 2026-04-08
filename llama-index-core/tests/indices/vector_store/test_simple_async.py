@@ -1,8 +1,9 @@
 import pytest
-from typing import List
+from typing import Any, List
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.core.schema import Document
+from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
 
@@ -199,3 +200,32 @@ async def test_adelete_ref_doc_nodes_removed_from_docstore(
     for node_id in ref_doc_info_2.node_ids:
         node = index.docstore.get_node(node_id, raise_error=False)
         assert node is not None
+
+
+@pytest.mark.asyncio
+async def test_adelete_ref_doc_calls_vector_store_with_ref_doc_id_only(
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
+) -> None:
+    delete_log: List[str] = []
+
+    class TrackingVectorStore(SimpleVectorStore):
+        def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
+            delete_log.append(ref_doc_id)
+            super().delete(ref_doc_id, **kwargs)
+
+        @property
+        def client(self) -> Any:
+            return None
+
+    store = TrackingVectorStore()
+    index = VectorStoreIndex.from_documents(
+        [Document(text="Hello world.", id_="my-doc-id")],
+        storage_context=StorageContext.from_defaults(vector_store=store),
+        embed_model=mock_embed_model,
+    )
+
+    await index.adelete_ref_doc("my-doc-id")
+
+    assert delete_log == ["my-doc-id"], (
+        f"Expected delete() called once with ref_doc_id only, got: {delete_log}"
+    )

@@ -1,6 +1,5 @@
 """Base retrieval abstractions."""
 
-import asyncio
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
@@ -11,9 +10,6 @@ from llama_index.core.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.core.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
     RetrievalMetricResult,
-)
-from llama_index.core.llama_dataset.legacy.embedding import (
-    EmbeddingQAFinetuneDataset,
 )
 
 
@@ -168,33 +164,3 @@ class BaseRetrievalEvaluator(BaseModel):
             mode=mode,
             metric_dict=metric_dict,
         )
-
-    async def aevaluate_dataset(
-        self,
-        dataset: EmbeddingQAFinetuneDataset,
-        workers: int = 2,
-        show_progress: bool = False,
-        **kwargs: Any,
-    ) -> List[RetrievalEvalResult]:
-        """Run evaluation with dataset."""
-        semaphore = asyncio.Semaphore(workers)
-
-        async def eval_worker(
-            query: str, expected_ids: List[str], mode: RetrievalEvalMode
-        ) -> RetrievalEvalResult:
-            async with semaphore:
-                return await self.aevaluate(query, expected_ids=expected_ids, mode=mode)
-
-        response_jobs = []
-        mode = RetrievalEvalMode.from_str(dataset.mode)
-        for query_id, query in dataset.queries.items():
-            expected_ids = dataset.relevant_docs[query_id]
-            response_jobs.append(eval_worker(query, expected_ids, mode))
-        if show_progress:
-            from tqdm.asyncio import tqdm_asyncio
-
-            eval_results = await tqdm_asyncio.gather(*response_jobs)
-        else:
-            eval_results = await asyncio.gather(*response_jobs)
-
-        return eval_results
