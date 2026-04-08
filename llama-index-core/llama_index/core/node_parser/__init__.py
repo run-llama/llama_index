@@ -25,7 +25,7 @@ from llama_index.core.node_parser.relational.unstructured_element import (
 from llama_index.core.node_parser.relational.llama_parse_json_element import (
     LlamaParseJsonNodeParser,
 )
-from llama_index.core.node_parser.text.code import CodeSplitter
+from llama_index.core.node_parser.text.code import CodeSplitter, EXTENSION_TO_LANGUAGE
 from llama_index.core.node_parser.text.langchain import LangchainNodeParser
 from llama_index.core.node_parser.text.semantic_splitter import (
     SemanticSplitterNodeParser,
@@ -47,6 +47,7 @@ __all__ = [
     "TokenTextSplitter",
     "SentenceSplitter",
     "CodeSplitter",
+    "EXTENSION_TO_LANGUAGE",
     "SimpleFileNodeParser",
     "HTMLNodeParser",
     "MarkdownNodeParser",

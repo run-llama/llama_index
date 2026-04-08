@@ -406,3 +406,81 @@ def complex_function():
     assert len(nodes) >= 1
     assert isinstance(nodes[0], TextNode)
     assert "def complex_function():" in nodes[0].text
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_python() -> None:
+    """Test that from_filename correctly infers Python from .py extension."""
+    if "CI" in os.environ:
+        return
+
+    splitter = CodeSplitter.from_filename(
+        "main.py", chunk_lines=4, chunk_lines_overlap=1, max_chars=30
+    )
+    assert splitter.language == "python"
+
+    text = """\
+def foo():
+    print("bar")
+
+def baz():
+    print("bbq")"""
+
+    chunks = splitter.split_text(text)
+    assert chunks[0].startswith("def foo():")
+    assert chunks[1].startswith("def baz():")
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_typescript() -> None:
+    """Test that from_filename correctly infers TypeScript from .ts extension."""
+    if "CI" in os.environ:
+        return
+
+    splitter = CodeSplitter.from_filename(
+        "/project/src/index.ts", chunk_lines=4, chunk_lines_overlap=1, max_chars=50
+    )
+    assert splitter.language == "typescript"
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_full_path() -> None:
+    """Test that from_filename works with full file paths."""
+    if "CI" in os.environ:
+        return
+
+    splitter = CodeSplitter.from_filename("/home/user/project/utils.py")
+    assert splitter.language == "python"
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_unknown_extension() -> None:
+    """Test that from_filename raises ValueError for unrecognised extension."""
+    if "CI" in os.environ:
+        return
+
+    with pytest.raises(ValueError, match="Unrecognised file extension"):
+        CodeSplitter.from_filename("unknown.xyz")
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_from_filename_no_extension() -> None:
+    """Test that from_filename raises ValueError for files with no extension."""
+    if "CI" in os.environ:
+        return
+
+    with pytest.raises(ValueError, match="has no file extension"):
+        CodeSplitter.from_filename("Makefile")
+
+
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
+def test_extension_to_language_map() -> None:
+    """Test that EXTENSION_TO_LANGUAGE covers common languages."""
+    from llama_index.core.node_parser.text.code import EXTENSION_TO_LANGUAGE
+
+    assert EXTENSION_TO_LANGUAGE[".py"] == "python"
+    assert EXTENSION_TO_LANGUAGE[".ts"] == "typescript"
+    assert EXTENSION_TO_LANGUAGE[".js"] == "javascript"
+    assert EXTENSION_TO_LANGUAGE[".go"] == "go"
+    assert EXTENSION_TO_LANGUAGE[".rs"] == "rust"
+    assert EXTENSION_TO_LANGUAGE[".java"] == "java"
