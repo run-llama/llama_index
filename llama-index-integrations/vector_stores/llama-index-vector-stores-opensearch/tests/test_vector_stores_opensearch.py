@@ -10,6 +10,42 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+def test_default_approximate_search_query_includes_native_knn_filter_when_prefilter_present():
+    """Ensure ANN query uses native knn.filter when pre_filter is provided."""
+    client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+
+    pre_filter = {"bool": {"filter": [{"term": {"metadata.foo": "bar"}}]}}
+    query = client._default_approximate_search_query(
+        query_vector=[0.1, 0.2, 0.3],
+        k=4,
+        vector_field="embedding",
+        pre_filter=pre_filter,
+    )
+
+    assert query["size"] == 4
+    assert query["query"]["knn"]["field"] == "embedding"
+    assert query["query"]["knn"]["query_vector"] == [0.1, 0.2, 0.3]
+    assert query["query"]["knn"]["k"] == 4
+    assert query["query"]["knn"]["filter"] == pre_filter
+
+
+def test_default_approximate_search_query_omits_filter_for_match_all_prefilter():
+    """Avoid adding knn.filter for MATCH_ALL_QUERY to keep query minimal."""
+    from llama_index.vector_stores.opensearch.base import MATCH_ALL_QUERY
+
+    client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+
+    query = client._default_approximate_search_query(
+        query_vector=[0.1, 0.2, 0.3],
+        k=4,
+        vector_field="embedding",
+        pre_filter=MATCH_ALL_QUERY,
+    )
+
+    assert query["query"]["knn"]["field"] == "embedding"
+    assert "filter" not in query["query"]["knn"]
+
+
 def test_class():
     names_of_base_classes = [b.__name__ for b in OpensearchVectorStore.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
