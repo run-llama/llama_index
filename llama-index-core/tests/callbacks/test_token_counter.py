@@ -1,7 +1,13 @@
 """Embeddings."""
 
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType
 from llama_index.core.callbacks.token_counting import TokenCountingHandler
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.schema import Document
+from llama_index.core.settings import Settings
 
 TEST_PAYLOAD = {"chunks": ["one"], "formatted_prompt": "two", "response": "three"}
 TEST_ID = "my id"
@@ -48,3 +54,24 @@ def test_on_event_end() -> None:
     # Embedding should be one (single token chunk)
     assert handler.total_llm_token_count == 2
     assert handler.total_embedding_token_count == 1
+
+
+def test_token_counter_with_ingestion_pipeline() -> None:
+    """Test that TokenCountingHandler tracks embedding tokens in an IngestionPipeline."""
+    token_counter = TokenCountingHandler()
+    callback_manager = CallbackManager([token_counter])
+
+    Settings.callback_manager = callback_manager
+
+    embed_model = MockEmbedding(embed_dim=128)
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=512, chunk_overlap=0),
+            embed_model,
+        ],
+    )
+
+    documents = [Document(text="This is a test document for token counting.")]
+    pipeline.run(documents=documents)
+
+    assert token_counter.total_embedding_token_count > 0
