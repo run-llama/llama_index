@@ -6,27 +6,35 @@ pip install llama-index-readers-service-now
 
 This loader reads Knowledge Base articles from a ServiceNow instance. The user needs to specify the ServiceNow instance URL and authentication credentials to initialize the SnowKBReader.
 
-The loader uses the `pysnc` library to connect to ServiceNow and retrieve knowledge base articles. It supports authentication via username/password (basic auth) or with OAuth2 client credentials (password grant flow).
+The loader uses the `pysnc` library to connect to ServiceNow and retrieve knowledge base articles. It supports authentication via username/password (basic auth), OAuth2 password grant flow, or OAuth2 client credentials grant flow.
 
 **Important**: This reader requires custom parsers for processing different file types. At minimum, an HTML parser must be provided for processing article bodies.
 
 ## Authentication
 
-The reader requires the following authentication parameters:
+The reader supports three authentication methods:
 
-**Required:**
+### 1. Basic Auth (username/password)
 
 - `instance`: Your ServiceNow instance name (e.g., "dev12345" - without .service-now.com)
 - `username`: ServiceNow username
 - `password`: ServiceNow password
 - `custom_parsers`: Dictionary mapping FileType enum values to BaseReader instances (REQUIRED)
 
-**Optional (for OAuth2 password grant flow):**
+### 2. OAuth2 Password Grant Flow (username/password + client credentials)
 
-- `client_id`: OAuth2 client ID (if provided, client_secret is also required)
-- `client_secret`: OAuth2 client secret (if provided, client_id is also required)
+- `instance`, `username`, `password`, `custom_parsers` (as above)
+- `client_id`: OAuth2 client ID
+- `client_secret`: OAuth2 client secret
 
-If OAuth2 parameters are not provided, the reader will use basic authentication with username/password.
+### 3. OAuth2 Client Credentials Grant Flow (machine-to-machine, no username/password)
+
+- `instance`: Your ServiceNow instance name
+- `client_id`: OAuth2 client ID
+- `client_secret`: OAuth2 client secret
+- `custom_parsers`: Dictionary mapping FileType enum values to BaseReader instances (REQUIRED)
+
+This flow is ideal for machine-to-machine authentication where no user context is needed. Requires `pysnc>=1.2.1`.
 
 ## Event System
 
@@ -184,12 +192,31 @@ reader = SnowKBReader(
     custom_parsers=custom_parsers,  # REQUIRED parameter
     username="your_username",
     password="your_password",
-    # Optional OAuth2 parameters:
+    # Optional OAuth2 parameters for password grant flow:
     # client_id="your_client_id",
     # client_secret="your_client_secret",
 )
 
 # Load a specific article by sys_id
+documents = reader.load_data(article_sys_id="your_article_sys_id")
+```
+
+```python
+# Example using OAuth2 Client Credentials Grant Flow (machine-to-machine, no username/password)
+from llama_index.readers.service_now import SnowKBReader, FileType
+
+# Custom parsers are REQUIRED
+custom_parsers = {
+    FileType.HTML: HTMLParser()  # Required for article body processing
+}
+
+reader = SnowKBReader(
+    instance="dev12345",
+    custom_parsers=custom_parsers,
+    client_id="your_client_id",
+    client_secret="your_client_secret",
+)
+
 documents = reader.load_data(article_sys_id="your_article_sys_id")
 ```
 

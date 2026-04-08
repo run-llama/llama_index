@@ -6,7 +6,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.core.instrumentation import get_dispatcher
 from pysnc import GlideRecord, ServiceNowClient
-from pysnc.auth import ServiceNowPasswordGrantFlow
+from pysnc.auth import ServiceNowPasswordGrantFlow, ServiceNowClientCredentialsFlow
 import requests
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
@@ -240,7 +240,7 @@ class CustomParserManager(BaseModel):
 
 class SnowKBReader(BaseReader):
     """
-    ServiceNow Knowledge Base reader using PySNC with username/password or password grant flow.
+    ServiceNow Knowledge Base reader using PySNC with multiple authentication methods.
 
     This reader requires custom parsers for processing different file types. At minimum,
     an HTML parser must be provided for processing article bodies. Additional parsers
@@ -265,10 +265,10 @@ class SnowKBReader(BaseReader):
         custom_parsers: Dictionary mapping FileType enum values to BaseReader instances.
                        This is REQUIRED and must include at least FileType.HTML.
                        Each parser must implement the load_data method.
-        username: ServiceNow username for authentication (required)
-        password: ServiceNow password for authentication (required)
-        client_id: OAuth client ID for ServiceNow (optional, but if provided, client_secret is required)
-        client_secret: OAuth client secret for ServiceNow (optional, but if provided, client_id is required)
+        username: ServiceNow username for authentication (required for basic/password grant flow)
+        password: ServiceNow password for authentication (required for basic/password grant flow)
+        client_id: OAuth client ID for ServiceNow
+        client_secret: OAuth client secret for ServiceNow
         process_attachment_callback: Optional callback to filter attachments (content_type: str, size_bytes: int, file_name: str) -> tuple[bool, str]
         process_document_callback: Optional callback to filter documents (kb_number: str) -> bool
         custom_folder: Folder for temporary files during parsing
@@ -278,7 +278,9 @@ class SnowKBReader(BaseReader):
 
     Authentication:
         - Basic auth: Provide username and password only
-        - OAuth flow: Provide username, password, client_id, and client_secret
+        - Password grant flow (OAuth): Provide username, password, client_id, and client_secret
+        - Client credentials flow (OAuth): Provide client_id and client_secret only (no username/password).
+          Requires pysnc>=1.2.1.
 
     Events:
         The reader fires various events during processing using LlamaIndex's standard
@@ -344,17 +346,29 @@ class SnowKBReader(BaseReader):
                 )
 
         # Validate authentication parameters
-        # Username and password are always required
-        if not username:
-            raise ValueError("username parameter is required")
-        if not password:
-            raise ValueError("password parameter is required")
+        # Three valid authentication combinations:
+        # 1. Basic auth: username + password (no client_id/client_secret)
+        # 2. Password grant flow: username + password + client_id + client_secret
+        # 3. Client credentials flow: client_id + client_secret (no username/password)
 
-        # If client_id is provided, client_secret must also be provided (for OAuth flow)
-        if client_id is not None and client_secret is None:
-            raise ValueError("client_secret is required when client_id is provided")
-        if client_secret is not None and client_id is None:
-            raise ValueError("client_id is required when client_secret is provided")
+        # Check for partial credential pairs first to give specific error messages
+        if (username is not None) != (password is not None):
+            raise ValueError("Both username and password must be provided together.")
+
+        if (client_id is not None) != (client_secret is not None):
+            raise ValueError(
+                "Both client_id and client_secret must be provided together."
+            )
+
+        has_user_creds = username is not None and password is not None
+        has_client_creds = client_id is not None and client_secret is not None
+
+        if not has_user_creds and not has_client_creds:
+            raise ValueError(
+                "Authentication credentials required. Provide either "
+                "username/password (basic or password grant flow) or "
+                "client_id/client_secret (client credentials flow)."
+            )
 
         self.instance = instance
         self.username = username
@@ -408,22 +422,31 @@ class SnowKBReader(BaseReader):
         try:
             self.logger.info("Initializing ServiceNow client")
             instance = self.instance
-            user = self.username
-            password = self.password
 
-            # Use OAuth flow if client_id and client_secret are provided, otherwise use basic auth
-            if self.client_id and self.client_secret:
-                client_id = self.client_id
-                client_secret = self.client_secret
+            if (
+                self.client_id
+                and self.client_secret
+                and self.username
+                and self.password
+            ):
+                # Password grant flow: username + password + client_id + client_secret
                 self.pysnc_client = ServiceNowClient(
                     instance,
                     ServiceNowPasswordGrantFlow(
-                        user, password, client_id, client_secret
+                        self.username, self.password, self.client_id, self.client_secret
                     ),
+                )
+            elif self.client_id and self.client_secret:
+                # Client credentials flow: client_id + client_secret only
+                self.pysnc_client = ServiceNowClient(
+                    instance,
+                    ServiceNowClientCredentialsFlow(self.client_id, self.client_secret),
                 )
             else:
                 # Basic authentication with username and password
-                self.pysnc_client = ServiceNowClient(instance, (user, password))
+                self.pysnc_client = ServiceNowClient(
+                    instance, (self.username, self.password)
+                )
         except Exception as e:
             self.logger.error(f"Error initializing ServiceNow client: {e}")
             raise ValueError(f"Error initializing ServiceNow client: {e}")

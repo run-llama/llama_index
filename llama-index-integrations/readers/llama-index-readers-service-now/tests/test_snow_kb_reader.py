@@ -58,6 +58,14 @@ class MockPasswordGrantFlow:
         pass
 
 
+class MockClientCredentialsFlow:
+    """Mock client credentials grant flow for ServiceNow authentication."""
+
+    def __init__(self, client_id, client_secret):
+        self.client_id = client_id
+        self.client_secret = client_secret
+
+
 @pytest.fixture
 def mock_pysnc_imports():
     """Mock pysnc imports for testing."""
@@ -65,6 +73,9 @@ def mock_pysnc_imports():
         sys.modules["pysnc"].ServiceNowClient = MockServiceNowClient
         sys.modules["pysnc"].GlideRecord = MagicMock()
         sys.modules["pysnc.auth"].ServiceNowPasswordGrantFlow = MockPasswordGrantFlow
+        sys.modules[
+            "pysnc.auth"
+        ].ServiceNowClientCredentialsFlow = MockClientCredentialsFlow
         yield
 
 
@@ -78,21 +89,51 @@ def snow_reader(mock_pysnc_imports):
             "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
             MockPasswordGrantFlow,
         ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                # Create custom parsers dictionary with mock parsers
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # HTML parser is required
+                    FileType.PDF: MockCustomParser(),
+                    FileType.DOCUMENT: MockCustomParser(),
+                }
+
+                return SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
+
+
+@pytest.fixture
+def snow_reader_client_creds(mock_pysnc_imports):
+    """Fixture to create a SnowKBReader instance using client credentials flow."""
+    with patch(
+        "llama_index.readers.service_now.base.ServiceNowClient", MockServiceNowClient
+    ):
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+            MockClientCredentialsFlow,
+        ):
             from llama_index.readers.service_now import SnowKBReader
             from llama_index.readers.service_now.base import FileType
 
-            # Create custom parsers dictionary with mock parsers
             custom_parsers = {
-                FileType.HTML: MockCustomParser(),  # HTML parser is required
+                FileType.HTML: MockCustomParser(),
                 FileType.PDF: MockCustomParser(),
-                FileType.DOCUMENT: MockCustomParser(),
             }
 
             return SnowKBReader(
                 instance="test.service-now.com",
                 custom_parsers=custom_parsers,
-                username="test_user",
-                password="test_pass",
                 client_id="test_client_id",
                 client_secret="test_client_secret",
             )
@@ -138,7 +179,7 @@ class TestSnowKBReader:
                 assert reader.custom_parsers == custom_parsers
 
     def test_initialization_missing_credentials(self):
-        """Test that SnowKBReader raises error when missing required credentials."""
+        """Test that SnowKBReader raises error when missing all credentials."""
         from llama_index.readers.service_now import SnowKBReader
         from llama_index.readers.service_now.base import FileType
 
@@ -147,7 +188,7 @@ class TestSnowKBReader:
             FileType.PDF: MockCustomParser(),
         }
 
-        with pytest.raises(ValueError, match="username parameter is required"):
+        with pytest.raises(ValueError, match="Authentication credentials required"):
             SnowKBReader(instance="test.service-now.com", custom_parsers=custom_parsers)
 
     def test_load_data_by_sys_id(self, snow_reader):
@@ -599,3 +640,372 @@ class TestSnowKBReader:
                 pytest.fail(
                     f"Unexpected error during minimal SnowKBReader instantiation: {e}"
                 )
+
+
+class TestClientCredentialsFlow:
+    """Test class for Client Credentials Grant Flow authentication."""
+
+    def test_client_credentials_initialization(self, mock_pysnc_imports):
+        """Test SnowKBReader initializes correctly with client credentials only."""
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),
+                    FileType.PDF: MockCustomParser(),
+                }
+
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
+
+                assert reader.instance == "test.service-now.com"
+                assert reader.username is None
+                assert reader.password is None
+                assert reader.client_id == "test_client_id"
+                assert reader.client_secret == "test_client_secret"
+                assert reader.kb_table == "kb_knowledge"
+                assert reader.pysnc_client is not None
+                assert reader.custom_parsers == custom_parsers
+
+    def test_client_credentials_uses_correct_flow(self, mock_pysnc_imports):
+        """Test that client credentials flow uses ServiceNowClientCredentialsFlow."""
+        mock_snow_client = MagicMock()
+        mock_cred_flow = MagicMock()
+
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            mock_snow_client,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                mock_cred_flow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    client_id="my_client_id",
+                    client_secret="my_client_secret",
+                )
+
+                # Verify ServiceNowClientCredentialsFlow was called with correct args
+                mock_cred_flow.assert_called_once_with(
+                    "my_client_id", "my_client_secret"
+                )
+                # Verify ServiceNowClient was called with the flow instance
+                mock_snow_client.assert_called_once_with(
+                    "test.service-now.com", mock_cred_flow.return_value
+                )
+
+    def test_password_grant_flow_still_used_when_all_creds_provided(
+        self, mock_pysnc_imports
+    ):
+        """Test that password grant flow is used when all four credentials are provided."""
+        mock_snow_client = MagicMock()
+        mock_pwd_flow = MagicMock()
+        mock_cred_flow = MagicMock()
+
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            mock_snow_client,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                mock_pwd_flow,
+            ):
+                with patch(
+                    "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                    mock_cred_flow,
+                ):
+                    from llama_index.readers.service_now import SnowKBReader
+                    from llama_index.readers.service_now.base import FileType
+
+                    custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                    SnowKBReader(
+                        instance="test.service-now.com",
+                        custom_parsers=custom_parsers,
+                        username="test_user",
+                        password="test_pass",
+                        client_id="test_client_id",
+                        client_secret="test_client_secret",
+                    )
+
+                    # Password grant flow should be used, not client credentials
+                    mock_pwd_flow.assert_called_once_with(
+                        "test_user",
+                        "test_pass",
+                        "test_client_id",
+                        "test_client_secret",
+                    )
+                    mock_cred_flow.assert_not_called()
+
+    def test_basic_auth_used_when_only_username_password(self, mock_pysnc_imports):
+        """Test that basic auth is used when only username and password are provided."""
+        mock_snow_client = MagicMock()
+
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            mock_snow_client,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                )
+
+                # Basic auth should pass a tuple
+                mock_snow_client.assert_called_once_with(
+                    "test.service-now.com", ("test_user", "test_pass")
+                )
+
+    def test_client_credentials_load_data(self, snow_reader_client_creds):
+        """Test loading data using client credentials flow reader."""
+        with patch.object(snow_reader_client_creds, "load_data") as mock_load_data:
+            mock_doc = Document(
+                text="Test content",
+                metadata={
+                    "title": "Test KB Article",
+                    "page_id": "KB0010001",
+                    "status": "Published",
+                },
+            )
+            mock_load_data.return_value = [mock_doc]
+
+            result = snow_reader_client_creds.load_data(article_sys_id="test_sys_id")
+
+            assert len(result) == 1
+            assert result[0].text == "Test content"
+
+    def test_missing_client_secret_raises_error(self, mock_pysnc_imports):
+        """Test that providing client_id without client_secret raises error."""
+        from llama_index.readers.service_now import SnowKBReader
+        from llama_index.readers.service_now.base import FileType
+
+        custom_parsers = {FileType.HTML: MockCustomParser()}
+
+        with pytest.raises(
+            ValueError, match="Both client_id and client_secret must be provided"
+        ):
+            SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+                client_id="test_client_id",
+            )
+
+    def test_missing_client_id_raises_error(self, mock_pysnc_imports):
+        """Test that providing client_secret without client_id raises error."""
+        from llama_index.readers.service_now import SnowKBReader
+        from llama_index.readers.service_now.base import FileType
+
+        custom_parsers = {FileType.HTML: MockCustomParser()}
+
+        with pytest.raises(
+            ValueError, match="Both client_id and client_secret must be provided"
+        ):
+            SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+                client_secret="test_client_secret",
+            )
+
+    def test_username_without_password_raises_error(self, mock_pysnc_imports):
+        """Test that providing username without password raises error."""
+        from llama_index.readers.service_now import SnowKBReader
+        from llama_index.readers.service_now.base import FileType
+
+        custom_parsers = {FileType.HTML: MockCustomParser()}
+
+        with pytest.raises(
+            ValueError, match="Both username and password must be provided"
+        ):
+            SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+                username="test_user",
+                client_id="test_client_id",
+                client_secret="test_client_secret",
+            )
+
+    def test_password_without_username_raises_error(self, mock_pysnc_imports):
+        """Test that providing password without username raises error."""
+        from llama_index.readers.service_now import SnowKBReader
+        from llama_index.readers.service_now.base import FileType
+
+        custom_parsers = {FileType.HTML: MockCustomParser()}
+
+        with pytest.raises(
+            ValueError, match="Both username and password must be provided"
+        ):
+            SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+                password="test_pass",
+                client_id="test_client_id",
+                client_secret="test_client_secret",
+            )
+
+    def test_no_credentials_raises_error(self, mock_pysnc_imports):
+        """Test that providing no credentials at all raises error."""
+        from llama_index.readers.service_now import SnowKBReader
+        from llama_index.readers.service_now.base import FileType
+
+        custom_parsers = {FileType.HTML: MockCustomParser()}
+
+        with pytest.raises(ValueError, match="Authentication credentials required"):
+            SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+            )
+
+    def test_client_credentials_with_callbacks(self, mock_pysnc_imports):
+        """Test client credentials flow with process callbacks."""
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                def process_attachment_callback(
+                    file_name: str, size: int
+                ) -> tuple[bool, str]:
+                    return True, "Processing"
+
+                def process_document_callback(kb_number: str) -> bool:
+                    return True
+
+                custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                    process_attachment_callback=process_attachment_callback,
+                    process_document_callback=process_document_callback,
+                )
+
+                assert reader.process_attachment_callback is not None
+                assert reader.process_document_callback is not None
+                assert reader.username is None
+                assert reader.password is None
+
+    def test_client_credentials_with_custom_kb_table(self, mock_pysnc_imports):
+        """Test client credentials flow with custom KB table."""
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                    kb_table="custom_kb_table",
+                )
+
+                assert reader.kb_table == "custom_kb_table"
+
+    def test_backward_compatibility_basic_auth(self, mock_pysnc_imports):
+        """Test backward compatibility: basic auth still works as before."""
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                MockClientCredentialsFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
+
+                custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                )
+
+                assert reader.instance == "test.service-now.com"
+                assert reader.username == "test_user"
+                assert reader.password == "test_pass"
+                assert reader.client_id is None
+                assert reader.client_secret is None
+                assert reader.pysnc_client is not None
+
+    def test_backward_compatibility_password_grant_flow(self, mock_pysnc_imports):
+        """Test backward compatibility: password grant flow still works as before."""
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                with patch(
+                    "llama_index.readers.service_now.base.ServiceNowClientCredentialsFlow",
+                    MockClientCredentialsFlow,
+                ):
+                    from llama_index.readers.service_now import SnowKBReader
+                    from llama_index.readers.service_now.base import FileType
+
+                    custom_parsers = {FileType.HTML: MockCustomParser()}
+
+                    reader = SnowKBReader(
+                        instance="test.service-now.com",
+                        custom_parsers=custom_parsers,
+                        username="test_user",
+                        password="test_pass",
+                        client_id="test_client_id",
+                        client_secret="test_client_secret",
+                    )
+
+                    assert reader.instance == "test.service-now.com"
+                    assert reader.username == "test_user"
+                    assert reader.password == "test_pass"
+                    assert reader.client_id == "test_client_id"
+                    assert reader.client_secret == "test_client_secret"
+                    assert reader.pysnc_client is not None
