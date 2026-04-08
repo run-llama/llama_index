@@ -726,7 +726,11 @@ def test_llm_stream_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     assert len(chunks) >= 1
     # Final chunk has full accumulated content
     final_content = chunks[-1].message.content or ""
-    assert "Stream" in final_content and "chunk" in final_content and "response" in final_content
+    assert (
+        "Stream" in final_content
+        and "chunk" in final_content
+        and "response" in final_content
+    )
 
 
 @pytest.mark.parametrize(
@@ -798,7 +802,11 @@ async def test_llm_astream_chat(monkeypatch: MonkeyPatch, test_model_id: str) ->
 
     assert len(chunks) >= 1
     final_content = chunks[-1].message.content or ""
-    assert "Stream" in final_content and "chunk" in final_content and "response" in final_content
+    assert (
+        "Stream" in final_content
+        and "chunk" in final_content
+        and "response" in final_content
+    )
 
 
 @pytest.mark.asyncio
@@ -806,7 +814,9 @@ async def test_llm_astream_chat(monkeypatch: MonkeyPatch, test_model_id: str) ->
     "test_model_id",
     ["cohere.command-r-16k", "meta.llama-3-70b-instruct"],
 )
-async def test_llm_astream_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+async def test_llm_astream_complete(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
     """Test async astream_complete call to OCI Generative AI LLM service."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
@@ -929,7 +939,9 @@ def test_llm_complete_with_models(monkeypatch: MonkeyPatch, test_model_id: str) 
     "test_model_id",
     ["cohere.command-r-16k", "xai.grok-4"],
 )
-async def test_llm_achat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+async def test_llm_achat_with_tools(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
     """Test async chat (achat) with tools to OCI Generative AI LLM service."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
@@ -1033,7 +1045,10 @@ async def test_llm_achat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str
     if provider == "CohereProvider":
         assert "tool_calls" in actual.message.additional_kwargs
         assert len(actual.message.additional_kwargs["tool_calls"]) == 1
-        assert actual.message.additional_kwargs["tool_calls"][0]["name"] == "mock_tool_function"
+        assert (
+            actual.message.additional_kwargs["tool_calls"][0]["name"]
+            == "mock_tool_function"
+        )
 
 
 @pytest.mark.parametrize(
@@ -1178,7 +1193,9 @@ async def test_llm_acomplete_temperature_and_max_tokens(
                                                     {
                                                         "content": [
                                                             MockResponseDict(
-                                                                {"text": "Custom params response."}
+                                                                {
+                                                                    "text": "Custom params response."
+                                                                }
                                                             )
                                                         ]
                                                     }
@@ -1201,9 +1218,7 @@ async def test_llm_acomplete_temperature_and_max_tokens(
 
     monkeypatch.setattr(llm._client, "chat", mocked_response)
 
-    result = await llm.acomplete(
-        "Test prompt", temperature=0.9, max_tokens=100
-    )
+    result = await llm.acomplete("Test prompt", temperature=0.9, max_tokens=100)
     assert result.text == "Custom params response."
 
 
@@ -1522,7 +1537,9 @@ def _make_cohere_function_calls_events() -> list:
 
 
 @pytest.mark.parametrize("test_model_id", ["cohere.command-r-16k"])
-def test_llm_stream_chat_function_calls_alias(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+def test_llm_stream_chat_function_calls_alias(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
     """Ensure stream_chat supports functionCalls key alias for tool calls."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
