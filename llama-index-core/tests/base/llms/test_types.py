@@ -892,6 +892,9 @@ def test_image_block_resolve_image_buffer(png_1px: bytes):
     assert isinstance(img, BytesIO)
     assert img.read() == png_1px
 
+    # Test that the buffer remains the same
+    assert b.resolve_image() == img
+
 
 def test_image_block_resolve_image_path(
     tmp_path: Path, png_1px_b64: bytes, png_1px: bytes
@@ -1114,6 +1117,9 @@ def test_video_block_resolve_video_buffer(mp4_bytes: bytes):
     vid = b.resolve_video()
     assert isinstance(vid, BytesIO)
     assert vid.read() == mp4_bytes
+
+    # Test that the buffer remains the same
+    assert b.resolve_video() == vid
 
 
 def test_video_block_resolve_video_path(
