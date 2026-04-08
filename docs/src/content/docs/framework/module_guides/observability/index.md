@@ -922,6 +922,44 @@ from llama_index.core import set_global_handler
 set_global_handler("agentops")
 ```
 
+### Asqav
+
+[Asqav](https://github.com/jagmarques/asqav-sdk) is an AI agent governance platform that provides audit trails, policy enforcement, and compliance tracking for LLM applications. With the asqav integration, every LLM call, retrieval, query, and embedding event in your LlamaIndex pipeline is cryptographically signed for governance and audit purposes.
+
+Uses `CallbackManager` directly (not `set_global_handler`).
+
+#### Install
+
+```shell
+pip install asqav[llamaindex]
+```
+
+#### Usage Pattern
+
+```python
+import asqav
+from asqav.extras.llamaindex import AsqavCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings, VectorStoreIndex, SimpleDirectoryReader
+
+asqav.init("your_api_key")
+
+handler = AsqavCallbackHandler(agent_name="my-rag-app")
+callback_manager = CallbackManager([handler])
+Settings.callback_manager = callback_manager
+
+# All LlamaIndex operations are now signed for governance
+documents = SimpleDirectoryReader("data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in the data?")
+```
+
+#### Guides
+
+- [Asqav Documentation](https://asqav.com/docs)
+- [Asqav SDK on GitHub](https://github.com/jagmarques/asqav-sdk)
+
 ### Simple (LLM Inputs/Outputs)
 
 This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
