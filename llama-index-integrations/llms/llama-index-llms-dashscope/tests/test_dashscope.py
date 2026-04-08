@@ -11,7 +11,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
 )
-from llama_index.llms.dashscope.base import DashScope
+from llama_index.llms.dashscope.base import DASHSCOPE_MODEL_META, DashScope
 from llama_index.llms.dashscope.utils import chat_message_to_dashscope_messages
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
@@ -346,3 +346,19 @@ def test_chat_message_to_dashscope_messages_with_tool():
     result = chat_message_to_dashscope_messages([msg])
     assert result[0]["role"] == "tool"
     assert result[0]["tool_call_id"] == "123"
+
+
+def test_context_window_greater_than_num_output():
+    """
+    Regression test for GitHub issue #14722.
+
+    context_window must always be greater than num_output, otherwise
+    PromptHelper._get_available_context_size() will raise a ValueError
+    on every query.
+    """
+    for model_name, meta in DASHSCOPE_MODEL_META.items():
+        assert meta["context_window"] > meta["num_output"], (
+            f"Model '{model_name}' has context_window ({meta['context_window']}) "
+            f"<= num_output ({meta['num_output']}), which will cause a ValueError "
+            f"in PromptHelper. See GitHub issue #14722."
+        )
