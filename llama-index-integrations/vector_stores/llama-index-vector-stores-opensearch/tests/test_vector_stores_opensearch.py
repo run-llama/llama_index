@@ -104,8 +104,8 @@ def test_knn_search_query_routing_with_filters(
         client._default_scoring_script_query.assert_not_called()
 
         _, kwargs = client._default_approximate_search_query.call_args
-        assert kwargs.get("filters") == expected_filter_structure
-        assert "pre_filter" not in kwargs
+        assert kwargs.get("pre_filter") == expected_filter_structure
+        assert "filters" not in kwargs
 
     elif expected_path == "script_score":
         client._default_scoring_script_query.assert_called_once()
