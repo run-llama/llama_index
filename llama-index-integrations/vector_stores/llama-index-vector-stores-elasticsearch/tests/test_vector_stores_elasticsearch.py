@@ -1,4 +1,5 @@
 import aiohttp  # noqa
+import asyncio
 import logging
 import os
 import re
@@ -227,6 +228,11 @@ def es_store(
 ) -> Generator[ElasticsearchStore, None, None]:
     store = ElasticsearchStore(
         es_client=es_client,
+        es_url=os.environ.get("ES_URL", "http://localhost:9200"),
+        es_cloud_id=os.environ.get("ES_CLOUD_ID"),
+        es_api_key=os.environ.get("ES_API_KEY"),
+        es_user=os.environ.get("ES_USERNAME", "elastic"),
+        es_password=os.environ.get("ES_PASSWORD", "changeme"),
         index_name=index_name,
         distance_strategy="EUCLIDEAN_DISTANCE",
     )
@@ -242,6 +248,11 @@ def es_hybrid_store(
 ) -> Generator[ElasticsearchStore, None, None]:
     store = ElasticsearchStore(
         es_client=es_client,
+        es_url=os.environ.get("ES_URL", "http://localhost:9200"),
+        es_cloud_id=os.environ.get("ES_CLOUD_ID"),
+        es_api_key=os.environ.get("ES_API_KEY"),
+        es_user=os.environ.get("ES_USERNAME", "elastic"),
+        es_password=os.environ.get("ES_PASSWORD", "changeme"),
         index_name=index_name,
         distance_strategy="EUCLIDEAN_DISTANCE",
         retrieval_strategy=AsyncDenseVectorStrategy(hybrid=True),
@@ -258,6 +269,11 @@ def es_bm25_store(
 ) -> Generator[ElasticsearchStore, None, None]:
     store = ElasticsearchStore(
         es_client=es_client,
+        es_url=os.environ.get("ES_URL", "http://localhost:9200"),
+        es_cloud_id=os.environ.get("ES_CLOUD_ID"),
+        es_api_key=os.environ.get("ES_API_KEY"),
+        es_user=os.environ.get("ES_USERNAME", "elastic"),
+        es_password=os.environ.get("ES_PASSWORD", "changeme"),
         index_name=index_name,
         retrieval_strategy=AsyncBM25Strategy(),
     )
@@ -590,6 +606,52 @@ def test_metadata_filter_to_es_filter() -> None:
             ]
         }
     }
+
+
+def test_sync_methods_do_not_use_event_loop(mocker) -> None:
+    mocker.patch.object(
+        asyncio,
+        "get_event_loop",
+        side_effect=AssertionError("sync methods should not use get_event_loop"),
+    )
+    mocker.patch(
+        "llama_index.vector_stores.elasticsearch.base.convert_es_hit_to_node",
+        side_effect=lambda hit, _: TextNode(text="stub", id_=hit["_id"]),
+    )
+
+    sync_store = mocker.Mock()
+    sync_store.num_dimensions = None
+    sync_store.add_texts.return_value = ["node-1"]
+    sync_store.search.return_value = [{"_id": "node-1", "_score": 1.0, "_source": {}}]
+    sync_store.client.search.return_value = {
+        "hits": {"hits": [{"_id": "node-1", "_score": 1.0, "_source": {}}]}
+    }
+    sync_store.client.indices.exists.return_value = True
+
+    store = ElasticsearchStore.model_construct(
+        retrieval_strategy=AsyncDenseVectorStrategy(),
+        text_field="content",
+        index_name="test-index",
+    )
+    store._sync_store = sync_store
+
+    node = TextNode(text="stub", id_="node-1", embedding=[0.1, 0.2, 0.3])
+    assert store.add([node]) == ["node-1"]
+
+    query_result = store.query(
+        VectorStoreQuery(query_embedding=[0.1, 0.2, 0.3], similarity_top_k=1)
+    )
+    assert query_result.ids == ["node-1"]
+
+    store.delete("doc-1")
+    store.delete_nodes(node_ids=["node-1"])
+    _ = store.get_nodes(node_ids=["node-1"])
+    store.clear()
+
+    sync_store.delete.assert_any_call(query={"term": {"metadata.ref_doc_id": "doc-1"}})
+    sync_store.delete.assert_any_call(ids=["node-1"])
+    sync_store.client.search.assert_called_once()
+    sync_store.client.indices.delete.assert_called_once_with(index="test-index")
 
 
 @pytest.mark.asyncio
