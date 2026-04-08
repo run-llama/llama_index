@@ -32,6 +32,6 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Relevant Logs/Tracbacks
+      label: Relevant Logs/Tracebacks
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell

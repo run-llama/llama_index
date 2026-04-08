@@ -1,14 +1,9 @@
+import json
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import openai
 from deprecated import deprecated
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -22,20 +17,26 @@ from tenacity import (
 from tenacity.stop import stop_base
 from tenacity.wait import wait_base
 
+import openai
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
+    AudioBlock,
     ChatMessage,
+    ContentBlock,
+    DocumentBlock,
     ImageBlock,
     LogProb,
     MessageRole,
     TextBlock,
-    AudioBlock,
-    DocumentBlock,
     ThinkingBlock,
     ToolCallBlock,
-    ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -75,11 +76,19 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
+    "gpt-5.3": 400000,
+    "gpt-5.3-chat-latest": 128000,
+    "gpt-5.4": 1050000,
+    "gpt-5.4-2026-03-05": 1050000,
+    "gpt-5.4-mini": 400000,
+    "gpt-5.4-nano": 400000,
+    "gpt-5.4-chat-latest": 128000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
     "gpt-5.2-pro": 400000,
     "gpt-5.2-pro-2025-12-11": 400000,
+    "gpt-5.4-pro": 1050000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -221,6 +230,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-4.1",
     "gpt-5",
     "gpt-5.2",
+    "gpt-5.4",
 ]
 
 
@@ -434,8 +444,10 @@ def to_openai_message_dict(
             content.append(
                 {
                     "type": "file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -651,11 +663,14 @@ def to_openai_responses_message_dict(
                         }
                     )
         elif isinstance(block, ToolCallBlock):
+            arguments = block.tool_kwargs
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
             tool_calls.extend(
                 [
                     {
                         "type": "function_call",
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                         "call_id": block.tool_call_id,
                         "name": block.tool_name,
                     }
@@ -671,9 +686,17 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
-        return [*reasoning, *message_dicts]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(message_dicts)
+        return items
     elif tool_calls:
-        return [*reasoning, *tool_calls]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(tool_calls)
+        return items
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed

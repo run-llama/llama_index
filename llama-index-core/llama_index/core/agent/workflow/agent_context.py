@@ -9,7 +9,7 @@ scenarios like `LLM.predict_and_call`.
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from workflows.context.state_store import DictState, InMemoryStateStore
+from workflows.context.state_store import DictState, InMemoryStateStore, StateStore
 
 
 @runtime_checkable
@@ -22,7 +22,7 @@ class AgentContext(Protocol):
     """
 
     @property
-    def store(self) -> InMemoryStateStore[Any]:
+    def store(self) -> StateStore[Any]:
         """Access the key-value store for agent state."""
         ...
 
