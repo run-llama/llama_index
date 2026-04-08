@@ -1,0 +1,2 @@
+llama-index-core
+mrscraper-sdk

@@ -18,6 +18,7 @@ from llama_index.readers.web.knowledge_base.base import (
 from llama_index.readers.web.main_content_extractor.base import (
     MainContentExtractorReader,
 )
+from llama_index.readers.web.mrscraper_web.base import MrScraperWebReader
 from llama_index.readers.web.news.base import NewsArticleReader
 from llama_index.readers.web.olostep_web.base import OlostepWebReader
 from llama_index.readers.web.oxylabs_web.base import OxylabsWebReader
@@ -69,6 +70,7 @@ __all__ = [
     "HyperbrowserWebReader",
     "KnowledgeBaseWebReader",
     "MainContentExtractorReader",
+    "MrScraperWebReader",
     "NewsArticleReader",
     "OlostepWebReader",
     "OxylabsWebReader",
