@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-databricks"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index vector_stores databricks vector search integration"
 authors = [
     {name = "Alberto Da Costa <alberto@bamelevate.com>"},
