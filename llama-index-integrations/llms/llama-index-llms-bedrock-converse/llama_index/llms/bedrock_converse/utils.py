@@ -6,6 +6,7 @@ from typing import (
     AsyncGenerator,
     Callable,
     Dict,
+    Generator,
     List,
     Literal,
     Optional,
@@ -766,7 +767,9 @@ def converse_with_retry(
     )
 
     @retry_decorator
-    def _converse_with_retry(**kwargs: Any) -> Any:
+    def _converse_with_retry(
+        **kwargs: Any,
+    ) -> Union[Any, Generator[dict[str, Any], None]]:
         if stream:
             return client.converse_stream(**kwargs)
         else:
@@ -793,7 +796,7 @@ async def converse_with_retry_async(
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
-) -> Any:
+) -> Union[Any, AsyncGenerator[dict[str, Any], None]]:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
     converse_kwargs = {
@@ -865,7 +868,7 @@ async def converse_with_retry_async(
     # Further investigation is needed
 
     @retry_decorator
-    async def _conversion_with_retry(**kwargs: Any) -> Dict[str, Any]:
+    async def _conversion_with_retry(**kwargs: Any) -> Any:
         async with session.client(
             "bedrock-runtime",
             config=config,
@@ -875,7 +878,7 @@ async def converse_with_retry_async(
 
     async def _conversion_stream_with_retry(
         **kwargs: Any,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> Any:
         @retry_decorator
         async def _connect(**kw: Any) -> Tuple[Dict[str, Any], Any]:
             async with session.client(
