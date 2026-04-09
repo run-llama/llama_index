@@ -872,16 +872,21 @@ async def converse_with_retry_async(
         ) as client:
             return await client.converse(**kwargs)
 
-    @retry_decorator
     async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
-            response = await client.converse_stream(**kwargs)
-            async for event in response["stream"]:
-                yield event
+        @retry_decorator
+        async def _connect(**kw: Any):
+            async with session.client(
+                "bedrock-runtime",
+                config=config,
+                **_boto_client_kwargs,
+            ) as client:
+                response = await client.converse_stream(**kw)
+                return response, client
+
+        response, client = await _connect(**kwargs)
+
+        async for event in response["stream"]:
+            yield event
 
     if stream:
         return _conversion_stream_with_retry(**converse_kwargs)
