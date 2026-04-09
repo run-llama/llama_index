@@ -877,8 +877,8 @@ async def converse_with_retry_async(
         async def _connect(**kw: Any) -> Any:
             async with session.client(
                 "bedrock-runtime", config=config, **_boto_client_kwargs
-            ) as c:
-                return await c.converse_stream(**kw), c
+            ) as session_client:
+                return await session_client.converse_stream(**kw), session_client
 
         response, client = await _connect(**kwargs)
         async for event in response["stream"]:
