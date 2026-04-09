@@ -3,6 +3,7 @@ import json
 import logging
 from typing import (
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
     List,
@@ -864,7 +865,7 @@ async def converse_with_retry_async(
     # Further investigation is needed
 
     @retry_decorator
-    async def _conversion_with_retry(**kwargs: Any) -> Any:
+    async def _conversion_with_retry(**kwargs: Any) -> Dict[str, Any]:
         async with session.client(
             "bedrock-runtime",
             config=config,
@@ -872,9 +873,11 @@ async def converse_with_retry_async(
         ) as client:
             return await client.converse(**kwargs)
 
-    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
+    async def _conversion_stream_with_retry(
+        **kwargs: Any,
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         @retry_decorator
-        async def _connect(**kw: Any) -> Any:
+        async def _connect(**kw: Any) -> Tuple[Dict[str, Any], Any]:
             async with session.client(
                 "bedrock-runtime", config=config, **_boto_client_kwargs
             ) as session_client:
