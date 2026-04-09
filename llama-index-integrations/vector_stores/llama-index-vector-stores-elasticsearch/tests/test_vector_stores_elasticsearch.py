@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp  # noqa
 import logging
 import os
@@ -590,6 +591,45 @@ def test_metadata_filter_to_es_filter() -> None:
             ]
         }
     }
+
+
+def test_query_forwards_metadata_keyword_suffix() -> None:
+    captured = {}
+
+    class DummyStore:
+        async def aquery(
+            self,
+            query: VectorStoreQuery,
+            custom_query=None,
+            es_filter=None,
+            metadata_keyword_suffix: str = ".keyword",
+            **kwargs,
+        ):
+            captured["query"] = query
+            captured["custom_query"] = custom_query
+            captured["es_filter"] = es_filter
+            captured["metadata_keyword_suffix"] = metadata_keyword_suffix
+            captured["kwargs"] = kwargs
+            return "ok"
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        query = VectorStoreQuery(query_embedding=[1.0], similarity_top_k=1)
+        result = ElasticsearchStore.query(
+            DummyStore(),
+            query,
+            metadata_keyword_suffix="",
+            extra_option=True,
+        )
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+    assert result == "ok"
+    assert captured["query"] == query
+    assert captured["metadata_keyword_suffix"] == ""
+    assert captured["kwargs"] == {"extra_option": True}
 
 
 @pytest.mark.asyncio
