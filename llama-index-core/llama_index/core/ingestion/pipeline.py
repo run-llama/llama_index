@@ -10,7 +10,7 @@ from functools import partial, reduce
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 from fsspec import AbstractFileSystem
 
@@ -180,6 +180,72 @@ def arun_transformations_wrapper(
     )
     loop.close()
     return nodes
+
+
+def _get_cache_entries(
+    cache: Optional[IngestionCache], cache_collection: Optional[str]
+) -> Optional[Dict[str, dict]]:
+    """Extract all cache entries for a given collection."""
+    if cache is None:
+        return None
+    collection = cache_collection or cache.collection
+    return cache.cache.get_all(collection=collection)
+
+
+def _run_transformations_with_cache(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+) -> Tuple[Sequence[BaseNode], Optional[Dict[str, dict]]]:
+    """Run transformations and return both nodes and cache entries.
+
+    Used in multi-worker paths so cache writes from worker processes
+    can be merged back into the parent cache.
+    """
+    result = run_transformations(
+        nodes, transformations, in_place=in_place,
+        cache=cache, cache_collection=cache_collection,
+    )
+    return result, _get_cache_entries(cache, cache_collection)
+
+
+def _arun_transformations_wrapper_with_cache(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+    **kwargs: Any,
+) -> Tuple[Sequence[BaseNode], Optional[Dict[str, dict]]]:
+    """Async wrapper that returns both nodes and cache entries."""
+    loop = asyncio.new_event_loop()
+    result = loop.run_until_complete(
+        arun_transformations(
+            nodes=nodes,
+            transformations=transformations,
+            in_place=in_place,
+            cache=cache,
+            cache_collection=cache_collection,
+            **kwargs,
+        )
+    )
+    loop.close()
+    return result, _get_cache_entries(cache, cache_collection)
+
+
+def _merge_worker_caches(
+    results: Sequence[Tuple[Sequence[BaseNode], Optional[Dict[str, dict]]]],
+    cache: IngestionCache,
+    cache_collection: Optional[str],
+) -> None:
+    """Merge cache entries from worker processes back into the parent cache."""
+    collection = cache_collection or cache.collection
+    for _, worker_cache_data in results:
+        if worker_cache_data:
+            for key, val in worker_cache_data.items():
+                cache.cache.put(key, val, collection=collection)
 
 
 class DocstoreStrategy(str, Enum):
@@ -560,8 +626,8 @@ class IngestionPipeline(BaseModel):
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )
-                nodes_parallel = p.starmap(
-                    run_transformations,
+                results = p.starmap(
+                    _run_transformations_with_cache,
                     zip(
                         node_batches,
                         repeat(self.transformations),
@@ -570,7 +636,10 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])  # type: ignore
+                nodes = reduce(lambda x, y: x + y, [r[0] for r in results], [])  # type: ignore
+
+                if not self.disable_cache:
+                    _merge_worker_caches(results, self.cache, cache_collection)
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -772,7 +841,7 @@ class IngestionPipeline(BaseModel):
                     loop.run_in_executor(
                         p,
                         partial(
-                            arun_transformations_wrapper,
+                            _arun_transformations_wrapper_with_cache,
                             transformations=self.transformations,
                             in_place=in_place,
                             cache=self.cache if not self.disable_cache else None,
@@ -782,8 +851,11 @@ class IngestionPipeline(BaseModel):
                     )
                     for batch in node_batches
                 ]
-                result: Sequence[Sequence[BaseNode]] = await asyncio.gather(*tasks)
-                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, result, [])  # type: ignore
+                results = await asyncio.gather(*tasks)
+                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, [r[0] for r in results], [])  # type: ignore
+
+                if not self.disable_cache:
+                    _merge_worker_caches(results, self.cache, cache_collection)
         else:
             nodes = await arun_transformations(  # type: ignore
                 nodes_to_run,

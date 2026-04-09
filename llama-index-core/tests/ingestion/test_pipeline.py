@@ -501,3 +501,21 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+
+def test_multiworker_cache_is_preserved() -> None:
+    """Cache entries written inside worker processes must survive in the parent.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21300
+    """
+    docs = [Document(text=f"Document {i}. " * 30) for i in range(4)]
+
+    pipeline = IngestionPipeline(transformations=[SentenceSplitter()])
+    pipeline.run(documents=docs, num_workers=2)
+
+    cache_entries = pipeline.cache.cache.get_all(
+        collection=pipeline.cache.collection,
+    )
+    assert len(cache_entries) > 0, (
+        "Multi-worker run should populate the parent cache"
+    )
