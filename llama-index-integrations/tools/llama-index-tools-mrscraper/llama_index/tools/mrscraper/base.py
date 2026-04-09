@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List, Literal, Optional
 
 from llama_index.core.schema import Document
@@ -74,18 +73,11 @@ class MrScraperToolSpec(BaseToolSpec):
         if self._verbose:
             print(f"[MrScraper] Fetching HTML: {url}")
 
-        result = await self._client.fetch_html(
+        return await self._client.fetch_html(
             url,
             timeout=timeout,
             geo_code=geo_code,
             block_resources=block_resources,
-        )
-        html = result.get("data", "")
-        if isinstance(html, dict):
-            html = json.dumps(html)
-        return Document(
-            text=str(html),
-            metadata={"url": url, "status_code": result.get("status_code")},
         )
 
     async def create_scraper(
