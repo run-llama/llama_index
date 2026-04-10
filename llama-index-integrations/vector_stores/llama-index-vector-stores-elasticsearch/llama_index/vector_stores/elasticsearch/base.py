@@ -1,6 +1,5 @@
 """Elasticsearch vector store."""
 
-import asyncio
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
@@ -384,12 +383,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
     def close(self) -> None:
         if self._owns_sync_client:
             self._sync_store.close()
-        if self._owns_async_client:
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(self._store.close())
-            except RuntimeError:
-                asyncio.run(self._store.close())
 
     async def aclose(self) -> None:
         if self._owns_sync_client:
