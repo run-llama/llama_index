@@ -4,7 +4,9 @@ Default parsers for ConfluenceReader file types.
 
 import os
 from io import BytesIO
-from typing import Dict, Iterable, override
+from typing import Dict, Iterable
+
+from typing_extensions import override
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
