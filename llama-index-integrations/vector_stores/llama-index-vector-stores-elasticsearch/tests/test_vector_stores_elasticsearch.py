@@ -634,6 +634,9 @@ def test_sync_methods_do_not_use_event_loop(mocker) -> None:
         index_name="test-index",
     )
     store._sync_store = sync_store
+    store._store = mocker.Mock()
+    store._owns_sync_client = True
+    store._owns_async_client = True
 
     node = TextNode(text="stub", id_="node-1", embedding=[0.1, 0.2, 0.3])
     assert store.add([node]) == ["node-1"]
@@ -646,11 +649,14 @@ def test_sync_methods_do_not_use_event_loop(mocker) -> None:
     store.delete("doc-1")
     store.delete_nodes(node_ids=["node-1"])
     _ = store.get_nodes(node_ids=["node-1"])
+    store.close()
     store.clear()
 
     sync_store.delete.assert_any_call(query={"term": {"metadata.ref_doc_id": "doc-1"}})
     sync_store.delete.assert_any_call(ids=["node-1"])
     sync_store.client.search.assert_called_once()
+    sync_store.close.assert_called_once()
+    store._store.close.assert_not_called()
     sync_store.client.indices.delete.assert_called_once_with(index="test-index")
 
 
