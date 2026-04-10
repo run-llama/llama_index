@@ -14,13 +14,13 @@ pip install semantix-ai
 
 No additional configuration is required. semantix downloads a small NLI model on first use and caches it locally.
 
-### Basic Usage with a LlamaIndex Query Engine
+### Inline Validation with a LlamaIndex Query Engine
 
-You can validate the string output of any LlamaIndex query engine against a natural language intent:
+Use `assert_semantic` to validate the string output of any LlamaIndex query engine against a natural language constraint:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from semantix import Semantic, validate_output
+from semantix.testing import assert_semantic
 
 # Build a simple RAG query engine
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
@@ -31,60 +31,64 @@ query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the key findings.")
 output = str(response)
 
-# Validate the output against a natural language intent
-result = validate_output(
-    output=output,
-    intent="must be a clear, factual summary with no speculation",
-)
-
-if result.is_valid:
-    print("Output passed semantic validation.")
-else:
-    print(f"Validation failed: {result.reason}")
+# Validate — raises AssertionError on failure
+assert_semantic(output, "must be a clear, factual summary with no speculation")
 ```
 
-### Using Semantic Types
+### Using Intent Classes with `@validate_intent`
 
-semantix lets you declare intent directly in type annotations using `Semantic`. This is useful for wrapping output pipelines with reusable intent constraints:
+For reusable validation, define an `Intent` subclass and use the `@validate_intent` decorator. The function's return type annotation tells semantix which intent to enforce:
 
 ```python
-from semantix import Semantic
+from semantix import Intent, validate_intent
 
-# Declare a semantic type: a string that must be polite and professional
-PoliteSummary = Semantic[str, "must be polite and professional"]
+class FactualSummary(Intent):
+    """The text must be a clear, factual summary with no speculation."""
 
-# Use validate_output with the semantic type
-from semantix import validate_output
+@validate_intent
+def summarize_docs(query_engine, question: str) -> FactualSummary:
+    response = query_engine.query(question)
+    return str(response)  # returns a plain string; decorator validates it
 
-response = query_engine.query("What are the action items from the report?")
-output = str(response)
-
-result = validate_output(output=output, intent=PoliteSummary)
-print(result.is_valid, result.reason)
+result = summarize_docs(query_engine, "What are the key findings?")
 ```
 
 ### Composite Intents
 
-You can combine multiple constraints to build richer validation logic:
+Combine multiple constraints with the `&` operator to build richer validation:
 
 ```python
-from semantix import Semantic, validate_output
+from semantix import Intent
 
-# Validate against multiple intents at once
-response = query_engine.query("List the risks mentioned in the document.")
-output = str(response)
+class Polite(Intent):
+    """The text must be polite and professional."""
 
-result = validate_output(
-    output=output,
-    intent=[
-        "must identify at least one specific risk",
-        "must not include recommendations or solutions",
-        "must use neutral, factual language",
-    ],
-)
+class Factual(Intent):
+    """The text must be factual with no speculation."""
 
-print(result.is_valid)   # True / False
-print(result.reason)     # Explanation from the NLI model
+# AllOf — output must satisfy both intents
+PoliteFactual = Polite & Factual
+
+@validate_intent
+def polite_summary(query_engine, question: str) -> PoliteFactual:
+    return str(query_engine.query(question))
+```
+
+### Pluggable Judges
+
+By default semantix uses its built-in NLI judge. You can swap in other judges for different tradeoffs:
+
+```python
+from semantix import NLIJudge, EmbeddingJudge, LLMJudge
+from semantix.testing import assert_semantic
+
+output = str(query_engine.query("List the risks in the document."))
+
+# Use the NLI judge explicitly
+assert_semantic(output, "must identify at least one specific risk", judge=NLIJudge())
+
+# Or use the embedding-based judge
+assert_semantic(output, "must use neutral, factual language", judge=EmbeddingJudge())
 ```
 
 ### Why Use semantix with LlamaIndex?
@@ -92,7 +96,7 @@ print(result.reason)     # Explanation from the NLI model
 - **No API cost** — inference runs on a local NLI model (~15ms per check)
 - **Intent-based validation** — catches hallucinations, tone drift, and off-topic responses that schema checks miss
 - **Zero configuration** — drop it in after any `query_engine.query()` call
-- **166 tests, MIT licensed**
+- **MIT licensed**
 
 ### Useful Links
 
