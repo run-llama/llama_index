@@ -660,6 +660,18 @@ def test_sync_methods_do_not_use_event_loop(mocker) -> None:
     sync_store.client.indices.delete.assert_called_once_with(index="test-index")
 
 
+def test_async_only_client_does_not_require_sync_client() -> None:
+    async_client = AsyncElasticsearch("http://localhost:9200")
+    try:
+        store = ElasticsearchStore(index_name="test-index", es_client=async_client)
+        with pytest.raises(ValueError, match="Synchronous methods require"):
+            store.query(
+                VectorStoreQuery(query_embedding=[0.1, 0.2, 0.3], similarity_top_k=1)
+            )
+    finally:
+        asyncio.run(async_client.close())
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
