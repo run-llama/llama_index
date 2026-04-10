@@ -390,7 +390,8 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                     )
                 )
 
-        return PGRetriever(sub_retrievers, use_async=self._use_async, **kwargs)
+        use_async_val = kwargs.pop("use_async", self._use_async)
+        return PGRetriever(sub_retrievers, use_async=use_async_val, **kwargs)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
