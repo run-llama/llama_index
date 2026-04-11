@@ -819,6 +819,398 @@ def to_openai_message_dicts(
         ]
 
 
+async def ato_openai_message_dict(
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
+    store: bool = False,
+) -> ChatCompletionMessageParam:
+    """Async version of to_openai_message_dict.
+
+    Uses async document resolution to avoid blocking the event loop
+    when DocumentBlock(url=...) needs to fetch remote files.
+    """
+    content = []
+    content_txt = ""
+    reference_audio_id = None
+    for block in message.blocks:
+        if message.role == MessageRole.ASSISTANT:
+            reference_audio_id = message.additional_kwargs.get(
+                "reference_audio_id", None
+            )
+            if reference_audio_id:
+                continue
+
+        if isinstance(block, TextBlock):
+            content.append({"type": "text", "text": block.text})
+            content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = await block.aresolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+                mimetype = block._guess_mimetype()
+            content.append(
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": block.title,
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
+                }
+            )
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                image_url = {"url": str(block.url)}
+                if block.detail:
+                    image_url["detail"] = block.detail
+
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": image_url,
+                    }
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                image_url = f"data:{block.image_mimetype};base64,{img_str}"
+
+                image_url_dict = {"url": image_url}
+                if block.detail:
+                    image_url_dict["detail"] = block.detail
+
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": image_url_dict,
+                    }
+                )
+        elif isinstance(block, AudioBlock):
+            audio_bytes = block.resolve_audio(as_base64=True).read()
+            audio_str = audio_bytes.decode("utf-8")
+            content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": audio_str,
+                        "format": block.format,
+                    },
+                }
+            )
+        elif isinstance(block, ThinkingBlock):
+            continue
+        elif isinstance(block, ToolCallBlock):
+            try:
+                function_dict = {
+                    "type": "function",
+                    "function": {
+                        "name": block.tool_name,
+                        "arguments": block.tool_kwargs,
+                    },
+                    "id": block.tool_call_id,
+                }
+
+                if len(content) == 0 or content[-1]["type"] != "text":
+                    content.append(
+                        {"type": "text", "text": "", "tool_calls": [function_dict]}
+                    )
+                elif content[-1]["type"] == "text" and "tool_calls" in content[-1]:
+                    content[-1]["tool_calls"].append(function_dict)
+                elif content[-1]["type"] == "text" and "tool_calls" not in content[-1]:
+                    content[-1]["tool_calls"] = [function_dict]
+            except Exception:
+                logger.warning(
+                    f"It was not possible to convert ToolCallBlock with call id {block.tool_call_id or '`no call id`'} to a valid message, skipping..."
+                )
+                continue
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    already_has_tool_calls = any(
+        isinstance(block, ToolCallBlock) for block in message.blocks
+    )
+    content_txt = (
+        None
+        if content_txt == ""
+        and message.role == MessageRole.ASSISTANT
+        and (
+            "function_call" in message.additional_kwargs
+            or "tool_calls" in message.additional_kwargs
+            or already_has_tool_calls
+        )
+        else content_txt
+    )
+
+    if reference_audio_id:
+        message_dict = {
+            "role": message.role.value,
+            "audio": {"id": reference_audio_id},
+        }
+    else:
+        message_dict = {
+            "role": message.role.value,
+            "content": (
+                content_txt
+                if message.role.value in ("assistant", "tool", "system")
+                or all(isinstance(block, TextBlock) for block in message.blocks)
+                else content
+            ),
+        }
+        if already_has_tool_calls:
+            existing_tool_calls = []
+            for c in content:
+                existing_tool_calls.extend(c.get("tool_calls", []))
+
+            if existing_tool_calls:
+                message_dict["tool_calls"] = existing_tool_calls
+
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
+        if message_dict["role"] == "system":
+            message_dict["role"] = "developer"
+
+    if (
+        "tool_calls" in message.additional_kwargs
+        or "function_call" in message.additional_kwargs
+    ) and not already_has_tool_calls:
+        message_dict.update(message.additional_kwargs)
+
+    if "tool_call_id" in message.additional_kwargs:
+        message_dict["tool_call_id"] = message.additional_kwargs["tool_call_id"]
+
+    null_keys = [key for key, value in message_dict.items() if value is None]
+    if drop_none:
+        for key in null_keys:
+            message_dict.pop(key)
+
+    return message_dict  # type: ignore
+
+
+async def ato_openai_responses_message_dict(
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
+    store: bool = False,
+) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
+    """Async version of to_openai_responses_message_dict.
+
+    Uses async document resolution to avoid blocking the event loop
+    when DocumentBlock(url=...) needs to fetch remote files.
+    """
+    content = []
+    content_txt = ""
+    tool_calls = []
+    reasoning = []
+
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            if message.role.value == "user":
+                content.append({"type": "input_text", "text": block.text})
+            else:
+                content.append({"type": "output_text", "text": block.text})
+            content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = await block.aresolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+                mimetype = block._guess_mimetype()
+            content.append(
+                {
+                    "type": "input_file",
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                }
+            )
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": str(block.url),
+                        "detail": block.detail or "auto",
+                    }
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": f"data:{block.image_mimetype};base64,{img_str}",
+                        "detail": block.detail or "auto",
+                    }
+                )
+        elif isinstance(block, ThinkingBlock):
+            if store:
+                if block.content and "id" in block.additional_information:
+                    reasoning.append(
+                        {
+                            "type": "reasoning",
+                            "id": block.additional_information["id"],
+                            "summary": [
+                                {"type": "summary_text", "text": block.content or ""}
+                            ],
+                        }
+                    )
+        elif isinstance(block, ToolCallBlock):
+            arguments = block.tool_kwargs
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
+            tool_calls.extend(
+                [
+                    {
+                        "type": "function_call",
+                        "arguments": arguments,
+                        "call_id": block.tool_call_id,
+                        "name": block.tool_name,
+                    }
+                ]
+            )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    if "tool_calls" in message.additional_kwargs:
+        message_dicts = [
+            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
+            for tool_call in message.additional_kwargs["tool_calls"]
+        ]
+
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(message_dicts)
+        return items
+    elif tool_calls:
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(tool_calls)
+        return items
+
+    content_txt = (
+        None
+        if content_txt == ""
+        and message.role == MessageRole.ASSISTANT
+        and (
+            "function_call" in message.additional_kwargs
+            or "tool_calls" in message.additional_kwargs
+        )
+        else content_txt
+    )
+
+    if message.role.value == "tool":
+        call_id = message.additional_kwargs.get(
+            "tool_call_id", message.additional_kwargs.get("call_id")
+        )
+        if call_id is None:
+            raise ValueError(
+                "tool_call_id or call_id is required in additional_kwargs for tool messages"
+            )
+
+        message_dict = {
+            "type": "function_call_output",
+            "output": content_txt,
+            "call_id": call_id,
+        }
+
+        return message_dict
+
+    elif (
+        isinstance(content_txt, str)
+        and len(content_txt) != 0
+        and all(item["type"] == "input_text" for item in content)
+        and message.role.value == "user"
+    ):
+        return content_txt
+    else:
+        message_dict = {
+            "role": message.role.value,
+            "content": (
+                content_txt
+                if message.role.value in ("system", "developer")
+                or all(isinstance(block, TextBlock) for block in message.blocks)
+                else content
+            ),
+        }
+
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
+        if message_dict["role"] == "system":
+            message_dict["role"] = "developer"
+
+    null_keys = [key for key, value in message_dict.items() if value is None]
+    if drop_none:
+        for key in null_keys:
+            message_dict.pop(key)
+
+    if reasoning:
+        return [*reasoning, message_dict]
+
+    return message_dict  # type: ignore
+
+
+async def ato_openai_message_dicts(
+    messages: Sequence[ChatMessage],
+    drop_none: bool = False,
+    model: Optional[str] = None,
+    is_responses_api: bool = False,
+    store: bool = False,
+) -> Union[List[ChatCompletionMessageParam], str]:
+    """Async version of to_openai_message_dicts.
+
+    Uses async document resolution to avoid blocking the event loop
+    when DocumentBlock(url=...) needs to fetch remote files.
+    """
+    if is_responses_api:
+        final_message_dicts = []
+        for message in messages:
+            message_dicts = await ato_openai_responses_message_dict(
+                message,
+                drop_none=drop_none,
+                model="o3-mini",
+                store=store,
+            )
+            if isinstance(message_dicts, list):
+                final_message_dicts.extend(message_dicts)
+            elif isinstance(message_dicts, str):
+                final_message_dicts.append({"role": "user", "content": message_dicts})
+            else:
+                final_message_dicts.append(message_dicts)
+
+        if (
+            len(final_message_dicts) == 1
+            and final_message_dicts[0]["role"] == "user"
+            and isinstance(final_message_dicts[0]["content"], str)
+        ):
+            return final_message_dicts[0]["content"]
+
+        return final_message_dicts
+    else:
+        return [
+            await ato_openai_message_dict(
+                message,
+                drop_none=drop_none,
+                model=model,
+                store=store,
+            )
+            for message in messages
+        ]
+
+
 def from_openai_message(
     openai_message: ChatCompletionMessage, modalities: List[str]
 ) -> ChatMessage:
