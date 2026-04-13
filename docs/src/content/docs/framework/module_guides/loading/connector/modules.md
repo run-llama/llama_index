@@ -28,3 +28,4 @@ title: Module Guides
 - [Docling Reader](/python/examples/data_connectors/doclingreaderdemo)
 - [Google AlloyDB Reader](/python/examples/data_connectors/alloydbreaderdemo)
 - [Google Cloud SQL for PostgreSQL Reader](/python/examples/data_connectors/cloudsqlpgreaderdemo)
+- [OpenDataLoader PDF Reader](/python/examples/data_connectors/opendataloaderpdfreaderdemo)
