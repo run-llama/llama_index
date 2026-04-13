@@ -1,7 +1,12 @@
 from typing import Any, Sequence
 
+from llama_index.core.base.llms.types import ChatMessage
+
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.response_synthesizers.base import BaseSynthesizer
+from llama_index.core.response_synthesizers.base import (
+    BaseSynthesizer,
+    BaseMultimodalSynthesizer,
+)
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
@@ -28,3 +33,40 @@ class ContextOnly(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         return "\n\n".join(text_chunks)
+
+
+class MultimodalContextOnly(BaseMultimodalSynthesizer):
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+
+    def get_response(  # type: ignore[override]
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        texts = [
+            block.text
+            for msg in message_chunks
+            for block in msg.blocks
+            if block.block_type == "text"
+        ]
+        return "\n\n".join(texts)
+
+    async def aget_response(  # type: ignore[override]
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        texts = [
+            block.text
+            for msg in message_chunks
+            for block in msg.blocks
+            if block.block_type == "text"
+        ]
+        return "\n\n".join(texts)

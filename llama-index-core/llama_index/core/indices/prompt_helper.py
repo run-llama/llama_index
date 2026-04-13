@@ -10,7 +10,6 @@ needed), or truncating them so that they fit in a single LLM call.
 """
 
 import logging
-from copy import deepcopy
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import asyncio_run
@@ -31,10 +30,9 @@ from llama_index.core.prompts import (
     SelectorPromptTemplate,
 )
 from llama_index.core.prompts.prompt_utils import (
-    get_empty_prompt_messages,
     get_empty_prompt_txt,
+    get_empty_prompt_messages,
 )
-from llama_index.core.prompts.utils import format_content_blocks
 from llama_index.core.schema import BaseComponent
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -203,22 +201,7 @@ class PromptHelper(BaseComponent):
             prompt = prompt.select(llm=llm)
 
         if isinstance(prompt, ChatPromptTemplate):
-            messages: List[ChatMessage] = prompt.message_templates
-
-            # account for partial formatting
-            partial_messages = []
-            for message in messages:
-                partial_message = deepcopy(message)
-
-                # TODO: This does not count tokens in non-text blocks
-                prompt_kwargs = prompt.kwargs or {}
-                partial_message.blocks = format_content_blocks(
-                    partial_message.blocks, **prompt_kwargs
-                )
-
-                # add to list of partial messages
-                partial_messages.append(partial_message)
-
+            partial_messages = get_empty_prompt_messages(prompt)
             num_prompt_tokens = self._token_counter.estimate_tokens_in_messages(
                 partial_messages
             )
@@ -461,9 +444,9 @@ class ChatPromptHelper(BaseComponent):
         if isinstance(prompt, SelectorPromptTemplate):
             prompt = prompt.select(llm=llm)
 
-        prompt_messages = get_empty_prompt_messages(prompt)
+        partial_messages = get_empty_prompt_messages(prompt)
         num_prompt_tokens = await self._token_counter.aestimate_tokens_in_messages(
-            prompt_messages
+            partial_messages
         )
 
         # add tool tokens

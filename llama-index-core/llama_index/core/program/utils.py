@@ -15,7 +15,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BasePydanticProgram, Model, PydanticProgramMode
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
 _logger = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ def _repair_incomplete_json(json_str: str) -> str:
 
 
 def process_streaming_objects(
-    chat_response: ChatResponse,
+    chat_response: ChatResponse | CompletionResponse,
     output_cls: Type[Model],
     cur_objects: Optional[Sequence[Model]] = None,
     allow_parallel_tool_calls: bool = False,
@@ -174,7 +174,7 @@ def process_streaming_objects(
     Process streaming response into structured objects.
 
     Args:
-        chat_response (ChatResponse): The chat response to process
+        chat_response (ChatResponse | CompletionResponse): The response to process
         output_cls (Type[BaseModel]): The target output class
         cur_objects (Optional[List[BaseModel]]): Current accumulated objects
         allow_parallel_tool_calls (bool): Whether to allow multiple tool calls
@@ -190,9 +190,11 @@ def process_streaming_objects(
     else:
         partial_output_cls = output_cls  # type: ignore
 
+    if isinstance(chat_response, CompletionResponse):
+        output_cls_args = [chat_response.text]
     # Get tool calls from response, if there are any
-    if not chat_response.message.additional_kwargs.get("tool_calls"):
-        output_cls_args = [chat_response.message.content]
+    elif not chat_response.message.additional_kwargs.get("tool_calls"):
+        output_cls_args = [chat_response.message.content]  # type: ignore[list-item]
     else:
         tool_calls: List[ToolSelection] = []
         if not llm:

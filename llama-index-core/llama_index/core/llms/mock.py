@@ -10,6 +10,7 @@ from typing import (
     Union,
     TYPE_CHECKING,
 )
+
 from typing_extensions import TypeAlias
 from base64 import b64decode
 from json import JSONDecodeError
@@ -122,7 +123,7 @@ class MockLLM(CustomLLM):
                 response_text = self._generate_text(i)
                 yield CompletionResponse(
                     text=response_text,
-                    delta="text ",
+                    delta="text " if i < max_tokens - 1 else "text",
                 )
 
         return gen_response(self.max_tokens) if self.max_tokens else gen_prompt()
@@ -280,7 +281,12 @@ BlockToContentCallback: TypeAlias = Callable[
     [list[ContentBlock], Optional[list[ToolCallBlock]]], str
 ]
 
-ResponseGenerator: TypeAlias = Callable[[Sequence[ChatMessage]], ChatMessage]
+ResponseGenerator: TypeAlias = Callable[
+    [Sequence[ChatMessage]],
+    ChatMessage
+    | Generator[ChatMessage, None, None]
+    | AsyncGenerator[ChatMessage, None],
+]
 
 
 def _default_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
@@ -302,6 +308,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     )
 
     _response_generator: Optional[ResponseGenerator] = PrivateAttr(default=None)
+    is_chat_model: Optional[bool] = False
 
     def __init__(
         self,
@@ -312,6 +319,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         blocks_to_content_callback: Optional[BlockToContentCallback] = None,
         response_generator: Optional[ResponseGenerator] = None,
+        is_chat_model: Optional[bool] = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -328,6 +336,8 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
 
         if response_generator is not None:
             self._response_generator = response_generator
+
+        self.is_chat_model = is_chat_model
         # else: leave as None, will use _get_response_generator() method
 
     @classmethod
@@ -366,7 +376,9 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=True)
+        return LLMMetadata(
+            is_function_calling_model=True, is_chat_model=self.is_chat_model
+        )
 
     @llm_completion_callback()
     def complete(
@@ -402,15 +414,19 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        response_msg = self._get_response_generator()(messages)
-        content = response_msg.content or ""
+        response_msg_or_gen = self._get_response_generator()(messages)
 
         def _gen() -> Generator[ChatResponse, None, None]:
-            yield ChatResponse(
-                message=response_msg,
-                delta=content,
-                raw={"content": content},
-            )
+            if isinstance(response_msg_or_gen, ChatMessage):
+                content = response_msg_or_gen.content or ""
+                yield ChatResponse(message=response_msg_or_gen, delta=content)
+            else:
+                for chat_message in response_msg_or_gen:  # type: ignore[union-attr]
+                    content = chat_message.content or ""
+                    yield ChatResponse(
+                        message=chat_message,
+                        delta=content,
+                    )
 
         return _gen()
 
@@ -418,22 +434,26 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        response_msg = self._get_response_generator()(messages)
-        content = response_msg.content or ""
+        response_msg_or_gen = self._get_response_generator()(messages)
 
         async def _gen() -> AsyncGenerator[ChatResponse, None]:
-            yield ChatResponse(
-                message=response_msg,
-                delta=content,
-                raw={"content": content},
-            )
+            if isinstance(response_msg_or_gen, ChatMessage):
+                content = response_msg_or_gen.content or ""
+                yield ChatResponse(message=response_msg_or_gen, delta=content)
+            else:
+                async for chat_message in response_msg_or_gen:  # type: ignore[union-attr]
+                    content = chat_message.content or ""
+                    yield ChatResponse(
+                        message=chat_message,
+                        delta=content,
+                    )
 
         return _gen()
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         response_msg = self._get_response_generator()(messages)
-        content = response_msg.content or ""
+        content = response_msg.content or ""  # type: ignore[union-attr]
         return ChatResponse(
             message=response_msg,
             delta=content,
@@ -505,3 +525,59 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
                 )
             )
         return tool_selections
+
+
+class MockFunctionCallingLLMWithChatMemoryOfLastCall(MockFunctionCallingLLM):
+    """
+    Mock FunctionCallingLLM that keeps track of chat messages of function calls.
+
+    The idea behind this is to be able to easily checks whether the right messages would have been passed to an actual
+    LLM.
+    """
+
+    last_chat_messages: Optional[Sequence[ChatMessage]] = Field(
+        default=None, exclude=True
+    )
+    last_called_chat_function: List[str] = Field(default=[], exclude=True)
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        r = super().chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("chat")
+        return r
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        r = super().stream_chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("stream_chat")
+        return r
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        r = await super().achat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("achat")
+        return r
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        r = await super().astream_chat(copy.deepcopy(messages), **kwargs)
+        self.last_chat_messages = messages
+        self.last_called_chat_function.append("astream_chat")
+        return r
+
+    def reset_memory(self) -> None:
+        self.last_chat_messages = None
+        self.last_called_chat_function = []
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockFunctionCallingLLMWithChatMemoryOfLastCall"

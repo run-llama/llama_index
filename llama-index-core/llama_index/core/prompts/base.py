@@ -290,17 +290,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         messages: List[ChatMessage] = []
         for message_template in self.message_templates:
-            # Handle messages with multiple blocks
-            if message_template.blocks:
-                template_vars = message_template.get_template_vars()
-                relevant_kwargs = {
-                    k: v for k, v in mapped_all_kwargs.items() if k in template_vars
-                }
-                formatted_message = message_template.format_vars(**relevant_kwargs)
-                messages.append(formatted_message)
-            else:
-                # Handle empty messages (if any)
-                messages.append(message_template.model_copy())
+            messages.append(message_template.format_vars(**mapped_all_kwargs))  # type: ignore[arg-type]
 
         if self.output_parser is not None:
             messages = self.output_parser.format_messages(messages)
