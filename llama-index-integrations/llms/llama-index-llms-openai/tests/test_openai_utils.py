@@ -756,3 +756,54 @@ def test_responses_api_tool_kwargs_string_passthrough() -> None:
         if isinstance(item, dict) and item.get("type") == "function_call"
     ][0]
     assert tool_item["arguments"] == '{"q": "test"}'
+
+
+def test_chat_completions_tool_kwargs_serialized_to_json_string() -> None:
+    """Test that dict tool_kwargs are serialized to JSON strings in Chat Completions API.
+
+    The OpenAI Chat Completions API expects 'arguments' to be a JSON string,
+    but ToolCallBlock.tool_kwargs can be a dict. This caused 400 BadRequestError
+    when using mixed LLM providers (e.g., Anthropic orchestrator -> OpenAI sub-agent).
+    Ref: https://github.com/run-llama/llama_index/issues/21378
+    """
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="get_weather",
+                tool_call_id="call_123",
+                tool_kwargs={"location": "Boston", "unit": "celsius"},
+            ),
+        ],
+    )
+
+    result = to_openai_message_dict(msg)
+    # result should have tool_calls with function.arguments as JSON string
+    tool_calls = result.get("tool_calls", [])
+    assert len(tool_calls) == 1
+    function = tool_calls[0]["function"]
+    assert isinstance(function["arguments"], str), "arguments must be a JSON string"
+    assert json.loads(function["arguments"]) == {
+        "location": "Boston",
+        "unit": "celsius",
+    }
+
+
+def test_chat_completions_tool_kwargs_string_passthrough() -> None:
+    """Test that string tool_kwargs are passed through unchanged in Chat Completions API."""
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_456",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    result = to_openai_message_dict(msg)
+    tool_calls = result.get("tool_calls", [])
+    assert len(tool_calls) == 1
+    function = tool_calls[0]["function"]
+    assert function["arguments"] == '{"q": "test"}'
