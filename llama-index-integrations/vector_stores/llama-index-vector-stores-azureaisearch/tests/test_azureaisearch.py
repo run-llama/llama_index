@@ -503,3 +503,44 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+import pytest
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed,
+    reason="missing dependency",
+)
+def test_mapping_does_not_drop_empty_like_values():
+    vs = AzureAISearchVectorStore(
+        search_or_index_client=mock_client_with_user_agent("svc"),
+        id_field_key="key",
+        chunk_field_key="body",
+        embedding_field_key="vec",
+        metadata_string_field_key="meta",
+        doc_id_field_key="ref",
+        filterable_metadata_field_keys=["num", "msg", "arr"],
+        hidden_field_keys=["vec"],
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+        semantic_configuration_name="cfg",
+    )
+
+    base = {
+        "key": "x1",
+        "body": "abc",
+        "vec": [0.5, 0.6],
+        "meta": "{}",
+        "ref": "r1",
+    }
+
+    samples = {
+        "num": 0,
+        "msg": "",
+        "arr": [],
+    }
+
+    for k, v in samples.items():
+        out = vs._default_index_mapping(base, {k: v})
+        assert out[k] == v
