@@ -150,6 +150,48 @@ def test_azureaisearch_add_one_batch() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
+def test_default_index_mapping_preserves_falsy_metadata_values() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys=["count", "text_value", "list_value"],
+        hidden_field_keys=["embedding"],
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+        semantic_configuration_name="default",
+    )
+
+    enriched_doc = {
+        "id": "1",
+        "chunk": "chunk",
+        "embedding": [0.1, 0.2],
+        "metadata": "{}",
+        "doc_id": "doc-1",
+    }
+
+    assert vector_store._default_index_mapping(enriched_doc, {"count": 0})["count"] == 0
+    assert (
+        vector_store._default_index_mapping(enriched_doc, {"text_value": ""})[
+            "text_value"
+        ]
+        == ""
+    )
+    assert (
+        vector_store._default_index_mapping(enriched_doc, {"list_value": []})[
+            "list_value"
+        ]
+        == []
+    )
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
 def test_invalid_index_management_for_searchclient() -> None:
     search_client = mock_client_with_user_agent("search")
 
