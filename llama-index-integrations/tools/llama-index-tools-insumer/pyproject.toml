@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-tools-insumer"
+version = "0.1.0"
+description = "LlamaIndex tool spec for InsumerAPI — wallet auth and condition-based access across 33 chains"
+authors = [{name = "Douglas Borthwick", email = "douglas@insumermodel.com"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = [
+    "llama-index",
+    "llamaindex",
+    "tools",
+    "insumer",
+    "wallet-auth",
+    "condition-based-access",
+    "on-chain",
+    "attestation",
+    "blockchain",
+    "ecdsa",
+    "jwks",
+    "jwt",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "requests>=2.28.0",
+]
+
+[project.urls]
+Homepage = "https://insumermodel.com/developers/"
+Repository = "https://github.com/douglasborthwick-crypto/llama-index-tools-insumer"
+Documentation = "https://insumermodel.com/developers/"
+Issues = "https://github.com/douglasborthwick-crypto/llama-index-tools-insumer/issues"
+
+[dependency-groups]
+dev = [
+    "pytest==7.2.1",
+    "pytest-cov>=6.1.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.insumer"
+
+[tool.llamahub.class_authors]
+InsumerToolSpec = "douglasborthwick-crypto"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.10"
