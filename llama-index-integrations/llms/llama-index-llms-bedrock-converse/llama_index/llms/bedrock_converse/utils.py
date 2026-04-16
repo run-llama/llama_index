@@ -77,6 +77,9 @@ BEDROCK_MODELS = {
     "cohere.command-light-text-v14": 4096,
     "cohere.command-r-v1:0": 128000,
     "cohere.command-r-plus-v1:0": 128000,
+    "google.gemma-3-12b-it": 128000,
+    "google.gemma-3-27b-it": 128000,
+    "google.gemma-3-4b-it": 128000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
     "meta.llama3-8b-instruct-v1:0": 8192,
@@ -208,6 +211,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-haiku-4-5-20251001-v1:0",
     "deepseek.r1-v1:0",
     "deepseek.v3-v1:0",
+    "google.gemma-3-12b-it",
 )
 
 BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
