@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from typing import Any, Dict, Optional, Type, cast
+from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel
@@ -165,3 +166,94 @@ async def test_answer_filtering_no_answers() -> None:
         "question", list(input_to_query_satisfied.keys())
     )
     assert res == "Empty Response"
+
+
+def test_inner_loop_short_circuits_sync() -> None:
+    call_count = [0]
+
+    def program_factory(*args: Any, **kwargs: Any) -> Any:
+        def prog(*a: Any, **kw: Any) -> StructuredRefineResponse:
+            call_count[0] += 1
+            s = kw.get("context_str") or kw.get("context_msg")
+            return StructuredRefineResponse(answer=s, query_satisfied=True)
+
+        return prog
+
+    refine = Refine(structured_answer_filtering=True, program_factory=program_factory)
+    mock_helper = MagicMock()
+    mock_helper.repack.return_value = ["sub1", "sub2"]
+    refine._prompt_helper = mock_helper
+
+    res = refine.get_response("question", ["outer_chunk"])
+    assert call_count[0] == 1
+    assert res == "sub1"
+
+
+@pytest.mark.asyncio
+async def test_inner_loop_short_circuits_async() -> None:
+    call_count = [0]
+
+    def program_factory(*args: Any, **kwargs: Any) -> Any:
+        async def prog(*a: Any, **kw: Any) -> StructuredRefineResponse:
+            call_count[0] += 1
+            s = kw.get("context_str") or kw.get("context_msg")
+            return StructuredRefineResponse(answer=s, query_satisfied=True)
+
+        prog.acall = prog
+        return prog
+
+    refine = Refine(structured_answer_filtering=True, program_factory=program_factory)
+    mock_helper = MagicMock()
+    mock_helper.repack.return_value = ["sub1", "sub2"]
+    refine._prompt_helper = mock_helper
+
+    res = await refine.aget_response("question", ["outer_chunk"])
+    assert call_count[0] == 1
+    assert res == "sub1"
+
+
+def test_structured_filtering_short_circuits_sync() -> None:
+    call_count = [0]
+    chunks = ["chunk1", "chunk2", "chunk3"]
+
+    def program_factory(*args: Any, **kwargs: Any) -> MockRefineProgram:
+        call_count[0] += 1
+        return MockRefineProgram({"chunk1": True, "chunk2": True, "chunk3": True})
+
+    refine = Refine(structured_answer_filtering=True, program_factory=program_factory)
+    res = refine.get_response("question", chunks)
+    assert call_count[0] == 1
+    assert res == "chunk1"
+
+
+@pytest.mark.asyncio
+async def test_structured_filtering_short_circuits_async() -> None:
+    call_count = [0]
+    chunks = ["chunk1", "chunk2", "chunk3"]
+
+    def program_factory(*args: Any, **kwargs: Any) -> MockRefineProgram:
+        call_count[0] += 1
+        return MockRefineProgram({"chunk1": True, "chunk2": True, "chunk3": True})
+
+    refine = Refine(structured_answer_filtering=True, program_factory=program_factory)
+    res = await refine.aget_response("question", chunks)
+    assert call_count[0] == 1
+    assert res == "chunk1"
+
+
+def test_no_filtering_does_not_short_circuit_sync() -> None:
+    call_count = [0]
+
+    def program_factory(*args: Any, **kwargs: Any) -> MockRefineProgram:
+        call_count[0] += 1
+        return MockRefineProgram({"chunk1": True, "chunk2": True, "chunk3": True})
+
+    refine = Refine(structured_answer_filtering=False)
+    refine._program_factory = program_factory
+    mock_helper = MagicMock()
+    mock_helper.repack.return_value = ["chunk1"]
+    mock_helper._get_available_chunk_size.return_value = 100
+    refine._prompt_helper = mock_helper
+
+    refine.get_response("question", ["chunk1", "chunk2", "chunk3"])
+    assert call_count[0] == 3
