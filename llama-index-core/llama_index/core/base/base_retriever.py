@@ -30,6 +30,13 @@ import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
+def _filter_nodes_by_score(nodes, threshold=0.5):
+    filtered = []
+    for n in nodes:
+        score = getattr(n, "score", None)
+        if score is None or score >= threshold:
+            filtered.append(n)
+    return filtered
 
 class BaseRetriever(PromptMixin, DispatcherSpanMixin):
     """Base retriever."""
@@ -40,8 +47,12 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         object_map: Optional[Dict] = None,
         objects: Optional[List[IndexNode]] = None,
         verbose: bool = False,
+        enable_score_filter: bool = False,
+        score_threshold: float = 0.5,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager()
+        self._enable_score_filter = enable_score_filter
+        self._score_threshold = score_threshold
 
         if objects is not None:
             object_map = {obj.index_id: obj.obj for obj in objects}
@@ -93,6 +104,7 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             return obj.retrieve(query_bundle)
         else:
             raise ValueError(f"Object {obj} is not retrievable.")
+
 
     async def _aretrieve_from_object(
         self,
@@ -215,6 +227,13 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             ) as retrieve_event:
                 nodes = self._retrieve(query_bundle)
                 nodes = self._handle_recursive_retrieval(query_bundle, nodes)
+                if self._enable_score_filter:
+                    threshold = self._score_threshold
+                    original_count = len(nodes)
+                    nodes = _filter_nodes_by_score(nodes, threshold)
+
+                    if self._verbose:
+                        print(f"[BaseRetriever] Score filtering applied: {original_count} → {len(nodes)} nodes")
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
