@@ -389,6 +389,7 @@ We support integrations with OpenAI, Azure, and anything LangChain offers.
 - [Cohere](/python/examples/embeddings/cohereai)
 - [Custom](/python/examples/embeddings/custom_embeddings)
 - [Dashscope](/python/examples/embeddings/dashscope_embeddings)
+- [Doubleword](/python/examples/embeddings/doubleword)
 - [ElasticSearch](/python/examples/embeddings/elasticsearch)
 - [FastEmbed](/python/examples/embeddings/fastembed)
 - [Google Palm](/python/examples/embeddings/google_palm)
