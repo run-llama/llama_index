@@ -503,3 +503,50 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_default_index_mapping_preserves_falsy_metadata_values() -> None:
+    """Falsy-but-not-None metadata values (0, "", [], False) must be indexed,
+    not dropped. Previously the mapper used a truthiness check which treated
+    0 as absent."""
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+
+    vector_store._metadata_to_index_field_map = {
+        "zero_int": ("zero_int_field", "Edm.Int64"),
+        "empty_string": ("empty_string_field", "Edm.String"),
+        "empty_list": ("empty_list_field", "Collection(Edm.String)"),
+        "false_bool": ("false_bool_field", "Edm.Boolean"),
+        "none_value": ("none_value_field", "Edm.String"),
+        "truthy": ("truthy_field", "Edm.String"),
+    }
+
+    metadata = {
+        "zero_int": 0,
+        "empty_string": "",
+        "empty_list": [],
+        "false_bool": False,
+        "none_value": None,
+        "truthy": "hello",
+    }
+
+    index_doc = vector_store._default_index_mapping(
+        enriched_doc={
+            "id": "x",
+            "chunk": "x",
+            "embedding": [0.0, 0.0],
+            "metadata": "{}",
+            "doc_id": "x",
+        },
+        metadata=metadata,
+    )
+
+    assert index_doc["zero_int_field"] == 0
+    assert index_doc["empty_string_field"] == ""
+    assert index_doc["empty_list_field"] == []
+    assert index_doc["false_bool_field"] is False
+    assert index_doc["truthy_field"] == "hello"
+    assert "none_value_field" not in index_doc
