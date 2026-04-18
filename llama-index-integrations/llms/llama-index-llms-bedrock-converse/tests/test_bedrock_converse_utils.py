@@ -202,6 +202,23 @@ def test_deepseek_function_calling_models(model_id, expected):
     assert is_bedrock_function_calling_model(model_id) == expected
 
 
+@pytest.mark.parametrize(
+    ("model_id", "expected_context"),
+    [
+        ("google.gemma-3-12b-it", 128000),
+        ("google.gemma-3-27b-it", 128000),
+        ("google.gemma-3-4b-it", 128000),
+    ],
+)
+def test_gemma_models_registered(model_id, expected_context):
+    assert model_id in BEDROCK_MODELS
+    assert bedrock_modelname_to_context_size(model_id) == expected_context
+
+
+def test_gemma_reasoning_model():
+    assert is_reasoning("google.gemma-3-12b-it") is True
+
+
 def test_get_img_format_jpeg():
     assert __get_img_format_from_image_mimetype("image/jpeg") == "jpeg"
 
