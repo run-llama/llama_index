@@ -144,4 +144,3 @@ def test_persist_utf8_round_trip() -> None:
     assert loaded_nodes[e1.id].name == "定义图"
     assert loaded_nodes[e2.id].name == "テスト"
     assert loaded_nodes[e3.id].name == "émojis_✨🚀"
-
