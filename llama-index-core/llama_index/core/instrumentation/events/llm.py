@@ -144,8 +144,13 @@ class LLMCompletionInProgressEvent(BaseEvent):
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
+            return self.model_copy(
+                update={
+                    "response": self.response.model_copy(
+                        update={"raw": self.response.raw.model_dump()}
+                    )
+                }
+            ).model_dump(**kwargs)
         return super().model_dump(**kwargs)
 
 
@@ -169,8 +174,13 @@ class LLMCompletionEndEvent(BaseEvent):
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
+            return self.model_copy(
+                update={
+                    "response": self.response.model_copy(
+                        update={"raw": self.response.raw.model_dump()}
+                    )
+                }
+            ).model_dump(**kwargs)
         return super().model_dump(**kwargs)
 
 
@@ -216,8 +226,13 @@ class LLMChatInProgressEvent(BaseEvent):
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
+            return self.model_copy(
+                update={
+                    "response": self.response.model_copy(
+                        update={"raw": self.response.raw.model_dump()}
+                    )
+                }
+            ).model_dump(**kwargs)
         return super().model_dump(**kwargs)
 
 
@@ -241,6 +256,11 @@ class LLMChatEndEvent(BaseEvent):
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         if self.response is not None and isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
+            return self.model_copy(
+                update={
+                    "response": self.response.model_copy(
+                        update={"raw": self.response.raw.model_dump()}
+                    )
+                }
+            ).model_dump(**kwargs)
         return super().model_dump(**kwargs)
