@@ -168,8 +168,10 @@ class BaseComponent(BaseModel):
         return data
 
     def to_json(self, **kwargs: Any) -> str:
+        # Keep default json.dumps behavior (ensure_ascii=True) unless overridden.
+        ensure_ascii = kwargs.pop("ensure_ascii", True)
         data = self.to_dict(**kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=ensure_ascii)
 
     # TODO: return type here not supported by current mypy version
     @classmethod

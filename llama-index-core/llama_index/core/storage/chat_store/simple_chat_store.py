@@ -83,27 +83,30 @@ class SimpleChatStore(BaseChatStore):
         self,
         persist_path: str = "chat_store.json",
         fs: Optional[fsspec.AbstractFileSystem] = None,
+        encoding: str = "utf-8",
     ) -> None:
         """Persist the docstore to a file."""
         fs = fs or fsspec.filesystem("file")
         dirpath = os.path.dirname(persist_path)
-        if not fs.exists(dirpath):
+        if dirpath and not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
-            f.write(self.json())
+        with fs.open(persist_path, "w", encoding=encoding) as f:
+            # Use ensure_ascii=False to avoid bloating persisted files with unicode escape sequences.
+            f.write(json.dumps(self.dict(), ensure_ascii=False))
 
     @classmethod
     def from_persist_path(
         cls,
         persist_path: str = "chat_store.json",
         fs: Optional[fsspec.AbstractFileSystem] = None,
+        encoding: str = "utf-8",
     ) -> "SimpleChatStore":
         """Create a SimpleChatStore from a persist path."""
         fs = fs or fsspec.filesystem("file")
         if not fs.exists(persist_path):
             return cls()
-        with fs.open(persist_path, "r") as f:
+        with fs.open(persist_path, "r", encoding=encoding) as f:
             data = json.load(f)
 
         if isinstance(data, str):
