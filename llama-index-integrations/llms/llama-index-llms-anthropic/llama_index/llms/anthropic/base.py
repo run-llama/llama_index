@@ -499,6 +499,7 @@ class Anthropic(FunctionCallingLLM):
             input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             for r in response:
+                thinking_delta = ""
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
@@ -539,13 +540,14 @@ class Anthropic(FunctionCallingLLM):
                             )
                     elif isinstance(r.delta, ThinkingDelta):
                         content_delta = ""
+                        thinking_delta = r.delta.thinking or ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
-                                content=r.delta.thinking or "",
+                                content=thinking_delta,
                                 additional_information={"signature": ""},
                             )
                         else:
-                            cur_block.content += r.delta.thinking
+                            cur_block.content += thinking_delta
                     elif isinstance(r.delta, CitationsDelta):
                         content_delta = ""
                         # TODO: handle citation deltas
@@ -589,6 +591,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -627,6 +630,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -662,6 +666,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -751,6 +756,7 @@ class Anthropic(FunctionCallingLLM):
             input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             async for r in response:
+                thinking_delta = ""
                 if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
@@ -791,13 +797,14 @@ class Anthropic(FunctionCallingLLM):
                             )
                     elif isinstance(r.delta, ThinkingDelta):
                         content_delta = ""
+                        thinking_delta = r.delta.thinking or ""
                         if cur_block is None:
                             cur_block = LIThinkingBlock(
-                                content=r.delta.thinking or "",
+                                content=thinking_delta,
                                 additional_information={"signature": ""},
                             )
                         else:
-                            cur_block.content += r.delta.thinking
+                            cur_block.content += thinking_delta
                     elif isinstance(r.delta, CitationsDelta):
                         content_delta = ""
                         # TODO: handle citation deltas
@@ -841,6 +848,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -879,6 +887,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
@@ -914,6 +923,7 @@ class Anthropic(FunctionCallingLLM):
                             additional_kwargs={
                                 "usage": usage_metadata if usage_metadata else None,
                                 "stop_reason": stop_reason,
+                                "thinking_delta": thinking_delta,
                             },
                         ),
                         citations=cur_citations,
