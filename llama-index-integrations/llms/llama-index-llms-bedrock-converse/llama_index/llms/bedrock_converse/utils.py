@@ -67,6 +67,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-opus-4-6-v1": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
@@ -125,6 +126,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -164,6 +166,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -187,6 +190,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -205,6 +209,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -216,6 +221,7 @@ BEDROCK_REASONING_MODELS = (
 
 BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-6",
 )
 
