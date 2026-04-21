@@ -43,6 +43,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelec
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_NO_TEMP_MODELS,
     ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
@@ -365,6 +366,12 @@ class BedrockConverse(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+        for model in BEDROCK_NO_TEMP_MODELS:
+            if model in self.model:
+                del base_kwargs["temperature"]
+                break
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
