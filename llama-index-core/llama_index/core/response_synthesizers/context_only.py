@@ -3,10 +3,7 @@ from typing import Any, Sequence
 from llama_index.core.base.llms.types import ChatMessage
 
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.response_synthesizers.base import (
-    BaseSynthesizer,
-    BaseMultimodalSynthesizer,
-)
+from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
@@ -34,16 +31,7 @@ class ContextOnly(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         return "\n\n".join(text_chunks)
 
-
-class MultimodalContextOnly(BaseMultimodalSynthesizer):
-    def _get_prompts(self) -> PromptDictType:
-        """Get prompts."""
-        return {}
-
-    def _update_prompts(self, prompts: PromptDictType) -> None:
-        """Update prompts."""
-
-    def get_response(  # type: ignore[override]
+    def get_response_from_messages(
         self,
         query_str: str,
         message_chunks: Sequence[ChatMessage],
@@ -57,7 +45,7 @@ class MultimodalContextOnly(BaseMultimodalSynthesizer):
         ]
         return "\n\n".join(texts)
 
-    async def aget_response(  # type: ignore[override]
+    async def aget_response_from_messages(
         self,
         query_str: str,
         message_chunks: Sequence[ChatMessage],

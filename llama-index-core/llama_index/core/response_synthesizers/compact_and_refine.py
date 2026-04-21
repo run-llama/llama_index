@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Sequence
 from llama_index.core.base.llms.types import ChatMessage
 
 from llama_index.core.prompts.prompt_utils import get_biggest_prompt
-from llama_index.core.response_synthesizers.refine import Refine, MultimodalRefine
+from llama_index.core.response_synthesizers.refine import Refine
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 import llama_index.core.instrumentation as instrument
 
@@ -58,42 +58,6 @@ class CompactAndRefine(Refine):
             max_prompt, text_chunks, llm=self._llm, padding=self._response_padding_size
         )
 
-
-class MultimodalCompactAndRefine(MultimodalRefine):
-    """Refine responses across compact message chunks."""
-
-    @dispatcher.span
-    async def aget_response(
-        self,
-        query_str: str,
-        message_chunks: Sequence[ChatMessage],
-        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        compact_chunks = self._make_compact_message_chunks(query_str, message_chunks)
-        return await super().aget_response(
-            query_str=query_str,
-            message_chunks=compact_chunks,
-            prev_response=prev_response,
-            **response_kwargs,
-        )
-
-    @dispatcher.span
-    def get_response(
-        self,
-        query_str: str,
-        message_chunks: Sequence[ChatMessage],
-        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        compact_chunks = self._make_compact_message_chunks(query_str, message_chunks)
-        return super().get_response(
-            query_str=query_str,
-            message_chunks=compact_chunks,
-            prev_response=prev_response,
-            **response_kwargs,
-        )
-
     def _make_compact_message_chunks(
         self, query_str: str, message_chunks: Sequence[ChatMessage]
     ) -> List[ChatMessage]:
@@ -108,4 +72,36 @@ class MultimodalCompactAndRefine(MultimodalRefine):
             list(message_chunks),  # type: ignore[arg-type]
             llm=self._llm,
             padding=self._response_padding_size,
+        )
+
+    @dispatcher.span
+    def get_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        compact_chunks = self._make_compact_message_chunks(query_str, message_chunks)
+        return super().get_response_from_messages(
+            query_str=query_str,
+            message_chunks=compact_chunks,
+            prev_response=prev_response,
+            **response_kwargs,
+        )
+
+    @dispatcher.span
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        compact_chunks = self._make_compact_message_chunks(query_str, message_chunks)
+        return await super().aget_response_from_messages(
+            query_str=query_str,
+            message_chunks=compact_chunks,
+            prev_response=prev_response,
+            **response_kwargs,
         )
