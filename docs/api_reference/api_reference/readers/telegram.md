@@ -1,3 +1,4 @@
 ::: llama_index.readers.telegram
-options:
-members: - TelegramReader
+    options:
+      members:
+        - TelegramReader

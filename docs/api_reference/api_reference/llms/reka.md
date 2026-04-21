@@ -1,3 +1,4 @@
 ::: llama_index.llms.reka
-options:
-members: - RekaAI
+    options:
+      members:
+        - RekaAI

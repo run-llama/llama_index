@@ -1,3 +1,4 @@
 ::: llama_index.llms.openrouter
-options:
-members: - OpenRouter
+    options:
+      members:
+        - OpenRouter

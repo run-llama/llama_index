@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.nomic
-options:
-members: - NomicEmbedding
+    options:
+      members:
+        - NomicEmbedding

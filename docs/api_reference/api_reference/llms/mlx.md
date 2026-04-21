@@ -1,3 +1,4 @@
 ::: llama_index.llms.mlx
-options:
-members: - MLX
+    options:
+      members:
+        - MLX

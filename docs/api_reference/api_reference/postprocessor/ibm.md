@@ -1,3 +1,4 @@
 ::: llama_index.postprocessor.ibm
-options:
-members: - WatsonxRerank
+    options:
+      members:
+        - WatsonxRerank
