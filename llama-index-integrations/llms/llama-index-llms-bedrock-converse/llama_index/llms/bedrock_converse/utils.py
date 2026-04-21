@@ -3,8 +3,10 @@ import json
 import logging
 from typing import (
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
+    Generator,
     List,
     Literal,
     Optional,
@@ -769,7 +771,9 @@ def converse_with_retry(
     )
 
     @retry_decorator
-    def _converse_with_retry(**kwargs: Any) -> Any:
+    def _converse_with_retry(
+        **kwargs: Any,
+    ) -> Union[Any, Generator[dict[str, Any], None]]:
         if stream:
             return client.converse_stream(**kwargs)
         else:
@@ -796,7 +800,7 @@ async def converse_with_retry_async(
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
-) -> Any:
+) -> Union[Any, AsyncGenerator[dict[str, Any], None]]:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
     converse_kwargs = {
@@ -876,16 +880,19 @@ async def converse_with_retry_async(
         ) as client:
             return await client.converse(**kwargs)
 
-    @retry_decorator
-    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
-            response = await client.converse_stream(**kwargs)
-            async for event in response["stream"]:
-                yield event
+    async def _conversion_stream_with_retry(
+        **kwargs: Any,
+    ) -> Any:
+        @retry_decorator
+        async def _connect(**kw: Any) -> Tuple[Dict[str, Any], Any]:
+            async with session.client(
+                "bedrock-runtime", config=config, **_boto_client_kwargs
+            ) as session_client:
+                return await session_client.converse_stream(**kw), session_client
+
+        response, client = await _connect(**kwargs)
+        async for event in response["stream"]:
+            yield event
 
     if stream:
         return _conversion_stream_with_retry(**converse_kwargs)

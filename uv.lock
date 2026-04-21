@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -1294,10 +1294,9 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.14.19"
+version = "0.14.20"
 source = { editable = "." }
 dependencies = [
-    { name = "llama-index-cli" },
     { name = "llama-index-core" },
     { name = "llama-index-embeddings-openai" },
     { name = "llama-index-llms-openai" },
@@ -1329,8 +1328,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-cli", marker = "python_full_version >= '3.10'", specifier = ">=0.5.0,<0.6" },
-    { name = "llama-index-core", specifier = ">=0.14.19,<0.15.0" },
+    { name = "llama-index-core", specifier = ">=0.14.20,<0.15.0" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.6.0,<0.7" },
     { name = "llama-index-llms-openai", specifier = ">=0.7.0,<0.8" },
     { name = "nltk", specifier = ">=3.9.3" },
@@ -1360,22 +1358,8 @@ dev = [
 ]
 
 [[package]]
-name = "llama-index-cli"
-version = "0.5.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "llama-index-core" },
-    { name = "llama-index-embeddings-openai" },
-    { name = "llama-index-llms-openai" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/a3/1aaeaf6d0d1982d711fc4b2983d5792f851599b055678e25c5a179ad94ee/llama_index_cli-0.5.6.tar.gz", hash = "sha256:4e14d072febf626d05f821d04a858de8dd9cc7c98376658a0ab98489f5a6bcf7", size = 24851, upload-time = "2026-03-13T15:21:36.241Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/68/4d35de5871a39a26eb17cca308d47cd61354b38622ba4753b0f6c210bc6d/llama_index_cli-0.5.6-py3-none-any.whl", hash = "sha256:df600edec7998f8d5df414bd4dd3b6504c0aac333ce18a43ad0a09c901e655a6", size = 28211, upload-time = "2026-03-13T15:21:35.331Z" },
-]
-
-[[package]]
 name = "llama-index-core"
-version = "0.14.19"
+version = "0.14.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1409,9 +1393,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/09/eb/a661cc2f70177f59cfe7bfcdb7a4e9352fb073ab46927068151bf2905fbb/llama_index_core-0.14.19.tar.gz", hash = "sha256:7b17f321f0d965495402890991b2bfde49d4197bc46ca5970300cc7b9c2df6a2", size = 11599592, upload-time = "2026-03-25T20:58:25.751Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/2c/9a1f613fcd59c583c1b4d529948785fd153f97b076e7b0f170d86106357d/llama_index_core-0.14.20.tar.gz", hash = "sha256:5ddb7ecba2131ecd0a452cd730c5361a407d3ffcdcfb1a319525ed8c9a7c423b", size = 11599236, upload-time = "2026-04-03T19:54:52.108Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/b6/6c2678b8597903503b804fe831a203d299bcbcc07bdf35789a484e67f7c0/llama_index_core-0.14.19-py3-none-any.whl", hash = "sha256:807352f16a300f9980d0110cfdaa81d07e201384965e9f7d940c8ead80d463ed", size = 11945679, upload-time = "2026-03-25T20:58:28.265Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/27/0f0e01c239efddc178713379341aabee7a54ffa8e0a4162ff05a0ab950e0/llama_index_core-0.14.20-py3-none-any.whl", hash = "sha256:c666e395879e73a0aa6c751e5f4c8a8e8637df50f6e66ab9ae6e5d932c816126", size = 11945381, upload-time = "2026-04-03T19:54:55.711Z" },
 ]
 
 [[package]]
