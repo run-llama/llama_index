@@ -45,7 +45,7 @@ uv run -- pytest
 
 **That’s it!** The package you're working on is already installed in editable mode, so you can go on, change the code and run the tests!
 
-Once you get familiar with the project, scroll down to the [Development Guidelines](#-Development-Guidelines) for more details.
+Once you get familiar with the project, scroll down to the [Development Guidelines](#development-guidelines) for more details.
 
 ---
 
@@ -78,7 +78,7 @@ We also do not recommend working on these areas:
    ```bash
    git checkout -b your-feature-branch
    ```
-4. **Set up your environment** (follow the [Quick Start Guide](#-quick-start-guide)).
+4. **Set up your environment** (follow the [Quick Start Guide](#quick-start-guide)).
 5. **Work on your feature or bugfix**, ensuring you have unit tests covering your code.
 6. **Commit** your changes, then push them to your fork.
    ```bash
