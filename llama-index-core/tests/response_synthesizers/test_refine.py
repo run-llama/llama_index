@@ -41,7 +41,6 @@ from llama_index.core.llms.mock import (
 )
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.response_synthesizers.refine import (
-    MultimodalRefine,
     Refine,
     StructuredRefineResponse,
     DefaultRefineProgram,
@@ -419,6 +418,13 @@ class TestRefine:
                 structured_answer_filtering=False,
             )
 
+    def test_init__multimodal_non_chat_model_raises_error(self) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10)
+        with pytest.raises(
+            ValueError, match="Multimodal synthesis requires a chat LLM."
+        ):
+            Refine(llm=llm, multimodal=True)
+
     def test_synthesize__default_refine_program(
         self, llm_case: LLMCase, nodes: list[NodeWithScore]
     ) -> None:
@@ -459,6 +465,60 @@ class TestRefine:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    def test_synthesize__multimodal_default_refine_program(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        # Arrange
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer = Refine(llm=llm, multimodal=True)
+
+        # Act
+        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == " ".join(["text"] * 10)
+        assert llm.last_called_chat_function == ["chat", "chat", "chat"], (
+            "One call per node"
+        )
+        assert [msg.role for msg in llm.last_chat_messages] == [
+            MessageRole.SYSTEM,
+            MessageRole.USER,
+        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__multimodal_default_refine_program(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        # Arrange
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer = Refine(llm=llm, multimodal=True)
+
+        # Act
+        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == " ".join(["text"] * 10)
+        assert llm.last_called_chat_function.count("achat") == 3, "One per node"
+        assert llm.last_called_chat_function.count("chat") == 3, (
+            "Async calls sync under hood"
+        )
+        assert [msg.role for msg in llm.last_chat_messages] == [
+            MessageRole.SYSTEM,
+            MessageRole.USER,
+        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
 
     def test_synthesize__streaming_default_refine_program(
         self, llm_case: LLMCase, nodes: list[NodeWithScore]
@@ -587,6 +647,81 @@ class TestRefine:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    def test_synthesize__multimodal_structured_answer_filtering_default_text_completion_refine_program(
+        self,
+        multimodal_nodes: list[NodeWithScore],
+        input_to_query_satisfied: OrderedDict[str | None, bool],
+        mock_chat_response_text_completion_generator: Callable[
+            [Sequence[ChatMessage]], ChatResponse
+        ],
+        query_satisfied_case: QuerySatisfiedCase,
+    ) -> None:
+        # Arrange
+        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
+        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
+        synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
+
+        # Act
+        with patch.object(
+            CustomLLM,
+            "chat",
+            side_effect=mock_chat_response_text_completion_generator,
+        ):
+            response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == query_satisfied_case.expected_response
+        assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
+        assert llm.last_chat_messages[0].content.startswith(
+            query_satisfied_case.expected_last_llm_message_prefix
+        )
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__multimodal_structured_answer_filtering_default_text_completion_refine_program(
+        self,
+        multimodal_nodes: list[NodeWithScore],
+        input_to_query_satisfied: OrderedDict[str | None, bool],
+        mock_async_chat_response_text_completion_generator: Coroutine[
+            Any, Any, ChatResponse
+        ],
+        query_satisfied_case: QuerySatisfiedCase,
+    ) -> None:
+        # Arrange
+        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
+        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
+        synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
+
+        # Act
+        with patch.object(
+            CustomLLM,
+            "achat",
+            side_effect=mock_async_chat_response_text_completion_generator,
+        ):
+            response = await synthesizer.asynthesize(
+                query="test", nodes=multimodal_nodes
+            )
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == query_satisfied_case.expected_response
+        assert llm.last_called_chat_function == ["achat", "achat", "achat"], (
+            "One per node, no sync call for mock"
+        )
+        assert llm.last_chat_messages[0].content.startswith(
+            query_satisfied_case.expected_last_llm_message_prefix
+        )
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
 
     def test_synthesize__structured_answer_filtering_with_streaming_default_text_completion_refine_program(
         self,
@@ -726,6 +861,76 @@ class TestRefine:
             query_satisfied_case.expected_last_llm_message_prefix
         )
 
+    def test_synthesize__multimodal_structured_answer_filtering_default_function_calling_refine_program(
+        self,
+        multimodal_nodes: list[NodeWithScore],
+        input_to_query_satisfied: OrderedDict[str | None, bool],
+        mock_chat_message_with_tool_call_generator: Callable[
+            [Sequence[ChatMessage]], ChatMessage
+        ],
+        query_satisfied_case: QuerySatisfiedCase,
+    ) -> None:
+        # Arrange
+        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
+        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
+            response_generator=mock_chat_message_with_tool_call_generator,
+            is_chat_model=True,
+        )
+        synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
+
+        # Act
+        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == query_satisfied_case.expected_response
+        assert llm.last_called_chat_function == ["chat", "chat", "chat"], "One per node"
+        assert llm.last_chat_messages[0].content.startswith(
+            query_satisfied_case.expected_last_llm_message_prefix
+        )
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__multimodal_structured_answer_filtering_default_function_calling_refine_program(
+        self,
+        multimodal_nodes: list[NodeWithScore],
+        input_to_query_satisfied: OrderedDict[str | None, bool],
+        mock_chat_message_with_tool_call_generator: Callable[
+            [Sequence[ChatMessage]], ChatMessage
+        ],
+        query_satisfied_case: QuerySatisfiedCase,
+    ) -> None:
+        # Arrange
+        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
+        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
+            response_generator=mock_chat_message_with_tool_call_generator,
+            is_chat_model=True,
+        )
+        synthesizer = Refine(llm=llm, structured_answer_filtering=True, multimodal=True)
+
+        # Act
+        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == query_satisfied_case.expected_response
+        assert llm.last_called_chat_function.count("achat") == 3, "One per node"
+        assert llm.last_called_chat_function.count("chat") == 3, (
+            "Async calls sync under hood"
+        )
+        assert llm.last_chat_messages[0].content.startswith(
+            query_satisfied_case.expected_last_llm_message_prefix
+        )
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
+
     def test_synthesize__structured_answer_filtering_with_streaming_default_function_calling_refine_program(
         self,
         nodes: list[NodeWithScore],
@@ -794,454 +999,3 @@ class TestRefine:
         )
         assert str(synthesizer.synthesize("question", nodes)) == "Empty Response"
         assert str(await synthesizer.asynthesize("question", nodes)) == "Empty Response"
-
-
-class TestMultimodalRefine:
-    def test_init__non_chat_model_raises_error(self) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10)
-        with pytest.raises(
-            ValueError, match="BaseMultimodalSynthesizer requires a chat LLM."
-        ):
-            MultimodalRefine(llm=llm)
-
-    def test_constructor_args(self) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        with pytest.raises(ValueError):
-            # can't construct refine with a program factory but not answer filtering
-            MultimodalRefine(
-                llm=llm,
-                program_factory=lambda _: DefaultRefineProgram(
-                    prompt=MagicMock(),
-                    llm=llm,
-                    output_cls=MagicMock(),
-                ),
-                structured_answer_filtering=False,
-            )
-
-    def test_synthesize__default_refine_program(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm)
-        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response)
-        assert str(response) == " ".join(["text"] * 10)
-        assert llm.last_called_chat_function == ["chat", "chat", "chat"], (
-            "One for each node"
-        )
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert llm.last_chat_messages[0].content.startswith(
-            "You are an expert Q&A system that strictly operates in two modes when refining existing answers:"
-        ), "Most recent call should use the refine template system message"
-        assert len(llm.last_chat_messages[1].blocks) == 3
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    def test_synthesize__streaming_default_refine_program(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm, streaming=True)
-        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, StreamingResponse)
-        assert str(response) == " ".join(["text"] * 10)
-        assert llm.last_called_chat_function == [
-            "stream_chat",
-            "stream_chat",
-            "stream_chat",
-        ], "One for each node"
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert llm.last_chat_messages[0].content.startswith(
-            "You are an expert Q&A system that strictly operates in two modes when refining existing answers:"
-        ), "Most recent call should use the refine template system message"
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__default_refine_program(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm)
-        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response)
-        assert str(response) == " ".join(["text"] * 10)
-        assert len(llm.last_called_chat_function) == 6, "Two calls for each node"
-        assert llm.last_called_chat_function.count("achat") == 3, "One for each node"
-        assert llm.last_called_chat_function.count("chat") == 3, (
-            "Async calls sync under hood"
-        )
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert llm.last_chat_messages[0].content.startswith(
-            "You are an expert Q&A system that strictly operates in two modes when refining existing answers:"
-        ), "Most recent call should use the refine template system message"
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__streaming_default_refine_program(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm, streaming=True)
-        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, AsyncStreamingResponse)
-        assert str(response) == " ".join(["text"] * 10)
-        assert len(llm.last_called_chat_function) == 6, "Two calls for each node"
-        assert llm.last_called_chat_function.count("astream_chat") == 3, (
-            "One for each node"
-        )
-        assert llm.last_called_chat_function.count("stream_chat") == 3, (
-            "Async calls sync under hood"
-        )
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert llm.last_chat_messages[0].content.startswith(
-            "You are an expert Q&A system that strictly operates in two modes when refining existing answers:"
-        ), "Most recent call should use the refine template system messaage"
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    def test_synthesize__structured_answer_filtering_default_text_completion_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_chat_response_text_completion_generator: Callable[
-            [Sequence[ChatMessage]], ChatResponse
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm, structured_answer_filtering=True)
-        with (
-            patch.object(
-                CustomLLM,
-                "chat",
-                side_effect=mock_chat_response_text_completion_generator,
-            ),
-        ):
-            response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response)
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["chat", "chat", "chat"], (
-            "One for each node"
-        )
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__structured_answer_filtering_default_text_completion_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_async_chat_response_text_completion_generator: Coroutine[
-            Any, Any, ChatResponse
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
-        synthesizer = MultimodalRefine(llm=llm, structured_answer_filtering=True)
-        with (
-            patch.object(
-                CustomLLM,
-                "achat",
-                side_effect=mock_async_chat_response_text_completion_generator,
-            ),
-        ):
-            response = await synthesizer.asynthesize(
-                query="test", nodes=multimodal_nodes
-            )
-        assert isinstance(response, Response)
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["achat", "achat", "achat"], (
-            "One for each node, no sync call for mock"
-        )
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    def test_synthesize__structured_answer_filtering_with_streaming_default_text_completion_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_streaming_chat_response_text_completion_generator: Callable[
-            [Sequence[ChatMessage]], Generator[ChatResponse, None, None]
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
-        synthesizer = MultimodalRefine(
-            llm=llm, structured_answer_filtering=True, streaming=True
-        )
-        with (
-            patch.object(
-                CustomLLM,
-                "stream_chat",
-                side_effect=mock_streaming_chat_response_text_completion_generator,
-            ),
-        ):
-            response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response), (
-            "Not a generator since the tokens were consumed as part of the last refine call"
-        )
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == [
-            "stream_chat",
-            "stream_chat",
-            "stream_chat",
-        ], "One for each node"
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__structured_answer_filtering_with_streaming_default_text_completion_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_async_streaming_chat_response_text_completion_generator: Coroutine[
-            Any, Any, AsyncGenerator[ChatResponse, None]
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
-        synthesizer = MultimodalRefine(
-            llm=llm, structured_answer_filtering=True, streaming=True
-        )
-        with (
-            patch.object(
-                CustomLLM,
-                "astream_chat",
-                side_effect=mock_async_streaming_chat_response_text_completion_generator,
-            ),
-        ):
-            response = await synthesizer.asynthesize(
-                query="test", nodes=multimodal_nodes
-            )
-        assert isinstance(response, Response), (
-            "Not an async generator since the tokens were consumed as part of the last refine call"
-        )
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == [
-            "astream_chat",
-            "astream_chat",
-            "astream_chat",
-        ], "One for each node; no sync call for mock"
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    def test_synthesize__structured_answer_filtering_default_function_calling_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_chat_message_with_tool_call_generator: Callable[
-            [Sequence[ChatMessage]], ChatMessage
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
-            response_generator=mock_chat_message_with_tool_call_generator,
-            is_chat_model=True,
-        )
-        synthesizer = MultimodalRefine(llm=llm, structured_answer_filtering=True)
-        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response)
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == ["chat", "chat", "chat"], (
-            "One for each node"
-        )
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__structured_answer_filtering_default_function_calling_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_chat_message_with_tool_call_generator: Callable[
-            [Sequence[ChatMessage]], ChatMessage
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
-            response_generator=mock_chat_message_with_tool_call_generator,
-            is_chat_model=True,
-        )
-        synthesizer = MultimodalRefine(llm=llm, structured_answer_filtering=True)
-        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response)
-        assert str(response) == query_satisfied_case.expected_response
-        assert len(llm.last_called_chat_function) == 6, "Two calls for each node"
-        assert llm.last_called_chat_function.count("achat") == 3, "One for each node"
-        assert llm.last_called_chat_function.count("chat") == 3, (
-            "Async calls sync under hood"
-        )
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    def test_synthesize__structured_answer_filtering_with_streaming_default_function_calling_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_streaming_chat_message_with_tool_call_generator: Callable[
-            [Sequence[ChatMessage]], Generator[ChatMessage, None, None]
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
-            response_generator=mock_streaming_chat_message_with_tool_call_generator,
-            is_chat_model=True,
-        )
-        synthesizer = MultimodalRefine(
-            llm=llm, structured_answer_filtering=True, streaming=True
-        )
-        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response), (
-            "Not a generator since the tokens were consumed as part of the last refine call"
-        )
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == [
-            "stream_chat",
-            "stream_chat",
-            "stream_chat",
-        ], "One for each node"
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__structured_answer_filtering_with_streaming_default_function_calling_refine_program(
-        self,
-        multimodal_nodes: list[NodeWithScore],
-        input_to_query_satisfied: OrderedDict[str | None, bool],
-        mock_async_streaming_chat_message_with_tool_call_generator: Coroutine[
-            Any, Any, AsyncGenerator[ChatMessage, None]
-        ],
-        query_satisfied_case: QuerySatisfiedCase,
-    ) -> None:
-        input_to_query_satisfied["input2"] = query_satisfied_case.input2_value
-        llm = MockFunctionCallingLLMWithChatMemoryOfLastCall(
-            response_generator=mock_async_streaming_chat_message_with_tool_call_generator,
-            is_chat_model=True,
-        )
-        synthesizer = MultimodalRefine(
-            llm=llm, structured_answer_filtering=True, streaming=True
-        )
-        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-        assert isinstance(response, Response), (
-            "Not an async generator since the tokens were consumed as part of the last refine call"
-        )
-        assert str(response) == query_satisfied_case.expected_response
-        assert llm.last_called_chat_function == [
-            "astream_chat",
-            "astream_chat",
-            "astream_chat",
-        ], (
-            "One for each node; MockFunctionCallingLLM astream_chat doesn't call sync under hood"
-        )
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert llm.last_chat_messages[0].content.startswith(
-            query_satisfied_case.expected_last_llm_message_prefix
-        )
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ], "User message should contain image block"
-
-    @pytest.mark.parametrize(
-        "error",
-        [
-            ValueError("LLM did not return any tool calls"),
-            TypeError("Expected BaseModel but got str"),
-        ],
-    )
-    @pytest.mark.asyncio
-    async def test_synthesize_and_asynthesize__handles_value_and_type_errors_from_program(
-        self, multimodal_nodes, error
-    ) -> None:
-        synthesizer = MultimodalRefine(
-            llm=MockLLMWithChatMemoryOfLastCall(is_chat_model=True),
-            structured_answer_filtering=True,
-            program_factory=lambda _: FailingStub(error),
-        )
-        assert (
-            str(synthesizer.synthesize("question", multimodal_nodes))
-            == "Empty Response"
-        )
-        assert (
-            str(await synthesizer.asynthesize("question", multimodal_nodes))
-            == "Empty Response"
-        )

@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import patch
 
 from llama_index.core import PromptHelper
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.indices.prompt_helper import ChatPromptHelper
 from llama_index.core.llms.mock import MockLLMWithChatMemoryOfLastCall
 from llama_index.core.prompts.chat_prompts import (
@@ -13,11 +12,8 @@ from llama_index.core.prompts.prompt_utils import (
     get_biggest_prompt,
     get_empty_prompt_messages,
 )
-from llama_index.core.response_synthesizers.refine import Refine, MultimodalRefine
-from llama_index.core.response_synthesizers.compact_and_refine import (
-    CompactAndRefine,
-    MultimodalCompactAndRefine,
-)
+from llama_index.core.response_synthesizers.refine import Refine
+from llama_index.core.response_synthesizers.compact_and_refine import CompactAndRefine
 from llama_index.core.schema import ImageNode, NodeWithScore, TextNode
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -51,7 +47,8 @@ class TestCompactAndRefine:
         max_prompt = get_biggest_prompt(
             [
                 prompt.partial_format(query_str="test")
-                for prompt in list(synthesizer1.get_prompts().values())
+                for key, prompt in synthesizer1.get_prompts().items()
+                if key in ["text_qa_template", "refine_template"]
             ]
         )
         max_prompt = max_prompt.select(llm=llm)
@@ -93,7 +90,8 @@ class TestCompactAndRefine:
         max_prompt = get_biggest_prompt(
             [
                 prompt.partial_format(query_str="test")
-                for prompt in list(synthesizer1.get_prompts().values())
+                for key, prompt in synthesizer1.get_prompts().items()
+                if key in ["text_qa_template", "refine_template"]
             ]
         )
         max_prompt = max_prompt.select(llm=llm)
@@ -138,7 +136,8 @@ class TestCompactAndRefine:
         max_prompt = get_biggest_prompt(
             [
                 prompt.partial_format(query_str="test")
-                for prompt in list(synthesizer1.get_prompts().values())
+                for key, prompt in synthesizer1.get_prompts().items()
+                if key in ["text_qa_template", "refine_template"]
             ]
         )
         max_prompt = max_prompt.select(llm=llm)
@@ -183,7 +182,8 @@ class TestCompactAndRefine:
         max_prompt = get_biggest_prompt(
             [
                 prompt.partial_format(query_str="test")
-                for prompt in list(synthesizer1.get_prompts().values())
+                for key, prompt in synthesizer1.get_prompts().items()
+                if key in ["text_qa_template", "refine_template"]
             ]
         )
         max_prompt = max_prompt.select(llm=llm)
@@ -221,11 +221,12 @@ class TestCompactAndRefine:
             "information2",
         ]
 
-
-class TestMultimodalCompactAndRefine:
-    def test_synthesize(self, nodes: list[NodeWithScore]) -> None:
+    def test_synthesize__multimodal(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer1 = MultimodalCompactAndRefine(llm=llm)
+        synthesizer1 = CompactAndRefine(llm=llm, multimodal=True)
         tkn_counter = TokenCounter()
         qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
         refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
@@ -233,20 +234,25 @@ class TestMultimodalCompactAndRefine:
         prompt_tokens = tkn_counter.estimate_tokens_in_messages(
             get_empty_prompt_messages(max_prompt)
         )
-        synthesizer2 = MultimodalCompactAndRefine(
+        synthesizer2 = CompactAndRefine(
             llm=llm,
             prompt_helper=ChatPromptHelper(
                 context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
             ),
             response_padding_size=0,
+            multimodal=True,
         )
+
+        # Act
         with patch.object(
-            MultimodalRefine,
-            "get_response",
-            wraps=MultimodalRefine(llm=llm).get_response,
+            Refine,
+            "get_response_from_messages",
+            wraps=Refine(llm=llm, multimodal=True).get_response_from_messages,
         ) as wraps_get_response:
-            response1 = synthesizer1.synthesize(query="test", nodes=nodes)
-            response2 = synthesizer2.synthesize(query="test", nodes=nodes)
+            response1 = synthesizer1.synthesize(query="test", nodes=multimodal_nodes)
+            response2 = synthesizer2.synthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
         assert str(response1) == " ".join(["text"] * 10)
         assert str(response2) == " ".join(["text"] * 10)
         assert llm.last_called_chat_function == ["chat"] * 3, (
@@ -254,59 +260,25 @@ class TestMultimodalCompactAndRefine:
             "Second call one compacted node split into 2 = 2 calls "
             "Total of 3 calls"
         )
-        assert wraps_get_response.call_args_list[0].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1 context information2")
-        ]
-        assert wraps_get_response.call_args_list[1].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1"),
-            ChatMessage(content="context information2"),
-        ]
-
-    def test_synthesize__streaming(self, nodes: list[NodeWithScore]) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer1 = MultimodalCompactAndRefine(llm=llm, streaming=True)
-        tkn_counter = TokenCounter()
-        qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
-        refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
-        max_prompt = get_biggest_prompt([qa_template, refine_template])
-        prompt_tokens = tkn_counter.estimate_tokens_in_messages(
-            get_empty_prompt_messages(max_prompt)
-        )
-        synthesizer2 = MultimodalCompactAndRefine(
-            llm=llm,
-            prompt_helper=ChatPromptHelper(
-                context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
-            ),
-            response_padding_size=0,
-            streaming=True,
-        )
-        with patch.object(
-            MultimodalRefine,
-            "get_response",
-            wraps=MultimodalRefine(llm=llm, streaming=True).get_response,
-        ) as wraps_get_response:
-            response1 = synthesizer1.synthesize(query="test", nodes=nodes)
-            response2 = synthesizer2.synthesize(query="test", nodes=nodes)
-        assert str(response1) == " ".join(["text"] * 10)
-        assert str(response2) == " ".join(["text"] * 10)
-        assert set(llm.last_called_chat_function) == {"stream_chat"}
-        assert len(llm.last_called_chat_function) == 3, (
-            "First call one compacted node = 1 call "
-            "Second call one compacted node split into 2 = 2 calls "
-            "Total of 3 calls"
-        )
-        assert wraps_get_response.call_args_list[0].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1 context information2")
-        ]
-        assert wraps_get_response.call_args_list[1].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1"),
-            ChatMessage(content="context information2"),
-        ]
+        assert (
+            len(wraps_get_response.call_args_list[0].kwargs["message_chunks"]) == 1
+        ), "Both nodes compacted into 1 message"
+        assert (
+            len(wraps_get_response.call_args_list[1].kwargs["message_chunks"]) == 2
+        ), "Tight context forces 2 separate messages"
+        assert any(
+            block.block_type == "image"
+            for msg in wraps_get_response.call_args_list[0].kwargs["message_chunks"]
+            for block in msg.blocks
+        ), "Compacted message should contain image block"
 
     @pytest.mark.asyncio
-    async def test_asynthesize(self, nodes: list[NodeWithScore]) -> None:
+    async def test_asynthesize__multimodal(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer1 = MultimodalCompactAndRefine(llm=llm)
+        synthesizer1 = CompactAndRefine(llm=llm, multimodal=True)
         tkn_counter = TokenCounter()
         qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
         refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
@@ -314,78 +286,46 @@ class TestMultimodalCompactAndRefine:
         prompt_tokens = tkn_counter.estimate_tokens_in_messages(
             get_empty_prompt_messages(max_prompt)
         )
-        synthesizer2 = MultimodalCompactAndRefine(
+        synthesizer2 = CompactAndRefine(
             llm=llm,
             prompt_helper=ChatPromptHelper(
                 context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
             ),
             response_padding_size=0,
+            multimodal=True,
         )
+
+        # Act
         with patch.object(
-            MultimodalRefine,
-            "aget_response",
-            wraps=MultimodalRefine(llm=llm).aget_response,
+            Refine,
+            "aget_response_from_messages",
+            wraps=Refine(llm=llm, multimodal=True).aget_response_from_messages,
         ) as wraps_aget_response:
-            response1 = await synthesizer1.asynthesize(query="test", nodes=nodes)
-            response2 = await synthesizer2.asynthesize(query="test", nodes=nodes)
+            response1 = await synthesizer1.asynthesize(
+                query="test", nodes=multimodal_nodes
+            )
+            response2 = await synthesizer2.asynthesize(
+                query="test", nodes=multimodal_nodes
+            )
+
+        # Assert
         assert str(response1) == " ".join(["text"] * 10)
         assert str(response2) == " ".join(["text"] * 10)
         assert set(llm.last_called_chat_function) == {"achat", "chat"}
         assert len(llm.last_called_chat_function) == 3 * 2, (
             "First call one compacted node = 1 call "
             "Second call one compacted node split into 2 = 2 calls "
-            "For Async, astream_chat and stream_chat are called (multiplied by 2) "
+            "For Async, achat and chat are called (multiplied by 2) "
             "Total of 6 calls"
         )
-        assert wraps_aget_response.call_args_list[0].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1 context information2")
-        ]
-        assert wraps_aget_response.call_args_list[1].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1"),
-            ChatMessage(content="context information2"),
-        ]
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__streaming(self, nodes: list[NodeWithScore]) -> None:
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer1 = MultimodalCompactAndRefine(llm=llm, streaming=True)
-        tkn_counter = TokenCounter()
-        qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
-        refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
-        max_prompt = get_biggest_prompt([qa_template, refine_template])
-        prompt_tokens = tkn_counter.estimate_tokens_in_messages(
-            get_empty_prompt_messages(max_prompt)
-        )
-        synthesizer2 = MultimodalCompactAndRefine(
-            llm=llm,
-            prompt_helper=ChatPromptHelper(
-                context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
-            ),
-            response_padding_size=0,
-            streaming=True,
-        )
-        with patch.object(
-            MultimodalRefine,
-            "aget_response",
-            wraps=MultimodalRefine(llm=llm, streaming=True).aget_response,
-        ) as wraps_aget_response:
-            response1 = await synthesizer1.asynthesize(query="test", nodes=nodes)
-            response2 = await synthesizer2.asynthesize(query="test", nodes=nodes)
-
-        # Assert
-        assert str(response1) == " ".join(["text"] * 10)
-        assert str(response2) == " ".join(["text"] * 10)
-        assert set(llm.last_called_chat_function) == {"astream_chat", "stream_chat"}
-        assert len(llm.last_called_chat_function) == 3 * 2, (
-            "First call one compacted node = 1 call "
-            "Second call one compacted node split into 2 = 2 calls "
-            "For Async, astream_chat and stream_chat are called (multiplied by 2) "
-            "Total of 6 calls"
-        )
-        assert wraps_aget_response.call_args_list[0].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1 context information2")
-        ]
-        assert wraps_aget_response.call_args_list[1].kwargs["message_chunks"] == [
-            ChatMessage(content="context information1"),
-            ChatMessage(content="context information2"),
-        ]
+        assert (
+            len(wraps_aget_response.call_args_list[0].kwargs["message_chunks"]) == 1
+        ), "Both nodes compacted into 1 message"
+        assert (
+            len(wraps_aget_response.call_args_list[1].kwargs["message_chunks"]) == 2
+        ), "Tight context forces 2 separate messages"
+        assert any(
+            block.block_type == "image"
+            for msg in wraps_aget_response.call_args_list[0].kwargs["message_chunks"]
+            for block in msg.blocks
+        ), "Compacted message should contain image block"
