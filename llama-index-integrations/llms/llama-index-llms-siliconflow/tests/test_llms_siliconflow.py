@@ -189,6 +189,7 @@ def test_stream_chat():
             },
             headers=llm._headers,
             timeout=llm.timeout,
+            stream=True,
         )
 
 
