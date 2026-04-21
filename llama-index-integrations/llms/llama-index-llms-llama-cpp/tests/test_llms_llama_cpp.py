@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -48,3 +50,26 @@ def test_messages_to_prompt_v3_instruct():
         "<|start_header_id|>assistant<|end_header_id|>\n\n"
     )
     assert messages_to_prompt_v3_instruct(messages, "SYSTEM PROMPT") == output
+
+
+def test_context_window_uses_model_default_when_zero(monkeypatch, tmp_path):
+    import llama_index.llms.llama_cpp.base as llama_cpp_base
+
+    class FakeLlama:
+        last_kwargs = None
+
+        def __init__(self, model_path: str, **kwargs):
+            FakeLlama.last_kwargs = kwargs
+            self.context_params = SimpleNamespace(n_ctx=8192)
+
+        def n_ctx(self) -> int:
+            return 8192
+
+    monkeypatch.setattr(llama_cpp_base, "Llama", FakeLlama)
+
+    model_path = tmp_path / "model.gguf"
+    model_path.write_bytes(b"")
+
+    llm = LlamaCPP(model_path=str(model_path), context_window=0)
+    assert FakeLlama.last_kwargs["n_ctx"] == 0
+    assert llm.context_window == 8192
