@@ -367,10 +367,8 @@ class BedrockConverse(FunctionCallingLLM):
             "max_tokens": self.max_tokens,
         }
 
-        for model in BEDROCK_NO_TEMP_MODELS:
-            if model in self.model:
-                del base_kwargs["temperature"]
-                break
+        if any(model in self.model for model in BEDROCK_NO_TEMP_MODELS):
+            del base_kwargs["temperature"]
 
         return {
             **base_kwargs,
