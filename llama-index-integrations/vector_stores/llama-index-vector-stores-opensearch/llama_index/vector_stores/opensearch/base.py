@@ -360,26 +360,20 @@ class OpensearchVectorClient:
         self,
         query_vector: List[float],
         k: int = 4,
-        filters: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
+        pre_filter: Optional[Union[Dict, List]] = None,
         excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         """For Approximate k-NN Search, this is the default query."""
-        query = {
-            "size": k,
-            "query": {
-                "knn": {
-                    vector_field: {
-                        "vector": query_vector,
-                        "k": k,
-                    }
-                }
-            },
+        knn_query: Dict[str, Any] = {
+            "field": vector_field,
+            "query_vector": query_vector,
+            "k": k,
         }
+        if pre_filter and pre_filter != MATCH_ALL_QUERY:
+            knn_query["filter"] = pre_filter
 
-        if filters:
-            # filter key must be added only when filtering to avoid "filter doesn't support values of type: START_ARRAY" exception
-            query["query"]["knn"][vector_field]["filter"] = filters
+        query: Dict[str, Any] = {"size": k, "query": {"knn": knn_query}}
         if excluded_source_fields:
             query["_source"] = {"exclude": excluded_source_fields}
         return query
@@ -531,8 +525,8 @@ class OpensearchVectorClient:
             search_query = self._default_approximate_search_query(
                 query_embedding,
                 k,
-                filters={"bool": {"filter": filters}},
                 vector_field=embedding_field,
+                pre_filter={"bool": {"filter": filters}},
                 excluded_source_fields=excluded_source_fields,
             )
         else:
