@@ -197,6 +197,40 @@ async def test_SimpleDirectoryReader_aload_file_extractor(data_path):
     assert len(docs) == 1
 
 
+@pytest.mark.asyncio
+async def test_SimpleDirectoryReader_aload_file_error(data_path):
+    extractor = mock.AsyncMock()
+    extractor.aload_data.side_effect = ValueError("async load failed")
+
+    # Raise on error preserves original exception type/message for async path.
+    with pytest.raises(ValueError, match="async load failed"):
+        await SimpleDirectoryReader.aload_file(
+            input_file=data_path / "file_0.md",
+            file_metadata=lambda x: {},
+            file_extractor={".md": extractor},
+            raise_on_error=True,
+        )
+
+    # Continue on error
+    docs = await SimpleDirectoryReader.aload_file(
+        input_file=data_path / "file_0.md",
+        file_metadata=lambda x: {},
+        file_extractor={".md": extractor},
+        raise_on_error=False,
+    )
+    assert not docs
+
+    # Always raise ImportError
+    extractor.aload_data.side_effect = ImportError("Module Bar not found.")
+    with pytest.raises(ImportError, match="Module Bar not found."):
+        await SimpleDirectoryReader.aload_file(
+            input_file=data_path / "file_0.md",
+            file_metadata=lambda x: {},
+            file_extractor={".md": extractor},
+            raise_on_error=False,
+        )
+
+
 def test_SimpleDirectoryReader_load_file_error(data_path):
     extractor = mock.MagicMock()
     extractor.load_data.side_effect = ValueError
