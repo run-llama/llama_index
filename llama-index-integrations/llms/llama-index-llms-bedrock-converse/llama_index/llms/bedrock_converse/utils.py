@@ -225,6 +225,8 @@ BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-sonnet-4-6",
 )
 
+BEDROCK_NO_TEMP_MODELS = "anthropic.claude-opus-4-7"
+
 
 def is_reasoning(model_name: str) -> bool:
     model_name = get_model_name(model_name)
