@@ -5,10 +5,12 @@
 ## [2026-04-21]
 
 ### llama-index-callbacks-honeyhive [0.5.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-core [0.14.21]
+
 - fix(core): prevent `KeyError` in `DocumentSummaryIndex.delete_nodes` when invalid node ID is provided ([#21067](https://github.com/run-llama/llama_index/pull/21067))
 - fix(core): handle `ValueError` and `TypeError` from structured output failures ([#21090](https://github.com/run-llama/llama_index/pull/21090))
 - fix: add explicit UTF-8 encoding to persistence layer fs.open() calls ([#21111](https://github.com/run-llama/llama_index/pull/21111))
@@ -17,499 +19,620 @@
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-embeddings-huggingface-optimum [0.4.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-nvidia [0.5.1]
+
 - feat(embeddings-nvidia): add http client support ([#21046](https://github.com/run-llama/llama_index/pull/21046))
 
 ### llama-index-embeddings-oracleai [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-premai [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-embeddings-text-embeddings-inference [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-textembed [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-together [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-upstage [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-embeddings-vertex [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-vertex-endpoint [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-vllm [0.1.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-voyageai [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-xinference [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-yandexgpt [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-embeddings-zhipuai [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-evaluation-tonic-validate [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-extractors-entity [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-extractors-marvin [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-extractors-relik [0.4.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-graph-stores-ApertureDB [0.3.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-graph-stores-falkordb [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-graph-stores-memgraph [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-graph-stores-nebula [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-graph-stores-neo4j [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-graph-stores-neptune [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-graph-stores-tidb [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-indices-managed-bge-m3 [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-colbert [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-dashscope [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-google [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-lancedb [0.3.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-llama-cloud [0.11.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-indices-managed-postgresml [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-vectara [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-indices-managed-vertexai [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-ingestion-ray [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-ai21 [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-aibadgr [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-alephalpha [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-alibabacloud-aisearch [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-anyscale [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-asi [0.3.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-azure-inference [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-azure-openai [0.5.3]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-baseten [0.2.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-bedrock [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-bedrock-converse [0.14.6]
+
 - Adds Google Gemma models and Bump version to 0.14.6 ([#21380](https://github.com/run-llama/llama_index/pull/21380))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-cerebras [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-clarifai [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-cleanlab [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-cloudflare-ai-gateway [0.2.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 
 ### llama-index-llms-cometapi [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-dashscope [0.6.1]
+
 - fix(dashscope): separate num_output from context_window to fix prompt… ([#21051](https://github.com/run-llama/llama_index/pull/21051))
 
 ### llama-index-llms-databricks [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-deepinfra [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-deepseek [0.3.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-everlyai [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-featherlessai [0.3.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-fireworks [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-friendli [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-gaudi [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-gigachat [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-groq [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-helicone [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-heroku [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-huggingface [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-huggingface-api [0.7.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-keywordsai [1.2.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 
 ### llama-index-llms-konko [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-langchain [0.8.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-litellm [0.7.1]
+
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-llama-api [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-llama-cpp [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-llamafile [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-lmstudio [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-localai [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-maritalk [0.6.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-meta [0.3.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-mistralai [0.10.1]
+
 - fix: parse MistralAI structured ThinkChunk/TextChunk without regex ([#20916](https://github.com/run-llama/llama_index/pull/20916))
 
 ### llama-index-llms-monsterapi [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-openai [0.7.5]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-openai-like [0.7.1]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-openvino-genai [0.3.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-ovhcloud [0.2.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-perplexity [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-portkey [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-upstage [0.8.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-llms-yi [0.5.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-postprocessor-cohere-rerank [0.8.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-postprocessor-google-rerank [0.1.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-postprocessor-nvidia-rerank [0.6.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-datasets [0.2.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-gcs [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-github [0.11.2]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-joplin [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-mbox [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-microsoft-sharepoint [0.9.1]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-obsidian [0.7.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-paddle-ocr [0.2.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-pandas-ai [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-patentsview [1.1.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-pebblo [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-s3 [0.6.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-service-now [0.3.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-readers-whatsapp [0.5.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-storage-chat-store-redis [0.7.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-tools-aws-bedrock-agentcore [0.3.1]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-tools-google [0.7.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-tools-mcp-discovery [0.2.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-tools-seltz [0.3.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-tools-typecast [0.1.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-utils-huggingface [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-utils-oracleai [0.4.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-utils-qianfan [0.5.0]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-couchbase [0.7.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-databricks [0.6.1]
+
 - fix: make primary key column configurable in DatabricksVectorSearch ([#20966](https://github.com/run-llama/llama_index/pull/20966))
 
 ### llama-index-vector-stores-milvus [1.1.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-mongodb [0.10.1]
+
 - chore(deps): bump the pip group across 96 directories with 2 updates ([#21381](https://github.com/run-llama/llama_index/pull/21381))
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-oceanbase [0.4.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-opensearch [1.2.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 
 ### llama-index-vector-stores-yugabytedb [0.6.0]
+
 - chore(deps): bump the pip group across 87 directories with 2 updates ([#21382](https://github.com/run-llama/llama_index/pull/21382))
 - chore(deps): bump the pip group across 68 directories with 2 updates ([#21394](https://github.com/run-llama/llama_index/pull/21394))
 

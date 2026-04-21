@@ -1,4 +1,3 @@
 ::: llama_index.llms.cohere
-    options:
-      members:
-        - Cohere
+options:
+members: - Cohere
