@@ -31,6 +31,7 @@ class Page:
     last_modified: Optional[datetime]
     pageid: Optional[int]
     namespace: Optional[int]
+    revision: Optional[int] = None
 
 
 class MediaWikiReader(BasePydanticReader):
@@ -258,6 +259,9 @@ class MediaWikiReader(BasePydanticReader):
                     last_modified=self._extract_revision_time(page, title),
                     pageid=page.pageid,
                     namespace=page.namespace,
+                    # mwclient defaults revision to 0 when unavailable; coerce to None
+                    # so callers can use a simple truthiness check.
+                    revision=page.revision or None,
                 )
 
     def _get_page_contents(self, page_title: str) -> Optional[str]:

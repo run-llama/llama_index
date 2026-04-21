@@ -218,7 +218,7 @@ class TestGetAllPages:
         mock_site = _mock_site()
         mock_page = MagicMock()
         mock_page.name = "Page 1"
-        mock_page.revision = True
+        mock_page.revision = 98765
         mock_page.touched = (2024, 1, 1, 12, 0, 0, 0, 0, 0)
         mock_site.allpages.return_value = [mock_page]
         mock_site_cls.return_value = mock_site
@@ -230,6 +230,7 @@ class TestGetAllPages:
         assert pages[0].title == "Page 1"
         assert pages[0].url == "https://example.com/wiki/Page_1"
         assert pages[0].last_modified.year == 2024
+        assert pages[0].revision == 98765
 
     @patch("llama_index.readers.mediawiki.base.mwclient.Site")
     def test_multiple_namespaces(self, mock_site_cls):
