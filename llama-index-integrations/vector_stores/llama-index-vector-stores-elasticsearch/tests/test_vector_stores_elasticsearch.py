@@ -10,7 +10,8 @@ from elasticsearch import AsyncElasticsearch, ConnectionError
 import pandas as pd
 import pytest
 import pytest_asyncio
-
+from unittest.mock import AsyncMock
+import asyncio
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
@@ -736,3 +737,38 @@ async def test_clear(
 
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == node_embeddings[0].node_id
+
+
+def test_query_forwards_suffix_without_class() -> None:
+    async_mock = AsyncMock(return_value="ok")
+    testing_dict = {}
+
+    async def wrapper(*args, **kwargs):
+        testing_dict["args"] = args
+        testing_dict["kwargs"] = kwargs
+        return await async_mock(*args, **kwargs)
+
+    store = type("Store", (), {})()
+    store.aquery = wrapper
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    q = VectorStoreQuery(query_embedding=[1.0], similarity_top_k=1)
+    result = ElasticsearchStore.query(
+        store,
+        q,
+        metadata_keyword_suffix="__custom",
+        test_flag=True,
+    )
+
+    loop.close()
+    asyncio.set_event_loop(None)
+
+    assert testing_dict["kwargs"]["query"] == q
+    assert testing_dict["kwargs"]["metadata_keyword_suffix"] == "__custom"
+    assert testing_dict["kwargs"]["test_flag"] is True
+    assert result == "ok"
