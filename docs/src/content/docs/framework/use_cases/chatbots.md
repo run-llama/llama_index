@@ -13,6 +13,7 @@ The central module guide you'll want to check out is our [Chat Engines](/python/
 Here are some additional relevant resources to build full-stack chatbot apps:
 
 - [Building a chatbot](/python/framework/understanding/putting_it_all_together/chatbots/building_a_chatbot) tutorial
+- [Local starter tutorial](/python/framework/getting_started/starter_example_local): build a chatbot on top of a fully local stack with no hosted-API dependency.
 - [create-llama](https://blog.llamaindex.ai/create-llama-a-command-line-tool-to-generate-llamaindex-apps-8f7683021191), a command line tool that generates a full-stack chatbot application for you
 - [SECinsights.ai](https://www.secinsights.ai/), an open-source application that uses LlamaIndex to build a chatbot that answers questions about SEC filings
 - [RAGs](https://blog.llamaindex.ai/introducing-rags-your-personalized-chatgpt-experience-over-your-data-2b9d140769b1), a project inspired by OpenAI's GPTs that lets you build a low-code chatbot over your data using Streamlit
