@@ -756,3 +756,64 @@ def test_responses_api_tool_kwargs_string_passthrough() -> None:
         if isinstance(item, dict) and item.get("type") == "function_call"
     ][0]
     assert tool_item["arguments"] == '{"q": "test"}'
+
+
+def _extract_chat_tool_call(message_dict: dict) -> dict:
+    """Pull the single tool_call dict out of a Chat Completions message dict."""
+    if message_dict.get("tool_calls"):
+        return message_dict["tool_calls"][0]
+    content = message_dict.get("content")
+    if isinstance(content, list):
+        for item in content:
+            if isinstance(item, dict) and item.get("tool_calls"):
+                return item["tool_calls"][0]
+    raise AssertionError(f"No tool_calls found in message: {message_dict!r}")
+
+
+def test_chat_completions_tool_kwargs_dict_serialized_to_json_string() -> None:
+    """`function.arguments` must be a JSON string for the Chat Completions API.
+
+    Regression test for the cross-provider workflow where an Anthropic
+    assistant message (whose `ToolCallBlock.tool_kwargs` is a dict) is fed
+    into an OpenAI agent. Previously, `to_openai_message_dict` placed the
+    raw dict into `function.arguments`, triggering a 400 from OpenAI.
+    """
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="get_weather",
+                tool_call_id="call_dict",
+                tool_kwargs={"location": "Boston", "unit": "celsius"},
+            ),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([msg])[0]
+    tool_call = _extract_chat_tool_call(openai_message)
+
+    assert tool_call["function"]["name"] == "get_weather"
+    assert isinstance(tool_call["function"]["arguments"], str)
+    assert json.loads(tool_call["function"]["arguments"]) == {
+        "location": "Boston",
+        "unit": "celsius",
+    }
+
+
+def test_chat_completions_tool_kwargs_string_passthrough() -> None:
+    """Already-serialized `tool_kwargs` strings must pass through unchanged."""
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_str",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([msg])[0]
+    tool_call = _extract_chat_tool_call(openai_message)
+
+    assert tool_call["function"]["arguments"] == '{"q": "test"}'
