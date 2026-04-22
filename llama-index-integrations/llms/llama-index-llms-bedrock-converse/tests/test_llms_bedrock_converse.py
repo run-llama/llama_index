@@ -1,3 +1,6 @@
+import random
+import string
+import json
 import os
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
@@ -9,6 +12,10 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     ImageBlock,
     TextBlock,
+    ThinkingBlock,
+    CachePoint,
+    CacheControl,
+    ToolCallBlock,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.tools import FunctionTool
@@ -69,11 +76,48 @@ def bedrock_converse_integration():
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         max_tokens=EXP_MAX_TOKENS,
+        system_prompt_caching=True,
+    )
+
+
+@pytest.fixture(scope="module")
+def bedrock_converse_integration_thinking():
+    """Create a BedrockConverse instance for integration tests with proper credentials."""
+    return BedrockConverse(
+        model=os.getenv("BEDROCK_THINKING_MODEL")
+        or "anthropic.claude-3-7-sonnet-20250219-v1:0",
+        region_name=os.getenv("AWS_REGION", "us-east-1"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        max_tokens=12000,
+        temperature=1,
+        thinking={"budget_tokens": 10000, "type": "enabled"},
+    )
+
+
+@pytest.fixture(scope="module")
+def bedrock_converse_integration_no_system_prompt_caching_param():
+    """Create a BedrockConverse instance for integration tests with proper credentials."""
+    return BedrockConverse(
+        model=EXP_MODEL,
+        region_name=os.getenv("AWS_REGION", "us-east-1"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        max_tokens=EXP_MAX_TOKENS,
     )
 
 
 class MockExceptions:
     class ThrottlingException(Exception):
+        pass
+
+    class InternalServerException(Exception):
+        pass
+
+    class ServiceUnavailableException(Exception):
+        pass
+
+    class ModelTimeoutException(Exception):
         pass
 
 
@@ -208,6 +252,25 @@ def test_init_app_inf_profile(bedrock_converse_with_application_inference_profil
     assert client._model_kwargs["model"] == EXP_APP_INF_PROFILE_ARN
 
 
+def test_init_adaptive_thinking_unsupported_model(mock_boto3_session):
+    with pytest.warns(UserWarning, match="does not support adaptive thinking mode"):
+        llm = BedrockConverse(
+            model="anthropic.claude-sonnet-4-20250514-v1:0",
+            thinking={"type": "adaptive"},
+            botocore_session=mock_boto3_session,
+        )
+        assert llm.thinking is None
+
+
+def test_init_adaptive_thinking_opus_46(mock_boto3_session):
+    llm = BedrockConverse(
+        model="anthropic.claude-opus-4-6-v1",
+        thinking={"type": "adaptive"},
+        botocore_session=mock_boto3_session,
+    )
+    assert llm.thinking == {"type": "adaptive"}
+
+
 def test_chat(bedrock_converse):
     response = bedrock_converse.chat(messages)
 
@@ -222,7 +285,6 @@ def test_complete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 def test_stream_chat(bedrock_converse):
@@ -303,7 +365,6 @@ async def test_acomplete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 @pytest.mark.asyncio
@@ -535,12 +596,23 @@ def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     """Test that custom tool_choice overrides tool_required."""
     custom_tool_choice = {"specific": {"name": "search_tool"}}
     result = bedrock_converse._prepare_chat_with_tools(
-        tools=[search_tool], tool_required=True, tool_choice=custom_tool_choice
+        tools=[search_tool], tool_choice=custom_tool_choice
     )
 
     assert "tools" in result
     assert "toolChoice" in result["tools"]
     assert result["tools"]["toolChoice"] == custom_tool_choice
+
+
+def test_prepare_chat_with_tools_cache_enabled(bedrock_converse):
+    """Test that custom tool_choice overrides tool_required."""
+    custom_tool_choice = {"specific": {"name": "search_tool"}}
+    result = bedrock_converse._prepare_chat_with_tools(
+        tools=[search_tool], tool_caching=True
+    )
+
+    assert "tools" in result
+    assert "toolChoice" in result["tools"]
 
 
 # Integration test for reproducing the empty text field error
@@ -801,3 +873,427 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert response_5 is not None
     assert hasattr(response_5, "response")
     assert len(str(response_5)) > 0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
+    messages = [
+        ChatMessage(
+            role="user",
+            content="Can you help me solve this equation for x? x^2+7x+12 = 0. Please think before answering",
+        )
+    ]
+    res_chat = bedrock_converse_integration_thinking.chat(messages)
+    assert (
+        len(
+            [
+                block
+                for block in res_chat.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+
+    res_achat = await bedrock_converse_integration_thinking.achat(messages)
+    assert (
+        len(
+            [
+                block
+                for block in res_achat.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+    res_stream_chat = bedrock_converse_integration_thinking.stream_chat(messages)
+
+    last_resp = None
+    for r in res_stream_chat:
+        last_resp = r
+
+    assert all(
+        len((block.content or "")) > 10
+        for block in last_resp.message.blocks
+        if isinstance(block, ThinkingBlock)
+    )
+    assert len(last_resp.message.blocks) > 0
+    res_astream_chat = await bedrock_converse_integration_thinking.astream_chat(
+        messages
+    )
+
+    last_resp = None
+    async for r in res_astream_chat:
+        last_resp = r
+
+    assert all(
+        len((block.content or "")) > 10
+        for block in last_resp.message.blocks
+        if isinstance(block, ThinkingBlock)
+    )
+    assert len(last_resp.message.blocks) > 0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
+    bedrock_converse_integration_thinking,
+):
+    """
+    Test that thinking_delta is populated in additional_kwargs during streaming.
+
+    This test verifies that when using extended thinking mode:
+    1. Thinking content appears in additional_kwargs['thinking_delta'] during streaming
+    2. Text content appears in delta field separately from thinking content
+    3. Final message contains accumulated thinking in ThinkingBlock
+    """
+    messages = [
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What is 15 + 27? Think step by step before answering.",
+        )
+    ]
+
+    # Test stream_chat
+    responses = list(bedrock_converse_integration_thinking.stream_chat(messages))
+
+    # Verify we got responses
+    assert len(responses) > 0
+
+    # Check for thinking_delta in additional_kwargs
+    thinking_responses = [
+        r
+        for r in responses
+        if r.additional_kwargs.get("thinking_delta") is not None
+        and len(r.additional_kwargs.get("thinking_delta", "")) > 0
+    ]
+    assert len(thinking_responses) > 0, (
+        "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    )
+
+    # Check that text deltas are separate from thinking deltas
+    text_responses = [
+        r
+        for r in responses
+        if r.delta and r.additional_kwargs.get("thinking_delta") is None
+    ]
+    assert len(text_responses) > 0, "Should have text responses separate from thinking"
+
+    # Verify final message has ThinkingBlock with accumulated content
+    final_response = responses[-1]
+    thinking_blocks = [
+        b for b in final_response.message.blocks if isinstance(b, ThinkingBlock)
+    ]
+    assert len(thinking_blocks) > 0, "Final message should have ThinkingBlock"
+    assert len(thinking_blocks[0].content) > 10, "ThinkingBlock should have content"
+
+    # Test astream_chat
+    async_responses = []
+    async for r in await bedrock_converse_integration_thinking.astream_chat(messages):
+        async_responses.append(r)
+
+    # Verify async streaming also has thinking_delta
+    async_thinking_responses = [
+        r
+        for r in async_responses
+        if r.additional_kwargs.get("thinking_delta") is not None
+    ]
+    assert len(async_thinking_responses) > 0, (
+        "Async streaming should also have thinking_delta in additional_kwargs"
+    )
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_system_prompt_cache_points(
+    bedrock_converse_integration_no_system_prompt_caching_param,
+):
+    """
+    Test system prompt cache point functionality with BedrockConverse integration.
+
+    This test verifies:
+    1. Cache point creation on first call (cache write tokens > 0)
+    2. Cache point usage on second call (cache read tokens > 0)
+    3. Proper token accounting for cached vs non-cached content
+
+    Uses a system prompt with 1026+ tokens to exceed the 1024 token minimum for caching.
+    Each test run uses a unique random identifier to ensure fresh cache creation.
+    """
+    llm = bedrock_converse_integration_no_system_prompt_caching_param
+
+    # Generate a unique random string for this test run to ensure fresh cache
+    # Use fixed length to ensure consistent token counting
+    random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    # Create a system prompt with enough tokens for caching
+    # Approximate token calculation: "You are a recruiting expert for session ABC12345! " ≈ 11-12 tokens
+    base_text = f"You are a recruiting expert for session {random_id}! "
+
+    # Calculate repetitions needed to exceed 1024 tokens (using conservative estimate of 10 tokens per repetition)
+    target_tokens = 1100  # Target slightly above minimum to ensure we exceed 1024
+    estimated_tokens_per_repetition = 10
+    repetitions = target_tokens // estimated_tokens_per_repetition
+
+    repeated_text = base_text * repetitions
+
+    # Additional uncached text to test partial caching
+    uncached_instructions = (
+        "Please focus on providing helpful responses to job seekers."
+    )
+
+    # First call - should establish cache
+    cache_test_messages_1 = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text=repeated_text),
+                CachePoint(cache_control=CacheControl(type="default")),
+                TextBlock(text=uncached_instructions),
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.USER, content="Do you have data science jobs in Toronto?"
+        ),
+    ]
+
+    response_1 = await llm.achat(messages=cache_test_messages_1)
+    # Verify cache write tokens are present (first call should write to cache)
+    additional_kwargs_1 = getattr(response_1, "additional_kwargs", {})
+    assert "cache_creation_input_tokens" in additional_kwargs_1, (
+        "First call should show cache creation tokens"
+    )
+    cache_write_tokens_1 = additional_kwargs_1.get("cache_creation_input_tokens", 0)
+    assert cache_write_tokens_1 > 0, (
+        f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    )
+
+    # Second call - should read from cache with different user message
+    cache_test_messages_2 = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text=repeated_text),  # Same cached content
+                CachePoint(cache_control=CacheControl(type="default")),
+                TextBlock(text=uncached_instructions),  # Same uncached content
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the environmental impacts of solar energy?",
+        ),
+    ]
+
+    response_2 = await llm.achat(messages=cache_test_messages_2)
+
+    # Verify cache read tokens are present (second call should read from cache)
+    additional_kwargs_2 = getattr(response_2, "additional_kwargs", {})
+    assert "cache_read_input_tokens" in additional_kwargs_2, (
+        "Second call should show cache read tokens"
+    )
+    cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
+    assert cache_read_tokens_2 > 0, (
+        f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    )
+
+    # Verify cache efficiency - cache read tokens should be close to cache write tokens
+    # (since we're using the same cached content)
+    cache_efficiency_ratio = cache_read_tokens_2 / cache_write_tokens_1
+    assert 0.95 <= cache_efficiency_ratio <= 1.05, (
+        f"Cache efficiency seems off. Write: {cache_write_tokens_1}, "
+        f"Read: {cache_read_tokens_2}, Ratio: {cache_efficiency_ratio:.2f}"
+    )
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
+    bedrock_converse_integration,
+):
+    """
+    Test automatic system prompt cache writing when system_prompt_caching=True.
+
+    This test verifies:
+    1. Cache write tokens are properly recorded on first call
+
+
+    Uses the bedrock_converse_integration fixture which has system_prompt_caching=True.
+    Each test run uses a unique random identifier to ensure fresh cache creation.
+    """
+    llm = bedrock_converse_integration
+
+    # Generate a unique random string for this test run to ensure fresh cache
+    # Use fixed length to ensure consistent token counting
+    random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+
+    # Create a system prompt with enough tokens for automatic caching
+    # The system_prompt_caching=True should automatically cache system prompts >= 1024 tokens
+    base_text = (
+        f"You are an AI assistant specialized in {random_id} analysis and research. "
+    )
+
+    # Calculate repetitions needed to exceed 1024 tokens (using conservative estimate of 12 tokens per repetition)
+    target_tokens = 1100  # Target slightly above minimum to ensure we exceed 1024
+    estimated_tokens_per_repetition = 12
+    repetitions = target_tokens // estimated_tokens_per_repetition
+
+    # Create system prompt that will be automatically cached
+    large_system_prompt = base_text * repetitions + (
+        "Please provide detailed, helpful, and accurate responses. "
+        "Focus on delivering high-quality information with proper context and examples."
+    )
+
+    # First call - should trigger automatic cache write for system prompt
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=large_system_prompt,
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the key benefits of renewable energy?",
+        ),
+    ]
+
+    response = await llm.achat(messages=messages)
+
+    # Verify cache write tokens are present (first call should write to cache automatically)
+    additional_kwargs = getattr(response, "additional_kwargs", {})
+    assert "cache_creation_input_tokens" in additional_kwargs, (
+        "First call should show cache creation tokens when system_prompt_caching=True"
+    )
+    cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
+    assert cache_write_tokens > 0, (
+        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    )
+
+    # Verify response is meaningful
+    assert len(str(response.message.content)) > 50, "Response should be substantial"
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_tool_call_input_output(
+    bedrock_converse_integration_thinking: BedrockConverse,
+) -> None:
+    def get_weather(location: str):
+        return f"The weather in {location} is rainy with a temperature of 15°C."
+
+    tool = FunctionTool.from_defaults(
+        fn=get_weather,
+        name="get_weather",
+        description="Get the weather of a given location",
+    )
+
+    history = [
+        ChatMessage(
+            role="user",
+            content="Hello, can you tell me what is the weather today in London?",
+        ),
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                ToolCallBlock(
+                    tool_name="get_weather",
+                    tool_kwargs={"location": "Liverpool"},
+                    tool_call_id="1",
+                ),
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="The weather in London is 11°C and windy",
+            additional_kwargs={"tool_call_id": "1"},
+        ),
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                TextBlock(
+                    text="The weather in London is windy with a temperature of 11°C"
+                )
+            ],
+        ),
+    ]
+
+    input_message = ChatMessage(
+        role="user",
+        content="Ok, and what is the weather in Liverpool?",
+    )
+
+    response = bedrock_converse_integration_thinking.chat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in response.message.blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    aresponse = await bedrock_converse_integration_thinking.achat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    assert (
+        len(
+            [
+                block
+                for block in aresponse.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in aresponse.message.blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    stream_response = bedrock_converse_integration_thinking.stream_chat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    blocks = []
+    for res in stream_response:
+        blocks.extend(res.message.blocks)
+    assert len([block for block in blocks if isinstance(block, ToolCallBlock)]) > 0
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    astream_response = (
+        await bedrock_converse_integration_thinking.astream_chat_with_tools(
+            tools=[tool], user_msg=input_message, chat_history=history
+        )
+    )
+    ablocks = []
+    async for res in astream_response:
+        ablocks.extend(res.message.blocks)
+    assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) > 0
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in ablocks
+        if isinstance(block, ToolCallBlock)
+    )

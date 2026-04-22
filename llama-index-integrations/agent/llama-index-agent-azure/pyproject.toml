@@ -27,18 +27,18 @@ dev = [
 
 [project]
 name = "llama-index-agent-azure-foundry"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index agent azure integration"
 authors = [{name = "Microsoft", email = "SK-Support@microsoft.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "azure-ai-projects >= 1.0.0b11",
+    "azure-ai-projects >= 1.0.0b11, < 2.0.0",
     "azure-ai-agents >= 1.0.0b3",
     "azure-identity",
     "openai>=1.14.0",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

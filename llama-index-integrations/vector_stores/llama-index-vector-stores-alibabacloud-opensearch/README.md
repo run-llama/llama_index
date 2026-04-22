@@ -1,6 +1,6 @@
 # LlamaIndex Vector_Stores Integration: Alibaba Cloud OpenSearch
 
-Please refer to the [notebook](../../../docs/docs/examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb) for usage of AlibabaCloud OpenSearch as vector store in LlamaIndex.
+Please refer to the [notebook](../../../docs/examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb) for usage of AlibabaCloud OpenSearch as vector store in LlamaIndex.
 
 ## Example Usage
 

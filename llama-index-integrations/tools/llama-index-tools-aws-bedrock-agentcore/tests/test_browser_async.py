@@ -478,3 +478,130 @@ class TestAsyncBrowserFunctions:
         mock_browser_client.stop.assert_called_once()
         # Note: In the actual implementation, the thread is not removed from _browser_clients
         # when an exception occurs during stop(), so we don't assert that here
+
+
+class TestAsyncBrowserLifecycle:
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.list_browsers"
+    )
+    async def test_alist_browsers(self, mock_list):
+        """Test alist_browsers delegates to sync list_browsers."""
+        mock_list.return_value = (
+            "Found 1 browser(s):\n"
+            "- my-browser (ID: b-123, Status: ACTIVE, Type: CUSTOM)"
+        )
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.alist_browsers(
+            browser_type="CUSTOM", max_results=5, thread_id="test-thread"
+        )
+
+        mock_list.assert_called_once_with(
+            browser_type="CUSTOM", max_results=5, thread_id="test-thread"
+        )
+        assert "Found 1 browser(s)" in result
+
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.create_browser"
+    )
+    async def test_acreate_browser(self, mock_create):
+        """Test acreate_browser delegates to sync create_browser."""
+        mock_create.return_value = "Browser created (ID: b-456, Status: CREATING)"
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.acreate_browser(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/test",
+            network_mode="PUBLIC",
+            description="test desc",
+            thread_id="test-thread",
+        )
+
+        mock_create.assert_called_once_with(
+            name="test_browser",
+            execution_role_arn="arn:aws:iam::123456789012:role/test",
+            network_mode="PUBLIC",
+            description="test desc",
+            subnet_ids=None,
+            security_group_ids=None,
+            thread_id="test-thread",
+        )
+        assert "Browser created" in result
+
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.delete_browser"
+    )
+    async def test_adelete_browser(self, mock_delete):
+        """Test adelete_browser delegates to sync delete_browser."""
+        mock_delete.return_value = "Browser 'b-456' deleted (Status: DELETING)"
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.adelete_browser(
+            browser_id="b-456", thread_id="test-thread"
+        )
+
+        mock_delete.assert_called_once_with(browser_id="b-456", thread_id="test-thread")
+        assert "deleted" in result
+
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.get_browser"
+    )
+    async def test_aget_browser(self, mock_get):
+        """Test aget_browser delegates to sync get_browser."""
+        mock_get.return_value = (
+            "Browser 'b-456':\n"
+            "  Name: test_browser\n"
+            "  Status: ACTIVE\n"
+            "  Network mode: PUBLIC"
+        )
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.aget_browser(
+            browser_id="b-456", thread_id="test-thread"
+        )
+
+        mock_get.assert_called_once_with(browser_id="b-456", thread_id="test-thread")
+        assert "Browser 'b-456'" in result
+        assert "Status: ACTIVE" in result
+
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.take_control"
+    )
+    async def test_atake_control(self, mock_take):
+        """Test atake_control delegates to sync take_control."""
+        mock_take.return_value = (
+            "Took manual control of the browser session. Automation stream disabled."
+        )
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.atake_control(thread_id="test-thread")
+
+        mock_take.assert_called_once_with(thread_id="test-thread")
+        assert "Took manual control" in result
+
+    @pytest.mark.asyncio
+    @patch(
+        "llama_index.tools.aws_bedrock_agentcore.browser.base"
+        ".AgentCoreBrowserToolSpec.release_control"
+    )
+    async def test_arelease_control(self, mock_release):
+        """Test arelease_control delegates to sync release_control."""
+        mock_release.return_value = (
+            "Released manual control. Automation stream re-enabled."
+        )
+
+        tool_spec = AgentCoreBrowserToolSpec()
+        result = await tool_spec.arelease_control(thread_id="test-thread")
+
+        mock_release.assert_called_once_with(thread_id="test-thread")
+        assert "Released manual control" in result

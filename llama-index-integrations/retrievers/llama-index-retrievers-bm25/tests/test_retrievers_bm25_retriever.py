@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from llama_index.core import Document
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.retrievers.bm25.base import BM25Retriever
@@ -121,3 +124,27 @@ def _count_score_greater_than_zero(nodes):
         print(node.score)
         count = count + (node.score > 0)
     return count
+
+
+def test_persist_and_load():
+    documents = [Document.example()]
+
+    splitter = SentenceSplitter(chunk_size=1024)
+    nodes = splitter.get_nodes_from_documents(documents)
+
+    # Passing a high value of similarity_top_k w.r.t Document example
+    similarity_top_k = 20
+    retriever = BM25Retriever.from_defaults(
+        nodes=nodes, similarity_top_k=similarity_top_k
+    )
+
+    # Persist the retriever
+    try:
+        retriever.persist("test_retriever")
+
+        # Load the retriever
+        _ = BM25Retriever.from_persist_dir("test_retriever")
+    finally:
+        # Clean up the test_retriever directory
+        if os.path.exists("test_retriever"):
+            shutil.rmtree("test_retriever")

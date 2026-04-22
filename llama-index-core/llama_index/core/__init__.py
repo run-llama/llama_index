@@ -1,16 +1,17 @@
 """Top-level imports for LlamaIndex."""
 
-__version__ = "0.13.1"
-
 import logging
+from importlib.metadata import PackageNotFoundError, version
 from logging import NullHandler
 from typing import Callable, Optional
 
 try:
-    # Force pants to install eval_type_backport on 3.9
-    import eval_type_backport  # noqa  # type: ignore
-except ImportError:
-    pass
+    __version__ = version("llama-index-core")
+except PackageNotFoundError:
+    # This might happen when running tests or scripts directly without
+    # an editable install.
+    __version__ = "0.0.0"
+
 
 # response
 from llama_index.core.base.response.schema import Response
@@ -63,7 +64,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.core.readers import SimpleDirectoryReader, download_loader
+from llama_index.core.readers import SimpleDirectoryReader
 
 # Response Synthesizer
 from llama_index.core.response_synthesizers.factory import get_response_synthesizer
@@ -135,7 +136,6 @@ __all__ = [
     "SQLContextBuilder",
     "PromptHelper",
     "IndexStructType",
-    "download_loader",
     "load_graph_from_storage",
     "load_index_from_storage",
     "load_indices_from_storage",

@@ -75,8 +75,8 @@ def test_get_when_initial_tokens_same_as_limit_removes_message() -> None:
     # When I get the chat history from the memory
     history = memory.get(initial_token_count=initial_tokens)
 
-    # Then the history should be empty
-    assert len(history) == 0
+    # Then the history should have at least one message
+    assert len(history) == 1
 
 
 def test_get_when_space_for_assistant_message_removes_assistant_message_at_start_of_history() -> (
@@ -95,8 +95,8 @@ def test_get_when_space_for_assistant_message_removes_assistant_message_at_start
     # When I get the chat history from the memory
     history = memory.get(initial_token_count=initial_tokens)
 
-    # Then the history should be empty
-    assert len(history) == 0
+    # Then the history should have at least one message
+    assert len(history) == 1
 
 
 def test_get_when_space_for_second_message_and_answer_removes_only_first_message_and_answer() -> (

@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-tools-brightdata"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index tools Bright Data integration"
 authors = [{name = "Bright Data", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "brightdata"}]
 dependencies = [
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

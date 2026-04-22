@@ -80,7 +80,7 @@ class ConfigurableComponent(Enum):
 
         if name is None:
             suffix = uuid.uuid1()
-            name = self.value.name + f" [{suffix}]]"
+            name = self.value.name + f" [{suffix}]"
         return ConfiguredDataSource[component_type](  # type: ignore
             component=component, name=name
         )

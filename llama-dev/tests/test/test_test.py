@@ -229,7 +229,7 @@ def test_skip_failures_no_tests(
 
     # Check console output
     assert result.exit_code == 0
-    assert "⏭️ test_integration skipped due to no tests" in result.stdout
+    assert "1 packages were skipped" in result.stdout
 
 
 @mock.patch("llama_dev.test.find_all_packages")
@@ -262,8 +262,7 @@ def test_skip_failures_unsupported_python(
     # Check console output
     assert result.exit_code == 0
     assert (
-        "⏭️ test_integration skipped due to python version incompatibility"
-        in result.stdout
+        "1 packages were skipped due to Python version incompatibility" in result.stdout
     )
 
 
@@ -294,7 +293,7 @@ def test_success(
 
     # Check console output
     assert result.exit_code == 0
-    assert "✅ test_integration succeeded in 0.1s" in result.stdout
+    assert "Tests passed for 1 packages." in result.stdout
 
 
 @mock.patch("llama_dev.test.find_all_packages")

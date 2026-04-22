@@ -7,7 +7,7 @@ dev = [
     "jupyter>=1.0.0,<2",
     "mypy>=1.10.0,<2",
     "pre-commit==3.2.0",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
@@ -17,17 +17,17 @@ dev = [
 
 [project]
 name = "llama-index-graph-stores-tidb"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index graph stores tidb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "tidb-vector>=0.0.9,<0.0.10",
     "PyMySQL>=1.1.1,<2",
     "SQLAlchemy>=2.0.30,<3",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

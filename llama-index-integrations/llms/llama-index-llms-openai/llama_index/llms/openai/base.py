@@ -1,4 +1,5 @@
 import functools
+import re
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
@@ -43,6 +44,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ThinkingBlock,
+    ToolCallBlock,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -76,8 +80,9 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
     is_json_schema_supported,
+    is_chatcomp_api_supported,
 )
-from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -121,9 +126,15 @@ class Tokenizer(Protocol):
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class OpenAI(FunctionCallingLLM):
@@ -160,7 +171,7 @@ class OpenAI(FunctionCallingLLM):
 
         llm = OpenAI(model="gpt-3.5-turbo")
 
-        stream = llm.stream("Hi, write a short story")
+        stream = llm.stream_complete("Hi, write a short story")
 
         for r in stream:
             print(r.delta, end="")
@@ -226,7 +237,9 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high", "minimal"]] = Field(
+    reasoning_effort: Optional[
+        Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+    ] = Field(
         default=None,
         description="The effort to use for reasoning models.",
     )
@@ -269,7 +282,9 @@ class OpenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         strict: bool = False,
-        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        reasoning_effort: Optional[
+            Literal["none", "minimal", "low", "medium", "high", "xhigh"]
+        ] = None,
         modalities: Optional[List[str]] = None,
         audio_config: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -290,6 +305,11 @@ class OpenAI(FunctionCallingLLM):
         # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
             temperature = 1.0
+
+        if not is_chatcomp_api_supported(model):
+            raise ValueError(
+                f"Cannot use model {model} as it is only supported by the Responses API. Use the OpenAIResponses class for it."
+            )
 
         super().__init__(
             model=model,
@@ -458,7 +478,7 @@ class OpenAI(FunctionCallingLLM):
             )
             all_kwargs.pop("max_tokens", None)
         if self.model in O1_MODELS and self.reasoning_effort is not None:
-            # O1 models support reasoning_effort of low, medium, high
+            # O1 models support reasoning_effort of none, minimal, low, medium, high, xhigh
             all_kwargs["reasoning_effort"] = self.reasoning_effort
 
         if self.modalities is not None:
@@ -521,6 +541,7 @@ class OpenAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            reasoning_content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
@@ -528,14 +549,12 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(client, AzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
 
                 if delta is None:
                     continue
@@ -549,21 +568,48 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                additional_kwargs = {}
+                # Extract reasoning_content for chain-of-thought streaming.
+                # Many OpenAI-compatible providers surface this extra field.
+                raw_reasoning = getattr(delta, "reasoning_content", None)
+                reasoning_delta = (
+                    raw_reasoning if isinstance(raw_reasoning, str) else ""
+                )
+                reasoning_content += reasoning_delta
+
+                if reasoning_content:
+                    blocks.append(ThinkingBlock(content=reasoning_content))
+                blocks.append(TextBlock(text=content))
+
+                message_additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
-                        additional_kwargs["tool_calls"] = tool_calls
+                        message_additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
+
+                # thinking_delta goes in ChatResponse.additional_kwargs
+                # (same pattern as Ollama) so agents can read it
+                response_additional_kwargs = self._get_response_token_counts(response)
+                if reasoning_delta:
+                    response_additional_kwargs["thinking_delta"] = reasoning_delta
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
+                        additional_kwargs=message_additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
+                    additional_kwargs=response_additional_kwargs,
                 )
 
         return gen()
@@ -780,6 +826,7 @@ class OpenAI(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            reasoning_content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
@@ -788,6 +835,7 @@ class OpenAI(FunctionCallingLLM):
                 messages=message_dicts,
                 **self._get_model_kwargs(stream=True, **kwargs),
             ):
+                blocks = []
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     # check if the first chunk has neither content nor tool_calls
@@ -801,10 +849,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(aclient, AsyncAzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 if delta is None:
@@ -819,21 +864,48 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                additional_kwargs = {}
+                # Extract reasoning_content for chain-of-thought streaming.
+                # Many OpenAI-compatible providers surface this extra field.
+                raw_reasoning = getattr(delta, "reasoning_content", None)
+                reasoning_delta = (
+                    raw_reasoning if isinstance(raw_reasoning, str) else ""
+                )
+                reasoning_content += reasoning_delta
+
+                if reasoning_content:
+                    blocks.append(ThinkingBlock(content=reasoning_content))
+                blocks.append(TextBlock(text=content))
+
+                message_additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     if tool_calls:
-                        additional_kwargs["tool_calls"] = tool_calls
+                        message_additional_kwargs["tool_calls"] = tool_calls
+                        for tool_call in tool_calls:
+                            if tool_call.function:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_call_id=tool_call.id,
+                                        tool_kwargs=tool_call.function.arguments or {},
+                                        tool_name=tool_call.function.name or "",
+                                    )
+                                )
+
+                # thinking_delta goes in ChatResponse.additional_kwargs
+                # (same pattern as Ollama) so agents can read it
+                response_additional_kwargs = self._get_response_token_counts(response)
+                if reasoning_delta:
+                    response_additional_kwargs["thinking_delta"] = reasoning_delta
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
+                        blocks=blocks,
+                        additional_kwargs=message_additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
+                    additional_kwargs=response_additional_kwargs,
                 )
 
         return gen()
@@ -938,7 +1010,7 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        return {
+        kwargs = {
             "messages": messages,
             "tools": tool_specs or None,
             "tool_choice": resolve_tool_choice(tool_choice, tool_required)
@@ -946,6 +1018,11 @@ class OpenAI(FunctionCallingLLM):
             else None,
             **kwargs,
         }
+
+        if tool_specs and self.model not in O1_MODELS:
+            kwargs["parallel_tool_calls"] = allow_parallel_tool_calls
+
+        return kwargs
 
     def _validate_chat_with_tools_response(
         self,
@@ -966,49 +1043,93 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+        if tool_calls:
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            tool_selections = []
+            for tool_call in tool_calls:
+                # this should handle both complete and partial jsons
+                try:
+                    if isinstance(tool_call.tool_kwargs, str):
+                        argument_dict = parse_partial_json(tool_call.tool_kwargs)
+                    else:
+                        argument_dict = tool_call.tool_kwargs
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.tool_call_id or "",
+                        tool_name=tool_call.tool_name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            else:
-                return []
 
-        tool_selections = []
-        for tool_call in tool_calls:
-            if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
+            return tool_selections
+        else:  # keep it backward-compatible
+            tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
-            # this should handle both complete and partial jsons
-            try:
-                argument_dict = parse_partial_json(tool_call.function.arguments)
-            except (ValueError, TypeError, JSONDecodeError):
-                argument_dict = {}
+            if len(tool_calls) < 1:
+                if error_on_no_tool_call:
+                    raise ValueError(
+                        f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                    )
+                else:
+                    return []
 
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.id,
-                    tool_name=tool_call.function.name,
-                    tool_kwargs=argument_dict,
+            tool_selections = []
+            for tool_call in tool_calls:
+                if tool_call.type != "function":
+                    raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
+
+                # this should handle both complete and partial jsons
+                try:
+                    argument_dict = parse_partial_json(tool_call.function.arguments)
+                except (ValueError, TypeError, JSONDecodeError):
+                    argument_dict = {}
+
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.id,
+                        tool_name=tool_call.function.name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            )
 
-        return tool_selections
+            return tool_selections
 
     def _prepare_schema(
         self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
     ) -> Dict[str, Any]:
-        from openai.resources.beta.chat.completions import _type_to_response_format
+        from openai.resources.chat.completions.completions import (
+            _type_to_response_format,
+        )
 
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["response_format"] = _type_to_response_format(output_cls)
+        response_format = _type_to_response_format(output_cls)
+        if isinstance(response_format, dict):
+            json_schema = response_format.get("json_schema")
+            if isinstance(json_schema, dict) and "name" in json_schema:
+                json_schema["name"] = re.sub(
+                    r"[^a-zA-Z0-9_-]", "_", str(json_schema["name"])
+                )
+        llm_kwargs["response_format"] = response_format
         if "tool_choice" in llm_kwargs:
             del llm_kwargs["tool_choice"]
         return llm_kwargs
 
-    def _should_use_structure_outputs(self):
+    def _should_use_structure_outputs(self) -> bool:
         return (
             self.pydantic_program_mode == PydanticProgramMode.DEFAULT
             and is_json_schema_supported(self.model)

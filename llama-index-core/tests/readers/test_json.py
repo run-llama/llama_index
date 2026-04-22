@@ -13,7 +13,7 @@ def test_basic() -> None:
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test1.json"
 
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write('{"test1": "test1"}')
 
         reader = JSONReader()
@@ -27,7 +27,7 @@ def test_levels_back0() -> None:
     """Test JSON reader using the levels_back function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test2.json"
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write('{ "a": { "b": ["c"] } }')
 
         reader1 = JSONReader(levels_back=0)
@@ -43,7 +43,7 @@ def test_collapse_length() -> None:
     """Test JSON reader using the collapse_length function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test3.json"
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write('{ "a": { "b": "c" } }')
 
         reader1 = JSONReader(levels_back=0, collapse_length=100)
@@ -61,7 +61,7 @@ def test_jsonl() -> None:
     """Test JSON reader using the is_jsonl function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test4.json"
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write('{"test1": "test1"}\n{"test2": "test2"}\n{"test3": "test3"}\n')
 
         reader = JSONReader(is_jsonl=True)
@@ -79,7 +79,7 @@ def test_clean_json() -> None:
     """Test JSON reader using the clean_json function."""
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test5.json"
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write('{ "a": { "b": "c" } }')
 
         # If levels back is set clean_json is ignored
@@ -113,7 +113,7 @@ def test_max_recursion_attack(tmp_path):
                 current_level = current_level[f"level{i}"]
 
         file_name = tmp_path / "test_nested.json"
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write(json.dumps(nested_dict))
 
         # Force a recursion error

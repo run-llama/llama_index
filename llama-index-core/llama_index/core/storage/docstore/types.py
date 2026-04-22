@@ -54,10 +54,14 @@ class BaseDocumentStore(ABC):
     ) -> None: ...
 
     @abstractmethod
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]: ...
+    def get_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseNode]: ...
 
     @abstractmethod
-    async def aget_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]: ...
+    async def aget_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseNode]: ...
 
     @abstractmethod
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
@@ -126,7 +130,9 @@ class BaseDocumentStore(ABC):
         """Delete a ref_doc and all it's associated nodes."""
 
     # ===== Nodes =====
-    def get_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[BaseNode]:
+    def get_nodes(
+        self, node_ids: List[str], raise_error: bool = True
+    ) -> List[BaseNode]:
         """
         Get nodes from docstore.
 
@@ -148,7 +154,9 @@ class BaseDocumentStore(ABC):
 
         return nodes
 
-    async def aget_nodes(self, node_ids: List[str], raise_error: bool = True) -> List[BaseNode]:
+    async def aget_nodes(
+        self, node_ids: List[str], raise_error: bool = True
+    ) -> List[BaseNode]:
         """
         Get nodes from docstore.
 
@@ -174,7 +182,9 @@ class BaseDocumentStore(ABC):
     def get_node(self, node_id: str, raise_error: Literal[True] = True) -> BaseNode: ...
 
     @overload
-    def get_node(self, node_id: str, raise_error: Literal[False] = False) -> Optional[BaseNode]: ...
+    def get_node(
+        self, node_id: str, raise_error: Literal[False] = False
+    ) -> Optional[BaseNode]: ...
 
     def get_node(self, node_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """
@@ -201,12 +211,18 @@ class BaseDocumentStore(ABC):
         return doc
 
     @overload
-    async def aget_node(self, node_id: str, raise_error: Literal[True] = True) -> BaseNode: ...
+    async def aget_node(
+        self, node_id: str, raise_error: Literal[True] = True
+    ) -> BaseNode: ...
 
     @overload
-    async def aget_node(self, node_id: str, raise_error: Literal[False] = False) -> Optional[BaseNode]: ...
+    async def aget_node(
+        self, node_id: str, raise_error: Literal[False] = False
+    ) -> Optional[BaseNode]: ...
 
-    async def aget_node(self, node_id: str, raise_error: bool = True) -> Optional[BaseNode]:
+    async def aget_node(
+        self, node_id: str, raise_error: bool = True
+    ) -> Optional[BaseNode]:
         """
         Get node from docstore.
 
@@ -238,7 +254,9 @@ class BaseDocumentStore(ABC):
             node_id_dict (Dict[int, str]): mapping of index to node ids
 
         """
-        return {index: self.get_node(node_id) for index, node_id in node_id_dict.items()}
+        return {
+            index: self.get_node(node_id) for index, node_id in node_id_dict.items()
+        }
 
     async def aget_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
         """
@@ -248,4 +266,7 @@ class BaseDocumentStore(ABC):
             node_id_dict (Dict[int, str]): mapping of index to node ids
 
         """
-        return {index: await self.aget_node(node_id) for index, node_id in node_id_dict.items()}
+        return {
+            index: await self.aget_node(node_id)
+            for index, node_id in node_id_dict.items()
+        }

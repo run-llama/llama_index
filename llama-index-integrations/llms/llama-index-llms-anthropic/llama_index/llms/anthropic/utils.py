@@ -2,36 +2,48 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Optional
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast
 
 from llama_index.core.base.llms.types import (
+    CachePoint,
     ChatMessage,
     ChatResponse,
-    ImageBlock,
-    MessageRole,
-    TextBlock,
-    DocumentBlock,
-    CachePoint,
     CitableBlock,
     CitationBlock,
     ContentBlock,
+    DocumentBlock,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 
 from anthropic.types import (
+    Base64PDFSourceParam,
+    CacheControlEphemeralParam,
+    DocumentBlockParam,
+    ImageBlockParam,
     MessageParam,
     TextBlockParam,
-    DocumentBlockParam,
     ThinkingBlockParam,
-    ImageBlockParam,
-    CacheControlEphemeralParam,
-    Base64PDFSourceParam,
+    ToolUseBlockParam,
 )
-from anthropic.types import ContentBlock as AnthropicContentBlock
+from anthropic.types import ContentBlockParam as AnthropicContentBlock
 from anthropic.types.beta import (
+    BetaBase64ImageSourceParam,
+    BetaCacheControlEphemeralParam,
+    BetaCitationsConfigParam,
+    BetaContentBlockParam,
+    BetaImageBlockParam,
+    BetaMessageParam,
     BetaSearchResultBlockParam,
     BetaTextBlockParam,
-    BetaCitationsConfigParam,
+    BetaThinkingBlockParam,
+    BetaToolResultBlockParam,
+    BetaToolUseBlockParam,
 )
+from anthropic.types.beta.beta_tool_result_block_param import Content as BetaContent
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
@@ -43,50 +55,41 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
-    "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
-    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 1000000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
-}
-BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
-    "anthropic.claude-instant-v1": 100000,
-    "anthropic.claude-v2": 100000,
-    "anthropic.claude-v2:1": 200000,
+    "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
+    "anthropic.claude-haiku-4-5-20251001-v1:0": 200000,
+    "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
+    "anthropic.claude-opus-4-6-v1:0": 200000,
+    "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
 VERTEX_CLAUDE_MODELS: Dict[str, int] = {
-    "claude-3-opus@20240229": 200000,
-    "claude-3-sonnet@20240229": 200000,
     "claude-3-haiku@20240307": 200000,
-    "claude-3-5-sonnet@20240620": 200000,
-    "claude-3-5-sonnet-v2@20241022": 200000,
     "claude-3-5-haiku@20241022": 200000,
     "claude-3-7-sonnet@20250219": 200000,
     "claude-opus-4@20250514": 200000,
     "claude-sonnet-4@20250514": 200000,
     "claude-opus-4-1@20250805": 200000,
+    "claude-sonnet-4-5@20250929": 200000,
+    "claude-haiku-4-5@20251001": 200000,
+    "claude-opus-4-5@20251101": 200000,
+    "claude-opus-4-6": 200000,
+    "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # Anthropic API/SDK identifiers
 ANTHROPIC_MODELS: Dict[str, int] = {
-    "claude-instant-1": 100000,
-    "claude-instant-1.2": 100000,
-    "claude-2": 100000,
-    "claude-2.0": 100000,
-    "claude-2.1": 200000,
-    "claude-3-opus-latest": 200000,
-    "claude-3-opus-20240229": 200000,
-    "claude-3-sonnet-latest": 200000,
-    "claude-3-sonnet-20240229": 200000,
-    "claude-3-haiku-latest": 200000,
     "claude-3-haiku-20240307": 200000,
-    "claude-3-5-sonnet-latest": 200000,
-    "claude-3-5-sonnet-20240620": 200000,
-    "claude-3-5-sonnet-20241022": 200000,
+    "claude-3-haiku-latest": 200000,
     "claude-3-5-haiku-latest": 200000,
     "claude-3-5-haiku-20241022": 200000,
     "claude-3-7-sonnet-20250219": 200000,
@@ -94,19 +97,34 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-0": 200000,
     "claude-opus-4-20250514": 200000,
     "claude-4-opus-20250514": 200000,
-    "claude-sonnet-4-0": 200000,
-    "claude-sonnet-4-20250514": 200000,
-    "claude-4-sonnet-20250514": 200000,
+    "claude-sonnet-4-0": 1000000,
+    "claude-sonnet-4-20250514": 1000000,
+    "claude-4-sonnet-20250514": 1000000,
     "claude-opus-4-1-20250805": 200000,
+    "claude-opus-4-1": 200000,
+    "claude-sonnet-4-5-20250929": 200000,
+    "claude-sonnet-4-5": 200000,
+    "claude-haiku-4-5-20251001": 200000,
+    "claude-haiku-4-5": 200000,
+    "claude-opus-4-5": 200000,
+    "claude-opus-4-5-20251101": 200000,
+    "claude-opus-4-6": 200000,
+    "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # All provider Anthropic identifiers
 CLAUDE_MODELS: Dict[str, int] = {
     **BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS,
-    **BEDROCK_CLAUDE_MODELS,
     **VERTEX_CLAUDE_MODELS,
     **ANTHROPIC_MODELS,
 }
+
+
+ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
+    "anthropic.claude-opus-4-7",
+    "claude-opus-4-7",
+)
 
 
 def is_function_calling_model(modelname: str) -> bool:
@@ -139,10 +157,10 @@ def anthropic_modelname_to_contextsize(modelname: str) -> int:
 
 
 def __merge_common_role_msgs(
-    messages: Sequence[MessageParam],
-) -> Sequence[MessageParam]:
+    messages: Sequence[Union[MessageParam, BetaMessageParam]],
+) -> Sequence[Union[MessageParam, BetaMessageParam]]:
     """Merge consecutive messages with the same role."""
-    postprocessed_messages: Sequence[MessageParam] = []
+    postprocessed_messages: Sequence[Union[MessageParam, BetaMessageParam]] = []
     for message in messages:
         if (
             postprocessed_messages
@@ -197,29 +215,21 @@ def blocks_to_anthropic_blocks(
 ) -> List[AnthropicContentBlock]:
     anthropic_blocks: List[AnthropicContentBlock] = []
     global_cache_control: Optional[CacheControlEphemeralParam] = None
+    unique_tool_calls = []
 
     if kwargs.get("cache_control"):
         global_cache_control = CacheControlEphemeralParam(**kwargs["cache_control"])
-
-    if kwargs.get("thinking"):
-        anthropic_blocks.append(ThinkingBlockParam(**kwargs["thinking"]))
 
     for block in blocks:
         if isinstance(block, TextBlock):
             if block.text:
                 anthropic_blocks.append(_to_anthropic_text_block(block))
-                if global_cache_control:
-                    anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, ImageBlock):
             anthropic_blocks.append(_to_anthropic_image_block(block))
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, DocumentBlock):
             anthropic_blocks.append(_to_anthropic_document_block(block))
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, CitableBlock):
             anthropic_sub_blocks = []
@@ -242,19 +252,36 @@ def blocks_to_anthropic_blocks(
                     content=anthropic_sub_blocks,
                     source=block.source,
                     title=block.title,
-                    cache_control=global_cache_control,
                     citations=BetaCitationsConfigParam(
                         enabled=True,
                     ),
                 )
             )
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
+
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                signature = block.additional_information.get("signature", "")
+                anthropic_blocks.append(
+                    ThinkingBlockParam(
+                        signature=signature, thinking=block.content, type="thinking"
+                    )
+                )
+
+        elif isinstance(block, ToolCallBlock):
+            unique_tool_calls.append((block.tool_call_id, block.tool_name))
+            anthropic_blocks.append(
+                ToolUseBlockParam(
+                    id=block.tool_call_id or "",
+                    input=block.tool_kwargs,
+                    name=block.tool_name,
+                    type="tool_use",
+                )
+            )
 
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
                 anthropic_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
-                    **block.model_dump(exclude="block_type")
+                    **block.cache_control.model_dump()
                 )
             else:
                 raise ValueError("Cache point must be after at least one block")
@@ -264,20 +291,30 @@ def blocks_to_anthropic_blocks(
         else:
             raise ValueError(f"Unsupported block type: {type(block)}")
 
+    # keep this code for compatibility with older chat histories
     tool_calls = kwargs.get("tool_calls", [])
     for tool_call in tool_calls:
-        assert "id" in tool_call
-        assert "input" in tool_call
-        assert "name" in tool_call
+        try:
+            assert "id" in tool_call
+            assert "input" in tool_call
+            assert "name" in tool_call
 
-        anthropic_blocks.append(
-            ToolUseBlockParam(
-                id=tool_call["id"],
-                input=tool_call["input"],
-                name=tool_call["name"],
-                type="tool_use",
-            )
-        )
+            if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                anthropic_blocks.append(
+                    ToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
+                    )
+                )
+        except AssertionError:
+            continue
+
+    # Apply cache_control only to the last block to avoid exceeding
+    # Anthropic's limit of 4 blocks with cache_control per request.
+    if global_cache_control and anthropic_blocks:
+        anthropic_blocks[-1]["cache_control"] = global_cache_control
 
     return anthropic_blocks
 
@@ -285,12 +322,15 @@ def blocks_to_anthropic_blocks(
 def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
+    model: Optional[str] = None,
 ) -> Tuple[Sequence[MessageParam], str]:
     """
     Converts a list of generic ChatMessages to anthropic messages.
 
     Args:
         messages: List of ChatMessages
+        cache_idx: Optional index to enable caching up to
+        model: Optional model name used to validate prompt caching support
 
     Returns:
         Tuple of:
@@ -303,11 +343,12 @@ def messages_to_anthropic_messages(
     for idx, message in enumerate(messages):
         # inject cache_control for all messages up to and including the cache_idx
         if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
-            message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+            if model is None or is_anthropic_prompt_caching_supported_model(model):
+                message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
 
         if message.role == MessageRole.SYSTEM:
             system_prompt.extend(
-                blocks_to_anthropic_blocks(message.blocks, message.additional_kwargs)
+                [block.text for block in message.blocks if isinstance(block, TextBlock)]
             )
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             anthropic_blocks = blocks_to_anthropic_blocks(
@@ -333,10 +374,304 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
 
-    return __merge_common_role_msgs(anthropic_messages), system_prompt
+    return cast(
+        Sequence[MessageParam], __merge_common_role_msgs(anthropic_messages)
+    ), "\n".join(system_prompt)
+
+
+def blocks_to_anthropic_beta_blocks(
+    blocks: Sequence[ContentBlock], kwargs: Dict[str, Any]
+) -> Sequence[BetaContentBlockParam]:
+    global_cache_control: Optional[BetaCacheControlEphemeralParam] = None
+    if kwargs.get("cache_control"):
+        global_cache_control = BetaCacheControlEphemeralParam(**kwargs["cache_control"])
+    ant_blocks: Sequence[BetaContentBlockParam] = []
+    unique_tool_calls = []
+    for block in blocks:
+        if isinstance(block, TextBlock):
+            ant_block = BetaTextBlockParam(text=block.text, type=block.block_type)
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ThinkingBlock):
+            # does not support cache control
+            ant_block = BetaThinkingBlockParam(
+                thinking=block.content or "",
+                signature=block.additional_information.get("signature", ""),
+                type=block.block_type,
+            )
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ToolCallBlock):
+            unique_tool_calls.append((block.tool_call_id, block.tool_name))
+            ant_block = BetaToolUseBlockParam(
+                id=block.tool_call_id or "",
+                input=block.tool_kwargs,
+                name=block.tool_name,
+                type="tool_use",
+            )
+            ant_blocks.append(ant_block)
+        elif isinstance(block, ImageBlock):
+            img_bytes = block.resolve_image(as_base64=True).read()
+            img_str = img_bytes.decode("utf-8")
+
+            block_type: Literal["document", "image"] = (
+                "document" if block.image_mimetype == "application/pdf" else "image"
+            )
+            if block_type == "image":
+                if block.image_mimetype is not None and block.image_mimetype in [
+                    "image/jpeg",
+                    "image/png",
+                    "image/gif",
+                    "image/webp",
+                ]:
+                    source: BetaBase64ImageSourceParam = {
+                        "type": "base64",
+                        "media_type": cast(
+                            Literal[
+                                "image/jpeg", "image/png", "image/gif", "image/webp"
+                            ],
+                            block.image_mimetype,
+                        ),
+                        "data": img_str,
+                    }
+                    ant_block = BetaImageBlockParam(type=block_type, source=source)
+                    ant_blocks.append(ant_block)
+                else:
+                    raise ValueError(
+                        f"Image mimetype {block.image_mimetype or 'no mimetype detected'} not supported"
+                    )
+            else:
+                raise ValueError("Document upload not supported for beta API")
+        elif isinstance(block, CitableBlock):
+            anthropic_sub_blocks = []
+            for sub_block in block.content:
+                if isinstance(sub_block, TextBlock) and sub_block.text:
+                    anthropic_sub_blocks.append(
+                        BetaTextBlockParam(
+                            type="text",
+                            text=sub_block.text,
+                        )
+                    )
+                else:
+                    raise ValueError(
+                        f"Unsupported block type for citable blocks: {type(sub_block)}"
+                    )
+
+            ant_block = BetaSearchResultBlockParam(
+                type="search_result",
+                content=anthropic_sub_blocks,
+                source=block.source,
+                title=block.title,
+                citations=BetaCitationsConfigParam(
+                    enabled=True,
+                ),
+            )
+            ant_blocks.append(ant_block)
+        elif isinstance(block, CachePoint):
+            if len(ant_blocks) > 0:
+                ant_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
+                    **block.cache_control.model_dump()
+                )
+            else:
+                raise ValueError("Cache point must be after at least one block")
+        elif isinstance(block, CitationBlock):
+            # No need to pass these back to Anthropic
+            continue
+        else:
+            raise ValueError(f"Block type not supported: {block.block_type}")
+
+    # keep this code for compatibility with older chat histories
+    tool_calls = kwargs.get("tool_calls", [])
+    for tool_call in tool_calls:
+        try:
+            assert "id" in tool_call
+            assert "input" in tool_call
+            assert "name" in tool_call
+
+            if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                ant_blocks.append(
+                    BetaToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
+                    )
+                )
+        except AssertionError:
+            continue
+
+    # Apply cache_control only to the last block to avoid exceeding
+    # Anthropic's limit of 4 blocks with cache_control per request.
+    if global_cache_control and ant_blocks:
+        ant_blocks[-1]["cache_control"] = global_cache_control
+
+    return ant_blocks
+
+
+def messages_to_anthropic_beta_messages(
+    messages: Sequence[ChatMessage],
+    cache_idx: Optional[int] = None,
+    model: Optional[str] = None,
+) -> Tuple[Sequence[BetaMessageParam], str]:
+    anthropic_messages = []
+    system_prompt: list[str] = []
+    for idx, message in enumerate(messages):
+        # inject cache_control for all messages up to and including the cache_idx
+        if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
+            if model is None or is_anthropic_prompt_caching_supported_model(model):
+                message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+
+        if message.role == MessageRole.SYSTEM:
+            system_prompt.extend(
+                [block.text for block in message.blocks if isinstance(block, TextBlock)]
+            )
+        elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
+            anthropic_blocks = blocks_to_anthropic_beta_blocks(
+                message.blocks, message.additional_kwargs
+            )
+            content = BetaToolResultBlockParam(
+                tool_use_id=message.additional_kwargs["tool_call_id"],
+                type="tool_result",
+                content=cast(Sequence[BetaContent], anthropic_blocks),
+            )
+            anth_message = BetaMessageParam(
+                role=MessageRole.USER.value,
+                content=[content],
+            )
+            anthropic_messages.append(anth_message)
+        else:
+            content = blocks_to_anthropic_beta_blocks(
+                message.blocks, message.additional_kwargs
+            )
+            anth_message = BetaMessageParam(
+                role=cast(Literal["assistant", "user"], message.role.value),
+                content=content,
+            )
+            anthropic_messages.append(anth_message)
+    return cast(
+        Sequence[BetaMessageParam], __merge_common_role_msgs(anthropic_messages)
+    ), "\n".join(system_prompt)
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
+
+
+# Anthropic models that support prompt caching
+# Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude 4.5 Opus
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
+    # Claude 4.1 Opus
+    "claude-opus-4-1-20250805",
+    "claude-opus-4-1",
+    # Claude 4 Opus
+    "claude-opus-4-20250514",
+    "claude-opus-4-0",
+    "claude-4-opus-20250514",
+    # Claude 4.5 Sonnet
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    # Claude 4 Sonnet
+    "claude-sonnet-4-20250514",
+    "claude-sonnet-4-0",
+    "claude-4-sonnet-20250514",
+    # Claude 3.7 Sonnet
+    "claude-3-7-sonnet-20250219",
+    "claude-3-7-sonnet-latest",
+    # Claude 3.5 Sonnet
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-latest",
+    # Claude 4.5 Haiku
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
+    # Claude 3.5 Haiku
+    "claude-3-5-haiku-20241022",
+    "claude-3-5-haiku-latest",
+    # Claude 3 Haiku
+    "claude-3-haiku-20240307",
+    "claude-3-haiku-latest",
+    # Claude 3 Opus (deprecated)
+    "claude-3-opus-20240229",
+    "claude-3-opus-latest",
+)
+
+STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
+    "claude-opus-4-1-20250805",
+    "claude-opus-4-1",
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-5",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6",
+)
+
+
+def update_tool_calls(blocks: list[ContentBlock], tool_call: ToolCallBlock) -> None:
+    if len([block for block in blocks if isinstance(block, ToolCallBlock)]) == 0:
+        blocks.append(tool_call)
+        return
+    elif not any(
+        block.tool_call_id == tool_call.tool_call_id
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        blocks.append(tool_call)
+        return
+    elif any(
+        block.tool_call_id == tool_call.tool_call_id
+        and block.tool_kwargs == tool_call.tool_kwargs
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    ):
+        return
+    else:
+        for i, block in enumerate(blocks):
+            if isinstance(block, ToolCallBlock):
+                if block.tool_call_id == tool_call.tool_call_id:
+                    blocks[i] = tool_call
+                    break
+        return
+
+
+def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
+    """
+    Check if the given Anthropic model supports prompt caching.
+
+    Args:
+        model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
+
+    Returns:
+        True if the model supports prompt caching, False otherwise.
+
+    See: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+
+    """
+    return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
+
+
+def is_anthropic_structured_output_supported(model: str) -> bool:
+    """
+    Check if the given Anthropic model supports structured output.
+
+    Args:
+        model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
+
+    Returns:
+        True if the model supports structured output, False otherwise.
+
+    See: https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+
+    """
+    return model in STRUCTURED_OUTPUT_SUPPORT

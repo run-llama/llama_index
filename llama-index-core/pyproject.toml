@@ -4,22 +4,24 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black>=23.7.0,<=24.3.0",
+    "black>=23.7.0,<=26.3.1",
     "boto3==1.33.6",
     "botocore>=1.33.13",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
+    "llama-index-llms-openai",
     "mypy==1.11.0",
     "openai",
     "pandas",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest~=7.2",
+    "pytest>=7.2,<10.0",
     "pytest-asyncio==0.21.0",
     "pytest-cov~=5.0",
     "pytest-dotenv==0.5.2",
     "pytest-mock==3.11.1",
+    "pytest-timeout>=2.4.0",
     "rake-nltk==1.0.6",
     "ruff==0.11.11",
     "tree-sitter",
@@ -27,14 +29,15 @@ dev = [
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-requests>=2.28.11.8",
+    "types-setuptools",
 ]
 
 [project]
 name = "llama-index-core"
-version = "0.13.1"
+version = "0.14.21"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [
@@ -58,7 +61,7 @@ dependencies = [
     "fsspec>=2023.5.0",
     "httpx",
     "nest-asyncio>=1.5.8,<2",
-    "nltk>3.8.1",
+    "nltk>=3.9.3",
     "numpy",
     "tenacity>=8.2.0,!=8.4.0,<10.0.0",
     "tiktoken>=0.7.0",
@@ -75,11 +78,12 @@ dependencies = [
     "pydantic>=2.8.0",
     "filetype>=1.2.0,<2",
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
-    "banks>=2.2.0,<3",
+    "banks>=2.3.0,<3",
     "aiosqlite",
-    "llama-index-workflows>=1.0.1,<2",
+    "llama-index-workflows>=2.14.0,<3",
     "setuptools>=80.9.0",
     "platformdirs",
+    "tinytag>=2.2.0",
 ]
 
 [project.urls]
@@ -145,3 +149,6 @@ table_keys = false
 [[tool.uv.index]]
 name = "nvidia-pypi"
 url = "https://pypi.nvidia.com"
+
+[tool.uv.sources]
+llama-index-llms-openai = {path = "../llama-index-integrations/llms/llama-index-llms-openai"}

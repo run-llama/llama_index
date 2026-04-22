@@ -86,7 +86,16 @@ class ReActOutputParser(BaseOutputParser):
             Answer: <answer>
             ```
         """
-        if "Thought:" not in output and "Action:" not in output:
+        # Use regex to find properly formatted keywords at line boundaries
+        thought_match = re.search(r"Thought:", output, re.MULTILINE)
+        action_match = re.search(r"Action:", output, re.MULTILINE)
+        answer_match = re.search(r"Answer:", output, re.MULTILINE)
+
+        thought_idx = thought_match.start() if thought_match else None
+        action_idx = action_match.start() if action_match else None
+        answer_idx = answer_match.start() if answer_match else None
+
+        if thought_idx is None and action_idx is None and answer_idx is None:
             # NOTE: handle the case where the agent directly outputs the answer
             # instead of following the thought-answer format
             return ResponseReasoningStep(
@@ -96,10 +105,16 @@ class ReActOutputParser(BaseOutputParser):
             )
 
         # An "Action" should take priority over an "Answer"
-        if "Action:" in output:
+        if (
+            action_idx is not None
+            and answer_idx is not None
+            and action_idx < answer_idx
+        ):
+            return parse_action_reasoning_step(output)
+        elif action_idx is not None and answer_idx is None:
             return parse_action_reasoning_step(output)
 
-        if "Answer:" in output:
+        if answer_idx is not None:
             thought, answer = extract_final_response(output)
             return ResponseReasoningStep(
                 thought=thought, response=answer, is_streaming=is_streaming

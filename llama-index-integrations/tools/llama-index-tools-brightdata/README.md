@@ -12,7 +12,7 @@ pip install llama-index llama-index-core llama-index-tools-brightdata
 
 ## Authentication
 
-To use this tool, you'll need a Bright Data API key. You can obtain one by signing up for a Bright Data account on their [website](https://brightdata.com/).
+Sign up at [Bright Data](https://brightdata.com/?utm_source=tech-partner&utm_medium=link&utm_campaign=llamaindex&hs_signup=1) and retrieve your API key from your account settings. Replace `"your-api-key"` with your actual API key in the examples below:
 
 ## Usage
 

@@ -2,13 +2,19 @@ from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
 
 if TYPE_CHECKING:
-    from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+    try:
+        # For langchain v1.x.x
+        from langchain_core.language_models import (
+            BaseLanguageModel,
+        )  # pants: no-infer-dep
+    except ImportError:
+        # For langchain v0.x.x
+        from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
 
 import os
 
 from llama_index.core.llms.callbacks import CallbackManager
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.mock import MockLLM
 
 LLMType = Union[str, LLM, "BaseLanguageModel"]
 
@@ -20,13 +26,22 @@ def resolve_llm(
     from llama_index.core.settings import Settings
 
     try:
-        from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+        # For langchain v1.x.x
+        from langchain_core.language_models import (
+            BaseLanguageModel,
+        )  # pants: no-infer-dep
     except ImportError:
-        BaseLanguageModel = None  # type: ignore
+        try:
+            # For langchain v0.x.x
+            from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
+        except ImportError:
+            BaseLanguageModel = None  # type: ignore
 
     if llm == "default":
         # if testing return mock llm
         if os.getenv("IS_TESTING"):
+            from llama_index.core.llms.mock import MockLLM
+
             llm = MockLLM()
             llm.callback_manager = callback_manager or Settings.callback_manager
             return llm
@@ -52,7 +67,6 @@ def resolve_llm(
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
                 f"{e!s}"
-                "\nTo disable the LLM entirely, set llm=None."
                 "\n******"
             )
 
@@ -96,6 +110,8 @@ def resolve_llm(
                 "please run `pip install llama-index-llms-langchain`"
             )
     elif llm is None:
+        from llama_index.core.llms.mock import MockLLM
+
         print("LLM is explicitly disabled. Using MockLLM.")
         llm = MockLLM()
 

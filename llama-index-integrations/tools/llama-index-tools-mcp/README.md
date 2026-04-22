@@ -226,6 +226,32 @@ client = BasicMCPClient.with_oauth(
 )
 ```
 
+### Use a custom HTTP Client
+
+The MCP Client can use a custom `httpx.AsyncClient` instance.
+This feature is only available for Streamable HTTP transport.
+
+```python
+httpx_async_client = AsyncClient(
+    # to avoid self-signed certificates failures
+    verify=false
+)
+
+client = BasicMCPClient(
+    url="https://example.com/mcp", http_client=httpx_async_client
+)
+client_with_oauth = BasicMCPClient.with_oauth(
+    "https://api.example.com/mcp",
+    client_name="My App",
+    redirect_uris=["http://localhost:3000/callback"],
+    # Function to handle the redirect URL (e.g., open a browser)
+    redirect_handler=lambda url: print(f"Please visit: {url}"),
+    # Function to get the authorization code from the user
+    callback_handler=lambda: (input("Enter the code: "), None),
+    http_client=httpx_async_client,
+)
+```
+
 ## Notebook Example
 
 This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-mcp/examples/mcp.ipynb).

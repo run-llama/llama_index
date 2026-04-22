@@ -435,7 +435,7 @@ class Vertex(FunctionCallingLLM):
             is_gemini=self._is_gemini,
             **params,
         )
-        return CompletionResponse(text=completion.text)
+        return CompletionResponse(text=completion.text, raw=completion.__dict__)
 
     @llm_chat_callback()
     async def astream_chat(

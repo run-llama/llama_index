@@ -1,7 +1,20 @@
 from abc import ABCMeta
 import inspect
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    Type,
+    cast,
+    overload,
+)
+from typing_extensions import deprecated
 from pydantic import BaseModel
 
 from llama_index.core.agent.utils import generate_structured_response
@@ -10,7 +23,9 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
+    _get_waiting_for_event_exception,
 )
+from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.prompts import (
     DEFAULT_HANDOFF_PROMPT,
@@ -24,10 +39,11 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentSetup,
     AgentOutput,
+    AgentStream,
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
-from llama_index.core.llms import ChatMessage, TextBlock
+from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -48,7 +64,6 @@ from llama_index.core.workflow import (
     step,
     WorkflowRuntimeError,
 )
-from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from llama_index.core.settings import Settings
@@ -96,9 +111,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         structured_output_fn: Optional[
             Callable[[List[ChatMessage]], Dict[str, Any]]
         ] = None,
+        early_stopping_method: Literal["force", "generate"] = "force",
         **workflow_kwargs: Any,
     ):
         super().__init__(timeout=timeout, **workflow_kwargs)
+        self.early_stopping_method = early_stopping_method
         if not agents:
             raise ValueError("At least one agent must be provided")
 
@@ -280,11 +297,52 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
             await ctx.store.set("max_iterations", max_iterations)
 
+        if not await ctx.store.get("early_stopping_method", default=None):
+            early_stopping_method = (
+                ev.get("early_stopping_method", default=None)
+                or self.early_stopping_method
+            )
+            await ctx.store.set("early_stopping_method", early_stopping_method)
+
         # Reset the number of iterations
         await ctx.store.set("num_iterations", 0)
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
+
+    async def _get_llm_response(
+        self,
+        ctx: Context,
+        llm_input: List[ChatMessage],
+        agent: BaseWorkflowAgent,
+    ) -> "ChatResponse":
+        """Get LLM response, respecting agent's streaming settings."""
+        if agent.streaming:
+            response_stream = await agent.llm.astream_chat(llm_input)
+            last_response = None
+            async for last_response in response_stream:
+                raw = (
+                    last_response.raw.model_dump()
+                    if isinstance(last_response.raw, BaseModel)
+                    else last_response.raw
+                )
+                if ctx.is_running:
+                    ctx.write_event_to_stream(
+                        AgentStream(
+                            delta=last_response.delta or "",
+                            response=last_response.message.content or "",
+                            raw=raw,
+                            current_agent_name=agent.name,
+                            thinking_delta=last_response.additional_kwargs.get(
+                                "thinking_delta", None
+                            ),
+                        )
+                    )
+            if last_response is None:
+                raise ValueError("Got empty streaming response")
+            return last_response
+        else:
+            return await agent.llm.achat(llm_input)
 
     async def _call_tool(
         self,
@@ -305,12 +363,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             else:
                 tool_output = await tool.acall(**tool_input)
         except Exception as e:
+            event_exception = _get_waiting_for_event_exception()
+            if event_exception and isinstance(e, event_exception):
+                raise
             tool_output = ToolOutput(
                 content=str(e),
                 tool_name=tool.metadata.get_name(),
                 raw_input=tool_input,
                 raw_output=str(e),
                 is_error=True,
+                exception=e,
             )
 
         return tool_output
@@ -418,6 +480,45 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         ctx.write_event_to_stream(agent_output)
         return agent_output
 
+    async def _generate_early_stopping_response(
+        self, ctx: Context, ev: AgentOutput, max_iterations: int
+    ) -> StopEvent:
+        """Generate a final response when max iterations is reached with early_stopping_method='generate'."""
+        memory: BaseMemory = await ctx.store.get("memory")
+        agent = self.agents[ev.current_agent_name]
+        messages = await memory.aget()
+
+        early_stopping_prompt = DEFAULT_EARLY_STOPPING_PROMPT.format(
+            max_iterations=max_iterations
+        )
+
+        llm_input = [*messages]
+        if agent.system_prompt:
+            llm_input = [
+                ChatMessage(role="system", content=agent.system_prompt),
+                *llm_input,
+            ]
+        llm_input.append(ChatMessage(role="system", content=early_stopping_prompt))
+
+        response = await self._get_llm_response(ctx, llm_input, agent)
+        await memory.aput(response.message)
+
+        output = AgentOutput(
+            response=response.message,
+            tool_calls=[],
+            raw=response.raw,
+            current_agent_name=agent.name,
+        )
+
+        cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
+            "current_tool_calls", default=[]
+        )
+        output.tool_calls.extend(cur_tool_calls)  # type: ignore[arg-type]
+        await ctx.store.set("current_tool_calls", [])
+
+        ctx.write_event_to_stream(output)
+        return StopEvent(result=output)
+
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
@@ -430,10 +531,19 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         await ctx.store.set("num_iterations", num_iterations)
 
         if num_iterations >= max_iterations:
-            raise WorkflowRuntimeError(
-                f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
-                "increase the max iterations with `.run(.., max_iterations=...)`"
+            early_stopping_method = await ctx.store.get(
+                "early_stopping_method", default="force"
             )
+            if early_stopping_method == "generate":
+                return await self._generate_early_stopping_response(
+                    ctx, ev, max_iterations
+                )
+            else:
+                raise WorkflowRuntimeError(
+                    f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
+                    "increase the max iterations with `.run(.., max_iterations=...)` "
+                    "or use `early_stopping_method='generate'` to generate a final response instead."
+                )
 
         memory: BaseMemory = await ctx.store.get("memory")
 
@@ -480,7 +590,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
             if self.output_cls is not None:
                 try:
@@ -498,7 +609,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     )
                 except Exception as e:
                     warnings.warn(
-                        f"There was a problem with the generation of the structured output: {e}"
+                        f"There was a problem with the generation of the structured output: {e}",
+                        stacklevel=2,
                     )
 
             return StopEvent(result=output)
@@ -634,39 +746,93 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         return AgentInput(input=input_messages, current_agent_name=agent.name)
 
+    # TODO: Remove the deprecated agent-specific overload. The agent params
+    # (user_msg, chat_history, memory, etc.) should be passed as kwargs that
+    # flow through Workflow.run() → AgentWorkflowStartEvent construction
+    # automatically, matching the standard Workflow.run(ctx, start_event,
+    # **kwargs) signature. At that point this entire override can be deleted.
+
+    @overload
+    @deprecated(
+        "Use the standard workflow signature instead: "
+        "workflow.run(user_msg='hello') or "
+        "workflow.run(ctx=ctx, start_event=event, user_msg='hello'). "
+        "This positional signature will be removed in a future version.",
+        category=None,
+    )
     def run(
         self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
-        stepwise: bool = False,
-        checkpoint_callback: Optional[CheckpointCallback] = None,
         max_iterations: Optional[int] = None,
+        early_stopping_method: Optional[Literal["force", "generate"]] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
-    ) -> WorkflowHandler:
-        # Detect if hitl is needed
+    ) -> WorkflowHandler: ...
+
+    @overload
+    def run(
+        self,
+        ctx: Optional[Context] = None,
+        start_event: Optional[StartEvent] = None,
+        **kwargs: Any,
+    ) -> WorkflowHandler: ...
+
+    def run(self, *args: Any, **kwargs: Any) -> WorkflowHandler:
+        user_msg: Optional[Union[str, ChatMessage]] = None
+        chat_history: Optional[List[ChatMessage]] = None
+        memory: Optional[BaseMemory] = None
+        ctx: Optional[Context] = None
+        start_event: Optional[StartEvent] = None
+
+        if args:
+            first = args[0]
+            if isinstance(first, Context):
+                ctx = first
+                if len(args) > 1 and isinstance(args[1], StartEvent):
+                    start_event = args[1]
+            else:
+                user_msg = first
+                if len(args) > 1:
+                    chat_history = args[1]
+                if len(args) > 2:
+                    memory = args[2]
+                if len(args) > 3:
+                    ctx = args[3]
+
+        user_msg = kwargs.pop("user_msg", None) or user_msg
+        chat_history = kwargs.pop("chat_history", None) or chat_history
+        memory = kwargs.pop("memory", None) or memory
+        ctx = kwargs.pop("ctx", None) or ctx
+        max_iterations: Optional[int] = kwargs.pop("max_iterations", None)
+        early_stopping_method: Optional[Literal["force", "generate"]] = kwargs.pop(
+            "early_stopping_method", None
+        )
+        start_event = kwargs.pop("start_event", None) or start_event
+        run_id = kwargs.pop("run_id", None)
+
         if ctx is not None and ctx.is_running:
             return super().run(
                 ctx=ctx,
-                stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
+                run_id=run_id,
                 **kwargs,
             )
         else:
-            start_event = start_event or AgentWorkflowStartEvent(
-                user_msg=user_msg,
-                chat_history=chat_history,
-                memory=memory,
-                max_iterations=max_iterations,
-                **kwargs,
-            )
+            if start_event is None or isinstance(start_event, AgentWorkflowStartEvent):
+                start_event = start_event or AgentWorkflowStartEvent(
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    memory=memory,
+                    max_iterations=max_iterations,
+                    early_stopping_method=early_stopping_method,
+                    **kwargs,
+                )
             return super().run(
                 start_event=start_event,
                 ctx=ctx,
-                stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
+                run_id=run_id,
             )
 
     @classmethod

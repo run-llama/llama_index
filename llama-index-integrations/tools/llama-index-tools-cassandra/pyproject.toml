@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-tools-cassandra"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index tools Apache Cassandra® integration"
 authors = [{name = "Patrick McFadin", email = "patrick@datastax.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "cassio>=0.1.7,<0.2",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

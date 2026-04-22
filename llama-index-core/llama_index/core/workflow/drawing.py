@@ -80,16 +80,25 @@ def draw_most_recent_execution(
     notebook: bool = False,
 ) -> None:
     """Draws the most recent execution of the workflow."""
+    from importlib.metadata import version
+    from packaging.version import Version
+
+    if Version(version("workflows")) >= Version("2.9.0"):
+        raise ValueError(
+            "draw_most_recent_execution function is deprecated and no longer works with the installed version of `workflows`. Install `llama-index-utils-workflow` and use the draw_most_recent_execution import `from llama_index.utils.workflow` instead."
+        )
+
     from pyvis.network import Network
 
     net = Network(directed=True, height="750px", width="100%")
 
     # Add nodes and edges based on execution history
-    existing_context = next(iter(workflow._contexts), None)
+    existing_context = next(iter(workflow._contexts), None)  # type: ignore
     if existing_context is None:
         raise ValueError("No runs found in workflow")
 
-    for i, (step, event) in enumerate(existing_context._accepted_events):
+    accepted_events = existing_context._accepted_events  # type: ignore
+    for i, (step, event) in enumerate(accepted_events):
         event_node = f"{event}_{i}"
         step_node = f"{step}_{i}"
         net.add_node(
@@ -101,7 +110,7 @@ def draw_most_recent_execution(
         net.add_edge(event_node, step_node)
 
         if i > 0:
-            prev_step_node = f"{existing_context._accepted_events[i - 1][0]}_{i - 1}"
+            prev_step_node = f"{accepted_events[i - 1][0]}_{i - 1}"
             net.add_edge(prev_step_node, event_node)
 
     net.show(filename, notebook=notebook)

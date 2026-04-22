@@ -77,6 +77,24 @@ resp = llm.complete("Write a story about a dragon who can code in Rust")
 print(resp)
 ```
 
+## Provider Routing (OpenRouter)
+
+OpenRouter supports selecting which upstream providers to prioritize. You can pass these via `OpenRouter(..., order=[...], allow_fallbacks=...)`.
+
+```python
+from llama_index.llms.openrouter import OpenRouter
+
+llm = OpenRouter(
+    api_key="<your-api-key>",
+    model="mistralai/mixtral-8x7b-instruct",
+    order=["openai", "together"],
+    allow_fallbacks=False,
+)
+
+resp = llm.complete("Hello")
+print(resp)
+```
+
 ### LLM Implementation example
 
 https://docs.llamaindex.ai/en/stable/examples/llm/openrouter/

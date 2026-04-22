@@ -43,6 +43,7 @@ class AgentStream(Event):
     current_agent_name: str
     tool_calls: list[ToolSelection] = Field(default_factory=list)
     raw: Optional[Any] = Field(default=None, exclude=True)
+    thinking_delta: Optional[str] = Field(default=None)
 
 
 class AgentStreamStructuredOutput(Event):
@@ -59,6 +60,7 @@ class AgentStreamStructuredOutput(Event):
             warnings.warn(
                 f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
                 PydanticConversionWarning,
+                stacklevel=2,
             )
             return None
 
@@ -85,6 +87,7 @@ class AgentOutput(Event):
             warnings.warn(
                 f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
                 PydanticConversionWarning,
+                stacklevel=2,
             )
             return None
 
@@ -139,4 +142,5 @@ class AgentWorkflowStartEvent(StartEvent):
             "user_msg": self.user_msg,
             "chat_history": self.chat_history,
             "max_iterations": self.max_iterations,
+            "early_stopping_method": self.get("early_stopping_method"),
         }

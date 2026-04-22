@@ -3,12 +3,14 @@ from typing import List, Sequence, Optional, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.prompts import CONTEXT_REACT_CHAT_SYSTEM_HEADER
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+from llama_index.core.agent.workflow.agent_context import AgentContext
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
@@ -16,7 +18,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, TextBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
@@ -59,6 +61,9 @@ class ReActAgent(BaseWorkflowAgent):
         elif not self.formatter.context and self.system_prompt:
             self.formatter.context = self.system_prompt
 
+        if self.formatter.context and "{context}" not in self.formatter.system_header:
+            self.formatter.system_header = CONTEXT_REACT_CHAT_SYSTEM_HEADER
+
         return self
 
     def _get_prompts(self) -> PromptDictType:
@@ -76,9 +81,46 @@ class ReActAgent(BaseWorkflowAgent):
                 react_header = PromptTemplate(react_header)
             self.formatter.system_header = react_header.format()
 
+    async def _get_response(self, current_llm_input: List[ChatMessage]) -> ChatResponse:
+        return await self.llm.achat(current_llm_input)
+
+    async def _get_streaming_response(
+        self, ctx: AgentContext, current_llm_input: List[ChatMessage]
+    ) -> ChatResponse:
+        response = await self.llm.astream_chat(
+            current_llm_input,
+        )
+
+        # last_chat_response will be used later, after the loop.
+        # We initialize it so it's valid even when 'response' is empty
+        last_chat_response = ChatResponse(message=ChatMessage())
+        async for last_chat_response in response:
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+            # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+            # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+            # so just don't write events if the context is not running.
+            if ctx.is_running:
+                ctx.write_event_to_stream(
+                    AgentStream(
+                        delta=last_chat_response.delta or "",
+                        response=last_chat_response.message.content or "",
+                        raw=raw,
+                        current_agent_name=self.name,
+                        thinking_delta=last_chat_response.additional_kwargs.get(
+                            "thinking_delta", None
+                        ),
+                    )
+                )
+
+        return last_chat_response
+
     async def take_step(
         self,
-        ctx: Context,
+        ctx: AgentContext,
         llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
@@ -103,34 +145,49 @@ class ReActAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
-        ctx.write_event_to_stream(
-            AgentInput(input=input_chat, current_agent_name=self.name)
-        )
+        # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
+        # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
+        # so just don't write events if the context is not running.
+        if ctx.is_running:
+            ctx.write_event_to_stream(
+                AgentInput(input=input_chat, current_agent_name=self.name)
+            )
 
         # Initial LLM call
-        response = await self.llm.astream_chat(input_chat)
-        # last_chat_response will be used later, after the loop.
-        # We initialize it so it's valid even when 'response' is empty
-        last_chat_response = ChatResponse(message=ChatMessage())
-        async for last_chat_response in response:
+        if self.streaming:
+            last_chat_response = await self._get_streaming_response(ctx, input_chat)
+        else:
+            last_chat_response = await self._get_response(input_chat)
+
+        # Parse reasoning step and check if done
+        message_content = last_chat_response.message.content
+        if not message_content:
+            error_msg = (
+                "FAILURE: Your previous response was empty.\n"
+                "You must output a thought and an action/answer.\n\n"
+                "Please follow this structure exactly:\n"
+                "Thought: <what you are thinking>\n"
+                "Action: <tool_name>\n"
+                "Action Input: <json_params>\n\n"
+                "OR:\n\n"
+                "Thought: <what you are thinking>\n"
+                "Answer: <your final response to the user>"
+            )
             raw = (
                 last_chat_response.raw.model_dump()
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=last_chat_response.delta or "",
-                    response=last_chat_response.message.content or "",
-                    raw=raw,
-                    current_agent_name=self.name,
-                )
-            )
 
-        # Parse reasoning step and check if done
-        message_content = last_chat_response.message.content
-        if not message_content:
-            raise ValueError("Got empty message")
+            return AgentOutput(
+                response=last_chat_response.message,
+                raw=raw,
+                current_agent_name=self.name,
+                retry_messages=[
+                    last_chat_response.message,
+                    ChatMessage(role="user", content=error_msg),
+                ],
+            )
 
         try:
             reasoning_step = output_parser.parse(message_content, is_streaming=False)
@@ -251,11 +308,19 @@ class ReActAgent(BaseWorkflowAgent):
                 await memory.aput(reasoning_msg)
                 await ctx.store.set(self.reasoning_key, [])
 
-            # remove "Answer:" from the response
-            if output.response.content and "Answer:" in output.response.content:
-                start_idx = output.response.content.find("Answer:")
+            # Find the text block in the response to modify it directly
+            text_block = None
+            for block in output.response.blocks:
+                if isinstance(block, TextBlock):
+                    text_block = block
+                    break
+
+            # remove "Answer:" from the response (now checking text_block.text)
+            if text_block and "Answer:" in text_block.text:
+                start_idx = text_block.text.find("Answer:")
                 if start_idx != -1:
-                    output.response.content = output.response.content[
+                    # Modify the .text attribute of the block, NOT response.content
+                    text_block.text = text_block.text[
                         start_idx + len("Answer:") :
                     ].strip()
 

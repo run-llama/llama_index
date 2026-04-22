@@ -1,6 +1,7 @@
 """Gemini embeddings file."""
 
 import os
+from importlib.metadata import PackageNotFoundError, version
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -121,7 +122,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     Args:
         model_name (str): Model for embedding.
-            Defaults to "text-embedding-005".
+            Defaults to "gemini-embedding-2-preview".
         api_key (Optional[str]): API key to access the model. Defaults to None.
         embedding_config (Optional[types.EmbedContentConfigOrDict]): Embedding config to access the model. Defaults to None.
         vertexai_config (Optional[VertexAIConfig]): Vertex AI config to access the model. Defaults to None.
@@ -141,7 +142,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         ```python
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        embed_model = GoogleGenAIEmbedding(model_name="text-embedding-005", api_key="...")
+        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview", api_key="...")
         ```
 
     """
@@ -166,7 +167,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "text-embedding-004",
+        model_name: str = "gemini-embedding-2-preview",
         api_key: Optional[str] = None,
         embedding_config: Optional[types.EmbedContentConfigOrDict] = None,
         vertexai_config: Optional[VertexAIConfig] = None,
@@ -221,8 +222,21 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             config_params["api_key"] = None
             config_params["vertexai"] = True
 
-        if http_options:
-            config_params["http_options"] = http_options
+        try:
+            package_v = version("llama-index-embeddings-google-genai")
+        except PackageNotFoundError:
+            package_v = "0.0.0"
+        client_hdr = {"x-goog-api-client": f"llamaindex/{package_v}"}
+
+        if isinstance(http_options, dict):
+            http_opts = http_options
+        elif isinstance(http_options, types.HttpOptions):
+            http_opts = http_options.to_json_dict()
+        else:
+            http_opts = {}
+        http_opts["headers"] = http_opts.get("headers", {}) | client_hdr
+
+        config_params["http_options"] = types.HttpOptions(**http_opts)
 
         if debug_config:
             config_params["debug_config"] = debug_config

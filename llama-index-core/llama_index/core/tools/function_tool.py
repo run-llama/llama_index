@@ -135,6 +135,15 @@ class FunctionTool(AsyncBaseTool):
 
         self.partial_params = partial_params or {}
 
+        # Extract actual default values from FieldInfo defaults so they are
+        # applied when the function is called without those arguments.
+        self._field_defaults: Dict[str, Any] = {}
+        for param in sig.parameters.values():
+            if isinstance(param.default, FieldInfo) and not param.default.is_required():
+                self._field_defaults[param.name] = param.default.get_default(
+                    call_default_factory=True
+                )
+
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
         """
         Runs the sync callback, if provided, and returns either a ToolOutput
@@ -209,21 +218,13 @@ class FunctionTool(AsyncBaseTool):
             # 4. Replace signature in one go
             fn_sig = fn_sig.replace(parameters=final_params)
 
-            # 5. Build enriched description using param_docs
+            # 5. Build description
             if description is None:
                 description = f"{name}{fn_sig}\n"
+                if docstring:
+                    description += docstring
 
-                # Extract the first meaningful line (summary) from the docstring
-                doc_lines = docstring.strip().splitlines()
-                for line in doc_lines:
-                    if line.strip():
-                        description += line.strip()
-                        break
-
-            for param in final_params:
-                desc = param_docs.get(param.name)
-                if desc:
-                    description += f"\n:param {param.name}: {desc}"
+                description = description.strip()
 
             # 6. Build fn_schema only if not already provided
             if fn_schema is None:
@@ -311,7 +312,7 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
@@ -350,7 +351,7 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
-        all_kwargs = {**self.partial_params, **kwargs}
+        all_kwargs = {**self._field_defaults, **self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
             if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")

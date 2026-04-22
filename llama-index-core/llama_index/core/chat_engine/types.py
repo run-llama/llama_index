@@ -7,7 +7,7 @@ from enum import Enum
 from functools import partial
 from inspect import iscoroutinefunction
 from queue import Queue, Empty
-from threading import Event
+from threading import Event, Thread
 from typing import AsyncGenerator, Callable, Generator, List, Optional, Union, Dict, Any
 
 from llama_index.core.base.llms.types import (
@@ -125,6 +125,7 @@ class StreamingAgentChatResponse:
     # Track if an exception occurred
     exception: Optional[Exception] = None
     awrite_response_to_history_task: Optional[asyncio.Task] = None
+    write_response_to_history_thread: Optional[Thread] = None
 
     def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
@@ -279,34 +280,37 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
-        yielded_once = False
-        if self.is_writing_to_memory:
-            while not self.is_done or not self.queue.empty():
-                if self.exception is not None:
-                    raise self.exception
+        try:
+            yielded_once = False
+            if self.is_writing_to_memory:
+                while not self.is_done or not self.queue.empty():
+                    if self.exception is not None:
+                        raise self.exception
 
-                try:
-                    delta = self.queue.get(block=False)
-                    self.unformatted_response += delta
-                    yield delta
+                    try:
+                        delta = self.queue.get(block=False)
+                        self.unformatted_response += delta
+                        yield delta
+                        yielded_once = True
+                    except Empty:
+                        time.sleep(0)
+            else:
+                if self.chat_stream is None:
+                    raise ValueError("chat_stream is None!")
+
+                for chat_response in self.chat_stream:
+                    self.unformatted_response += chat_response.delta or ""
+                    yield chat_response.delta or ""
                     yielded_once = True
-                except Empty:
-                    # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
-                    time.sleep(0)
-        else:
-            if self.chat_stream is None:
-                raise ValueError("chat_stream is None!")
 
-            for chat_response in self.chat_stream:
-                self.unformatted_response += chat_response.delta or ""
-                yield chat_response.delta or ""
-                yielded_once = True
+            self.response = self.unformatted_response.strip()
 
-        self.response = self.unformatted_response.strip()
-
-        # edge case where the stream was exhausted before yielding anything
-        if not yielded_once:
-            yield self.response
+            if not yielded_once:
+                yield self.response
+        finally:
+            if self.write_response_to_history_thread is not None:
+                self.write_response_to_history_thread.join()
+                self.write_response_to_history_thread = None
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         try:
@@ -325,7 +329,8 @@ class StreamingAgentChatResponse:
                                 self.aqueue.get(), timeout=0.1
                             )
                         except asyncio.TimeoutError:
-                            if self.is_done:
+                            # Break only when the stream is done and the queue is empty
+                            if self.is_done and self.aqueue.empty():
                                 break
                             continue
                         if delta is not None:

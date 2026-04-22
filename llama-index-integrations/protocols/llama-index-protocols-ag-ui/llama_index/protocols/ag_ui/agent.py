@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from ag_ui.core import RunAgentInput
+from ag_ui.core import RunAgentInput, Tool as AGUITool
 
 from llama_index.core import Settings
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
@@ -12,6 +12,7 @@ from llama_index.core.workflow import Context, Workflow, step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.protocols.ag_ui.events import (
     MessagesSnapshotWorkflowEvent,
+    StateSnapshotWorkflowEvent,
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
 )
@@ -21,6 +22,59 @@ from llama_index.protocols.ag_ui.utils import (
     timestamp,
     validate_tool,
 )
+
+
+def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
+    """
+    Convert an AG-UI Tool definition to a LlamaIndex FunctionTool.
+
+    The returned function is a no-op — these tools are treated as frontend
+    tools (pass-through) so they are never executed server-side. The LLM sees
+    the tool schema, calls it, and the AG-UI middleware handles execution.
+    """
+    from pydantic import Field, create_model
+
+    tool_name = tool.name
+    tool_description = tool.description or tool.name
+
+    # Build a Pydantic model from the AG-UI tool's JSON schema so that
+    # LlamaIndex generates the correct OpenAI function-call schema with
+    # top-level parameter names (e.g. `a2ui_json`) rather than wrapping
+    # everything under a `kwargs` key.
+    params = tool.parameters or {}
+    properties = params.get("properties", {})
+    required_fields = set(params.get("required", []))
+
+    pydantic_fields: Dict[str, Any] = {}
+    for prop_name, prop_schema in properties.items():
+        field_description = prop_schema.get("description", prop_name)
+        if prop_name in required_fields:
+            pydantic_fields[prop_name] = (str, Field(description=field_description))
+        else:
+            pydantic_fields[prop_name] = (
+                Optional[str],
+                Field(default=None, description=field_description),
+            )
+
+    fn_schema = (
+        create_model(f"{tool_name}_schema", **pydantic_fields)
+        if pydantic_fields
+        else create_model(f"{tool_name}_schema")
+    )
+
+    def _noop(**kwargs: Any) -> str:
+        return ""
+
+    _noop.__name__ = tool_name
+    _noop.__doc__ = tool_description
+
+    return FunctionTool.from_defaults(
+        fn=_noop,
+        name=tool_name,
+        description=tool_description,
+        fn_schema=fn_schema,
+    )
+
 
 DEFAULT_STATE_PROMPT = """<state>
 {state}
@@ -134,6 +188,7 @@ class AGUIChatWorkflow(Workflow):
 
             # Save state to context for tools to use
             await ctx.store.set("state", state)
+            ctx.write_event_to_stream(StateSnapshotWorkflowEvent(snapshot=state))
 
             if state:
                 for msg in chat_history[::-1]:
@@ -158,6 +213,23 @@ class AGUIChatWorkflow(Workflow):
         tools = list(self.frontend_tools.values())
         tools.extend(list(self.backend_tools.values()))
 
+        # Dynamically inject tools from the AG-UI RunAgentInput (e.g. from
+        # A2UIMiddleware or MCPAppsMiddleware). Treat them as frontend tools so
+        # the LLM can call them but they are not executed server-side.
+        if isinstance(ev, InputEvent):
+            dynamic_frontend_tool_names: List[str] = []
+            for ag_ui_tool in ev.input_data.tools or []:
+                if (
+                    ag_ui_tool.name not in self.frontend_tools
+                    and ag_ui_tool.name not in self.backend_tools
+                ):
+                    llama_tool = _ag_ui_tool_to_llama_index(ag_ui_tool)
+                    tools.append(llama_tool)
+                    dynamic_frontend_tool_names.append(ag_ui_tool.name)
+            await ctx.store.set(
+                "dynamic_frontend_tool_names", dynamic_frontend_tool_names
+            )
+
         resp_gen = await self.llm.astream_chat_with_tools(
             tools=tools,
             chat_history=chat_history,
@@ -179,7 +251,6 @@ class AGUIChatWorkflow(Workflow):
                 )
 
         chat_history.append(resp.message)
-        self._snapshot_messages(ctx, [*chat_history])
         await ctx.store.set("chat_history", chat_history)
 
         tool_calls = self.llm.get_tool_calls_from_response(
@@ -187,15 +258,23 @@ class AGUIChatWorkflow(Workflow):
         )
         if tool_calls:
             await ctx.store.set("num_tool_calls", len(tool_calls))
+            # Include dynamically injected tools (from input_data.tools) in the
+            # frontend set so they are treated as pass-through, not executed.
+            dynamic_frontend_tool_names = await ctx.store.get(
+                "dynamic_frontend_tool_names", default=[]
+            )
+            all_frontend_names = set(self.frontend_tools) | set(
+                dynamic_frontend_tool_names
+            )
             frontend_tool_calls = [
                 tool_call
                 for tool_call in tool_calls
-                if tool_call.tool_name in self.frontend_tools
+                if tool_call.tool_name in all_frontend_names
             ]
             backend_tool_calls = [
                 tool_call
                 for tool_call in tool_calls
-                if tool_call.tool_name in self.backend_tools
+                if tool_call.tool_name not in all_frontend_names
             ]
 
             # Call backend tools first so that the frontend can return results for frontend tools
@@ -233,8 +312,13 @@ class AGUIChatWorkflow(Workflow):
                     )
                 )
 
+            # Send MessagesSnapshot AFTER ToolCallChunk events, as a "wrap it up" step
+            self._snapshot_messages(ctx, [*chat_history])
+
             return None
 
+        # No tool calls, send snapshot immediately
+        self._snapshot_messages(ctx, [*chat_history])
         return StopEvent()
 
     @step
@@ -250,6 +334,13 @@ class AGUIChatWorkflow(Workflow):
                 kwargs[tool.ctx_param_name] = ctx
 
             tool_output = await tool.acall(**kwargs)
+
+            # Update the state snapshot
+            current_state = await ctx.store.get("state", default={})
+            ctx.write_event_to_stream(
+                StateSnapshotWorkflowEvent(snapshot=current_state)
+            )
+
             return ToolCallResultEvent(
                 tool_call_id=ev.tool_call_id,
                 tool_name=ev.tool_name,
@@ -283,15 +374,19 @@ class AGUIChatWorkflow(Workflow):
 
         # organize tool results so that frontend tools are last
         # for backend tools, update the messages snapshot with the tool output
+        dynamic_frontend_tool_names = await ctx.store.get(
+            "dynamic_frontend_tool_names", default=[]
+        )
+        all_frontend_names = set(self.frontend_tools) | set(dynamic_frontend_tool_names)
         frontend_tool_calls = [
             tool_result
             for tool_result in tool_call_results
-            if tool_result.tool_name in self.frontend_tools
+            if tool_result.tool_name in all_frontend_names
         ]
         backend_tool_calls = [
             tool_result
             for tool_result in tool_call_results
-            if tool_result.tool_name in self.backend_tools
+            if tool_result.tool_name not in all_frontend_names
         ]
 
         new_tool_messages = []

@@ -13,7 +13,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.1.1",
     "pytest-httpx>=0.30.0",
@@ -34,15 +34,15 @@ test_integration = [
 
 [project]
 name = "llama-index-llms-heroku"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index llms heroku managed inference integration"
 authors = [{name = "LlamaIndex", email = "dev@llamaindex.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-llms-openai-like>=0.5.0,<0.6",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

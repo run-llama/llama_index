@@ -2,28 +2,29 @@
 
 import logging
 import os
+import tempfile
 import uuid
+from io import BytesIO
 from typing import Callable, Dict, List, Optional
 from urllib.parse import unquote
 
 import requests
+from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
 from retrying import retry
-from io import BytesIO
 
 from .event import (
-    FileType,
-    TotalPagesToProcessEvent,
-    PageDataFetchStartedEvent,
-    PageDataFetchCompletedEvent,
-    PageSkippedEvent,
-    PageFailedEvent,
-    AttachmentProcessingStartedEvent,
-    AttachmentProcessedEvent,
-    AttachmentSkippedEvent,
     AttachmentFailedEvent,
+    AttachmentProcessedEvent,
+    AttachmentProcessingStartedEvent,
+    AttachmentSkippedEvent,
+    FileType,
+    PageDataFetchCompletedEvent,
+    PageDataFetchStartedEvent,
+    PageFailedEvent,
+    PageSkippedEvent,
+    TotalPagesToProcessEvent,
 )
 
 CONFLUENCE_API_TOKEN = "CONFLUENCE_API_TOKEN"
@@ -285,8 +286,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             != 1
         ):
             raise ValueError(
-                "Must specify exactly one among `space_key`, `page_ids`, `label`, `cql`"
-                " parameters."
+                "Must specify exactly one among `space_key`, `page_ids`, `label`, `cql` parameters."
             )
 
         if cursor and start:
@@ -313,14 +313,9 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 " please use `max_num_results` instead."
             )
 
-        try:
-            import html2text  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`html2text` package not found, please run `pip install html2text`"
-            )
+        from .html_parser import HtmlTextParser
 
-        text_maker = html2text.HTML2Text()
+        text_maker = HtmlTextParser()
 
         if not start:
             start = 0
@@ -445,15 +440,20 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 type="page",
                 max_num_results=max_num_remaining,
             )
-        ] + [
-            (child_id, "folder")
-            for child_id in self._get_data_with_paging(
-                self.confluence.get_child_id_list,
-                page_id=id,
-                type="folder",
-                max_num_results=max_num_remaining,
-            )
         ]
+
+        if self.confluence.cloud:
+            child_items.extend(
+                [
+                    (child_id, "folder")
+                    for child_id in self._get_data_with_paging(
+                        self.confluence.get_child_id_list,
+                        page_id=id,
+                        type="folder",
+                        max_num_results=max_num_remaining,
+                    )
+                ]
+            )
 
         for child_id, child_type in child_items:
             if max_num_remaining is not None and max_num_remaining <= 0:
@@ -567,24 +567,37 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             attachment_texts = []
         if FileType.HTML in self.custom_parsers and self.custom_folder:
             html_text = page["body"]["export_view"]["value"]
-            # save in file
-            file_location = os.path.join(self.custom_folder, "output.html")
-            with open(file_location, "w", encoding="utf-8") as f:
+            # save in temporary file
+            file_location = None
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".html",
+                encoding="utf-8",
+                dir=self.custom_folder,
+                delete=False,
+            ) as f:
                 f.write(html_text)
-            text = (
-                page["title"]
-                + "\n"
-                + "\n".join(
-                    doc.text
-                    for doc in self.custom_parsers[FileType.HTML].load_data(
-                        file_path=file_location
+                file_location = f.name
+            try:
+                text = (
+                    page["title"]
+                    + "\n"
+                    + "\n".join(
+                        doc.text
+                        for doc in self.custom_parsers[FileType.HTML].load_data(
+                            file_path=file_location
+                        )
                     )
+                    + "\n"
+                    + "\n".join(attachment_texts)
                 )
-                + "\n"
-                + "\n".join(attachment_texts)
-            )
+            finally:
+                try:
+                    os.unlink(file_location)
+                except OSError:
+                    pass
         else:
-            text = text_maker.handle(page["body"]["export_view"]["value"]) + "".join(
+            text = text_maker.convert(page["body"]["export_view"]["value"]) + "".join(
                 attachment_texts
             )
 
@@ -607,8 +620,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             pass
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found, please run"
-                " `pip install pytesseract pdf2image Pillow`"
+                "`pytesseract` or `pdf2image` or `Pillow` package not found, please run `pip install pytesseract pdf2image Pillow`"
             )
 
         # depending on setup you may also need to set the correct path for poppler and tesseract
@@ -796,8 +808,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 from pdf2image import convert_from_bytes  # type: ignore
             except ImportError:
                 raise ImportError(
-                    "`pytesseract` or `pdf2image` package not found, please run `pip"
-                    " install pytesseract pdf2image`"
+                    "`pytesseract` or `pdf2image` package not found, please run `pip install pytesseract pdf2image`"
                 )
 
         response = self.confluence.request(path=link, absolute=True)
@@ -907,8 +918,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             from PIL import Image  # type: ignore
         except ImportError:
             raise ImportError(
-                "`pytesseract` or `Pillow` package not found, please run `pip install"
-                " pytesseract Pillow`"
+                "`pytesseract` or `Pillow` package not found, please run `pip install pytesseract Pillow`"
             )
 
         text = ""
@@ -1147,8 +1157,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             from svglib.svglib import svg2rlg  # type: ignore
         except ImportError:
             raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found, please run"
-                " `pip install pytesseract Pillow svglib`"
+                "`pytesseract`, `Pillow`, or `svglib` package not found, please run `pip install pytesseract Pillow svglib`"
             )
 
         response = self.confluence.request(path=link, absolute=True)

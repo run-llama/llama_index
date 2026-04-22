@@ -82,6 +82,7 @@ class BM25Retriever(BaseRetriever):
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
         filters: Optional[MetadataFilters] = None,
+        corpus_weight_mask: Optional[List[int]] = None,
     ) -> None:
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
@@ -124,7 +125,7 @@ class BM25Retriever(BaseRetriever):
             )
             self.similarity_top_k = int(self.bm25.scores["num_docs"])
 
-        self.corpus_weight_mask = None
+        self.corpus_weight_mask = corpus_weight_mask or None
         if filters and self.corpus:
             # Build a weight mask for each corpus to filter out only relevant nodes
             _corpus_dict = {
@@ -137,6 +138,13 @@ class BM25Retriever(BaseRetriever):
                 int(_query_filter_fn(corpus_token["node_id"]))
                 for corpus_token in self.corpus
             ]
+
+            # Check if all nodes were filtered out
+            if not any(self.corpus_weight_mask):
+                raise ValueError(
+                    "All nodes were filtered out by the metadata filters. "
+                    "Please adjust your filters or add more data."
+                )
 
         super().__init__(
             callback_manager=callback_manager,

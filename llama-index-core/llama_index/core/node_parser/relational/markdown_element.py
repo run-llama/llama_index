@@ -27,9 +27,10 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
             node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
         elements = self.extract_html_tables(elements)
-        table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
-        self.extract_table_summaries(table_elements)
+        # Pass all elements so that extract_table_summaries can access
+        # surrounding context (e.g., table titles) for better summarization
+        self.extract_table_summaries(elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         nodes = self.get_nodes_from_elements(
@@ -46,9 +47,10 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         elements = self.extract_elements(
             node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
-        table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
-        await self.aextract_table_summaries(table_elements)
+        # Pass all elements so that aextract_table_summaries can access
+        # surrounding context (e.g., table titles) for better summarization
+        await self.aextract_table_summaries(elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         nodes = self.get_nodes_from_elements(
@@ -168,13 +170,12 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         type="code",
                         element=line.lstrip("```"),
                     )
-                elif currentElement is not None and currentElement.type == "text":
-                    currentElement.element += "\n" + line
                 else:
+                    # Start of a new code block
                     if currentElement is not None:
                         elements.append(currentElement)
                     currentElement = Element(
-                        id=f"id_{len(elements)}", type="text", element=line
+                        id=f"id_{len(elements)}", type="code", element=""
                     )
             elif currentElement is not None and currentElement.type == "code":
                 currentElement.element += "\n" + line
@@ -264,10 +265,10 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         element=element.element,
                     )
             else:
-                # if the element is not a table, keep it as to text
+                # if the element is not a table, keep its original type
                 elements[idx] = Element(
                     id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
-                    type="text",
+                    type=element.type,
                     element=element.element,
                 )
 

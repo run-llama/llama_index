@@ -1,7 +1,7 @@
+import asyncio
 import logging
 from typing import Callable, Generator, List, Optional, Sequence, Any
 
-from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.base_selector import BaseSelector
@@ -220,7 +220,7 @@ class RouterQueryEngine(BaseQueryEngine):
                     selected_query_engine = self._query_engines[engine_ind]
                     tasks.append(selected_query_engine.aquery(query_bundle))
 
-                responses = run_async_tasks(tasks)
+                responses = await asyncio.gather(*tasks)
                 if len(responses) > 1:
                     final_response = await acombine_responses(
                         self._summarizer, responses, query_bundle
@@ -380,7 +380,7 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
             for query_engine_tool in query_engine_tools:
                 query_engine = query_engine_tool.query_engine
                 tasks.append(query_engine.aquery(query_bundle))
-            responses = run_async_tasks(tasks)
+            responses = await asyncio.gather(*tasks)
             if len(responses) > 1:
                 final_response = await acombine_responses(
                     self._summarizer, responses, query_bundle

@@ -105,7 +105,11 @@ def vector_indexed(collection: Collection) -> str:
             filters=["metadata.year"],
             wait_until_complete=TIMEOUT,
         )
-    return VECTOR_INDEX_NAME
+    yield VECTOR_INDEX_NAME
+    if any(
+        idx["name"] == VECTOR_INDEX_NAME for idx in collection.list_search_indexes()
+    ):
+        collection.drop_search_index(VECTOR_INDEX_NAME)
 
 
 @pytest.fixture()
@@ -120,16 +124,20 @@ def year_indexed(collection: Collection) -> str:
     ):
         index.create_fulltext_search_index(
             collection=collection,
-            index_name="metadata_year",
+            index_name=FILTER_INDEX_NAME,
             field="metadata.year",
             field_type="number",
             wait_until_complete=TIMEOUT,
         )
         assert any(
-            idx["name"] == "metadata_year" for idx in collection.list_search_indexes()
+            idx["name"] == FILTER_INDEX_NAME for idx in collection.list_search_indexes()
         )
 
-    return FILTER_INDEX_NAME
+    yield FILTER_INDEX_NAME
+    if any(
+        idx["name"] == FILTER_INDEX_NAME for idx in collection.list_search_indexes()
+    ):
+        collection.drop_search_index(FILTER_INDEX_NAME)
 
 
 @pytest.fixture()

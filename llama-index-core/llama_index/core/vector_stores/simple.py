@@ -309,7 +309,10 @@ class SimpleVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
 
-        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
+        return VectorStoreQueryResult(
+            similarities=top_similarities,
+            ids=top_ids,
+        )
 
     def persist(
         self,
@@ -322,7 +325,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             json.dump(self.data.to_dict(), f)
 
     @classmethod

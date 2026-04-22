@@ -28,15 +28,15 @@ dev = [
 
 [project]
 name = "llama-index-tools-agentql"
-version = "1.1.0"
+version = "1.3.0"
 description = "llama-index tools agentql integration"
 authors = [{name = "Jason Zhang", email = "jason@tinyfish.io"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [{name = "Jason Zhang", email = "jason@tinyfish.io"}]
 dependencies = [
-    "llama-index-core>=0.10.0,<0.13",
+    "llama-index-core>=0.10.0,<0.15",
     "agentql>=1.8.1,<2",
     "playwright>=1.50.0,<2",
     "httpx>=0.28.1,<0.29",

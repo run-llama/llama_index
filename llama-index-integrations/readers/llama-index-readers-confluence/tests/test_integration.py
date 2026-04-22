@@ -24,12 +24,12 @@ from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 class TestIntegration:
     """Integration tests for all new features working together."""
 
-    @patch("html2text.HTML2Text")
-    def test_full_feature_integration(self, mock_html2text_class):
+    @patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
+    def test_full_feature_integration(self, mock_html_parser_class):
         """Test all new features working together in a realistic scenario."""
         mock_text_maker = MagicMock()
-        mock_text_maker.handle.return_value = "processed text content"
-        mock_html2text_class.return_value = mock_text_maker
+        mock_text_maker.convert.return_value = "processed text content"
+        mock_html_parser_class.return_value = mock_text_maker
 
         # Setup custom parser
         mock_parser = MagicMock()

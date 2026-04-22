@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +9,9 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    VideoBlock,
+    ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -388,6 +391,53 @@ def test_structured_predict_multiple_block(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_predict_with_video(llm: GoogleGenAI) -> None:
+    chat_messages = [
+        ChatMessage(
+            content=[
+                TextBlock(text="where is this scene happening?"),
+                VideoBlock(
+                    url="https://upload.wikimedia.org/wikipedia/commons/transcoded/2/28/"
+                    "TikTok_and_YouTube_Shorts_example.webm/TikTok_and_YouTube_Shorts_example.webm.720p.vp9.webm"
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
+    ]
+
+    answer = llm.predict(prompt=ChatPromptTemplate(message_templates=chat_messages))
+    assert "space" in answer.lower()
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_predict_with_large_video(llm: GoogleGenAI) -> None:
+    client = llm._client
+
+    before_file_names = {file.name for file in client.files.list()}
+
+    chat_messages = [
+        ChatMessage(
+            content=[
+                TextBlock(text="what is this video about?"),
+                VideoBlock(
+                    url="https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f0/Die_Franz%C3%B6sische_"
+                    "Revolution_und_Napoleon_-_Planet_Wissen.webm/Die_Franz%C3%B6sische_Revolution_und_Napoleon"
+                    "_-_Planet_Wissen.webm.720p.vp9.webm"
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
+    ]
+
+    answer = llm.predict(prompt=ChatPromptTemplate(message_templates=chat_messages))
+    assert "revolution" in answer.lower()
+
+    # Unsure the file has been deleted
+    after_file_names = {file.name for file in client.files.list()}
+    assert before_file_names == after_file_names
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -515,8 +565,16 @@ def test_tool_required_integration(llm: GoogleGenAI) -> None:
         tools=[search_tool],
         tool_required=True,
     )
-    assert response.message.additional_kwargs.get("tool_calls") is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -666,11 +724,24 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     assert len(blogpost.contents) >= 3
 
 
-def test_prepare_chat_params_more_than_2_tool_calls():
+@pytest.mark.asyncio
+async def test_prepare_chat_params_more_than_2_tool_calls():
     expected_generation_config = types.GenerateContentConfig()
     expected_model_name = "models/gemini-foo"
     test_messages = [
         ChatMessage(content="Find me a puppy.", role=MessageRole.USER),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking me for a puppy, so I should search for puppies using the available tools."
+                )
+            ],
+        ),
+        ChatMessage(
+            blocks=[ToolCallBlock(tool_name="get_available_tools", tool_kwargs={})],
+            role=MessageRole.ASSISTANT,
+        ),
         ChatMessage(
             content="Let me search for puppies.",
             role=MessageRole.ASSISTANT,
@@ -700,7 +771,9 @@ def test_prepare_chat_params_more_than_2_tool_calls():
         ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
     ]
 
-    next_msg, chat_kwargs = prepare_chat_params(expected_model_name, test_messages)
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
+        expected_model_name, test_messages
+    )
 
     assert chat_kwargs["model"] == expected_model_name
     assert chat_kwargs["config"] == expected_generation_config
@@ -713,10 +786,15 @@ def test_prepare_chat_params_more_than_2_tool_calls():
         ),
         types.Content(
             parts=[
+                types.Part(
+                    text="The user is asking me for a puppy, so I should search for puppies using the available tools.",
+                    thought=True,
+                ),
+                types.Part.from_function_call(name="get_available_tools", args={}),
                 types.Part(text="Let me search for puppies."),
-                types.Part.from_function_call(name="tool_1", args=None),
-                types.Part.from_function_call(name="tool_2", args=None),
-                types.Part.from_function_call(name="tool_3", args=None),
+                types.Part.from_function_call(name="tool_1", args={}),
+                types.Part.from_function_call(name="tool_2", args={}),
+                types.Part.from_function_call(name="tool_3", args={}),
             ],
             role=MessageRole.MODEL,
         ),
@@ -737,7 +815,8 @@ def test_prepare_chat_params_more_than_2_tool_calls():
     ]
 
 
-def test_prepare_chat_params_with_system_message():
+@pytest.mark.asyncio
+async def test_prepare_chat_params_with_system_message():
     # Setup a conversation starting with a SYSTEM message
     model_name = "models/gemini-test"
     system_prompt = "You are a test system."
@@ -752,7 +831,9 @@ def test_prepare_chat_params_with_system_message():
     ]
 
     # Execute prepare_chat_params
-    next_msg, chat_kwargs = prepare_chat_params(model_name, messages)
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
+        model_name, messages
+    )
 
     # Verify system_prompt is forwarded to system_instruction
     cfg = chat_kwargs["config"]
@@ -776,6 +857,50 @@ def test_prepare_chat_params_with_system_message():
         parts=[types.Part(text=user_message_2)],
         role=MessageRole.USER,
     )
+
+
+@pytest.mark.asyncio
+async def test_prepare_chat_params_does_not_mutate_messages():
+    """
+    Ensure prepare_chat_params does not pop the system message from the
+    caller's list, which would break retry logic (e.g. after a 429).
+
+    See: https://github.com/run-llama/llama_index/issues/21137
+    """
+    model_name = "models/gemini-test"
+    system_prompt = "You are a helpful assistant."
+    user_text = "Hi there."
+
+    messages = [
+        ChatMessage(content=system_prompt, role=MessageRole.SYSTEM),
+        ChatMessage(content=user_text, role=MessageRole.USER),
+    ]
+    original_length = len(messages)
+
+    # First call -- should extract the system message internally
+    next_msg, chat_kwargs, _ = await prepare_chat_params(model_name, messages)
+
+    # The caller's list must be unchanged
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
+    assert messages[0].content == system_prompt
+
+    # The system message should still have been forwarded correctly
+    cfg = chat_kwargs["config"]
+    assert isinstance(cfg, GenerateContentConfig)
+    assert cfg.system_instruction == system_prompt
+
+    # Simulate a retry: calling again with the same messages list
+    next_msg2, chat_kwargs2, _ = await prepare_chat_params(model_name, messages)
+
+    # System message should still be extracted on the retry
+    cfg2 = chat_kwargs2["config"]
+    assert isinstance(cfg2, GenerateContentConfig)
+    assert cfg2.system_instruction == system_prompt
+
+    # And the caller's list must still be intact
+    assert len(messages) == original_length
+    assert messages[0].role == MessageRole.SYSTEM
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -805,14 +930,19 @@ def test_cached_content_in_response() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call.id = ""
+    mock_response.candidates[0].content.parts[0].function_call.name = "hello"
+    mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
     mock_response.cached_content = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify cached_content is in raw response
     assert "cached_content" in chat_response.raw
@@ -831,7 +961,12 @@ def test_cached_content_without_cached_content() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call.id = ""
+    mock_response.candidates[0].content.parts[0].function_call.name = "hello"
+    mock_response.candidates[0].content.parts[0].function_call.args = {}
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -839,7 +974,7 @@ def test_cached_content_without_cached_content() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
     assert "cached_content" not in chat_response.raw
@@ -856,9 +991,17 @@ def test_thoughts_in_response() -> None:
     mock_response.candidates[0].content.parts[0].text = "This is a thought."
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = True
+    mock_response.candidates[0].content.parts[0].function_call.id = ""
+    mock_response.candidates[0].content.parts[0].function_call.name = "hello"
+    mock_response.candidates[0].content.parts[0].function_call.args = {}
     mock_response.candidates[0].content.parts[1].text = "This is not a thought."
     mock_response.candidates[0].content.parts[1].inline_data = None
     mock_response.candidates[0].content.parts[1].thought = None
+    mock_response.candidates[0].content.parts[1].function_call = None
+    mock_response.candidates[0].content.parts[1].function_response = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
+    mock_response.candidates[0].content.parts[1].model_dump = MagicMock(return_value={})
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -866,11 +1009,24 @@ def test_thoughts_in_response() -> None:
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify thoughts in raw response
-    assert "thoughts" in chat_response.message.additional_kwargs
-    assert chat_response.message.additional_kwargs["thoughts"] == "This is a thought."
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 1
+    )
+    assert [  # noqa: RUF015
+        block
+        for block in chat_response.message.blocks
+        if isinstance(block, ThinkingBlock)
+    ][0].content == "This is a thought."
     assert chat_response.message.content == "This is not a thought."
 
 
@@ -885,17 +1041,29 @@ def test_thoughts_without_thought_response() -> None:
     mock_response.candidates[0].content.parts[0].text = "This is not a thought."
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
     # No cached_content attribute
     del mock_response.cached_content
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify no cached_content key in raw response
-    assert "thoughts" not in chat_response.message.additional_kwargs
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 0
+    )
     assert chat_response.message.content == "This is not a thought."
 
 
@@ -919,7 +1087,8 @@ def test_cached_content_with_generation_config() -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_cached_content_in_chat_params() -> None:
+@pytest.mark.asyncio
+async def test_cached_content_in_chat_params() -> None:
     """Test that cached_content is properly included in generation config."""
     cached_content_value = (
         "projects/test-project/locations/us-central1/cachedContents/test-cache"
@@ -938,7 +1107,7 @@ def test_cached_content_in_chat_params() -> None:
     messages = [ChatMessage(content="Test message", role=MessageRole.USER)]
 
     # Prepare chat params with the LLM's generation config
-    next_msg, chat_kwargs = prepare_chat_params(
+    next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
         llm.model, messages, generation_config=llm._generation_config
     )
 
@@ -991,6 +1160,8 @@ def test_built_in_tool_in_response() -> None:
     ].text = "Test response with search results"
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = MagicMock()
     mock_response.usage_metadata.model_dump.return_value = {
@@ -1027,7 +1198,7 @@ def test_built_in_tool_in_response() -> None:
     }
 
     # Convert response
-    chat_response = chat_from_gemini_response(mock_response)
+    chat_response = chat_from_gemini_response(mock_response, [])
 
     # Verify response is processed correctly
     assert chat_response.message.role == MessageRole.ASSISTANT
@@ -1081,7 +1252,8 @@ def test_built_in_tool_with_generation_config() -> None:
         assert tool_obj == grounding_tool
 
 
-def test_built_in_tool_in_chat_params() -> None:
+@pytest.mark.asyncio
+async def test_built_in_tool_in_chat_params() -> None:
     """Test that built_in_tool is properly included in chat parameters."""
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
@@ -1105,7 +1277,7 @@ def test_built_in_tool_in_chat_params() -> None:
         )
 
         # Prepare chat params
-        next_msg, chat_kwargs = prepare_chat_params(
+        next_msg, chat_kwargs, file_api_names = await prepare_chat_params(
             llm.model, messages, generation_config=llm._generation_config
         )
 
@@ -1429,6 +1601,8 @@ def test_code_execution_response_parts() -> None:
     )
     mock_text_part.inline_data = None
     mock_text_part.thought = None
+    mock_text_part.function_call = None
+    mock_text_part.function_response = None
 
     mock_code_part = MagicMock()
     mock_code_part.text = None
@@ -1438,6 +1612,8 @@ def test_code_execution_response_parts() -> None:
         "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
         "language": types.Language.PYTHON,
     }
+    mock_code_part.function_call = None
+    mock_code_part.function_response = None
 
     mock_result_part = MagicMock()
     mock_result_part.text = None
@@ -1447,11 +1623,15 @@ def test_code_execution_response_parts() -> None:
         "outcome": types.Outcome.OUTCOME_OK,
         "output": "Sum of first 50 primes: 5117",
     }
+    mock_result_part.function_call = None
+    mock_result_part.function_response = None
 
     mock_final_text_part = MagicMock()
     mock_final_text_part.text = "The sum of the first 50 prime numbers is 5117."
     mock_final_text_part.inline_data = None
     mock_final_text_part.thought = None
+    mock_final_text_part.function_call = None
+    mock_final_text_part.function_response = None
 
     mock_candidate.content.parts = [
         mock_text_part,
@@ -1607,8 +1787,21 @@ def test_thoughts_with_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1641,8 +1834,21 @@ async def test_thoughts_with_async_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1667,8 +1873,21 @@ def test_thoughts_with_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1694,5 +1913,73 @@ async def test_thoughts_with_async_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
+
+
+def test_client_header_initialization() -> None:
+    """Test that the client header is correctly passed to the GoogleGenAI LLM."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_client.models.get.return_value = mock_model
+
+        GoogleGenAI(model="models/gemini-3.0-flash", api_key="test-key")
+
+        # Check if http_options were passed to the client constructor
+        call_args = mock_client_class.call_args
+        _, kwargs = call_args
+        http_options = kwargs["http_options"]
+        headers = http_options.headers
+
+        assert "x-goog-api-client" in headers
+        assert headers["x-goog-api-client"].startswith("llamaindex/")
+
+
+META_SCENARIOS_TO_TEST = [
+    # default case, should fetch metadata
+    {"kwargs": {}, "meta_fetched": True},
+    # only max_tokens provided, should fetch metadata
+    {"kwargs": {"max_tokens": 1024}, "meta_fetched": True},
+    # only context_window provided, should fetch metadata
+    {"kwargs": {"context_window": 8192}, "meta_fetched": True},
+    # both provided, should not fetch metadata
+    {"kwargs": {"max_tokens": 512, "context_window": 4096}, "meta_fetched": False},
+]
+
+
+@pytest.mark.parametrize("scenario", META_SCENARIOS_TO_TEST)
+def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
+    """Test that the model metadata is fetched only when max_tokens or context_window is not provided."""
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_model = MagicMock()
+        mock_client.models.get.return_value = mock_model
+
+        llm = GoogleGenAI(
+            model="models/gemini-3.0-flash", api_key="test-key", **scenario["kwargs"]
+        )
+
+        if scenario["meta_fetched"]:
+            # confirm model metadata was fetched
+            mock_client.models.get.assert_called_once()
+        else:
+            # confirm model metadata was not fetched
+            mock_client.models.get.assert_not_called()

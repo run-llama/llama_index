@@ -3,6 +3,7 @@ import re
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ContentBlock, TextBlock
+from llama_index.core.utils import resolve_binary
 
 
 class SafeFormatter:
@@ -21,7 +22,11 @@ class SafeFormatter:
 
     def _replace_match(self, match: re.Match) -> str:
         key = match.group(1)
-        return str(self.format_dict.get(key, match.group(0)))
+        value = self.format_dict.get(key, match.group(0))
+        if isinstance(value, bytes):
+            return resolve_binary(value, as_base64=True).read().decode("utf-8")
+
+        return str(value)
 
 
 def format_string(string_to_format: str, **kwargs: str) -> str:

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
@@ -334,6 +335,40 @@ def test_azureaisearch_semantic_query() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
+def test_azureaisearch_query_raises_for_unsupported_mode() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+    query = VectorStoreQuery(
+        query_str="test query",
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+    )
+
+    with pytest.raises(ValueError, match="Unsupported query mode"):
+        vector_store.query(query)
+
+    search_client.search.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_aquery_raises_for_unsupported_mode() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+    query = VectorStoreQuery(
+        query_str="test query",
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
+    )
+
+    with pytest.raises(ValueError, match="Unsupported query mode"):
+        asyncio.run(vector_store.aquery(query))
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
 def test_azureaisearch_query_ignores_conflicting_kwargs_and_forwards_extras_for_all_modes() -> (
     None
 ):
@@ -392,3 +427,79 @@ def test_azureaisearch_query_ignores_conflicting_kwargs_and_forwards_extras_for_
         assert called["top"] != extras["top"]
         assert called["select"] != extras["select"]
         assert called["filter"] != extras["filter"]
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_ownership_flag_set_when_index_client_provided() -> None:
+    """Test that _owns_search_client is True when SearchIndexClient is provided."""
+    index_client = mock_client_with_user_agent("index")
+
+    # Create a mock search client that will be returned by get_search_client
+    mock_search_client = mock_client_with_user_agent("search")
+    index_client.get_search_client = MagicMock(return_value=mock_search_client)
+
+    vector_store = create_mock_vector_store(
+        index_client,
+        index_name="test-index",
+        index_management=IndexManagement.NO_VALIDATION,
+    )
+
+    # When SearchIndexClient is provided, we create SearchClient internally
+    assert vector_store._owns_search_client is True
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_ownership_flag_false_when_search_client_provided() -> None:
+    """Test that _owns_search_client is False when SearchClient is directly provided."""
+    search_client = mock_client_with_user_agent("search")
+
+    vector_store = create_mock_vector_store(search_client)
+
+    # When SearchClient is directly provided, we don't own it
+    assert vector_store._owns_search_client is False
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_close_calls_internal_client_close() -> None:
+    """Test that close() calls close() on internally-created client."""
+    index_client = mock_client_with_user_agent("index")
+
+    # Create a mock search client that will be returned by get_search_client
+    mock_search_client = mock_client_with_user_agent("search")
+    mock_search_client.close = MagicMock()
+    index_client.get_search_client = MagicMock(return_value=mock_search_client)
+
+    vector_store = create_mock_vector_store(
+        index_client,
+        index_name="test-index",
+        index_management=IndexManagement.NO_VALIDATION,
+    )
+
+    # Call close
+    vector_store.close()
+
+    # Verify close was called on the internal search client
+    mock_search_client.close.assert_called_once()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_close_does_not_call_external_client_close() -> None:
+    """Test that close() does NOT call close() on externally-provided client."""
+    search_client = mock_client_with_user_agent("search")
+    search_client.close = MagicMock()
+
+    vector_store = create_mock_vector_store(search_client)
+
+    # Call close
+    vector_store.close()
+
+    # Verify close was NOT called on the external search client
+    search_client.close.assert_not_called()

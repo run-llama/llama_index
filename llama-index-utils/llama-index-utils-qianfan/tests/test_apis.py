@@ -10,7 +10,7 @@ from llama_index.utils.qianfan.apis import (
     ServiceItem,
 )
 
-mock_service_list_reponse = {
+mock_service_list_response = {
     "log_id": "4102908182",
     "success": True,
     "result": {
@@ -48,7 +48,7 @@ mock_service_list_reponse = {
 @patch("httpx.Client")
 def test_get_service_list(mock_client: httpx.Client):
     mock_response = MagicMock()
-    mock_response.json.return_value = mock_service_list_reponse
+    mock_response.json.return_value = mock_service_list_response
     mock_client.return_value.__enter__.return_value.send.return_value = mock_response
 
     service_list: List[ServiceItem] = get_service_list(
@@ -69,7 +69,7 @@ def test_get_service_list(mock_client: httpx.Client):
 @patch("httpx.AsyncClient")
 def test_aget_service_list(mock_client: httpx.AsyncClient):
     mock_response = MagicMock()
-    mock_response.json.return_value = mock_service_list_reponse
+    mock_response.json.return_value = mock_service_list_response
     mock_client.return_value.__aenter__.return_value.send.return_value = mock_response
 
     async def async_process():

@@ -1,33 +1,53 @@
 import re
 from typing import Dict
 
-MISTRALAI_MODELS: Dict[str, int] = {
-    "mistral-tiny": 32000,
-    "mistral-small": 32000,
-    "mistral-medium": 32000,
-    "mistral-large": 131000,
-    "mistral-saba-latest": 32000,
-    "open-mixtral-8x7b": 32000,
-    "open-mistral-7b": 32000,
-    "open-mixtral-8x22b": 64000,
-    "mistral-small-latest": 32000,
-    "mistral-medium-latest": 32000,
-    "mistral-large-latest": 32000,
-    "codestral-latest": 256000,
-    "open-mistral-nemo-latest": 131000,
-    "ministral-8b-latest": 131000,
-    "ministral-3b-latest": 131000,
-    "pixtral-large-latest": 131000,
-    "pixtral-12b-2409": 131000,
-    "magistral-medium-2506": 40000,
-    "magistral-small-2506": 40000,
-    "magistral-medium-latest": 40000,
-    "magistral-small-latest": 40000,
+
+#
+# https://docs.mistral.ai/getting-started/models/models_overview/#api-versioning
+MISTRAL_MODELS_TAGGED_LATEST = {
+    "magistral-medium-latest": "magistral-medium-2509",
+    "magistral-small-latest": "magistral-small-2509",
+    "mistral-medium-latest": "mistral-medium-2508",
+    "mistral-large-latest": "mistral-medium-2508",  # Note: points to medium, not large
+    "pixtral-large-latest": "pixtral-large-2411",
+    "ministral-3b-latest": "ministral-3b-2410",
+    "ministral-8b-latest": "ministral-8b-2410",
+    "mistral-small-latest": "mistral-small-2506",
+    "devstral-small-latest": "devstral-small-2507",
+    "devstral-medium-latest": "devstral-medium-2507",
+    "codestral-latest": "codestral-2508",
 }
+
+
+MISTRALAI_MODELS: Dict[str, int] = {
+    "codestral-2501": 256_000,
+    "codestral-2508": 256_000,
+    "devstral-medium-2507": 128_000,
+    "devstral-small-2507": 128_000,
+    "magistral-medium-2506": 40_000,
+    "magistral-medium-2507": 40_000,
+    "magistral-medium-2509": 128_000,
+    "magistral-small-2506": 40_000,
+    "magistral-small-2507": 40_000,
+    "magistral-small-2509": 128_000,
+    "ministral-3b-2410": 128_000,
+    "ministral-8b-2410": 128_000,
+    "mistral-large-2411": 128_000,
+    "mistral-medium-2505": 128_000,
+    "mistral-medium-2508": 128_000,
+    "mistral-small-2407": 32_000,
+    "mistral-small-2506": 128_000,
+    "open-mistral-nemo": 128_000,
+    "pixtral-12b-2409": 131_000,
+    "pixtral-large-2411": 12_8000,
+}
+
+for tag, reference in MISTRAL_MODELS_TAGGED_LATEST.items():
+    MISTRALAI_MODELS[tag] = MISTRALAI_MODELS[reference]
+
 
 MISTRALAI_FUNCTION_CALLING_MODELS = (
     "mistral-large-latest",
-    "open-mixtral-8x22b",
     "ministral-8b-latest",
     "ministral-3b-latest",
     "mistral-small-latest",

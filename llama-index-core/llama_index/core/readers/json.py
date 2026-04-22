@@ -150,5 +150,8 @@ class JSONReader(BaseReader):
                         )
             return documents
         except RecursionError:
-            warnings.warn("Recursion error occurred while processing JSON data.")
+            warnings.warn(
+                "Recursion error occurred while processing JSON data.",
+                stacklevel=2,
+            )
             return []

@@ -167,8 +167,36 @@ def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json
     message = "what's 1+1?"
     chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
     tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1  # Should still work, just with empty kwargs
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_handles_empty_json_arguments(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
+    """Test that empty JSON object '{}' is handled correctly."""
+    mock_tool_response(respx_mock, "{}")
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_handles_missing_tool_id(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
+    """Test that missing tool ID generates UUID fallback."""
+    mock_tool_response_no_id(respx_mock)
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1
+    assert tools[0].tool_name == "add"
+    assert tools[0].tool_kwargs == {"x": 1, "y": 1}
+    # Should have a UUID-like tool_id
+    assert len(tools[0].tool_id) > 0
+    assert tools[0].tool_id != "call_123"  # Should be different from normal ID
 
 
 def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(
@@ -211,7 +239,7 @@ def test_token_calculation_errors():
     # Test case 2: Prompt too long
     with patch("tiktoken.encoding_for_model") as mock_encoding:
         # Mock the encoding to return a token count that exceeds context window
-        mock_encoding.return_value.encode.return_value = [1] * 5000  # 5000 tokens
+        mock_encoding.return_value.encode.return_value = [1] * 20000  # 20000 tokens
         llm = LiteLLM(model="gpt-3.5-turbo")
         with pytest.raises(ValueError) as exc_info:
             llm._get_max_token_for_prompt("test prompt")
@@ -296,6 +324,44 @@ def mock_tool_response(
             },
         )
     )
+
+
+def mock_tool_response_no_id(
+    respx_mock: respx.MockRouter, arguments: str = '{"x": 1, "y": 1}'
+):
+    """Mock tool response without tool call ID to test UUID fallback."""
+    respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            status_code=200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": "Let me calculate that for you.",
+                            "tool_calls": [
+                                {
+                                    # No "id" field to test UUID fallback
+                                    "type": "function",
+                                    "function": {
+                                        "name": "add",
+                                        "arguments": arguments,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
+        )
+    )
+
+
+@pytest.fixture(autouse=True)
+def setup_openai_api_key(monkeypatch):
+    """Fixture to set up and tear down OPENAI_API_KEY for all tests."""
+    monkeypatch.setenv("OPENAI_API_KEY", "fake-api-key")
+    yield
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
 
 @pytest.fixture()
@@ -583,3 +649,21 @@ def test_prepare_chat_with_tools_tool_not_required():
     assert result["tool_choice"] == "auto"
     assert len(result["tools"]) == 1
     assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_custom_llm_provider_in_model_kwargs():
+    """Test that custom_llm_provider is included in _model_kwargs when set."""
+    # Test with custom_llm_provider set
+    llm = LiteLLM(
+        model="claude-sonnet-4-5",
+        api_base="https://my-proxy.com",
+        custom_llm_provider="openai",
+    )
+    model_kwargs = llm._model_kwargs
+    assert "custom_llm_provider" in model_kwargs
+    assert model_kwargs["custom_llm_provider"] == "openai"
+
+    # Test without custom_llm_provider
+    llm_no_provider = LiteLLM(model="gpt-3.5-turbo")
+    model_kwargs_no_provider = llm_no_provider._model_kwargs
+    assert "custom_llm_provider" not in model_kwargs_no_provider

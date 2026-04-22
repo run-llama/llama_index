@@ -46,6 +46,9 @@ class SimilarityMode(str, Enum):
 
 def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
+    if not embeddings:
+        raise ValueError("No embeddings to aggregate")
+
     return np.array(embeddings).mean(axis=0).tolist()
 
 
@@ -92,6 +95,12 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     embeddings_cache: Optional[Any] = Field(
         default=None,
         description="Cache for the embeddings: if None, the embeddings are not cached",
+    )
+    # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
+    rate_limiter: Optional[Any] = Field(
+        default=None,
+        description="Rate limiter instance to throttle API calls.",
+        exclude=True,
     )
 
     @model_validator(mode="after")
@@ -146,6 +155,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
+                if self.rate_limiter is not None:
+                    self.rate_limiter.acquire()
                 query_embedding = self._get_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
@@ -155,6 +166,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     cached_key = next(iter(cached_emb.keys()))
                     query_embedding = cached_emb[cached_key]
                 else:
+                    if self.rate_limiter is not None:
+                        self.rate_limiter.acquire()
                     query_embedding = self._get_query_embedding(query)
                     self.embeddings_cache.put(
                         key=query,
@@ -189,6 +202,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
+                if self.rate_limiter is not None:
+                    await self.rate_limiter.async_acquire()
                 query_embedding = await self._aget_query_embedding(query)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
@@ -198,6 +213,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     cached_key = next(iter(cached_emb.keys()))
                     query_embedding = cached_emb[cached_key]
                 else:
+                    if self.rate_limiter is not None:
+                        await self.rate_limiter.async_acquire()
                     query_embedding = await self._aget_query_embedding(query)
                     await self.embeddings_cache.aput(
                         key=query,
@@ -277,6 +294,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return await asyncio.gather(
             *[self._aget_text_embedding(text) for text in texts]
         )
+
+    async def _aget_text_embeddings_rate_limited(
+        self, texts: List[str]
+    ) -> List[Embedding]:
+        """Acquire rate limiter before delegating to _aget_text_embeddings."""
+        if self.rate_limiter is not None:
+            await self.rate_limiter.async_acquire()
+        return await self._aget_text_embeddings(texts)
 
     def _get_text_embeddings_cached(self, texts: List[str]) -> List[Embedding]:
         """
@@ -365,6 +390,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
+                if self.rate_limiter is not None:
+                    self.rate_limiter.acquire()
                 text_embedding = self._get_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
@@ -374,6 +401,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     cached_key = next(iter(cached_emb.keys()))
                     text_embedding = cached_emb[cached_key]
                 else:
+                    if self.rate_limiter is not None:
+                        self.rate_limiter.acquire()
                     text_embedding = self._get_text_embedding(text)
                     self.embeddings_cache.put(
                         key=text,
@@ -409,6 +438,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
+                if self.rate_limiter is not None:
+                    await self.rate_limiter.async_acquire()
                 text_embedding = await self._aget_text_embedding(text)
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
@@ -418,6 +449,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     cached_key = next(iter(cached_emb.keys()))
                     text_embedding = cached_emb[cached_key]
                 else:
+                    if self.rate_limiter is not None:
+                        await self.rate_limiter.async_acquire()
                     text_embedding = await self._aget_text_embedding(text)
                     await self.embeddings_cache.aput(
                         key=text,
@@ -469,6 +502,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
                 ) as event:
+                    if self.rate_limiter is not None:
+                        self.rate_limiter.acquire()
                     if not self.embeddings_cache:
                         embeddings = self._get_text_embeddings(cur_batch)
                     elif self.embeddings_cache is not None:
@@ -492,7 +527,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
     @dispatcher.span
     async def aget_text_embedding_batch(
-        self, texts: List[str], show_progress: bool = False
+        self,
+        texts: List[str],
+        show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
         num_workers = self.num_workers
@@ -521,7 +559,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 callback_payloads.append((event_id, cur_batch))
 
                 if not self.embeddings_cache:
-                    embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                    embeddings_coroutines.append(
+                        self._aget_text_embeddings_rate_limited(cur_batch)
+                    )
                 elif self.embeddings_cache is not None:
                     embeddings_coroutines.append(
                         self._aget_text_embeddings_cached(cur_batch)

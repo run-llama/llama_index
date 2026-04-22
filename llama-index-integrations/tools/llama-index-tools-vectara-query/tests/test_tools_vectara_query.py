@@ -285,7 +285,7 @@ def vectara2():
     except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
-    file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
+    file_path = "docs/examples/data/paul_graham/paul_graham_essay.txt"
     id = vectara2.insert_file(
         file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
     )

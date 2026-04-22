@@ -27,18 +27,18 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-databricks"
-version = "0.5.0"
+version = "0.6.1"
 description = "llama-index vector_stores databricks vector search integration"
 authors = [
     {name = "Alberto Da Costa <alberto@bamelevate.com>"},
     {name = "Nickhil Nabar <nickhil@bamelevate.com"},
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "databricks-vectorsearch>=0.21,<0.22",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

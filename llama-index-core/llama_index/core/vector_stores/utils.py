@@ -63,7 +63,7 @@ def node_to_metadata_dict(
     node_dict["embedding"] = None
 
     # dump remainder of node_dict to json string
-    metadata["_node_content"] = json.dumps(node_dict)
+    metadata["_node_content"] = json.dumps(node_dict, ensure_ascii=False)
     metadata["_node_type"] = node.class_name()
 
     # store ref doc id at top level to allow metadata filtering
@@ -113,8 +113,10 @@ def build_metadata_filter_fn(
         def _process_filter_match(
             operator: FilterOperator, value: Any, metadata_value: Any
         ) -> bool:
+            """Evaluate a single filter operator against a metadata value."""
             if metadata_value is None:
                 return False
+
             if operator == FilterOperator.EQ:
                 return metadata_value == value
             if operator == FilterOperator.NE:
@@ -134,11 +136,24 @@ def build_metadata_filter_fn(
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
             if operator == FilterOperator.TEXT_MATCH:
-                return value.lower() in metadata_value.lower()
+                if isinstance(value, str) and isinstance(metadata_value, str):
+                    return value in metadata_value
+                raise TypeError(
+                    "Both metadata_value and value should be strings to be used with a "
+                    "TEXT_MATCH filter"
+                )
+            if operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+                if isinstance(value, str) and isinstance(metadata_value, str):
+                    return value.lower() in metadata_value.lower()
+                raise TypeError(
+                    "Both metadata_value and value should be strings to be used with a "
+                    "TEXT_MATCH_INSENSITIVE filter"
+                )
             if operator == FilterOperator.ALL:
                 return all(val in metadata_value for val in value)
             if operator == FilterOperator.ANY:
                 return any(val in metadata_value for val in value)
+
             raise ValueError(f"Invalid operator: {operator}")
 
         metadata = metadata_lookup_fn(node_id)
@@ -167,10 +182,13 @@ def build_metadata_filter_fn(
 
         if filter_condition == FilterCondition.AND:
             return all(filter_matches_list)
-        elif filter_condition == FilterCondition.OR:
+        if filter_condition == FilterCondition.OR:
             return any(filter_matches_list)
-        else:
-            raise ValueError(f"Invalid filter condition: {filter_condition}")
+        if filter_condition == FilterCondition.NOT:
+            # Match when none of the filters match.
+            return not any(filter_matches_list)
+
+        raise ValueError(f"Invalid filter condition: {filter_condition}")
 
     return filter_fn
 

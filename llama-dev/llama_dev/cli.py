@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.theme import Theme
 
 from .pkg import pkg
+from .release import release
 from .test import test
 
 LLAMA_DEV_THEME = Theme(
@@ -40,3 +41,4 @@ def cli(ctx, repo_root: str, debug: bool):
 
 cli.add_command(pkg)
 cli.add_command(test)
+cli.add_command(release)

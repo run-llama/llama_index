@@ -76,6 +76,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[Type[BaseModel]] = None,
         use_async: bool = False,
         streaming: bool = False,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """
@@ -99,6 +100,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 response synthesizer.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
+            verbose (bool): Whether to print verbose output.
 
         """
         llm = llm or Settings.llm
@@ -113,6 +115,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
+            verbose=verbose,
         )
 
         callback_manager = callback_manager or Settings.callback_manager

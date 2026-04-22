@@ -248,20 +248,15 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             new_chunk = True
 
             # add overlap to the next chunk using the last one first
-            # there is a small issue with this logic. If the chunk directly after
-            # the overlap is really big, then we could go over the chunk_size, and
-            # in theory the correct thing to do would be to remove some/all of the
-            # overlap. However, it would complicate the logic further without
-            # much real world benefit, so it's not implemented now.
             if len(last_chunk) > 0:
                 last_index = len(last_chunk) - 1
                 while (
                     last_index >= 0
                     and cur_chunk_len + last_chunk[last_index][1] <= self.chunk_overlap
                 ):
-                    text, length = last_chunk[last_index]
-                    cur_chunk_len += length
-                    cur_chunk.insert(0, (text, length))
+                    overlap_text, overlap_length = last_chunk[last_index]
+                    cur_chunk_len += overlap_length
+                    cur_chunk.insert(0, (overlap_text, overlap_length))
                     last_index -= 1
 
         split_idx = 0
@@ -273,6 +268,17 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 # if adding split to current chunk exceeds chunk size: close out chunk
                 close_chunk()
             else:
+                # If this is a new chunk with overlap, and adding the split would
+                # exceed chunk_size, remove overlap to make room
+                if new_chunk and cur_chunk_len + cur_split.token_size > chunk_size:
+                    # Remove overlap from the beginning until split fits
+                    while (
+                        len(cur_chunk) > 0
+                        and cur_chunk_len + cur_split.token_size > chunk_size
+                    ):
+                        _, length = cur_chunk.pop(0)
+                        cur_chunk_len -= length
+
                 if (
                     cur_split.is_sentence
                     or cur_chunk_len + cur_split.token_size <= chunk_size

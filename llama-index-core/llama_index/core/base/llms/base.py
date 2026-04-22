@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import (
     Any,
     List,
+    Optional,
     Sequence,
 )
 
@@ -28,6 +29,12 @@ class BaseLLM(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
+    )
+    # Expected type: BaseRateLimiter (from llama_index.core.rate_limiter)
+    rate_limiter: Optional[Any] = Field(
+        default=None,
+        description="Rate limiter instance to throttle API calls.",
+        exclude=True,
     )
 
     @model_validator(mode="after")

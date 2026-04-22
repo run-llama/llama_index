@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP, Context
@@ -14,6 +14,8 @@ def get_tools_from_mcp_url(
     command_or_url: str,
     client: Optional[ClientSession] = None,
     allowed_tools: Optional[List[str]] = None,
+    global_partial_params: Optional[Dict[str, Any]] = None,
+    partial_params_by_tool: Optional[Dict[str, Dict[str, Any]]] = None,
     include_resources: bool = False,
 ) -> List[FunctionTool]:
     """
@@ -23,12 +25,19 @@ def get_tools_from_mcp_url(
         command_or_url: The command to run or the URL to connect to.
         client (optional): The client to use to connect to the MCP server.
         allowed_tools (optional): The tool names to allow from the MCP server.
+        global_partial_params: A dict of params to apply to all tools globally.
+        partial_params_by_tool: A dict mapping tool names to param overrides.
+                                Values override global_partial_params. Use None as a value to remove a global param for a specific tool.
         include_resources (optional): Whether to include resources in the tool list.
 
     """
     client = client or BasicMCPClient(command_or_url)
     tool_spec = McpToolSpec(
-        client, allowed_tools=allowed_tools, include_resources=include_resources
+        client,
+        allowed_tools=allowed_tools,
+        global_partial_params=global_partial_params,
+        partial_params_by_tool=partial_params_by_tool,
+        include_resources=include_resources,
     )
     return tool_spec.to_tool_list()
 
@@ -37,6 +46,8 @@ async def aget_tools_from_mcp_url(
     command_or_url: str,
     client: Optional[ClientSession] = None,
     allowed_tools: Optional[List[str]] = None,
+    global_partial_params: Optional[Dict[str, Any]] = None,
+    partial_params_by_tool: Optional[Dict[str, Dict[str, Any]]] = None,
     include_resources: bool = False,
 ) -> List[FunctionTool]:
     """
@@ -46,12 +57,19 @@ async def aget_tools_from_mcp_url(
         command_or_url: The command to run or the URL to connect to.
         client (optional): The client to use to connect to the MCP server.
         allowed_tools (optional): The tool names to allow from the MCP server.
+        global_partial_params: A dict of params to apply to all tools globally.
+        partial_params_by_tool: A dict mapping tool names to param overrides.
+                                Values override global_partial_params. Use None as a value to remove a global param for a specific tool.
         include_resources (optional): Whether to include resources in the tool list.
 
     """
     client = client or BasicMCPClient(command_or_url)
     tool_spec = McpToolSpec(
-        client, allowed_tools=allowed_tools, include_resources=include_resources
+        client,
+        allowed_tools=allowed_tools,
+        global_partial_params=global_partial_params,
+        partial_params_by_tool=partial_params_by_tool,
+        include_resources=include_resources,
     )
     return await tool_spec.to_tool_list_async()
 

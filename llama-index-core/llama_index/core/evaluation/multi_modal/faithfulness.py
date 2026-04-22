@@ -150,12 +150,14 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
+        image_nodes: List[Union[ImageBlock, TextBlock]] = []
+
         if image_paths:
-            image_nodes: List[Any] = [
-                ImageBlock(path=Path(image_path)) for image_path in image_paths
-            ]
+            image_nodes.extend(
+                [ImageBlock(path=Path(image_path)) for image_path in image_paths]
+            )
         if image_urls:
-            image_nodes = [ImageBlock(url=image_url) for image_url in image_urls]
+            image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
         image_nodes.append(TextBlock(text=fmt_prompt))
 

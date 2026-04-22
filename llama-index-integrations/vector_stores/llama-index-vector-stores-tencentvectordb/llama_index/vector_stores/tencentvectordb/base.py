@@ -145,6 +145,11 @@ class CollectionParams:
         self.drop_exists = drop_exists
         self._filter_fields = filter_fields or []
 
+    @property
+    def filter_fields(self) -> List[FilterField]:
+        """Get the filter fields for the collection."""
+        return self._filter_fields
+
 
 class TencentVectorDB(BasePydanticVectorStore):
     """

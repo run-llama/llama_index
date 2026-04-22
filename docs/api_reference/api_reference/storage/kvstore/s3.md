@@ -1,0 +1,3 @@
+::: llama_index.storage.kvstore.s3
+options:
+members: - S3DBKVStore

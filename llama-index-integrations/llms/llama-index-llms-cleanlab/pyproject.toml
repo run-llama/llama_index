@@ -12,7 +12,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-llms-cleanlab"
-version = "0.6.0"
+version = "0.7.0"
 description = "llama-index llms cleanlab integration"
 authors = [{name = "Ashish Sardana", email = "ashishsardana21@gmail.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "cleanlab-tlm>=1.1.2,<2",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

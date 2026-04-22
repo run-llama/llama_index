@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from typing import AsyncGenerator, List, Sequence
 from unittest.mock import patch
 
+
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -10,7 +11,8 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
 )
-from llama_index.llms.dashscope.base import DashScope
+from llama_index.llms.dashscope.base import DASHSCOPE_MODEL_META, DashScope
+from llama_index.llms.dashscope.utils import chat_message_to_dashscope_messages
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 
@@ -309,3 +311,54 @@ async def test_astream_chat_with_tools(monkeypatch, dashscope_llm):
         "function": {"name": "dummy_tool", "arguments": '{"param": "value"}'},
     }
     assert tool_calls[0] == expected_tool_call, "tool_calls is not as expected"
+
+
+def test_chat_message_to_dashscope_messages_without_tool_calls():
+    """Test assistant message conversion without tool calls."""
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="content",
+        additional_kwargs={"not_tool_calls": "tool"},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert "tool_calls" not in result[0]
+
+
+def test_chat_message_to_dashscope_messages_with_tool_calls():
+    """Test assistant message conversion with tool calls."""
+    tool_calls = [{"id": "123", "type": "function", "function": {"name": "test"}}]
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="content",
+        additional_kwargs={"tool_calls": tool_calls},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert result[0]["tool_calls"] == tool_calls
+
+
+def test_chat_message_to_dashscope_messages_with_tool():
+    """Test tool message conversion."""
+    msg = ChatMessage(
+        role=MessageRole.TOOL,
+        content="content",
+        additional_kwargs={"tool_call_id": "123", "name": "mock_name"},
+    )
+    result = chat_message_to_dashscope_messages([msg])
+    assert result[0]["role"] == "tool"
+    assert result[0]["tool_call_id"] == "123"
+
+
+def test_context_window_greater_than_num_output():
+    """
+    Regression test for GitHub issue #14722.
+
+    context_window must always be greater than num_output, otherwise
+    PromptHelper._get_available_context_size() will raise a ValueError
+    on every query.
+    """
+    for model_name, meta in DASHSCOPE_MODEL_META.items():
+        assert meta["context_window"] > meta["num_output"], (
+            f"Model '{model_name}' has context_window ({meta['context_window']}) "
+            f"<= num_output ({meta['num_output']}), which will cause a ValueError "
+            f"in PromptHelper. See GitHub issue #14722."
+        )

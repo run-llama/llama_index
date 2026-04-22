@@ -41,7 +41,7 @@ class SimpleKVStore(MutableMappingKVStore[dict]):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(self._collections_mappings))
 
     @classmethod
@@ -51,7 +51,6 @@ class SimpleKVStore(MutableMappingKVStore[dict]):
         """Load a SimpleKVStore from a persist path and filesystem."""
         fs = fs or fsspec.filesystem("file")
         logger.debug(f"Loading {__name__} from {persist_path}.")
-        print(f"Loading {__name__} from {persist_path}.")
         with fs.open(persist_path, "rb") as f:
             data = json.load(f)
         return cls(data)
