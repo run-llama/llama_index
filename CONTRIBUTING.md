@@ -31,6 +31,13 @@ Whenever you make changes, make sure they comply with linting rules:
 uv run make lint
 ```
 
+If your change touches dependencies (`pyproject.toml` / `uv.lock`), run the
+dependency hygiene helper from the repository root:
+
+```bash
+uv run make deps-hygiene
+```
+
 3. Navigate to the project folder you want to work on. For example, if you want to work on the OpenAI LLM integration:
 
 ```bash
