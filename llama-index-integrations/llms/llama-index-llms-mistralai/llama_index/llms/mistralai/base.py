@@ -56,7 +56,7 @@ from llama_index.llms.mistralai.utils import (
 from mistralai_azure import MistralAzure
 import mistralai_azure.models as mistral_azure_models
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 import mistralai.models as mistral_models
 
 if TYPE_CHECKING:
