@@ -2,6 +2,18 @@
 title: Node Postprocessor Modules
 ---
 
+Node postprocessors run between retrieval and response synthesis: they take the nodes returned by a retriever and transform, filter, or re-order them before the LLM sees them. The most common kind is a **reranker**, covered immediately below.
+
+## Choosing a reranker
+
+- No API key, local, recommended default: [`SentenceTransformerRerank`](#sentencetransformerrerank), a cross-encoder via `sentence-transformers`. Use `cross-encoder/ms-marco-MiniLM-L6-v2` for speed, `Qwen/Qwen3-Reranker-0.6B` for stronger multilingual quality.
+- Hosted API, minimal setup: [`CohereRerank`](#coherererank), [`JinaRerank`](#jinarerank), [`VoyageAIRerank`](/python/examples/node_postprocessor/voyageairerank), [`MixedbreadAIRerank`](/python/examples/node_postprocessor/mixedbreadairerank), [`NVIDIARerank`](/python/examples/node_postprocessor/nvidiarerank).
+- Highest quality, latency tolerant: [`LLMRerank`](#llm-rerank), [`RankGPTRerank`](#beta-rankgpt), [`RankLLMRerank`](#rankllm). These use an LLM itself to judge relevance.
+- Token-level late interaction: [`ColbertRerank`](#colbert-reranker), useful for narrow technical terminology.
+- Multimodal (documents as images): [`ColPaliRerank`](/python/examples/node_postprocessor/colpalirerank).
+
+See also the [rerankers overview page](/python/framework/module_guides/models/rerankers) for a broader framing.
+
 ## SimilarityPostprocessor
 
 Used to remove nodes that are below a similarity score threshold.
@@ -86,7 +98,7 @@ Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N 
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 
 postprocessor = CohereRerank(
-    top_n=2, model="rerank-english-v2.0", api_key="YOUR COHERE API KEY"
+    top_n=2, model="rerank-v3.5", api_key="YOUR COHERE API KEY"
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -103,7 +115,7 @@ from llama_index.core.postprocessor import SentenceTransformerRerank
 
 # We choose a model with relatively high speed and decent accuracy.
 postprocessor = SentenceTransformerRerank(
-    model="cross-encoder/ms-marco-MiniLM-L-2-v2", top_n=3
+    model="cross-encoder/ms-marco-MiniLM-L2-v2", top_n=3
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -111,7 +123,21 @@ postprocessor.postprocess_nodes(nodes)
 
 Full notebook guide is available [here](/python/examples/node_postprocessor/sentencetransformerrerank).
 
-Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
+Please also refer to the [`sentence-transformers` docs](https://sbert.net/docs/cross_encoder/pretrained_models.html) for a more complete list of cross-encoder models with speed/accuracy tradeoffs. The constructor's `model` argument defaults to `cross-encoder/stsb-distilroberta-base`, which was trained for semantic textual similarity rather than passage re-ranking. For retrieval workloads we strongly recommend passing an MS MARCO-trained model like `cross-encoder/ms-marco-MiniLM-L6-v2` (shown above is the smaller `L2` variant) or a modern option like `Qwen/Qwen3-Reranker-0.6B` (see below).
+
+For stronger accuracy on multilingual content, swap in a recent cross-encoder such as [`Qwen/Qwen3-Reranker-0.6B`](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B):
+
+```python
+from llama_index.core.postprocessor import SentenceTransformerRerank
+
+postprocessor = SentenceTransformerRerank(
+    model="Qwen/Qwen3-Reranker-0.6B", top_n=3
+)
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+This still runs locally with no API key, at the cost of extra compute per query compared to the MiniLM baselines.
 
 ## LLM Rerank
 
@@ -135,7 +161,9 @@ Uses the "Jina ReRank" functionality to re-order nodes, and returns the top N no
 from llama_index.postprocessor.jinaai_rerank import JinaRerank
 
 postprocessor = JinaRerank(
-    top_n=2, model="jina-reranker-v1-base-en", api_key="YOUR JINA API KEY"
+    top_n=2,
+    model="jina-reranker-v2-base-multilingual",
+    api_key="YOUR JINA API KEY",
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -265,7 +293,7 @@ Uses RankGPT agent to rerank documents according to relevance. Returns the top N
 ```python
 from llama_index.postprocessor.rankgpt_rerank import RankGPTRerank
 
-postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-3.5-turbo-16k"))
+postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-4o-mini"))
 
 postprocessor.postprocess_nodes(nodes)
 ```
@@ -311,20 +339,43 @@ reranker.postprocess_nodes(nodes)
 
 A full [notebook example is available](/python/examples/node_postprocessor/rankllm).
 
-## All Notebooks
+## All notebooks
+
+Local / self-hosted rerankers:
+
+- [SentenceTransformer Rerank](/python/examples/node_postprocessor/sentencetransformerrerank): cross-encoders via `sentence-transformers` (recommended default for local reranking).
+- [FlagEmbedding Reranker](/python/examples/node_postprocessor/flagembeddingreranker): `BAAI/bge-reranker-*` family.
+- [Colbert Rerank](/python/examples/node_postprocessor/colbertrerank): token-level late interaction with ColBERT v2.
+- [OpenVINO Rerank](/python/examples/node_postprocessor/openvino_rerank): Intel-optimized cross-encoder inference.
+- [RankLLM](/python/examples/node_postprocessor/rankllm): instruction-tuned listwise LLM rerankers (RankZephyr, RankVicuna).
+
+Hosted API rerankers:
+
+- [Cohere Rerank](/python/examples/node_postprocessor/coherererank)
+- [JinaAI Rerank](/python/examples/node_postprocessor/jinarerank)
+- [Mixedbread AI Rerank](/python/examples/node_postprocessor/mixedbreadairerank)
+- [VoyageAI Rerank](/python/examples/node_postprocessor/voyageairerank)
+- [NVIDIA Rerank (NIM)](/python/examples/node_postprocessor/nvidiarerank)
+- [AIMon Rerank](/python/examples/node_postprocessor/aimonrerank)
+- [IBM watsonx.ai](/python/examples/node_postprocessor/ibm_watsonx)
+
+LLM-as-reranker:
+
+- [LLM Reranker Gatsby](/python/examples/node_postprocessor/llmreranker-gatsby)
+- [LLM Reranker Lyft 10k](/python/examples/node_postprocessor/llmreranker-lyft-10k)
+- [Structured LLM Reranker Lyft 10k](/python/examples/node_postprocessor/structured-llmreranker-lyft-10k)
+- [RankGPT](/python/examples/node_postprocessor/rankgpt)
+
+Multimodal rerankers:
+
+- [ColPali Rerank](/python/examples/node_postprocessor/colpalirerank): vision-language reranking over document images.
+
+Other node postprocessors:
 
 - [Sentence Optimizer](/python/examples/node_postprocessor/optimizerdemo)
-- [Cohere Rerank](/python/examples/node_postprocessor/coherererank)
-- [LLM Reranker Lyft 10k](/python/examples/node_postprocessor/llmreranker-lyft-10k)
-- [LLM Reranker Gatsby](/python/examples/node_postprocessor/llmreranker-gatsby)
 - [Recency](/python/examples/node_postprocessor/recencypostprocessordemo)
 - [Time Weighted](/python/examples/node_postprocessor/timeweightedpostprocessordemo)
 - [PII](/python/examples/node_postprocessor/pii)
 - [PrevNext](/python/examples/node_postprocessor/prevnextpostprocessordemo)
 - [Metadata Replacement](/python/examples/node_postprocessor/metadatareplacementdemo)
 - [Long Context Reorder](/python/examples/node_postprocessor/longcontextreorder)
-- [RankGPT](/python/examples/node_postprocessor/rankgpt)
-- [Colbert Rerank](/python/examples/node_postprocessor/colbertrerank)
-- [JinaAI Rerank](/python/examples/node_postprocessor/jinarerank)
-- [MixedBread Rerank](/python/examples/cookbooks/mixedbread_reranker)
-- [RankLLM](/python/examples/node_postprocessor/rankllm)
