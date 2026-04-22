@@ -143,10 +143,10 @@ class LLMCompletionInProgressEvent(BaseEvent):
         return "LLMCompletionInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+            data["response"]["raw"] = self.response.raw.model_dump()
+        return data
 
 
 class LLMCompletionEndEvent(BaseEvent):
@@ -168,10 +168,10 @@ class LLMCompletionEndEvent(BaseEvent):
         return "LLMCompletionEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+            data["response"]["raw"] = self.response.raw.model_dump()
+        return data
 
 
 class LLMChatStartEvent(BaseEvent):
@@ -215,10 +215,10 @@ class LLMChatInProgressEvent(BaseEvent):
         return "LLMChatInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+            data["response"]["raw"] = self.response.raw.model_dump()
+        return data
 
 
 class LLMChatEndEvent(BaseEvent):
@@ -240,7 +240,7 @@ class LLMChatEndEvent(BaseEvent):
         return "LLMChatEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         if self.response is not None and isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+            data["response"]["raw"] = self.response.raw.model_dump()
+        return data
