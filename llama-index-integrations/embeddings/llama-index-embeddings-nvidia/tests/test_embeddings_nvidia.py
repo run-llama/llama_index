@@ -8,6 +8,7 @@ from llama_index.embeddings.nvidia import NVIDIAEmbedding
 from openai import AuthenticationError
 
 from pytest_httpx import HTTPXMock
+import httpx
 
 
 @pytest.fixture()
@@ -46,6 +47,25 @@ def test_nvidia_embedding_param_setting():
     assert emb._aclient.timeout == 20
     assert emb._aclient.max_retries == 10
     assert emb.embed_batch_size == 15
+
+
+def test_nvidia_embedding_custom_http_clients():
+    sync_client = httpx.Client(verify=False)
+    async_client = httpx.AsyncClient(verify=False)
+
+    emb = NVIDIAEmbedding(
+        api_key="BOGUS",
+        model="NV-Embed-QA",
+        http_client=sync_client,
+        async_http_client=async_client,
+    )
+
+    assert emb._http_client is sync_client
+    assert emb._async_http_client is async_client
+
+    # Ensure the underlying OpenAI clients were constructed with the custom clients
+    assert emb._client._client is sync_client
+    assert emb._aclient._client is async_client
 
 
 def test_nvidia_embedding_throws_on_batches_larger_than_259():

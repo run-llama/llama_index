@@ -6,7 +6,7 @@ title: Advanced Retrieval Strategies
 
 There are a variety of more advanced retrieval strategies you may wish to try, each with different benefits:
 
-- [Reranking](/python/examples/node_postprocessor/coherererank)
+- [Reranking](/python/framework/module_guides/models/rerankers)
 - [Recursive retrieval](/python/examples/query_engine/pdf_tables/recursive_retriever)
 - [Embedded tables](/python/examples/query_engine/sec_tables/tesla_10q_table)
 - [Small-to-big retrieval](/python/examples/node_postprocessor/metadatareplacementdemo)
