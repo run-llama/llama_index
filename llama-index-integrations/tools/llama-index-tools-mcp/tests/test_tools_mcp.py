@@ -86,15 +86,38 @@ async def test_pydantic_models_tool(client: BasicMCPClient):
     tool = tools[0]
     assert tool.metadata.name == "test_pydantic"
 
-    result = await tool.async_fn(
+    result = await tool.acall(
         name={"name": "John Doe"},
         method={"method": "POST"},
         lst={"lst": [1, 2, 3, 4, 5]},
     )
 
-    assert (
-        "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content[0].text
-    )
+    assert "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content
+
+
+@pytest.mark.asyncio
+async def test_image_tool_returns_image_block(client: BasicMCPClient):
+    """Test that generate_image tool returns an ImageBlock in ToolOutput."""
+    from llama_index.core.base.llms.types import ImageBlock
+
+    tool_spec = McpToolSpec(client, allowed_tools=["generate_image"])
+    tools = await tool_spec.to_tool_list_async()
+
+    tool = tools[0]
+    assert tool.metadata.name == "generate_image"
+
+    result = await tool.acall(width=8, height=8, color="red")
+
+    # ToolOutput.blocks should contain an ImageBlock
+    assert result.blocks is not None
+    image_blocks = [b for b in result.blocks if isinstance(b, ImageBlock)]
+    assert len(image_blocks) == 1
+
+    img = image_blocks[0]
+    assert img.image_mimetype == "image/png"
+    # image field should be populated (base64-encoded PNG bytes)
+    assert img.image is not None
+    assert len(img.image) > 0
 
 
 def test_pydantic_models_schema_structure(client: BasicMCPClient):
