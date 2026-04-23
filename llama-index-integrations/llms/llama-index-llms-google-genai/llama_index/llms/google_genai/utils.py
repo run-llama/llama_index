@@ -273,6 +273,27 @@ def chat_from_gemini_response(
     )
 
 
+def extract_token_usage_from_response(
+    response: types.GenerateContentResponse,
+) -> Dict[str, Any]:
+    """Extract token usage metadata from a generate_content response."""
+    if not response.usage_metadata:
+        return {}
+
+    additional_kwargs: Dict[str, Any] = {
+        "prompt_tokens": response.usage_metadata.prompt_token_count,
+        "completion_tokens": response.usage_metadata.candidates_token_count,
+        "total_tokens": response.usage_metadata.total_token_count,
+    }
+
+    if response.usage_metadata.thoughts_token_count:
+        additional_kwargs["thoughts_token_count"] = (
+            response.usage_metadata.thoughts_token_count
+        )
+
+    return additional_kwargs
+
+
 async def create_file_part(
     file_buffer: IOBase,
     mime_type: str,
