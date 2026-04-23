@@ -227,6 +227,63 @@ def test_pipeline_update_metadata() -> None:
         assert node.metadata == new_metadata
 
 
+def test_pipeline_does_not_re_embed_on_volatile_metadata_change() -> None:
+    """Regression test: fields listed in `excluded_embed_metadata_keys` must
+    NOT trigger re-embedding on upsert. This covers the churn scenario where
+    volatile metadata such as file-stat timestamps or sizes would otherwise
+    force redundant embedding API calls for byte-identical content.
+
+    Companion to `test_pipeline_update_metadata`, which verifies the inverse:
+    a change to a content-relevant (non-excluded) metadata field DOES trigger
+    re-processing.
+    """
+    from unittest.mock import MagicMock
+
+    embed_model = MockEmbedding(embed_dim=4)
+    # Wrap the batch method so we can count invocations.
+    embed_model.get_text_embedding_batch = MagicMock(  # type: ignore[method-assign]
+        wraps=embed_model.get_text_embedding_batch
+    )
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=256, chunk_overlap=0),
+            embed_model,
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    doc = Document(
+        id_="0",
+        text="hello world, this is a short test document for the pipeline",
+        metadata={"tag": "v1", "last_modified_date": "2026-04-22"},
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+
+    # Phase 1: first ingest (should embed).
+    pipeline.run(documents=[doc])
+    embed_calls_after_phase1 = embed_model.get_text_embedding_batch.call_count
+    assert embed_calls_after_phase1 >= 1
+
+    # Phase 2: mutate only the volatile field, which is in
+    # `excluded_embed_metadata_keys`. This must NOT re-embed.
+    doc.metadata["last_modified_date"] = "2026-04-23"
+    pipeline.run(documents=[doc])
+    assert embed_model.get_text_embedding_batch.call_count == embed_calls_after_phase1, (
+        "Re-embedding was triggered by a change to metadata listed in "
+        "excluded_embed_metadata_keys. This re-introduces the churn bug."
+    )
+
+    # Phase 3: mutate a non-excluded (content-relevant) field. This SHOULD
+    # re-embed, preserving the behavior added in #18303 for #17871.
+    doc.metadata["tag"] = "v2"
+    pipeline.run(documents=[doc])
+    assert embed_model.get_text_embedding_batch.call_count > embed_calls_after_phase1, (
+        "Content-relevant metadata change was not detected. The fix must still "
+        "invalidate the cache when a non-excluded field changes."
+    )
+
+
 def test_pipeline_dedup_duplicates_only() -> None:
     documents = [
         Document(text="one", doc_id="1"),
