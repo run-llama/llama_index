@@ -182,6 +182,62 @@ def arun_transformations_wrapper(
     return nodes
 
 
+def _run_transformations_with_cache_snapshot(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+) -> tuple:
+    """Run transformations and return (nodes, cache_data) for multi-worker use.
+
+    Returning the cache snapshot lets the parent process merge new entries back
+    into its own cache after the worker exits, so subsequent runs (or persist())
+    can use those entries.  Without this, spawned worker processes mutate their
+    own in-memory cache copies which are discarded on exit.  See issue #21300.
+    """
+    result_nodes = run_transformations(
+        nodes, transformations, in_place, cache, cache_collection
+    )
+    cache_data: dict = {}
+    if cache is not None:
+        effective_collection = cache_collection or cache.collection
+        cache_data = cache.cache.get_all(collection=effective_collection)
+    return result_nodes, cache_data
+
+
+def _arun_transformations_wrapper_with_cache_snapshot(
+    nodes: Sequence[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+    **kwargs: Any,
+) -> tuple:
+    """Async-wrapper variant of _run_transformations_with_cache_snapshot.
+
+    Mirrors arun_transformations_wrapper but also returns the cache snapshot so
+    the parent process can merge new entries after all workers finish.
+    """
+    loop = asyncio.new_event_loop()
+    result_nodes = loop.run_until_complete(
+        arun_transformations(
+            nodes=nodes,
+            transformations=transformations,
+            in_place=in_place,
+            cache=cache,
+            cache_collection=cache_collection,
+            **kwargs,
+        )
+    )
+    loop.close()
+    cache_data: dict = {}
+    if cache is not None:
+        effective_collection = cache_collection or cache.collection
+        cache_data = cache.cache.get_all(collection=effective_collection)
+    return result_nodes, cache_data
+
+
 class DocstoreStrategy(str, Enum):
     """
     Document de-duplication de-deduplication strategies work by comparing the hashes or ids stored in the document store.
@@ -560,8 +616,8 @@ class IngestionPipeline(BaseModel):
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )
-                nodes_parallel = p.starmap(
-                    run_transformations,
+                results_with_cache = p.starmap(
+                    _run_transformations_with_cache_snapshot,
                     zip(
                         node_batches,
                         repeat(self.transformations),
@@ -570,7 +626,17 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])  # type: ignore
+                nodes = reduce(lambda x, y: x + y, [r[0] for r in results_with_cache], [])  # type: ignore
+                # Merge cache entries written inside worker processes back into
+                # the parent's IngestionCache so subsequent runs and persist()
+                # include them.  Workers receive a pickled snapshot of the cache
+                # but their in-memory writes are discarded on exit; returning the
+                # snapshot and merging here is the fix for issue #21300.
+                if not self.disable_cache and self.cache is not None:
+                    effective_collection = cache_collection or self.cache.collection
+                    for _, worker_cache_data in results_with_cache:
+                        for key, val in worker_cache_data.items():
+                            self.cache.cache.put(key, val, collection=effective_collection)
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -772,7 +838,7 @@ class IngestionPipeline(BaseModel):
                     loop.run_in_executor(
                         p,
                         partial(
-                            arun_transformations_wrapper,
+                            _arun_transformations_wrapper_with_cache_snapshot,
                             transformations=self.transformations,
                             in_place=in_place,
                             cache=self.cache if not self.disable_cache else None,
@@ -782,8 +848,16 @@ class IngestionPipeline(BaseModel):
                     )
                     for batch in node_batches
                 ]
-                result: Sequence[Sequence[BaseNode]] = await asyncio.gather(*tasks)
-                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, result, [])  # type: ignore
+                results_with_cache: list = await asyncio.gather(*tasks)
+                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, [r[0] for r in results_with_cache], [])  # type: ignore
+                # Merge cache entries written inside worker processes back into
+                # the parent's IngestionCache so subsequent runs and persist()
+                # include them.  See issue #21300.
+                if not self.disable_cache and self.cache is not None:
+                    effective_collection = cache_collection or self.cache.collection
+                    for _, worker_cache_data in results_with_cache:
+                        for key, val in worker_cache_data.items():
+                            self.cache.cache.put(key, val, collection=effective_collection)
         else:
             nodes = await arun_transformations(  # type: ignore
                 nodes_to_run,
