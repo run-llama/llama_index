@@ -1,47 +1,45 @@
 import asyncio
 import json
 import logging
+import typing
 from collections.abc import Sequence
 from io import IOBase
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Union,
-    Optional,
-    Type,
-    Tuple,
     List,
     Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
     cast,
 )
-import typing
 
-import google.genai.types as types
 import google.genai
+import google.genai.types as types
 import httpx
-from google.genai import _transformers, Client
-from google.genai import errors
-
-from llama_index.core.bridge.pydantic import BaseModel, ValidationError
+from google.genai import Client, _transformers, errors
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ContentBlock,
+    DocumentBlock,
     ImageBlock,
     MessageRole,
     TextBlock,
-    DocumentBlock,
-    VideoBlock,
     ThinkingBlock,
     ToolCallBlock,
-    ContentBlock,
+    VideoBlock,
 )
+from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
     before_sleep_log,
     retry,
-    retry_if_exception_type,
     retry_if_exception,
+    retry_if_exception_type,
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
@@ -129,9 +127,11 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
             if finish_reason == types.FinishReason.SAFETY and candidate.safety_ratings:
                 relevant_safety = list(
                     filter(
-                        lambda sr: sr.probability
-                        and sr.probability.value
-                        > types.HarmProbability.NEGLIGIBLE.value,
+                        lambda sr: (
+                            sr.probability
+                            and sr.probability.value
+                            > types.HarmProbability.NEGLIGIBLE.value
+                        ),
                         candidate.safety_ratings,
                     )
                 )
@@ -476,6 +476,7 @@ class ChatParams(typing.TypedDict):
     model: str
     history: list[types.Content]
     config: types.GenerateContentConfig
+    service_tier: Literal["priority", "standard", "flex"]
 
 
 async def prepare_chat_params(
@@ -483,6 +484,7 @@ async def prepare_chat_params(
     messages: Sequence[ChatMessage],
     file_mode: Literal["inline", "fileapi", "hybrid"] = "hybrid",
     client: Optional[Client] = None,
+    service_tier: Literal["priority", "standard", "flex"] = "standard",
     **kwargs: Any,
 ) -> tuple[types.Content, ChatParams, list[str]]:
     """
@@ -586,6 +588,7 @@ async def prepare_chat_params(
             config["tools"] = tools
 
     chat_kwargs["config"] = types.GenerateContentConfig(**config)
+    chat_kwargs["service_tier"] = service_tier
 
     return next_msg, chat_kwargs, file_api_names
 
