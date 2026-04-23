@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from elasticsearch import AsyncElasticsearch, Elasticsearch
 from logging import getLogger
@@ -24,6 +24,42 @@ def get_elasticsearch_client(
     username: Optional[str] = None,
     password: Optional[str] = None,
 ) -> AsyncElasticsearch:
+    _, async_es_client = get_elasticsearch_clients(
+        url=url,
+        cloud_id=cloud_id,
+        api_key=api_key,
+        username=username,
+        password=password,
+    )
+
+    return async_es_client
+
+
+def get_sync_elasticsearch_client(
+    url: Optional[str] = None,
+    cloud_id: Optional[str] = None,
+    api_key: Optional[str] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+) -> Elasticsearch:
+    sync_es_client, _ = get_elasticsearch_clients(
+        url=url,
+        cloud_id=cloud_id,
+        api_key=api_key,
+        username=username,
+        password=password,
+    )
+
+    return sync_es_client
+
+
+def get_elasticsearch_clients(
+    url: Optional[str] = None,
+    cloud_id: Optional[str] = None,
+    api_key: Optional[str] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+) -> Tuple[Elasticsearch, AsyncElasticsearch]:
     if url and cloud_id:
         raise ValueError(
             "Both es_url and cloud_id are defined. Please provide only one."
@@ -52,7 +88,7 @@ def get_elasticsearch_client(
 
     sync_es_client.info()  # use sync client so don't have to 'await' to just get info
 
-    return async_es_client
+    return sync_es_client, async_es_client
 
 
 def convert_es_hit_to_node(
