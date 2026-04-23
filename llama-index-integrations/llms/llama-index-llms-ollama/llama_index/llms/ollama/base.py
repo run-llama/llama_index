@@ -136,6 +136,10 @@ class Ollama(FunctionCallingLLM):
         default=None,
         description="Whether to enable or disable thinking in the model. For some models, like gpt-oss, allow 'low', 'medium', or 'high' to tune the trace length.",
     )
+    headers: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Custom HTTP headers for Ollama API requests (e.g. Authorization).",
+    )
 
     _client: Optional[Client] = PrivateAttr()
     _async_client: Optional[AsyncClient] = PrivateAttr()
@@ -155,6 +159,7 @@ class Ollama(FunctionCallingLLM):
         is_function_calling_model: bool = True,
         keep_alive: Optional[Union[float, str]] = None,
         thinking: Optional[Union[bool, Literal["low", "medium", "high"]]] = None,
+        headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -169,6 +174,7 @@ class Ollama(FunctionCallingLLM):
             is_function_calling_model=is_function_calling_model,
             keep_alive=keep_alive,
             thinking=thinking,
+            headers=headers,
             **kwargs,
         )
 
@@ -194,14 +200,20 @@ class Ollama(FunctionCallingLLM):
     @property
     def client(self) -> Client:
         if self._client is None:
-            self._client = Client(host=self.base_url, timeout=self.request_timeout)
+            self._client = Client(
+                host=self.base_url,
+                timeout=self.request_timeout,
+                headers=self.headers or {},
+            )
         return self._client
 
     @property
     def async_client(self) -> AsyncClient:
         if self._async_client is None:
             self._async_client = AsyncClient(
-                host=self.base_url, timeout=self.request_timeout
+                host=self.base_url,
+                timeout=self.request_timeout,
+                headers=self.headers or {},
             )
         return self._async_client
 

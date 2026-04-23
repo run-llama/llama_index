@@ -47,47 +47,6 @@ plugins:
             - ../../llama-index-core
             - ../../llama-index-instrumentation
             - ../../llama-index-experimental
-            - ../../llama-index-packs/llama-index-packs-retry-engine-weaviate
-            - ../../llama-index-packs/llama-index-packs-llava-completion
-            - ../../llama-index-packs/llama-index-packs-zephyr-query-engine
-            - ../../llama-index-packs/llama-index-packs-timescale-vector-autoretrieval
-            - ../../llama-index-packs/llama-index-packs-corrective-rag
-            - ../../llama-index-packs/llama-index-packs-multidoc-autoretrieval
-            - ../../llama-index-packs/llama-index-packs-gmail-openai-agent
-            - ../../llama-index-packs/llama-index-packs-neo4j-query-engine
-            - ../../llama-index-packs/llama-index-packs-resume-screener
-            - ../../llama-index-packs/llama-index-packs-trulens-eval-packs
-            - ../../llama-index-packs/llama-index-packs-evaluator-benchmarker
-            - ../../llama-index-packs/llama-index-packs-vanna
-            - ../../llama-index-packs/llama-index-packs-llama-guard-moderator
-            - ../../llama-index-packs/llama-index-packs-snowflake-query-engine
-            - ../../llama-index-packs/llama-index-packs-self-rag
-            - ../../llama-index-packs/llama-index-packs-self-discover
-            - ../../llama-index-packs/llama-index-packs-llama-dataset-metadata
-            - ../../llama-index-packs/llama-index-packs-stock-market-data-query-engine
-            - ../../llama-index-packs/llama-index-packs-rag-evaluator
-            - ../../llama-index-packs/llama-index-packs-arize-phoenix-query-engine
-            - ../../llama-index-packs/llama-index-packs-panel-chatbot
-            - ../../llama-index-packs/llama-index-packs-multi-tenancy-rag
-            - ../../llama-index-packs/llama-index-packs-streamlit-chatbot
-            - ../../llama-index-packs/llama-index-packs-vectara-rag
-            - ../../llama-index-packs/llama-index-packs-node-parser-semantic-chunking
-            - ../../llama-index-packs/llama-index-packs-dense-x-retrieval
-            - ../../llama-index-packs/llama-index-packs-auto-merging-retriever
-            - ../../llama-index-packs/llama-index-packs-sub-question-weaviate
-            - ../../llama-index-packs/llama-index-packs-deeplake-deepmemory-retriever
-            - ../../llama-index-packs/llama-index-packs-nebulagraph-query-engine
-            - ../../llama-index-packs/llama-index-packs-voyage-query-engine
-            - ../../llama-index-packs/llama-index-packs-sentence-window-retriever
-            - ../../llama-index-packs/llama-index-packs-recursive-retriever
-            - ../../llama-index-packs/llama-index-packs-amazon-product-extraction
-            - ../../llama-index-packs/llama-index-packs-cogniswitch-agent
-            - ../../llama-index-packs/llama-index-packs-ollama-query-engine
-            - ../../llama-index-packs/llama-index-packs-ragatouille-retriever
-            - ../../llama-index-packs/llama-index-packs-fuzzy-citation
-            - ../../llama-index-packs/llama-index-packs-deeplake-multimodal-retrieval
-            - ../../llama-index-packs/llama-index-packs-agent-search-retriever
-            - ../../llama-index-packs/llama-index-packs-fusion-retriever
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-singlestoredb
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-qdrant
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-pinecone
@@ -422,11 +381,6 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-gradient
             - ../../llama-index-integrations/extractors/llama-index-extractors-entity
             - ../../llama-index-integrations/extractors/llama-index-extractors-marvin
-            - ../../llama-index-packs/llama-index-packs-raptor
-            - ../../llama-index-packs/llama-index-packs-code-hierarchy
-            - ../../llama-index-packs/llama-index-packs-cohere-citation-chat
-            - ../../llama-index-packs/llama-index-packs-diff-private-simple-dataset
-            - ../../llama-index-packs/llama-index-packs-koda-retriever
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-baiduvectordb
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-astra-db
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-databricks
@@ -450,7 +404,6 @@ plugins:
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-neptune
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-alephalpha
             - ../../llama-index-integrations/llms/llama-index-llms-alephalpha
-            - ../../llama-index-packs/llama-index-packs-raft-dataset
             - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-elasticsearch
             - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-elasticsearch
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-analyticdb
@@ -507,11 +460,9 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-dashscope
             - ../../llama-index-integrations/llms/llama-index-llms-oci-genai
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-duckdb-retriever
-            - ../../llama-index-packs/llama-index-packs-zenguard
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-api
             - ../../llama-index-integrations/llms/llama-index-llms-text-generation-inference
             - ../../llama-index-integrations/llms/llama-index-llms-huggingface-api
-            - ../../llama-index-packs/llama-index-packs-mixture-of-agents
             - ../../llama-index-integrations/indices/llama-index-indices-managed-vertexai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-ibm
             - ../../llama-index-integrations/llms/llama-index-llms-bedrock-converse
@@ -540,7 +491,6 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-azure-inference
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-lindorm
             - ../../llama-index-integrations/retrievers/llama-index-retrievers-vertexai-search
-            - ../../llama-index-packs/llama-index-packs-longrag
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-textembed
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-tei-rerank
             - ../../llama-index-integrations/readers/llama-index-readers-gitlab
@@ -674,7 +624,6 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-featherlessai
             - ../../llama-index-integrations/llms/llama-index-llms-sarvam
             - ../../llama-index-integrations/tools/llama-index-tools-measurespace
-            - ../../llama-index-packs/llama-index-packs-searchain
             - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-ApertureDB
             - ../../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
             - ../../llama-index-integrations/tools/llama-index-tools-artifact-editor
@@ -734,6 +683,8 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-igpt-email
             - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-opensearch
             - ../../llama-index-integrations/tools/llama-index-tools-igpt-email
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-google-rerank
+            - ../../llama-index-integrations/llms/llama-index-llms-minimax
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:

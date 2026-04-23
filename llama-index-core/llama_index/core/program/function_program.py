@@ -14,6 +14,7 @@ from typing import (
 )
 
 from llama_index.core.bridge.pydantic import (
+    BaseModel,
     ValidationError,
 )
 from llama_index.core.base.llms.types import ChatResponse
@@ -44,6 +45,13 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
         """Model function."""
         if len(args) == 1 and isinstance(args[0], dict) and not kwargs:
             kwargs = args[0]
+        elif len(args) == 1 and not kwargs:
+            # Handle single-field models where the value is passed positionally.
+            # This happens when call_tool() extracts a single argument value.
+            properties = schema.get("properties", {})
+            if len(properties) == 1:
+                field_name = next(iter(properties.keys()))
+                kwargs = {field_name: args[0]}
         return output_cls(**kwargs)
 
     return FunctionTool.from_defaults(
@@ -197,8 +205,53 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         agent_response: AgentChatResponse,
         allow_parallel_tool_calls: bool = False,
     ) -> Union[Model, List[Model]]:
-        """Parse tool outputs."""
-        outputs = [cast(Model, s.raw_output) for s in agent_response.sources]
+        """
+        Parse tool outputs.
+
+        Validates that each tool output is actually a Pydantic model instance.
+
+        Raises:
+            ValueError: LLM did not return any tool calls, or a tool call
+                failed (e.g. Pydantic validation error).
+            TypeError: A tool call returned a non-BaseModel object.
+
+        """
+        if len(agent_response.sources) == 0:
+            raise ValueError(
+                "LLM did not return any tool calls for structured output. "
+                "The model was expected to call a function to produce a "
+                f"{self._output_cls.__name__} object, but instead returned "
+                f"plain text: {agent_response.response!r}. "
+                "This can happen when the LLM provider does not honor "
+                "tool_choice='required'. Consider using a different model or "
+                "switching to PydanticProgramMode.LLM to use text-based "
+                "output parsing instead."
+            )
+
+        outputs: List[Model] = []
+        for source in agent_response.sources:
+            raw = source.raw_output
+            if source.is_error:
+                # The tool call failed (e.g. Pydantic validation error).
+                # Surface the original exception with context instead of
+                # silently returning a string that will crash downstream.
+                error_detail = str(source.exception) if source.exception else str(raw)
+                raise ValueError(
+                    f"Structured output extraction failed: the LLM's tool "
+                    f"call could not be parsed into "
+                    f"{self._output_cls.__name__}. "
+                    f"Error: {error_detail}"
+                )
+            if not isinstance(raw, BaseModel):
+                raise TypeError(
+                    f"Structured output extraction failed: expected a "
+                    f"{self._output_cls.__name__} instance but got "
+                    f"{type(raw).__name__}: {raw!r}. "
+                    f"This may indicate a bug in the LLM integration's "
+                    f"tool call handling."
+                )
+            outputs.append(cast(Model, raw))
+
         if allow_parallel_tool_calls:
             return outputs
         else:

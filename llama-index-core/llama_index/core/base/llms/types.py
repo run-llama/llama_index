@@ -368,12 +368,7 @@ class ImageBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.image.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.image
             if isinstance(self.image, IOBase)
             else resolve_binary(
                 raw_bytes=self.image,
@@ -488,12 +483,7 @@ class AudioBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.audio.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.audio
             if isinstance(self.audio, IOBase)
             else resolve_binary(
                 raw_bytes=self.audio,
@@ -622,12 +612,7 @@ class VideoBlock(BaseContentBlock):
 
         """
         data_buffer = (
-            resolve_binary(
-                raw_bytes=self.video.read(),
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=as_base64,
-            )
+            self.video
             if isinstance(self.video, IOBase)
             else resolve_binary(
                 raw_bytes=self.video,
@@ -768,6 +753,9 @@ class DocumentBlock(BaseContentBlock):
         return Path(str(path)).suffix.replace(".", "")
 
     def _guess_mimetype(self) -> str | None:
+        if self.document_mimetype:
+            return self.document_mimetype
+
         if self.data:
             guess = filetype.guess(self.data)
             return str(guess.mime) if guess else None

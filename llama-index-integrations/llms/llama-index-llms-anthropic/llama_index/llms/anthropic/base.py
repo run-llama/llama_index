@@ -44,6 +44,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
+    ANTHROPIC_NO_TEMP_MODELS,
     anthropic_modelname_to_contextsize,
     force_single_tool_call,
     is_anthropic_prompt_caching_supported_model,
@@ -344,6 +345,12 @@ class Anthropic(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+        for model in ANTHROPIC_NO_TEMP_MODELS:
+            if model in self.model:
+                del base_kwargs["temperature"]
+                break
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -376,7 +383,7 @@ class Anthropic(FunctionCallingLLM):
         self, chat_response: AnthropicChatResponse
     ) -> AnthropicCompletionResponse:
         return AnthropicCompletionResponse(
-            text=chat_response.message.content,
+            text=chat_response.message.content or "",
             delta=chat_response.delta,
             additional_kwargs=chat_response.additional_kwargs,
             raw=chat_response.raw,
