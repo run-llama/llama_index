@@ -501,3 +501,50 @@ async def test_docstore_strategy_not_mutated_on_arun_without_vector_store() -> N
             await pipeline.arun(documents=[Document.example()])
 
         assert pipeline.docstore_strategy is strategy
+
+def _cache_entry_count(pipeline: IngestionPipeline) -> int:
+    """Return the number of entries in the pipeline's in-memory cache."""
+    return len(
+        pipeline.cache.cache.get_all(collection=pipeline.cache.collection)
+    )
+
+
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs for multi-worker test")
+def test_multiworker_run_merges_cache_into_parent() -> None:
+    """Cache entries written in worker processes must be visible in the parent.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21300.
+
+    Before the fix, spawned workers mutated their own in-memory copies of
+    IngestionCache (received via pickle) and those writes were discarded on
+    exit.  The parent's cache stayed empty so subsequent multi-worker runs
+    re-executed every transformation even when a cache hit was expected.
+    """
+    docs = [Document(text=f"Sample document {i}. " * 10) for i in range(4)]
+
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=50, chunk_overlap=0)]
+    )
+
+    # First run: cache is empty; workers should process and the parent should
+    # receive the resulting cache entries.
+    nodes_first = pipeline.run(documents=docs, num_workers=2)
+    assert len(nodes_first) > 0, "First multi-worker run produced no nodes"
+
+    cache_after_first = _cache_entry_count(pipeline)
+    assert cache_after_first > 0, (
+        "Parent cache is empty after the first multi-worker run. "
+        "Worker cache writes were not merged back into the parent. "
+        "See issue #21300."
+    )
+
+    # Second run: all entries should be cache hits; same nodes, same count.
+    nodes_second = pipeline.run(documents=docs, num_workers=2)
+    assert len(nodes_second) == len(nodes_first), (
+        "Second multi-worker run returned a different number of nodes than the "
+        "first run, which suggests the cache was not used."
+    )
+    cache_after_second = _cache_entry_count(pipeline)
+    assert cache_after_second == cache_after_first, (
+        "Cache grew on the second run; entries were re-written rather than hit."
+    )
