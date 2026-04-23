@@ -35,18 +35,18 @@ class HotpotQAEvaluator:
             url = DEV_DISTRACTOR_URL
             try:
                 os.makedirs(dataset_full_path, exist_ok=True)
-                save_file = open(
-                    os.path.join(dataset_full_path, "dev_distractor.json"), "wb"
-                )
-                response = requests.get(url, stream=True)
+                response = requests.get(url, stream=True, timeout=30)
 
                 # Define the size of each chunk
                 chunk_size = 1024
 
-                # Loop over the chunks and parse the JSON data
-                for chunk in tqdm.tqdm(response.iter_content(chunk_size=chunk_size)):
-                    if chunk:
-                        save_file.write(chunk)
+                with open(
+                    os.path.join(dataset_full_path, "dev_distractor.json"), "wb"
+                ) as save_file:
+                    # Loop over the chunks and parse the JSON data
+                    for chunk in tqdm.tqdm(response.iter_content(chunk_size=chunk_size)):
+                        if chunk:
+                            save_file.write(chunk)
             except Exception as e:
                 if os.path.exists(dataset_full_path):
                     print(
