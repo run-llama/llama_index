@@ -922,6 +922,41 @@ from llama_index.core import set_global_handler
 set_global_handler("agentops")
 ```
 
+### AgentSeal
+
+[AgentSeal](https://agentseal.com) is an observability and compliance platform for AI agents. It records every LLM call, retrieval, and tool action so teams can audit, debug, and monitor agent behaviour in production.
+
+The AgentSeal integration uses a `BaseCallbackHandler` that plugs into the LlamaIndex `CallbackManager` and automatically records events for LLM calls, retrievals, queries, and more.
+
+#### Install
+
+```shell
+pip install agentseal llama-index-core
+```
+
+#### Usage Pattern
+
+```python
+from agentseal import Seal
+from agentseal.integrations.llamaindex import AgentSealCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings
+
+# Initialize AgentSeal
+seal = Seal(api_key="your-agentseal-api-key")
+
+# Create the callback handler and register it
+agentseal_handler = AgentSealCallbackHandler(seal=seal)
+Settings.callback_manager = CallbackManager([agentseal_handler])
+
+# Now run your LlamaIndex application as usual.
+# All LLM, retrieval, and query events will be recorded to AgentSeal.
+```
+
+#### Guides
+
+- [AgentSeal Documentation](https://docs.agentseal.com)
+
 ### Simple (LLM Inputs/Outputs)
 
 This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
