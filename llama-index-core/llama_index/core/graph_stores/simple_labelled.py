@@ -180,7 +180,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         if fs is None:
             fs = fsspec.filesystem("file")
 
-        with fs.open(persist_path, "r") as f:
+        with fs.open(persist_path, "r", encoding="utf-8") as f:
             data = json.loads(f.read())
 
         return cls.from_dict(data)
