@@ -1,4 +1,4 @@
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 llama_index
 llama-index-llms-gaudi
 llama-index-embeddings-gaudi
