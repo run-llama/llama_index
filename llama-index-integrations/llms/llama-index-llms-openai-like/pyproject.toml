@@ -9,7 +9,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai-like"
-version = "0.7.1"
+version = "0.7.2"
 description = "llama-index llms openai like integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -59,6 +59,7 @@ import_path = "llama_index.llms.openai_like"
 
 [tool.llamahub.class_authors]
 OpenAILike = "llama-index"
+OpenAILikeResponses = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

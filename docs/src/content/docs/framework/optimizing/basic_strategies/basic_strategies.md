@@ -24,13 +24,20 @@ Some tasks are listed below, from simple to advanced.
 
 Choosing the right embedding model plays a large role in overall performance.
 
-- Maybe you need something better than the default `text-embedding-ada-002` model from OpenAI?
-- Maybe you want to scale to a local server?
+- Maybe you want a stronger or more recent model than OpenAI's `text-embedding-ada-002` (still the `OpenAIEmbedding` default for backwards compatibility)?
+- Maybe you want to run a model locally rather than call a hosted API?
 - Maybe you need an embedding model that works well for a specific language?
 
-Beyond OpenAI, many options existing for embedding APIs, running your own embedding model locally, or even hosting your own server.
+Beyond OpenAI, many options exist for embedding APIs, running your own embedding model locally, or hosting your own server.
 
-A great resource to check on the current best overall embeddings models is the [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard), which ranks embeddings models on over 50 datasets and tasks.
+The [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard) is the best place to compare current models across tons of datasets and tasks. At the time of writing, popular open-source picks include:
+
+- Fast / small baseline (~22-33M params): [`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) or [`BAAI/bge-small-en-v1.5`](https://huggingface.co/BAAI/bge-small-en-v1.5). Tiny, fast, still solid for many workloads.
+- Mid-size, recent architecture (~150M params): [`lightonai/DenseOn`](https://huggingface.co/lightonai/DenseOn), released April 2026. Sits between the small baselines and the Qwen3 family in size, worth trying if you want recent state-of-the-art retrieval without going to a 0.6B+ model.
+- Strong all-around, multilingual (~0.6-4B params): [`Qwen/Qwen3-Embedding-0.6B`](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (or `-4B` for higher accuracy). Competitive on MTEB, small enough to serve on a single GPU.
+- Frictionless hosted API: `OpenAIEmbedding(model="text-embedding-3-small")`.
+
+All of the local/open-source options above can be used via [`HuggingFaceEmbedding`](/python/framework/module_guides/models/embeddings#local-embedding-models) and benefit from ONNX / OpenVINO acceleration on CPU; see the [embeddings guide](/python/framework/module_guides/models/embeddings) for details.
 
 **NOTE:** Unlike an LLM (which you can change at any time), if you change your embedding model, you must re-index your data. Furthermore, you should ensure the same embedding model is used for both indexing and querying.
 
@@ -86,6 +93,29 @@ Relevant guides with both approaches can be found below:
 - [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
 - [Pinecone Hybrid Search](/python/examples/vector_stores/pineconeindexdemo-hybrid)
 - [Milvus Hybrid Search](/python/examples/vector_stores/milvushybridindexdemo)
+
+## Reranking
+
+Reranking is one of the highest-leverage knobs for RAG quality. The retriever returns a wider set of candidates (`similarity_top_k=10` or more) and a reranker (a stronger but slower model) re-orders them so the best nodes reach the LLM. It's often the difference between "retrieval looks roughly right" and "retrieval is actually answering the question."
+
+The frictionless recipe uses a local cross-encoder via [`SentenceTransformerRerank`](/python/framework/module_guides/querying/node_postprocessors/node_postprocessors#sentencetransformerrerank); no API key, runs anywhere:
+
+```python
+from llama_index.core.postprocessor import SentenceTransformerRerank
+
+reranker = SentenceTransformerRerank(
+    model="cross-encoder/ms-marco-MiniLM-L6-v2", top_n=3
+)
+
+query_engine = index.as_query_engine(
+    similarity_top_k=10,
+    node_postprocessors=[reranker],
+)
+```
+
+For stronger quality on multilingual content, swap the model for `Qwen/Qwen3-Reranker-0.6B`. For a hosted-API option with minimal setup, use `CohereRerank`, `JinaRerank`, or `VoyageAIRerank`. For the highest quality when latency isn't critical, an LLM-based reranker (`LLMRerank`, `RankGPTRerank`) can outperform cross-encoders at the cost of extra LLM calls.
+
+See the [node postprocessors guide](/python/framework/module_guides/querying/node_postprocessors/node_postprocessors) for the full list and the [rerankers overview](/python/framework/module_guides/models/rerankers) for a decision tree.
 
 ## Metadata Filters
 

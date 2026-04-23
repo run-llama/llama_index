@@ -39,13 +39,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "llama-index-cli>=0.5.0,<0.6 ; python_version > '3.9'",
-    "llama-index-core>=0.14.18,<0.15.0",
+    "llama-index-core>=0.14.21,<0.15.0",
     "llama-index-embeddings-openai>=0.6.0,<0.7",
-    "llama-index-indices-managed-llama-cloud>=0.4.0",
     "llama-index-llms-openai>=0.7.0,<0.8",
-    "llama-index-embeddings-openai>=0.6.0,<0.7",
-    "nltk>3.8.1",
+    "nltk>=3.9.3",
 ]
 description = "Interface between LLMs and your data"
 keywords = [
@@ -69,10 +66,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-version = "0.14.18"
-
-[project.scripts]
-llamaindex-cli = "llama_index.cli.command_line:main"
+version = "0.14.21"
 
 [project.urls]
 Documentation = "https://docs.llamaindex.ai/en/stable/"

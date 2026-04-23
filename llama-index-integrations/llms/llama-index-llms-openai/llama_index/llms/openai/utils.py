@@ -76,7 +76,10 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
+    "gpt-5.3": 400000,
+    "gpt-5.3-chat-latest": 128000,
     "gpt-5.4": 1050000,
+    "gpt-5.4-2026-03-05": 1050000,
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
@@ -622,10 +625,8 @@ def to_openai_responses_message_dict(
             content.append(
                 {
                     "type": "input_file",
-                    "file": {
-                        "filename": block.title,
-                        "file_data": f"data:{mimetype};base64,{b64_string}",
-                    },
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -686,14 +687,14 @@ def to_openai_responses_message_dict(
         ]
 
         items = [*reasoning]
-        if content_txt:
-            items.append({"role": "assistant", "content": content_txt})
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
         items.extend(message_dicts)
         return items
     elif tool_calls:
         items = [*reasoning]
-        if content_txt:
-            items.append({"role": "assistant", "content": content_txt})
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
         items.extend(tool_calls)
         return items
 
