@@ -254,7 +254,7 @@ class Vllm(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
-        return {**base_kwargs}
+        return {k: v for k, v in base_kwargs.items() if v is not None}
 
     @atexit.register
     def close():
