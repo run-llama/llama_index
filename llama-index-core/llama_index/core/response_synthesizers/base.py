@@ -11,8 +11,19 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator, Type
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    AsyncGenerator,
+    Type,
+    cast,
+)
 
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -23,9 +34,10 @@ from llama_index.core.base.response.schema import (
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.mixin import PromptMixin
+from llama_index.core.prompts.utils import is_chat_model
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -61,6 +73,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         streaming: bool = False,
         output_cls: Optional[Type[BaseModel]] = None,
         empty_response: Optional[str] = None,
+        multimodal: bool = False,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -69,18 +82,30 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             self._llm.callback_manager = callback_manager
 
         self._callback_manager = callback_manager or Settings.callback_manager
-
-        self._prompt_helper = (
-            prompt_helper
-            or Settings._prompt_helper
-            or PromptHelper.from_llm_metadata(
-                self._llm.metadata,
-            )
-        )
-
         self._streaming = streaming
         self._output_cls = output_cls
         self._empty_response = empty_response or "Empty Response"
+        self._multimodal = multimodal
+
+        if multimodal:
+            if not is_chat_model(self._llm):
+                raise ValueError("Multimodal synthesis requires a chat LLM.")
+            self._prompt_helper = cast(
+                PromptHelper,
+                prompt_helper
+                or Settings.chat_prompt_helper
+                or ChatPromptHelper.from_llm_metadata(
+                    self._llm.metadata,
+                ),
+            )
+        else:
+            self._prompt_helper = (
+                prompt_helper
+                or Settings.prompt_helper
+                or PromptHelper.from_llm_metadata(
+                    self._llm.metadata,
+                )
+            )
 
     def _empty_response_generator(self) -> Generator[str, None, None]:
         yield self._empty_response
@@ -124,6 +149,22 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
     ) -> RESPONSE_TEXT_TYPE:
         """Get response."""
         ...
+
+    def get_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        raise NotImplementedError
+
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        raise NotImplementedError
 
     def _log_prompt_and_response(
         self,
@@ -232,13 +273,28 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
-            response_str = self.get_response(
-                query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
-                **response_kwargs,
-            )
+            if self._multimodal:
+                response_str = self.get_response_from_messages(
+                    query_str=query.query_str,
+                    message_chunks=[
+                        ChatMessage(
+                            blocks=n.node.get_content_blocks(
+                                metadata_mode=MetadataMode.LLM
+                            )
+                        )
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
+            else:
+                response_str = self.get_response(
+                    query_str=query.query_str,
+                    text_chunks=[
+                        n.node.get_content(metadata_mode=MetadataMode.LLM)
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
 
             additional_source_nodes = additional_source_nodes or []
             source_nodes = list(nodes) + list(additional_source_nodes)
@@ -297,13 +353,28 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
-            response_str = await self.aget_response(
-                query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
-                **response_kwargs,
-            )
+            if self._multimodal:
+                response_str = await self.aget_response_from_messages(
+                    query_str=query.query_str,
+                    message_chunks=[
+                        ChatMessage(
+                            blocks=n.node.get_content_blocks(
+                                metadata_mode=MetadataMode.LLM
+                            )
+                        )
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
+            else:
+                response_str = await self.aget_response(
+                    query_str=query.query_str,
+                    text_chunks=[
+                        n.node.get_content(metadata_mode=MetadataMode.LLM)
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
 
             additional_source_nodes = additional_source_nodes or []
             source_nodes = list(nodes) + list(additional_source_nodes)

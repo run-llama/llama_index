@@ -1,38 +1,52 @@
 import logging
+from collections import deque
 from typing import (
+    TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Callable,
     Generator,
     Optional,
     Sequence,
     Type,
     cast,
-    AsyncGenerator,
 )
+
+from llama_index.core.base.llms.types import ChatMessage
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
-from llama_index.core.indices.utils import truncate_text
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate
+from llama_index.core.prompts.chat_prompts import (
+    CHAT_CONTENT_QA_PROMPT,
+    CHAT_CONTENT_REFINE_PROMPT,
+)
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
+from llama_index.core.prompts.prompt_utils import get_biggest_prompt
 from llama_index.core.response.utils import get_response_text, aget_response_text
-from llama_index.core.response_synthesizers.base import BaseSynthesizer
+from llama_index.core.response_synthesizers.base import (
+    BaseSynthesizer,
+)
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
 from llama_index.core.instrumentation.events.synthesis import (
     GetResponseEndEvent,
     GetResponseStartEvent,
+    GetMessageResponseEndEvent,
+    GetMessageResponseStartEvent,
 )
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_RESPONSE_PADDING_SIZE = 500
 
 
 class StructuredRefineResponse(BaseModel):
@@ -42,14 +56,24 @@ class StructuredRefineResponse(BaseModel):
     Also indicates if the query was satisfied with the provided answer.
     """
 
-    answer: str = Field(
-        description="The answer for the given query, based on the context and not "
-        "prior knowledge."
-    )
+    # It is important that this variable comes first, because the LLM *almost always* streams jsons in the order the
+    # variables are listed here (and consequently serialized to json). What this allows is a very early abandonment
+    # of irrelevant sources during streaming. Since this variable is streamed with in the first 10 or so tokens,
+    # if it is False, we do not need to wait for the rest of the response, we can simply move on to the next source.
     query_satisfied: bool = Field(
         description="True if there was enough context given to provide an answer "
         "that satisfies the query."
     )
+    answer: str = Field(
+        description="The answer for the given query, based on the context and not "
+        "prior knowledge."
+    )
+
+
+if TYPE_CHECKING:
+    from llama_index.core.program.utils import create_flexible_model
+
+    FlexibleStructuredRefineResponse = create_flexible_model(StructuredRefineResponse)
 
 
 class DefaultRefineProgram(BasePydanticProgram):
@@ -104,6 +128,73 @@ class DefaultRefineProgram(BasePydanticProgram):
             )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
+    def stream_call(
+        self, *args: Any, **kwds: Any
+    ) -> Generator[StructuredRefineResponse, None, None]:
+        """
+        Stream object.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        """
+        if self._output_cls is not None:
+            for structured_answer in self._llm.stream_structured_predict(
+                self._output_cls,
+                self._prompt,
+                **kwds,
+            ):
+                if answer := structured_answer.answer:  # type: ignore[union-attr]
+                    yield StructuredRefineResponse(answer=answer, query_satisfied=True)
+        else:
+            answer = ""
+            # Because structured stream_structured_predict does not yield partial json fields, answer is only available
+            # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
+            # cases
+            for token in self._llm.stream(
+                self._prompt,
+                **kwds,
+            ):
+                answer += token
+            yield StructuredRefineResponse(answer=answer.strip(), query_satisfied=True)
+
+    async def astream_call(
+        self, *args: Any, **kwds: Any
+    ) -> AsyncGenerator[StructuredRefineResponse, None]:
+        """
+        Stream objects.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        """
+
+        async def gen() -> AsyncGenerator[StructuredRefineResponse, None]:
+            if self._output_cls is not None:
+                async for structured_answer in self._llm.astream_structured_predict(  # type: ignore
+                    self._output_cls,
+                    self._prompt,
+                    **kwds,
+                ):
+                    if structured_answer.answer:
+                        yield StructuredRefineResponse(
+                            answer=structured_answer.answer, query_satisfied=True
+                        )
+            else:
+                answer = ""
+                # Because structured stream_structured_predict does not yield partial json fields, answer is only available
+                # once the field is complete. We want to mimic that behavior here so it behaves similarly across the two
+                # cases
+                async for token in await self._llm.astream(
+                    self._prompt,
+                    **kwds,
+                ):
+                    answer += token
+                if answer:
+                    yield StructuredRefineResponse(
+                        answer=answer.strip(), query_satisfied=True
+                    )
+
+        return gen()
+
 
 class Refine(BaseSynthesizer):
     """Refine a response to a query across text chunks."""
@@ -115,30 +206,38 @@ class Refine(BaseSynthesizer):
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
+        chat_content_qa_template: Optional[BasePromptTemplate] = None,
+        chat_content_refine_template: Optional[BasePromptTemplate] = None,
         output_cls: Optional[Type[BaseModel]] = None,
+        response_padding_size: int = DEFAULT_RESPONSE_PADDING_SIZE,
         streaming: bool = False,
         verbose: bool = False,
         structured_answer_filtering: bool = False,
         program_factory: Optional[
             Callable[[BasePromptTemplate], BasePydanticProgram]
         ] = None,
+        multimodal: bool = False,
     ) -> None:
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
             streaming=streaming,
+            multimodal=multimodal,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
+        self._chat_content_qa_template = (
+            chat_content_qa_template or CHAT_CONTENT_QA_PROMPT
+        )
+        self._chat_content_refine_template = (
+            chat_content_refine_template or CHAT_CONTENT_REFINE_PROMPT
+        )
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
         self._output_cls = output_cls
+        self._response_padding_size = response_padding_size
 
-        if self._streaming and self._structured_answer_filtering:
-            raise ValueError(
-                "Streaming not supported with structured answer filtering."
-            )
         if not self._structured_answer_filtering and program_factory is not None:
             raise ValueError(
                 "Program factory not supported without structured answer filtering."
@@ -150,6 +249,8 @@ class Refine(BaseSynthesizer):
         return {
             "text_qa_template": self._text_qa_template,
             "refine_template": self._refine_template,
+            "chat_content_qa_template": self._chat_content_qa_template,
+            "chat_content_refine_template": self._chat_content_refine_template,
         }
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
@@ -158,45 +259,37 @@ class Refine(BaseSynthesizer):
             self._text_qa_template = prompts["text_qa_template"]
         if "refine_template" in prompts:
             self._refine_template = prompts["refine_template"]
+        if "chat_content_qa_template" in prompts:
+            self._chat_content_qa_template = prompts["chat_content_qa_template"]
+        if "chat_content_refine_template" in prompts:
+            self._chat_content_refine_template = prompts["chat_content_refine_template"]
 
-    @dispatcher.span
-    def get_response(
-        self,
-        query_str: str,
-        text_chunks: Sequence[str],
-        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        """Give response over chunks."""
-        dispatcher.event(
-            GetResponseStartEvent(query_str=query_str, text_chunks=text_chunks)
-        )
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        for text_chunk in text_chunks:
-            if prev_response is None:
-                # if this is the first chunk, and text chunk already
-                # is an answer, then return it
-                response = self._give_response_single(
-                    query_str, text_chunk, **response_kwargs
-                )
-            else:
-                # refine response if possible
-                response = self._refine_response_single(
-                    prev_response, query_str, text_chunk, **response_kwargs
-                )
-            prev_response = response
-        if isinstance(response, str):
-            if self._output_cls is not None:
-                try:
-                    response = self._output_cls.model_validate_json(response)
-                except ValidationError:
-                    pass
-            else:
-                response = response or "Empty Response"
-        else:
-            response = cast(Generator, response)
-        dispatcher.event(GetResponseEndEvent())
-        return response
+    @staticmethod
+    def _get_attribute_from_object_generator(
+        generator: Generator, structured_response: BaseModel | None, attribute: str
+    ) -> Generator:
+        """
+        Object generators like those returned by the DefaultRefineProgram or FunctionCallingProgram
+        stream_call may yield multiple objects, but because we cannot guarantee the order of object attribute generation
+        we need to wait until it's fully generated to be sure that the attribute is both present and complete
+        """
+        for obj in generator:
+            structured_response = obj
+        yield getattr(structured_response, attribute)
+
+    @staticmethod
+    async def _get_attribute_from_object_async_generator(
+        generator: AsyncGenerator, structured_response: BaseModel | None, attribute: str
+    ) -> AsyncGenerator:
+        """
+        Object generators like those returned by the DefaultRefineProgram or FunctionCallingProgram
+        stream_call may yield multiple objects, but because we cannot guarantee the order of object attribute generation
+        we need to wait until it's fully generated to be sure that the attribute is both present and complete
+        """
+        async for obj in generator:
+            structured_response = obj
+        yield getattr(structured_response, attribute)
+        return
 
     def _default_program_factory(
         self, prompt: BasePromptTemplate
@@ -217,131 +310,270 @@ class Refine(BaseSynthesizer):
                 output_cls=self._output_cls,
             )
 
-    def _give_response_single(
+    def _update_response(
+        self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
+    ) -> Optional[RESPONSE_TEXT_TYPE]:
+        """Update response."""
+        query_satisfied = False
+        if not self._streaming:
+            try:
+                structured_response = cast(
+                    StructuredRefineResponse,
+                    program(
+                        **program_kwargs,
+                        **response_kwargs,
+                    ),
+                )
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    return structured_response.answer
+            except (ValidationError, ValueError, TypeError) as e:
+                logger.warning(f"Structured response error: {e}", exc_info=True)
+        elif self._streaming:
+            try:
+                structured_response_gen = program.stream_call(
+                    **program_kwargs,
+                    **response_kwargs,
+                )
+                structured_response = None
+                for sr in structured_response_gen:
+                    structured_response = sr  # type: ignore[assignment]
+                    if sr is not None:
+                        query_satisfied = sr.query_satisfied  # type: ignore[union-attr]
+                        if query_satisfied is not None:
+                            break
+                if query_satisfied:
+                    return self._get_attribute_from_object_generator(
+                        structured_response_gen,
+                        structured_response,
+                        "answer",  # type: ignore[arg-type]
+                    )
+            except (ValidationError, ValueError, TypeError) as e:
+                logger.warning(f"Structured response error: {e}", exc_info=True)
+        return None
+
+    async def _aupdate_response(
+        self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
+    ) -> Optional[RESPONSE_TEXT_TYPE]:
+        """Update response."""
+        query_satisfied = False
+        if not self._streaming:
+            try:
+                structured_response = cast(
+                    StructuredRefineResponse,
+                    await program.acall(
+                        **program_kwargs,
+                        **response_kwargs,
+                    ),
+                )
+                query_satisfied = structured_response.query_satisfied
+                if query_satisfied:
+                    return structured_response.answer
+            except (ValidationError, ValueError, TypeError) as e:
+                logger.warning(f"Structured response error: {e}", exc_info=True)
+        elif self._streaming:
+            try:
+                structured_response_gen = await program.astream_call(
+                    **program_kwargs,
+                    **response_kwargs,
+                )
+                structured_response = None
+                async for sr in structured_response_gen:
+                    structured_response = sr  # type: ignore[assignment]
+                    if sr is not None:
+                        query_satisfied = sr.query_satisfied  # type: ignore[union-attr]
+                        if query_satisfied is not None:
+                            break
+                if query_satisfied:
+                    return self._get_attribute_from_object_async_generator(
+                        structured_response_gen,
+                        structured_response,
+                        "answer",  # type: ignore[arg-type]
+                    )
+            except (ValidationError, ValueError, TypeError) as e:
+                logger.warning(f"Structured response error: {e}", exc_info=True)
+        return None
+
+    def _run_refine_loop(
         self,
         query_str: str,
-        text_chunk: str,
+        chunks: Sequence[Any],
+        qa_template: BasePromptTemplate,
+        refine_template: BasePromptTemplate,
+        make_qa_prompt_kwargs: Callable[[Any], dict],
+        make_refine_prompt_kwargs: Callable[[Any], dict],
+        start_event: Any,
+        end_event: Any,
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Give response given a query and a corresponding text chunk."""
-        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        text_chunks = self._prompt_helper.repack(
-            text_qa_template, [text_chunk], llm=self._llm
-        )
-
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        program = self._program_factory(text_qa_template)
-        # TODO: consolidate with loop in get_response_default
-        for cur_text_chunk in text_chunks:
-            query_satisfied = False
-            if response is None and not self._streaming:
-                try:
-                    structured_response = cast(
-                        StructuredRefineResponse,
-                        program(
-                            context_str=cur_text_chunk,
-                            **response_kwargs,
-                        ),
-                    )
-                    query_satisfied = structured_response.query_satisfied
-                    if query_satisfied:
-                        response = structured_response.answer
-                except (ValidationError, ValueError, TypeError) as e:
-                    logger.warning(f"Structured response error: {e}", exc_info=True)
-            elif response is None and self._streaming:
-                response = self._llm.stream(
-                    text_qa_template,
-                    context_str=cur_text_chunk,
-                    **response_kwargs,
+        dispatcher.event(start_event)
+        max_prompt = get_biggest_prompt([qa_template, refine_template])
+        # Make first best guess at how many chunks we can fit in the prompt at once. Increase padding
+        # to give more room for the response
+        chunks_deque: deque = deque(
+            [
+                tc
+                for chunk in chunks
+                for tc in self._prompt_helper.repack(
+                    max_prompt,
+                    [chunk],  # type: ignore[list-item]
+                    llm=self._llm,
+                    padding=self._response_padding_size,
                 )
-                query_satisfied = True
+            ]
+        )
+        response = prev_response
+        while chunks_deque:
+            if isinstance(response, Generator):
+                response = get_response_text(response)
+
+            chunk = chunks_deque.popleft()
+
+            if response is None:
+                prompt_template = qa_template.partial_format(query_str=query_str)
+                prompt_kwargs = make_qa_prompt_kwargs(chunk)
             else:
-                response = self._refine_response_single(
-                    cast(RESPONSE_TEXT_TYPE, response),
-                    query_str,
-                    cur_text_chunk,
-                    **response_kwargs,
-                )
-        if response is None:
-            response = "Empty Response"
-        if isinstance(response, str):
-            response = response or "Empty Response"
-        else:
-            response = cast(Generator, response)
-        return response
-
-    def _refine_response_single(
-        self,
-        response: RESPONSE_TEXT_TYPE,
-        query_str: str,
-        text_chunk: str,
-        **response_kwargs: Any,
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
-        """Refine response."""
-        # TODO: consolidate with logic in response/schema.py
-        if isinstance(response, Generator):
-            response = get_response_text(response)
-
-        fmt_text_chunk = truncate_text(text_chunk, 50)
-        logger.debug(f"> Refine context: {fmt_text_chunk}")
-        if self._verbose:
-            print(f"> Refine context: {fmt_text_chunk}")
-
-        # NOTE: partial format refine template with query_str and existing_answer here
-        refine_template = self._refine_template.partial_format(
-            query_str=query_str, existing_answer=response
-        )
-
-        # compute available chunk size to see if there is any available space
-        # determine if the refine template is too big (which can happen if
-        # prompt template + query + existing answer is too large)
-        avail_chunk_size = self._prompt_helper._get_available_chunk_size(
-            refine_template
-        )
-
-        if avail_chunk_size < 0:
-            # if the available chunk size is negative, then the refine template
-            # is too big and we just return the original response
-            return response
-
-        # obtain text chunks to add to the refine template
-        text_chunks = self._prompt_helper.repack(
-            refine_template, text_chunks=[text_chunk], llm=self._llm
-        )
-
-        program = self._program_factory(refine_template)
-        for cur_text_chunk in text_chunks:
-            query_satisfied = False
-            if not self._streaming:
-                try:
-                    structured_response = cast(
-                        StructuredRefineResponse,
-                        program(
-                            context_msg=cur_text_chunk,
-                            **response_kwargs,
-                        ),
-                    )
-                    query_satisfied = structured_response.query_satisfied
-                    if query_satisfied:
-                        response = structured_response.answer
-                except (ValidationError, ValueError, TypeError) as e:
-                    logger.warning(f"Structured response error: {e}", exc_info=True)
-            else:
-                # TODO: structured response not supported for streaming
-                if isinstance(response, Generator):
-                    response = "".join(response)
-
-                refine_template = self._refine_template.partial_format(
+                prompt_template = refine_template.partial_format(
                     query_str=query_str, existing_answer=response
                 )
-
-                response = self._llm.stream(
-                    refine_template,
-                    context_msg=cur_text_chunk,
-                    **response_kwargs,
+                # Because the existing answer portion is constantly being updated, it may be necessary to
+                # repack the chunk with the new prompt template to ensure it fits. Since the template has been
+                # partially formatted with the actual response, there's no need for the extra padding.
+                repacked = self._prompt_helper.repack(
+                    prompt_template,
+                    [chunk],
+                    llm=self._llm,  # type: ignore[list-item]
                 )
+                # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
+                if len(repacked) > 1:
+                    chunks_deque.extendleft(repacked)
+                    continue
+                chunk = repacked[0]
+                prompt_kwargs = make_refine_prompt_kwargs(chunk)
 
+            program = self._program_factory(prompt_template)
+            if resp := self._update_response(program, prompt_kwargs, response_kwargs):
+                response = resp
+
+        if isinstance(response, str):
+            if self._output_cls is not None:
+                try:
+                    response = self._output_cls.model_validate_json(response)
+                except (ValidationError, ValueError, TypeError):
+                    pass
+            else:
+                response = response or "Empty Response"
+        elif response is None:
+            response = "Empty Response"
+        else:
+            response = cast(Generator, response)
+        dispatcher.event(end_event)
         return response
+
+    async def _arun_refine_loop(
+        self,
+        query_str: str,
+        chunks: Sequence[Any],
+        qa_template: BasePromptTemplate,
+        refine_template: BasePromptTemplate,
+        make_qa_prompt_kwargs: Callable[[Any], dict],
+        make_refine_prompt_kwargs: Callable[[Any], dict],
+        start_event: Any,
+        end_event: Any,
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        dispatcher.event(start_event)
+        max_prompt = get_biggest_prompt([qa_template, refine_template])
+        # Make first best guess at how many chunks we can fit in the prompt at once. Increase padding
+        # to give more room for the response
+        chunks_deque: deque = deque(
+            [
+                tc
+                for chunk in chunks
+                for tc in self._prompt_helper.repack(
+                    max_prompt,
+                    [chunk],  # type: ignore[list-item]
+                    llm=self._llm,
+                    padding=self._response_padding_size,
+                )
+            ]
+        )
+        response = prev_response
+        while chunks_deque:
+            if isinstance(response, AsyncGenerator):
+                response = await aget_response_text(response)
+
+            chunk = chunks_deque.popleft()
+
+            if response is None:
+                prompt_template = qa_template.partial_format(query_str=query_str)
+                prompt_kwargs = make_qa_prompt_kwargs(chunk)
+            else:
+                prompt_template = refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
+                # Because the existing answer portion is constantly being updated, it may be necessary to
+                # repack the chunk with the new prompt template to ensure it fits. Since the template has been
+                # partially formatted with the actual response, there's no need for the extra padding.
+                repacked = self._prompt_helper.repack(
+                    prompt_template,
+                    [chunk],
+                    llm=self._llm,  # type: ignore[list-item]
+                )
+                # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
+                if len(repacked) > 1:
+                    chunks_deque.extendleft(repacked)
+                    continue
+                chunk = repacked[0]
+                prompt_kwargs = make_refine_prompt_kwargs(chunk)
+
+            program = self._program_factory(prompt_template)
+            if resp := await self._aupdate_response(
+                program, prompt_kwargs, response_kwargs
+            ):
+                response = resp
+
+        if isinstance(response, str):
+            if self._output_cls is not None:
+                try:
+                    response = self._output_cls.model_validate_json(response)
+                except (ValidationError, ValueError, TypeError):
+                    pass
+            else:
+                response = response or "Empty Response"
+        elif response is None:
+            response = "Empty Response"
+        else:
+            response = cast(AsyncGenerator, response)
+        dispatcher.event(end_event)
+        return response
+
+    # TODO: Why does this class call dispatcher.span on this method when other classes only call it on synthesize
+    @dispatcher.span
+    def get_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        """Give response over chunks."""
+        return self._run_refine_loop(
+            query_str=query_str,
+            chunks=text_chunks,
+            qa_template=self._text_qa_template,
+            refine_template=self._refine_template,
+            make_qa_prompt_kwargs=lambda chunk: {"context_str": chunk},
+            make_refine_prompt_kwargs=lambda chunk: {"context_msg": chunk},
+            start_event=GetResponseStartEvent(
+                query_str=query_str, text_chunks=list(text_chunks)
+            ),
+            end_event=GetResponseEndEvent(),
+            prev_response=prev_response,
+            **response_kwargs,
+        )
 
     @dispatcher.span
     async def aget_response(
@@ -351,163 +583,64 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        dispatcher.event(
-            GetResponseStartEvent(query_str=query_str, text_chunks=text_chunks)
-        )
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        for text_chunk in text_chunks:
-            if prev_response is None:
-                # if this is the first chunk, and text chunk already
-                # is an answer, then return it
-                response = await self._agive_response_single(
-                    query_str, text_chunk, **response_kwargs
-                )
-            else:
-                response = await self._arefine_response_single(
-                    prev_response, query_str, text_chunk, **response_kwargs
-                )
-            prev_response = response
-        if response is None:
-            response = "Empty Response"
-        if isinstance(response, str):
-            if self._output_cls is not None:
-                response = self._output_cls.model_validate_json(response)
-            else:
-                response = response or "Empty Response"
-        else:
-            response = cast(AsyncGenerator, response)
-        dispatcher.event(GetResponseEndEvent())
-        return response
-
-    async def _arefine_response_single(
-        self,
-        response: RESPONSE_TEXT_TYPE,
-        query_str: str,
-        text_chunk: str,
-        **response_kwargs: Any,
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
-        """Refine response."""
-        # TODO: consolidate with logic in response/schema.py
-        if isinstance(response, AsyncGenerator):
-            response = await aget_response_text(response)
-
-        fmt_text_chunk = truncate_text(text_chunk, 50)
-        logger.debug(f"> Refine context: {fmt_text_chunk}")
-
-        # NOTE: partial format refine template with query_str and existing_answer here
-        refine_template = self._refine_template.partial_format(
-            query_str=query_str, existing_answer=response
+        return await self._arun_refine_loop(
+            query_str=query_str,
+            chunks=text_chunks,
+            qa_template=self._text_qa_template,
+            refine_template=self._refine_template,
+            make_qa_prompt_kwargs=lambda chunk: {"context_str": chunk},
+            make_refine_prompt_kwargs=lambda chunk: {"context_msg": chunk},
+            start_event=GetResponseStartEvent(
+                query_str=query_str, text_chunks=list(text_chunks)
+            ),
+            end_event=GetResponseEndEvent(),
+            prev_response=prev_response,
+            **response_kwargs,
         )
 
-        # compute available chunk size to see if there is any available space
-        # determine if the refine template is too big (which can happen if
-        # prompt template + query + existing answer is too large)
-        avail_chunk_size = self._prompt_helper._get_available_chunk_size(
-            refine_template
-        )
-
-        if avail_chunk_size < 0:
-            # if the available chunk size is negative, then the refine template
-            # is too big and we just return the original response
-            return response
-
-        # obtain text chunks to add to the refine template
-        text_chunks = self._prompt_helper.repack(
-            refine_template, text_chunks=[text_chunk], llm=self._llm
-        )
-
-        program = self._program_factory(refine_template)
-        for cur_text_chunk in text_chunks:
-            query_satisfied = False
-            if not self._streaming:
-                try:
-                    structured_response = await program.acall(
-                        context_msg=cur_text_chunk,
-                        **response_kwargs,
-                    )
-                    structured_response = cast(
-                        StructuredRefineResponse, structured_response
-                    )
-                    query_satisfied = structured_response.query_satisfied
-                    if query_satisfied:
-                        response = structured_response.answer
-                except (ValidationError, ValueError, TypeError) as e:
-                    logger.warning(f"Structured response error: {e}", exc_info=True)
-            else:
-                if isinstance(response, Generator):
-                    response = "".join(response)
-
-                if isinstance(response, AsyncGenerator):
-                    _r = ""
-                    async for text in response:
-                        _r += text
-                    response = _r
-
-                refine_template = self._refine_template.partial_format(
-                    query_str=query_str, existing_answer=response
-                )
-
-                response = await self._llm.astream(
-                    refine_template,
-                    context_msg=cur_text_chunk,
-                    **response_kwargs,
-                )
-
-            if query_satisfied:
-                refine_template = self._refine_template.partial_format(
-                    query_str=query_str, existing_answer=response
-                )
-
-        return response
-
-    async def _agive_response_single(
+    @dispatcher.span
+    def get_response_from_messages(
         self,
         query_str: str,
-        text_chunk: str,
+        message_chunks: Sequence[ChatMessage],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        """Give response given a query and a corresponding text chunk."""
-        text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        text_chunks = self._prompt_helper.repack(
-            text_qa_template, [text_chunk], llm=self._llm
+        """Give response over message chunks."""
+        return self._run_refine_loop(
+            query_str=query_str,
+            chunks=message_chunks,
+            qa_template=self._chat_content_qa_template,
+            refine_template=self._chat_content_refine_template,
+            make_qa_prompt_kwargs=lambda chunk: {"context_messages": [chunk]},
+            make_refine_prompt_kwargs=lambda chunk: {"context_messages": [chunk]},
+            start_event=GetMessageResponseStartEvent(
+                query_str=query_str, message_chunks=list(message_chunks)
+            ),
+            end_event=GetMessageResponseEndEvent(),
+            prev_response=prev_response,
+            **response_kwargs,
         )
 
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        program = self._program_factory(text_qa_template)
-        # TODO: consolidate with loop in get_response_default
-        for cur_text_chunk in text_chunks:
-            if response is None and not self._streaming:
-                try:
-                    structured_response = await program.acall(
-                        context_str=cur_text_chunk,
-                        **response_kwargs,
-                    )
-                    structured_response = cast(
-                        StructuredRefineResponse, structured_response
-                    )
-                    query_satisfied = structured_response.query_satisfied
-                    if query_satisfied:
-                        response = structured_response.answer
-                except (ValidationError, ValueError, TypeError) as e:
-                    logger.warning(f"Structured response error: {e}", exc_info=True)
-            elif response is None and self._streaming:
-                response = await self._llm.astream(
-                    text_qa_template,
-                    context_str=cur_text_chunk,
-                    **response_kwargs,
-                )
-                query_satisfied = True
-            else:
-                response = await self._arefine_response_single(
-                    cast(RESPONSE_TEXT_TYPE, response),
-                    query_str,
-                    cur_text_chunk,
-                    **response_kwargs,
-                )
-        if response is None:
-            response = "Empty Response"
-        if isinstance(response, str):
-            response = response or "Empty Response"
-        else:
-            response = cast(AsyncGenerator, response)
-        return response
+    @dispatcher.span
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        return await self._arun_refine_loop(
+            query_str=query_str,
+            chunks=message_chunks,
+            qa_template=self._chat_content_qa_template,
+            refine_template=self._chat_content_refine_template,
+            make_qa_prompt_kwargs=lambda chunk: {"context_messages": [chunk]},
+            make_refine_prompt_kwargs=lambda chunk: {"context_messages": [chunk]},
+            start_event=GetMessageResponseStartEvent(
+                query_str=query_str, message_chunks=list(message_chunks)
+            ),
+            end_event=GetMessageResponseEndEvent(),
+            prev_response=prev_response,
+            **response_kwargs,
+        )

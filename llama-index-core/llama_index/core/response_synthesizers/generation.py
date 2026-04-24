@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Sequence
 
+from llama_index.core.base.llms.types import ChatMessage
+
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -11,6 +13,7 @@ from llama_index.core.instrumentation.events.synthesis import (
 import llama_index.core.instrumentation as instrument
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts.chat_prompts import CHAT_SIMPLE_INPUT_PROMPT
 from llama_index.core.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
@@ -34,14 +37,18 @@ class Generation(BaseSynthesizer):
         prompt_helper: Optional[PromptHelper] = None,
         simple_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
+        multimodal: bool = False,
     ) -> None:
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
             streaming=streaming,
+            multimodal=multimodal,
         )
-        self._input_prompt = simple_template or DEFAULT_SIMPLE_INPUT_PROMPT
+        self._input_prompt = simple_template or (
+            CHAT_SIMPLE_INPUT_PROMPT if multimodal else DEFAULT_SIMPLE_INPUT_PROMPT
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -52,35 +59,12 @@ class Generation(BaseSynthesizer):
         if "simple_template" in prompts:
             self._input_prompt = prompts["simple_template"]
 
-    async def aget_response(
-        self,
-        query_str: str,
-        text_chunks: Sequence[str],
-        **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
-        # NOTE: ignore text chunks and previous response
-        del text_chunks
-
-        if not self._streaming:
-            return await self._llm.apredict(
-                self._input_prompt,
-                query_str=query_str,
-                **response_kwargs,
-            )
-        else:
-            return await self._llm.astream(
-                self._input_prompt,
-                query_str=query_str,
-                **response_kwargs,
-            )
-
     def get_response(
         self,
         query_str: str,
         text_chunks: Sequence[str],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        # NOTE: ignore text chunks and previous response
         del text_chunks
 
         if not self._streaming:
@@ -96,8 +80,71 @@ class Generation(BaseSynthesizer):
                 **response_kwargs,
             )
 
-    # NOTE: synthesize and asynthesize are copied from the base class,
-    #       but modified to return when zero nodes are provided
+    async def aget_response(
+        self,
+        query_str: str,
+        text_chunks: Sequence[str],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        del text_chunks
+
+        if not self._streaming:
+            return await self._llm.apredict(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+        else:
+            return await self._llm.astream(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+
+    def get_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        del message_chunks
+
+        if not self._streaming:
+            return self._llm.predict(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+        else:
+            return self._llm.stream(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        del message_chunks
+
+        if not self._streaming:
+            return await self._llm.apredict(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+        else:
+            return await self._llm.astream(
+                self._input_prompt,
+                query_str=query_str,
+                **response_kwargs,
+            )
+
+    # NOTE: synthesize and asynthesize bypass the base class empty-node early
+    #       return so that Generation always calls the LLM regardless of nodes.
 
     @dispatcher.span
     def synthesize(
@@ -120,13 +167,28 @@ class Generation(BaseSynthesizer):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
-            response_str = self.get_response(
-                query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
-                **response_kwargs,
-            )
+            if self._multimodal:
+                response_str = self.get_response_from_messages(
+                    query_str=query.query_str,
+                    message_chunks=[
+                        ChatMessage(
+                            blocks=n.node.get_content_blocks(
+                                metadata_mode=MetadataMode.LLM
+                            )
+                        )
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
+            else:
+                response_str = self.get_response(
+                    query_str=query.query_str,
+                    text_chunks=[
+                        n.node.get_content(metadata_mode=MetadataMode.LLM)
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
 
             additional_source_nodes = additional_source_nodes or []
             source_nodes = list(nodes) + list(additional_source_nodes)
@@ -164,13 +226,28 @@ class Generation(BaseSynthesizer):
             CBEventType.SYNTHESIZE,
             payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
-            response_str = await self.aget_response(
-                query_str=query.query_str,
-                text_chunks=[
-                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
-                ],
-                **response_kwargs,
-            )
+            if self._multimodal:
+                response_str = await self.aget_response_from_messages(
+                    query_str=query.query_str,
+                    message_chunks=[
+                        ChatMessage(
+                            blocks=n.node.get_content_blocks(
+                                metadata_mode=MetadataMode.LLM
+                            )
+                        )
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
+            else:
+                response_str = await self.aget_response(
+                    query_str=query.query_str,
+                    text_chunks=[
+                        n.node.get_content(metadata_mode=MetadataMode.LLM)
+                        for n in nodes
+                    ],
+                    **response_kwargs,
+                )
 
             additional_source_nodes = additional_source_nodes or []
             source_nodes = list(nodes) + list(additional_source_nodes)

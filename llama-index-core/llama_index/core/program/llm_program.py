@@ -1,10 +1,25 @@
-from typing import Any, Dict, Optional, Type, cast
+import logging
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Optional,
+    Type,
+    cast,
+    AsyncGenerator,
+    Union,
+    List,
+)
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
+from llama_index.core.program.utils import FlexibleModel, process_streaming_objects
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.types import BaseOutputParser, BasePydanticProgram, Model
+
+
+_logger = logging.getLogger(__name__)
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[Model]):
@@ -132,3 +147,81 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
                 f"Output parser returned {type(output)} but expected {self._output_cls}"
             )
         return output
+
+    def stream_call(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[
+        Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None, None
+    ]:
+        """
+        Stream object.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        """
+        llm_kwargs = llm_kwargs or {}
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+            messages = self._llm._extend_messages(messages)
+            response_gen = self._llm.stream_chat(messages, **llm_kwargs)
+        else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+            response_gen = self._llm.stream_complete(formatted_prompt, **llm_kwargs)  # type: ignore[assignment]
+        cur_objects = None
+        for partial_resp in response_gen:
+            try:
+                objects = process_streaming_objects(
+                    partial_resp,
+                    self._output_cls,
+                    cur_objects=cur_objects,
+                    flexible_mode=True,
+                    llm=self._llm,  # type: ignore[arg-type]
+                )
+                cur_objects = objects if isinstance(objects, list) else [objects]
+                yield objects
+            except Exception as e:
+                _logger.warning(f"Failed to parse streaming response: {e}")
+                continue
+
+    async def astream_call(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+    ]:
+        """
+        Stream objects.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        """
+        llm_kwargs = llm_kwargs or {}
+        if self._llm.metadata.is_chat_model:
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+            messages = self._llm._extend_messages(messages)
+            response_gen = await self._llm.astream_chat(messages, **llm_kwargs)
+        else:
+            formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
+            response_gen = await self._llm.astream_complete(  # type: ignore[assignment]
+                formatted_prompt, **llm_kwargs
+            )
+
+        async def gen() -> AsyncGenerator[
+            Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+        ]:
+            cur_objects = None
+            async for partial_resp in response_gen:
+                try:
+                    objects = process_streaming_objects(
+                        partial_resp,
+                        self._output_cls,
+                        cur_objects=cur_objects,
+                        flexible_mode=True,
+                        llm=self._llm,  # type: ignore[arg-type]
+                    )
+                    cur_objects = objects if isinstance(objects, list) else [objects]
+                    yield objects
+                except Exception as e:
+                    _logger.warning(f"Failed to parse streaming response: {e}")
+                    continue
+
+        return gen()
