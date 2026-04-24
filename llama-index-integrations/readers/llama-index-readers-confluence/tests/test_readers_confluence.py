@@ -116,16 +116,14 @@ def test_confluence_reader_with_incomplete_basic_auth():
 
 # Test new features
 def test_confluence_reader_with_custom_folder_without_parsers():
-    """Test that custom_folder raises error when used without custom_parsers."""
-    with pytest.raises(ValueError) as excinfo:
-        ConfluenceReader(
-            base_url="https://example.atlassian.net/wiki",
-            api_token="example_api_token",
-            custom_folder="/tmp/test",
-        )
-    assert "custom_folder can only be used when custom_parsers are provided" in str(
-        excinfo.value
+    """Test that custom_folder is accepted even without custom_parsers."""
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+        custom_folder="/tmp/test",
     )
+    assert reader.custom_parser_manager.custom_folder == "/tmp/test"
+    assert reader.custom_parser_manager is not None
 
 
 def test_confluence_reader_with_custom_parsers_and_folder():
@@ -140,8 +138,17 @@ def test_confluence_reader_with_custom_parsers_and_folder():
         custom_folder="/tmp/test",
     )
 
-    assert reader.custom_parsers == custom_parsers
-    assert reader.custom_folder == "/tmp/test"
+    assert reader.custom_parser_manager.custom_parsers[FileType.PDF] is mock_parser
+    assert reader.custom_parser_manager.custom_folder == "/tmp/test"
+    assert reader.custom_parser_manager is not None
+
+
+def test_confluence_reader_default_parser_manager_always_set():
+    """Test that custom_parser_manager is always created (defaults loaded even without user parsers)."""
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
     assert reader.custom_parser_manager is not None
 
 
@@ -158,9 +165,33 @@ def test_confluence_reader_with_custom_parsers_default_folder():
         custom_parsers=custom_parsers,
     )
 
-    assert reader.custom_parsers == custom_parsers
-    assert reader.custom_folder == os.getcwd()
+    assert reader.custom_parser_manager.custom_parsers[FileType.PDF] is mock_parser
+    assert reader.custom_parser_manager.custom_folder == os.getcwd()
     assert reader.custom_parser_manager is not None
+
+
+def test_confluence_reader_page_html_and_html_parsers_are_independent():
+    """FileType.PAGE_HTML and FileType.HTML override independently."""
+    from llama_index.readers.confluence.event import FileType
+
+    html_parser = MagicMock(spec=BaseReader)
+    page_html_parser = MagicMock(spec=BaseReader)
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+        custom_parsers={
+            FileType.HTML: html_parser,
+            FileType.PAGE_HTML: page_html_parser,
+        },
+    )
+    manager = reader.custom_parser_manager
+    assert manager.custom_parsers[FileType.HTML] is html_parser
+    assert manager.custom_parsers[FileType.PAGE_HTML] is page_html_parser
+    assert (
+        manager.custom_parsers[FileType.HTML]
+        is not manager.custom_parsers[FileType.PAGE_HTML]
+    )
 
 
 def test_confluence_reader_callbacks():
@@ -287,12 +318,12 @@ def test_confluence_reader_fail_on_error_setting():
     assert reader3.fail_on_error is True
 
 
-@patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
-def test_confluence_reader_process_page_with_callbacks(mock_html_parser_class):
+@patch(
+    "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+)
+def test_confluence_reader_process_page_with_callbacks(mock_process):
     """Test that callbacks are properly used during page processing."""
-    mock_text_maker = MagicMock()
-    mock_text_maker.convert.return_value = "processed text"
-    mock_html_parser_class.return_value = mock_text_maker
+    mock_process.return_value = ("processed text", {})
 
     # Mock the confluence API
     mock_confluence = MagicMock()
@@ -316,7 +347,7 @@ def test_confluence_reader_process_page_with_callbacks(mock_html_parser_class):
         "_links": {"webui": "/pages/123"},
     }
 
-    result = reader.process_page(page_data, False, mock_text_maker)
+    result = reader.process_page(page_data, False)
     assert result is not None
     assert result.doc_id == "normal_page"
     assert result.metadata["title"] == "Test Page"
@@ -330,8 +361,171 @@ def test_confluence_reader_process_page_with_callbacks(mock_html_parser_class):
         "_links": {"webui": "/pages/456"},
     }
 
-    result_skip = reader.process_page(page_data_skip, False, mock_text_maker)
+    result_skip = reader.process_page(page_data_skip, False)
     assert result_skip is None
+
+
+@patch(
+    "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+)
+def test_process_page_parser_extra_info_is_merged(mock_process):
+    """Custom parser extra_info keys are merged into the final Document."""
+    mock_process.return_value = ("parsed text", {"custom_key": "custom_val"})
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
+    reader.confluence = MagicMock()
+
+    page_data = {
+        "id": "page_123",
+        "title": "My Page",
+        "status": "current",
+        "body": {"export_view": {"value": "<p>content</p>"}},
+        "_links": {"webui": "/pages/123"},
+    }
+
+    result = reader.process_page(page_data, False)
+
+    assert result is not None
+    assert result.metadata["custom_key"] == "custom_val"
+    # Defaults are still present
+    assert result.metadata["title"] == "My Page"
+    assert result.metadata["page_id"] == "page_123"
+    assert result.metadata["status"] == "current"
+
+
+@patch(
+    "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+)
+def test_process_page_defaults_win_over_parser_extra_info(mock_process):
+    """Default keys (title, page_id, status, url) always win over parser extra_info."""
+    mock_process.return_value = (
+        "parsed text",
+        {"title": "parser title", "page_id": "parser_id", "extra": "value"},
+    )
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
+    reader.confluence = MagicMock()
+
+    page_data = {
+        "id": "page_456",
+        "title": "Real Title",
+        "status": "current",
+        "body": {"export_view": {"value": "<p>content</p>"}},
+        "_links": {"webui": "/pages/456"},
+    }
+
+    result = reader.process_page(page_data, False)
+
+    assert result is not None
+    # Confluence-sourced defaults win
+    assert result.metadata["title"] == "Real Title"
+    assert result.metadata["page_id"] == "page_456"
+    # Non-conflicting parser key is still present
+    assert result.metadata["extra"] == "value"
+
+
+@patch(
+    "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+)
+def test_process_page_include_attachments_uses_string_attachment_text(mock_process):
+    """Regression test: include_attachments path should not fail on tuple parser outputs."""
+
+    def mock_parser(file_type, file_content, extension):
+        if file_type == FileType.PAGE_HTML:
+            return "page body\n", {}
+        if file_type == FileType.IMAGE:
+            return "image extracted\n", {}
+        return "", {}
+
+    mock_process.side_effect = mock_parser
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
+
+    request_response = MagicMock()
+    request_response.status_code = 200
+    request_response.content = b"fake-image-bytes"
+
+    reader.confluence = MagicMock()
+    reader.confluence.get_attachments_from_content.return_value = {
+        "results": [
+            {
+                "id": "att-1",
+                "title": "diagram.png",
+                "metadata": {"mediaType": "image/png"},
+                "extensions": {"fileSize": 1234},
+                "_links": {
+                    "download": "/download/attachments/123/diagram.png",
+                    "webui": "/wiki/attachments/123/diagram.png",
+                },
+            }
+        ]
+    }
+    reader.confluence.request.return_value = request_response
+
+    page_data = {
+        "id": "page-1",
+        "title": "Attachment Test",
+        "status": "current",
+        "body": {"export_view": {"value": "<p>content</p>"}},
+        "_links": {"webui": "/pages/123"},
+    }
+
+    result = reader.process_page(page_data, True)
+
+    assert result is not None
+    assert "page body" in result.text
+    assert "# diagram.png" in result.text
+    assert "image extracted" in result.text
+
+
+@patch(
+    "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+)
+def test_process_attachment_returns_strings_for_supported_media_types(mock_process):
+    """Attachment processor should always return text list entries as strings."""
+    mock_process.return_value = ("pdf extracted\n", {})
+
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        api_token="example_api_token",
+    )
+
+    request_response = MagicMock()
+    request_response.status_code = 200
+    request_response.content = b"fake-pdf-bytes"
+
+    reader.confluence = MagicMock()
+    reader.confluence.get_attachments_from_content.return_value = {
+        "results": [
+            {
+                "id": "att-pdf",
+                "title": "report.pdf",
+                "metadata": {"mediaType": "application/pdf"},
+                "extensions": {"fileSize": 2048},
+                "_links": {
+                    "download": "/download/attachments/123/report.pdf",
+                    "webui": "/wiki/attachments/123/report.pdf",
+                },
+            }
+        ]
+    }
+    reader.confluence.request.return_value = request_response
+
+    texts = reader.process_attachment("page-1")
+
+    assert len(texts) == 1
+    assert isinstance(texts[0], str)
+    assert "# report.pdf" in texts[0]
+    assert "pdf extracted" in texts[0]
 
 
 def test_confluence_reader_logger_setting():

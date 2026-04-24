@@ -1,8 +1,29 @@
 # Confluence Loader
 
+## Installation
+
+The base package installs only the essential dependencies:
+
 ```bash
 pip install llama-index-readers-confluence
 ```
+
+To enable all built-in attachment parsers (PDF, images, Word, PowerPoint, Excel, CSV, SVG, HTML, Outlook), install with the `all` extra:
+
+```bash
+pip install "llama-index-readers-confluence[all]"
+```
+
+### What each install level provides
+
+| Install                               | Included parsers                                    | Missing parsers                                                              |
+| ------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `llama-index-readers-confluence`      | Confluence page body (HTML to Markdown), plain text | PDF, image, Word, PowerPoint, Excel/CSV/XLSB, HTML attachments, SVG, Outlook |
+| `llama-index-readers-confluence[all]` | All of the above                                    | -                                                                            |
+
+When a parser's dependency is missing at runtime, an `ImportError` will tell you exactly which package(s) to install and offer both the targeted install and the `[all]` shortcut.
+
+You can also override any parser with your own implementation via the `custom_parsers` argument - see [Advanced Configuration](#advanced-configuration) below.
 
 This loader loads pages from a given Confluence cloud instance. The user needs to specify the base URL for a Confluence
 instance to initialize the ConfluenceReader - base URL needs to end with `/wiki`.
@@ -28,12 +49,13 @@ For more on authenticating using OAuth 2.0, checkout:
 - https://atlassian-python-api.readthedocs.io/index.html
 - https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/
 
-Confluence pages are obtained through one of 4 four mutually exclusive ways:
+Confluence pages are obtained through one of 5 mutually exclusive ways:
 
 1. `page_ids`: Load all pages from a list of page ids
 2. `space_key`: Load all pages from a space
 3. `label`: Load all pages with a given label
 4. `cql`: Load all pages that match a given CQL query (Confluence Query Language https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/ ).
+5. `folder_id`: Load all pages from a Confluence folder
 
 When `page_ids` is specified, `include_children` will cause the loader to also load all descendent pages.
 When `space_key` is specified, `page_status` further specifies the status of pages to load: None, 'current', 'archived', 'draft'.
@@ -46,18 +68,42 @@ start(int): Which offset we should jump to when getting pages, only works with s
 
 cursor(str): An alternative to start for cql queries, the cursor is a pointer to the next "page" when searching atlassian products. The current one after a search can be found with `get_next_cursor()`
 
-User can also specify a boolean `include_attachments` to
-include attachments, this is set to `False` by default, if set to `True` all attachments will be downloaded and
-ConfluenceReader will extract the text from the attachments and add it to the Document object.
-Currently supported attachment types are: PDF, PNG, JPEG/JPG, SVG, Word and Excel.
+User can also specify a boolean `include_attachments` to include attachments, this is set to `False` by default. When set to `True`, all attachments are downloaded and ConfluenceReader extracts text from them and appends it to the Document object.
+
+Currently supported attachment types are:
+
+- **PDF** - Extract text via OCR (pytesseract + pdf2image)
+- **Images** (PNG, JPEG, JPG) - Extract text via OCR (pytesseract + Pillow)
+- **SVG** - Render to raster then extract text via OCR
+- **Word** (DOCX) - Extract text via docx2txt
+- **PowerPoint** (PPTX) - Extract text via python-pptx
+- **Excel** (XLSX, XLS) - Extract tables via pandas + openpyxl
+- **Excel Binary** (XLSB) - Extract via pandas + pyxlsb
+- **CSV** - Parse via pandas
+- **HTML** - Extract text via BeautifulSoup
+- **Text** (TXT) - Read directly
+- **Outlook** (MSG) - Extract subject, sender, to, cc, body via extract-msg
+
+You can use the `FileType` enum to reference these in custom_parsers configuration.
 
 ## Advanced Configuration
 
 The ConfluenceReader supports several advanced configuration options for customizing the reading behavior:
 
-**Custom Parsers**: You can provide custom parsers for specific file types using the `custom_parsers` parameter. This allows you to override the default parsing behavior for attachments of different types.
+**Custom Parsers**: ConfluenceReader always loads default parsers for all supported file types. You can override any default parser by providing custom implementations via the `custom_parsers` parameter.
 
-Custom parsers must implement the LlamaIndex `BaseReader` interface. Here's an example for DOCX files using MarkItDown:
+**How it works:**
+
+- Default parsers handle PDF, images, Word, Excel, CSV, HTML, and all other types listed above
+- When you pass `custom_parsers={FileType.PDF: MyCustomPDFParser(), ...}`, those override the defaults for the specified types only
+- Unspecified types continue using the built-in parsers
+- If a parser's dependencies are missing at runtime, an `ImportError` will tell you exactly which package(s) to install
+
+If you only need a subset of parsers, install only the parser-specific dependencies and keep the base package slim. If you want full attachment coverage, install the `[all]` extra.
+
+Custom parsers must implement the LlamaIndex `BaseReader` interface and return a list containing a single `Document`. Any additional metadata you set on that `Document` (via `metadata` or `extra_info`) will be merged into the final page `Document`'s metadata when using a `FileType.PAGE_HTML` parser - the four default keys (`title`, `page_id`, `status`, `url`) always take precedence on conflicts.
+
+Here's an example for DOCX files using MarkItDown:
 
 ```python
 from typing import List, Union
@@ -88,17 +134,17 @@ class DocxParser(BaseReader):
 
 # Usage with ConfluenceReader - Multiple file type parsers
 from parsers import DocxParser
-from readers.confluence_reader import FileType as ConfluenceFileType
+from llama_index.readers.confluence.event import FileType
 
 confluence_parsers = {
-    # ConfluenceFileType.PRESENTATION: PPTXParser(),
-    ConfluenceFileType.DOCUMENT: DocxParser(),
-    # ConfluenceFileType.PDF: PDFParser(),
-    # ConfluenceFileType.HTML: HTMLParser(),
-    # ConfluenceFileType.CSV: CSVParser(),
-    # ConfluenceFileType.SPREADSHEET: ExcelParser(),
-    # ConfluenceFileType.MARKDOWN: MarkdownParser(),
-    # ConfluenceFileType.TEXT: TextParser()
+    # FileType.PRESENTATION: PPTXParser(),
+    FileType.DOCUMENT: DocxParser(),
+    # FileType.PDF: PDFParser(),
+    # FileType.HTML: HTMLParser(),
+    # FileType.CSV: CSVParser(),
+    # FileType.SPREADSHEET: ExcelParser(),
+    # FileType.MARKDOWN: MarkdownParser(),
+    # FileType.TEXT: TextParser()
 }
 
 reader = ConfluenceReader(
@@ -110,12 +156,16 @@ reader = ConfluenceReader(
 
 **Processing Callbacks**:
 
-- `process_attachment_callback`: A callback function to control which attachments should be processed. The function receives the media type and file size as parameters and should return a tuple of `(should_process: bool, reason: str)`.
+- `process_attachment_callback`: A callback to control which attachments should be processed. Signature: `Callable[[str, int, str], tuple[bool, str]]` where parameters are:
+  - `media_type` (str): MIME type of the attachment
+  - `file_size` (int): Size in bytes
+  - `attachment_title` (str): Name/title of the attachment
+  - Returns: `(should_process: bool, reason: str)` where reason explains why processing was skipped (if applicable)
 - `process_document_callback`: A callback function to control which documents should be processed. The function receives the page ID as a parameter and should return a boolean indicating whether to process the document.
 
 **File Management**:
 
-- `custom_folder`: Specify a custom directory for storing temporary files during processing. Can only be used when `custom_parsers` are provided. Defaults to the current working directory if `custom_parsers` are used.
+- `custom_folder`: Optional directory for storing temporary parser files. Defaults to the current working directory.
 
 **Error Handling**:
 
@@ -124,6 +174,11 @@ reader = ConfluenceReader(
 **Logging**:
 
 - `logger`: Provide a custom logger instance for controlling log output during the reading process.
+
+**Instance Configuration**:
+
+- `cloud` (default: `True`): Set to `False` when connecting to a self-hosted Confluence Server or Data Centre instance instead of Confluence Cloud.
+- `client_args`: Additional keyword arguments passed directly to the Atlassian API client. For example, `{"backoff_and_retry": True}` enables automatic retry on rate-limit responses, and `{"timeout": 30}` sets a request timeout in seconds.
 
 **Event Monitoring (LlamaIndex Instrumentation)**:
 The ConfluenceReader integrates with LlamaIndex's instrumentation system to emit events during document and attachment processing. This allows you to monitor progress, handle errors, or integrate with external systems like databases or message queues.
@@ -159,6 +214,19 @@ dispatcher.add_event_handler(MyEventHandler())
 
 Hint: `space_key` and `page_id` can both be found in the URL of a page in Confluence - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
 
+## Document Metadata
+
+Each `Document` returned by `load_data` includes the following fields in its `metadata` (formerly `extra_info`) dict:
+
+| Field     | Type  | Description                                          |
+| --------- | ----- | ---------------------------------------------------- |
+| `title`   | `str` | Page title                                           |
+| `page_id` | `str` | Confluence page ID                                   |
+| `status`  | `str` | Page status: `'current'`, `'draft'`, or `'archived'` |
+| `url`     | `str` | Full web UI URL of the page                          |
+
+If a custom `FileType.PAGE_HTML` parser returns a `Document` with additional `metadata` / `extra_info` keys, those keys are merged into the final Document's metadata. The four default keys above always take precedence - a custom parser cannot override `title`, `page_id`, `status`, or `url`.
+
 ## Usage
 
 Here's an example usage of the ConfluenceReader.
@@ -172,7 +240,7 @@ oauth2_dict = {"client_id": "<client_id>", "token": token}
 
 base_url = "https://yoursite.atlassian.com/wiki"
 
-page_ids = ["<page_id_1>", "<page_id_2>", "<page_id_3"]
+page_ids = ["<page_id_1>", "<page_id_2>", "<page_id_3>"]
 space_key = "<space_key>"
 
 reader = ConfluenceReader(
@@ -212,7 +280,6 @@ documents = reader.load_data(
 documents.extend(
     reader.load_data(
         space_key=space_key,
-        include_children=True,
         include_attachments=True,
         start=5,
         max_num_results=5,
@@ -243,9 +310,9 @@ from llama_index.readers.confluence import ConfluenceReader
 import logging
 
 
-# Custom callback to filter attachments by size and type
+# Custom callback to filter attachments by size, type, and name
 def attachment_filter(
-    media_type: str, file_size: int, title: str
+    media_type: str, file_size: int, attachment_title: str
 ) -> tuple[bool, str]:
     # Skip large files (>10MB)
     if file_size > 10 * 1024 * 1024:
@@ -254,6 +321,10 @@ def attachment_filter(
     # Skip certain file types
     if media_type in ["application/x-zip-compressed", "application/zip"]:
         return False, f"Unsupported file type: {media_type}"
+
+    # Skip specific files by name
+    if attachment_title.startswith("temp_"):
+        return False, f"Temporary file: {attachment_title}"
 
     return True, ""
 

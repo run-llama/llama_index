@@ -3,17 +3,16 @@
 import logging
 import os
 import tempfile
-import uuid
-from io import BytesIO
 from typing import Callable, Dict, List, Optional
 from urllib.parse import unquote
 
-import requests
-from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
+from llama_index_instrumentation import DispatcherSpanMixin, get_dispatcher
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.core.utils import get_tqdm_iterable
 from retrying import retry
 
+from .default_parsers import get_default_parsers
 from .event import (
     AttachmentFailedEvent,
     AttachmentProcessedEvent,
@@ -42,76 +41,122 @@ class CustomParserManager:
         self.custom_parsers = custom_parsers or {}
         self.custom_folder = custom_folder
 
-    def __remove_custom_file(self, file_path: str):
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            print(f"Error removing file {file_path}: {e}")
-
     def process_with_custom_parser(
         self, file_type: FileType, file_content: bytes, extension: str
-    ) -> Optional[str]:
+    ) -> tuple[str, dict]:
         if file_type not in self.custom_parsers:
-            return None
+            return "", {}
 
-        file_name = f"{uuid.uuid4().hex}.{extension}"
-        custom_file_path = os.path.join(self.custom_folder, file_name)
-        with open(custom_file_path, "wb") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            suffix=f".{extension}",
+            dir=self.custom_folder,
+            delete=False,
+        ) as f:
             f.write(file_content)
-
+            custom_file_path = f.name
         try:
-            markdown_text = "\n".join(
-                doc.text
-                for doc in self.custom_parsers[file_type].load_data(
-                    file_path=custom_file_path
-                )
-            )
+            docs = self.custom_parsers[file_type].load_data(file_path=custom_file_path)
+            text = "\n".join(doc.text for doc in docs) + "\n"
+            # TODO: If a parser returns multiple Documents each with different metadata, how should those be merged together?
+            metadata = docs[0].metadata or {} if docs else {}
         finally:
-            self.__remove_custom_file(custom_file_path)
-        return markdown_text
+            try:
+                os.unlink(custom_file_path)
+            except OSError:
+                pass
+        return text, metadata
 
 
 class ConfluenceReader(BaseReader, DispatcherSpanMixin):
     """
     Confluence reader.
 
-    Reads a set of confluence pages given a space key and optionally a list of page ids
+    Reads Confluence pages and optional attachments selected by one query method.
 
-    For more on OAuth login, checkout:
-        - https://atlassian-python-api.readthedocs.io/index.html
-        - https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/
+    Authentication precedence:
+        1. ``oauth2``
+        2. ``api_token``
+        3. ``cookies``
+        4. ``user_name`` and ``password``
+        5. Environment variables:
+           ``CONFLUENCE_API_TOKEN`` or ``CONFLUENCE_USERNAME`` +
+           ``CONFLUENCE_PASSWORD``
+
+    If none of the above are provided, initialization raises ``ValueError``.
+
+    Query constraints:
+        - ``load_data`` requires exactly one of ``space_key``, ``page_ids``,
+          ``label``, ``folder_id``, or ``cql``.
+        - ``include_children`` is only valid with ``page_ids``.
+        - ``page_status`` is only valid with ``space_key``.
+        - ``start`` and ``cursor`` are mutually exclusive.
+        - ``cursor`` is not valid with ``space_key``.
 
     Args:
-        oauth2 (dict): Atlassian OAuth 2.0, minimum fields are `client_id` and `token`, where `token` is a dict and must at least contain "access_token" and "token_type".
-        base_url (str): 'base_url' for confluence cloud instance, this is suffixed with '/wiki', eg 'https://yoursite.atlassian.com/wiki'
-        cloud (bool): connecting to Confluence Cloud or self-hosted instance
-        api_token (str): Confluence API token, see https://confluence.atlassian.com/cloud/api-tokens-938839638.html
-        cookies (dict): Confluence cookies, see https://atlassian-python-api.readthedocs.io/index.html
-        user_name (str): Confluence username, used for basic auth. Must be used with `password`.
-        password (str): Confluence password, used for basic auth. Must be used with `user_name`.
-        client_args (dict): Additional keyword arguments to pass directly to the Atlassian Confluence client constructor, for example `{'backoff_and_retry': True}`.
-        custom_parsers (dict): Optional custom parsers for different file types. Maps FileType enum values to BaseReader instances.
-        process_attachment_callback (callable): Optional callback function to determine whether to process an attachment. Should return tuple[bool, str] where bool indicates whether to process and str provides reason if not.
-        process_document_callback (callable): Optional callback function to determine whether to process a document. Should return bool indicating whether to process.
-        custom_folder (str): Optional custom folder path for storing temporary files. Can only be used when custom_parsers are provided. Defaults to current working directory if custom_parsers are used.
-        logger (Logger): Optional custom logger instance. If not provided, uses internal logger.
-        fail_on_error (bool): Whether to raise exceptions on processing errors or continue with warnings. Default is True.
+        base_url (str): Base URL for the Confluence instance, usually ending
+            with ``/wiki`` for Confluence Cloud.
+        oauth2 (Optional[dict]): Atlassian OAuth 2.0 configuration. Minimum
+            expected keys include ``client_id`` and ``token`` where ``token``
+            contains at least ``access_token`` and ``token_type``.
+        cloud (bool): Whether to connect to Confluence Cloud (`True`) or a
+            self-hosted instance (`False`).
+        api_token (Optional[str]): Confluence API token for token-based auth.
+            See: https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+        cookies (Optional[dict]): Cookie-based auth payload accepted by
+            ``atlassian.Confluence``.
+        user_name (Optional[str]): Username for basic auth. Must be used with
+            ``password``.
+        password (Optional[str]): Password for basic auth. Must be used with
+            ``user_name``.
+        client_args (Optional[dict]): Additional keyword arguments passed to
+            ``atlassian.Confluence`` (for example,
+            ``{"backoff_and_retry": True}``).
+        custom_parsers (Optional[Dict[FileType, BaseReader]]): Per-file-type
+            parser overrides. Entries are merged with built-in parsers and
+            override defaults for matching ``FileType`` values.
+        process_attachment_callback (Optional[Callable[[str, int, str],
+            tuple[bool, str]]]): Callback to decide whether to process an
+            attachment. Receives ``(media_type, file_size, attachment_title)``
+            and returns ``(should_process, reason)``.
+        process_document_callback (Optional[Callable[[str], bool]]): Callback
+            to decide whether to process a page. Receives ``page_id`` and
+            returns ``True`` to process or ``False`` to skip.
+        custom_folder (Optional[str]): Folder used for temporary parser files.
+            Defaults to the current working directory.
+        logger (Optional[logging.Logger]): Custom logger instance. If not
+            provided, uses the module logger.
+        fail_on_error (bool): Error policy for page and attachment processing.
+            If ``True`` (default), raises on processing errors. If ``False``,
+            logs warnings, emits failure events, and continues processing.
+        verbose (bool): Whether to emit detailed log messages.
 
     Instrumentation Events:
-        The ConfluenceReader uses LlamaIndex's instrumentation system to emit events during document and attachment processing.
-        These events can be captured by adding event handlers to the dispatcher.
+        The reader emits LlamaIndex instrumentation events during page and
+        attachment processing. Add event handlers to the dispatcher to capture
+        these events.
 
         Available events:
-        - TotalPagesToProcessEvent: Emitted when the total number of pages to process is determined
-        - PageDataFetchStartedEvent: Emitted when processing of a page begins
-        - PageDataFetchCompletedEvent: Emitted when a page is successfully processed
-        - PageFailedEvent: Emitted when page processing fails
-        - PageSkippedEvent: Emitted when a page is skipped due to callback decision
-        - AttachmentProcessingStartedEvent: Emitted when attachment processing begins
-        - AttachmentProcessedEvent: Emitted when an attachment is successfully processed
-        - AttachmentSkippedEvent: Emitted when an attachment is skipped
-        - AttachmentFailedEvent: Emitted when attachment processing fails
+        - ``TotalPagesToProcessEvent``: ``total_pages``. Emitted when the total number of pages to process is determined.
+        - ``PageDataFetchStartedEvent``: ``page_id``. Emitted when processing of a page begins.
+        - ``PageDataFetchCompletedEvent``: ``page_id``, ``document``. Emitted when a page is successfully processed.
+        - ``PageFailedEvent``: ``page_id``, ``error``. Emitted when page processing fails.
+        - ``PageSkippedEvent``: ``page_id``. Emitted when a page is skipped due to callback decision.
+        - ``AttachmentProcessingStartedEvent``: ``page_id``, ``attachment_id``,
+          ``attachment_name``, ``attachment_type``, ``attachment_size``,
+          ``attachment_link``. Emitted when attachment processing begins.
+        - ``AttachmentProcessedEvent``: ``page_id``, ``attachment_id``,
+          ``attachment_name``, ``attachment_type``, ``attachment_size``,
+          ``attachment_link``. Emitted when an attachment is successfully processed.
+        - ``AttachmentSkippedEvent``: ``page_id``, ``attachment_id``,
+          ``attachment_name``, ``attachment_type``, ``attachment_size``,
+          ``attachment_link``, ``reason``. Emitted when an attachment is skipped.
+        - ``AttachmentFailedEvent``: ``page_id``, ``attachment_id``,
+          ``attachment_name``, ``attachment_type``, ``attachment_size``,
+          ``attachment_link``, ``error``. Emitted when attachment processing fails.
+
+        Unsupported attachment media types are skipped and emit
+        ``AttachmentSkippedEvent``.
 
         To listen to events, add an event handler to the dispatcher:
         ```python
@@ -126,11 +171,16 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         dispatcher.add_event_handler(MyEventHandler())
         ```
 
+    References:
+        - https://atlassian-python-api.readthedocs.io/index.html
+        - https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/
+
     """
 
     def __init__(
         self,
-        base_url: str = None,
+        base_url: str,
+        *,
         oauth2: Optional[Dict] = None,
         cloud: bool = True,
         api_token: Optional[str] = None,
@@ -140,35 +190,29 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         client_args: Optional[dict] = None,
         custom_parsers: Optional[Dict[FileType, BaseReader]] = None,
         process_attachment_callback: Optional[
-            Callable[[str, int], tuple[bool, str]]
+            Callable[[str, int, str], tuple[bool, str]]
         ] = None,
         process_document_callback: Optional[Callable[[str], bool]] = None,
         custom_folder: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         fail_on_error: bool = True,
+        verbose: bool = False,
     ) -> None:
         if base_url is None:
             raise ValueError("Must provide `base_url`")
 
         self.base_url = base_url
-        self.custom_parsers = custom_parsers or {}
 
-        # Only set custom_folder if custom_parsers are provided
-        if custom_parsers and custom_folder:
-            self.custom_folder = custom_folder
-        elif custom_parsers:
-            self.custom_folder = os.getcwd()
-        elif custom_folder:
-            raise ValueError(
-                "custom_folder can only be used when custom_parsers are provided"
-            )
-        else:
-            self.custom_folder = None
+        self.custom_parser_manager = CustomParserManager(
+            {**get_default_parsers(), **(custom_parsers or {})},
+            custom_folder or os.getcwd(),
+        )
 
         self.logger = logger or internal_logger
         self.process_attachment_callback = process_attachment_callback
         self.process_document_callback = process_document_callback
         self.fail_on_error = fail_on_error
+        self.verbose = verbose
 
         try:
             from atlassian import Confluence
@@ -176,7 +220,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             raise ImportError(
                 "`atlassian` package not found, please run `pip install atlassian-python-api`"
             )
-        self.confluence: Confluence = None
+
         if client_args is None:
             client_args = {}
         if oauth2:
@@ -225,12 +269,6 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                         )
 
         self._next_cursor = None
-        if custom_parsers:
-            self.custom_parser_manager = CustomParserManager(
-                custom_parsers, self.custom_folder
-            )
-        else:
-            self.custom_parser_manager = None
 
     def _format_attachment_header(self, attachment: dict) -> str:
         """Formats the attachment title as a markdown header."""
@@ -253,7 +291,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         max_num_results: Optional[int] = None,
     ) -> List[Document]:
         """
-        Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
+        Load Confluence pages from Confluence, specifying one of five mutually exclusive methods:
         `space_key`, `page_ids`, `label`, `folder_id` or `cql`
         (Confluence Query Language https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/ ).
 
@@ -286,7 +324,7 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             != 1
         ):
             raise ValueError(
-                "Must specify exactly one among `space_key`, `page_ids`, `label`, `cql` parameters."
+                "Must specify exactly one among `space_key`, `page_ids`, `label`, `folder_id`, `cql` parameters."
             )
 
         if cursor and start:
@@ -312,10 +350,6 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 " API limits.  If you wish to limit the number of returned results"
                 " please use `max_num_results` instead."
             )
-
-        from .html_parser import HtmlTextParser
-
-        text_maker = HtmlTextParser()
 
         if not start:
             start = 0
@@ -369,16 +403,28 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                         if max_num_remaining <= 0:
                             break
                 page_ids = dfs_page_ids
-            for page_id in (
-                page_ids[:max_num_results] if max_num_results is not None else page_ids
-            ):
-                pages.append(
-                    self._get_data_with_retry(
-                        self.confluence.get_page_by_id,
-                        page_id=page_id,
-                        expand="body.export_view.value",
+            page_ids_with_progress = get_tqdm_iterable(
+                page_ids[:max_num_results] if max_num_results is not None else page_ids,
+                self.verbose,
+                "Downloading Confluence pages",
+            )
+            for page_id in page_ids_with_progress:
+                try:
+                    pages.append(
+                        self._get_data_with_retry(
+                            self.confluence.get_page_by_id,
+                            page_id=page_id,
+                            expand="body.export_view.value",
+                        )
                     )
-                )
+                except Exception:
+                    if self.fail_on_error:
+                        self.logger.error(f"Failed to fetch page with id {page_id}")
+                        raise
+                    else:
+                        self.logger.warning(
+                            f"Failed to fetch page with id {page_id}. Skipping this page."
+                        )
         elif folder_id:
             # Fetch all folders in the folder
             max_num_remaining = max_num_results
@@ -387,17 +433,28 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 type="folder",
                 max_num_results=max_num_remaining,
             )
-            for page_id in (
-                page_ids[:max_num_results] if max_num_results is not None else page_ids
-            ):
-                pages.append(
-                    self._get_data_with_retry(
-                        self.confluence.get_page_by_id,
-                        page_id=page_id,
-                        expand="body.export_view.value",
+            page_ids_with_progress = get_tqdm_iterable(
+                page_ids[:max_num_results] if max_num_results is not None else page_ids,
+                self.verbose,
+                "Downloading Confluence pages",
+            )
+            for page_id in page_ids_with_progress:
+                try:
+                    pages.append(
+                        self._get_data_with_retry(
+                            self.confluence.get_page_by_id,
+                            page_id=page_id,
+                            expand="body.export_view.value",
+                        )
                     )
-                )
-
+                except Exception:
+                    if self.fail_on_error:
+                        self.logger.error(f"Failed to fetch page with id {page_id}")
+                        raise
+                    else:
+                        self.logger.warning(
+                            f"Failed to fetch page with id {page_id}. Skipping this page."
+                        )
         docs = []
 
         if pages:
@@ -405,11 +462,11 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
 
         for page in pages:
             try:
-                doc = self.process_page(page, include_attachments, text_maker)
+                doc = self.process_page(page, include_attachments)
                 if doc:
                     docs.append(doc)
             except Exception as e:
-                self.logger.error(f"Error processing page: {e}")
+                self.logger.error(f"Error processing page {page['id']}: {e}")
                 dispatcher.event(PageFailedEvent(page_id=page["id"], error=str(e)))
                 if self.fail_on_error:
                     raise
@@ -417,7 +474,6 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                     self.logger.warning(
                         f"Failed to process page {page['id']}: {e}. Skipping this page."
                     )
-                    continue
         return docs
 
     def _dfs_page_ids(self, id, type="page", max_num_results=None):
@@ -547,8 +603,10 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
         return function(**kwargs)
 
     @dispatcher.span
-    def process_page(self, page, include_attachments, text_maker):
-        self.logger.info("Processing " + self.base_url + page["_links"]["webui"])
+    def process_page(self, page, include_attachments):
+        self.logger.info(
+            f"Processing {self.base_url}{page['_links']['webui']} ({page['title']})"
+        )
 
         if self.process_document_callback:
             should_process = self.process_document_callback(page["id"])
@@ -561,68 +619,34 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
 
         dispatcher.event(PageDataFetchStartedEvent(page_id=page["id"]))
 
+        attachment_texts = []
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
-        else:
-            attachment_texts = []
-        if FileType.HTML in self.custom_parsers and self.custom_folder:
-            html_text = page["body"]["export_view"]["value"]
-            # save in temporary file
-            file_location = None
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                suffix=".html",
-                encoding="utf-8",
-                dir=self.custom_folder,
-                delete=False,
-            ) as f:
-                f.write(html_text)
-                file_location = f.name
-            try:
-                text = (
-                    page["title"]
-                    + "\n"
-                    + "\n".join(
-                        doc.text
-                        for doc in self.custom_parsers[FileType.HTML].load_data(
-                            file_path=file_location
-                        )
-                    )
-                    + "\n"
-                    + "\n".join(attachment_texts)
-                )
-            finally:
-                try:
-                    os.unlink(file_location)
-                except OSError:
-                    pass
-        else:
-            text = text_maker.convert(page["body"]["export_view"]["value"]) + "".join(
-                attachment_texts
-            )
 
+        html_bytes = page["body"]["export_view"]["value"].encode("utf-8")
+        page_body, parser_metadata = (
+            self.custom_parser_manager.process_with_custom_parser(
+                FileType.PAGE_HTML, html_bytes, "html"
+            )
+        )
+        text = page_body + "".join(attachment_texts)
+
+        default_metadata = {
+            "title": page["title"],
+            "page_id": page["id"],
+            "status": page["status"],
+            "url": self.base_url + page["_links"]["webui"],
+        }
         doc = Document(
             text=text,
             doc_id=page["id"],
-            extra_info={
-                "title": page["title"],
-                "page_id": page["id"],
-                "status": page["status"],
-                "url": self.base_url + page["_links"]["webui"],
-            },
+            metadata={**parser_metadata, **default_metadata},
         )
         dispatcher.event(PageDataFetchCompletedEvent(page_id=page["id"], document=doc))
         return doc
 
     @dispatcher.span
     def process_attachment(self, page_id):
-        try:
-            pass
-        except ImportError:
-            raise ImportError(
-                "`pytesseract` or `pdf2image` or `Pillow` package not found, please run `pip install pytesseract pdf2image Pillow`"
-            )
-
         # depending on setup you may also need to set the correct path for poppler and tesseract
         attachments = self.confluence.get_attachments_from_content(page_id)["results"]
         texts = []
@@ -798,387 +822,144 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                         error=str(e),
                     )
                 )
+                # Enforce fail_on_error parameter: if True, re-raise exception to stop processing
+                if self.fail_on_error:
+                    raise
+                else:
+                    self.logger.warning(
+                        f"Failed to process attachment {attachment['title']}: {e}. Skipping this attachment."
+                    )
 
         return texts
 
-    def process_pdf(self, link):
-        if FileType.PDF not in self.custom_parsers:
-            try:
-                import pytesseract  # type: ignore
-                from pdf2image import convert_from_bytes  # type: ignore
-            except ImportError:
-                raise ImportError(
-                    "`pytesseract` or `pdf2image` package not found, please run `pip install pytesseract pdf2image`"
-                )
-
+    def process_pdf(self, link) -> str:
         response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
-
-        if FileType.PDF in self.custom_parsers and self.custom_parser_manager:
-            return self.custom_parser_manager.process_with_custom_parser(
-                FileType.PDF, response.content, "pdf"
-            )
-
-        try:
-            images = convert_from_bytes(response.content)
-        except ValueError:
-            return text
-
-        for i, image in enumerate(images):
-            image_text = pytesseract.image_to_string(image)
-            text += f"Page {i + 1}:\n{image_text}\n\n"
-
-        return text
-
-    def process_html(self, link):
-        try:
-            from bs4 import BeautifulSoup  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`beautifulsoup4` or `requests` package not found, please run `pip install beautifulsoup4 requests`"
-            )
-
-        try:
-            response = self.confluence.request(path=link, absolute=True)
-            if response.status_code != 200:
-                return "Error fetching HTML content: HTTP Status Code {}".format(
-                    response.status_code
-                )
-
-            if FileType.HTML in self.custom_parsers and self.custom_parser_manager:
-                return self.custom_parser_manager.process_with_custom_parser(
-                    FileType.HTML, response.content, "html"
-                )
-
-            # Parse the HTML content and extract text
-            soup = BeautifulSoup(response.content, "html.parser")
-            return soup.get_text(separator=" ", strip=True)
-        except Exception as e:
-            self.logger.error(f"Error processing HTML file at {link}: {e}")
-            return f"Error processing HTML file: {link}. An error occurred while fetching or parsing the content."
-
-    def process_txt(self, link):
-        try:
-            response = self.confluence.request(path=link, absolute=True)
-            if response.status_code != 200:
-                return "Error fetching text content: HTTP Status Code {}".format(
-                    response.status_code
-                )
-            return response.text
-        except Exception as e:
-            self.logger.error(f"Error processing text file at {link}: {e}")
-            return f"Error processing text file: {link}. An error occurred while fetching the content."
-
-    def process_msg(self, link):
-        try:
-            import extract_msg  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`extract-msg` package not found, please run `pip install extract-msg`"
-            )
-
-        response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if response.status_code != 200 or response.content in [b"", None]:
-            self.logger.error(f"Failed to download .msg file from {link}")
-            return text
-
-        file_data = BytesIO(response.content)
-
-        try:
-            # Load the .msg file content
-            with extract_msg.Message(file_data) as msg:
-                subject = msg.subject
-                sender = msg.sender
-                to = msg.to
-                cc = msg.cc
-                body = msg.body
-
-                # Compile the extracted information into a text string
-                text = (
-                    f"Subject: {subject}\nFrom: {sender}\nTo: {to}\nCC: {cc}\n\n{body}"
-                )
-        except Exception as e:
-            self.logger.error(f"Error processing .msg file at {link}: {e}")
-            return "Error processing .msg file."
-
-        return text
-
-    def process_image(self, link):
-        try:
-            import pytesseract  # type: ignore
-            from PIL import Image  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`pytesseract` or `Pillow` package not found, please run `pip install pytesseract Pillow`"
-            )
-
-        text = ""
-
-        try:
-            response = self.confluence.request(path=link, absolute=True)
-            # Check if the response status code indicates success (200 OK)
-            if response.status_code == 200 and response.content:
-                try:
-                    image = Image.open(BytesIO(response.content))
-                    text = pytesseract.image_to_string(image)
-                except OSError:
-                    # Handle errors that occur while opening or processing the image
-                    self.logger.error(
-                        f"Error processing image at {link}: Unable to open or read the image content."
-                    )
-                    return text
-            else:
-                # Log non-200 responses here if needed
-                self.logger.error(
-                    f"Error fetching image at {link}: HTTP status code {response.status_code}."
-                )
-                return text
-        except requests.exceptions.RequestException as e:
-            # This catches any Requests-related exceptions, including HTTPError, ConnectionError, etc.
-            self.logger.error(f"Request error while fetching image at {link}: {e}")
-            return text
-
-        return text
-
-    def process_doc(self, link):
-        try:
-            import zipfile  # Import zipfile to catch BadZipFile exceptions
-        except ImportError:
-            raise ImportError("Failed to import BytesIO from io")
-        if not self.custom_parsers.get(FileType.DOCUMENT):
-            try:
-                import docx2txt
-            except ImportError:
-                raise ImportError(
-                    "`docx2txt` package not found, please run `pip install docx2txt`"
-                )
-
-        text = ""
-
-        try:
-            response = self.confluence.request(path=link, absolute=True)
-            if response.status_code != 200 or response.content in [b"", None]:
-                self.logger.error(
-                    f"Error fetching document at {link}: HTTP status code {response.status_code}."
-                )
-                return text
-
-            file_data = BytesIO(response.content)
-
-            # save in file
-            # Use custom parser if available
-            if FileType.DOCUMENT in self.custom_parsers and self.custom_parser_manager:
-                return self.custom_parser_manager.process_with_custom_parser(
-                    FileType.DOCUMENT, file_data.getbuffer(), "docx"
-                )
-
-            try:
-                text = docx2txt.process(file_data)
-            except zipfile.BadZipFile:
-                self.logger.error(
-                    f"Error processing Word document at {link}: File is not a zip file."
-                )
-                return text
-        except Exception as e:
-            self.logger.error(f"Unexpected error processing document at {link}: {e}")
-            return text
-
-        return text
-
-    def process_ppt(self, link):
-        if not self.custom_parsers.get(FileType.PRESENTATION):
-            try:
-                from pptx import Presentation  # type: ignore
-            except ImportError:
-                raise ImportError(
-                    "`python-pptx` package not found, please run `pip install python-pptx`"
-                )
-
-        response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
-
-        file_data = BytesIO(response.content)
-
-        if not file_data:
+        if response.status_code != 200 or not response.content:
             self.logger.error(
-                f"Error processing PowerPoint file at {link}: Empty content."
+                f"Error fetching PDF attachment at {link}: HTTP status code {response.status_code}."
             )
-            return text
-
-        if FileType.PRESENTATION in self.custom_parsers and self.custom_parser_manager:
-            return self.custom_parser_manager.process_with_custom_parser(
-                FileType.PRESENTATION, file_data.getbuffer(), "pptx"
-            )
-
-        # Check if the response content is empty
-
-        try:
-            presentation = Presentation(file_data)
-            for slide in presentation.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text += shape.text + " "
-        except (
-            Exception
-        ) as e:  # Catching a general exception to handle any unexpected errors
-            self.logger.error(f"Error processing PowerPoint file at {link}: {e}")
-            text = f"Error processing PowerPoint file: {link}. The file might be corrupt or not a valid PowerPoint file."
-
-        return text.strip()  # Remove any leading/trailing whitespace
-
-    def process_xls(self, link):
-        try:
-            import pandas as pd  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`pandas` package not found, please run `pip install pandas`"
-            )
-
-        response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
-
-        file_data = BytesIO(response.content)
-
-        if FileType.SPREADSHEET in self.custom_parsers and self.custom_parser_manager:
-            return self.custom_parser_manager.process_with_custom_parser(
-                FileType.SPREADSHEET, file_data.getbuffer(), "xlsx"
-            )
-        # Try to read the Excel file
-        try:
-            # Use pandas to read all sheets; returns a dict of DataFrame
-            sheets = pd.read_excel(file_data, sheet_name=None, engine="openpyxl")
-        except Exception as e:
-            return f"Failed to read Excel file: {e!s}"
-
-        for sheet_name, sheet_data in sheets.items():
-            text += f"{sheet_name}:\n"
-            for row_index, row in sheet_data.iterrows():
-                text += "\t".join(str(value) for value in row) + "\n"
-            text += "\n"
-
-        return text.strip()
-
-    def process_xlsb(self, link):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError(
-                "`pandas` package not found, please run `pip install pandas`"
-            )
-
-        response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
-
-        file_data = BytesIO(response.content)
-
-        try:
-            # Use pandas to read the .xlsb file, specifying pyxlsb as the engine
-            df = pd.read_excel(file_data, engine="pyxlsb")
-            # Convert the DataFrame to a text string
-            text_rows = []
-            for index, row in df.iterrows():
-                text_rows.append(", ".join(row.astype(str)))
-            text = "\n".join(text_rows)
-        except Exception as e:
-            self.logger.error(f"Error processing XLSB file at {link}: {e}")
-            text = "Error processing XLSB file."
-
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.PDF, response.content, "pdf"
+        )
         return text
 
-    def process_csv(self, link):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError(
-                "`pandas` package not found, please run `pip install pandas`"
-            )
-
+    def process_html(self, link) -> str:
         response = self.confluence.request(path=link, absolute=True)
-        text = ""
-
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
-
-        file_data = BytesIO(response.content)
-
-        try:
-            # Assuming CSV uses default comma delimiter. If delimiter varies, consider detecting it.
-            df = pd.read_csv(file_data, low_memory=False)
-            # Convert the DataFrame to a text string, including headers
-            text_rows = []
-            for index, row in df.iterrows():
-                text_rows.append(", ".join(row.astype(str)))
-            text = "\n".join(text_rows)
-        except Exception as e:
-            self.logger.error(f"Error processing CSV file: {e}")
-            text = "Error processing CSV file."
-
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching HTML attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.HTML, response.content, "html"
+        )
         return text
 
-    def process_svg(self, link):
-        try:
-            import pytesseract  # type: ignore
-            from PIL import Image  # type: ignore
-            from reportlab.graphics import renderPM  # type: ignore
-            from svglib.svglib import svg2rlg  # type: ignore
-        except ImportError:
-            raise ImportError(
-                "`pytesseract`, `Pillow`, or `svglib` package not found, please run `pip install pytesseract Pillow svglib`"
-            )
-
+    def process_txt(self, link) -> str:
         response = self.confluence.request(path=link, absolute=True)
-        text = ""
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching TXT attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.TEXT, response.content, "txt"
+        )
+        return text
 
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
+    def process_msg(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching MSG attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.MSG, response.content, "msg"
+        )
+        return text
 
-        drawing = svg2rlg(BytesIO(response.content))
+    def process_image(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching image attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.IMAGE, response.content, "png"
+        )
+        return text
 
-        img_data = BytesIO()
-        renderPM.drawToFile(drawing, img_data, fmt="PNG")
-        img_data.seek(0)
-        image = Image.open(img_data)
+    def process_doc(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching document attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.DOCUMENT, response.content, "docx"
+        )
+        return text
 
-        return pytesseract.image_to_string(image)
+    def process_ppt(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching PPT attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.PRESENTATION, response.content, "pptx"
+        )
+        return text
 
+    def process_xls(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching XLS attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.SPREADSHEET, response.content, "xlsx"
+        )
+        return text
 
-if __name__ == "__main__":
-    reader = ConfluenceReader()
+    def process_xlsb(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching XLSB attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.XLSB, response.content, "xlsb"
+        )
+        return text
+
+    def process_csv(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching CSV attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.CSV, response.content, "csv"
+        )
+        return text
+
+    def process_svg(self, link) -> str:
+        response = self.confluence.request(path=link, absolute=True)
+        if response.status_code != 200 or not response.content:
+            self.logger.error(
+                f"Error fetching SVG attachment at {link}: HTTP status code {response.status_code}."
+            )
+            return ""
+        text, _ = self.custom_parser_manager.process_with_custom_parser(
+            FileType.SVG, response.content, "svg"
+        )
+        return text
