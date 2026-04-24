@@ -228,22 +228,14 @@ def test_pipeline_update_metadata() -> None:
 
 
 def test_pipeline_does_not_re_embed_on_volatile_metadata_change() -> None:
-    """Regression test: fields listed in `excluded_embed_metadata_keys` must
-    NOT trigger re-embedding on upsert. This covers the churn scenario where
-    volatile metadata such as file-stat timestamps or sizes would otherwise
-    force redundant embedding API calls for byte-identical content.
-
-    Companion to `test_pipeline_update_metadata`, which verifies the inverse:
-    a change to a content-relevant (non-excluded) metadata field DOES trigger
-    re-processing.
+    """A change to a field listed in `excluded_embed_metadata_keys` must
+    NOT trigger re-embedding. This covers the scenario where volatile
+    metadata such as file-stat timestamps or sizes would otherwise force
+    redundant embedding API calls for byte-identical content.
     """
-    from unittest.mock import MagicMock
+    from unittest.mock import patch
 
     embed_model = MockEmbedding(embed_dim=4)
-    # Wrap the batch method so we can count invocations.
-    embed_model.get_text_embedding_batch = MagicMock(  # type: ignore[method-assign]
-        wraps=embed_model.get_text_embedding_batch
-    )
 
     pipeline = IngestionPipeline(
         transformations=[
@@ -260,28 +252,48 @@ def test_pipeline_does_not_re_embed_on_volatile_metadata_change() -> None:
         excluded_embed_metadata_keys=["last_modified_date"],
     )
 
-    # Phase 1: first ingest (should embed).
-    pipeline.run(documents=[doc])
-    embed_calls_after_phase1 = embed_model.get_text_embedding_batch.call_count
-    assert embed_calls_after_phase1 >= 1
+    # Patched at the class level because direct instance assignment is
+    # rejected by Pydantic's strict field validation on `BaseEmbedding`.
+    with patch.object(
+        MockEmbedding,
+        "get_text_embedding_batch",
+        wraps=embed_model.get_text_embedding_batch,
+    ) as embed_spy:
 
-    # Phase 2: mutate only the volatile field, which is in
-    # `excluded_embed_metadata_keys`. This must NOT re-embed.
-    doc.metadata["last_modified_date"] = "2026-04-23"
-    pipeline.run(documents=[doc])
-    assert embed_model.get_text_embedding_batch.call_count == embed_calls_after_phase1, (
-        "Re-embedding was triggered by a change to metadata listed in "
-        "excluded_embed_metadata_keys. This re-introduces the churn bug."
-    )
+        def texts_embedded() -> int:
+            """Count the real texts embedded so far, ignoring empty-batch calls.
 
-    # Phase 3: mutate a non-excluded (content-relevant) field. This SHOULD
-    # re-embed, preserving the behavior added in #18303 for #17871.
-    doc.metadata["tag"] = "v2"
-    pipeline.run(documents=[doc])
-    assert embed_model.get_text_embedding_batch.call_count > embed_calls_after_phase1, (
-        "Content-relevant metadata change was not detected. The fix must still "
-        "invalidate the cache when a non-excluded field changes."
-    )
+            The pipeline always invokes the embedding transform once per
+            `pipeline.run(...)`, even when dedup produced an empty
+            `nodes_to_run` and the batch is `[]`. Counting raw invocations
+            would therefore report a re-embed every time we re-run, which
+            is the opposite of what we want to assert.
+            """
+            return sum(
+                len(call.args[0]) if call.args else 0
+                for call in embed_spy.call_args_list
+            )
+
+        # Phase 1: first ingest; should embed.
+        pipeline.run(documents=[doc])
+        embedded_after_phase1 = texts_embedded()
+        assert embedded_after_phase1 >= 1
+
+        # Phase 2: change a volatile (excluded) field; must NOT re-embed.
+        doc.metadata["last_modified_date"] = "2026-04-23"
+        pipeline.run(documents=[doc])
+        assert texts_embedded() == embedded_after_phase1, (
+            "Re-embedding was triggered by a change to metadata listed in "
+            "excluded_embed_metadata_keys."
+        )
+
+        # Phase 3: change a non-excluded field; should re-embed.
+        doc.metadata["tag"] = "v2"
+        pipeline.run(documents=[doc])
+        assert texts_embedded() > embedded_after_phase1, (
+            "A change to a content-relevant (non-excluded) metadata field "
+            "did not trigger re-embedding."
+        )
 
 
 def test_pipeline_dedup_duplicates_only() -> None:
