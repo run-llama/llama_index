@@ -147,7 +147,7 @@ class SimpleGraphStore(GraphStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             json.dump(self._data.to_dict(), f)
 
     def get_schema(self, refresh: bool = False) -> str:

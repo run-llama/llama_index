@@ -67,6 +67,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-opus-4-6-v1": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
@@ -125,6 +126,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -164,6 +166,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -187,6 +190,7 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -205,6 +209,7 @@ BEDROCK_REASONING_MODELS = (
     "anthropic.claude-opus-4-1-20250805-v1:0",
     "anthropic.claude-opus-4-5-20251101-v1:0",
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-20250514-v1:0",
     "anthropic.claude-sonnet-4-5-20250929-v1:0",
     "anthropic.claude-sonnet-4-6",
@@ -216,8 +221,11 @@ BEDROCK_REASONING_MODELS = (
 
 BEDROCK_ADAPTIVE_THINKING_SUPPORTED_MODELS = (
     "anthropic.claude-opus-4-6-v1",
+    "anthropic.claude-opus-4-7",
     "anthropic.claude-sonnet-4-6",
 )
+
+BEDROCK_NO_TEMP_MODELS = ("anthropic.claude-opus-4-7",)
 
 
 def is_reasoning(model_name: str) -> bool:
@@ -702,7 +710,7 @@ def converse_with_retry(
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
-    temperature: float = 0.1,
+    temperature: Optional[float] = None,
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
@@ -712,13 +720,15 @@ def converse_with_retry(
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
+    inference_config: Dict[str, Any] = {
+        "maxTokens": max_tokens,
+    }
+    if temperature is not None:
+        inference_config["temperature"] = temperature
     converse_kwargs = {
         "modelId": model,
         "messages": messages,
-        "inferenceConfig": {
-            "maxTokens": max_tokens,
-            "temperature": temperature,
-        },
+        "inferenceConfig": inference_config,
     }
     if "thinking" in kwargs:
         converse_kwargs["additionalModelRequestFields"] = {
@@ -788,7 +798,7 @@ async def converse_with_retry_async(
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
-    temperature: float = 0.1,
+    temperature: Optional[float] = None,
     stream: bool = False,
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
@@ -799,13 +809,15 @@ async def converse_with_retry_async(
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
+    inference_config: Dict[str, Any] = {
+        "maxTokens": max_tokens,
+    }
+    if temperature is not None:
+        inference_config["temperature"] = temperature
     converse_kwargs = {
         "modelId": model,
         "messages": messages,
-        "inferenceConfig": {
-            "maxTokens": max_tokens,
-            "temperature": temperature,
-        },
+        "inferenceConfig": inference_config,
     }
     if "thinking" in kwargs:
         converse_kwargs["additionalModelRequestFields"] = {

@@ -70,7 +70,7 @@ The first nine sections focus on single-query behavior (retrieval, chunking, emb
 **Fixes:**
 
 - Store your embedding model name alongside your index and log it in metadata or config
-- Pin your embedding model version (for example, `text-embedding-ada-002` or a specific sentence-transformers version)
+- Pin your embedding model version (for example, `text-embedding-3-small` or a specific `sentence-transformers` model revision)
 - If you change the embedding model, rebuild the entire index since you cannot mix embeddings
 - Use `Settings.embed_model` consistently in both indexing and querying code paths
 

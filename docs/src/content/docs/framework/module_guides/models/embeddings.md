@@ -65,15 +65,15 @@ You can find more usage details and available customization options below.
 
 The most common usage for an embedding model will be setting it in the global `Settings` object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
 
-By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
+If you don't set `Settings.embed_model`, LlamaIndex will fall back to `OpenAIEmbedding`'s default of `text-embedding-ada-002`. The example below shows how to set a current OpenAI model explicitly. We recommend doing this for new projects.
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
 
-# global default
-Settings.embed_model = OpenAIEmbedding()
+# global default: select a current OpenAI model explicitly
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -87,6 +87,20 @@ query_engine = index.as_query_engine()
 
 response = query_engine.query("query string")
 ```
+
+## Choosing an embedding model
+
+There are many embedding models to choose from. At the time of writing, a reasonable starting point for each common scenario is:
+
+- Frictionless hosted API: `OpenAIEmbedding(model="text-embedding-3-small")`. No model to host, good general-purpose quality.
+- Runs locally, small and fast (~22-33M params): `HuggingFaceEmbedding("BAAI/bge-small-en-v1.5")` or `HuggingFaceEmbedding("sentence-transformers/all-MiniLM-L6-v2")`.
+- Runs locally, mid-size, recent architecture (~150M params): `HuggingFaceEmbedding("lightonai/DenseOn")` (released April 2026). A natural step up from the small baselines without committing to a 0.6B+ model.
+- Runs locally, stronger accuracy, multilingual (~0.6-4B params): `HuggingFaceEmbedding("Qwen/Qwen3-Embedding-0.6B")` (or `-4B` if you have the VRAM).
+- CPU-only deployment, throughput-sensitive: any of the local options above with `backend="openvino"`; see the [ONNX / OpenVINO section](#onnx-or-openvino-optimizations) for benchmarks.
+
+The [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard) is the canonical place to compare current models across accuracy, speed, and multilingual support.
+
+Important: if you change your embedding model after indexing, you must re-index. Embeddings from different models are not interchangeable.
 
 ## Customization
 
@@ -113,7 +127,21 @@ Settings.embed_model = HuggingFaceEmbedding(
 )
 ```
 
-Which loads the [BAAI/bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) embedding model. You can use [any Sentence Transformers embedding model from Hugging Face](https://huggingface.co/models?library=sentence-transformers).
+Which loads the small-and-fast (~33M params) [BAAI/bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) embedding model. You can use [any Sentence Transformers embedding model from Hugging Face](https://huggingface.co/models?library=sentence-transformers). Browse the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard) to compare current options.
+
+As a mid-size step up (~150M params), [`lightonai/DenseOn`](https://huggingface.co/lightonai/DenseOn) is an April 2026 release and a good option when the small baselines aren't accurate enough but you don't want to serve a 0.6B+ model:
+
+```python
+Settings.embed_model = HuggingFaceEmbedding(model_name="lightonai/DenseOn")
+```
+
+For stronger accuracy and multilingual coverage, swap in a larger modern model like [`Qwen/Qwen3-Embedding-0.6B`](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (or `Qwen/Qwen3-Embedding-4B` for even higher accuracy on a single GPU):
+
+```python
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="Qwen/Qwen3-Embedding-0.6B"
+)
+```
 
 Beyond the keyword arguments available in the [`HuggingFaceEmbedding`](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/huggingface/#llama_index.embeddings.huggingface.HuggingFaceEmbedding) constructor, additional keyword arguments are passed down to the underlying [`SentenceTransformer` instance](https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html), like `backend`, `model_kwargs`, `truncate_dim`, `revision`, etc.
 
@@ -382,27 +410,28 @@ embeddings = embed_model.get_text_embedding(
 
 ## List of supported embeddings
 
-We support integrations with OpenAI, Azure, and anything LangChain offers.
+LlamaIndex integrates with a wide range of embedding providers: hosted APIs, self-hosted servers, and local models. You can also use anything LangChain offers via the LangChain integration.
 
+- [Anyscale](/python/examples/embeddings/anyscale)
 - [Azure OpenAI](/python/examples/customization/llms/azureopenai)
-- [CalrifAI](/python/examples/embeddings/clarifai)
+- [Baseten](/python/examples/embeddings/baseten)
+- [Clarifai](/python/examples/embeddings/clarifai)
 - [Cohere](/python/examples/embeddings/cohereai)
 - [Custom](/python/examples/embeddings/custom_embeddings)
 - [Dashscope](/python/examples/embeddings/dashscope_embeddings)
 - [ElasticSearch](/python/examples/embeddings/elasticsearch)
 - [FastEmbed](/python/examples/embeddings/fastembed)
-- [Google Palm](/python/examples/embeddings/google_palm)
-- [Anyscale](/python/examples/embeddings/anyscale)
-- [Huggingface](/python/examples/embeddings/huggingface)
+- [Fireworks AI](/python/examples/embeddings/fireworks)
+- [Google PaLM](/python/examples/embeddings/google_palm)
+- [Hugging Face (local, Sentence Transformers)](/python/examples/embeddings/huggingface)
 - [JinaAI](/python/examples/embeddings/jinaai_embeddings)
-- [Langchain](/python/examples/embeddings/langchain)
+- [LangChain](/python/examples/embeddings/langchain)
 - [LLM Rails](/python/examples/embeddings/llm_rails)
 - [MistralAI](/python/examples/embeddings/mistralai)
+- [Nomic](/python/examples/embeddings/nomic)
 - [OpenAI](/python/examples/embeddings/openai)
 - [Sagemaker](/python/examples/embeddings/sagemaker_embedding_endpoint)
-- [Text Embedding Inference](/python/examples/embeddings/text_embedding_inference)
+- [Text Embeddings Inference](/python/examples/embeddings/text_embedding_inference)
 - [TogetherAI](/python/examples/embeddings/together)
 - [Upstage](/python/examples/embeddings/upstage)
 - [VoyageAI](/python/examples/embeddings/voyageai)
-- [Nomic](/python/examples/embeddings/nomic)
-- [Fireworks AI](/python/examples/embeddings/fireworks)
