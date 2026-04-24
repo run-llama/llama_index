@@ -41,6 +41,8 @@ LlamaIndex has a lot of resources around QA / RAG. Here are some core resource g
 
 **I'm a RAG beginner and want to learn the basics**: Take a look at our ["Learn" series of guides](/python/framework/understanding).
 
+**I want to run without sending data to a hosted API**: See the [privacy guide](/python/framework/understanding/privacy) and the [local starter tutorial](/python/framework/getting_started/starter_example_local). Both walk through an OSS stack using Hugging Face embeddings, reranker, and a local LLM runtime like Ollama.
+
 **I've built RAG, and now I want to optimize it**: Take a look at our ["Advanced Topics" Guides](/python/framework/optimizing/production_rag).
 
 **I'm more advanced and want to build a custom RAG workflow**: Use LlamaIndex [workflows](/python/framework/module_guides/workflow) to compose advanced, agentic RAG pipelines, like this [Corrective RAG](/python/examples/workflow/corrective_rag_pack) workflow.

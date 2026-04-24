@@ -19,6 +19,7 @@ Here are some top Considerations for Building Production-Grade RAG
 - Decoupling chunks used for retrieval vs. chunks used for synthesis
 - Structured Retrieval for Larger Document Sets
 - Dynamically Retrieve Chunks Depending on your Task
+- Reranking retrieved nodes for precision
 - Optimize context embeddings
 
 We discussed this and more during our [Production RAG Webinar](https://www.youtube.com/watch?v=Zj5RCweUHIk).
@@ -119,6 +120,22 @@ You can use these modules to do joint question-answering and summarization, or e
 - [Joint QA-Summary](/python/examples/query_engine/jointqasummary)
 - [Router Query Engine](/python/examples/query_engine/routerqueryengine)
 - [OpenAI Agent Cookbook](/python/examples/agent/openai_agent_query_cookbook)
+
+## Reranking Retrieved Nodes for Precision
+
+#### Motivation
+
+Dense retrievers and hybrid retrievers are tuned for recall; they'll return candidates that are semantically close to the query, but the top-1 isn't always the most relevant. In production, this shows up as "the retrieval looks right, but the model is still answering the wrong question." A reranker addresses this by running a stronger, slower model over the top-`k` candidates and reordering them before they reach the LLM.
+
+#### Key Techniques
+
+Retrieve a wider candidate set (e.g. `similarity_top_k=10-20`) and rerank down to a smaller `top_n` (3–5). Options, in order of cost:
+
+1. Local cross-encoder via [`SentenceTransformerRerank`](/python/framework/module_guides/querying/node_postprocessors/node_postprocessors#sentencetransformerrerank), the recommended default. No API key, runs on the same infra as your embeddings. Use a model like `cross-encoder/ms-marco-MiniLM-L6-v2` for speed or `Qwen/Qwen3-Reranker-0.6B` for stronger multilingual quality.
+2. Hosted reranker APIs: `CohereRerank`, `JinaRerank`, `VoyageAIRerank`, `MixedbreadAIRerank`. Simple to wire up, no infra to manage, adds per-query latency and cost.
+3. LLM-as-reranker: `LLMRerank`, `RankGPTRerank`, `RankLLMRerank`. Strongest quality, most expensive. Reserve for production flows where accuracy dominates cost.
+
+See the [rerankers overview](/python/framework/module_guides/models/rerankers) for a decision tree and the [node postprocessors guide](/python/framework/module_guides/querying/node_postprocessors/node_postprocessors) for the full list of integrations.
 
 ## Optimize Context Embeddings
 

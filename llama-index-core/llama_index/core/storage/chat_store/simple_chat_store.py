@@ -90,7 +90,7 @@ class SimpleChatStore(BaseChatStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
             f.write(self.json())
 
     @classmethod
@@ -103,7 +103,7 @@ class SimpleChatStore(BaseChatStore):
         fs = fs or fsspec.filesystem("file")
         if not fs.exists(persist_path):
             return cls()
-        with fs.open(persist_path, "r") as f:
+        with fs.open(persist_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if isinstance(data, str):

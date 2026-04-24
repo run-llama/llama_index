@@ -9,7 +9,7 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
+    "pytest==9.0.3",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-mistralai"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index embeddings mistralai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "mistralai>=1.0.0",
+    "mistralai>=2.0.0",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
