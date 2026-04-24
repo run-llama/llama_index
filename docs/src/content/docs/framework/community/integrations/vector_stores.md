@@ -12,6 +12,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Actian VectorAI DB (`ActianVectorAIVectorStore`). [Quickstart](https://www.actian.com/).
 - Alibaba Cloud OpenSearch (`AlibabaCloudOpenSearchStore`). [QuickStart](https://help.aliyun.com/zh/open-search/vector-search-edition).
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)

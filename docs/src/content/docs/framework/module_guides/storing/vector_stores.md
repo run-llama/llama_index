@@ -17,6 +17,7 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store               | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async                         |
 | -------------------------- | ----------------------- | ------------------ | ------------- | ------ | --------------- | ----------------------------- |
+| Actian VectorAI DB         | self-hosted / cloud     | ✓                  |               | ✓      | ✓               | ✓                             |
 | Alibaba Cloud OpenSearch   | cloud                   | ✓                  |               | ✓      | ✓               | ✓                             |
 | Apache Cassandra®         | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |                               |
 | Astra DB                   | cloud                   | ✓                  |               | ✓      | ✓               |                               |
