@@ -20,9 +20,7 @@ from llama_index.core.indices.keyword_table.simple_base import (
     GPTSimpleKeywordTableIndex,
     SimpleKeywordTableIndex,
 )
-from llama_index.core.indices.knowledge_graph import (
-    KnowledgeGraphIndex,
-)
+from llama_index.core.indices.knowledge_graph import KnowledgeGraphIndex
 from llama_index.core.indices.list import GPTListIndex, ListIndex, SummaryIndex
 from llama_index.core.indices.list.base import (
     GPTListIndex,
@@ -72,7 +70,6 @@ __all__ = [
     "ComposableGraph",
     "PropertyGraphIndex",
     # legacy
-    "GPTKnowledgeGraphIndex",
     "GPTKeywordTableIndex",
     "GPTSimpleKeywordTableIndex",
     "GPTRAKEKeywordTableIndex",
