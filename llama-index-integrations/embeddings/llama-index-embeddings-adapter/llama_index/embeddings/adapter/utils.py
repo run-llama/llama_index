@@ -50,6 +50,7 @@ class BaseAdapter(nn.Module):
             torch.load(
                 os.path.join(input_path, "pytorch_model.bin"),
                 map_location=torch.device("cpu"),
+                weights_only=True,  ##Changes Done
             )
         )
         return model
