@@ -76,6 +76,52 @@ def test_text_node_hash() -> None:
     assert node3.hash != node.hash
 
 
+def test_text_node_hash_ignores_excluded_embed_metadata() -> None:
+    """Regression test for the embedding churn fix (#21461, #21462).
+
+    `TextNode.hash` must be computed from `MetadataMode.EMBED`, not `ALL`.
+    Fields listed in `excluded_embed_metadata_keys` (e.g. the
+    `last_modified_date` field that `SimpleDirectoryReader` populates from
+    the filesystem stat) are volatile: they change across runs even when
+    the document content is byte-identical. If the hash included them,
+    every ingestion run would produce a new hash for the same content,
+    forcing the cache to miss and the embedding model to re-embed
+    unchanged text.
+    """
+    node_a = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/readme.md",
+            "last_modified_date": "2026-04-22",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    node_b = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/readme.md",
+            "last_modified_date": "2026-04-23",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    # Volatile metadata changed but embedded content is byte-identical,
+    # so the hashes must match.
+    assert node_a.hash == node_b.hash
+
+    # Sanity check: a non-excluded metadata field still affects the hash.
+    # Without this assertion, a future regression that ignored ALL metadata
+    # would make the main assert above pass trivially.
+    node_c = TextNode(
+        text="hello world",
+        metadata={
+            "source": "docs/CHANGED.md",
+            "last_modified_date": "2026-04-22",
+        },
+        excluded_embed_metadata_keys=["last_modified_date"],
+    )
+    assert node_c.hash != node_a.hash
+
+
 def test_text_node_with_text_resource():
     tr = MediaResource(text="This is a test")
     text_node = TextNode(text_resource=tr)
