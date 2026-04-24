@@ -44,6 +44,9 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
     return [mock_get_text_embedding(text) for text in texts]
 
 
+@patch.object(
+    MockEmbedding, "_get_query_embedding", side_effect=mock_get_text_embedding
+)
 @patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
 @patch.object(
     MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
@@ -51,6 +54,7 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
 def test_simple_composable_memory(
     _mock_get_text_embeddings: Any,
     _mock_get_text_embedding: Any,
+    _mock_get_query_embedding: Any,
     vector_memory_initial_msgs: List[ChatMessage],
 ) -> None:
     """Test vector memory."""
@@ -85,6 +89,9 @@ def test_simple_composable_memory(
     assert retrieved_msgs[1:] == msgs
 
 
+@patch.object(
+    MockEmbedding, "_get_query_embedding", side_effect=mock_get_text_embedding
+)
 @patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
 @patch.object(
     MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
@@ -92,6 +99,7 @@ def test_simple_composable_memory(
 def test_repeated_secondary_history(
     _mock_get_text_embeddings: Any,
     _mock_get_text_embedding: Any,
+    _mock_get_query_embedding: Any,
     vector_memory_initial_msgs: List[ChatMessage],
 ) -> None:
     """Test event where historical messages exist in both secondary and primary."""
