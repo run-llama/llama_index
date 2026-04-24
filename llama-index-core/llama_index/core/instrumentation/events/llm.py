@@ -143,10 +143,17 @@ class LLMCompletionInProgressEvent(BaseEvent):
         return "LLMCompletionInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+        result = super().model_dump(**kwargs)
+        # Serialize raw without mutating the original response object.
+        # The original code did self.response.raw = self.response.raw.model_dump()
+        # which permanently converted the field from a Pydantic model to a dict,
+        # corrupting ChatResponse.raw for all callers.  See issue #21422.
+        if (
+            isinstance(self.response.raw, BaseModel)
+            and isinstance(result.get("response"), dict)
+        ):
+            result["response"]["raw"] = self.response.raw.model_dump()
+        return result
 
 
 class LLMCompletionEndEvent(BaseEvent):
@@ -168,10 +175,17 @@ class LLMCompletionEndEvent(BaseEvent):
         return "LLMCompletionEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+        result = super().model_dump(**kwargs)
+        # Serialize raw without mutating the original response object.
+        # The original code did self.response.raw = self.response.raw.model_dump()
+        # which permanently converted the field from a Pydantic model to a dict,
+        # corrupting ChatResponse.raw for all callers.  See issue #21422.
+        if (
+            isinstance(self.response.raw, BaseModel)
+            and isinstance(result.get("response"), dict)
+        ):
+            result["response"]["raw"] = self.response.raw.model_dump()
+        return result
 
 
 class LLMChatStartEvent(BaseEvent):
@@ -215,10 +229,17 @@ class LLMChatInProgressEvent(BaseEvent):
         return "LLMChatInProgressEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+        result = super().model_dump(**kwargs)
+        # Serialize raw without mutating the original response object.
+        # The original code did self.response.raw = self.response.raw.model_dump()
+        # which permanently converted the field from a Pydantic model to a dict,
+        # corrupting ChatResponse.raw for all callers.  See issue #21422.
+        if (
+            isinstance(self.response.raw, BaseModel)
+            and isinstance(result.get("response"), dict)
+        ):
+            result["response"]["raw"] = self.response.raw.model_dump()
+        return result
 
 
 class LLMChatEndEvent(BaseEvent):
@@ -240,7 +261,13 @@ class LLMChatEndEvent(BaseEvent):
         return "LLMChatEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if self.response is not None and isinstance(self.response.raw, BaseModel):
-            self.response.raw = self.response.raw.model_dump()
-
-        return super().model_dump(**kwargs)
+        result = super().model_dump(**kwargs)
+        # Serialize raw without mutating the original response object.
+        # See issue #21422.
+        if (
+            self.response is not None
+            and isinstance(self.response.raw, BaseModel)
+            and isinstance(result.get("response"), dict)
+        ):
+            result["response"]["raw"] = self.response.raw.model_dump()
+        return result
