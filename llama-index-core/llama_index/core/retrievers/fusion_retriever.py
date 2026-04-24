@@ -123,8 +123,10 @@ class QueryFusionRetriever(BaseRetriever):
         fused_scores = {}
         hash_to_node = {}
 
-        # compute reciprocal rank scores
-        for nodes_with_scores in results.values():
+        # compute reciprocal rank scores weighted by retriever weight
+        for query_tuple, nodes_with_scores in results.items():
+            retriever_idx = query_tuple[1]
+            weight = self._retriever_weights[retriever_idx]
             for rank, node_with_score in enumerate(
                 sorted(nodes_with_scores, key=lambda x: x.score or 0.0, reverse=True)
             ):
@@ -132,7 +134,7 @@ class QueryFusionRetriever(BaseRetriever):
                 hash_to_node[hash] = node_with_score
                 if hash not in fused_scores:
                     fused_scores[hash] = 0.0
-                fused_scores[hash] += 1.0 / (rank + k)
+                fused_scores[hash] += weight / (rank + k)
 
         # sort results
         reranked_results = dict(
