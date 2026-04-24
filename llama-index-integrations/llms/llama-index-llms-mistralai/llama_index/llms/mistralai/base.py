@@ -53,15 +53,17 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
 )
-from mistralai_azure import MistralAzure
-import mistralai_azure.models as mistral_azure_models
+from mistralai.azure.client import MistralAzure
+from mistralai.azure.client import models as mistral_azure_models
 
-from mistralai import Mistral
-import mistralai.models as mistral_models
+
+from mistralai.client import Mistral
+from mistralai.client import models as mistral_models
+
 
 if TYPE_CHECKING:
-    from mistralai.models import ContentChunk, Messages
-    from mistralai.models import (
+    from mistralai.client.models import ContentChunk, Messages
+    from mistralai.client.models import (
         AssistantMessage,
         FunctionCall,
         ImageURLChunk,
