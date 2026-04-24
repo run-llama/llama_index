@@ -66,7 +66,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        url: str = "localhost:50051",
+        url: str = "localhost:6574",
         collection_name: str = "llama_index_collection",
         client_kwargs: Optional[dict[str, Any]] = None,
         dense_vector_name: str = "llama_index_dense_vector",
@@ -84,7 +84,7 @@ class ActianVectorAIVectorStore(BasePydanticVectorStore):
         Args:
             url: Actian Vector AI endpoint in host:port format. Ignored when
                 explicit sync or async clients are provided. Defaults to
-                "localhost:50051".
+                "localhost:6574".
             collection_name: Name of the collection used to store vectors and
                 metadata. Defaults to "llama_index_collection".
             client_kwargs: Optional keyword arguments forwarded to internally

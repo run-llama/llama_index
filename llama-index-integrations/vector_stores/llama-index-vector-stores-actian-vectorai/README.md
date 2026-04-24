@@ -11,7 +11,7 @@ pip install llama-index-vector-stores-actian-vectorai
 ## Requirements
 
 - Python 3.10–3.12
-- A running Actian VectorAI DB instance (default endpoint: `localhost:50051`)
+- A running Actian VectorAI DB instance (default endpoint: `localhost:6574`)
 
 ## Usage
 
@@ -78,13 +78,13 @@ share a connection or supply custom client configuration:
 from actian_vectorai import VectorAIClient, AsyncVectorAIClient
 
 # Sync
-with VectorAIClient("localhost:50051") as client:
+with VectorAIClient("localhost:6574") as client:
     vector_store = ActianVectorAIVectorStore(client=client)
     vector_store.add(nodes)
     result = vector_store.query(query)
 
 # Async
-async with AsyncVectorAIClient("localhost:50051") as async_client:
+async with AsyncVectorAIClient("localhost:6574") as async_client:
     vector_store = ActianVectorAIVectorStore(async_client=async_client)
     await vector_store.async_add(nodes)
     result = await vector_store.aquery(query)
@@ -94,7 +94,7 @@ async with AsyncVectorAIClient("localhost:50051") as async_client:
 
 | Parameter                   | Type                          | Default                      | Description                                                                                                                                               |
 | --------------------------- | ----------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`                       | `str`                         | `"localhost:50051"`          | Actian VectorAI DB endpoint (`host:port`). Ignored when explicit clients are provided.                                                                    |
+| `url`                       | `str`                         | `"localhost:6574"`           | Actian VectorAI DB endpoint (`host:port`). Ignored when explicit clients are provided.                                                                    |
 | `collection_name`           | `str`                         | `"llama_index_collection"`   | Collection to use for storing vectors and metadata.                                                                                                       |
 | `dense_vector_name`         | `str`                         | `"llama_index_dense_vector"` | Name of the dense vector field inside the collection.                                                                                                     |
 | `dense_vector_params`       | `VectorParams \| None`        | `None`                       | Vector configuration (size, distance metric). Inferred from the first inserted embedding if omitted (defaults to cosine distance).                        |
@@ -111,7 +111,7 @@ async with AsyncVectorAIClient("localhost:50051") as async_client:
 from actian_vectorai import VectorParams, Distance
 
 with ActianVectorAIVectorStore(
-    url="localhost:50051",
+    url="localhost:6574",
     collection_name="my_collection",
     dense_vector_name="dense_vector",
     dense_vector_params=VectorParams(size=1536, distance=Distance.Cosine),
@@ -191,6 +191,6 @@ vector_store.delete_nodes(
 Tests require a running Actian VectorAI DB instance. Set `VECTORAI_SERVER_URL` to override the default endpoint:
 
 ```bash
-export VECTORAI_SERVER_URL="localhost:50051"
+export VECTORAI_SERVER_URL="localhost:6574"
 pytest
 ```
