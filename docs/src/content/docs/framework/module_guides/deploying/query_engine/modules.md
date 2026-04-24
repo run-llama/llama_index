@@ -20,7 +20,7 @@ Then check out the rest of the sections below.
 - [JSONalyze Query Engine](/python/examples/query_engine/jsonalyze_query_engine)
 - [Knowledge Graph Query Engine](/python/examples/query_engine/knowledge_graph_query_engine)
 - [KG RAG Retriever](/python/examples/query_engine/knowledge_graph_rag_query_engine)
-- [Multi-Docment Auto Retrieval](/python/examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval)
+- [Multi-Document Auto Retrieval](/python/examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval)
 
 ## Advanced
 
