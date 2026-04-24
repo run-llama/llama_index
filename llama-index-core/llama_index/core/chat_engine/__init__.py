@@ -5,11 +5,8 @@ from llama_index.core.chat_engine.condense_question import (
     CondenseQuestionChatEngine,
 )
 from llama_index.core.chat_engine.context import ContextChatEngine
-from llama_index.core.chat_engine.simple import SimpleChatEngine
 from llama_index.core.chat_engine.multi_modal_context import MultiModalContextChatEngine
-from llama_index.core.chat_engine.multi_modal_condense_plus_context import (
-    MultiModalCondensePlusContextChatEngine,
-)
+from llama_index.core.chat_engine.simple import SimpleChatEngine
 
 __all__ = [
     "SimpleChatEngine",
@@ -17,5 +14,4 @@ __all__ = [
     "ContextChatEngine",
     "CondensePlusContextChatEngine",
     "MultiModalContextChatEngine",
-    "MultiModalCondensePlusContextChatEngine",
 ]

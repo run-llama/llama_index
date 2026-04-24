@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
     MultiModelIndexDict,
@@ -26,7 +27,6 @@ from llama_index.core.indices.multi_modal.retriever import (
     MultiModalVectorIndexRetriever,
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
-from llama_index.core.llms import LLM
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
@@ -38,7 +38,6 @@ from llama_index.core.vector_stores.simple import (
     SimpleVectorStore,
 )
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 
 logger = logging.getLogger(__name__)
 
@@ -163,40 +162,55 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         self,
         chat_mode: ChatMode = ChatMode.BEST,
         llm: Optional[LLMType] = None,
+        multi_modal_llm: Optional[MultiModalLLM] = None,
         **kwargs: Any,
     ) -> BaseChatEngine:
-        llm = llm or Settings.llm
-        assert isinstance(llm, (BaseLLM, MultiModalLLM))
-        llm = cast(LLM, llm)  # kludge. They don't actually inherit from these types.
-        class_name = llm.class_name()
-        if "multi" not in class_name:
-            logger.warning(
-                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
-            )
+        """
+        Convert the index to a chat engine.
 
+        For ``ChatMode.CONTEXT`` a :class:`MultiModalContextChatEngine` is
+        returned that retrieves both text and image nodes and sends a
+        multi-modal message list to a ``MultiModalLLM``.
+
+        All other chat modes fall back to the base ``VectorStoreIndex``
+        implementation.
+
+        Args:
+            chat_mode: The chat mode to use. ``ChatMode.CONTEXT`` (default
+                when explicitly requested) is handled natively; all other modes
+                are delegated to the parent class.
+            llm: A text-only LLM.  Accepted for other chat modes or as a
+                fallback; ignored when ``multi_modal_llm`` is provided.
+            multi_modal_llm: The ``MultiModalLLM`` to use for
+                ``ChatMode.CONTEXT``.  When *None* the global
+                ``Settings.llm`` is used (which must be a
+                ``MultiModalLLM``).
+            **kwargs: Additional keyword arguments forwarded to the retriever
+                and/or the chat engine ``from_defaults`` constructor.
+        """
         if chat_mode == ChatMode.CONTEXT:
             from llama_index.core.chat_engine.multi_modal_context import (
                 MultiModalContextChatEngine,
             )
 
+            mm_llm: Any = multi_modal_llm or (
+                llm if isinstance(llm, MultiModalLLM) else None
+            ) or Settings.llm
+
+            if not isinstance(mm_llm, MultiModalLLM):
+                raise ValueError(
+                    f"ChatMode.CONTEXT on a MultiModalVectorStoreIndex requires a "
+                    f"MultiModalLLM, but got {type(mm_llm).__name__}. "
+                    "Pass multi_modal_llm=<your MultiModalLLM instance>."
+                )
+
             return MultiModalContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
-                multi_modal_llm=llm,
+                multi_modal_llm=mm_llm,
                 **kwargs,
             )
 
-        if chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
-            from llama_index.core.chat_engine.multi_modal_condense_plus_context import (
-                MultiModalCondensePlusContextChatEngine,
-            )
-
-            return MultiModalCondensePlusContextChatEngine.from_defaults(
-                retriever=self.as_retriever(**kwargs),
-                multi_modal_llm=llm,
-                **kwargs,
-            )
-
-        return super().as_chat_engine(chat_mode, llm, **kwargs)
+        return super().as_chat_engine(chat_mode=chat_mode, llm=llm, **kwargs)
 
     @classmethod
     def from_vector_store(

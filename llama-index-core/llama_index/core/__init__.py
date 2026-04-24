@@ -19,7 +19,7 @@ from llama_index.core.base.response.schema import Response
 # import global eval handler
 from llama_index.core.callbacks.global_handlers import set_global_handler
 from llama_index.core.data_structs.struct_type import IndexStructType
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding, MockMultiModalEmbedding
 
 # indices
 # loading
@@ -131,6 +131,7 @@ __all__ = [
     "Document",
     "SimpleDirectoryReader",
     "MockEmbedding",
+    "MockMultiModalEmbedding",
     "SQLDatabase",
     "SQLDocumentContextBuilder",
     "SQLContextBuilder",
