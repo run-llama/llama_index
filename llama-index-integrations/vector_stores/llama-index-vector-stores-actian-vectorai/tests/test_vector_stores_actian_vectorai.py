@@ -22,7 +22,7 @@ from llama_index.vector_stores.actian_vectorai import ActianVectorAIVectorStore
 from actian_vectorai import Distance, VectorAIClient, VectorParams, AsyncVectorAIClient
 
 
-VECTORAI_SERVER_URL = os.getenv("VECTORAI_SERVER_URL", "localhost:50051")
+VECTORAI_SERVER_URL = os.getenv("VECTORAI_SERVER_URL", "localhost:6574")
 
 EMBED_DIM = 128
 
