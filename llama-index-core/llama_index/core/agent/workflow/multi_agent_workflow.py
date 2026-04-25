@@ -513,7 +513,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
             "current_tool_calls", default=[]
         )
-        output.tool_calls.extend(cur_tool_calls)  # type: ignore[arg-type]
+        output.tool_calls.extend(
+            ToolSelection(
+                tool_id=t.tool_id,
+                tool_name=t.tool_name,
+                tool_kwargs=t.tool_kwargs,
+            )
+            for t in cur_tool_calls
+        )
         await ctx.store.set("current_tool_calls", [])
 
         ctx.write_event_to_stream(output)
@@ -572,7 +579,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
-            output.tool_calls.extend(cur_tool_calls)  # type: ignore
+            output.tool_calls.extend(
+                ToolSelection(
+                    tool_id=t.tool_id,
+                    tool_name=t.tool_name,
+                    tool_kwargs=t.tool_kwargs,
+                )
+                for t in cur_tool_calls
+            )
             await ctx.store.set("current_tool_calls", [])
 
             if self.structured_output_fn is not None:
