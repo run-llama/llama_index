@@ -1,7 +1,7 @@
 """Leaf query mechanism."""
 
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.response.schema import Response
@@ -113,17 +113,21 @@ class TreeSelectLeafRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         prev_response: Optional[str] = None,
         level: int = 0,
-    ) -> str:
+    ) -> Tuple[str, List[NodeWithScore]]:
         """
         Get response for selected node.
 
         If not leaf node, it will recursively call _query on the child nodes.
         If prev_response is provided, we will update prev_response with the answer.
 
+        Returns a (response_str, source_nodes) tuple so the caller can collect
+        the leaf nodes that actually contributed to the answer.
         """
         query_str = query_bundle.query_str
 
         if len(self._index_struct.get_children(selected_node)) == 0:
+            # Leaf node: this is an actual source node.
+            source_nodes = [NodeWithScore(node=selected_node, score=None)]
             response_builder = get_response_synthesizer(
                 llm=self._llm,
                 text_qa_template=self._text_qa_template,
@@ -138,14 +142,14 @@ class TreeSelectLeafRetriever(BaseRetriever):
             cur_response = str(cur_response)
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
-            cur_response = self._query_level(
+            cur_response, source_nodes = self._query_level(
                 self._index_struct.get_children(selected_node),
                 query_bundle,
                 level=level + 1,
             )
 
         if prev_response is None:
-            return cur_response
+            return cur_response, source_nodes
         else:
             context_msg = selected_node.get_content(metadata_mode=MetadataMode.LLM)
             cur_response = self._llm.predict(
@@ -156,14 +160,14 @@ class TreeSelectLeafRetriever(BaseRetriever):
             )
 
             logger.debug(f">[Level {level}] Current refined response: {cur_response} ")
-            return str(cur_response)
+            return str(cur_response), source_nodes
 
     def _query_level(
         self,
         cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
-    ) -> str:
+    ) -> Tuple[str, List[NodeWithScore]]:
         """Answer a query recursively."""
         query_str = query_bundle.query_str
         cur_nodes = {
@@ -176,7 +180,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.debug(f">[Level {level}] Only one node left. Querying node.")
             return self._query_with_selected_node(
                 cur_node_list[0], query_bundle, level=level
-            )
+            )  # already returns Tuple[str, List[NodeWithScore]]
         elif self.child_branch_factor == 1:
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
@@ -229,8 +233,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
             if self._verbose:
                 print_text(debug_str, end="\n")
             # just join text from current nodes as response
-            return response
+            return response, []
         result_response = None
+        all_source_nodes: List[NodeWithScore] = []
         for number_str in numbers:
             number = int(number_str)
             if number > len(cur_node_list):
@@ -238,7 +243,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                     f">[Level {level}] Invalid response: {response} - "
                     f"number {number} out of range"
                 )
-                return response
+                return response, []
 
             # number is 1-indexed, so subtract 1
             selected_node = cur_node_list[number - 1]
@@ -261,14 +266,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
             logger.debug(full_debug_str)
             if self._verbose:
                 print_text(full_debug_str, end="\n")
-            result_response = self._query_with_selected_node(
+            result_response, new_source_nodes = self._query_with_selected_node(
                 selected_node,
                 query_bundle,
                 prev_response=result_response,
                 level=level,
             )
+            all_source_nodes.extend(new_source_nodes)
         # result_response should not be None
-        return cast(str, result_response)
+        return cast(str, result_response), all_source_nodes
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
@@ -277,13 +283,12 @@ class TreeSelectLeafRetriever(BaseRetriever):
         logger.info(info_str)
         if self._verbose:
             print_text(info_str, end="\n")
-        response_str = self._query_level(
+        response_str, source_nodes = self._query_level(
             self._index_struct.root_nodes,
             query_bundle,
             level=0,
-        ).strip()
-        # TODO: fix source nodes
-        return Response(response_str, source_nodes=[])
+        )
+        return Response(response_str.strip(), source_nodes=source_nodes)
 
     def _select_nodes(
         self,
