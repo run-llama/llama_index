@@ -27,7 +27,7 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import AudioBlock, ChatMessage, DocumentBlock, ImageBlock, TextBlock
 
 
 class StreamingHandler(logging.Handler):
@@ -398,9 +398,58 @@ class BasicMCPClient(ClientSession):
                             ],
                         )
                     )
+                elif isinstance(message.content, types.AudioContent):
+                    # AudioContent carries base64-encoded audio and a MIME type.
+                    import base64 as _b64
+                    audio_bytes = _b64.b64decode(message.content.data)
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                AudioBlock(
+                                    audio=audio_bytes,
+                                )
+                            ],
+                        )
+                    )
                 elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
+                    # EmbeddedResource wraps either text or binary (blob) content.
+                    resource = message.content.resource
+                    if isinstance(resource, types.TextResourceContents):
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[TextBlock(text=resource.text)],
+                            )
+                        )
+                    else:
+                        # BlobResourceContents: base64-encoded binary data.
+                        import base64 as _b64
+                        blob_bytes = _b64.b64decode(resource.blob)
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[
+                                    DocumentBlock(
+                                        data=blob_bytes,
+                                    )
+                                ],
+                            )
+                        )
+                elif isinstance(message.content, types.ResourceLink):
+                    # ResourceLink is a reference to a server-readable resource.
+                    # Represent it as a text block containing the URI and name so
+                    # the LLM can at minimum see the reference.
+                    parts = [f"Resource: {message.content.uri}"]
+                    if message.content.name:
+                        parts.append(f"Name: {message.content.name}")
+                    if message.content.description:
+                        parts.append(f"Description: {message.content.description}")
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[TextBlock(text="\n".join(parts))],
+                        )
                     )
                 else:
                     raise ValueError(
