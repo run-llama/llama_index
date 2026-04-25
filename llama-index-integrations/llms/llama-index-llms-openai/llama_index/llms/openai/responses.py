@@ -88,6 +88,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.program.utils import FlexibleModel
 from llama_index.llms.openai.utils import (
     O1_MODELS,
+    ato_openai_message_dicts,
     create_retry_decorator,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -784,7 +785,7 @@ class OpenAIResponses(FunctionCallingLLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        message_dicts = to_openai_message_dicts(
+        message_dicts = await ato_openai_message_dicts(
             messages,
             model=self.model,
             is_responses_api=True,
@@ -809,7 +810,7 @@ class OpenAIResponses(FunctionCallingLLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        message_dicts = to_openai_message_dicts(
+        message_dicts = await ato_openai_message_dicts(
             messages,
             model=self.model,
             is_responses_api=True,
@@ -999,7 +1000,7 @@ class OpenAIResponses(FunctionCallingLLM):
         adherence at the API level, rather than best-effort function calling.
         """
         messages = prompt.format_messages(**prompt_args)
-        message_dicts = to_openai_message_dicts(
+        message_dicts = await ato_openai_message_dicts(
             messages, model=self.model, is_responses_api=True
         )
         response = await self._aclient.responses.parse(

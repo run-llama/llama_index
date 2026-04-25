@@ -44,7 +44,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageDocument
-from llama_index.core.utils import get_tokenizer, resolve_binary
+from llama_index.core.utils import aresolve_binary, get_tokenizer, resolve_binary
 
 _logger = logging.getLogger(__name__)
 
@@ -727,6 +727,31 @@ class DocumentBlock(BaseContentBlock):
             raise ValueError("resolve_document returned zero bytes")
         return data_buffer
 
+    async def aresolve_document(self) -> IOBase:
+        """
+        Async version of resolve_document.
+
+        Resolve a document such that it is represented by a BufferIO object.
+        Uses async HTTP when fetching from URLs to avoid blocking the event loop.
+        """
+        if isinstance(self.data, IOBase):
+            data_buffer = self.data
+        else:
+            data_buffer = await aresolve_binary(
+                raw_bytes=self.data,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=False,
+            )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_document returned zero bytes")
+        return data_buffer
+
     def _get_b64_bytes(self, data_buffer: IOBase) -> bytes:
         """
         Get base64-encoded bytes from a IOBase buffer.
@@ -769,7 +794,7 @@ class DocumentBlock(BaseContentBlock):
 
     async def aestimate_tokens(self, *args: Any, **kwargs: Any) -> int:
         try:
-            self.resolve_document()
+            await self.aresolve_document()
         except ValueError as e:
             # Null case
             if str(e) == "resolve_document returned zero bytes":
