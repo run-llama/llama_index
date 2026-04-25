@@ -499,7 +499,7 @@ def to_openai_message_dict(
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": json.dumps(block.tool_kwargs),
                     },
                     "id": block.tool_call_id,
                 }
