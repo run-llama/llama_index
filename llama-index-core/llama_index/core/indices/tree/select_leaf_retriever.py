@@ -113,12 +113,17 @@ class TreeSelectLeafRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         prev_response: Optional[str] = None,
         level: int = 0,
+        selected_leaf_nodes: Optional[List[BaseNode]] = None,
     ) -> str:
         """
         Get response for selected node.
 
         If not leaf node, it will recursively call _query on the child nodes.
         If prev_response is provided, we will update prev_response with the answer.
+
+        If ``selected_leaf_nodes`` is provided, any leaf node synthesized into the
+        final answer is appended to it so callers can surface retrieval
+        provenance on the returned ``Response`` (see issue #21441).
 
         """
         query_str = query_bundle.query_str
@@ -136,12 +141,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 query_str, [node_text], prev_response=prev_response
             )
             cur_response = str(cur_response)
+            if selected_leaf_nodes is not None:
+                selected_leaf_nodes.append(selected_node)
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
                 self._index_struct.get_children(selected_node),
                 query_bundle,
                 level=level + 1,
+                selected_leaf_nodes=selected_leaf_nodes,
             )
 
         if prev_response is None:
@@ -163,6 +171,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
+        selected_leaf_nodes: Optional[List[BaseNode]] = None,
     ) -> str:
         """Answer a query recursively."""
         query_str = query_bundle.query_str
@@ -175,7 +184,10 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if len(cur_node_list) == 1:
             logger.debug(f">[Level {level}] Only one node left. Querying node.")
             return self._query_with_selected_node(
-                cur_node_list[0], query_bundle, level=level
+                cur_node_list[0],
+                query_bundle,
+                level=level,
+                selected_leaf_nodes=selected_leaf_nodes,
             )
         elif self.child_branch_factor == 1:
             query_template = self.query_template.partial_format(
@@ -266,6 +278,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 query_bundle,
                 prev_response=result_response,
                 level=level,
+                selected_leaf_nodes=selected_leaf_nodes,
             )
         # result_response should not be None
         return cast(str, result_response)
@@ -277,13 +290,24 @@ class TreeSelectLeafRetriever(BaseRetriever):
         logger.info(info_str)
         if self._verbose:
             print_text(info_str, end="\n")
+        selected_leaf_nodes: List[BaseNode] = []
         response_str = self._query_level(
             self._index_struct.root_nodes,
             query_bundle,
             level=0,
+            selected_leaf_nodes=selected_leaf_nodes,
         ).strip()
-        # TODO: fix source nodes
-        return Response(response_str, source_nodes=[])
+        # Deduplicate while preserving traversal order so the same leaf is not
+        # surfaced twice when it is visited along multiple selected branches.
+        seen: set = set()
+        unique_leaf_nodes: List[BaseNode] = []
+        for node in selected_leaf_nodes:
+            if node.node_id in seen:
+                continue
+            seen.add(node.node_id)
+            unique_leaf_nodes.append(node)
+        source_nodes = [NodeWithScore(node=node) for node in unique_leaf_nodes]
+        return Response(response_str, source_nodes=source_nodes)
 
     def _select_nodes(
         self,
