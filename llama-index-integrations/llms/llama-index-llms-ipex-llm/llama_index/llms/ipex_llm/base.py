@@ -232,8 +232,16 @@ class IpexLLM(CustomLLM):
                     tokenizer_name, **tokenizer_kwargs
                 )
             except Exception:
+                logger.warning(
+                    f"AutoTokenizer failed for '{tokenizer_name}'. "
+                    "Retrying with LlamaTokenizer. "
+                    "trust_remote_code is NOT enabled automatically; "
+                    "pass trust_remote_code=True in tokenizer_kwargs explicitly "
+                    "if you trust this model source."
+                )
                 tokenizer = LlamaTokenizer.from_pretrained(
-                    tokenizer_name, trust_remote_code=True
+                    tokenizer_name,
+                    trust_remote_code=tokenizer_kwargs.get("trust_remote_code", False),
                 )
 
         if tokenizer_name != model_name:
@@ -404,7 +412,14 @@ class IpexLLM(CustomLLM):
         """Attempts to load a model with AutoModelForCausalLM and falls back to AutoModel on failure."""
         from ipex_llm.transformers import AutoModelForCausalLM, AutoModel
 
-        load_kwargs = {"use_cache": True, "trust_remote_code": True}
+        trust_remote_code = model_kwargs.pop("trust_remote_code", False)
+        if trust_remote_code:
+            logger.warning(
+                "trust_remote_code=True is enabled. This allows execution of "
+                "arbitrary code from the model repository. Only use this if you "
+                "trust the model source."
+            )
+        load_kwargs = {"use_cache": True, "trust_remote_code": trust_remote_code}
 
         if not low_bit_model:
             if load_in_low_bit is not None:
