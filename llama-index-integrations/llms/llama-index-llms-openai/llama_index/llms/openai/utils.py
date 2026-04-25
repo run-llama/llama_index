@@ -495,11 +495,14 @@ def to_openai_message_dict(
             continue
         elif isinstance(block, ToolCallBlock):
             try:
+                arguments = block.tool_kwargs
+                if not isinstance(arguments, str):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
