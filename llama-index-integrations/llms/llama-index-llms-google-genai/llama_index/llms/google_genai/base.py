@@ -50,6 +50,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.program.utils import FlexibleModel, create_flexible_model
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
@@ -350,7 +351,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
+        next_msg, chat_kwargs, file_api_names = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.file_mode, self._client, **params
             )
@@ -405,7 +406,7 @@ class GoogleGenAI(FunctionCallingLLM):
             **kwargs.pop("generation_config", {}),
         }
         params = {**kwargs, "generation_config": generation_config}
-        next_msg, chat_kwargs, file_api_names = asyncio.run(
+        next_msg, chat_kwargs, file_api_names = asyncio_run(
             prepare_chat_params(
                 self.model, messages, self.file_mode, self._client, **params
             )
@@ -616,7 +617,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
         messages = prompt.format_messages(**prompt_args)
         contents_and_names = [
-            asyncio.run(chat_message_to_gemini(message, self.file_mode, self._client))
+            asyncio_run(chat_message_to_gemini(message, self.file_mode, self._client))
             for message in messages
         ]
         contents = [it[0] for it in contents_and_names]
@@ -667,7 +668,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
@@ -769,7 +770,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
             messages = prompt.format_messages(**prompt_args)
             contents_and_names = [
-                asyncio.run(
+                asyncio_run(
                     chat_message_to_gemini(message, self.file_mode, self._client)
                 )
                 for message in messages
