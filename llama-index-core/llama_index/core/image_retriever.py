@@ -44,7 +44,7 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
         Retrieve image nodes given single image input.
 
         Args:
-            str_or_query_bundle (QueryType): a image path
+            str_or_query_bundle (QueryType): an image path
             string or a QueryBundle object.
 
         """

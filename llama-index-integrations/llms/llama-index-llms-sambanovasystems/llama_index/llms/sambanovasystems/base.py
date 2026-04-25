@@ -279,7 +279,7 @@ class SambaNovaCloud(LLM):
         self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        Performs a async post request to the LLM API.
+        Performs an async post request to the LLM API.
 
         Args:
             messages_dicts: List of role / content dicts to use as input.

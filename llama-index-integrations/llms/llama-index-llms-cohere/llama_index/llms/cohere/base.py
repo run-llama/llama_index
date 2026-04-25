@@ -232,7 +232,7 @@ class Cohere(FunctionCallingLLM):
         # cohere SDK will fail loudly if both connectors and documents are provided
         if additional_kwargs.get("documents", []) and documents and len(documents) > 0:
             raise ValueError(
-                "Received documents both as a keyword argument and as an prompt additional keyword argument. Please choose only one option."
+                "Received documents both as a keyword argument and as a prompt additional keyword argument. Please choose only one option."
             )
 
         messages, documents = remove_documents_from_messages(messages)

@@ -115,7 +115,7 @@ class LindormVectorClient:
 
         if filter_type not in ["post_filter", "pre_filter"]:
             raise ValueError(
-                f"Unsupported filter type: {filter_type}, only post_filter and pre_filter are suopported now."
+                f"Unsupported filter type: {filter_type}, only post_filter and pre_filter are supported now."
             )
 
         # initialize parameters

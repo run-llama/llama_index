@@ -355,7 +355,7 @@ class Qianfan(CustomLLM):
             and the previous messages are the historical chat information. The number of
             members must be odd, and the role value of the odd-numbered messages must be
             "user", while the role value of the even-numbered messages must be "assistant".
-        :return: A ChatResponseAsyncGen object, which is a asynchronous generator of ChatResponse.
+        :return: A ChatResponseAsyncGen object, which is an asynchronous generator of ChatResponse.
         """
         request = build_chat_request(stream=True, messages=messages, **kwargs)
 
