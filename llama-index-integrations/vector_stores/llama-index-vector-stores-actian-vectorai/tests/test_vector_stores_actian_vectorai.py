@@ -604,6 +604,22 @@ async def test_adelete_nodes_parallel() -> None:
 
 
 @pytest.mark.asyncio
+async def test_async_add_parallel() -> None:
+    async with _aempty_vector_store() as vector_store:
+        # Run multiple add operations in parallel to test thread safety
+        await asyncio.gather(
+            vector_store.async_add(nodes[:2]),
+            vector_store.async_add(nodes[2:4]),
+            vector_store.async_add(nodes[4:]),
+            vector_store.async_add(nodes[4:]),
+        )
+
+        assert await vector_store.async_client.points.count(
+            vector_store.collection_name
+        ) == len(nodes)
+
+
+@pytest.mark.asyncio
 async def test_async_add_with_external_client() -> None:
     async with AsyncVectorAIClient(VECTORAI_SERVER_URL) as async_client:
         vector_store = ActianVectorAIVectorStore(
