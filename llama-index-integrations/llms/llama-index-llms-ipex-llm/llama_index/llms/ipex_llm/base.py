@@ -496,7 +496,7 @@ class IpexLLM(CustomLLM):
             kwargs: Other kwargs for complete.
 
         Returns:
-            CompletionReponse after generation.
+            CompletionResponse after generation.
 
         """
         if not formatted:
@@ -532,7 +532,7 @@ class IpexLLM(CustomLLM):
             kwargs: Other kwargs for complete.
 
         Returns:
-            CompletionReponse after generation.
+            CompletionResponse after generation.
 
         """
         from transformers import TextIteratorStreamer
