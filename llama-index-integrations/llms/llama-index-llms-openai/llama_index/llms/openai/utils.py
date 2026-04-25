@@ -495,11 +495,20 @@ def to_openai_message_dict(
             continue
         elif isinstance(block, ToolCallBlock):
             try:
+                # OpenAI Chat Completions API requires function.arguments to be a
+                # JSON string, not a dict.  When ToolCallBlock originates from the
+                # Anthropic provider, tool_kwargs is a Python dict (Anthropic returns
+                # tool_input as an object).  Serialize to string if needed.
+                # This is already done in to_openai_responses_message_dict.
+                # See issue #21378.
+                arguments = block.tool_kwargs
+                if not isinstance(arguments, str):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
