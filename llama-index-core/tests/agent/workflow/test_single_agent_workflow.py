@@ -397,6 +397,81 @@ async def test_early_stopping_method_override_in_run():
 
 
 @pytest.mark.asyncio
+async def test_agent_output_tool_calls_are_tool_selections():
+    """
+    AgentOutput.tool_calls must be List[ToolSelection], not List[ToolCallResult].
+
+    Regression test for https://github.com/run-llama/llama_index/issues/20071 — both
+    on the standard finalize path and on the early-stopping ('generate') path,
+    `tool_calls` was being populated with `ToolCallResult` instances even though
+    the field is typed as `list[ToolSelection]`.
+    """
+    from llama_index.core.agent.workflow.workflow_events import ToolCallResult
+
+    def random_tool() -> str:
+        return "random"
+
+    tool_call_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="one",
+                    tool_name="random_tool",
+                    tool_kwargs={},
+                )
+            ]
+        },
+    )
+    final_response = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="done",
+    )
+
+    # 1) Standard finalize path: a tool call followed by a final assistant message.
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response, final_response]
+            )
+        ),
+    )
+
+    response = await agent.run(user_msg="test")
+    assert response is not None
+    for tc in response.tool_calls:
+        assert isinstance(tc, ToolSelection), (
+            f"tool_calls must contain ToolSelection, got {type(tc).__name__}"
+        )
+        assert not isinstance(tc, ToolCallResult)
+
+    # 2) Early-stopping 'generate' path.
+    agent_es = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_response] * 5 + [final_response]
+            )
+        ),
+        early_stopping_method="generate",
+    )
+
+    response_es = await agent_es.run(user_msg="test", max_iterations=5)
+    assert response_es is not None
+    for tc in response_es.tool_calls:
+        assert isinstance(tc, ToolSelection), (
+            f"early-stopping tool_calls must contain ToolSelection, got {type(tc).__name__}"
+        )
+        assert not isinstance(tc, ToolCallResult)
+
+
+@pytest.mark.asyncio
 async def test_function_agent_with_mock_function_calling_llm():
     """Test that FunctionAgent works with MockFunctionCallingLLM."""
 
