@@ -756,3 +756,39 @@ def test_responses_api_tool_kwargs_string_passthrough() -> None:
         if isinstance(item, dict) and item.get("type") == "function_call"
     ][0]
     assert tool_item["arguments"] == '{"q": "test"}'
+
+
+def test_tool_call_block_with_no_args_serializes_arguments_as_json_string() -> None:
+    """Regression test for issue #18928.
+
+    When a FunctionTool has no parameters, the 'arguments' field in the
+    serialized tool_calls message must be a JSON string ("{}"), not a dict ({}).
+    Strict OpenAI-spec servers like vLLM reject a bare dict with a 400 error.
+    """
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    block_type="tool_call",
+                    tool_call_id="call_001",
+                    tool_name="no_arg_tool",
+                    tool_kwargs={},  # no parameters
+                )
+            ],
+        )
+    ]
+    openai_dicts = to_openai_message_dicts(messages)
+
+    tool_calls = openai_dicts[0]["tool_calls"]
+    assert len(tool_calls) == 1
+
+    arguments = tool_calls[0]["function"]["arguments"]
+
+    # Must be a string, not a dict
+    assert isinstance(arguments, str), (
+        f"'arguments' must be a JSON string per OpenAI spec, got {type(arguments)}"
+    )
+    # Must be valid JSON
+    parsed = json.loads(arguments)
+    assert parsed == {}
