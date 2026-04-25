@@ -5,6 +5,7 @@ from typing import (
     Generator,
     Optional,
     Sequence,
+    Tuple,
     Type,
     cast,
     AsyncGenerator,
@@ -176,15 +177,17 @@ class Refine(BaseSynthesizer):
             if prev_response is None:
                 # if this is the first chunk, and text chunk already
                 # is an answer, then return it
-                response = self._give_response_single(
+                response, query_satisfied = self._give_response_single(
                     query_str, text_chunk, **response_kwargs
                 )
             else:
                 # refine response if possible
-                response = self._refine_response_single(
+                response, query_satisfied = self._refine_response_single(
                     prev_response, query_str, text_chunk, **response_kwargs
                 )
             prev_response = response
+            if self._structured_answer_filtering and query_satisfied:
+                break
         if isinstance(response, str):
             if self._output_cls is not None:
                 try:
@@ -222,7 +225,7 @@ class Refine(BaseSynthesizer):
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
+    ) -> Tuple[RESPONSE_TEXT_TYPE, bool]:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         text_chunks = self._prompt_helper.repack(
@@ -230,10 +233,10 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
+        query_satisfied = False
         program = self._program_factory(text_qa_template)
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
-            query_satisfied = False
             if response is None and not self._streaming:
                 try:
                     structured_response = cast(
@@ -246,6 +249,8 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
+                        if self._structured_answer_filtering:
+                            break
                 except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(f"Structured response error: {e}", exc_info=True)
             elif response is None and self._streaming:
@@ -256,7 +261,7 @@ class Refine(BaseSynthesizer):
                 )
                 query_satisfied = True
             else:
-                response = self._refine_response_single(
+                response, query_satisfied = self._refine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
@@ -268,7 +273,7 @@ class Refine(BaseSynthesizer):
             response = response or "Empty Response"
         else:
             response = cast(Generator, response)
-        return response
+        return response, query_satisfied
 
     def _refine_response_single(
         self,
@@ -276,7 +281,7 @@ class Refine(BaseSynthesizer):
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
+    ) -> Tuple[RESPONSE_TEXT_TYPE, bool]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
         if isinstance(response, Generator):
@@ -302,16 +307,16 @@ class Refine(BaseSynthesizer):
         if avail_chunk_size < 0:
             # if the available chunk size is negative, then the refine template
             # is too big and we just return the original response
-            return response
+            return response, False
 
         # obtain text chunks to add to the refine template
         text_chunks = self._prompt_helper.repack(
             refine_template, text_chunks=[text_chunk], llm=self._llm
         )
 
+        query_satisfied = False
         program = self._program_factory(refine_template)
         for cur_text_chunk in text_chunks:
-            query_satisfied = False
             if not self._streaming:
                 try:
                     structured_response = cast(
@@ -324,6 +329,8 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
+                        if self._structured_answer_filtering:
+                            break
                 except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(f"Structured response error: {e}", exc_info=True)
             else:
@@ -341,7 +348,7 @@ class Refine(BaseSynthesizer):
                     **response_kwargs,
                 )
 
-        return response
+        return response, query_satisfied
 
     @dispatcher.span
     async def aget_response(
@@ -359,14 +366,16 @@ class Refine(BaseSynthesizer):
             if prev_response is None:
                 # if this is the first chunk, and text chunk already
                 # is an answer, then return it
-                response = await self._agive_response_single(
+                response, query_satisfied = await self._agive_response_single(
                     query_str, text_chunk, **response_kwargs
                 )
             else:
-                response = await self._arefine_response_single(
+                response, query_satisfied = await self._arefine_response_single(
                     prev_response, query_str, text_chunk, **response_kwargs
                 )
             prev_response = response
+            if self._structured_answer_filtering and query_satisfied:
+                break
         if response is None:
             response = "Empty Response"
         if isinstance(response, str):
@@ -385,7 +394,7 @@ class Refine(BaseSynthesizer):
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> Optional[RESPONSE_TEXT_TYPE]:
+    ) -> Tuple[RESPONSE_TEXT_TYPE, bool]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
         if isinstance(response, AsyncGenerator):
@@ -409,16 +418,16 @@ class Refine(BaseSynthesizer):
         if avail_chunk_size < 0:
             # if the available chunk size is negative, then the refine template
             # is too big and we just return the original response
-            return response
+            return response, False
 
         # obtain text chunks to add to the refine template
         text_chunks = self._prompt_helper.repack(
             refine_template, text_chunks=[text_chunk], llm=self._llm
         )
 
+        query_satisfied = False
         program = self._program_factory(refine_template)
         for cur_text_chunk in text_chunks:
-            query_satisfied = False
             if not self._streaming:
                 try:
                     structured_response = await program.acall(
@@ -431,6 +440,8 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
+                        if self._structured_answer_filtering:
+                            break
                 except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(f"Structured response error: {e}", exc_info=True)
             else:
@@ -453,19 +464,14 @@ class Refine(BaseSynthesizer):
                     **response_kwargs,
                 )
 
-            if query_satisfied:
-                refine_template = self._refine_template.partial_format(
-                    query_str=query_str, existing_answer=response
-                )
-
-        return response
+        return response, query_satisfied
 
     async def _agive_response_single(
         self,
         query_str: str,
         text_chunk: str,
         **response_kwargs: Any,
-    ) -> RESPONSE_TEXT_TYPE:
+    ) -> Tuple[RESPONSE_TEXT_TYPE, bool]:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
         text_chunks = self._prompt_helper.repack(
@@ -473,6 +479,7 @@ class Refine(BaseSynthesizer):
         )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
+        query_satisfied = False
         program = self._program_factory(text_qa_template)
         # TODO: consolidate with loop in get_response_default
         for cur_text_chunk in text_chunks:
@@ -488,6 +495,8 @@ class Refine(BaseSynthesizer):
                     query_satisfied = structured_response.query_satisfied
                     if query_satisfied:
                         response = structured_response.answer
+                        if self._structured_answer_filtering:
+                            break
                 except (ValidationError, ValueError, TypeError) as e:
                     logger.warning(f"Structured response error: {e}", exc_info=True)
             elif response is None and self._streaming:
@@ -498,7 +507,7 @@ class Refine(BaseSynthesizer):
                 )
                 query_satisfied = True
             else:
-                response = await self._arefine_response_single(
+                response, query_satisfied = await self._arefine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
                     query_str,
                     cur_text_chunk,
@@ -510,4 +519,4 @@ class Refine(BaseSynthesizer):
             response = response or "Empty Response"
         else:
             response = cast(AsyncGenerator, response)
-        return response
+        return response, query_satisfied
