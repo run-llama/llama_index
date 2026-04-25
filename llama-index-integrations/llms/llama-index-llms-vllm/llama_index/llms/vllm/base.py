@@ -1,4 +1,6 @@
+import inspect
 import json
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -254,7 +256,7 @@ class Vllm(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
-        return {**base_kwargs}
+        return {k: v for k, v in base_kwargs.items() if v is not None}
 
     @atexit.register
     def close():
@@ -288,7 +290,23 @@ class Vllm(LLM):
 
         from vllm import SamplingParams
 
-        # build sampling parameters
+        # Drop params not accepted by the installed vLLM version so that
+        # fields removed in newer releases (e.g. best_of in vLLM >= 0.19.0)
+        # don't cause a TypeError.
+        valid_keys = (
+            set(inspect.signature(SamplingParams.__init__).parameters) - {"self"}
+        )
+        unsupported = set(params) - valid_keys
+        if unsupported:
+            warnings.warn(
+                f"The following sampling kwargs are not supported by the "
+                f"installed vLLM version and will be ignored: "
+                f"{sorted(unsupported)}",
+                UserWarning,
+                stacklevel=2,
+            )
+            params = {k: v for k, v in params.items() if k in valid_keys}
+
         sampling_params = SamplingParams(**params)
         outputs = self._client.generate([prompt], sampling_params)
         return CompletionResponse(text=outputs[0].outputs[0].text)
