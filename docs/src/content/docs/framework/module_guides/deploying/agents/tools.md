@@ -27,7 +27,7 @@ from llama_index.core.tools import FunctionTool
 
 
 def get_weather(location: str) -> str:
-    """Usfeful for getting the weather for a given location."""
+    """Useful for getting the weather for a given location."""
     ...
 
 
@@ -36,8 +36,31 @@ tool = FunctionTool.from_defaults(
     # async_fn=aget_weather,  # optional!
 )
 
-agent = ReActAgent(llm=llm, tools=tools)
+agent = ReActAgent(llm=llm, tools=[tool])
 ```
+
+When using workflow agents such as `FunctionAgent` or `ReActAgent`, you
+can also pass callable Python functions directly in the `tools` list.
+LlamaIndex will automatically convert them into `FunctionTool` instances.
+
+```python
+from llama_index.core.agent.workflow import FunctionAgent
+
+
+def get_weather(location: str) -> str:
+    """Useful for getting the weather for a given location."""
+    ...
+
+
+agent = FunctionAgent(llm=llm, tools=[get_weather])
+```
+
+Passing a plain function is a good default when the function name,
+docstring, and type annotations already describe the tool clearly. Use
+`FunctionTool.from_defaults()` directly when you need more control over
+the tool metadata, such as overriding the tool name or description,
+providing an async implementation, customizing the generated schema, or
+using advanced options like partial parameters.
 
 For a better function definition, you can also leverage the `Annotated` type to specify argument descriptions.
 
