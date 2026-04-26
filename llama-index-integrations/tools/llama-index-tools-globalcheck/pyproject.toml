@@ -1,0 +1,16 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-tools-globalcheck"
+version = "0.1.0"
+description = "llama-index tools globalcheck integration"
+authors = ["Your Name <hello@globalcheck.ai>"]
+readme = "README.md"
+packages = [{include = "llama_index/tools/globalcheck"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.1"
+requests = "^2.31.0"
