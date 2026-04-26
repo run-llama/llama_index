@@ -33,7 +33,8 @@ pip install llama-index-core tessera-mesh[llamaindex]
 ## Wire the handler
 
 ```python
-import os, secrets
+import os
+import secrets
 from llama_index.core.agent import FunctionCallingAgent
 from llama_index.core.tools import FunctionTool
 from tessera.adapters.llamaindex import MeshLlamaIndexHandler
