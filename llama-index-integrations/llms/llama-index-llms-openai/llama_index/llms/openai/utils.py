@@ -83,6 +83,8 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
+    "gpt-5.5": 1050000,
+    "gpt-5.5-2026-04-23": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
@@ -231,6 +233,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-5",
     "gpt-5.2",
     "gpt-5.4",
+    "gpt-5.5",
 ]
 
 
