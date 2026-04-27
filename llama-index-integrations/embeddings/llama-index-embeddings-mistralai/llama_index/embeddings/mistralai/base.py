@@ -10,7 +10,7 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 
 class MistralAIEmbedding(BaseEmbedding):
