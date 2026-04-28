@@ -8,9 +8,9 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "actian-vectorai"
-version = "0.1.0rc1"
-source = { path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0rc1-py3-none-any.whl" }
+name = "actian-vectorai-client"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
     { name = "httpx" },
@@ -21,35 +21,8 @@ dependencies = [
     { name = "python-dotenv" },
 ]
 wheels = [
-    { filename = "actian_vectorai-0.1.0rc1-py3-none-any.whl", hash = "sha256:98bbcbab6d5e8c13e0203ad8831e00b25857924904793b7f019a88a18c7c4396" },
+    { url = "https://files.pythonhosted.org/packages/3c/a5/a43424a8349316f76c648f3dd5b282e5123a58818d511e12e018a79de2eb/actian_vectorai_client-1.0.0-py3-none-any.whl", hash = "sha256:199a8dd7803bb38a9944ca9d5d8d50424b3af70523ecc18de3517598b3950c4e", size = 170613, upload-time = "2026-04-28T14:06:40.506Z" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "actian-vectorai", extras = ["fast", "openai", "telemetry"], marker = "extra == 'all'" },
-    { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.6.0" },
-    { name = "grpcio", specifier = ">=1.80.0,<2.0.0" },
-    { name = "grpcio", marker = "extra == 'dev'", specifier = ">=1.80.0,<2.0.0" },
-    { name = "grpcio-tools", marker = "extra == 'dev'", specifier = ">=1.80.0,<2.0.0" },
-    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "msgspec", marker = "extra == 'fast'", specifier = ">=0.18.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14.0" },
-    { name = "numpy", specifier = ">=1.26.0" },
-    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
-    { name = "opentelemetry-api", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
-    { name = "opentelemetry-sdk", marker = "extra == 'telemetry'", specifier = ">=1.20.0" },
-    { name = "orjson", marker = "extra == 'fast'", specifier = ">=3.10.0" },
-    { name = "protobuf", specifier = ">=5.29.2" },
-    { name = "pydantic", specifier = ">=2.10.0,<3.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.3.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
-    { name = "types-protobuf", marker = "extra == 'dev'", specifier = ">=5.29.0" },
-]
-provides-extras = ["fast", "telemetry", "openai", "all", "dev"]
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -1885,7 +1858,7 @@ name = "llama-index-vector-stores-actian-vectorai"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "actian-vectorai" },
+    { name = "actian-vectorai-client" },
     { name = "llama-index-core" },
 ]
 
@@ -1914,7 +1887,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "actian-vectorai", path = "../../../../../Downloads/Actian VectorAI DB - 8db4b78/actian_vectorai-0.1.0rc1-py3-none-any.whl" },
+    { name = "actian-vectorai-client", specifier = ">=1.0.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 

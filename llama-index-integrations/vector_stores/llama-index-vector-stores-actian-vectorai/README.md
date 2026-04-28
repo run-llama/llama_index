@@ -1,6 +1,6 @@
 # LlamaIndex Vector Store Integration: Actian VectorAI
 
-A LlamaIndex vector store backend powered by [Actian VectorAI DB](https://www.actian.com/).
+A LlamaIndex vector store backend powered by [Actian VectorAI DB](https://docs.vectoraidb.actian.com).
 
 ## Installation
 
