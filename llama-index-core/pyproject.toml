@@ -60,7 +60,7 @@ dependencies = [
     "deprecated>=1.2.9.3",
     "fsspec>=2023.5.0",
     "httpx",
-    "nest-asyncio>=1.5.8,<2",
+    "nest-asyncio2>=1.6.0",
     "nltk>=3.9.3",
     "numpy",
     "tenacity>=8.2.0,!=8.4.0,<10.0.0",
