@@ -38,6 +38,7 @@ from llama_index.llms.openai.utils import (
     is_json_schema_supported,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
+    to_openai_message_dict,
     to_openai_tool,
 )
 
