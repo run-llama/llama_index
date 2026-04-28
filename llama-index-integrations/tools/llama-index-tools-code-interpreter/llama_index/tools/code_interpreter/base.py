@@ -31,5 +31,10 @@ class CodeInterpreterToolSpec(BaseToolSpec):
 
         It is not possible to return graphics or other complicated data from this function. If the user cannot see the output, save it to a file and tell the user.
         """
-        result = subprocess.run([sys.executable, "-c", code], capture_output=True)
+        result = subprocess.run(
+            [sys.executable, "-I", "-c", code],
+            capture_output=True,
+            timeout=60,
+            env={},
+        )
         return f"StdOut:\n{result.stdout}\nStdErr:\n{result.stderr}"
