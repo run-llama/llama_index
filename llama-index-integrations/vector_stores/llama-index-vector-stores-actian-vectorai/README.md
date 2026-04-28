@@ -10,7 +10,7 @@ pip install llama-index-vector-stores-actian-vectorai
 
 ## Requirements
 
-- Python 3.10–3.12
+- Python 3.10+
 - A running Actian VectorAI DB instance (default endpoint: `localhost:6574`)
 
 ## Usage
