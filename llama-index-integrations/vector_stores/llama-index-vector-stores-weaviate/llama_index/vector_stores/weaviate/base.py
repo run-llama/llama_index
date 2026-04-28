@@ -6,6 +6,7 @@ An index that is built on top of an existing vector store.
 """
 
 import logging
+from contextlib import AbstractContextManager
 from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
@@ -35,10 +36,6 @@ from llama_index.vector_stores.weaviate._exceptions import (
 
 import weaviate
 import weaviate.classes as wvc
-
-from weaviate.collections.batch.batch_wrapper import (
-    _ContextManagerWrapper as BatchWrapper,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -221,7 +218,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     _collection_initialized: bool = PrivateAttr()
     _is_self_created_weaviate_client: bool = PrivateAttr()  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
-    _custom_batch: Optional[BatchWrapper] = PrivateAttr()
+    _custom_batch: Optional[AbstractContextManager[Any]] = PrivateAttr()
     _property_types: Optional[Dict[str, Any]] = PrivateAttr()
 
     def __init__(
@@ -282,7 +279,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         self._custom_batch = (
             client_kwargs.get("custom_batch") if client_kwargs else None
         )
-        if self._custom_batch and not isinstance(self._custom_batch, BatchWrapper):
+        if self._custom_batch and not isinstance(
+            self._custom_batch, AbstractContextManager
+        ):
             raise ValueError(
                 "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
             )
