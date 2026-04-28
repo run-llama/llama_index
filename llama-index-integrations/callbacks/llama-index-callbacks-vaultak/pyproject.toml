@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llama-index-callbacks-vaultak"
+version = "0.1.0"
+description = "Vaultak runtime security callback handler for LlamaIndex agents"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+keywords = [
+    "llamaindex",
+    "llama-index",
+    "vaultak",
+    "ai-agents",
+    "security",
+    "runtime-security",
+    "llm",
+    "agent-security",
+    "ai-governance",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "vaultak>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "llama-index>=0.10.0",
+]
+
+[project.urls]
+Homepage = "https://vaultak.com"
+Documentation = "https://docs.vaultak.com"
+Repository = "https://github.com/vaultak/llama-index-vaultak"
+Issues = "https://github.com/vaultak/llama-index-vaultak/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llama_index*"]
