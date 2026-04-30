@@ -130,3 +130,68 @@ query_perplexity_tool = FunctionTool.from_defaults(fn=query_perplexity)
 ### LLM Implementation example
 
 https://docs.llamaindex.ai/en/stable/examples/llm/perplexity/
+
+## Search API
+
+This package also ships a client and tool spec for the
+[Perplexity Search API](https://docs.perplexity.ai/docs/search/quickstart),
+which returns ranked web results for a query. The Search API is a separate
+product from the chat completions endpoint above.
+
+Authentication uses the same `PERPLEXITY_API_KEY` environment variable
+(also accepts `PPLX_API_KEY` as a fallback), or pass `api_key=...` directly.
+
+### Low-level client
+
+```python
+from llama_index.llms.perplexity import PerplexitySearch
+
+client = PerplexitySearch(api_key="your-perplexity-api-key")
+
+results = client.search(
+    "latest research on retrieval-augmented generation",
+    max_results=5,
+    search_recency_filter="month",
+    search_domain_filter=["arxiv.org"],
+)
+for r in results:
+    print(r["title"], r["url"])
+```
+
+#### Async
+
+```python
+results = await client.asearch("latest AI news", max_results=10)
+```
+
+### Agent tool spec
+
+`PerplexitySearchToolSpec` exposes the Search API as a LlamaIndex tool that
+returns `Document` objects (text=snippet, metadata={title, url, date}), so
+agents can call it directly:
+
+```python
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.perplexity import PerplexitySearchToolSpec
+
+search_tools = PerplexitySearchToolSpec(
+    api_key="your-perplexity-api-key"
+).to_tool_list()
+
+agent = FunctionAgent(
+    tools=search_tools,
+    llm=OpenAI(model="gpt-4o"),
+    system_prompt="You research questions using the Perplexity Search API.",
+)
+
+response = await agent.run("Find recent papers on speculative decoding.")
+print(response)
+```
+
+Supported filters mirror the Search API:
+
+- `max_results` — maximum number of results to return (default 5).
+- `search_domain_filter` — list of domains to allow, or `-domain.com` to deny.
+  Do not mix allow and deny entries in a single call.
+- `search_recency_filter` — one of `hour`, `day`, `week`, `month`, `year`.
