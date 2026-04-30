@@ -165,7 +165,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             return self._add_vector_nodes(nodes, **add_kwargs)
 
     def _to_top_level_metadata(self, metadata: Optional[dict]) -> dict:
-        """Flatten metadata so Moorcheh stores it as top-level fields.
+        """
+        Flatten metadata so Moorcheh stores it as top-level fields.
 
         If callers pass nested metadata as {"metadata": {...}}, unwrap it and merge.
         Explicit top-level keys win over nested keys on conflicts.
@@ -180,13 +181,15 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         clean_nested_metadata = {
             key: value
             for key, value in nested_metadata.items()
-            if key not in {ID_KEY, TEXT_KEY, VECTOR_KEY, SPARSE_VECTOR_KEY, METADATA_KEY}
+            if key
+            not in {ID_KEY, TEXT_KEY, VECTOR_KEY, SPARSE_VECTOR_KEY, METADATA_KEY}
         }
 
         clean_top_level_metadata = {
             key: value
             for key, value in metadata.items()
-            if key not in {ID_KEY, TEXT_KEY, VECTOR_KEY, SPARSE_VECTOR_KEY, METADATA_KEY}
+            if key
+            not in {ID_KEY, TEXT_KEY, VECTOR_KEY, SPARSE_VECTOR_KEY, METADATA_KEY}
         }
         return {**clean_nested_metadata, **clean_top_level_metadata}
 
@@ -299,7 +302,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         return ids
 
     def _build_query_filter_suffix(self, query: VectorStoreQuery) -> str:
-        """Translate supported LlamaIndex metadata filters to Moorcheh query tokens.
+        """
+        Translate supported LlamaIndex metadata filters to Moorcheh query tokens.
 
         Supports only text-query filter syntax (`#key:value`) currently.
         """

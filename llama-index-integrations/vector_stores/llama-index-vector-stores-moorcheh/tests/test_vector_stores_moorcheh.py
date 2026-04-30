@@ -17,7 +17,6 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterCondition,
     FilterOperator,
-    VectorStoreQuery,
 )
 
 # Import your custom vector store class
@@ -26,6 +25,8 @@ from llama_index.vector_stores.moorcheh import MoorchehVectorStore
 MAX_WAIT_TIME = 60
 EMBED_DIM = 1536
 MOORCHEH_API_KEY = os.environ.get("MOORCHEH_API_KEY", None)
+
+
 def _new_client_and_auth_ok() -> bool:
     if not MOORCHEH_API_KEY:
         return False
@@ -148,7 +149,9 @@ def test_retrieval_with_filters(text_index_with_nodes: VectorStoreIndex):
         ],
         condition=FilterCondition.OR,
     )
-    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve("Hello, world 1!")
+    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve(
+        "Hello, world 1!"
+    )
     assert len(nodes) >= 1
     values = {n.node.metadata.get("some_key") for n in nodes}
     assert values.issubset({1, 2})
@@ -162,7 +165,9 @@ def test_retrieval_with_filters(text_index_with_nodes: VectorStoreIndex):
             ),
         ],
     )
-    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve("Hello, world 1!")
+    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve(
+        "Hello, world 1!"
+    )
     # Backend filtering behavior can vary slightly by scoring/ranking.
     assert len(nodes) >= 1
 
@@ -175,7 +180,9 @@ def test_retrieval_with_filters(text_index_with_nodes: VectorStoreIndex):
             ),
         ],
     )
-    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve("Hello, world 1!")
+    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve(
+        "Hello, world 1!"
+    )
     assert len(nodes) >= 1
     values = {n.node.metadata.get("some_key") for n in nodes}
     assert values.issubset({1, 2})
@@ -189,7 +196,9 @@ def test_retrieval_with_filters(text_index_with_nodes: VectorStoreIndex):
             ),
         ],
     )
-    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve("Hello, world 1!")
+    nodes = text_index_with_nodes.as_retriever(filters=filters).retrieve(
+        "Hello, world 1!"
+    )
     assert len(nodes) >= 1
     values = {n.node.metadata.get("some_key") for n in nodes}
     assert values == {"3"}
