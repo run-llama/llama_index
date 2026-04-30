@@ -36,7 +36,7 @@ class PineconeNativeRerank(BaseNodePostprocessor):
         super().__init__(top_n=top_n, model=model)
         try:
             api_key = api_key or os.environ["PINECONE_API_KEY"]
-        except IndexError:
+        except KeyError:
             raise ValueError(
                 "Must pass in pinecone api key or "
                 "specify via PINECONE_API_KEY environment variable "
