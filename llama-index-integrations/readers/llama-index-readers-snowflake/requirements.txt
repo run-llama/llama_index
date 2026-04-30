@@ -1,2 +1,0 @@
-snowflake-sqlalchemy
-sqlalchemy
