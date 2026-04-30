@@ -1,6 +1,7 @@
 import warnings
 import logging
 import io
+import base64
 
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -27,7 +28,7 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import AudioBlock, ChatMessage, ImageBlock, TextBlock
 
 
 class StreamingHandler(logging.Handler):
@@ -398,9 +399,80 @@ class BasicMCPClient(ClientSession):
                             ],
                         )
                     )
+                elif isinstance(message.content, types.AudioContent):
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                AudioBlock(
+                                    audio=base64.b64decode(
+                                        message.content.data
+                                    ),
+                                    format=message.content.mimeType.split(
+                                        "/"
+                                    )[-1]
+                                    if message.content.mimeType
+                                    else None,
+                                )
+                            ],
+                        )
+                    )
                 elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
+                    resource = message.content.resource
+                    if isinstance(resource, types.TextResourceContents):
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[TextBlock(text=resource.text)],
+                            )
+                        )
+                    elif isinstance(resource, types.BlobResourceContents):
+                        mime = resource.mimeType or ""
+                        if mime.startswith("image/"):
+                            llama_messages.append(
+                                ChatMessage(
+                                    role=message.role,
+                                    blocks=[
+                                        ImageBlock(
+                                            image=resource.blob,
+                                            image_mimetype=mime or None,
+                                        )
+                                    ],
+                                )
+                            )
+                        elif mime.startswith("audio/"):
+                            llama_messages.append(
+                                ChatMessage(
+                                    role=message.role,
+                                    blocks=[
+                                        AudioBlock(
+                                            audio=base64.b64decode(
+                                                resource.blob
+                                            ),
+                                            format=mime.split("/")[-1],
+                                        )
+                                    ],
+                                )
+                            )
+                        else:
+                            llama_messages.append(
+                                ChatMessage(
+                                    role=message.role,
+                                    blocks=[
+                                        TextBlock(
+                                            text=f"[Binary resource ({mime or 'unknown type'}): {resource.uri}]"
+                                        )
+                                    ],
+                                )
+                            )
+                elif isinstance(message.content, types.ResourceLink):
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                TextBlock(text=str(message.content.uri))
+                            ],
+                        )
                     )
                 else:
                     raise ValueError(
