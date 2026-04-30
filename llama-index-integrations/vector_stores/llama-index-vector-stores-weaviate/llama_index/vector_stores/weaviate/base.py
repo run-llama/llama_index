@@ -40,6 +40,40 @@ import weaviate.classes as wvc
 _logger = logging.getLogger(__name__)
 
 
+_CUSTOM_BATCH_ERROR = (
+    "client_kwargs['custom_batch'] must be an instance of "
+    "client.batch.dynamic() or client.batch.fixed_size()"
+)
+
+
+def _is_batch_writer(batch: Any) -> bool:
+    return callable(getattr(batch, "add_object", None))
+
+
+def _get_wrapped_batch_writer(batch_manager: AbstractContextManager[Any]) -> Any:
+    for attr_name in (
+        "_ContextManagerSync__current_batch",
+        "_ContextManagerWrapper__current_batch",
+    ):
+        batch = getattr(batch_manager, attr_name, None)
+        if batch is not None:
+            return batch
+    return None
+
+
+def _is_valid_batch_context_manager(batch_manager: Any) -> bool:
+    if not isinstance(batch_manager, AbstractContextManager):
+        return False
+
+    batch = _get_wrapped_batch_writer(batch_manager)
+    if batch is not None:
+        return _is_batch_writer(batch)
+
+    # Newer Weaviate clients may rename the private context-manager class. Keep
+    # those compatible while still rejecting arbitrary context managers.
+    return batch_manager.__class__.__module__.startswith("weaviate.collections.batch")
+
+
 def _transform_weaviate_filter_condition(condition: str) -> str:
     """Translate standard metadata filter op to Chroma specific spec."""
     if condition == "and":
@@ -279,12 +313,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         self._custom_batch = (
             client_kwargs.get("custom_batch") if client_kwargs else None
         )
-        if self._custom_batch and not isinstance(
-            self._custom_batch, AbstractContextManager
+        if self._custom_batch and not _is_valid_batch_context_manager(
+            self._custom_batch
         ):
-            raise ValueError(
-                "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
-            )
+            raise ValueError(_CUSTOM_BATCH_ERROR)
 
         self._property_types = None
 
@@ -382,6 +414,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         if not provided_batch:
             provided_batch = self.client.batch.dynamic()
         with provided_batch as batch:
+            if not _is_batch_writer(batch):
+                raise ValueError(_CUSTOM_BATCH_ERROR)
             for node in nodes:
                 data_object = get_data_object(node=node, text_key=self.text_key)
                 batch.add_object(
