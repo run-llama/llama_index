@@ -1,2 +1,0 @@
-bilibili_api
-requests

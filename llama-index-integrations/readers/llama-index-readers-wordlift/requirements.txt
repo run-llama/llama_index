@@ -1,2 +1,0 @@
-langchain
-graphql-core

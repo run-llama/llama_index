@@ -1,5 +1,0 @@
-httpx
-lxml
-lxml-html-clean
-markdownify
-oxylabs

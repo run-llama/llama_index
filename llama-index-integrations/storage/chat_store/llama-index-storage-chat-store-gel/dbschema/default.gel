@@ -1,8 +1,0 @@
-module default {
-    type Record {
-        required key: str {
-            constraint exclusive;
-        }
-        value: array<json>;
-    }
-}

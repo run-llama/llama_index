@@ -1,3 +1,0 @@
-multion
-pytesseract
-Pillow

@@ -1,3 +1,0 @@
-rayyan-sdk
-tqdm
-tenacity

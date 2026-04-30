@@ -1,3 +1,0 @@
-selenium>=4.15.1,<5
-webdriver_manager==4.0.1
-IMDbPY==2022.7.9
