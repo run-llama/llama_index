@@ -1,15 +1,17 @@
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import httpx
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from llama_index.core import PromptTemplate
+from llama_index.core.llms.llm import Model
 from llama_index.llms.azure_openai.utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-from llama_index.llms.openai.responses import OpenAIResponses
+from llama_index.llms.openai.responses import OpenAIResponses, to_openai_message_dicts
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
@@ -203,6 +205,68 @@ class AzureOpenAIResponses(OpenAIResponses):
 
         self._http_client = http_client
         self._async_http_client = async_http_client
+
+    def structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
+        """
+        Structured predict using responses.parse with the Azure deployment name.
+
+        Overrides OpenAIResponses.structured_predict to pass ``self.engine``
+        (the Azure deployment name) instead of ``self.model`` (the model family
+        name) to ``responses.parse``.  Azure routes requests by deployment name;
+        using the model family name results in a 404 DeploymentNotFound error.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
+        )
+        response = self._client.responses.parse(
+            model=self.engine,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
+        )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
+
+    async def astructured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
+        """
+        Async structured predict using responses.parse with the Azure deployment name.
+
+        Overrides OpenAIResponses.astructured_predict to pass ``self.engine``
+        (the Azure deployment name) instead of ``self.model`` (the model family
+        name) to ``responses.parse``.  Azure routes requests by deployment name;
+        using the model family name results in a 404 DeploymentNotFound error.
+        """
+        messages = prompt.format_messages(**prompt_args)
+        message_dicts = to_openai_message_dicts(
+            messages, model=self.model, is_responses_api=True
+        )
+        response = await self._aclient.responses.parse(
+            model=self.engine,
+            input=message_dicts,
+            text_format=output_cls,
+            tool_choice="none",
+            store=self.store,
+            **(llm_kwargs or {}),
+        )
+        if response.output_parsed is not None:
+            return response.output_parsed
+        raise ValueError("Failed to produce a structured response from the model.")
 
     def _get_credential_kwargs(
         self, is_async: bool = False, **kwargs: Any
