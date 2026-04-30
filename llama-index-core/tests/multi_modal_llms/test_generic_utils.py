@@ -70,8 +70,12 @@ def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = content
         with patch("os.path.isfile", return_value=True):
-            with patch("builtins.open", mock_open(read_data=content)):
-                result = image_documents_to_base64(documents)
+            with patch(
+                "llama_index.core.multi_modal_llms.generic_utils.is_image_pil",
+                return_value=True,
+            ):
+                with patch("builtins.open", mock_open(read_data=content)):
+                    result = image_documents_to_base64(documents)
 
     assert len(result) == 4
     assert all(encoding == expected_b64 for encoding in result)
@@ -166,3 +170,31 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
     assert results[0].image == expected_b64
     assert results[0].image_mimetype == "image/jpeg"
     assert results[1].image_mimetype == "image/jpeg"
+def test_metadata_file_path_non_image_rejected():
+    """Security fix: non-image file via metadata file_path should be rejected."""
+    document = ImageDocument(metadata={"file_path": "/etc/passwd"})
+
+    with patch("os.path.isfile", return_value=True):
+        with patch(
+            "llama_index.core.multi_modal_llms.generic_utils.is_image_pil",
+            return_value=False,
+        ):
+            result = image_documents_to_base64([document])
+
+    assert len(result) == 0
+
+
+def test_metadata_file_path_valid_image_encoded():
+    """Security fix: valid image via metadata file_path should still be encoded."""
+    document = ImageDocument(metadata={"file_path": "photo.jpg"})
+
+    with patch("os.path.isfile", return_value=True):
+        with patch(
+            "llama_index.core.multi_modal_llms.generic_utils.is_image_pil",
+            return_value=True,
+        ):
+            with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
+                result = image_documents_to_base64([document])
+
+    assert len(result) == 1
+    assert result[0] == EXP_BASE64

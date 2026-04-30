@@ -7,7 +7,7 @@ from typing import List, Optional, Sequence
 
 import requests
 
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageDocument, is_image_pil
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,7 @@ def image_documents_to_base64(
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
             and os.path.isfile(image_document.metadata["file_path"])
+            and is_image_pil(image_document.metadata["file_path"])
         ):  # Alternative path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.metadata["file_path"]))
         elif image_document.image_url:  # Image can also be pulled from the URL.
