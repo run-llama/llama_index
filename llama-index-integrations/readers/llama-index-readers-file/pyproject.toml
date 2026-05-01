@@ -28,10 +28,10 @@ dev = [
 
 [project]
 name = "llama-index-readers-file"
-version = "0.5.6"
+version = "0.6.0"
 description = "llama-index readers file integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [

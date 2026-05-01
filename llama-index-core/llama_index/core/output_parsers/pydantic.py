@@ -50,7 +50,7 @@ class PydanticOutputParser(BaseOutputParser, Generic[Model]):
         for key in self._excluded_schema_keys_from_format:
             del schema_dict[key]
 
-        schema_str = json.dumps(schema_dict)
+        schema_str = json.dumps(schema_dict, ensure_ascii=False)
         output_str = self._pydantic_format_tmpl.format(schema=schema_str)
         if escape_json:
             return output_str.replace("{", "{{").replace("}", "}}")

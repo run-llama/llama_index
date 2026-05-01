@@ -1,0 +1,64 @@
+name: "Close new integration PRs"
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+    paths:
+      - "**/pyproject.toml"
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-new-pyproject:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for new pyproject.toml files
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+
+            const newPyprojects = files.filter(
+              (f) => f.filename.endsWith("pyproject.toml") && f.status === "added"
+            );
+
+            if (newPyprojects.length === 0) {
+              console.log("No new pyproject.toml files detected.");
+              return;
+            }
+
+            const fileList = newPyprojects.map((f) => `- \`${f.filename}\``).join("\n");
+
+            const body = [
+              "Thank you for your contribution! Unfortunately, **we are no longer accepting new integration packages** in this repository.",
+              "",
+              "This PR was automatically closed because it adds new `pyproject.toml` file(s):",
+              "",
+              fileList,
+              "",
+              "New integrations are not being accepted at this time.",
+              "",
+              "If you believe this was closed in error (e.g., you are modifying an existing package), please comment on this PR and a maintainer will review it.",
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body,
+            });
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              state: "closed",
+            });
+
+            console.log(`Closed PR #${context.payload.pull_request.number} for adding new pyproject.toml files: ${fileList}`);

@@ -196,11 +196,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             self._query_engine._response_synthesizer._streaming = False
 
         # Query with standalone question
-        query_response = self._query_engine.query(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        try:
+            query_response = self._query_engine.query(condensed_question)
+        finally:
+            # NOTE: reset streaming flag
+            if isinstance(self._query_engine, RetrieverQueryEngine):
+                self._query_engine._response_synthesizer._streaming = is_streaming
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -240,11 +241,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
-        query_response = self._query_engine.query(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        try:
+            query_response = self._query_engine.query(condensed_question)
+        finally:
+            # NOTE: reset streaming flag
+            if isinstance(self._query_engine, RetrieverQueryEngine):
+                self._query_engine._response_synthesizer._streaming = is_streaming
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -265,6 +267,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 target=response.write_response_to_history,
                 args=(self._memory,),
             )
+            response.write_response_to_history_thread = thread
             thread.start()
         else:
             raise ValueError("Streaming is not enabled. Please use chat() instead.")
@@ -296,11 +299,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             self._query_engine._response_synthesizer._streaming = False
 
         # Query with standalone question
-        query_response = await self._query_engine.aquery(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        try:
+            query_response = await self._query_engine.aquery(condensed_question)
+        finally:
+            # NOTE: reset streaming flag
+            if isinstance(self._query_engine, RetrieverQueryEngine):
+                self._query_engine._response_synthesizer._streaming = is_streaming
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response
@@ -340,11 +344,12 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             self._query_engine._response_synthesizer._streaming = True
 
         # Query with standalone question
-        query_response = await self._query_engine.aquery(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        try:
+            query_response = await self._query_engine.aquery(condensed_question)
+        finally:
+            # NOTE: reset streaming flag
+            if isinstance(self._query_engine, RetrieverQueryEngine):
+                self._query_engine._response_synthesizer._streaming = is_streaming
 
         tool_output = self._get_tool_output_from_response(
             condensed_question, query_response

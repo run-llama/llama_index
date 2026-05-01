@@ -266,12 +266,21 @@ def test_ensure_initialized_aoss_calls_exists():
 
 def test_close_does_not_raise_in_running_event_loop():
     """Verify close() does not raise RuntimeError when event loop is running."""
-    client = _make_client_no_network()
+    mock_sync = MagicMock()
+    mock_async = MagicMock()
+    mock_async.close = AsyncMock()
+
+    # Build client that owns its clients (no os_client/os_async_client passed)
+    client = OpensearchVectorClient.__new__(OpensearchVectorClient)
+    client._os_client = mock_sync
+    client._os_async_client = mock_async
+    client._owns_os_client = True
+    client._owns_os_async_client = True
 
     with patch(
-        "llama_index.vector_stores.opensearch.base.asyncio_run",
-        side_effect=RuntimeError("This event loop is already running"),
+        "llama_index.vector_stores.opensearch.base.asyncio.get_running_loop",
+        return_value=MagicMock(),
     ):
         client.close()
 
-    client._os_client.close.assert_called_once()
+    mock_sync.close.assert_called_once()

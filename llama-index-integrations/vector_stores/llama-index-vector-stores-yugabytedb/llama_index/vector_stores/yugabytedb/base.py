@@ -348,7 +348,6 @@ class YBVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             return
 
-        self._session.close_all()
         if self._engine:
             self._engine.dispose()
 

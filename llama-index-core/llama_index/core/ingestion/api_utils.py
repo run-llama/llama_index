@@ -18,7 +18,7 @@ def get_client(
     timeout: int = 60,
     httpx_client: Optional[httpx.Client] = None,
 ) -> "LlamaCloud":
-    """Get the sync platform API client."""
+    """Deprecated: Get the sync platform API client with <1.0 llama-cloud SDK."""
     from llama_cloud.client import LlamaCloud
 
     base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
@@ -37,7 +37,7 @@ def get_aclient(
     timeout: int = 60,
     httpx_client: Optional[httpx.AsyncClient] = None,
 ) -> "AsyncLlamaCloud":
-    """Get the async platform API client."""
+    """Deprecated: Get the async platform API client with <1.0 llama-cloud SDK."""
     from llama_cloud.client import AsyncLlamaCloud
 
     base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)

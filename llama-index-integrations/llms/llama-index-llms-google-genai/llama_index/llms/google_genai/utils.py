@@ -502,6 +502,9 @@ async def prepare_chat_params(
 
     """
     # Extract system message if present
+    # Copy the list to avoid mutating the caller's original, which would
+    # strip the system message on retries (e.g. after a 429 rate-limit).
+    messages = list(messages)
     system_message: str | None = None
     if messages and messages[0].role == MessageRole.SYSTEM:
         sys_msg = messages.pop(0)

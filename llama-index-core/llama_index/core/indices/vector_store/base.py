@@ -414,7 +414,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
-                    self._vector_store.delete(node_id)
 
     def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
@@ -424,7 +423,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
+        """Delete a document and its nodes by using ref_doc_id."""
         self._vector_store.delete(ref_doc_id, **delete_kwargs)
         self._delete_from_index_struct(ref_doc_id)
         if delete_from_docstore:
@@ -438,7 +437,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if ref_doc_info is not None:
                 for node_id in ref_doc_info.node_ids:
                     self._index_struct.delete(node_id)
-                    self._vector_store.delete(node_id)
 
     async def _adelete_from_docstore(self, ref_doc_id: str) -> None:
         """Delete from docstore only if needed."""
@@ -448,7 +446,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     async def adelete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
+        """Delete a document and its nodes by using ref_doc_id."""
         tasks = [
             self._vector_store.adelete(ref_doc_id, **delete_kwargs),
             self._adelete_from_index_struct(ref_doc_id),

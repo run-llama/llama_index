@@ -1,5 +1,7 @@
 # LlamaParse
 
+**NOTE:** This package has been deprecated and is no longer maintained. Please use the [llama-cloud package](https://github.com/run-llama/llama-cloud-py) instead.
+
 LlamaParse is an API created by LlamaIndex to efficiently parse and represent files for efficient retrieval and context augmentation using LlamaIndex frameworks.
 
 LlamaParse directly integrates with [LlamaIndex](https://github.com/run-llama/llama_index).

@@ -325,7 +325,7 @@ class BaseIndex(Generic[IS], ABC):
 
         self.delete_nodes(
             ref_doc_info.node_ids,
-            delete_from_docstore=False,
+            delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
 
@@ -343,7 +343,7 @@ class BaseIndex(Generic[IS], ABC):
 
         await self.adelete_nodes(
             ref_doc_info.node_ids,
-            delete_from_docstore=False,
+            delete_from_docstore=delete_from_docstore,
             **delete_kwargs,
         )
 

@@ -12,7 +12,6 @@ definition of a Document - the bare minimum is a `text` property.
 """
 
 from llama_index.core.readers.base import ReaderConfig
-from llama_index.core.readers.download import download_loader
 
 # readers
 from llama_index.core.readers.file.base import (
@@ -28,5 +27,4 @@ __all__ = [
     "ReaderConfig",
     "Document",
     "StringIterableReader",
-    "download_loader",
 ]

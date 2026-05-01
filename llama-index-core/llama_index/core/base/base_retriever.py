@@ -107,7 +107,12 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             return [NodeWithScore(node=obj, score=score)]
         elif isinstance(obj, BaseQueryEngine):
             response = await obj.aquery(query_bundle)
-            return [NodeWithScore(node=TextNode(text=str(response)), score=score)]
+            return [
+                NodeWithScore(
+                    node=TextNode(text=str(response), metadata=response.metadata or {}),
+                    score=score,
+                )
+            ]
         elif isinstance(obj, BaseRetriever):
             return await obj.aretrieve(query_bundle)
         else:
@@ -142,7 +147,9 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
         return [
             n
             for n in retrieved_nodes
-            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+            if not (
+                n.node.node_id in seen or seen.add(n.node.node_id)  # type: ignore[func-returns-value]
+            )
         ]
 
     async def _ahandle_recursive_retrieval(
@@ -171,14 +178,13 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             else:
                 retrieved_nodes.append(n)
 
-        # remove any duplicates based on hash and ref_doc_id
+        # remove any duplicates based on node_id
         seen = set()
         return [
             n
             for n in retrieved_nodes
             if not (
-                (n.node.hash, n.node.ref_doc_id) in seen
-                or seen.add((n.node.hash, n.node.ref_doc_id))  # type: ignore[func-returns-value]
+                n.node.node_id in seen or seen.add(n.node.node_id)  # type: ignore[func-returns-value]
             )
         ]
 

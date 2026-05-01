@@ -11,10 +11,10 @@ dev = [
 
 [project]
 name = "llama-index-agent-agentmesh"
-version = "0.1.0"
+version = "0.2.0"
 description = "AgentMesh trust layer integration for LlamaIndex agents"
 authors = [{name = "AgentMesh Contributors"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = ["llama-index-core>=0.13.0,<0.15.0", "cryptography>=41.0.0"]

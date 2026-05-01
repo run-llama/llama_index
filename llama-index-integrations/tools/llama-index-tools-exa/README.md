@@ -1,6 +1,6 @@
 # LlamaIndex Tools Integration: Exa
 
-This tool connects to [Exa](https://exa.ai/) to easily enable
+This tool connects to [Exa](https://exa.ai/), one of the best web search APIs for AI, to easily enable
 your agent to search and get HTML content from the Internet.
 
 To begin, you need to obtain an API key on the [Exa developer dashboard](https://dashboard.exa.ai).
@@ -33,7 +33,7 @@ print(
 )
 ```
 
-`search`: Search for a list of articles relating to a natural language query
+`search`: Search the web using Exa for a list of articles relating to a natural language query
 
 `retrieve_documents`: Retrieve a list of documents returned from `exa_search`.
 

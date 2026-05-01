@@ -49,7 +49,7 @@ class ConfigurableComponent(Enum):
         )
 
 
-def build_conifurable_data_sink_enum() -> ConfigurableComponent:
+def build_configurable_data_sink_enum() -> ConfigurableComponent:
     """
     Build an enum of configurable data sinks.
     But conditional on if the corresponding vector store is available.
@@ -144,7 +144,7 @@ def build_conifurable_data_sink_enum() -> ConfigurableComponent:
     return ConfigurableComponent("ConfigurableDataSinks", enum_members)  # type: ignore
 
 
-ConfigurableDataSinks = build_conifurable_data_sink_enum()
+ConfigurableDataSinks = build_configurable_data_sink_enum()
 
 
 T = TypeVar("T", bound=BasePydanticVectorStore)

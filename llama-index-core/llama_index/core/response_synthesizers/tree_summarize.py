@@ -122,7 +122,12 @@ class TreeSummarize(BaseSynthesizer):
                     for text_chunk in text_chunks
                 ]
                 summary_models = await asyncio.gather(*model_tasks)
-                summaries = [summary.model_dump_json() for summary in summary_models]
+                summaries = [
+                    summary.model_dump_json()
+                    if isinstance(summary, BaseModel)
+                    else str(summary)
+                    for summary in summary_models
+                ]
 
             # recursively summarize the summaries
             return await self.aget_response(
@@ -198,7 +203,10 @@ class TreeSummarize(BaseSynthesizer):
 
                 if self._output_cls is not None:
                     summaries = [
-                        summary.model_dump_json() for summary in summary_responses
+                        summary.model_dump_json()
+                        if isinstance(summary, BaseModel)
+                        else str(summary)
+                        for summary in summary_responses
                     ]
                 else:
                     summaries = summary_responses
@@ -213,7 +221,7 @@ class TreeSummarize(BaseSynthesizer):
                         for text_chunk in text_chunks
                     ]
                 else:
-                    summaries = [
+                    summary_models = [
                         self._llm.structured_predict(
                             self._output_cls,
                             summary_template,
@@ -222,7 +230,12 @@ class TreeSummarize(BaseSynthesizer):
                         )
                         for text_chunk in text_chunks
                     ]
-                    summaries = [summary.model_dump_json() for summary in summaries]
+                    summaries = [
+                        summary.model_dump_json()
+                        if isinstance(summary, BaseModel)
+                        else str(summary)
+                        for summary in summary_models
+                    ]
 
             # recursively summarize the summaries
             return self.get_response(

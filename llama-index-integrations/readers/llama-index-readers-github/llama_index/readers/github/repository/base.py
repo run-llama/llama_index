@@ -17,6 +17,7 @@ import re
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import _try_loading_included_file_formats
 from llama_index.core.schema import Document
@@ -190,17 +191,7 @@ class GithubRepositoryReader(BaseReader):
         self.logger = logger or logging.getLogger(__name__)
         self._process_file_callback = process_file_callback
         self.fail_on_error = fail_on_error
-
-        # Set up the event loop
-        try:
-            self._loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # If there is no running loop, create a new one
-            self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
-
         self._github_client = github_client
-
         self._file_readers: Dict[str, BaseReader] = custom_parsers or {}
         self._supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.dispatcher = get_dispatcher()
@@ -565,7 +556,7 @@ class GithubRepositoryReader(BaseReader):
             file_paths = [file_path]
 
         if file_paths is not None:
-            return self._loop.run_until_complete(
+            return asyncio_run(
                 self._load_files_by_path(
                     ref=commit_sha,
                     file_paths=file_paths,
@@ -580,7 +571,7 @@ class GithubRepositoryReader(BaseReader):
             )
         )
 
-        commit_response: GitCommitResponseModel = self._loop.run_until_complete(
+        commit_response: GitCommitResponseModel = asyncio_run(
             self._github_client.get_commit(
                 self._owner,
                 self._repo,
@@ -591,7 +582,7 @@ class GithubRepositoryReader(BaseReader):
         )
 
         tree_sha = commit_response.commit.tree.sha
-        blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
+        blobs_and_paths = asyncio_run(self._recurse_tree(tree_sha))
 
         # Filter ignoring file paths
         if ignore_file_paths:
@@ -620,7 +611,7 @@ class GithubRepositoryReader(BaseReader):
             )
         )
 
-        documents = self._loop.run_until_complete(
+        documents = asyncio_run(
             self._generate_documents(
                 blobs_and_paths=blobs_and_paths,
                 id=commit_sha,
@@ -635,8 +626,6 @@ class GithubRepositoryReader(BaseReader):
                 total_documents=len(documents),
             )
         )
-
-        return documents
 
         return documents
 
@@ -664,7 +653,7 @@ class GithubRepositoryReader(BaseReader):
             file_paths = [file_path]
 
         if file_paths is not None:
-            return self._loop.run_until_complete(
+            return asyncio_run(
                 self._load_files_by_path(
                     ref=branch,
                     file_paths=file_paths,
@@ -679,7 +668,7 @@ class GithubRepositoryReader(BaseReader):
             )
         )
 
-        branch_data: GitBranchResponseModel = self._loop.run_until_complete(
+        branch_data: GitBranchResponseModel = asyncio_run(
             self._github_client.get_branch(
                 self._owner,
                 self._repo,
@@ -690,7 +679,7 @@ class GithubRepositoryReader(BaseReader):
         )
 
         tree_sha = branch_data.commit.commit.tree.sha
-        blobs_and_paths = self._loop.run_until_complete(self._recurse_tree(tree_sha))
+        blobs_and_paths = asyncio_run(self._recurse_tree(tree_sha))
 
         # Filter ignoring file paths
         if ignore_file_paths:
@@ -719,7 +708,7 @@ class GithubRepositoryReader(BaseReader):
             )
         )
 
-        documents = self._loop.run_until_complete(
+        documents = asyncio_run(
             self._generate_documents(
                 blobs_and_paths=blobs_and_paths,
                 id=branch,
@@ -895,7 +884,6 @@ class GithubRepositoryReader(BaseReader):
             github_client=self._github_client,
             owner=self._owner,
             repo=self._repo,
-            loop=self._loop,
             buffer_size=self._concurrent_requests,  # TODO: make this configurable
             verbose=self._verbose,
             timeout=self._timeout,

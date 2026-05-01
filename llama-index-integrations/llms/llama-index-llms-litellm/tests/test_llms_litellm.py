@@ -649,3 +649,21 @@ def test_prepare_chat_with_tools_tool_not_required():
     assert result["tool_choice"] == "auto"
     assert len(result["tools"]) == 1
     assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_custom_llm_provider_in_model_kwargs():
+    """Test that custom_llm_provider is included in _model_kwargs when set."""
+    # Test with custom_llm_provider set
+    llm = LiteLLM(
+        model="claude-sonnet-4-5",
+        api_base="https://my-proxy.com",
+        custom_llm_provider="openai",
+    )
+    model_kwargs = llm._model_kwargs
+    assert "custom_llm_provider" in model_kwargs
+    assert model_kwargs["custom_llm_provider"] == "openai"
+
+    # Test without custom_llm_provider
+    llm_no_provider = LiteLLM(model="gpt-3.5-turbo")
+    model_kwargs_no_provider = llm_no_provider._model_kwargs
+    assert "custom_llm_provider" not in model_kwargs_no_provider

@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+from dataclasses import dataclass
 from unittest import mock
 
 # import aiohttp to force Pants to include it in the required dependencies
@@ -19,6 +20,12 @@ from llama_index.core.tools import FunctionTool
 from llama_index.llms.azure_inference import AzureAICompletionsModel
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AsyncClientFixture:
+    llm: AzureAICompletionsModel
+    client_instance: mock.MagicMock
 
 
 @pytest.fixture(scope="session")
@@ -48,18 +55,40 @@ def test_params() -> dict:
 
 
 @pytest.fixture()
-def test_llm():
+def azure_llm_async_fixture():
     with mock.patch(
         "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
     ):
         with mock.patch(
             "llama_index.llms.azure_inference.base.ChatCompletionsClientAsync",
             autospec=True,
-        ):
+        ) as mock_async_client_cls:
             llm = AzureAICompletionsModel(
                 endpoint="https://my-endpoint.inference.ai.azure.com",
                 credential="my-api-key",
             )
+    client_instance = mock_async_client_cls.return_value
+    # Azure async client's __aenter__ returns self; mirror that behavior in tests.
+    client_instance.__aenter__.return_value = client_instance
+    return AsyncClientFixture(llm=llm, client_instance=client_instance)
+
+
+@pytest.fixture()
+def test_llm(azure_llm_async_fixture):
+    llm = azure_llm_async_fixture.llm
+    client_instance = azure_llm_async_fixture.client_instance
+    entered_client = client_instance.__aenter__.return_value
+    entered_client.complete = mock.AsyncMock(
+        return_value=ChatCompletions(
+            choices=[
+                ChatChoice(
+                    message=ChatResponseMessage(
+                        content="Yes, this is a test.", role="assistant"
+                    )
+                )
+            ]
+        )
+    )
     llm._client.complete.return_value = ChatCompletions(
         choices=[
             ChatChoice(
@@ -73,17 +102,6 @@ def test_llm():
         model_name="my_model_name",
         model_provider_name="my_provider_name",
         model_type="chat-completions",
-    )
-    llm._async_client.complete = mock.AsyncMock(
-        return_value=ChatCompletions(
-            choices=[
-                ChatChoice(
-                    message=ChatResponseMessage(
-                        content="Yes, this is a test.", role="assistant"
-                    )
-                )
-            ]
-        )
     )
     return llm
 
@@ -160,6 +178,68 @@ def test_achat_completion(
 
     assert response.message.role == MessageRole.ASSISTANT
     assert response.message.content.strip() == "Yes, this is a test."
+
+
+def test_achat_closes_async_client_context(
+    loop: asyncio.AbstractEventLoop,
+    test_params: dict,
+    azure_llm_async_fixture,
+):
+    """Ensures async client context manager is used for proper session cleanup."""
+    llm = azure_llm_async_fixture.llm
+    client_instance = azure_llm_async_fixture.client_instance
+    entered_client = client_instance.__aenter__.return_value
+    entered_client.complete = mock.AsyncMock(
+        return_value=ChatCompletions(
+            choices=[
+                ChatChoice(
+                    message=ChatResponseMessage(
+                        content="Yes, this is a test.", role="assistant"
+                    )
+                )
+            ]
+        )
+    )
+
+    response = loop.run_until_complete(llm.achat(**test_params))
+
+    assert response.message.content.strip() == "Yes, this is a test."
+    client_instance.__aenter__.assert_awaited_once()
+    client_instance.__aexit__.assert_awaited_once()
+
+
+def test_astream_chat_closes_async_client_context(
+    loop: asyncio.AbstractEventLoop,
+    test_params: dict,
+    azure_llm_async_fixture,
+):
+    """Ensures async streaming path uses and closes async client context."""
+    llm = azure_llm_async_fixture.llm
+    client_instance = azure_llm_async_fixture.client_instance
+    entered_client = client_instance.__aenter__.return_value
+
+    async def stream_response():
+        first_chunk = mock.Mock()
+        first_chunk.choices = [mock.Mock(delta=mock.Mock(content="Yes"))]
+        second_chunk = mock.Mock()
+        second_chunk.choices = [mock.Mock(delta=mock.Mock(content=", this is a test."))]
+        yield first_chunk
+        yield second_chunk
+
+    entered_client.complete = mock.AsyncMock(return_value=stream_response())
+
+    async def collect() -> str:
+        stream = await llm.astream_chat(**test_params)
+        buffer = ""
+        async for chunk in stream:
+            buffer += chunk.delta
+        return buffer
+
+    response = loop.run_until_complete(collect())
+
+    assert response == "Yes, this is a test."
+    client_instance.__aenter__.assert_awaited_once()
+    client_instance.__aexit__.assert_awaited_once()
 
 
 @pytest.mark.skipif(

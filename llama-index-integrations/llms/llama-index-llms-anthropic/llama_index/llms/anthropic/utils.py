@@ -67,6 +67,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-opus-4-6-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -82,6 +83,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4-5@20251101": 200000,
     "claude-opus-4-6": 200000,
     "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # Anthropic API/SDK identifiers
@@ -108,6 +110,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-5-20251101": 200000,
     "claude-opus-4-6": 200000,
     "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # All provider Anthropic identifiers
@@ -116,6 +119,12 @@ CLAUDE_MODELS: Dict[str, int] = {
     **VERTEX_CLAUDE_MODELS,
     **ANTHROPIC_MODELS,
 }
+
+
+ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
+    "anthropic.claude-opus-4-7",
+    "claude-opus-4-7",
+)
 
 
 def is_function_calling_model(modelname: str) -> bool:
@@ -215,18 +224,12 @@ def blocks_to_anthropic_blocks(
         if isinstance(block, TextBlock):
             if block.text:
                 anthropic_blocks.append(_to_anthropic_text_block(block))
-                if global_cache_control:
-                    anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, ImageBlock):
             anthropic_blocks.append(_to_anthropic_image_block(block))
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, DocumentBlock):
             anthropic_blocks.append(_to_anthropic_document_block(block))
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, CitableBlock):
             anthropic_sub_blocks = []
@@ -249,14 +252,11 @@ def blocks_to_anthropic_blocks(
                     content=anthropic_sub_blocks,
                     source=block.source,
                     title=block.title,
-                    cache_control=global_cache_control,
                     citations=BetaCitationsConfigParam(
                         enabled=True,
                     ),
                 )
             )
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, ThinkingBlock):
             if block.content:
@@ -266,8 +266,6 @@ def blocks_to_anthropic_blocks(
                         signature=signature, thinking=block.content, type="thinking"
                     )
                 )
-                if global_cache_control:
-                    anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, ToolCallBlock):
             unique_tool_calls.append((block.tool_call_id, block.tool_name))
@@ -279,8 +277,6 @@ def blocks_to_anthropic_blocks(
                     type="tool_use",
                 )
             )
-            if global_cache_control:
-                anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
@@ -314,6 +310,11 @@ def blocks_to_anthropic_blocks(
                 )
         except AssertionError:
             continue
+
+    # Apply cache_control only to the last block to avoid exceeding
+    # Anthropic's limit of 4 blocks with cache_control per request.
+    if global_cache_control and anthropic_blocks:
+        anthropic_blocks[-1]["cache_control"] = global_cache_control
 
     return anthropic_blocks
 
@@ -389,8 +390,6 @@ def blocks_to_anthropic_beta_blocks(
     for block in blocks:
         if isinstance(block, TextBlock):
             ant_block = BetaTextBlockParam(text=block.text, type=block.block_type)
-            if global_cache_control is not None:
-                ant_block["cache_control"] = global_cache_control
             ant_blocks.append(ant_block)
         elif isinstance(block, ThinkingBlock):
             # does not support cache control
@@ -408,8 +407,6 @@ def blocks_to_anthropic_beta_blocks(
                 name=block.tool_name,
                 type="tool_use",
             )
-            if global_cache_control is not None:
-                ant_block["cache_control"] = global_cache_control
             ant_blocks.append(ant_block)
         elif isinstance(block, ImageBlock):
             img_bytes = block.resolve_image(as_base64=True).read()
@@ -436,8 +433,6 @@ def blocks_to_anthropic_beta_blocks(
                         "data": img_str,
                     }
                     ant_block = BetaImageBlockParam(type=block_type, source=source)
-                    if global_cache_control is not None:
-                        ant_block["cache_control"] = global_cache_control
                     ant_blocks.append(ant_block)
                 else:
                     raise ValueError(
@@ -465,15 +460,11 @@ def blocks_to_anthropic_beta_blocks(
                 content=anthropic_sub_blocks,
                 source=block.source,
                 title=block.title,
-                cache_control=global_cache_control,
                 citations=BetaCitationsConfigParam(
                     enabled=True,
                 ),
             )
             ant_blocks.append(ant_block)
-        elif isinstance(block, CitableBlock):
-            # no need to pass these back to anthropic
-            continue
         elif isinstance(block, CachePoint):
             if len(ant_blocks) > 0:
                 ant_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
@@ -481,28 +472,37 @@ def blocks_to_anthropic_beta_blocks(
                 )
             else:
                 raise ValueError("Cache point must be after at least one block")
+        elif isinstance(block, CitationBlock):
+            # No need to pass these back to Anthropic
+            continue
         else:
             raise ValueError(f"Block type not supported: {block.block_type}")
 
-        # keep this code for compatibility with older chat histories
-        tool_calls = kwargs.get("tool_calls", [])
-        for tool_call in tool_calls:
-            try:
-                assert "id" in tool_call
-                assert "input" in tool_call
-                assert "name" in tool_call
+    # keep this code for compatibility with older chat histories
+    tool_calls = kwargs.get("tool_calls", [])
+    for tool_call in tool_calls:
+        try:
+            assert "id" in tool_call
+            assert "input" in tool_call
+            assert "name" in tool_call
 
-                if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
-                    ant_blocks.append(
-                        BetaToolUseBlockParam(
-                            id=tool_call["id"],
-                            input=tool_call["input"],
-                            name=tool_call["name"],
-                            type="tool_use",
-                        )
+            if (tool_call["id"], tool_call["name"]) not in unique_tool_calls:
+                ant_blocks.append(
+                    BetaToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
                     )
-            except AssertionError:
-                continue
+                )
+        except AssertionError:
+            continue
+
+    # Apply cache_control only to the last block to avoid exceeding
+    # Anthropic's limit of 4 blocks with cache_control per request.
+    if global_cache_control and ant_blocks:
+        ant_blocks[-1]["cache_control"] = global_cache_control
+
     return ant_blocks
 
 
@@ -613,6 +613,8 @@ STRUCTURED_OUTPUT_SUPPORT: Tuple[str, ...] = (
     "claude-haiku-4-5",
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6",
 )
 
 

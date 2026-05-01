@@ -11,23 +11,20 @@
 ### Basic usage
 
 ```py
-# Import Cohere
+# Import Cohere and ChatMessage
+from llama_index.core.llms import ChatMessage
 from llama_index.llms.cohere import Cohere
 
 # Set your API key
 api_key = "Your api key"
 
-# Call complete function
-resp = Cohere(api_key=api_key).complete("Paul Graham is ")
-# Note: Your text contains a trailing whitespace, which has been trimmed to ensure high quality generations.
-print(resp)
+llm = Cohere(api_key=api_key)
+messages = [ChatMessage(role="user", content="Paul Graham is ")]
+resp = llm.chat(messages)
+print(resp.message.content)
 
 # Output
-# an English computer scientist, entrepreneur and investor.
-# He is best known for his work as a co-founder of the seed accelerator Y Combinator.
-# He is also the author of the free startup advice blog "Startups.com".
-# Paul Graham is known for his philanthropic efforts.
-# Has given away hundreds of millions of dollars to good causes.
+# an English computer scientist, entrepreneur, investor, and essayist.
 
 # Call chat with a list of messages
 from llama_index.core.llms import ChatMessage

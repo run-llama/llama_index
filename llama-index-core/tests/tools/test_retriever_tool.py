@@ -57,6 +57,27 @@ class MockPostProcessor(BaseNodePostprocessor):
         return nodes
 
 
+class _TrackingPostprocessor(BaseNodePostprocessor):
+    called_sync: bool = False
+    called_async: bool = False
+
+    def _postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        self.called_sync = True
+        return nodes
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        self.called_async = True
+        return nodes
+
+
 def test_retriever_tool() -> None:
     """Test retriever tool."""
     # Test retrieval
@@ -104,3 +125,16 @@ async def test_retriever_tool_async() -> None:
         str(pr_response_nodes)
         == "Metadata:\n- key: value\n\nContent:\nprocessed_mock_hello world\n\n"
     )
+
+
+@pytest.mark.asyncio
+async def test_acall_calls_async_postprocessor() -> None:
+    postprocessor = _TrackingPostprocessor()
+    retriever_tool = RetrieverTool.from_defaults(
+        retriever=MockRetriever(), node_postprocessors=[postprocessor]
+    )
+
+    await retriever_tool.acall("hello world")
+
+    assert postprocessor.called_async is True
+    assert postprocessor.called_sync is False

@@ -1271,7 +1271,7 @@ class Document(Node):
         return "Document"
 
     def to_cloud_document(self) -> CloudDocument:
-        """Convert to LlamaCloud document type."""
+        """Deprecated: Convert to LlamaCloud document type with <1.0 llama-cloud SDK."""
         from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
 
         return CloudDocument(
