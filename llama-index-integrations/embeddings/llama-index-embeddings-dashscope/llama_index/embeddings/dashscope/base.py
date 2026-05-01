@@ -147,7 +147,13 @@ def get_multimodal_embedding(
         model=model, input=input, api_key=api_key, kwargs=kwargs
     )
     if response.status_code == HTTPStatus.OK:
-        return response.output["embedding"]
+        if "embedding" in response.output:
+            return response.output["embedding"]
+        embeddings = response.output.get("embeddings") or []
+        if embeddings:
+            return embeddings[0]["embedding"]
+        logger.error("Calling MultiModalEmbedding returned no embeddings, details: %s" % response)
+        return []
     else:
         logger.error("Calling MultiModalEmbedding failed, details: %s" % response)
         return []
