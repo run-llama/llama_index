@@ -1,5 +1,6 @@
 import inspect
 import logging
+from contextvars import Token
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union, cast
 
@@ -52,7 +53,9 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
         default_factory=dict,
     )
-    _context_tokens: Dict[str, object] = PrivateAttr(default_factory=dict)
+    _context_tokens: Dict[str, Token[context.Context]] = PrivateAttr(
+        default_factory=dict
+    )
     all_spans: Dict[str, trace.Span] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
@@ -119,6 +122,32 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             restored = propagate.extract(carrier)
             context.attach(restored)
 
+    def _get_parent_context(self, parent_span_id: Optional[str]) -> context.Context:
+        ctx = context.get_current()
+        current_span_context = trace.get_current_span(ctx).get_span_context()
+        if (
+            current_span_context.is_valid
+            or parent_span_id is None
+            or parent_span_id not in self.all_spans
+        ):
+            return ctx
+        return set_span_in_context(span=self.all_spans[parent_span_id])
+
+    def _add_events_to_span(self, id_: str, span: trace.Span) -> None:
+        events = self._events_by_span.pop(id_, [])
+        for event in events:
+            span.add_event(name=event.name, attributes=event.attributes)
+
+    def _detach_context_and_end_span(self, id_: str, span: trace.Span) -> None:
+        token = self._context_tokens.pop(id_, None)
+        try:
+            if token is not None:
+                context.detach(token)
+        except BaseException:
+            _logger.warning("Error detaching OTel context for %s", id_, exc_info=True)
+        finally:
+            span.end()
+
     def new_span(
         self,
         id_: str,
@@ -139,10 +168,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         # 1. Same-process parent found in all_spans → use it
         # 2. Otherwise → use ambient OTel context (set by restore_propagation_context
         #    for cross-process, or inherited naturally for same-process roots)
-        if parent_span_id is not None and parent_span_id in self.all_spans:
-            ctx = set_span_in_context(span=self.all_spans[parent_span_id])
-        else:
-            ctx = context.get_current()
+        ctx = self._get_parent_context(parent_span_id)
 
         otel_span = self._tracer.start_span(name=span_name, context=ctx)
         self.all_spans.update({id_: otel_span})
@@ -185,16 +211,9 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             _logger.warning("No OTel span found for %s in prepare_to_exit_span", id_)
             return sp
 
-        # Get and process events specific to this span
-        events = self._events_by_span.pop(id_, [])
-        for event in events:
-            span.add_event(name=event.name, attributes=event.attributes)
-
+        self._add_events_to_span(id_, span)
         span.set_status(status=trace.StatusCode.OK)
-        token = self._context_tokens.pop(id_, None)
-        if token is not None:
-            context.detach(token)
-        span.end()
+        self._detach_context_and_end_span(id_, span)
         return sp
 
     def prepare_to_drop_span(
@@ -217,18 +236,11 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             _logger.warning("No OTel span found for %s in prepare_to_drop_span", id_)
             return sp
 
-        # Get and process events specific to this span
-        events = self._events_by_span.pop(id_, [])
-        for event in events:
-            span.add_event(name=event.name, attributes=event.attributes)
-
+        self._add_events_to_span(id_, span)
         if err is not None:
             span.record_exception(err)
         span.set_status(status=trace.StatusCode.ERROR, description=err.__str__())
-        token = self._context_tokens.pop(id_, None)
-        if token is not None:
-            context.detach(token)
-        span.end()
+        self._detach_context_and_end_span(id_, span)
         return sp
 
 
@@ -335,6 +347,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
         assert self.span_exporter is not None, (
             "span_exporter has to be non-null to be used within simple or batch span processors"
         )
+        span_processor: SpanProcessor
         if self.span_processor == "simple":
             span_processor = SimpleSpanProcessor(self.span_exporter)
         else:
