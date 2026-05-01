@@ -229,6 +229,10 @@ class Memory(BaseMemory):
         default=256,
         description="The token size estimate for video.",
     )
+    document_token_size_estimate: int = Field(
+        default=2048,
+        description="The token size estimate for documents (e.g. PDFs). Used when document data is not available for byte-based estimation.",
+    )
     tokenizer_fn: Callable[[str], List] = Field(
         default_factory=get_tokenizer,
         exclude=True,
@@ -423,6 +427,12 @@ class Memory(BaseMemory):
                 token_count += self.video_token_size_estimate
             elif isinstance(block, AudioBlock):
                 token_count += self.audio_token_size_estimate
+            elif isinstance(block, DocumentBlock):
+                if isinstance(block.data, bytes) and block.data:
+                    # data is base64-encoded; divide by 4 as a bytes-to-tokens heuristic
+                    token_count += len(block.data) // 4
+                else:
+                    token_count += self.document_token_size_estimate
 
         return token_count
 
