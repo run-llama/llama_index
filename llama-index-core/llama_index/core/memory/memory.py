@@ -231,7 +231,7 @@ class Memory(BaseMemory):
     )
     document_token_size_estimate: int = Field(
         default=2048,
-        description="The token size estimate for documents (e.g. PDFs). Used when document data is not available for byte-based estimation.",
+        description="The token size estimate for documents (e.g. PDFs).",
     )
     tokenizer_fn: Callable[[str], List] = Field(
         default_factory=get_tokenizer,
