@@ -122,7 +122,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     Args:
         model_name (str): Model for embedding.
-            Defaults to "gemini-embedding-2-preview".
+            Defaults to "gemini-embedding-2".
         api_key (Optional[str]): API key to access the model. Defaults to None.
         embedding_config (Optional[types.EmbedContentConfigOrDict]): Embedding config to access the model. Defaults to None.
         vertexai_config (Optional[VertexAIConfig]): Vertex AI config to access the model. Defaults to None.
@@ -142,7 +142,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         ```python
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2-preview", api_key="...")
+        embed_model = GoogleGenAIEmbedding(model_name="gemini-embedding-2", api_key="...")
         ```
 
     """
@@ -167,7 +167,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "gemini-embedding-2-preview",
+        model_name: str = "gemini-embedding-2",
         api_key: Optional[str] = None,
         embedding_config: Optional[types.EmbedContentConfigOrDict] = None,
         vertexai_config: Optional[VertexAIConfig] = None,
@@ -247,10 +247,52 @@ class GoogleGenAIEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "GeminiEmbedding"
 
+    def _format_texts_for_gemini_emb_2(
+        self, texts: List[str], task_type: str
+    ) -> List[str]:
+        """Format texts with specific task instructions required for gemini-embedding-2."""
+        task_prefix_map = {
+            "RETRIEVAL_QUERY": "task: search result | query: ",
+            "QUESTION_ANSWERING": "task: question answering | query: ",
+            "FACT_VERIFICATION": "task: fact checking | query: ",
+            "CODE_RETRIEVAL_QUERY": "task: code retrieval | query: ",
+            "SEMANTIC_SIMILARITY": "task: sentence similarity | query: ",
+            "CLASSIFICATION": "task: classification | query: ",
+            "CLUSTERING": "task: clustering | query: ",
+        }
+
+        formatted_texts = []
+        for text in texts:
+            if task_type == "RETRIEVAL_DOCUMENT":
+                if text.startswith("title: ") and " | text: " in text:
+                    formatted_texts.append(text)
+                else:
+                    formatted_texts.append(f"title: none | text: {text}")
+            elif task_type in task_prefix_map:
+                prefix = task_prefix_map[task_type]
+                if text.startswith(prefix):
+                    formatted_texts.append(text)
+                else:
+                    formatted_texts.append(f"{prefix}{text}")
+            else:
+                # fallback to RETRIEVAL_QUERY if task_type is unrecognised or None
+                formatted_texts.append(f"task: search result | query: {text}")
+
+        return formatted_texts
+
     def _embed_texts(
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
         """Embed texts."""
+        is_gemini_emb_2 = "embedding-2" in self.model_name
+
+        if is_gemini_emb_2 and task_type:
+            texts_to_embed = self._format_texts_for_gemini_emb_2(texts, task_type)
+            # Nullify task_type so the standard config block below ignores it
+            task_type = None
+        else:
+            texts_to_embed = texts
+
         # Set the task type if it is not already set
         if task_type and not self.embedding_config:
             embedding_config = types.EmbedContentConfig(task_type=task_type)
@@ -260,11 +302,21 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         else:
             embedding_config = self.embedding_config
 
+        # safely remove unsupported task_type param for gemini_embedding-2
+        if is_gemini_emb_2 and embedding_config:
+            if hasattr(embedding_config, "model_dump"):
+                embedding_config = embedding_config.model_dump(exclude_unset=True)
+            elif hasattr(embedding_config, "dict"):
+                embedding_config = embedding_config.dict(exclude_unset=True)
+            else:
+                embedding_config = dict(embedding_config)
+            embedding_config.pop("task_type", None)
+
         # Create the embedding function with retry logic
         def embed_with_client() -> List[List[float]]:
             results = self._client.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=texts_to_embed,
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
@@ -284,6 +336,15 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
         """Asynchronously embed texts."""
+        is_gemini_emb_2 = "embedding-2" in self.model_name
+
+        if is_gemini_emb_2 and task_type:
+            texts_to_embed = self._format_texts_for_gemini_emb_2(texts, task_type)
+            # Nullify task_type so the standard config block below ignores it
+            task_type = None
+        else:
+            texts_to_embed = texts
+
         # Set the task type if it is not already set
         if task_type and not self.embedding_config:
             embedding_config = types.EmbedContentConfig(task_type=task_type)
@@ -293,11 +354,22 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         else:
             embedding_config = self.embedding_config
 
+        # Scrub task_type if it was hardcoded in self.embedding_config
+        if is_gemini_emb_2 and embedding_config:
+            if hasattr(embedding_config, "model_dump"):
+                embedding_config = embedding_config.model_dump(exclude_unset=True)
+            elif hasattr(embedding_config, "dict"):
+                embedding_config = embedding_config.dict(exclude_unset=True)
+            else:
+                embedding_config = dict(embedding_config)
+
+            embedding_config.pop("task_type", None)
+
         # Create the async embedding function with retry logic
         async def aembed_with_client() -> List[List[float]]:
             results = await self._client.aio.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=texts_to_embed,
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
