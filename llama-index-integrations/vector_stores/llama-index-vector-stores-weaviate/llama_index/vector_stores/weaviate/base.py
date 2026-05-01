@@ -36,9 +36,14 @@ from llama_index.vector_stores.weaviate._exceptions import (
 import weaviate
 import weaviate.classes as wvc
 
-from weaviate.collections.batch.batch_wrapper import (
-    _ContextManagerWrapper as BatchWrapper,
-)
+try:
+    from weaviate.collections.batch.batch_wrapper import (
+        _BatchWrapper as BatchWrapper,
+    )
+except ImportError:
+    from weaviate.collections.batch.batch_wrapper import (
+        _ContextManagerWrapper as BatchWrapper,
+    )
 
 _logger = logging.getLogger(__name__)
 
