@@ -1,5 +1,3 @@
-import base64
-
 import pytest
 
 from llama_index.core.base.llms.types import (
@@ -68,20 +66,8 @@ async def test_estimate_token_count_audio(memory):
 
 
 @pytest.mark.asyncio
-async def test_estimate_token_count_document_with_data(memory):
-    """Test token counting for a document with byte data uses byte-based estimate."""
-    raw = b"A" * 400
-    block = DocumentBlock(
-        data=base64.b64encode(raw), document_mimetype="application/pdf"
-    )
-    message = ChatMessage(role="user", blocks=[block])
-    count = memory._estimate_token_count(message)
-    assert count == len(base64.b64encode(raw)) // 4
-
-
-@pytest.mark.asyncio
-async def test_estimate_token_count_document_without_data(memory):
-    """Test token counting for a document with no data falls back to fixed estimate."""
+async def test_estimate_token_count_document(memory):
+    """Test token counting for a document uses the fixed estimate."""
     block = DocumentBlock(
         url="http://example.com/doc.pdf", document_mimetype="application/pdf"
     )

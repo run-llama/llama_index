@@ -428,11 +428,7 @@ class Memory(BaseMemory):
             elif isinstance(block, AudioBlock):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
-                if isinstance(block.data, bytes) and block.data:
-                    # data is base64-encoded; divide by 4 as a bytes-to-tokens heuristic
-                    token_count += len(block.data) // 4
-                else:
-                    token_count += self.document_token_size_estimate
+                token_count += self.document_token_size_estimate
 
         return token_count
 
