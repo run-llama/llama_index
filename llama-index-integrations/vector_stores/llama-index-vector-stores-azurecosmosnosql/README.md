@@ -98,10 +98,20 @@ index = VectorStoreIndex.from_documents(
 ## Search Types
 
 All search types are available via the `search_type` kwarg on `store.query()`.
+Two optional kwargs further customise the behaviour of the vector-bearing search
+types:
+
+- `threshold` — applied to `vector` and `hybrid` searches. Items whose
+  similarity score does not satisfy the threshold (strict `>` for cosine /
+  dotproduct, strict `<` for euclidean) are dropped. `None` (the default)
+  disables filtering.
+- `weights` — applied to `hybrid` searches. Triggers Cosmos DB's server-side
+  weighted RRF.
 
 ### Vector Search
 
-Standard nearest-neighbour search ranked by `VectorDistance`.
+Standard nearest-neighbour search ranked by `VectorDistance`. Pass an optional
+`threshold` to drop low-similarity matches.
 
 ```python
 from llama_index.core.vector_stores.types import VectorStoreQuery
@@ -110,16 +120,11 @@ result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
     search_type="vector",
 )
-```
 
-### Vector Search with Score Threshold
-
-Returns only nodes whose cosine similarity exceeds `threshold`.
-
-```python
+# With threshold filtering (cosine: keep score > 0.8)
 result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=10),
-    search_type="vector_score_threshold",
+    search_type="vector",
     threshold=0.8,
 )
 ```
@@ -155,9 +160,12 @@ result = store.query(
 ### Hybrid Search (RRF)
 
 Fuses `FullTextScore` and `VectorDistance` rankings using Reciprocal Rank Fusion.
-Uses `OFFSET 0 LIMIT k` instead of `TOP k` as required by CosmosDB.
+Uses `OFFSET 0 LIMIT k` instead of `TOP k` as required by CosmosDB. Optionally
+accepts `threshold` (post-filter on the projected `SimilarityScore`) and
+`weights` (server-side weighted RRF) — both can be combined.
 
 ```python
+# Plain hybrid (RRF, no extras)
 result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
     search_type="hybrid",
@@ -165,16 +173,11 @@ result = store.query(
         {"search_field": "text", "search_text": "neural network"},
     ],
 )
-```
 
-### Hybrid Search with Score Threshold
-
-Same as hybrid but with client-side score filtering.
-
-```python
+# Hybrid with score threshold (drop weak vector matches after RRF fusion)
 result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
-    search_type="hybrid_score_threshold",
+    search_type="hybrid",
     full_text_rank_filter=[
         {"search_field": "text", "search_text": "neural network"},
     ],
@@ -182,35 +185,33 @@ result = store.query(
 )
 ```
 
-### Weighted Hybrid Search
+#### Hybrid Search with Weighted RRF
 
-Runs the same RRF query as `hybrid` but applies **client-side per-component
-weights** when re-ranking the returned results. This lets you tune the relative
-influence of each ranking component without changing the CosmosDB query.
+Pass `weights` to invoke CosmosDB's server-side weighted RRF — see the
+[Microsoft Learn hybrid-search docs](https://learn.microsoft.com/en-us/azure/cosmos-db/gen-ai/hybrid-search).
+The weights are appended to `RRF(...)` as an inline array literal, e.g.
+`ORDER BY RANK RRF(FullTextScore(...), VectorDistance(...), [0.3, 0.7])`.
 
 `weights` is a list of floats whose length equals the number of
 `full_text_rank_filter` entries **plus one** (the final entry is the weight for
 the vector component). The values do not need to sum to 1.
 
 ```python
+# Single text component + vector → weights=[text_weight, vector_weight]
+# 30 % text relevance, 70 % vector similarity
 result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
-    search_type="weighted_hybrid_search",
+    search_type="hybrid",
     full_text_rank_filter=[
         {"search_field": "text", "search_text": "neural network"},
     ],
-    # weights=[text_weight, vector_weight]
-    # 30 % text relevance, 70 % vector similarity
     weights=[0.3, 0.7],
 )
-```
 
-With two full-text components and one vector component:
-
-```python
+# Two text components + vector → 3 weights
 result = store.query(
     VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
-    search_type="weighted_hybrid_search",
+    search_type="hybrid",
     full_text_rank_filter=[
         {"search_field": "title", "search_text": "neural network"},
         {"search_field": "summary", "search_text": "deep learning"},
@@ -218,11 +219,18 @@ result = store.query(
     # weights=[title_weight, summary_weight, vector_weight]
     weights=[0.2, 0.3, 0.5],
 )
-```
 
-> **Note:** The CosmosDB NoSQL API does not expose a `weight=` parameter inside
-> `ORDER BY RANK RRF(...)`. The weighted re-ranking is therefore performed
-> client-side using position-based RRF scores after the server returns results.
+# Weighted RRF + threshold can be combined
+result = store.query(
+    VectorStoreQuery(query_embedding=[...], similarity_top_k=5),
+    search_type="hybrid",
+    full_text_rank_filter=[
+        {"search_field": "text", "search_text": "neural network"},
+    ],
+    weights=[0.3, 0.7],
+    threshold=0.4,
+)
+```
 
 ---
 

@@ -6,6 +6,7 @@ An index that is built on top of an existing vector store.
 """
 
 import logging
+import re
 from typing import Any, Optional, Dict, cast, List, Tuple
 
 from azure.identity import ClientSecretCredential
@@ -139,6 +140,16 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
+        # Distance function from container vector policy. Determines threshold
+        # comparison direction: 'euclidean' is a distance (lower = more similar),
+        # 'cosine' / 'dotproduct' are similarities (higher = more similar).
+        # Default per Azure Cosmos DB NoSQL docs: cosine.
+        # See: https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search
+        self._distance_function = (
+            self._vector_embedding_policy["vectorEmbeddings"][0]
+            .get("distanceFunction", "cosine")
+            .lower()
+        )
         self._full_text_search_enabled = full_text_search_enabled
 
         self._database = self._cosmos_client.create_database_if_not_exists(
@@ -341,13 +352,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         """Return CosmosDB client."""
         return self._cosmos_client
 
-    def _is_vector_search_with_threshold(self, search_type: str) -> bool:
-        """
-        Check if the search type requires post-query filtering by similarity score threshold.
-        Hybrid search types are excluded — they use ORDER BY RANK RRF which doesn't
-        project a SimilarityScore that can be threshold-filtered client-side.
-        """
-        return search_type == AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD
+    def _is_hybrid_search_type(self, search_type: str) -> bool:
+        """Check if the search type is a hybrid (RRF) search type."""
+        return search_type == AzureCosmosDBNoSqlVectorSearchType.HYBRID
 
     def _is_full_text_search_type(self, search_type: str) -> bool:
         """Check if the search type is a full text search type."""
@@ -355,18 +362,13 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_SEARCH,
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         )
 
     def _is_vector_search_type(self, search_type: str) -> bool:
         """Check if the search type requires vector search with vector embeddings."""
         return search_type in (
             AzureCosmosDBNoSqlVectorSearchType.VECTOR,
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         )
 
     def _validate_search_args(
@@ -374,6 +376,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         search_type: str,
         vector: Optional[List[float]] = None,
         return_with_vectors: bool = False,
+        full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
+        offset_limit: Optional[str] = None,
+        weights: Optional[List[float]] = None,
+        threshold: Optional[float] = None,
     ) -> None:
         """Validate search arguments."""
         # Validate search_type using CosmosDBVectorStoreSearchType enum
@@ -408,6 +414,45 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                     "'return_with_vectors' can only be True for vector search types using vector embeddings."
                 )
 
+        # full_text_rank_filter is required for full-text-ranking and hybrid
+        if (
+            search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING
+            or self._is_hybrid_search_type(search_type)
+        ) and not full_text_rank_filter:
+            raise ValueError(
+                f"'full_text_rank_filter' is required for search_type '{search_type}'."
+            )
+
+        # Validate offset_limit format if provided
+        if offset_limit and not re.match(
+            r"^\s*OFFSET\s+\d+\s+LIMIT\s+\d+\s*$", offset_limit, re.IGNORECASE
+        ):
+            raise ValueError(
+                f"Invalid 'offset_limit' format: {offset_limit!r}. "
+                "Expected: 'OFFSET <int> LIMIT <int>'."
+            )
+
+        # Validate weights: only for hybrid (server-side weighted RRF), and
+        # length must match number of RRF components (one per
+        # full_text_rank_filter entry + one for the vector component).
+        if weights is not None:
+            if not self._is_hybrid_search_type(search_type):
+                raise ValueError("'weights' is only supported for 'hybrid' search.")
+            expected = (len(full_text_rank_filter) if full_text_rank_filter else 0) + 1
+            if len(weights) != expected:
+                raise ValueError(
+                    f"'weights' must have {expected} elements "
+                    f"(one per full_text_rank_filter entry + 1 for the vector "
+                    f"component); got {len(weights)}."
+                )
+
+        # Validate threshold: only meaningful for vector-bearing search types.
+        if threshold is not None and not self._is_vector_search_type(search_type):
+            raise ValueError(
+                "'threshold' is only supported for search types that produce a "
+                "per-row similarity score ('vector' or 'hybrid')."
+            )
+
     def _generate_projection_fields(
         self,
         search_type: str,
@@ -417,25 +462,20 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         vector: Optional[List[float]] = None,
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
     ) -> str:
+        is_hybrid = self._is_hybrid_search_type(search_type)
         if projection_mapping:
             projection_fields = [
                 f"{self._table_alias}.{key} as {alias}"
                 for key, alias in projection_mapping.items()
             ]
-        elif search_type in (
-            AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
+        elif (
+            search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING
+            or is_hybrid
         ):
-            if (
-                search_type == AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING
-                and not full_text_rank_filter
-            ):
-                raise ValueError(f"'full_text_rank_filter' required for {search_type}.")
-
-            # Use direct field path syntax (c.fieldname) — bracket indexer is not
-            # supported by CosmosDB in queries with ORDER BY RANK.
+            # Use direct field path syntax (c.fieldname) for the base field
+            # projection in ORDER BY RANK queries. Bracket-indexer + parameterised
+            # values are accepted by the engine here too, but direct paths keep
+            # these queries closer to the patterns shown in the public docs.
             projection_fields = [
                 f"{self._table_alias}.{Constants.ID} as {Constants.ID}"
             ]
@@ -466,11 +506,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         # If it's a vector search type, include vector distance projection and optionally the vector itself
         if self._is_vector_search_type(search_type):
-            is_hybrid = search_type in (
-                AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-                AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-                AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
-            )
             if return_with_vectors:
                 projection_fields.append(
                     param_mapping.gen_proj_field(
@@ -479,16 +514,23 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                         alias=AzureCosmosDBNoSqlVectorSearchType.VECTOR.value,
                     )
                 )
-            # CosmosDB does not support projecting VectorDistance in SELECT for
-            # hybrid queries (ORDER BY RANK RRF) — omit SimilarityScore there.
-            if not is_hybrid:
-                projection_fields.append(
-                    param_mapping.gen_vector_distance_proj_field(
-                        vector_field=self._embedding_key,
-                        vector=vector,
-                        alias=Constants.SIMILARITY_SCORE,
-                    )
+            # Always project SimilarityScore for vector-bearing search types.
+            # CosmosDB accepts bracket-indexer + parameterised vectors in the
+            # SELECT projection of every query, including those that use
+            # ORDER BY RANK RRF. Surfacing the per-row vector distance is
+            # essentially free (the value is already computed during the
+            # search) and is useful both for caller-side relevance display
+            # and for the optional ``threshold`` post-filter applied in
+            # ``_execute_search_query``. The only ORDER BY RANK restriction
+            # worth noting is on FullTextScore string literals; see
+            # _generate_order_by_component_with_full_text_rank_filter.
+            projection_fields.append(
+                param_mapping.gen_vector_distance_proj_field(
+                    vector_field=self._embedding_key,
+                    vector=vector,
+                    alias=Constants.SIMILARITY_SCORE,
                 )
+            )
         return f" {', '.join(projection_fields)}"
 
     def _generate_limit_clause(self, param_mapping: ParamMapping, limit: int) -> str:
@@ -520,10 +562,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         weights: Optional[List[float]] = None,
     ) -> str:
         order_by_clause = ""
-        if search_type in (
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR,
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
-        ):
+        if search_type == AzureCosmosDBNoSqlVectorSearchType.VECTOR:
             vector_distance_proj_field = param_mapping.gen_vector_distance_proj_field(
                 vector_field=self._embedding_key, vector=vector
             )
@@ -531,26 +570,29 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         elif search_type in (
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
-            if not full_text_rank_filter:
-                raise ValueError(
-                    f"'full_text_rank_filter' required for {search_type} search."
-                )
+            # full_text_rank_filter is required here — already validated upstream
+            # in _validate_search_args.
             components = [
                 self._generate_order_by_component_with_full_text_rank_filter(
                     full_text_rank_filter=item,
                 )
-                for item in full_text_rank_filter
+                for item in full_text_rank_filter or []
             ]
-            if "hybrid" in search_type:
+            if self._is_hybrid_search_type(search_type):
                 components.append(
                     param_mapping.gen_vector_distance_order_by_field(
                         vector_field=self._embedding_key, vector=vector
                     )
                 )
-            if len(components) == 1:
+            if search_type == AzureCosmosDBNoSqlVectorSearchType.HYBRID and weights:
+                # Server-side weighted RRF: weights are passed as the last
+                # argument to RRF as an inline array literal.
+                # See https://learn.microsoft.com/en-us/azure/cosmos-db/gen-ai/hybrid-search
+                weights_literal = "[" + ", ".join(str(w) for w in weights) + "]"
+                rrf_args = ", ".join(components) + f", {weights_literal}"
+                order_by_clause = f"ORDER BY RANK RRF({rrf_args})"
+            elif len(components) == 1:
                 order_by_clause = f"ORDER BY RANK {components[0]}"
             else:
                 rrf_args = ", ".join(components)
@@ -573,11 +615,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         query = "SELECT"
         param_mapping = ParamMapping(table=self._table_alias)
 
-        is_hybrid = search_type in (
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
-        )
+        is_hybrid = self._is_hybrid_search_type(search_type)
 
         # ORDER BY RANK RRF does not support TOP — use OFFSET/LIMIT for hybrid types.
         if not offset_limit and not is_hybrid:
@@ -624,8 +662,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         parameters: Optional[List[Dict[str, Any]]] = None,
         return_with_vectors: bool = False,
         projection_mapping: Optional[Dict[str, Any]] = None,
-        threshold: Optional[float] = 0.0,
-        weights: Optional[List[float]] = None,
+        threshold: Optional[float] = None,
     ) -> VectorStoreQueryResult:
         """Execute the search query and return results."""
         parameters = parameters if parameters else []
@@ -637,39 +674,31 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             enable_cross_partition_query=True,
         )
 
-        # Filter items if it was threshold-based search
-        if search_type and self._is_vector_search_with_threshold(search_type):
-            threshold = threshold or 0.0
-            filtered_items = [
-                item
-                for item in items
-                if item.get(Constants.SIMILARITY_SCORE, 0.0) > threshold
-            ]
+        # Filter items if a threshold was supplied for a vector-bearing search.
+        # Threshold semantics depend on the container's distanceFunction:
+        #   * cosine / dotproduct → similarity score (higher = more similar) → keep score > threshold
+        #   * euclidean → distance (lower = more similar) → keep score < threshold
+        # Strict comparison: an item with a score equal to the threshold is excluded.
+        # Pass ``threshold=None`` (or omit it) to disable filtering.
+        if (
+            threshold is not None
+            and search_type
+            and self._is_vector_search_type(search_type)
+        ):
+            if self._distance_function == "euclidean":
+                filtered_items = [
+                    item
+                    for item in items
+                    if item.get(Constants.SIMILARITY_SCORE, 0.0) < threshold
+                ]
+            else:
+                filtered_items = [
+                    item
+                    for item in items
+                    if item.get(Constants.SIMILARITY_SCORE, 0.0) > threshold
+                ]
         else:
             filtered_items = list(items)
-
-        # Client-side weighted re-ranking for WEIGHTED_HYBRID_SEARCH.
-        # CosmosDB does not support weight= inside ORDER BY RANK RRF syntax,
-        # so we compute a weighted RRF score and re-sort the returned items.
-        if (
-            search_type == AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH
-            and weights
-        ):
-            # Assign position-based RRF scores per component weight.
-            # Each item's rank (1-based position) contributes: weight / (k + rank).
-            k = 60  # standard RRF constant
-            n_components = len(weights)
-            weighted_scores: List[float] = []
-            for rank, _ in enumerate(filtered_items, start=1):
-                score = sum(weights[i] / (k + rank) for i in range(n_components))
-                weighted_scores.append(score)
-            # Re-sort by descending weighted score
-            paired = sorted(
-                zip(weighted_scores, filtered_items),
-                key=lambda x: x[0],
-                reverse=True,
-            )
-            filtered_items = [item for _, item in paired]
 
         # Build VectorStoreQueryResult
         top_k_nodes = []
@@ -721,7 +750,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         full_text_rank_filter: Optional[List[Dict[str, str]]] = None,
         projection_mapping: Optional[Dict[str, Any]] = None,
         where: Optional[str] = None,
-        threshold: Optional[float] = 0.5,
+        threshold: Optional[float] = None,
         weights: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
@@ -732,20 +761,49 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             vectors: Query embedding vector.
             limit: Maximum number of results to return.
             search_type: The type of search to perform. Valid options are:
-                [vector, vector_score_threshold, full_text_search, full_text_ranking,
-                hybrid, hybrid_score_threshold, weighted_hybrid_search].
+                ``[vector, full_text_search, full_text_ranking, hybrid]``.
+
+                Behavioural variants are controlled by the optional
+                ``threshold`` and ``weights`` arguments rather than separate
+                search types: pass ``threshold`` alongside ``vector`` /
+                ``hybrid`` to post-filter by per-row similarity score, and pass
+                ``weights`` alongside ``hybrid`` to run server-side weighted
+                RRF.
             return_with_vectors: Set to True to include vector embeddings in the search results.
                 Only applicable for vector and hybrid search types.
-            offset_limit: Optional OFFSET and LIMIT clause for pagination.
+            offset_limit: Optional ``OFFSET <int> LIMIT <int>`` clause for pagination.
+                Validated against this exact format; rejected otherwise.
             full_text_rank_filter: Optional list of full text rank filters.
+                Required for ``full_text_ranking`` and all hybrid search types.
             projection_mapping: Optional mapping for projecting specific fields.
-            where: Optional WHERE clause for filtering results.
-            threshold: Similarity score threshold for filtering results.
-            weights: Optional list of per-component RRF weights for
-                ``weighted_hybrid_search``. Length must match the number of
-                components (full_text_rank_filter entries + 1 for the vector
-                component). E.g. ``[0.3, 0.7]`` gives more weight to the vector
-                component.
+            where: Optional raw SQL ``WHERE`` clause body (without the ``WHERE``
+                keyword) for filtering results.
+
+                .. warning::
+                    This value is interpolated into the SQL query verbatim and is
+                    NOT parameterised. Do not pass untrusted input. Use
+                    parameterised filters or sanitise/validate strictly upstream.
+            threshold: Optional similarity / distance score threshold. Applied
+                as a strict client-side filter on the projected
+                ``SimilarityScore`` for vector-bearing search types
+                (``vector`` and ``hybrid``); ignored for pure full-text
+                searches. Comparison direction depends on the container's
+                ``distanceFunction``:
+
+                * ``cosine`` (default) and ``dotproduct`` produce a similarity
+                  score where higher = more similar; items are kept when
+                  ``score > threshold`` (strict).
+                * ``euclidean`` produces a distance where lower = more similar;
+                  items are kept when ``score < threshold`` (strict).
+
+                Pass ``None`` (the default) to disable threshold filtering.
+            weights: Optional list of per-component RRF weights for ``hybrid``
+                search. When provided, the ORDER BY clause is rewritten as
+                CosmosDB's server-side ``RRF(..., [w1, w2, ...])`` form.
+                Length must equal ``len(full_text_rank_filter) + 1`` (one per
+                text component plus one for the vector component). E.g.
+                ``[0.3, 0.7]`` weights the full-text component at 0.3 and
+                the vector component at 0.7.
 
         Backward compatibility:
             pre_filter (dict): Legacy kwarg accepted by the old ``_query`` method.
@@ -769,6 +827,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             search_type=search_type,
             vector=vectors,
             return_with_vectors=return_with_vectors,
+            full_text_rank_filter=full_text_rank_filter,
+            offset_limit=offset_limit,
+            weights=weights,
+            threshold=threshold,
         )
 
         # Construct the query
@@ -792,24 +854,34 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             return_with_vectors=return_with_vectors,
             projection_mapping=projection_mapping,
             threshold=threshold,
-            weights=weights,
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
 
-        Args:
-            query: a VectorStoreQuery object.
+        Only ``query.query_embedding`` and ``query.similarity_top_k`` from the
+        ``VectorStoreQuery`` object are consumed. Other fields — including
+        ``query.mode``, ``query.filters``, ``query.query_str``,
+        ``query.doc_ids``, ``query.node_ids`` — are intentionally ignored;
+        callers must select the search variant via the ``search_type`` keyword
+        argument and pass any filtering through ``where`` / ``full_text_rank_filter``.
+
+        Keyword Args:
             search_type: The type of search to perform. Valid options are:
-                [vector, vector_score_threshold, full_text_search, full_text_ranking, hybrid, hybrid_score_threshold].
+                ``[vector, full_text_search, full_text_ranking, hybrid]``.
             return_with_vectors: Set to True to include vector embeddings in the search results.
                 Only applicable for vector and hybrid search types.
-            offset_limit: Optional OFFSET and LIMIT clause for pagination.
+            offset_limit: Optional ``OFFSET <int> LIMIT <int>`` clause for pagination.
             full_text_rank_filter: Optional list of full text rank filters.
             projection_mapping: Optional mapping for projecting specific fields.
-            where: Optional WHERE clause for filtering results.
-            threshold: Similarity score threshold for filtering results.
+            where: Optional raw SQL WHERE clause body for filtering results
+                (interpolated verbatim — do not pass untrusted input).
+            threshold: Optional similarity / distance score threshold. Applied
+                as a strict client-side filter for vector-bearing search types
+                (``vector`` and ``hybrid``).
+            weights: Optional list of per-component RRF weights for ``hybrid``
+                search (server-side weighted RRF).
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.

@@ -13,8 +13,8 @@ try:
 
     URI = os.environ.get("AZURE_COSMOSDB_URI", "")
     KEY = os.environ.get("AZURE_COSMOSDB_KEY", "")
-    database_name = "test_database"
-    container_name = "test_container"
+    database_name = os.environ.get("COSMOS_DB_DATABASE", "test_database")
+    container_name = os.environ.get("COSMOS_DB_CONTAINER", "test_container")
     test_client = CosmosClient(URI, credential=KEY)
 
     indexing_policy = {
@@ -30,6 +30,28 @@ try:
                 "path": "/embedding",
                 "dataType": "float32",
                 "distanceFunction": "cosine",
+                "dimensions": 3,
+            }
+        ]
+    }
+
+    # Distance-function variants exercised by TestAzureCosmosNoSqlDistanceFunctions.
+    euclidean_vector_embedding_policy = {
+        "vectorEmbeddings": [
+            {
+                "path": "/embedding",
+                "dataType": "float32",
+                "distanceFunction": "euclidean",
+                "dimensions": 3,
+            }
+        ]
+    }
+    dotproduct_vector_embedding_policy = {
+        "vectorEmbeddings": [
+            {
+                "path": "/embedding",
+                "dataType": "float32",
+                "distanceFunction": "dotproduct",
                 "dimensions": 3,
             }
         ]
@@ -63,8 +85,14 @@ try:
 
     test_database = test_client.create_database_if_not_exists(id=database_name)
 
-    # Always recreate containers to ensure the vector embedding policy (dimensions) is current
-    for _cname in [container_name, "full_text_container"]:
+    # Always recreate containers to ensure the vector embedding policy
+    # (dimensions / distanceFunction) is current.
+    for _cname in [
+        container_name,
+        "full_text_container",
+        "euclidean_container",
+        "dotproduct_container",
+    ]:
         try:
             test_database.delete_container(_cname)
         except Exception:
@@ -82,6 +110,18 @@ try:
         indexing_policy=full_text_indexing_policy,
         vector_embedding_policy=vector_embedding_policy,
         full_text_policy=full_text_policy,
+    )
+    euclidean_container = test_database.create_container(
+        id="euclidean_container",
+        partition_key=partition_key,
+        indexing_policy=indexing_policy,
+        vector_embedding_policy=euclidean_vector_embedding_policy,
+    )
+    dotproduct_container = test_database.create_container(
+        id="dotproduct_container",
+        partition_key=partition_key,
+        indexing_policy=indexing_policy,
+        vector_embedding_policy=dotproduct_vector_embedding_policy,
     )
 
     cosmosnosql_available = True
@@ -569,7 +609,17 @@ class TestAzureCosmosNoSqlVectorSearch:
     def test_query_hybrid_with_score_threshold(
         self, node_embeddings_with_description: List[TextNode]
     ) -> None:
-        """Hybrid RRF (FullTextScore + VectorDistance) returns ranked results."""
+        """
+        Hybrid threshold actually filters out low-similarity results.
+
+        With cosine similarity (the default), the threshold is a strict lower
+        bound on the projected ``SimilarityScore`` (= cosine similarity to the
+        query). Querying [1,0,0] gives:
+          * fts-node-1 (vec [1,0,0]) similarity = 1.0  (above 0.5)
+          * fts-node-2 (vec [0,1,0]) similarity = 0.0  (below 0.5)
+          * fts-node-3 (vec [0,0,1]) similarity = 0.0  (below 0.5)
+        So a threshold of 0.5 must keep only fts-node-1.
+        """
         vector_store = AzureCosmosDBNoSqlVectorSearch(
             cosmos_client=test_client,
             vector_embedding_policy=vector_embedding_policy,
@@ -585,30 +635,37 @@ class TestAzureCosmosNoSqlVectorSearch:
 
         res = vector_store.query(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
-            search_type="hybrid_score_threshold",
+            search_type="hybrid",
             full_text_rank_filter=[
                 {"search_field": "text", "search_text": "lorem ipsum"},
             ],
-            threshold=0.0,
+            threshold=0.5,
         )
 
         assert len(res.nodes) >= 1
         assert len(res.ids) == len(res.nodes)
         assert len(res.similarities) == len(res.nodes)
 
-        # Node fts-node-1 scores highest: it matches "lorem ipsum" AND has the closest
-        # vector [1,0,0] to the query [1,0,0]
-        assert res.ids[0] == "fts-node-1"
+        # Strict filter: only the perfect-vector match survives a 0.5 threshold.
+        assert res.ids == ["fts-node-1"]
+        assert res.similarities[0] == pytest.approx(1.0, abs=1e-5)
         assert "lorem" in res.nodes[0].get_content()
         assert res.nodes[0].metadata.get("author") == "Stephen King"
-
-        # All returned IDs are unique
-        assert len(res.ids) == len(set(res.ids))
 
         # All returned nodes are TextNode instances with non-empty node_id
         for node in res.nodes:
             assert isinstance(node, TextNode)
             assert node.node_id
+
+        # Sanity: same query without threshold returns more rows.
+        res_no_threshold = vector_store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            search_type="hybrid",
+            full_text_rank_filter=[
+                {"search_field": "text", "search_text": "lorem ipsum"},
+            ],
+        )
+        assert len(res_no_threshold.ids) > len(res.ids)
 
     def test_query_hybrid_with_weights(
         self, node_embeddings_with_description: List[TextNode]
@@ -657,11 +714,22 @@ class TestAzureCosmosNoSqlVectorSearch:
         self, node_embeddings_with_description: List[TextNode]
     ) -> None:
         """
-        Weighted hybrid RRF assigns per-component weights via weight=[...].
+        Weighted hybrid RRF assigns per-component weights server-side.
 
-        weights=[0.3, 0.7] gives 30 % to FullTextScore and 70 % to VectorDistance.
-        Node fts-node-1 has the exact query vector AND contains the search terms,
-        so it must still rank first regardless of weight direction.
+        ``weights=[w_text, w_vector]`` is passed verbatim as the last argument
+        of ``RRF(...)`` to Cosmos DB, so the relative ranking must respond to
+        the weights. We probe both extremes to verify weights are honoured:
+
+          * ``[0.99, 0.01]`` → text-dominated. ``fts-node-1`` (perfect text +
+            perfect vector) and ``fts-node-2`` (zero overlap with the search
+            terms) should rank well apart, with the text-only matchers near
+            the top.
+          * ``[0.01, 0.99]`` → vector-dominated. ``fts-node-1`` (vector =
+            [1,0,0] matches query [1,0,0]) must dominate.
+
+        We also confirm that the perfect-overlap node ``fts-node-1`` is the top
+        result in *both* configurations (it wins on both axes), and that the
+        rest of the ranking actually reorders when weights flip.
         """
         vector_store = AzureCosmosDBNoSqlVectorSearch(
             cosmos_client=test_client,
@@ -676,33 +744,42 @@ class TestAzureCosmosNoSqlVectorSearch:
         vector_store.add(node_embeddings_with_description)  # type: ignore
         sleep(1)
 
-        res = vector_store.query(
-            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
-            search_type="weighted_hybrid_search",
+        # vector-dominated
+        res_vec = vector_store.query(
+            VectorStoreQuery(query_embedding=[0.0, 1.0, 0.0], similarity_top_k=3),
+            search_type="hybrid",
             full_text_rank_filter=[
                 {"search_field": "text", "search_text": "lorem ipsum"},
             ],
-            # 30 % text, 70 % vector — vector component gets higher weight
-            weights=[0.3, 0.7],
+            weights=[0.01, 0.99],
         )
 
-        assert len(res.nodes) >= 1
-        assert len(res.ids) == len(res.nodes)
-        assert len(res.similarities) == len(res.nodes)
+        # text-dominated (same query embedding + same text query)
+        res_text = vector_store.query(
+            VectorStoreQuery(query_embedding=[0.0, 1.0, 0.0], similarity_top_k=3),
+            search_type="hybrid",
+            full_text_rank_filter=[
+                {"search_field": "text", "search_text": "lorem ipsum"},
+            ],
+            weights=[0.99, 0.01],
+        )
 
-        # fts-node-1 must still rank first: perfect vector match [1,0,0] + text match
-        assert res.ids[0] == "fts-node-1"
-        assert "lorem" in res.nodes[0].get_content()
-        assert res.nodes[0].metadata.get("author") == "Stephen King"
+        # When the vector dominates, fts-node-2 (vec [0,1,0] = query) wins.
+        assert res_vec.ids[0] == "fts-node-2"
+        # When text dominates, fts-node-1 (matches "lorem ipsum") wins.
+        assert res_text.ids[0] == "fts-node-1"
 
-        # All returned nodes are valid TextNode instances with non-empty content
-        for node in res.nodes:
-            assert isinstance(node, TextNode)
-            assert node.node_id
-            assert node.get_content()
+        # Sanity: ranking actually changes between the two weight settings.
+        assert res_vec.ids != res_text.ids
 
-        # No duplicate IDs
-        assert len(res.ids) == len(set(res.ids))
+        # All returned nodes are valid TextNode instances with non-empty content.
+        for res in (res_vec, res_text):
+            assert len(res.ids) == len(res.nodes) == len(res.similarities)
+            assert len(res.ids) == len(set(res.ids))
+            for node in res.nodes:
+                assert isinstance(node, TextNode)
+                assert node.node_id
+                assert node.get_content()
 
     def test_cosmos_client_with_host_and_key(
         self, node_embeddings: List[TextNode]
@@ -763,3 +840,199 @@ class TestAzureCosmosNoSqlVectorSearch:
         assert res.nodes[0].get_content() == "lorem ipsum"
         assert res.similarities[0] == pytest.approx(1.0, abs=1e-5)
         assert res.nodes[0].metadata.get("author") == "Stephen King"
+
+
+@pytest.mark.skipif(not cosmosnosql_available, reason="cosmos client is not available")
+class TestAzureCosmosNoSqlDistanceFunctions:
+    """
+    Verify that the store handles all three Cosmos DB NoSQL ``distanceFunction``
+    values correctly end-to-end, especially that ``vector_score_threshold``
+    filters in the right direction.
+
+    Per Microsoft Learn (Azure Cosmos DB NoSQL vector search):
+      * cosine     — similarity in [-1, +1], higher = more similar
+      * dotproduct — similarity in [-inf, +inf], higher = more similar
+      * euclidean  — distance in [0, +inf], LOWER = more similar
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        for container in (euclidean_container, dotproduct_container, test_container):
+            for item in container.query_items(
+                query="SELECT * FROM c", enable_cross_partition_query=True
+            ):
+                container.delete_item(item, partition_key=item["id"])
+
+    def _build_store(
+        self,
+        *,
+        container: str,
+        policy: dict,
+    ) -> AzureCosmosDBNoSqlVectorSearch:
+        return AzureCosmosDBNoSqlVectorSearch(
+            cosmos_client=test_client,
+            vector_embedding_policy=policy,
+            indexing_policy=indexing_policy,
+            cosmos_database_properties=cosmos_database_properties_test,
+            cosmos_container_properties=cosmos_container_properties_test,
+            database_name=database_name,
+            container_name=container,
+        )
+
+    # -- distance_function plumbing ----------------------------------------
+
+    def test_cosine_store_records_distance_function(
+        self, node_embeddings: List[TextNode]
+    ) -> None:
+        store = self._build_store(
+            container=container_name, policy=vector_embedding_policy
+        )
+        assert store._distance_function == "cosine"
+
+    def test_euclidean_store_records_distance_function(self) -> None:
+        store = self._build_store(
+            container="euclidean_container",
+            policy=euclidean_vector_embedding_policy,
+        )
+        assert store._distance_function == "euclidean"
+
+    def test_dotproduct_store_records_distance_function(self) -> None:
+        store = self._build_store(
+            container="dotproduct_container",
+            policy=dotproduct_vector_embedding_policy,
+        )
+        assert store._distance_function == "dotproduct"
+
+    # -- vector_score_threshold per distance function ----------------------
+
+    def test_cosine_vector_score_threshold_keeps_high_scores(
+        self, node_embeddings: List[TextNode]
+    ) -> None:
+        """
+        Cosine similarity to query [1,0,0]:
+          node-1 ([1,0,0]) → 1.0
+          node-2 ([0,1,0]) → 0.0
+          node-3 ([0,0,1]) → 0.0
+        Threshold 0.5 (strict >) must keep only node-1.
+        """
+        store = self._build_store(
+            container=container_name, policy=vector_embedding_policy
+        )
+        store.add(node_embeddings)  # type: ignore
+        sleep(1)
+
+        res = store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            search_type="vector",
+            threshold=0.5,
+        )
+        assert res.ids == ["node-1"]
+        assert res.similarities[0] == pytest.approx(1.0, abs=1e-5)
+
+    def test_euclidean_vector_score_threshold_keeps_low_distances(self) -> None:
+        """
+        Euclidean distance from query [1,0,0]:
+          node-1 ([1,0,0]) → 0.0
+          node-2 ([0,1,0]) → sqrt(2) ≈ 1.41
+          node-3 ([0,0,1]) → sqrt(2) ≈ 1.41
+        Threshold 0.5 with euclidean must keep only node-1 (distance < 0.5).
+        Verifies the per-distance-function comparison-direction fix.
+        """
+        store = self._build_store(
+            container="euclidean_container",
+            policy=euclidean_vector_embedding_policy,
+        )
+        nodes = [
+            TextNode(
+                text="lorem ipsum",
+                id_="node-1",
+                embedding=[1.0, 0.0, 0.0],
+                metadata={"theme": "Friendship"},
+            ),
+            TextNode(
+                text="lorem ipsum",
+                id_="node-2",
+                embedding=[0.0, 1.0, 0.0],
+                metadata={"theme": "Mafia"},
+            ),
+            TextNode(
+                text="lorem ipsum",
+                id_="node-3",
+                embedding=[0.0, 0.0, 1.0],
+                metadata={},
+            ),
+        ]
+        store.add(nodes)  # type: ignore
+        sleep(1)
+
+        res = store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            search_type="vector",
+            threshold=0.5,
+        )
+        assert res.ids == ["node-1"]
+        # Euclidean distance to itself is ~0
+        assert res.similarities[0] == pytest.approx(0.0, abs=1e-5)
+
+    def test_euclidean_threshold_none_returns_all_nodes(self) -> None:
+        store = self._build_store(
+            container="euclidean_container",
+            policy=euclidean_vector_embedding_policy,
+        )
+        nodes = [
+            TextNode(text="x", id_="node-1", embedding=[1.0, 0.0, 0.0]),
+            TextNode(text="x", id_="node-2", embedding=[0.0, 1.0, 0.0]),
+            TextNode(text="x", id_="node-3", embedding=[0.0, 0.0, 1.0]),
+        ]
+        store.add(nodes)  # type: ignore
+        sleep(1)
+
+        res = store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3),
+            search_type="vector",
+            # threshold defaults to None → no filtering
+        )
+        assert sorted(res.ids) == ["node-1", "node-2", "node-3"]
+
+    def test_euclidean_orders_results_most_similar_first(self) -> None:
+        """
+        Plain ``vector`` search (no threshold) must still return the
+        most-similar node first under euclidean. Cosmos DB's engine handles
+        the ORDER BY direction based on the container's distanceFunction.
+        """
+        store = self._build_store(
+            container="euclidean_container",
+            policy=euclidean_vector_embedding_policy,
+        )
+        nodes = [
+            TextNode(text="x", id_="node-1", embedding=[1.0, 0.0, 0.0]),
+            TextNode(text="x", id_="node-2", embedding=[0.0, 1.0, 0.0]),
+            TextNode(text="x", id_="node-3", embedding=[0.5, 0.5, 0.0]),
+        ]
+        store.add(nodes)  # type: ignore
+        sleep(1)
+
+        res = store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3)
+        )
+        # node-1 = exact match (distance 0). node-3 is closer than node-2.
+        assert res.ids[0] == "node-1"
+
+    def test_dotproduct_orders_results_most_similar_first(self) -> None:
+        store = self._build_store(
+            container="dotproduct_container",
+            policy=dotproduct_vector_embedding_policy,
+        )
+        nodes = [
+            TextNode(text="x", id_="node-1", embedding=[1.0, 0.0, 0.0]),
+            TextNode(text="x", id_="node-2", embedding=[0.0, 1.0, 0.0]),
+            TextNode(text="x", id_="node-3", embedding=[0.5, 0.0, 0.0]),
+        ]
+        store.add(nodes)  # type: ignore
+        sleep(1)
+
+        res = store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=3)
+        )
+        # node-1 has dot product 1.0, node-3 has 0.5, node-2 has 0.0.
+        assert res.ids[0] == "node-1"

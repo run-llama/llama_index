@@ -31,15 +31,23 @@ class Constants:
 
 
 class AzureCosmosDBNoSqlVectorSearchType(str, Enum):
-    """Vector store search type."""
+    """
+    Vector store search type.
+
+    Behavioural knobs are passed as separate keyword arguments rather than
+    encoded into the search type:
+
+    * ``threshold`` (float, optional) — when provided alongside ``VECTOR`` or
+      ``HYBRID``, post-filter results by the per-row similarity / distance
+      score (direction depends on the container's distance function).
+    * ``weights`` (list of float, optional) — when provided alongside
+      ``HYBRID``, runs server-side weighted RRF.
+    """
 
     VECTOR = "vector"
-    VECTOR_SCORE_THRESHOLD = "vector_score_threshold"
     FULL_TEXT_SEARCH = "full_text_search"
     FULL_TEXT_RANKING = "full_text_ranking"
     HYBRID = "hybrid"
-    HYBRID_SCORE_THRESHOLD = "hybrid_score_threshold"
-    WEIGHTED_HYBRID_SEARCH = "weighted_hybrid_search"
 
 
 class ParamMapping:

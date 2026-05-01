@@ -57,6 +57,7 @@ def _make_store(
     full_text_search_enabled: bool = False,
     indexing_policy: Dict[str, Any] = None,
     container_properties: Dict[str, Any] = None,
+    vector_embedding_policy: Dict[str, Any] = None,
 ) -> AzureCosmosDBNoSqlVectorSearch:
     """Create a store instance backed entirely by mocks (no real DB calls)."""
     mock_client = MagicMock()
@@ -67,7 +68,7 @@ def _make_store(
 
     return AzureCosmosDBNoSqlVectorSearch(
         cosmos_client=mock_client,
-        vector_embedding_policy=VECTOR_EMBEDDING_POLICY,
+        vector_embedding_policy=vector_embedding_policy or VECTOR_EMBEDDING_POLICY,
         indexing_policy=indexing_policy or INDEXING_POLICY,
         cosmos_container_properties=container_properties or COSMOS_CONTAINER_PROPERTIES,
         cosmos_database_properties={},
@@ -75,6 +76,20 @@ def _make_store(
         container_name="test_container",
         full_text_search_enabled=full_text_search_enabled,
     )
+
+
+def _embedding_policy(distance_function: str) -> Dict[str, Any]:
+    """Build a vector embedding policy with the given distance function."""
+    return {
+        "vectorEmbeddings": [
+            {
+                "path": "/embedding",
+                "dataType": "float32",
+                "distanceFunction": distance_function,
+                "dimensions": 3,
+            }
+        ]
+    }
 
 
 # ===========================================================================
@@ -179,12 +194,7 @@ class TestParamMapping:
 class TestSearchTypeEnum:
     def test_all_values_exist(self) -> None:
         values = {t.value for t in AzureCosmosDBNoSqlVectorSearchType}
-        assert "vector" in values
-        assert "vector_score_threshold" in values
-        assert "full_text_search" in values
-        assert "full_text_ranking" in values
-        assert "hybrid" in values
-        assert "hybrid_score_threshold" in values
+        assert values == {"vector", "full_text_search", "full_text_ranking", "hybrid"}
 
     def test_string_comparison(self) -> None:
         assert AzureCosmosDBNoSqlVectorSearchType.VECTOR == "vector"
@@ -193,6 +203,17 @@ class TestSearchTypeEnum:
     def test_invalid_value_raises(self) -> None:
         with pytest.raises(ValueError):
             AzureCosmosDBNoSqlVectorSearchType("invalid_type")
+
+    def test_removed_threshold_variants_no_longer_exist(self) -> None:
+        # Threshold filtering and weighted RRF are now controlled by the
+        # ``threshold`` and ``weights`` keyword arguments, not by separate
+        # search types — make sure the old enum values are gone.
+        with pytest.raises(ValueError):
+            AzureCosmosDBNoSqlVectorSearchType("vector_score_threshold")
+        with pytest.raises(ValueError):
+            AzureCosmosDBNoSqlVectorSearchType("hybrid_score_threshold")
+        with pytest.raises(ValueError):
+            AzureCosmosDBNoSqlVectorSearchType("weighted_hybrid_search")
 
 
 # ===========================================================================
@@ -249,48 +270,23 @@ class TestIsHelpers:
     def setup_method(self) -> None:
         self.store = _make_store(full_text_search_enabled=True)
 
-    def test_is_vector_search_with_threshold_true(self) -> None:
-        assert self.store._is_vector_search_with_threshold(
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD
-        )
-
-    def test_is_vector_search_with_threshold_false_for_vector(self) -> None:
-        assert not self.store._is_vector_search_with_threshold(
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR
-        )
-
-    def test_is_vector_search_with_threshold_false_for_hybrid(self) -> None:
-        # Hybrid is excluded from threshold filtering
-        assert not self.store._is_vector_search_with_threshold(
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD
-        )
-
     def test_is_full_text_search_type(self) -> None:
         for st in (
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_SEARCH,
             AzureCosmosDBNoSqlVectorSearchType.FULL_TEXT_RANKING,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             assert self.store._is_full_text_search_type(st), f"{st} should be full text"
 
     def test_is_not_full_text_search_type(self) -> None:
-        for st in (
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR,
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
-        ):
-            assert not self.store._is_full_text_search_type(st), (
-                f"{st} should not be full text"
-            )
+        assert not self.store._is_full_text_search_type(
+            AzureCosmosDBNoSqlVectorSearchType.VECTOR
+        )
 
     def test_is_vector_search_type(self) -> None:
         for st in (
             AzureCosmosDBNoSqlVectorSearchType.VECTOR,
-            AzureCosmosDBNoSqlVectorSearchType.VECTOR_SCORE_THRESHOLD,
             AzureCosmosDBNoSqlVectorSearchType.HYBRID,
-            AzureCosmosDBNoSqlVectorSearchType.HYBRID_SCORE_THRESHOLD,
-            AzureCosmosDBNoSqlVectorSearchType.WEIGHTED_HYBRID_SEARCH,
         ):
             assert self.store._is_vector_search_type(st), f"{st} should be vector"
 
@@ -302,6 +298,14 @@ class TestIsHelpers:
             assert not self.store._is_vector_search_type(st), (
                 f"{st} should not be vector"
             )
+
+    def test_is_hybrid_search_type(self) -> None:
+        assert self.store._is_hybrid_search_type(
+            AzureCosmosDBNoSqlVectorSearchType.HYBRID
+        )
+        assert not self.store._is_hybrid_search_type(
+            AzureCosmosDBNoSqlVectorSearchType.VECTOR
+        )
 
 
 # ===========================================================================
@@ -430,16 +434,6 @@ class TestGenerateOrderByClause:
         assert "VectorDistance" in result
         assert "@vector" in result
 
-    def test_vector_score_threshold(self) -> None:
-        pm = ParamMapping(table="c")
-        result = self.store._generate_order_by_clause(
-            search_type="vector_score_threshold",
-            param_mapping=pm,
-            vector=[0.5, 0.5, 0.0],
-        )
-        assert "ORDER BY" in result
-        assert "VectorDistance" in result
-
     def test_full_text_ranking_single_filter(self) -> None:
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
@@ -476,14 +470,18 @@ class TestGenerateOrderByClause:
         assert "ORDER BY RANK RRF(" in result
         assert "FullTextScore" in result
         assert "VectorDistance" in result
-        # Vector must be inline literal, not @vector param
+        # Inside the ORDER BY RANK RRF clause itself we still inline the vector
+        # literal (the parameterised form works too — see live tests — but
+        # inline keeps the SQL closer to the public-docs patterns).
         assert "@vector" not in result
         assert "[1.0, 0.0, 0.0]" in result
 
-    def test_hybrid_score_threshold_uses_rrf(self) -> None:
+    def test_hybrid_with_threshold_arg_does_not_change_order_by(self) -> None:
+        # Threshold filtering is applied client-side after the query runs, so
+        # passing ``threshold`` does not alter the ORDER BY clause.
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
-            search_type="hybrid_score_threshold",
+            search_type="hybrid",
             param_mapping=pm,
             vector=[0.0, 1.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "foo"}],
@@ -491,14 +489,19 @@ class TestGenerateOrderByClause:
         assert "ORDER BY RANK RRF(" in result
         assert "VectorDistance" in result
 
-    def test_full_text_ranking_missing_filter_raises(self) -> None:
+    def test_full_text_ranking_missing_filter_no_longer_raises_in_order_by(
+        self,
+    ) -> None:
+        # The required-check for full_text_rank_filter is now enforced in
+        # _validate_search_args (single source of truth). _generate_order_by_clause
+        # itself no longer raises when the filter is missing.
         pm = ParamMapping(table="c")
-        with pytest.raises(ValueError, match="full_text_rank_filter"):
-            self.store._generate_order_by_clause(
-                search_type="full_text_ranking",
-                param_mapping=pm,
-                full_text_rank_filter=None,
-            )
+        # Should not raise
+        self.store._generate_order_by_clause(
+            search_type="full_text_ranking",
+            param_mapping=pm,
+            full_text_rank_filter=None,
+        )
 
     def test_full_text_search_returns_empty(self) -> None:
         # full_text_search has no ORDER BY clause
@@ -508,11 +511,11 @@ class TestGenerateOrderByClause:
         )
         assert result.strip() == ""
 
-    def test_weighted_hybrid_emits_weight_clause(self) -> None:
-        """WEIGHTED_HYBRID_SEARCH uses the same RRF query as hybrid; weights are client-side."""
+    def test_hybrid_with_weights_emits_weight_clause(self) -> None:
+        """``hybrid`` + weights triggers server-side weighted RRF."""
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             param_mapping=pm,
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
@@ -521,29 +524,32 @@ class TestGenerateOrderByClause:
         assert "ORDER BY RANK RRF(" in result
         assert "FullTextScore" in result
         assert "VectorDistance" in result
-        # Weights are applied client-side — must NOT appear in the SQL clause
-        assert "weight=" not in result
-        assert "weights=" not in result
+        # Weights are appended server-side as the last RRF argument inline.
+        # See https://learn.microsoft.com/en-us/azure/cosmos-db/gen-ai/hybrid-search
+        assert "[0.3, 0.7]" in result
         # Vector must still be inlined
         assert "[1.0, 0.0, 0.0]" in result
         assert "@vector" not in result
 
-    def test_weighted_hybrid_without_weights_omits_weight_clause(self) -> None:
+    def test_hybrid_without_weights_omits_weight_clause(self) -> None:
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             param_mapping=pm,
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
             weights=None,
         )
         assert "ORDER BY RANK RRF(" in result
-        assert "weight=" not in result
+        # No weights array literal appended when weights is None
+        assert (
+            ", [" not in result.split("RRF(", 1)[1].rsplit(")", 1)[0].rsplit(",", 1)[-1]
+        )
 
-    def test_weighted_hybrid_multiple_text_components(self) -> None:
+    def test_hybrid_weights_multiple_text_components(self) -> None:
         pm = ParamMapping(table="c")
         result = self.store._generate_order_by_clause(
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             param_mapping=pm,
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[
@@ -554,8 +560,8 @@ class TestGenerateOrderByClause:
         )
         assert "ORDER BY RANK RRF(" in result
         assert result.count("FullTextScore") == 2
-        # Weights are client-side — not in SQL
-        assert "weight=" not in result
+        # Weights are inlined as the last RRF arg
+        assert "[0.2, 0.3, 0.5]" in result
 
 
 # ===========================================================================
@@ -575,16 +581,11 @@ class TestGenerateProjectionFields:
         assert "SimilarityScore" in result
         assert "VectorDistance" in result
 
-    def test_vector_score_threshold_includes_similarity_score(self) -> None:
-        pm = ParamMapping(table="c")
-        result = self.store._generate_projection_fields(
-            search_type="vector_score_threshold",
-            param_mapping=pm,
-            vector=[1.0, 0.0, 0.0],
-        )
-        assert "SimilarityScore" in result
-
-    def test_hybrid_projection_excludes_similarity_score(self) -> None:
+    def test_hybrid_projection_includes_similarity_score(self) -> None:
+        # ``hybrid`` always projects SimilarityScore now (essentially free —
+        # the VectorDistance is already computed during the search — and
+        # useful both as caller-visible relevance signal and for the optional
+        # ``threshold`` post-filter).
         pm = ParamMapping(table="c")
         result = self.store._generate_projection_fields(
             search_type="hybrid",
@@ -592,9 +593,42 @@ class TestGenerateProjectionFields:
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
         )
-        # CosmosDB rejects VectorDistance in SELECT with ORDER BY RANK
+        assert "SimilarityScore" in result
+        assert "VectorDistance(c[@vectorKey], @vector) as SimilarityScore" in result
+
+    def test_full_text_ranking_excludes_similarity_score(self) -> None:
+        # Pure full-text ranking has no vector and therefore no SimilarityScore.
+        pm = ParamMapping(table="c")
+        result = self.store._generate_projection_fields(
+            search_type="full_text_ranking",
+            param_mapping=pm,
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+        )
         assert "SimilarityScore" not in result
         assert "VectorDistance" not in result
+
+    def test_full_text_search_excludes_similarity_score(self) -> None:
+        pm = ParamMapping(table="c")
+        result = self.store._generate_projection_fields(
+            search_type="full_text_search", param_mapping=pm
+        )
+        assert "SimilarityScore" not in result
+        assert "VectorDistance" not in result
+
+    def test_hybrid_return_with_vectors_uses_parameterised_projection(self) -> None:
+        # The base field projection inside ORDER BY RANK queries still uses
+        # direct paths (closer to the public-docs patterns), but the embedding
+        # itself is projected using the parameterised form — which CosmosDB
+        # accepts inside ORDER BY RANK projections.
+        pm = ParamMapping(table="c")
+        result = self.store._generate_projection_fields(
+            search_type="hybrid",
+            param_mapping=pm,
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            return_with_vectors=True,
+        )
+        assert "c[@vectorKey] as vector" in result
 
     def test_hybrid_uses_direct_path_for_text_and_metadata(self) -> None:
         pm = ParamMapping(table="c")
@@ -607,7 +641,10 @@ class TestGenerateProjectionFields:
         # Must use c.text not c[@textKey]
         assert "c.text" in result
         assert "c.metadata" in result
-        assert "c[@" not in result
+        # The only bracket-indexer usage allowed inside ORDER BY RANK queries
+        # is the SimilarityScore projection (c[@vectorKey] for VectorDistance).
+        assert "c[@text" not in result
+        assert "c[@metadata" not in result
 
     def test_full_text_ranking_includes_id_text_metadata(self) -> None:
         pm = ParamMapping(table="c")
@@ -675,16 +712,8 @@ class TestConstructSearchQuery:
         assert "@limit" in param_names
         assert "@vector" in param_names
 
-    def test_vector_score_threshold_query(self) -> None:
-        query, params = self.store._construct_search_query(
-            limit=3, search_type="vector_score_threshold", vector=[0.5, 0.5, 0.0]
-        )
-        assert "TOP @limit" in query
-        assert "SimilarityScore" in query
-        assert "ORDER BY VectorDistance" in query
-
     def test_full_text_search_query_no_order_by(self) -> None:
-        query, params = self.store._construct_search_query(
+        query, _ = self.store._construct_search_query(
             limit=5,
             search_type="full_text_search",
             where="FullTextContains(c.text, 'lorem')",
@@ -694,7 +723,7 @@ class TestConstructSearchQuery:
         assert "TOP @limit" in query
 
     def test_full_text_ranking_query(self) -> None:
-        query, params = self.store._construct_search_query(
+        query, _ = self.store._construct_search_query(
             limit=5,
             search_type="full_text_ranking",
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
@@ -715,16 +744,19 @@ class TestConstructSearchQuery:
         assert "ORDER BY RANK RRF(" in query
         assert "VectorDistance(c.embedding, [1.0, 0.0, 0.0])" in query
 
-    def test_hybrid_score_threshold_query(self) -> None:
-        query, params = self.store._construct_search_query(
+    def test_hybrid_with_threshold_query(self) -> None:
+        # ``threshold`` doesn't change the SQL itself — it's a client-side
+        # post-filter. SimilarityScore is projected unconditionally for hybrid.
+        query, _ = self.store._construct_search_query(
             limit=5,
-            search_type="hybrid_score_threshold",
+            search_type="hybrid",
             vector=[0.0, 1.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "ipsum"}],
         )
         assert "TOP" not in query
         assert "OFFSET 0 LIMIT 5" in query
         assert "ORDER BY RANK RRF(" in query
+        assert "SimilarityScore" in query
 
     def test_where_clause_included(self) -> None:
         query, _ = self.store._construct_search_query(
@@ -782,10 +814,10 @@ class TestConstructSearchQuery:
         )
         assert len(params) > 0
 
-    def test_weighted_hybrid_uses_offset_limit_not_top(self) -> None:
+    def test_hybrid_with_weights_uses_offset_limit_not_top(self) -> None:
         query, _ = self.store._construct_search_query(
             limit=3,
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
             weights=[0.3, 0.7],
@@ -793,50 +825,55 @@ class TestConstructSearchQuery:
         assert "TOP" not in query
         assert "OFFSET 0 LIMIT 3" in query
 
-    def test_weighted_hybrid_emits_rrf_without_weight_in_sql(self) -> None:
-        """Weights are applied client-side; the SQL query is identical to hybrid."""
+    def test_hybrid_with_weights_emits_weights_inline_in_sql(self) -> None:
+        """Weights are passed server-side as the last argument to RRF."""
         query, _ = self.store._construct_search_query(
             limit=3,
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
             weights=[0.3, 0.7],
         )
         assert "ORDER BY RANK RRF(" in query
-        assert "weight=" not in query
-        assert "weights=" not in query
+        assert "[0.3, 0.7]" in query
         assert "FullTextScore" in query
         assert "VectorDistance(c.embedding, [1.0, 0.0, 0.0])" in query
 
-    def test_weighted_hybrid_no_weights_same_as_with_weights(self) -> None:
-        """SQL output is identical whether weights are provided or not."""
+    def test_hybrid_no_weights_differs_from_with_weights(self) -> None:
+        """SQL output differs when weights are provided vs not."""
         q_with, _ = self.store._construct_search_query(
             limit=3,
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
             weights=[0.3, 0.7],
         )
         q_without, _ = self.store._construct_search_query(
             limit=3,
-            search_type="weighted_hybrid_search",
+            search_type="hybrid",
             vector=[1.0, 0.0, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
         )
-        assert q_with == q_without
+        assert q_with != q_without
+        assert "[0.3, 0.7]" in q_with
+        assert "[0.3, 0.7]" not in q_without
 
-    def test_hybrid_vector_inline_not_parameterized(self) -> None:
+    def test_hybrid_vector_inline_in_order_by(self) -> None:
+        # The vector inside the ORDER BY RANK RRF clause is inlined as a literal
+        # (matches the public-docs pattern). The projection's SimilarityScore
+        # uses a parameterised @vector — so @vector IS a query parameter even
+        # for hybrid searches.
         query, params = self.store._construct_search_query(
             limit=3,
             search_type="hybrid",
             vector=[0.3, 0.7, 0.0],
             full_text_rank_filter=[{"search_field": "text", "search_text": "test"}],
         )
-        # @vector must NOT appear in params for hybrid (it's inlined)
+        # Inline literal appears in the ORDER BY clause
+        assert "VectorDistance(c.embedding, [0.3, 0.7, 0.0])" in query
+        # Parameterised @vector is used in the SimilarityScore projection
         param_names = {p["name"] for p in params}
-        assert "@vector" not in param_names
-        # The inline literal must be in the query
-        assert "[0.3, 0.7, 0.0]" in query
+        assert "@vector" in param_names
 
 
 # ===========================================================================
@@ -1078,3 +1115,372 @@ class TestSearchQueryPreFilterCompat:
         assert result.nodes == [mock_node]
         assert result.similarities == [0.9]
         assert result.ids == ["abc"]
+
+
+class TestValidateSearchArgsExtended:
+    """
+    Tests for centralized validation: rank-filter requirement, offset_limit
+    format, weights length matching.
+    """
+
+    def setup_method(self) -> None:
+        self.store = _make_store(full_text_search_enabled=True)
+
+    # full_text_rank_filter required for full_text_ranking + hybrid
+    @pytest.mark.parametrize(
+        "search_type",
+        [
+            "full_text_ranking",
+            "hybrid",
+        ],
+    )
+    def test_missing_full_text_rank_filter_raises(self, search_type: str) -> None:
+        with pytest.raises(ValueError, match="full_text_rank_filter"):
+            self.store._validate_search_args(
+                search_type=search_type,
+                vector=[1.0, 0.0, 0.0],
+                full_text_rank_filter=None,
+            )
+
+    def test_missing_full_text_rank_filter_via_search_query_raises(self) -> None:
+        with pytest.raises(ValueError, match="full_text_rank_filter"):
+            self.store._search_query(
+                vectors=[1.0, 0.0, 0.0],
+                limit=3,
+                search_type="hybrid",
+                full_text_rank_filter=None,
+            )
+
+    # offset_limit regex validation
+    @pytest.mark.parametrize(
+        "bad_value",
+        [
+            "OFFSET 0",
+            "LIMIT 5",
+            "ORDER BY c.id",
+            "OFFSET 0 LIMIT 5; DROP TABLE c",
+            "offset 0 limit 5 ;",
+            "OFFSET abc LIMIT 5",
+        ],
+    )
+    def test_invalid_offset_limit_raises(self, bad_value: str) -> None:
+        with pytest.raises(ValueError, match="offset_limit"):
+            self.store._validate_search_args(
+                search_type="vector",
+                vector=[1.0, 0.0, 0.0],
+                offset_limit=bad_value,
+            )
+
+    @pytest.mark.parametrize(
+        "good_value",
+        [
+            "OFFSET 0 LIMIT 5",
+            "offset 10 limit 20",
+            "  OFFSET 0 LIMIT 5  ",
+            "OFFSET   3   LIMIT   10",
+        ],
+    )
+    def test_valid_offset_limit_accepted(self, good_value: str) -> None:
+        # Should not raise
+        self.store._validate_search_args(
+            search_type="vector",
+            vector=[1.0, 0.0, 0.0],
+            offset_limit=good_value,
+        )
+
+    # weights length validation for hybrid + weights
+    def test_weights_wrong_length_raises(self) -> None:
+        with pytest.raises(ValueError, match="weights"):
+            self.store._validate_search_args(
+                search_type="hybrid",
+                vector=[1.0, 0.0, 0.0],
+                full_text_rank_filter=[
+                    {"search_field": "text", "search_text": "lorem"}
+                ],
+                weights=[0.1, 0.2, 0.7],  # 3 weights, but only 2 components
+            )
+
+    def test_weights_correct_length_accepted(self) -> None:
+        # 1 text component + 1 vector component = 2 weights
+        self.store._validate_search_args(
+            search_type="hybrid",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[{"search_field": "text", "search_text": "lorem"}],
+            weights=[0.3, 0.7],
+        )
+        # 2 text components + 1 vector component = 3 weights
+        self.store._validate_search_args(
+            search_type="hybrid",
+            vector=[1.0, 0.0, 0.0],
+            full_text_rank_filter=[
+                {"search_field": "text", "search_text": "lorem"},
+                {"search_field": "title", "search_text": "ipsum"},
+            ],
+            weights=[0.2, 0.3, 0.5],
+        )
+
+    @pytest.mark.parametrize(
+        "search_type",
+        ["vector", "full_text_search", "full_text_ranking"],
+    )
+    def test_weights_rejected_for_non_hybrid_search_type(
+        self, search_type: str
+    ) -> None:
+        # ``weights`` is only meaningful for hybrid search.
+        kwargs: dict = {"search_type": search_type, "weights": [0.3, 0.7]}
+        if search_type in ("vector", "hybrid"):
+            kwargs["vector"] = [1.0, 0.0, 0.0]
+        if search_type in ("full_text_ranking",):
+            kwargs["full_text_rank_filter"] = [
+                {"search_field": "text", "search_text": "lorem"}
+            ]
+        with pytest.raises(ValueError, match="weights"):
+            self.store._validate_search_args(**kwargs)
+
+    @pytest.mark.parametrize(
+        "search_type",
+        ["full_text_search", "full_text_ranking"],
+    )
+    def test_threshold_rejected_for_non_vector_search_type(
+        self, search_type: str
+    ) -> None:
+        # ``threshold`` only applies to search types that compute a vector
+        # similarity score (``vector`` or ``hybrid``).
+        kwargs: dict = {"search_type": search_type, "threshold": 0.5}
+        if search_type == "full_text_ranking":
+            kwargs["full_text_rank_filter"] = [
+                {"search_field": "text", "search_text": "lorem"}
+            ]
+        with pytest.raises(ValueError, match="threshold"):
+            self.store._validate_search_args(**kwargs)
+
+
+class TestThresholdSemantics:
+    """Tests for unified threshold default (None disables filtering, strict >)."""
+
+    def setup_method(self) -> None:
+        self.store = _make_store()
+
+    def test_threshold_none_does_not_filter(self) -> None:
+        # All items returned regardless of score when threshold=None
+        items = [
+            {"id": "a", "text": "x", "metadata": {}, "SimilarityScore": 0.1},
+            {"id": "b", "text": "y", "metadata": {}, "SimilarityScore": 0.9},
+        ]
+        self.store._container = MagicMock()
+        self.store._container.query_items = MagicMock(return_value=iter(items))
+        result = self.store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=None,
+        )
+        assert len(result.ids) == 2
+
+    def test_threshold_strict_greater_than(self) -> None:
+        # Items with score == threshold are excluded (strict >)
+        items = [
+            {"id": "a", "text": "x", "metadata": {}, "SimilarityScore": 0.5},
+            {"id": "b", "text": "y", "metadata": {}, "SimilarityScore": 0.6},
+            {"id": "c", "text": "z", "metadata": {}, "SimilarityScore": 0.4},
+        ]
+        self.store._container = MagicMock()
+        self.store._container.query_items = MagicMock(return_value=iter(items))
+        result = self.store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.5,
+        )
+        # Only id 'b' (0.6 > 0.5) survives
+        assert result.ids == ["b"]
+
+    def test_hybrid_score_threshold_filters_results(self) -> None:
+        # Verifies the previously-broken hybrid_score_threshold flow:
+        # SimilarityScore must now be projected and used to filter.
+        items = [
+            {"id": "a", "text": "x", "metadata": {}, "SimilarityScore": 0.9},
+            {"id": "b", "text": "y", "metadata": {}, "SimilarityScore": 0.3},
+        ]
+        self.store._container = MagicMock()
+        self.store._container.query_items = MagicMock(return_value=iter(items))
+        result = self.store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="hybrid",
+            threshold=0.5,
+        )
+        assert result.ids == ["a"]
+
+    def test_search_query_default_threshold_is_none(self) -> None:
+        # Default threshold of None means no filtering (regression: was 0.5 before).
+        items = [
+            {"id": "low", "text": "x", "metadata": {}, "SimilarityScore": 0.1},
+            {"id": "mid", "text": "y", "metadata": {}, "SimilarityScore": 0.5},
+        ]
+        self.store._container = MagicMock()
+        self.store._container.query_items = MagicMock(return_value=iter(items))
+        result = self.store._search_query(
+            vectors=[1.0, 0.0, 0.0],
+            limit=5,
+            search_type="vector",
+        )
+        assert len(result.ids) == 2
+
+
+# ===========================================================================
+# Distance-function semantics tests
+# ===========================================================================
+
+
+class TestDistanceFunctions:
+    """
+    Verify that threshold filtering uses the correct comparison direction for
+    each Cosmos DB NoSQL distance function.
+
+    Per Microsoft Learn (Azure Cosmos DB NoSQL vector search):
+      * cosine     — similarity in [-1, +1], higher = more similar
+      * dotproduct — similarity in [-inf, +inf], higher = more similar
+      * euclidean  — distance in [0, +inf], LOWER = more similar
+    """
+
+    def test_cosine_default_when_distance_function_missing(self) -> None:
+        policy = {
+            "vectorEmbeddings": [
+                {"path": "/embedding", "dataType": "float32", "dimensions": 3}
+            ]
+        }
+        store = _make_store(vector_embedding_policy=policy)
+        assert store._distance_function == "cosine"
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("cosine", "cosine"),
+            ("Cosine", "cosine"),
+            ("COSINE", "cosine"),
+            ("euclidean", "euclidean"),
+            ("Euclidean", "euclidean"),
+            ("dotproduct", "dotproduct"),
+            ("DotProduct", "dotproduct"),
+        ],
+    )
+    def test_distance_function_normalised_lowercase(
+        self, raw: str, expected: str
+    ) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy(raw))
+        assert store._distance_function == expected
+
+    # -- Threshold filtering ------------------------------------------------
+
+    @staticmethod
+    def _items() -> list:
+        # 3 items spanning a wide score range for clear pass/fail.
+        return [
+            {"id": "near", "text": "n", "metadata": {}, "SimilarityScore": 0.1},
+            {"id": "mid", "text": "m", "metadata": {}, "SimilarityScore": 0.5},
+            {"id": "far", "text": "f", "metadata": {}, "SimilarityScore": 0.9},
+        ]
+
+    def test_cosine_threshold_keeps_high_scores(self) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy("cosine"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.4,
+        )
+        # cosine: keep score > 0.4 → mid (0.5) and far (0.9)
+        assert sorted(result.ids) == ["far", "mid"]
+
+    def test_dotproduct_threshold_keeps_high_scores(self) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy("dotproduct"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.4,
+        )
+        # dotproduct: same direction as cosine — keep score > 0.4
+        assert sorted(result.ids) == ["far", "mid"]
+
+    def test_euclidean_threshold_keeps_low_scores(self) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy("euclidean"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.4,
+        )
+        # euclidean: distance, keep score < 0.4 → only "near" (0.1)
+        assert result.ids == ["near"]
+
+    def test_euclidean_hybrid_score_threshold_uses_inverse_filter(self) -> None:
+        store = _make_store(
+            full_text_search_enabled=True,
+            vector_embedding_policy=_embedding_policy("euclidean"),
+        )
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="hybrid",
+            threshold=0.5,
+        )
+        # euclidean + hybrid threshold: keep score < 0.5 → only "near"
+        assert result.ids == ["near"]
+
+    def test_euclidean_threshold_strict_excludes_equal(self) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy("euclidean"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.5,
+        )
+        # strict <: exclude the 0.5 match
+        assert result.ids == ["near"]
+
+    def test_cosine_threshold_strict_excludes_equal(self) -> None:
+        store = _make_store(vector_embedding_policy=_embedding_policy("cosine"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=0.5,
+        )
+        # strict >: exclude the 0.5 match
+        assert result.ids == ["far"]
+
+    def test_threshold_none_disables_filtering_for_all_distance_functions(
+        self,
+    ) -> None:
+        for dist in ("cosine", "dotproduct", "euclidean"):
+            store = _make_store(vector_embedding_policy=_embedding_policy(dist))
+            store._container = MagicMock()
+            store._container.query_items = MagicMock(return_value=iter(self._items()))
+            result = store._execute_search_query(
+                query="SELECT * FROM c",
+                search_type="vector",
+                threshold=None,
+            )
+            assert sorted(result.ids) == ["far", "mid", "near"], (
+                f"distance_function={dist} should not filter when threshold=None"
+            )
+
+    def test_distance_function_does_not_affect_search_when_threshold_none(
+        self,
+    ) -> None:
+        # When threshold is None the post-filter is bypassed regardless of
+        # distance function, so all items pass through.
+        store = _make_store(vector_embedding_policy=_embedding_policy("euclidean"))
+        store._container = MagicMock()
+        store._container.query_items = MagicMock(return_value=iter(self._items()))
+        result = store._execute_search_query(
+            query="SELECT * FROM c",
+            search_type="vector",
+            threshold=None,
+        )
+        assert sorted(result.ids) == ["far", "mid", "near"]
