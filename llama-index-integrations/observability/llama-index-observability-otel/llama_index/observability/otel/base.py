@@ -52,6 +52,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
         default_factory=dict,
     )
+    _context_tokens: Dict[str, object] = PrivateAttr(default_factory=dict)
     all_spans: Dict[str, trace.Span] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
@@ -79,6 +80,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         self._tracer = tracer
         self._tracer_provider = tracer_provider
         self._events_by_span = {}
+        self._context_tokens = {}
         self.debug = debug
 
     def close(self) -> None:
@@ -145,6 +147,9 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         otel_span = self._tracer.start_span(name=span_name, context=ctx)
         self.all_spans.update({id_: otel_span})
 
+        token = context.attach(set_span_in_context(otel_span))
+        self._context_tokens[id_] = token
+
         # Record instrument_tags as span attributes
         if tags is not None:
             for key, value in tags.items():
@@ -186,6 +191,9 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             span.add_event(name=event.name, attributes=event.attributes)
 
         span.set_status(status=trace.StatusCode.OK)
+        token = self._context_tokens.pop(id_, None)
+        if token is not None:
+            context.detach(token)
         span.end()
         return sp
 
@@ -217,6 +225,9 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if err is not None:
             span.record_exception(err)
         span.set_status(status=trace.StatusCode.ERROR, description=err.__str__())
+        token = self._context_tokens.pop(id_, None)
+        if token is not None:
+            context.detach(token)
         span.end()
         return sp
 
