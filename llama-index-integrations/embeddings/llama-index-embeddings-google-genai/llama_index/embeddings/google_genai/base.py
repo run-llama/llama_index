@@ -261,8 +261,16 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             "CLUSTERING": "task: clustering | query: ",
         }
 
+        # Normalize to upper to catch edge cases where users passed lowercase string
+        task_type = task_type.upper() if task_type else task_type
+
         formatted_texts = []
         for text in texts:
+            # skip empty strings
+            if not text.strip():
+                formatted_texts.append(text)
+                continue
+
             if task_type == "RETRIEVAL_DOCUMENT":
                 if text.startswith("title: ") and " | text: " in text:
                     formatted_texts.append(text)
@@ -275,10 +283,22 @@ class GoogleGenAIEmbedding(BaseEmbedding):
                 else:
                     formatted_texts.append(f"{prefix}{text}")
             else:
-                # fallback to RETRIEVAL_QUERY if task_type is unrecognised or None
+                # fallback to RETRIEVAL_QUERY if task_type is unrecognised
                 formatted_texts.append(f"task: search result | query: {text}")
 
         return formatted_texts
+
+    def _get_effective_task_type(self, task_type: Optional[str]) -> Optional[str]:
+        """Safely resolve task_type from method args or class-level config."""
+        if task_type:
+            return task_type
+
+        if self.embedding_config:
+            if isinstance(self.embedding_config, dict):
+                return self.embedding_config.get("task_type")
+            return getattr(self.embedding_config, "task_type", None)
+
+        return None
 
     def _embed_texts(
         self, texts: List[str], task_type: Optional[str] = None
@@ -286,8 +306,12 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         """Embed texts."""
         is_gemini_emb_2 = "embedding-2" in self.model_name
 
-        if is_gemini_emb_2 and task_type:
-            texts_to_embed = self._format_texts_for_gemini_emb_2(texts, task_type)
+        effective_task_type = self._get_effective_task_type(task_type)
+
+        if is_gemini_emb_2 and effective_task_type:
+            texts_to_embed = self._format_texts_for_gemini_emb_2(
+                texts, effective_task_type
+            )
             # Nullify task_type so the standard config block below ignores it
             task_type = None
         else:
@@ -338,8 +362,12 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         """Asynchronously embed texts."""
         is_gemini_emb_2 = "embedding-2" in self.model_name
 
-        if is_gemini_emb_2 and task_type:
-            texts_to_embed = self._format_texts_for_gemini_emb_2(texts, task_type)
+        effective_task_type = self._get_effective_task_type(task_type)
+
+        if is_gemini_emb_2 and effective_task_type:
+            texts_to_embed = self._format_texts_for_gemini_emb_2(
+                texts, effective_task_type
+            )
             # Nullify task_type so the standard config block below ignores it
             task_type = None
         else:
