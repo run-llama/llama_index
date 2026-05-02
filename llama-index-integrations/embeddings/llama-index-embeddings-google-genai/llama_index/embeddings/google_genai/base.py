@@ -1,5 +1,6 @@
 """Gemini embeddings file."""
 
+import logging
 import os
 from importlib.metadata import PackageNotFoundError, version
 from tenacity import (
@@ -23,6 +24,8 @@ import google.genai
 import google.auth.credentials
 import google.genai.types as types
 from google.genai.errors import APIError
+
+logger = logging.getLogger(__name__)
 
 # Define generic types for functions that will be wrapped with retry
 T = TypeVar("T")
@@ -284,6 +287,10 @@ class GoogleGenAIEmbedding(BaseEmbedding):
                     formatted_texts.append(f"{prefix}{text}")
             else:
                 # fallback to RETRIEVAL_QUERY if task_type is unrecognised
+                logger.warning(
+                    f"Unknown task_type {task_type!r} for gemini-embedding-2. "
+                    "Falling back to 'RETRIEVAL_QUERY' prefix."
+                )
                 formatted_texts.append(f"task: search result | query: {text}")
 
         return formatted_texts
