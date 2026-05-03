@@ -1,0 +1,29 @@
+[build-system]
+requires = ["poetry-core>=1.1.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llama-index-llms-cajal"
+version = "0.1.0"
+description = "LlamaIndex integration for CAJAL — Scientific paper generation with verified arXiv citations"
+authors = ["Francisco Angulo de Lafuente <contact@p2pclaw.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Agnuxo1/CAJAL"
+keywords = ["llamaindex", "cajal", "scientific-papers", "arxiv", "ollama", "local-llm"]
+packages = [{include = "llama_index"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+llama-index-core = "^0.12.0"
+requests = "^2.31.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.0"
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.llms.cajal"
+
+[tool.llamahub.class_authors]
+CajalLLM = "Agnuxo1"
