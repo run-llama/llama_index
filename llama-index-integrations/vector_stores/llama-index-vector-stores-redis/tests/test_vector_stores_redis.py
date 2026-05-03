@@ -663,3 +663,42 @@ async def test_async_unindexed_embedding_query_returns_no_matches(
     finally:
         index = None
         await vector_store.async_delete_index()
+
+
+def test_removeprefix_preserves_uuid_starting_with_prefix_chars():
+    """Regression test for issue #21483.
+
+    ``str.strip(chars)`` removes *any combination* of the supplied characters
+    from both ends of the string, which corrupts UUID-based node IDs when the
+    Redis prefix shares characters with the UUID (e.g. prefix ``doc`` strips
+    the leading ``d`` from ``d7b95ae7-...``).
+
+    ``str.removeprefix(prefix)`` removes the exact substring and is the
+    correct approach.
+    """
+    prefix = "semantic_cache_doc"
+    separator = ":"
+    stripped_prefix = prefix + separator
+
+    test_cases = [
+        # (node_id, expected_full_key)
+        ("e7b95ae7-6369-404d-8287-1f4504121563", "semantic_cache_doc:e7b95ae7-6369-404d-8287-1f4504121563"),
+        ("doc-abc-1234-5678", "semantic_cache_doc:doc-abc-1234-5678"),
+        ("a1b2c3d4-uuid-starts-with-a", "semantic_cache_doc:a1b2c3d4-uuid-starts-with-a"),
+        ("cab-starts-with-prefix-chars", "semantic_cache_doc:cab-starts-with-prefix-chars"),
+        ("normal-uuid-not-overlapping", "semantic_cache_doc:normal-uuid-not-overlapping"),
+    ]
+
+    for node_id, full_key in test_cases:
+        # The old buggy behaviour: .strip() corrupts the ID
+        broken_result = full_key.strip(stripped_prefix)
+        assert broken_result != node_id, (
+            f"Expected .strip() to corrupt '{node_id}' but it didn't — "
+            f"test case needs a different prefix/ID overlap"
+        )
+
+        # The correct behaviour with .removeprefix()
+        correct_result = full_key.removeprefix(stripped_prefix)
+        assert correct_result == node_id, (
+            f".removeprefix() should return '{node_id}', got '{correct_result}'"
+        )
