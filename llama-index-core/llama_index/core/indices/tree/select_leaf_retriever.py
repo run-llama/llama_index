@@ -284,7 +284,18 @@ class TreeSelectLeafRetriever(BaseRetriever):
         return cast(str, result_response)
 
     def _query(self, query_bundle: QueryBundle) -> Response:
-        """Answer a query."""
+        """
+        Answer a query.
+
+        The ``Response.source_nodes`` returned here are the leaf
+        ``BaseNode``\\s the LLM-driven traversal selected on the way to the
+        final answer, deduplicated while preserving traversal order. They are
+        wrapped in ``NodeWithScore`` with ``score=None`` because tree
+        traversal uses LLM selection rather than a numeric ranking — there is
+        no relevance score to attach. Downstream rerankers / weighted fusion
+        consumers that expect a non-``None`` score should treat unscored
+        source nodes as a tie and rank them by a fallback signal.
+        """
         # NOTE: this overrides the _query method in the base class
         info_str = f"> Starting query: {query_bundle.query_str}"
         logger.info(info_str)
