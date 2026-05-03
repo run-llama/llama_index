@@ -5,7 +5,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 
-from ollama import Client, AsyncClient
+from ollama import AsyncClient, Client
 
 
 class OllamaEmbedding(BaseEmbedding):
@@ -32,6 +32,10 @@ class OllamaEmbedding(BaseEmbedding):
         default="5m",
         description="controls how long the model will stay loaded into memory following the request(default: 5m)",
     )
+    dimensions: Optional[int] = Field(
+        default=None,
+        description="The number of dimensions for the embedding output.",
+    )
 
     _client: Client = PrivateAttr()
     _async_client: AsyncClient = PrivateAttr()
@@ -41,6 +45,7 @@ class OllamaEmbedding(BaseEmbedding):
         model_name: str,
         base_url: str = "http://localhost:11434",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        dimensions: Optional[int] = None,
         ollama_additional_kwargs: Optional[Dict[str, Any]] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
@@ -53,6 +58,7 @@ class OllamaEmbedding(BaseEmbedding):
             model_name=model_name,
             base_url=base_url,
             embed_batch_size=embed_batch_size,
+            dimensions=dimensions,
             ollama_additional_kwargs=ollama_additional_kwargs or {},
             query_instruction=query_instruction,
             text_instruction=text_instruction,
@@ -106,6 +112,7 @@ class OllamaEmbedding(BaseEmbedding):
             input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
+            dimensions=self.dimensions,
         )
         return result.embeddings
 
@@ -116,6 +123,7 @@ class OllamaEmbedding(BaseEmbedding):
             input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
+            dimensions=self.dimensions,
         )
         return result.embeddings
 
@@ -126,6 +134,7 @@ class OllamaEmbedding(BaseEmbedding):
             input=texts,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
+            dimensions=self.dimensions,
         )
         return result.embeddings[0]
 
@@ -136,6 +145,7 @@ class OllamaEmbedding(BaseEmbedding):
             input=prompt,
             options=self.ollama_additional_kwargs,
             keep_alive=self.keep_alive,
+            dimensions=self.dimensions,
         )
         return result.embeddings[0]
 
