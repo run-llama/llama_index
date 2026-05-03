@@ -67,9 +67,9 @@ class CompactAndRefine(Refine):
         )
 
         max_prompt = get_biggest_prompt([qa_template, refine_template])
-        return self._prompt_helper.repack(  # type: ignore[return-value]
+        return self._chat_prompt_helper.repack(
             max_prompt,
-            list(message_chunks),  # type: ignore[arg-type]
+            list(message_chunks),
             llm=self._llm,
             padding=self._response_padding_size,
         )

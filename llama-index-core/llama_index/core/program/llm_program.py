@@ -11,6 +11,7 @@ from typing import (
     List,
 )
 
+from llama_index.core.base.llms.types import CompletionResponse, ChatResponse
 from llama_index.core.llms.llm import LLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.program.utils import FlexibleModel, process_streaming_objects
@@ -159,6 +160,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
         """
+        response_gen: Generator[CompletionResponse | ChatResponse, None, None]
         llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -166,7 +168,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
             response_gen = self._llm.stream_chat(messages, **llm_kwargs)
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
-            response_gen = self._llm.stream_complete(formatted_prompt, **llm_kwargs)  # type: ignore[assignment]
+            response_gen = self._llm.stream_complete(formatted_prompt, **llm_kwargs)
         cur_objects = None
         for partial_resp in response_gen:
             try:
@@ -175,7 +177,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
                     self._output_cls,
                     cur_objects=cur_objects,
                     flexible_mode=True,
-                    llm=self._llm,  # type: ignore[arg-type]
+                    llm=self._llm,
                 )
                 cur_objects = objects if isinstance(objects, list) else [objects]
                 yield objects
@@ -194,6 +196,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
         """
+        response_gen: AsyncGenerator[CompletionResponse | ChatResponse, None]
         llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -201,7 +204,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
             response_gen = await self._llm.astream_chat(messages, **llm_kwargs)
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
-            response_gen = await self._llm.astream_complete(  # type: ignore[assignment]
+            response_gen = await self._llm.astream_complete(
                 formatted_prompt, **llm_kwargs
             )
 
@@ -216,7 +219,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[Model]):
                         self._output_cls,
                         cur_objects=cur_objects,
                         flexible_mode=True,
-                        llm=self._llm,  # type: ignore[arg-type]
+                        llm=self._llm,
                     )
                     cur_objects = objects if isinstance(objects, list) else [objects]
                     yield objects

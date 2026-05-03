@@ -236,7 +236,7 @@ class TestCompactAndRefine:
         )
         synthesizer2 = CompactAndRefine(
             llm=llm,
-            prompt_helper=ChatPromptHelper(
+            chat_prompt_helper=ChatPromptHelper(
                 context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
             ),
             response_padding_size=0,
@@ -288,7 +288,7 @@ class TestCompactAndRefine:
         )
         synthesizer2 = CompactAndRefine(
             llm=llm,
-            prompt_helper=ChatPromptHelper(
+            chat_prompt_helper=ChatPromptHelper(
                 context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
             ),
             response_padding_size=0,

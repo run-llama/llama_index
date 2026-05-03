@@ -25,6 +25,7 @@ class SimpleSummarize(BaseSynthesizer):
         chat_content_qa_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         multimodal: bool = False,
+        strict_truncation: bool = False,
     ) -> None:
         super().__init__(
             llm=llm,
@@ -37,6 +38,7 @@ class SimpleSummarize(BaseSynthesizer):
         self._chat_content_qa_template = (
             chat_content_qa_template or CHAT_CONTENT_QA_PROMPT
         )
+        self._strict_truncation = strict_truncation
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -132,14 +134,13 @@ class SimpleSummarize(BaseSynthesizer):
             query_str=query_str
         )
         single_message_chunk = ChatMessage.merge(
-            splits=message_chunks,  # type: ignore[arg-type]
-            chunk_size=sum(m.estimate_tokens() for m in message_chunks),  # type: ignore[union-attr, misc]
+            splits=message_chunks,
+            chunk_size=sum(m.estimate_tokens() for m in message_chunks),
         )[0]
-        truncated_chunks = self._prompt_helper.truncate(  # type: ignore[attr-defined, call-arg]
+        truncated_chunks = self._chat_prompt_helper.truncate(
             prompt=chat_content_qa_template,
             messages=[single_message_chunk],
             llm=self._llm,
-            strict=True,
         )
 
         response: RESPONSE_TEXT_TYPE
@@ -173,10 +174,10 @@ class SimpleSummarize(BaseSynthesizer):
             query_str=query_str
         )
         single_message_chunk = ChatMessage.merge(
-            splits=message_chunks,  # type: ignore[arg-type]
-            chunk_size=sum(m.estimate_tokens() for m in message_chunks),  # type: ignore[union-attr, misc]
+            splits=message_chunks,
+            chunk_size=sum(m.estimate_tokens() for m in message_chunks),
         )[0]
-        truncated_chunks = await self._prompt_helper.atruncate(  # type: ignore[attr-defined]
+        truncated_chunks = await self._chat_prompt_helper.atruncate(
             prompt=chat_content_qa_template,
             messages=[single_message_chunk],
             llm=self._llm,

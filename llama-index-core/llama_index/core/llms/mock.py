@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    cast,
 )
 
 from typing_extensions import TypeAlias
@@ -421,7 +422,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
                 content = response_msg_or_gen.content or ""
                 yield ChatResponse(message=response_msg_or_gen, delta=content)
             else:
-                for chat_message in response_msg_or_gen:  # type: ignore[union-attr]
+                for chat_message in cast(Generator, response_msg_or_gen):
                     content = chat_message.content or ""
                     yield ChatResponse(
                         message=chat_message,
@@ -441,7 +442,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
                 content = response_msg_or_gen.content or ""
                 yield ChatResponse(message=response_msg_or_gen, delta=content)
             else:
-                async for chat_message in response_msg_or_gen:  # type: ignore[union-attr]
+                async for chat_message in cast(AsyncGenerator, response_msg_or_gen):
                     content = chat_message.content or ""
                     yield ChatResponse(
                         message=chat_message,
@@ -452,8 +453,8 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        response_msg = self._get_response_generator()(messages)
-        content = response_msg.content or ""  # type: ignore[union-attr]
+        response_msg = cast(ChatMessage, self._get_response_generator()(messages))
+        content = response_msg.content or ""
         return ChatResponse(
             message=response_msg,
             delta=content,

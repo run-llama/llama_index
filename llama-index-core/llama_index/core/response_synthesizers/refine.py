@@ -10,13 +10,13 @@ from typing import (
     Sequence,
     Type,
     cast,
+    Union,
 )
 
 from llama_index.core.base.llms.types import ChatMessage
-
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.chat_prompts import (
@@ -71,7 +71,7 @@ class StructuredRefineResponse(BaseModel):
 
 
 if TYPE_CHECKING:
-    from llama_index.core.program.utils import create_flexible_model
+    from llama_index.core.program.utils import create_flexible_model, FlexibleModel
 
     FlexibleStructuredRefineResponse = create_flexible_model(StructuredRefineResponse)
 
@@ -114,7 +114,7 @@ class DefaultRefineProgram(BasePydanticProgram):
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
         if self._output_cls is not None:
-            answer = await self._llm.astructured_predict(  # type: ignore
+            answer = await self._llm.astructured_predict(
                 self._output_cls,
                 self._prompt,
                 **kwds,
@@ -143,7 +143,8 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             ):
-                if answer := structured_answer.answer:  # type: ignore[union-attr]
+                answer: str | None = getattr(structured_answer, "answer", None)
+                if answer is not None:
                     yield StructuredRefineResponse(answer=answer, query_satisfied=True)
         else:
             answer = ""
@@ -169,14 +170,17 @@ class DefaultRefineProgram(BasePydanticProgram):
 
         async def gen() -> AsyncGenerator[StructuredRefineResponse, None]:
             if self._output_cls is not None:
-                async for structured_answer in self._llm.astream_structured_predict(  # type: ignore
+                async for (
+                    structured_answer
+                ) in await self._llm.astream_structured_predict(
                     self._output_cls,
                     self._prompt,
                     **kwds,
                 ):
-                    if structured_answer.answer:
+                    answer: str | None = getattr(structured_answer, "answer", None)
+                    if answer is not None:
                         yield StructuredRefineResponse(
-                            answer=structured_answer.answer, query_satisfied=True
+                            answer=answer, query_satisfied=True
                         )
             else:
                 answer = ""
@@ -204,6 +208,7 @@ class Refine(BaseSynthesizer):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chat_prompt_helper: Optional[ChatPromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
         chat_content_qa_template: Optional[BasePromptTemplate] = None,
@@ -222,6 +227,7 @@ class Refine(BaseSynthesizer):
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
+            chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             multimodal=multimodal,
         )
@@ -314,7 +320,15 @@ class Refine(BaseSynthesizer):
         self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Update response."""
-        query_satisfied = False
+        query_satisfied: bool | None = False
+        structured_response: Union[
+            StructuredRefineResponse,
+            Any,
+            list[Any],
+            FlexibleModel,
+            list[FlexibleModel],
+            None,
+        ]
         if not self._streaming:
             try:
                 structured_response = cast(
@@ -337,16 +351,17 @@ class Refine(BaseSynthesizer):
                 )
                 structured_response = None
                 for sr in structured_response_gen:
-                    structured_response = sr  # type: ignore[assignment]
+                    assert not isinstance(sr, list)
+                    structured_response = sr
                     if sr is not None:
-                        query_satisfied = sr.query_satisfied  # type: ignore[union-attr]
+                        query_satisfied = getattr(sr, "query_satisfied", None)
                         if query_satisfied is not None:
                             break
                 if query_satisfied:
                     return self._get_attribute_from_object_generator(
                         structured_response_gen,
                         structured_response,
-                        "answer",  # type: ignore[arg-type]
+                        "answer",
                     )
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
@@ -356,7 +371,15 @@ class Refine(BaseSynthesizer):
         self, program: BasePydanticProgram, program_kwargs: dict, response_kwargs: dict
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Update response."""
-        query_satisfied = False
+        query_satisfied: bool | None = False
+        structured_response: Union[
+            StructuredRefineResponse,
+            Any,
+            list[Any],
+            FlexibleModel,
+            list[FlexibleModel],
+            None,
+        ]
         if not self._streaming:
             try:
                 structured_response = cast(
@@ -366,8 +389,7 @@ class Refine(BaseSynthesizer):
                         **response_kwargs,
                     ),
                 )
-                query_satisfied = structured_response.query_satisfied
-                if query_satisfied:
+                if structured_response.query_satisfied:
                     return structured_response.answer
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
@@ -379,16 +401,17 @@ class Refine(BaseSynthesizer):
                 )
                 structured_response = None
                 async for sr in structured_response_gen:
-                    structured_response = sr  # type: ignore[assignment]
+                    assert not isinstance(sr, list)
+                    structured_response = sr
                     if sr is not None:
-                        query_satisfied = sr.query_satisfied  # type: ignore[union-attr]
+                        query_satisfied = getattr(sr, "query_satisfied", None)
                         if query_satisfied is not None:
                             break
                 if query_satisfied:
                     return self._get_attribute_from_object_async_generator(
                         structured_response_gen,
                         structured_response,
-                        "answer",  # type: ignore[arg-type]
+                        "answer",
                     )
             except (ValidationError, ValueError, TypeError) as e:
                 logger.warning(f"Structured response error: {e}", exc_info=True)
@@ -411,13 +434,16 @@ class Refine(BaseSynthesizer):
         max_prompt = get_biggest_prompt([qa_template, refine_template])
         # Make first best guess at how many chunks we can fit in the prompt at once. Increase padding
         # to give more room for the response
+        prompt_helper: PromptHelper | ChatPromptHelper = (
+            self._prompt_helper if not self._multimodal else self._chat_prompt_helper
+        )
         chunks_deque: deque = deque(
             [
                 tc
                 for chunk in chunks
-                for tc in self._prompt_helper.repack(
+                for tc in prompt_helper.repack(
                     max_prompt,
-                    [chunk],  # type: ignore[list-item]
+                    [chunk],
                     llm=self._llm,
                     padding=self._response_padding_size,
                 )
@@ -440,10 +466,10 @@ class Refine(BaseSynthesizer):
                 # Because the existing answer portion is constantly being updated, it may be necessary to
                 # repack the chunk with the new prompt template to ensure it fits. Since the template has been
                 # partially formatted with the actual response, there's no need for the extra padding.
-                repacked = self._prompt_helper.repack(
+                repacked = prompt_helper.repack(
                     prompt_template,
                     [chunk],
-                    llm=self._llm,  # type: ignore[list-item]
+                    llm=self._llm,
                 )
                 # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
                 if len(repacked) > 1:
@@ -486,15 +512,18 @@ class Refine(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         dispatcher.event(start_event)
         max_prompt = get_biggest_prompt([qa_template, refine_template])
+        prompt_helper: PromptHelper | ChatPromptHelper = (
+            self._prompt_helper if not self._multimodal else self._chat_prompt_helper
+        )
         # Make first best guess at how many chunks we can fit in the prompt at once. Increase padding
         # to give more room for the response
         chunks_deque: deque = deque(
             [
                 tc
                 for chunk in chunks
-                for tc in self._prompt_helper.repack(
+                for tc in prompt_helper.repack(
                     max_prompt,
-                    [chunk],  # type: ignore[list-item]
+                    [chunk],
                     llm=self._llm,
                     padding=self._response_padding_size,
                 )
@@ -517,10 +546,10 @@ class Refine(BaseSynthesizer):
                 # Because the existing answer portion is constantly being updated, it may be necessary to
                 # repack the chunk with the new prompt template to ensure it fits. Since the template has been
                 # partially formatted with the actual response, there's no need for the extra padding.
-                repacked = self._prompt_helper.repack(
+                repacked = prompt_helper.repack(
                     prompt_template,
                     [chunk],
-                    llm=self._llm,  # type: ignore[list-item]
+                    llm=self._llm,
                 )
                 # If chunk is too big to be packed into a single chunk, push new chunks into the front of the deque
                 if len(repacked) > 1:

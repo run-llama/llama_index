@@ -309,11 +309,12 @@ class ChatPromptHelper(BaseComponent):
     calls needed), or truncating them so that they fit in a single LLM call.
 
     Args:
-        context_window (int):                   Context window for the LLM.
-        num_output (int):                       Number of outputs for the LLM.
-        chunk_overlap_ratio (float):            Chunk overlap as a ratio of chunk size
-        chunk_size_limit (Optional[int]):         Maximum chunk size to use.
-        tokenizer (Optional[Callable[[str], List]]): Tokenizer to use.
+        context_window (int):                           Context window for the LLM.
+        num_output (int):                               Number of outputs for the LLM.
+        chunk_overlap_ratio (float):                    Chunk overlap as a ratio of chunk size
+        chunk_size_limit (Optional[int]):               Maximum chunk size to use.
+        tokenizer (Optional[Callable[[str], List]]):    Tokenizer to use.
+        strict_truncation (Optional[bool]):             Whether truncated messages can exceed the available chunk size
 
     """
 
@@ -334,6 +335,10 @@ class ChatPromptHelper(BaseComponent):
     chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
 
     _token_counter: TokenCounter = PrivateAttr()
+    _strict_truncation: bool = PrivateAttr()
+    """Whether to ensure that truncated messages do not exceed the available chunk size by removing entire blocks
+    as needed. This may lead to more aggressive content removal for types that do not support truncation like
+    Images and Documents or Audio/Video, and in some cases could result in empty content"""
 
     def __init__(
         self,
@@ -342,6 +347,7 @@ class ChatPromptHelper(BaseComponent):
         chunk_overlap_ratio: float = DEFAULT_CHUNK_OVERLAP_RATIO,
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
+        strict_truncation: bool = False,
     ) -> None:
         """Init params."""
         super().__init__(
@@ -353,6 +359,7 @@ class ChatPromptHelper(BaseComponent):
 
         # TODO: make configurable
         self._token_counter = TokenCounter(tokenizer=tokenizer)
+        self._strict_truncation = strict_truncation
 
     @classmethod
     def from_llm_metadata(
@@ -507,14 +514,9 @@ class ChatPromptHelper(BaseComponent):
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
         tools: Optional[List["BaseTool"]] = None,
-        strict: bool = False,
-    ) -> list[ChatMessage]:
+    ) -> Sequence[ChatMessage]:
         """
         Async truncate text chunks to fit available context window.
-
-        When working with diverse ContentBlock types, setting strict=True ensures that truncation token estimates
-        do not exceed the available chunk size by removing entire blocks as needed. However, this may lead to more
-        aggressive content removal for types that do not support truncation like Images and Documents or Audio/Video.
         """
         num_chunks = len(messages)
         message_size = await self._aget_available_chunk_size(
@@ -524,7 +526,7 @@ class ChatPromptHelper(BaseComponent):
             list[ChatMessage],
             [await message.atruncate(max_tokens=message_size) for message in messages],
         )
-        if strict:
+        if self._strict_truncation:
             for message in messages:
                 while (
                     message.blocks and await message.aestimate_tokens() > message_size
@@ -540,14 +542,9 @@ class ChatPromptHelper(BaseComponent):
         padding: int = DEFAULT_PADDING,
         llm: LLM | None = None,
         tools: list["BaseTool"] | None = None,
-        strict: bool = False,
-    ) -> list[ChatMessage]:
+    ) -> Sequence[ChatMessage]:
         """
         Truncate text chunks to fit available context window.
-
-        When working with diverse ContentBlock types, setting strict=True ensures that truncation token estimates
-        do not exceed the available chunk size by removing entire blocks as needed. However, this may lead to more
-        aggressive content removal for types that do not support truncation like Images and Documents or Audio/Video.
         """
         return asyncio_run(
             self.atruncate(
@@ -556,7 +553,6 @@ class ChatPromptHelper(BaseComponent):
                 padding=padding,
                 llm=llm,
                 tools=tools,
-                strict=strict,
             )
         )
 

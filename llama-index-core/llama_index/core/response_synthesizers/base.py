@@ -20,7 +20,6 @@ from typing import (
     Sequence,
     AsyncGenerator,
     Type,
-    cast,
 )
 
 from llama_index.core.base.llms.types import ChatMessage
@@ -70,6 +69,7 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chat_prompt_helper: Optional[ChatPromptHelper] = None,
         streaming: bool = False,
         output_cls: Optional[Type[BaseModel]] = None,
         empty_response: Optional[str] = None,
@@ -86,26 +86,24 @@ class BaseSynthesizer(PromptMixin, DispatcherSpanMixin):
         self._output_cls = output_cls
         self._empty_response = empty_response or "Empty Response"
         self._multimodal = multimodal
-
+        self._prompt_helper: PromptHelper
         if multimodal:
             if not is_chat_model(self._llm):
                 raise ValueError("Multimodal synthesis requires a chat LLM.")
-            self._prompt_helper = cast(
-                PromptHelper,
-                prompt_helper
-                or Settings.chat_prompt_helper
-                or ChatPromptHelper.from_llm_metadata(
-                    self._llm.metadata,
-                ),
+        self._prompt_helper = (
+            prompt_helper
+            or Settings.prompt_helper
+            or PromptHelper.from_llm_metadata(
+                self._llm.metadata,
             )
-        else:
-            self._prompt_helper = (
-                prompt_helper
-                or Settings.prompt_helper
-                or PromptHelper.from_llm_metadata(
-                    self._llm.metadata,
-                )
+        )
+        self._chat_prompt_helper = (
+            chat_prompt_helper
+            or Settings.chat_prompt_helper
+            or ChatPromptHelper.from_llm_metadata(
+                self._llm.metadata,
             )
+        )
 
     def _empty_response_generator(self) -> Generator[str, None, None]:
         yield self._empty_response

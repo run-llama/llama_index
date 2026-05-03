@@ -168,7 +168,7 @@ def process_streaming_objects(
     cur_objects: Optional[Sequence[Model]] = None,
     allow_parallel_tool_calls: bool = False,
     flexible_mode: bool = True,
-    llm: Optional[FunctionCallingLLM] = None,
+    llm: Optional[FunctionCallingLLM | LLM] = None,
 ) -> Union[Model, List[Model], FlexibleModel, List[FlexibleModel]]:
     """
     Process streaming response into structured objects.
@@ -179,6 +179,7 @@ def process_streaming_objects(
         cur_objects (Optional[List[BaseModel]]): Current accumulated objects
         allow_parallel_tool_calls (bool): Whether to allow multiple tool calls
         flexible_mode (bool): Whether to use flexible schema during parsing
+        llm: (Optional[FunctionCallingLLM | LLM]): The LLM object to use
 
     Returns:
         Union[BaseModel, List[BaseModel]]: Processed object(s)
@@ -194,13 +195,14 @@ def process_streaming_objects(
         output_cls_args = [chat_response.text]
     # Get tool calls from response, if there are any
     elif not chat_response.message.additional_kwargs.get("tool_calls"):
-        output_cls_args = [chat_response.message.content]  # type: ignore[list-item]
+        output_cls_args = [chat_response.message.content or ""]
     else:
         tool_calls: List[ToolSelection] = []
         if not llm:
             raise ValueError("LLM is required to get tool calls")
 
         if isinstance(chat_response.message.additional_kwargs.get("tool_calls"), list):
+            assert isinstance(llm, FunctionCallingLLM)
             tool_calls = llm.get_tool_calls_from_response(
                 chat_response, error_on_no_tool_call=False
             )

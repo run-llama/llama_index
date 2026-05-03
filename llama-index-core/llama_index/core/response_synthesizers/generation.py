@@ -5,7 +5,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
@@ -35,6 +35,7 @@ class Generation(BaseSynthesizer):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
+        chat_prompt_helper: Optional[ChatPromptHelper] = None,
         simple_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
         multimodal: bool = False,
@@ -43,6 +44,7 @@ class Generation(BaseSynthesizer):
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
+            chat_prompt_helper=chat_prompt_helper,
             streaming=streaming,
             multimodal=multimodal,
         )
