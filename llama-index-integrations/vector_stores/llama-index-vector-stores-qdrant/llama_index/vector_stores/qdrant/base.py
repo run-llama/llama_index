@@ -875,6 +875,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
+        self._ensure_async_client()
+
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -945,10 +947,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
+        if self._client is None:
+            raise ValueError(
+                "Sync client is not initialized. Pass client= to the constructor."
+            )
         return self._client.collection_exists(collection_name)
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
+        self._ensure_async_client()
         return await self._aclient.collection_exists(collection_name)
 
     def _create_shard_keys(self) -> None:
