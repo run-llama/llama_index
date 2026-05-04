@@ -4,6 +4,7 @@ import pytest
 from typing import List, Optional
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.llms import MockFunctionCallingLLM
 from llama_index.core.program.utils import (
     _repair_incomplete_json,
     process_streaming_objects,
@@ -89,7 +90,7 @@ def test_process_streaming_objects() -> None:
     )
 
     # Mock LLM for tool calls
-    class MockLLM:
+    class MockLLM(MockFunctionCallingLLM):
         def get_tool_calls_from_response(self, *args, **kwargs):
             return [
                 type(

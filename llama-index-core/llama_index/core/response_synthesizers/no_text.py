@@ -1,5 +1,7 @@
 from typing import Any, Sequence
 
+from llama_index.core.base.llms.types import ChatMessage
+
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.types import RESPONSE_TEXT_TYPE
@@ -25,6 +27,22 @@ class NoText(BaseSynthesizer):
         self,
         query_str: str,
         text_chunks: Sequence[str],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        return ""
+
+    def get_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
+        **response_kwargs: Any,
+    ) -> RESPONSE_TEXT_TYPE:
+        return ""
+
+    async def aget_response_from_messages(
+        self,
+        query_str: str,
+        message_chunks: Sequence[ChatMessage],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         return ""
