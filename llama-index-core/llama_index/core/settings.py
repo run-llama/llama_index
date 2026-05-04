@@ -5,10 +5,11 @@ from typing import Any, Callable, List, Optional
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import BaseCallbackHandler, CallbackManager
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.indices.prompt_helper import PromptHelper, ChatPromptHelper
 from llama_index.core.llms import LLM
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.node_parser import NodeParser, SentenceSplitter
+from llama_index.core.prompts.utils import is_chat_model
 from llama_index.core.schema import TransformComponent
 from llama_index.core.types import PydanticProgramMode
 from llama_index.core.utils import get_tokenizer, set_global_tokenizer
@@ -25,6 +26,7 @@ class _Settings:
     _tokenizer: Optional[Callable[[str], List[Any]]] = None
     _node_parser: Optional[NodeParser] = None
     _prompt_helper: Optional[PromptHelper] = None
+    _chat_prompt_helper: Optional[ChatPromptHelper] = None
     _transformations: Optional[List[TransformComponent]] = None
 
     # ---- LLM ----
@@ -210,6 +212,27 @@ class _Settings:
         self._prompt_helper = prompt_helper
 
     @property
+    def chat_prompt_helper(self) -> ChatPromptHelper:
+        """Get the chat prompt helper."""
+        if (
+            self._llm is not None
+            and self._chat_prompt_helper is None
+            and is_chat_model(self._llm)
+        ):
+            self._chat_prompt_helper = ChatPromptHelper.from_llm_metadata(
+                self._llm.metadata
+            )
+        elif self._chat_prompt_helper is None:
+            self._chat_prompt_helper = ChatPromptHelper()
+
+        return self._chat_prompt_helper
+
+    @chat_prompt_helper.setter
+    def chat_prompt_helper(self, chat_prompt_helper: ChatPromptHelper) -> None:
+        """Set the chat prompt helper."""
+        self._chat_prompt_helper = chat_prompt_helper
+
+    @property
     def num_output(self) -> int:
         """Get the number of outputs."""
         return self.prompt_helper.num_output
@@ -220,6 +243,16 @@ class _Settings:
         self.prompt_helper.num_output = num_output
 
     @property
+    def chat_num_output(self) -> int:
+        """Get the number of outputs for chat prompt helper."""
+        return self.chat_prompt_helper.num_output
+
+    @chat_num_output.setter
+    def chat_num_output(self, chat_num_output: int) -> None:
+        """Set the number of outputs for chat prompt helper."""
+        self.chat_prompt_helper.num_output = chat_num_output
+
+    @property
     def context_window(self) -> int:
         """Get the context window."""
         return self.prompt_helper.context_window
@@ -228,6 +261,16 @@ class _Settings:
     def context_window(self, context_window: int) -> None:
         """Set the context window."""
         self.prompt_helper.context_window = context_window
+
+    @property
+    def chat_context_window(self) -> int:
+        """Get the context window for chat prompt helper."""
+        return self.chat_prompt_helper.context_window
+
+    @chat_context_window.setter
+    def chat_context_window(self, chat_context_window: int) -> None:
+        """Set the context window for chat prompt helper."""
+        self.chat_prompt_helper.context_window = chat_context_window
 
     # ---- Transformations ----
 
