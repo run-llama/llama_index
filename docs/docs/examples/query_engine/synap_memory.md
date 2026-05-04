@@ -60,3 +60,4 @@ memory = SynapChatMemory(
 - [LlamaIndex Integration Guide](https://docs.maximem.ai/integrations/llamaindex)
 - [Dashboard](https://synap.maximem.ai)
 - [PyPI: maximem-synap-llamaindex](https://pypi.org/project/maximem-synap-llamaindex/)
+- [Open source integration package](https://github.com/maximem-ai/maximem_synap_sdk/tree/main/packages/integrations)
