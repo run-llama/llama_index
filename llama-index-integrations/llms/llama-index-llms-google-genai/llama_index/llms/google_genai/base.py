@@ -427,7 +427,12 @@ class GoogleGenAI(FunctionCallingLLM):
                         top_candidate = candidates[0]
                         if response_content := top_candidate.content:
                             if parts := response_content.parts:
-                                content_delta = parts[0].text
+                                # Only use non-thought text parts for the delta
+                                content_delta = "".join(
+                                    part.text
+                                    for part in parts
+                                    if part.text and not part.thought
+                                )
 
                                 llama_resp = chat_from_gemini_response(
                                     r,
@@ -478,7 +483,12 @@ class GoogleGenAI(FunctionCallingLLM):
                         top_candidate = candidates[0]
                         if response_content := top_candidate.content:
                             if parts := response_content.parts:
-                                content_delta = parts[0].text
+                                # Only use non-thought text parts for the delta
+                                content_delta = "".join(
+                                    part.text
+                                    for part in parts
+                                    if part.text and not part.thought
+                                )
 
                                 llama_resp = chat_from_gemini_response(
                                     r,

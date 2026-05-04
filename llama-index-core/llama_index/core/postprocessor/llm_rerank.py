@@ -11,7 +11,7 @@ from llama_index.core.indices.utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate, SelectorPromptTemplate
-from llama_index.core.prompts.chat_prompts import CHAT_CHOICE_SELECT_PROMPT
+from llama_index.core.prompts.chat_prompts import CHAT_CONTENT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.prompts.utils import is_chat_model
@@ -43,7 +43,7 @@ class LLMRerank(BaseNodePostprocessor):
     ) -> None:
         choice_select_prompt = choice_select_prompt or SelectorPromptTemplate(
             default_template=DEFAULT_CHOICE_SELECT_PROMPT,
-            conditionals=[(is_chat_model, CHAT_CHOICE_SELECT_PROMPT)],
+            conditionals=[(is_chat_model, CHAT_CONTENT_CHOICE_SELECT_PROMPT)],
         )
 
         llm = llm or Settings.llm
