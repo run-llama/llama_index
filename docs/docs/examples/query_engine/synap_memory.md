@@ -22,16 +22,18 @@ with metadata including memory type and confidence score — ready to use in any
 LlamaIndex pipeline or query engine.
 
 ```python
+import os
+
 from maximem_synap import MaximemSynapSDK
 from synap_llamaindex import SynapRetriever
 
-sdk = MaximemSynapSDK(api_key="sk-...")
+sdk = MaximemSynapSDK(api_key=os.environ["SYNAP_API_KEY"])
 
 retriever = SynapRetriever(
     sdk=sdk,
     user_id="user_123",
     customer_id="acme_corp",
-    mode="accurate",   # or "fast" (~50 ms) for real-time conversations
+    mode="accurate",  # or "fast" (~50 ms) for real-time conversations
     max_results=20,
 )
 
@@ -44,7 +46,12 @@ nodes = retriever.retrieve("What are the user's dietary restrictions?")
 chat engine to persist conversation context across sessions automatically.
 
 ```python
+import os
+
+from maximem_synap import MaximemSynapSDK
 from synap_llamaindex import SynapChatMemory
+
+sdk = MaximemSynapSDK(api_key=os.environ["SYNAP_API_KEY"])
 
 memory = SynapChatMemory(
     sdk=sdk,
