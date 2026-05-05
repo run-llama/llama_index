@@ -256,13 +256,15 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
-        index_nodes = self._index_struct.node_id_to_summary_id.keys()
+        index_nodes = set(self._index_struct.node_id_to_summary_id.keys())
+        valid_node_ids = []
         for node in node_ids:
             if node not in index_nodes:
                 logger.warning(f"node_id {node} not found, will not be deleted.")
-                node_ids.remove(node)
+            else:
+                valid_node_ids.append(node)
 
-        self._index_struct.delete_nodes(node_ids)
+        self._index_struct.delete_nodes(valid_node_ids)
 
         remove_summary_ids = [
             summary_id

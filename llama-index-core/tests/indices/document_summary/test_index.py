@@ -60,3 +60,32 @@ def test_delete_nodes(
     assert len(index.index_struct.summary_id_to_node_ids) == 2
 
     assert len(index.vector_store._data.embedding_dict) == 2  # type: ignore
+
+
+def test_delete_nodes_ignores_invalid_node_ids(
+    index: DocumentSummaryIndex,
+) -> None:
+    before_node_to_summary = dict(index.index_struct.node_id_to_summary_id)
+    before_summary_to_nodes = {
+        summary_id: list(node_ids)
+        for summary_id, node_ids in index.index_struct.summary_id_to_node_ids.items()
+    }
+
+    index.delete_nodes(["does_not_exist_1", "does_not_exist_2"])
+
+    assert dict(index.index_struct.node_id_to_summary_id) == before_node_to_summary
+    assert {
+        summary_id: list(node_ids)
+        for summary_id, node_ids in index.index_struct.summary_id_to_node_ids.items()
+    } == before_summary_to_nodes
+
+
+def test_delete_nodes_deletes_valid_ids_and_skips_invalid_ones(
+    index: DocumentSummaryIndex,
+) -> None:
+    nodes = list(index.index_struct.node_id_to_summary_id.keys())
+    valid_node_id = nodes[0]
+
+    index.delete_nodes(["does_not_exist_1", valid_node_id, "does_not_exist_2"])
+
+    assert valid_node_id not in index.index_struct.node_id_to_summary_id

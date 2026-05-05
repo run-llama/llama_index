@@ -117,4 +117,4 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
-        exclude: ".*poetry.lock|.*_static"
+        exclude: ".*poetry.lock|uv.lock|.*_static"

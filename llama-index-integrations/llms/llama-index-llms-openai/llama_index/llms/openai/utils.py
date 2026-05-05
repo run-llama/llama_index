@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
@@ -75,10 +76,15 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
     "gpt-5.2-chat-latest": 128000,
+    "gpt-5.3": 400000,
+    "gpt-5.3-chat-latest": 128000,
     "gpt-5.4": 1050000,
+    "gpt-5.4-2026-03-05": 1050000,
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
+    "gpt-5.5": 1050000,
+    "gpt-5.5-2026-04-23": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
@@ -227,6 +233,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-5",
     "gpt-5.2",
     "gpt-5.4",
+    "gpt-5.5",
 ]
 
 
@@ -491,11 +498,15 @@ def to_openai_message_dict(
             continue
         elif isinstance(block, ToolCallBlock):
             try:
+                # OpenAI API expects arguments as a JSON string, not a dict
+                arguments = block.tool_kwargs
+                if isinstance(arguments, dict):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
@@ -621,10 +632,8 @@ def to_openai_responses_message_dict(
             content.append(
                 {
                     "type": "input_file",
-                    "file": {
-                        "filename": block.title,
-                        "file_data": f"data:{mimetype};base64,{b64_string}",
-                    },
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
                 }
             )
         elif isinstance(block, ImageBlock):
@@ -661,11 +670,14 @@ def to_openai_responses_message_dict(
                         }
                     )
         elif isinstance(block, ToolCallBlock):
+            arguments = block.tool_kwargs
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
             tool_calls.extend(
                 [
                     {
                         "type": "function_call",
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                         "call_id": block.tool_call_id,
                         "name": block.tool_name,
                     }
@@ -681,9 +693,17 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
-        return [*reasoning, *message_dicts]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(message_dicts)
+        return items
     elif tool_calls:
-        return [*reasoning, *tool_calls]
+        items = [*reasoning]
+        if content_txt not in (None, "", []):
+            items.append({"role": message.role.value, "content": content_txt})
+        items.extend(tool_calls)
+        return items
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
     # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed

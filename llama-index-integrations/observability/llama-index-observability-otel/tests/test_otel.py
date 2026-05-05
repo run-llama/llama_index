@@ -265,6 +265,44 @@ def make_handler():
     return exporter, handler, provider
 
 
+def enter_llama_span(
+    handler: OTelCompatibleSpanHandler,
+    span_id: str,
+    parent_id: Optional[str] = None,
+) -> None:
+    handler.span_enter(id_=span_id, bound_args=_bound, parent_id=parent_id)
+
+
+def exit_llama_span(handler: OTelCompatibleSpanHandler, span_id: str) -> None:
+    handler.span_exit(id_=span_id, bound_args=_bound)
+
+
+def finished_spans_by_name(
+    exporter: InMemorySpanExporter,
+    provider: TracerProvider,
+) -> dict[str, ReadableSpan]:
+    provider.force_flush()
+    spans = exporter.get_finished_spans()
+    spans_by_name = {span.name: span for span in spans}
+    assert len(spans_by_name) == len(spans)
+    return spans_by_name
+
+
+def assert_parent(child: ReadableSpan, parent: ReadableSpan) -> None:
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert child.parent.trace_id == parent.context.trace_id
+
+
+def assert_trace_chain(
+    spans_by_name: dict[str, ReadableSpan],
+    expected_chain: Sequence[str],
+) -> None:
+    assert set(spans_by_name) == set(expected_chain)
+    for parent_name, child_name in zip(expected_chain, expected_chain[1:]):
+        assert_parent(spans_by_name[child_name], spans_by_name[parent_name])
+
+
 def test_span_name_strips_uuid() -> None:
     exporter, handler, provider = make_handler()
     handler.span_enter(id_="MyWorkflow.run-abc123-def", bound_args=_bound)
@@ -357,17 +395,95 @@ def test_tags_not_mutated_by_new_span() -> None:
     assert tags == original_tags
 
 
+def test_span_enter_makes_otel_span_current_for_downstream_spans() -> None:
+    # Expected trace:
+    # root
+    #   downstream-child
+    exporter, handler, provider = make_handler()
+    clean_token = context.attach(context.Context())
+    try:
+        downstream_tracer = provider.get_tracer("downstream")
+
+        enter_llama_span(handler, "root-uuid")
+        root_otel_span = handler.all_spans["root-uuid"]
+        assert trace.get_current_span() is root_otel_span
+
+        with downstream_tracer.start_as_current_span("downstream-child"):
+            pass
+
+        exit_llama_span(handler, "root-uuid")
+
+        spans = finished_spans_by_name(exporter, provider)
+        assert_trace_chain(spans, ["root", "downstream-child"])
+        assert trace.get_current_span() is not root_otel_span
+    finally:
+        context.detach(clean_token)
+
+
+def test_otel_context_is_source_of_truth_when_external_spans_interleave() -> None:
+    # Expected trace:
+    # external-root
+    #   llama_parent
+    #     external-child
+    #       llama_child
+    exporter, handler, provider = make_handler()
+    clean_token = context.attach(context.Context())
+    tracer = provider.get_tracer("external")
+
+    try:
+        with tracer.start_as_current_span("external-root"):
+            enter_llama_span(handler, "llama_parent")
+            with tracer.start_as_current_span("external-child"):
+                enter_llama_span(
+                    handler,
+                    "llama_child",
+                    parent_id="llama_parent",
+                )
+                exit_llama_span(handler, "llama_child")
+            exit_llama_span(handler, "llama_parent")
+
+        spans = finished_spans_by_name(exporter, provider)
+        assert_trace_chain(
+            spans,
+            ["external-root", "llama_parent", "external-child", "llama_child"],
+        )
+    finally:
+        context.detach(clean_token)
+
+
+def test_span_exit_ends_span_when_context_detach_fails(monkeypatch: Any) -> None:
+    exporter, handler, provider = make_handler()
+    clean_token = context.attach(context.Context())
+    original_detach = context.detach
+
+    try:
+        handler.span_enter(id_="root-uuid", bound_args=_bound)
+
+        def fail_detach(token: Any) -> None:
+            raise RuntimeError("detach failed")
+
+        monkeypatch.setattr(context, "detach", fail_detach)
+        handler.span_exit(id_="root-uuid", bound_args=_bound)
+        provider.force_flush()
+
+        spans = exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].end_time is not None
+        assert handler.all_spans == {}
+        assert handler._context_tokens == {}
+    finally:
+        monkeypatch.setattr(context, "detach", original_detach)
+        context.detach(clean_token)
+
+
 def test_capture_propagation_context() -> None:
     """capture_propagation_context returns a dict with traceparent when a span is active."""
     exporter, handler, provider = make_handler()
     # Create a span so there's an active trace context
     handler.span_enter(id_="root-uuid", bound_args=_bound)
-    # Activate the OTel span in the current context so capture can see it
-    from opentelemetry.trace import set_span_in_context
 
     otel_span = handler.all_spans["root-uuid"]
-    ctx = set_span_in_context(otel_span)
-    context.attach(ctx)
+    assert trace.get_current_span() is otel_span
 
     captured = handler.capture_propagation_context()
     assert "otel" in captured
@@ -389,8 +505,6 @@ def test_capture_restore_propagation_roundtrip() -> None:
     - externally-set OTel context (e.g. baggage-like ambient values) propagates
       through the traceparent mechanism
     """
-    from opentelemetry.trace import set_span_in_context
-
     # --- Process A: create root span with tags, capture context ---
     exporter_a, handler_a, provider_a = make_handler()
 
@@ -398,10 +512,8 @@ def test_capture_restore_propagation_roundtrip() -> None:
     original_tags_a = dict(tags_a)
     handler_a.span_enter(id_="root-uuid", bound_args=_bound, tags=tags_a)
 
-    # Activate the OTel span in ambient context (simulating what the Dispatcher
-    # would do before a serialization boundary)
     root_otel_span = handler_a.all_spans["root-uuid"]
-    context.attach(set_span_in_context(root_otel_span))
+    assert trace.get_current_span() is root_otel_span
 
     # Capture propagation context — this is what gets serialized across the boundary
     captured_ctx = handler_a.capture_propagation_context()
@@ -486,7 +598,6 @@ def test_dispatcher_propagation_roundtrip_with_tags() -> None:
         active_instrument_tags,
         instrument_tags,
     )
-    from opentelemetry.trace import set_span_in_context
 
     exporter_a, handler_a, provider_a = make_handler()
     exporter_b, handler_b, provider_b = make_handler()
@@ -508,9 +619,8 @@ def test_dispatcher_propagation_roundtrip_with_tags() -> None:
             id_="root-uuid", bound_args=_bound, tags=active_instrument_tags.get()
         )
 
-        # Activate OTel span in ambient context
         root_otel_span = handler_a.all_spans["root-uuid"]
-        context.attach(set_span_in_context(root_otel_span))
+        assert trace.get_current_span() is root_otel_span
 
         captured = dispatcher_a.capture_propagation_context()
 

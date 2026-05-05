@@ -38,6 +38,7 @@ from llama_index.llms.openai.utils import (
     is_json_schema_supported,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
+    to_openai_message_dict,
     to_openai_tool,
 )
 
@@ -628,3 +629,182 @@ def test_gpt_5_4_pro_responses_api_only() -> None:
     assert is_json_schema_supported(model_name) is True, (
         f"{model_name} should support JSON schema"
     )
+
+
+def test_responses_api_assistant_text_preserved_with_tool_calls() -> None:
+    """Test that assistant text content is included alongside tool calls.
+
+    When an assistant message contains both text blocks and tool calls,
+    the text must not be silently dropped.
+    Ref: https://github.com/run-llama/llama_index/issues/21124 (bug #1)
+    """
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="I'll search for that information now."),
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_1",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    result = to_openai_responses_message_dict(msg, model="o3-mini")
+    assert isinstance(result, list)
+
+    text_items = [
+        item
+        for item in result
+        if isinstance(item, dict) and item.get("role") == "assistant"
+    ]
+    tool_items = [
+        item
+        for item in result
+        if isinstance(item, dict) and item.get("type") == "function_call"
+    ]
+
+    assert len(text_items) == 1, "Assistant text content should be preserved"
+    assert text_items[0]["content"] == "I'll search for that information now."
+    assert len(tool_items) == 1, "Tool call should be preserved"
+    assert tool_items[0]["name"] == "search"
+
+
+def test_responses_api_tool_only_no_empty_text() -> None:
+    """Test that tool-call-only messages don't include an empty text item."""
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_1",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    result = to_openai_responses_message_dict(msg, model="o3-mini")
+    assert isinstance(result, list)
+
+    text_items = [
+        item
+        for item in result
+        if isinstance(item, dict) and item.get("role") == "assistant"
+    ]
+    assert len(text_items) == 0, "No text item should be emitted for tool-only messages"
+
+
+def test_responses_api_tool_kwargs_serialized_to_json_string() -> None:
+    """Test that dict tool_kwargs are serialized to JSON strings.
+
+    The OpenAI Responses API expects 'arguments' to be a JSON string,
+    but ToolCallBlock.tool_kwargs can be a dict.
+    Ref: https://github.com/run-llama/llama_index/issues/21124 (bug #6)
+    """
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="get_weather",
+                tool_call_id="call_2",
+                tool_kwargs={"location": "Boston", "unit": "celsius"},
+            ),
+        ],
+    )
+
+    result = to_openai_responses_message_dict(msg, model="gpt-5.4")
+    assert isinstance(result, list)
+
+    tool_item = [
+        item
+        for item in result
+        if isinstance(item, dict) and item.get("type") == "function_call"
+    ][0]
+    assert isinstance(tool_item["arguments"], str), "arguments must be a JSON string"
+    assert json.loads(tool_item["arguments"]) == {
+        "location": "Boston",
+        "unit": "celsius",
+    }
+
+
+def test_responses_api_tool_kwargs_string_passthrough() -> None:
+    """Test that string tool_kwargs are passed through unchanged."""
+    from llama_index.llms.openai.utils import to_openai_responses_message_dict
+
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_3",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    result = to_openai_responses_message_dict(msg, model="gpt-5.4")
+    assert isinstance(result, list)
+
+    tool_item = [
+        item
+        for item in result
+        if isinstance(item, dict) and item.get("type") == "function_call"
+    ][0]
+    assert tool_item["arguments"] == '{"q": "test"}'
+
+
+def test_chat_completions_tool_kwargs_serialized_to_json_string() -> None:
+    """Test that dict tool_kwargs are serialized to JSON strings in Chat Completions API.
+
+    The OpenAI Chat Completions API expects 'arguments' to be a JSON string,
+    but ToolCallBlock.tool_kwargs can be a dict. This caused 400 BadRequestError
+    when using mixed LLM providers (e.g., Anthropic orchestrator -> OpenAI sub-agent).
+    Ref: https://github.com/run-llama/llama_index/issues/21378
+    """
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="get_weather",
+                tool_call_id="call_123",
+                tool_kwargs={"location": "Boston", "unit": "celsius"},
+            ),
+        ],
+    )
+
+    result = to_openai_message_dict(msg)
+    # result should have tool_calls with function.arguments as JSON string
+    tool_calls = result.get("tool_calls", [])
+    assert len(tool_calls) == 1
+    function = tool_calls[0]["function"]
+    assert isinstance(function["arguments"], str), "arguments must be a JSON string"
+    assert json.loads(function["arguments"]) == {
+        "location": "Boston",
+        "unit": "celsius",
+    }
+
+
+def test_chat_completions_tool_kwargs_string_passthrough() -> None:
+    """Test that string tool_kwargs are passed through unchanged in Chat Completions API."""
+    msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_name="search",
+                tool_call_id="call_456",
+                tool_kwargs='{"q": "test"}',
+            ),
+        ],
+    )
+
+    result = to_openai_message_dict(msg)
+    tool_calls = result.get("tool_calls", [])
+    assert len(tool_calls) == 1
+    function = tool_calls[0]["function"]
+    assert function["arguments"] == '{"q": "test"}'
