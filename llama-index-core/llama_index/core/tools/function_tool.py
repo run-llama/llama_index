@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+from contextvars import copy_context
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -46,7 +47,9 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+        # Copy current context to propagate ContextVars to the executor thread
+        ctx = copy_context()
+        return await loop.run_in_executor(None, lambda: ctx.run(fn, *args, **kwargs))
 
     return _async_wrapped_fn
 
