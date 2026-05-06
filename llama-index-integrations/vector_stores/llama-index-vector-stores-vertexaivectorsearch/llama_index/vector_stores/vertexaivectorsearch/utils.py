@@ -10,8 +10,9 @@ import logging
 import time
 import uuid
 import warnings
-from functools import wraps
+from functools import cache, wraps
 from importlib import metadata
+from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from google.api_core.gapic_v1.client_info import ClientInfo
@@ -30,13 +31,16 @@ from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint impo
 from google.cloud.storage import Bucket  # type: ignore[import-untyped, unused-ignore]
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores import VectorStoreQuery, VectorStoreQueryResult
-from llama_index.core.vector_stores.types import FilterOperator, MetadataFilters
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+)
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
 )
-
-from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import _import_v2_sdk
 
 _logger = logging.getLogger(__name__)
 
@@ -64,6 +68,29 @@ def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
             f"pip install google-cloud-aiplatform>={minimum_expected_version}"
         ) from e
     return aiplatform
+
+
+@cache
+def _import_v2_sdk() -> ModuleType:
+    """
+    Import v2 SDK with proper error handling.
+
+    Returns:
+        The vectorsearch_v1beta module
+
+    Raises:
+        ImportError: If google-cloud-vectorsearch is not installed
+
+    """
+    try:
+        from google.cloud import vectorsearch_v1beta
+
+        return vectorsearch_v1beta
+    except ImportError as e:
+        raise ImportError(
+            "v2 operations require google-cloud-vectorsearch. "
+            "Install with: pip install google-cloud-vectorsearch"
+        ) from e
 
 
 def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
@@ -532,12 +559,6 @@ def _convert_filters_to_v2(filters: Optional[MetadataFilters]) -> Optional[dict]
     """
     if filters is None or len(filters.filters) == 0:
         return None
-
-    from llama_index.core.vector_stores.types import (
-        FilterOperator,
-        FilterCondition,
-        MetadataFilter,
-    )
 
     op_map = {
         FilterOperator.EQ: "$eq",

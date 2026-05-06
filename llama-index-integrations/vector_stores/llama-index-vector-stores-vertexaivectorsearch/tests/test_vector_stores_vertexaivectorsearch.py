@@ -3,8 +3,8 @@
 import hashlib
 import os
 import uuid
-from typing import List
-from unittest.mock import MagicMock, patch
+from typing import Iterator, List, Optional, Tuple
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from google.cloud import storage
@@ -12,8 +12,27 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
+from google.cloud.vectorsearch_v1beta import (
+    BatchCreateDataObjectsRequest,
+    CreateDataObjectRequest,
+    DataObject,
+    DataObjectSearchServiceAsyncClient,
+    DataObjectSearchServiceClient,
+    DataObjectServiceAsyncClient,
+    DataObjectServiceClient,
+    DenseVector,
+    SparseVector,
+    Vector,
+    VectorSearchServiceClient,
+)
 from llama_index.core import Settings, StorageContext, VectorStoreIndex
-from llama_index.core.schema import Document, MetadataMode, TextNode
+from llama_index.core.schema import (
+    Document,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilter,
@@ -22,11 +41,12 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.embeddings.vertex import VertexTextEmbedding
-
 from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore, utils
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
+from llama_index.vector_stores.vertexaivectorsearch.base import VertexAIIndexingError
+from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
@@ -46,7 +66,7 @@ def create_uuid(text: str):
 
 
 @pytest.fixture(scope="session")
-def node_embeddings() -> list[TextNode]:
+def node_embeddings() -> List[TextNode]:
     record_data = [
         {
             "description": "A versatile pair of dark-wash denim jeans."
@@ -603,10 +623,6 @@ class TestV2SDKImport:
         """Test that _import_v2_sdk returns the module when available."""
         # This test will pass if google-cloud-vectorsearch is installed
         try:
-            from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-                _import_v2_sdk,
-            )
-
             result = _import_v2_sdk()
             assert result is not None
             assert hasattr(result, "BatchCreateDataObjectsRequest")
@@ -621,9 +637,8 @@ class TestV2SDKImport:
 
         # Verify the error message is properly formatted in the code
         import inspect
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            _import_v2_sdk,
-        )
+
+        from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
 
         source = inspect.getsource(_import_v2_sdk)
         assert expected_message in source, (
@@ -935,13 +950,13 @@ class TestV2FilterConversion:
 
     def test_simple_eq_filter(self):
         """Test simple equality filter conversion."""
+        from llama_index.core.vector_stores.types import (
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
-        )
-        from llama_index.core.vector_stores.types import (
-            MetadataFilters,
-            MetadataFilter,
-            FilterOperator,
         )
 
         filters = MetadataFilters(
@@ -956,13 +971,13 @@ class TestV2FilterConversion:
 
     def test_gt_filter(self):
         """Test greater than filter conversion."""
+        from llama_index.core.vector_stores.types import (
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
-        )
-        from llama_index.core.vector_stores.types import (
-            MetadataFilters,
-            MetadataFilter,
-            FilterOperator,
         )
 
         filters = MetadataFilters(
@@ -975,14 +990,14 @@ class TestV2FilterConversion:
 
     def test_and_filter(self):
         """Test AND filter conversion."""
+        from llama_index.core.vector_stores.types import (
+            FilterCondition,
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
-        )
-        from llama_index.core.vector_stores.types import (
-            MetadataFilters,
-            MetadataFilter,
-            FilterOperator,
-            FilterCondition,
         )
 
         filters = MetadataFilters(
@@ -1006,14 +1021,14 @@ class TestV2FilterConversion:
 
     def test_or_filter(self):
         """Test OR filter conversion."""
+        from llama_index.core.vector_stores.types import (
+            FilterCondition,
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
-        )
-        from llama_index.core.vector_stores.types import (
-            MetadataFilters,
-            MetadataFilter,
-            FilterOperator,
-            FilterCondition,
         )
 
         filters = MetadataFilters(
@@ -1035,13 +1050,13 @@ class TestV2FilterConversion:
 
     def test_in_filter(self):
         """Test IN filter conversion."""
+        from llama_index.core.vector_stores.types import (
+            FilterOperator,
+            MetadataFilter,
+            MetadataFilters,
+        )
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
-        )
-        from llama_index.core.vector_stores.types import (
-            MetadataFilters,
-            MetadataFilter,
-            FilterOperator,
         )
 
         filters = MetadataFilters(
@@ -1067,10 +1082,10 @@ class TestV2FilterConversion:
 
     def test_empty_filters(self):
         """Test that empty filters returns None."""
+        from llama_index.core.vector_stores.types import MetadataFilters
         from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
-        from llama_index.core.vector_stores.types import MetadataFilters
 
         result = _convert_filters_to_v2(MetadataFilters(filters=[]))
         assert result is None
@@ -1263,8 +1278,8 @@ class TestV2RankerConfiguration:
 
     def test_build_ranker_rrf(self):
         """Test _build_ranker creates RRF ranker."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
         from llama_index.core.vector_stores.types import VectorStoreQuery
+        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
 
         mock_vectorsearch = MagicMock()
         mock_ranker = MagicMock()
@@ -1292,8 +1307,8 @@ class TestV2RankerConfiguration:
 
     def test_build_ranker_vertex(self):
         """Test _build_ranker creates VertexRanker."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
         from llama_index.core.vector_stores.types import VectorStoreQuery
+        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
 
         mock_vectorsearch = MagicMock()
         mock_ranker = MagicMock()
@@ -1326,3 +1341,328 @@ class TestV2RankerConfiguration:
             )
             mock_vectorsearch.Ranker.assert_called_once()
             assert result == mock_ranker
+
+
+# Common mocks for V2 service clients
+
+
+@pytest.fixture
+def mock_v2_vector_search_service_client() -> MagicMock:
+    return MagicMock(
+        spec=VectorSearchServiceClient,
+        get_collection=MagicMock(return_value=MagicMock(vector_schema={})),
+    )
+
+
+@pytest.fixture
+def mock_v2_data_object_service_client() -> MagicMock:
+    return MagicMock(
+        spec=DataObjectServiceClient,
+        batch_create_data_objects=MagicMock(return_value=MagicMock()),
+    )
+
+
+@pytest.fixture
+def mock_v2_data_object_service_async_client() -> MagicMock:
+    return MagicMock(spec=DataObjectServiceAsyncClient)
+
+
+@pytest.fixture
+def mock_v2_data_object_search_service_client() -> MagicMock:
+    return MagicMock(spec=DataObjectSearchServiceClient)
+
+
+@pytest.fixture
+def mock_v2_data_object_search_service_async_client() -> MagicMock:
+    return MagicMock(spec=DataObjectSearchServiceAsyncClient)
+
+
+@pytest.fixture
+def mock_v2_sdk_manager(
+    mock_v2_vector_search_service_client: MagicMock,
+    mock_v2_data_object_service_client: MagicMock,
+    mock_v2_data_object_service_async_client: MagicMock,
+    mock_v2_data_object_search_service_client: MagicMock,
+    mock_v2_data_object_search_service_async_client: MagicMock,
+) -> Iterator[MagicMock]:
+    with patch(
+        "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+    ) as cls_:
+        mock_inst = MagicMock(spec=VectorSearchSDKManager)
+        mock_inst.get_v2_client.return_value = {
+            "vector_search_service_client": mock_v2_vector_search_service_client,
+            "data_object_service_client": mock_v2_data_object_service_client,
+            "data_object_service_async_client": mock_v2_data_object_service_async_client,
+            "data_object_search_service_client": mock_v2_data_object_search_service_client,
+            "data_object_search_service_async_client": mock_v2_data_object_search_service_async_client,
+        }
+        cls_.return_value = mock_inst
+        yield mock_inst
+
+
+class TestUnitV2Add:
+    COLLECTION_PARENT = (
+        "projects/test-project/locations/us-central1/collections/my-collection"
+    )
+
+    @pytest.fixture
+    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+        )
+
+    @pytest.fixture
+    def input_dense_nodes(self) -> List[TextNode]:
+        # corresponds to `output_dense_data_objects`
+        return [
+            TextNode(
+                id_=f"node_{i}",
+                text=f"Text {i}",
+                embedding=[i / 100 for _ in range(4)],
+                # for ref_doc_id / source_node
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"doc_{i // 2}"),
+                },
+                metadata={
+                    "title": f"Title {i}",
+                    "user_id": i * 100,
+                    "title_embedding": [i / 200 for _ in range(4)],
+                    "sparse_embedding": {
+                        "indices": [2, 4, 6, 8],
+                        "values": [0.2, 0.4, 0.6, 0.8],
+                    },
+                },
+            )
+            for i in range(5)
+        ]
+
+    @pytest.fixture
+    def output_dense_data_objects(self) -> List[DataObject]:
+        # corresponds to `input_dense_nodes`
+        return [
+            DataObject(
+                data={
+                    "node_id": f"node_{i}",
+                    "text": f"Text {i}",
+                    "title": f"Title {i}",
+                    "user_id": i * 100,
+                    "node_type": "TextNode",
+                    "parent_id": f"doc_{i // 2}",
+                },
+                vectors={
+                    "embedding": Vector(
+                        dense=DenseVector(values=[i / 100 for _ in range(4)])
+                    ),
+                    "title_embedding": Vector(
+                        dense=DenseVector(values=[i / 200 for _ in range(4)])
+                    ),
+                    "sparse_embedding": Vector(
+                        sparse=SparseVector(
+                            indices=[2, 4, 6, 8], values=[0.2, 0.4, 0.6, 0.8]
+                        )
+                    ),
+                },
+            )
+            for i in range(5)
+        ]
+
+    @pytest.fixture
+    def output_dense_create_data_object_requests(
+        self, output_dense_data_objects: List[DataObject]
+    ) -> List[CreateDataObjectRequest]:
+        # corresponds to `input_dense_nodes`
+        return [
+            CreateDataObjectRequest(
+                parent=self.COLLECTION_PARENT,
+                data_object_id=f"node_{i}",
+                data_object=obj,
+            )
+            for i, obj in enumerate(output_dense_data_objects)
+        ]
+
+    @pytest.fixture
+    def expected_add_requests(
+        self, output_dense_create_data_object_requests: List[CreateDataObjectRequest]
+    ) -> List[BatchCreateDataObjectsRequest]:
+        return [
+            BatchCreateDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=output_dense_create_data_object_requests[0:2],
+            ),
+            BatchCreateDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=output_dense_create_data_object_requests[2:4],
+            ),
+            BatchCreateDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=output_dense_create_data_object_requests[4:],
+            ),
+        ]
+
+    def test_v2_add_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        expected_add_requests: List[BatchCreateDataObjectsRequest],
+        mock_v2_data_object_service_client: MagicMock,
+        input_dense_nodes: List[TextNode],
+    ) -> None:
+        """Test that appropriate calls are made with prepared data objects when ``add`` is called."""
+        # GIVEN
+        expected_calls = [call(request) for request in expected_add_requests]
+        expected_output_ids = [f"node_{i}" for i in range(5)]
+
+        # WHEN
+        actual_output_ids = mock_v2_store.add(input_dense_nodes)
+
+        # THEN
+        assert actual_output_ids == expected_output_ids
+        mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    async def test_v2_async_add_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: List[TextNode],
+        expected_add_requests: List[BatchCreateDataObjectsRequest],
+        mock_v2_data_object_service_async_client: MagicMock,
+    ) -> None:
+        """Test that appropriate calls are made with prepared data objects when ``async_add`` is called."""
+        # GIVEN
+        expected_calls = [call(request) for request in expected_add_requests]
+        expected_output_ids = [f"node_{i}" for i in range(5)]
+
+        # WHEN
+        actual_output_ids = await mock_v2_store.async_add(input_dense_nodes)
+
+        # THEN
+        assert sorted(actual_output_ids) == expected_output_ids
+        mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
+            expected_calls, any_order=True
+        )
+
+    def test_v2_add_empty(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+    ) -> None:
+        """Test that no calls are made when an empty list of nodes is passed to ``add``."""
+        # WHEN
+        actual_output_ids = mock_v2_store.add([])
+
+        # THEN
+        assert actual_output_ids == []
+        mock_v2_data_object_service_client.batch_create_data_objects.assert_not_called()
+
+    async def test_v2_async_add_empty(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+    ) -> None:
+        """Test that no calls are made when an empty list of nodes is passed to ``async_add``."""
+        # WHEN
+        actual_output_ids = await mock_v2_store.async_add([])
+
+        # THEN
+        assert actual_output_ids == []
+        mock_v2_data_object_service_async_client.batch_create_data_objects.assert_not_awaited()
+
+    @pytest.mark.parametrize(
+        ("batch_add_side_effect", "expected_added_ids", "expected_failed_ids"),
+        [
+            ([ValueError, None, None], [2, 3, 4], [0, 1]),
+            ([None, ValueError, None], [0, 1, 4], [2, 3]),
+            ([None, None, ValueError], [0, 1, 2, 3], [4]),
+            ([ValueError, ValueError, None], [4], [0, 1, 2, 3]),
+            ([None, ValueError, ValueError], [0, 1], [2, 3, 4]),
+            ([ValueError, None, ValueError], [2, 3], [0, 1, 4]),
+            ([ValueError, ValueError, ValueError], [], [0, 1, 2, 3, 4]),
+        ],
+        ids=[
+            "1 exc, pos=1",
+            "1 exc, pos=2",
+            "1 exc, pos=3",
+            "2 excs, pos=1,2",
+            "2 excs, pos=2,3",
+            "2 excs, pos=1,3",
+            "3 excs, pos=1,2,3",
+        ],
+    )
+    class TestUnitV2AddSubBatchFailures:
+        """Tests for when a subset of add batches fail, with common test parameterization."""
+
+        def test_v2_add_failed_sub_requests(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            expected_requests: List[BatchCreateDataObjectsRequest],
+            mock_v2_data_object_service_client: MagicMock,
+            input_dense_nodes: List[TextNode],
+            batch_add_side_effect: List[Optional[Exception]],
+            expected_added_ids: List[int],
+            expected_failed_ids: List[int],
+        ) -> None:
+            """Test that the appropriate exception is raised when a subset of ``add`` batches fail."""
+            # GIVEN
+            expected_calls = [call(request) for request in expected_requests]
+            expected_added = [f"node_{i}" for i in expected_added_ids]
+            expected_failed = [f"node_{i}" for i in expected_failed_ids]
+            mock_v2_data_object_service_client.batch_create_data_objects.side_effect = (
+                batch_add_side_effect
+            )
+
+            # WHEN
+            with pytest.raises(VertexAIIndexingError) as exc_info:
+                _ = mock_v2_store.add(input_dense_nodes)
+
+            # THEN
+            exception = exc_info.value
+            assert isinstance(exception, VertexAIIndexingError)
+            assert exception.added_ids == expected_added
+            assert exception.failed_ids == expected_failed
+            mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        async def test_v2_async_add_failed_sub_requests(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            input_dense_nodes: List[TextNode],
+            expected_requests: List[BatchCreateDataObjectsRequest],
+            mock_v2_data_object_service_async_client: MagicMock,
+            batch_add_side_effect: List[Optional[Exception]],
+            expected_added_ids: List[int],
+            expected_failed_ids: List[int],
+        ) -> None:
+            """Test that the appropriate exception is raised when a subset of ``async_add`` batches fail."""
+            # GIVEN
+            expected_calls = [call(request) for request in expected_requests]
+            expected_added = [f"node_{i}" for i in expected_added_ids]
+            expected_failed = [f"node_{i}" for i in expected_failed_ids]
+            mock_v2_data_object_service_async_client.batch_create_data_objects.side_effect = batch_add_side_effect
+
+            # WHEN
+            with pytest.raises(VertexAIIndexingError) as exc_info:
+                _ = await mock_v2_store.async_add(input_dense_nodes)
+
+            # THEN
+            exception = exc_info.value
+            assert isinstance(exception, VertexAIIndexingError)
+            assert exception.added_ids == expected_added
+            assert exception.failed_ids == expected_failed
+            mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
+                expected_calls, any_order=True
+            )
