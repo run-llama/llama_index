@@ -5,10 +5,13 @@ An index that is built on top of an existing vector store.
 
 """
 
+import asyncio
 import logging
 import os
+import time
+import typing
 from functools import cached_property
-from typing import Any, List, Literal, Optional, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, cast
 
 from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
@@ -16,7 +19,7 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndexEndpoint,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -28,18 +31,42 @@ from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY, node_to_metad
 from llama_index.vector_stores.vertexaivectorsearch import utils
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
-    _import_v2_sdk,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     _build_ranker,
     _convert_filters_to_v2,
+    _import_v2_sdk,
     _merge_results_rrf,
     _process_batch_search_results,
     _process_search_results,
 )
-from typing_extensions import override
+from pydantic import PositiveInt, model_validator
+from typing_extensions import Self, override
+
+if typing.TYPE_CHECKING:
+    from google.cloud.vectorsearch_v1beta import (
+        CreateDataObjectRequest,
+        DataObject,
+        DataObjectServiceAsyncClient,
+    )
 
 _logger = logging.getLogger(__name__)
+
+
+class VertexAIException(Exception):
+    """Vertex AI Exception."""
+
+
+class VertexAIIndexingError(VertexAIException):
+    """Raised for errors when indexing content into a vector store."""
+
+    def __init__(self, failed_ids: List[str], added_ids: List[str]) -> None:
+        """Initialize the exception."""
+        super().__init__(
+            f"Failed to add {len(failed_ids)} nodes to the index: {failed_ids}"
+        )
+        self.failed_ids = failed_ids
+        self.added_ids = added_ids
 
 
 class FeatureFlags:
@@ -105,7 +132,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     region: str
 
     # API version - defaults to v1 for backward compatibility
-    api_version: Literal["v1", "v2"] = Field(default="v1")
+    api_version: Literal["v1", "v2"] = Field(
+        default="v1",
+        frozen=True,  # updates not allowed for initialization reasons
+    )
 
     # v1-exclusive parameters
     index_id: Optional[str] = None
@@ -119,6 +149,20 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     enable_hybrid: bool = Field(default=False)
     text_search_fields: Optional[List[str]] = Field(default=None)
     embedding_field: str = Field(default="embedding")
+    sparse_embedding_field: str = Field(default="sparse_embedding")
+
+    # V2 indexing-related fields
+    # allow users to specify additional fields for V2 indexing (add) operations
+    dense_embedding_fields: Set[str] = Field(default_factory=set)
+    sparse_embedding_fields: Set[str] = Field(default_factory=set)
+    max_concurrent_requests: PositiveInt = 5
+
+    # optional field names for non-metadata properties in nodes being indexed
+    nodeid_field: Optional[str] = None
+    node_type_field: Optional[str] = None
+    docid_field: Optional[str] = None
+    content_field: Optional[str] = None
+    content_field_metadata_mode: MetadataMode = MetadataMode.NONE
 
     # Ranker configuration
     hybrid_ranker: Literal["rrf", "vertex"] = Field(default="rrf")
@@ -143,16 +187,33 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     _stream_update: bool = PrivateAttr(default=False)
     _staging_bucket: storage.Bucket | None = PrivateAttr(default=None)
 
+    # a semaphore shared across all async_add calls to ensure a global maximum number of
+    # simultaneous requests are executed by the same vector store instance
+    _async_request_semaphore: asyncio.Semaphore = PrivateAttr()
+
     # _document_storage: GCSDocumentStorage = PrivateAttr()
+
+    @model_validator(mode="after")
+    def _validate_embedding_fields(self) -> Self:
+        """Validate that embedding fields are not duplicated in metadata."""
+        if self.dense_embedding_fields.intersection(self.sparse_embedding_fields):
+            raise ValueError(
+                f"Field name='{self.embedding_field}' is duplicated in "
+                f"'dense_embedding_fields' and 'sparse_embedding_fields'"
+            )
+        return self
 
     @override
     def model_post_init(self, context: Any, /) -> None:
         """Validate parameters and initialize any required private attributes."""
+        # ensure the SDK manager is created early
         self._sdk_manager = VectorSearchSDKManager(
             project_id=self.project_id,
             region=self.region,
             credentials_path=self.credentials_path,
         )
+        # initialize the semaphore with the input value
+        self._async_request_semaphore = asyncio.Semaphore(self.max_concurrent_requests)
 
         # V1 validation and initialization
         if self.api_version == "v1":
@@ -193,6 +254,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "For v1, use index_id and endpoint_id instead."
                 )
 
+            # Hybrid search validation (applies to both v1 and v2, but some features are v2-only)
+            if self.enable_hybrid:
+                raise ValueError(
+                    "enable_hybrid=True is only supported for api_version='v2'. "
+                    "V1 hybrid search uses HybridQuery with find_neighbors() directly."
+                )
+
         # V2 validation and initialization
         if self.api_version == "v2":
             # v2 requires collection_id
@@ -217,13 +285,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "Parameter 'gcs_bucket_name' is only valid for api_version='v1'. "
                     "v2 does not require a staging bucket."
                 )
-
-        # Hybrid search validation (applies to both v1 and v2, but some features are v2-only)
-        if self.enable_hybrid and self.api_version != "v2":
-            raise ValueError(
-                "enable_hybrid=True is only supported for api_version='v2'. "
-                "V1 hybrid search uses HybridQuery with find_neighbors() directly."
-            )
 
         if self.hybrid_ranker == "vertex":
             if (
@@ -274,7 +335,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     @override
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         is_complete_overwrite: bool = False,
         **add_kwargs: Any,
     ) -> List[str]:
@@ -283,13 +344,20 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+            is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
 
         """
+        if not nodes:
+            _logger.info("Empty node list passed to vector store, not adding")
+            return []
+
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
-            return self._add_v2(
-                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
-            )
+            if is_complete_overwrite:
+                raise ValueError(
+                    "The argument 'is_complete_overwrite' is only valid for api_version='v1'."
+                )
+            return self._add_v2(nodes, **add_kwargs)
         else:
             return self._add_v1(
                 nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
@@ -297,7 +365,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def _add_v1(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         is_complete_overwrite: bool = False,
         **add_kwargs: Any,
     ) -> List[str]:
@@ -342,8 +410,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def _add_v2(
         self,
-        nodes: List[BaseNode],
-        is_complete_overwrite: bool = False,
+        nodes: Sequence[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
         """
@@ -369,53 +436,252 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         data_object_client = clients["data_object_service_client"]
 
         # Convert nodes to v2 data objects
-        batch_requests = []
-        ids = []
-
-        for node in nodes:
-            node_id = node.node_id
-            metadata = node_to_metadata_dict(
-                node,
-                remove_text=False,
-                flat_metadata=False,
-            )
-            embedding = node.get_embedding()
-
-            # Prepare data and vectors following the notebook pattern
-            data_object = {
-                "data": metadata,  # Metadata becomes the data field
-                "vectors": {
-                    # Assuming default embedding field name
-                    "embedding": {"dense": {"values": embedding}},
-                },
-            }
-
-            # Create batch request item
-            batch_requests.append(
-                {"data_object_id": node_id, "data_object": data_object}
-            )
-            ids.append(node_id)
+        ids, batch_requests = self._build_v2_create_requests(nodes)
 
         # Batch create data objects
-        for i in range(0, len(batch_requests), self.batch_size):
-            batch = batch_requests[i : i + self.batch_size]
-            _logger.info(
-                f"Creating batch {i // self.batch_size + 1} ({len(batch)} objects)"
-            )
-
+        time_start = time.perf_counter()
+        added_ids: list[str] = []
+        failed_ids: list[str] = []
+        for i, start in enumerate(range(0, len(batch_requests), self.batch_size)):
+            batch = batch_requests[start : start + self.batch_size]
+            batch_ids = ids[start : start + self.batch_size]
+            size = len(batch)
+            _logger.info(f"Creating batch {i} ({size} objects)")
             request = vectorsearch.BatchCreateDataObjectsRequest(
-                parent=self._collection_parent,
-                requests=batch,
+                parent=self._collection_parent, requests=batch
             )
 
             try:
                 response = data_object_client.batch_create_data_objects(request)
                 _logger.debug(f"Batch create response: {response}")
-            except Exception as e:
-                _logger.error(f"Failed to create data objects batch: {e}")
-                raise
+                added_ids.extend(batch_ids)
+                _logger.debug(f"Add request batch {i} complete, indexed {size} nodes")
+            except Exception:
+                _logger.exception(f"Failed to create batch {i} ({size} objects)")
+                failed_ids.extend(batch_ids)
 
-        return ids
+        time_taken = time.perf_counter() - time_start
+        _logger.info(
+            f"Added {len(added_ids)} nodes in {time_taken:.2f}s (failed={len(failed_ids)})"
+        )
+        if failed_ids:
+            raise VertexAIIndexingError(failed_ids=failed_ids, added_ids=added_ids)
+        return added_ids
+
+    def _build_v2_create_requests(
+        self, nodes: Sequence[BaseNode]
+    ) -> Tuple[List[str], List["CreateDataObjectRequest"]]:
+        vectorsearch = _import_v2_sdk()
+        node_ids: List[str] = []
+        requests: List[vectorsearch.CreateDataObjectRequest] = []
+        for node in nodes:
+            node_ids.append(node.node_id)
+            data_object = self._extract_v2_data_object_from_node(node)
+            requests.append(
+                vectorsearch.CreateDataObjectRequest(
+                    parent=self._collection_parent,
+                    data_object_id=node.node_id,
+                    data_object=data_object,
+                )
+            )
+        return node_ids, requests
+
+    def _extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
+        """
+        Convert a BaseNode to a GCP DataObject for adding.
+
+        Handles content, doc ID fields, and dense/sparse embeddings.
+
+        Args:
+            node: The llama-index node to convert.
+
+        Returns:
+            A ``DataObject`` ready to include in a batch request.
+
+        """
+        vectorsearch = _import_v2_sdk()
+        data: Dict[str, Any] = {**node.metadata}
+        vectors: Dict[str, vectorsearch.Vector] = {}
+
+        # node ID field (if not duplicated in metadata)
+        if self.nodeid_field:
+            data[self.nodeid_field] = node.node_id
+
+        # parent document ID field
+        if self.docid_field and node.ref_doc_id:
+            data[self.docid_field] = node.ref_doc_id
+
+        # the type of the node
+        if self.node_type_field:
+            data[self.node_type_field] = node.class_name()
+
+        # node content (e.g., 'node.text' for TextNode)
+        if self.content_field:
+            data[self.content_field] = node.get_content(
+                metadata_mode=self.content_field_metadata_mode
+            )
+
+        # dense embeddings
+        if node.embedding:
+            # special case: embedding stored in node.embedding
+            vectors[self.embedding_field] = vectorsearch.Vector(
+                dense=vectorsearch.DenseVector(values=node.get_embedding())
+            )
+        # all other embeddings are pulled from metadata
+        for field in self.dense_embedding_fields:
+            if field in data:
+                # remove from the data dict
+                vector = data.pop(field)
+                if isinstance(vector, Sequence):
+                    vectors[field] = vectorsearch.Vector(
+                        dense=vectorsearch.DenseVector(values=vector)
+                    )
+                else:
+                    _logger.error(
+                        f"Invalid dense embedding field '{field}', type={type(vector)}"
+                    )
+
+        # sparse embeddings
+        for field in self.sparse_embedding_fields.union({self.sparse_embedding_field}):
+            if field in data:
+                # remove from the data dict
+                sparse_vector = data.pop(field)
+                if isinstance(sparse_vector, dict):
+                    vectors[field] = vectorsearch.Vector(
+                        sparse=vectorsearch.SparseVector(
+                            indices=sparse_vector.get("indices", []),
+                            values=sparse_vector.get("values", []),
+                        )
+                    )
+                else:
+                    _logger.error(
+                        f"Invalid sparse embedding field '{field}', "
+                        f"type={type(sparse_vector)}"
+                    )
+        return vectorsearch.DataObject(data=data, vectors=vectors)
+
+    @override
+    async def async_add(
+        self,
+        nodes: Sequence[BaseNode],
+        *,
+        is_complete_overwrite: bool = False,
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """
+        Asynchronously dd nodes to index.
+
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings
+            is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
+
+        """
+        if not nodes:
+            _logger.info("Empty node list passed to vector store, not adding")
+            return []
+
+        if FeatureFlags.should_use_v2(self.api_version):
+            if is_complete_overwrite:
+                raise ValueError(
+                    "The argument 'is_complete_overwrite' is only valid for api_version='v1'."
+                )
+            return await self._async_add_v2(nodes, **add_kwargs)
+        else:
+            # use the synchronous V1 implementation
+            return self._add_v1(
+                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
+            )
+
+    async def _async_add_v2(
+        self, nodes: Sequence[BaseNode], **add_kwargs: Any
+    ) -> List[str]:
+        """
+        Asynchronously add nodes to collection using v2 API.
+
+        Args:
+            nodes: List of nodes with embeddings
+            **add_kwargs: Additional keyword arguments
+
+        Returns:
+            List of node IDs
+
+        """
+        clients = self._sdk_manager.get_v2_client()
+        data_object_client = clients["data_object_service_async_client"]
+
+        node_ids, add_reqs = self._build_v2_create_requests(nodes)
+        tasks = [
+            self._async_create_batch(
+                client=data_object_client,
+                batch_idx=i,
+                batch_ids=node_ids[start : start + self.batch_size],
+                create_requests=add_reqs[start : start + self.batch_size],
+            )
+            for i, start in enumerate(range(0, len(add_reqs), self.batch_size), start=1)
+        ]
+        _logger.info(
+            f"Async adding {len(nodes)} nodes to v2 collection='{self.collection_id}' in "
+            f"{len(tasks)} batches (batch_size={self.batch_size})"
+        )
+
+        time_start = time.perf_counter()
+        results: List[Tuple[bool, List[str]]] = await asyncio.gather(*tasks)
+        time_taken = time.perf_counter() - time_start
+
+        added_ids: List[str] = []
+        failed_ids: List[str] = []
+        for success, batch_ids in results:
+            if success:
+                added_ids.extend(batch_ids)
+            else:
+                failed_ids.extend(batch_ids)
+
+        _logger.info(
+            f"Added {len(added_ids)} nodes in {time_taken:.2f}s (failed={len(failed_ids)})"
+        )
+        if failed_ids:
+            raise VertexAIIndexingError(failed_ids=failed_ids, added_ids=added_ids)
+        return added_ids
+
+    async def _async_create_batch(
+        self,
+        client: "DataObjectServiceAsyncClient",
+        batch_idx: int,
+        batch_ids: List[str],
+        create_requests: List["CreateDataObjectRequest"],
+    ) -> Tuple[bool, List[str]]:
+        """
+        Execute an async add for a single batch of data objects.
+
+        Args:
+            batch_idx: Index of the batch for logging.
+            batch_ids: List of IDs included in the requests.
+            create_requests: List of CreateDataObjectRequest protos to create.
+
+        Returns:
+            Tuple of (success, list of node IDs in this batch).
+
+        """
+        # the request will not execute until the semaphore can be acquired
+        vectorsearch = _import_v2_sdk()
+        size = len(create_requests)
+        async with self._async_request_semaphore:
+            try:
+                _logger.debug(f"Adding async batch {batch_idx} ({size} objects)")
+                request = vectorsearch.BatchCreateDataObjectsRequest(
+                    parent=self._collection_parent, requests=create_requests
+                )
+                response = await client.batch_create_data_objects(request)
+                _logger.debug(f"Batch create response: {response}")
+                _logger.debug(
+                    f"Add request batch {batch_idx} complete, indexed {size} nodes"
+                )
+                return True, batch_ids
+            except Exception:
+                _logger.exception(
+                    f"Failed to index async batch {batch_idx} ({size} objects)"
+                )
+                return False, batch_ids
 
     @override
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
