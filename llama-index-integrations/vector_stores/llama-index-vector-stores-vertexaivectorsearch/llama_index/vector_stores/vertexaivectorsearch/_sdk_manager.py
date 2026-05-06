@@ -1,3 +1,4 @@
+from types import ModuleType
 from typing import Union
 
 from google.oauth2.service_account import Credentials  # type: ignore
@@ -189,3 +190,25 @@ class VectorSearchSDKManager:
                 ),
             }
         return self._v2_client
+
+
+def _import_v2_sdk() -> ModuleType:
+    """
+    Import v2 SDK with proper error handling.
+
+    Returns:
+        The vectorsearch_v1beta module
+
+    Raises:
+        ImportError: If google-cloud-vectorsearch is not installed
+
+    """
+    try:
+        from google.cloud import vectorsearch_v1beta
+
+        return vectorsearch_v1beta
+    except ImportError as e:
+        raise ImportError(
+            "v2 operations require google-cloud-vectorsearch. "
+            "Install with: pip install google-cloud-vectorsearch"
+        ) from e

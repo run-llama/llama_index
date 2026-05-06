@@ -1,36 +1,32 @@
 """Test Vertex AI Vector Store Vector Search functionality."""
 
+import hashlib
 import os
 import uuid
-import hashlib
-
 from typing import List
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-
-from llama_index.core.schema import MetadataMode, TextNode, Document
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.core import StorageContext, Settings, VectorStoreIndex
-from llama_index.core.vector_stores.types import (
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-    MetadataFilters,
-    MetadataFilter,
-)
-from llama_index.embeddings.vertex import VertexTextEmbedding
-from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
-from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-    VectorSearchSDKManager,
-)
-
-from llama_index.vector_stores.vertexaivectorsearch import utils
-
+from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
-from google.cloud import storage
+from llama_index.core import Settings, StorageContext, VectorStoreIndex
+from llama_index.core.schema import Document, MetadataMode, TextNode
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.embeddings.vertex import VertexTextEmbedding
+
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore, utils
+from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
+    VectorSearchSDKManager,
+)
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
@@ -607,7 +603,7 @@ class TestV2SDKImport:
         """Test that _import_v2_sdk returns the module when available."""
         # This test will pass if google-cloud-vectorsearch is installed
         try:
-            from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+            from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
                 _import_v2_sdk,
             )
 
@@ -625,7 +621,7 @@ class TestV2SDKImport:
 
         # Verify the error message is properly formatted in the code
         import inspect
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
             _import_v2_sdk,
         )
 
@@ -717,7 +713,7 @@ class TestV2RetryDecorator:
 
     def test_retry_succeeds_on_first_attempt(self):
         """Test that function returns immediately on success."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
 
         call_count = 0
 
@@ -734,7 +730,7 @@ class TestV2RetryDecorator:
 
     def test_retry_retries_on_failure(self):
         """Test that function retries on failure."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
 
         call_count = 0
 
@@ -753,7 +749,7 @@ class TestV2RetryDecorator:
 
     def test_retry_raises_after_max_attempts(self):
         """Test that function raises exception after max attempts."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import retry
+        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
 
         call_count = 0
 
@@ -888,7 +884,7 @@ class TestV2RRFWeightCalculation:
 
     def test_alpha_0_pure_text(self):
         """Test that alpha=0 gives pure text weight."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _calculate_rrf_weights,
         )
 
@@ -897,7 +893,7 @@ class TestV2RRFWeightCalculation:
 
     def test_alpha_1_pure_vector(self):
         """Test that alpha=1 gives pure vector weight."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _calculate_rrf_weights,
         )
 
@@ -906,7 +902,7 @@ class TestV2RRFWeightCalculation:
 
     def test_alpha_0_5_balanced(self):
         """Test that alpha=0.5 gives balanced weights."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _calculate_rrf_weights,
         )
 
@@ -915,7 +911,7 @@ class TestV2RRFWeightCalculation:
 
     def test_alpha_0_7_favors_vector(self):
         """Test that alpha=0.7 favors vector search."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _calculate_rrf_weights,
         )
 
@@ -925,7 +921,7 @@ class TestV2RRFWeightCalculation:
 
     def test_three_searches_equal_weights(self):
         """Test that 3 searches get equal weights when not two."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _calculate_rrf_weights,
         )
 
@@ -939,7 +935,7 @@ class TestV2FilterConversion:
 
     def test_simple_eq_filter(self):
         """Test simple equality filter conversion."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import (
@@ -960,7 +956,7 @@ class TestV2FilterConversion:
 
     def test_gt_filter(self):
         """Test greater than filter conversion."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import (
@@ -979,7 +975,7 @@ class TestV2FilterConversion:
 
     def test_and_filter(self):
         """Test AND filter conversion."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import (
@@ -1010,7 +1006,7 @@ class TestV2FilterConversion:
 
     def test_or_filter(self):
         """Test OR filter conversion."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import (
@@ -1039,7 +1035,7 @@ class TestV2FilterConversion:
 
     def test_in_filter(self):
         """Test IN filter conversion."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import (
@@ -1062,7 +1058,7 @@ class TestV2FilterConversion:
 
     def test_none_filters(self):
         """Test that None filters returns None."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
 
@@ -1071,7 +1067,7 @@ class TestV2FilterConversion:
 
     def test_empty_filters(self):
         """Test that empty filters returns None."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
+        from llama_index.vector_stores.vertexaivectorsearch.utils import (
             _convert_filters_to_v2,
         )
         from llama_index.core.vector_stores.types import MetadataFilters
@@ -1267,9 +1263,7 @@ class TestV2RankerConfiguration:
 
     def test_build_ranker_rrf(self):
         """Test _build_ranker creates RRF ranker."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
-            _build_ranker,
-        )
+        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
         from llama_index.core.vector_stores.types import VectorStoreQuery
 
         mock_vectorsearch = MagicMock()
@@ -1298,9 +1292,7 @@ class TestV2RankerConfiguration:
 
     def test_build_ranker_vertex(self):
         """Test _build_ranker creates VertexRanker."""
-        from llama_index.vector_stores.vertexaivectorsearch._v2_operations import (
-            _build_ranker,
-        )
+        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
         from llama_index.core.vector_stores.types import VectorStoreQuery
 
         mock_vectorsearch = MagicMock()
