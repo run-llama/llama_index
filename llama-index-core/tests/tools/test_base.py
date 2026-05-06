@@ -490,3 +490,4 @@ async def test_function_tool_contextvar_propagation() -> None:
     var.set("expected")
     result = await tool.acall()
     assert result.raw_output == "expected"
+
