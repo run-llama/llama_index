@@ -7,6 +7,7 @@ An index that is built on top of an existing vector store.
 
 import logging
 import os
+from functools import cached_property
 from typing import Any, List, Literal, Optional, cast
 
 from google.cloud import storage
@@ -24,7 +25,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY, node_to_metadata_dict
-
 from llama_index.vector_stores.vertexaivectorsearch import utils
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
@@ -37,6 +37,7 @@ from llama_index.vector_stores.vertexaivectorsearch.utils import (
     _process_batch_search_results,
     _process_search_results,
 )
+from typing_extensions import override
 
 _logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     remove_text_from_metadata: bool = True
     flat_metadata: bool = False
 
-    text_key: str
+    text_key: str = DEFAULT_TEXT_KEY
 
     project_id: str
     region: str
@@ -135,100 +136,25 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     batch_size: int = 100
     credentials_path: Optional[str] = None
 
-    _index: MatchingEngineIndex = PrivateAttr()
-    _endpoint: MatchingEngineIndexEndpoint = PrivateAttr()
-    _index_metadata: dict = PrivateAttr()
-    _stream_update: bool = PrivateAttr()
-    _staging_bucket: storage.Bucket = PrivateAttr()
+    _sdk_manager: VectorSearchSDKManager = PrivateAttr(default=None)
+    _index: MatchingEngineIndex | None = PrivateAttr(default=None)
+    _endpoint: MatchingEngineIndexEndpoint | None = PrivateAttr(default=None)
+    _index_metadata: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _stream_update: bool = PrivateAttr(default=False)
+    _staging_bucket: storage.Bucket | None = PrivateAttr(default=None)
 
     # _document_storage: GCSDocumentStorage = PrivateAttr()
 
-    def __init__(
-        self,
-        project_id: Optional[str] = None,
-        region: Optional[str] = None,
-        index_id: Optional[str] = None,
-        endpoint_id: Optional[str] = None,
-        gcs_bucket_name: Optional[str] = None,
-        credentials_path: Optional[str] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        remove_text_from_metadata: bool = True,
-        api_version: str = "v1",
-        collection_id: Optional[str] = None,
-        batch_size: int = 100,
-        # V2 Hybrid Search parameters
-        enable_hybrid: bool = False,
-        text_search_fields: Optional[List[str]] = None,
-        embedding_field: str = "embedding",
-        hybrid_ranker: Literal["rrf", "vertex"] = "rrf",
-        default_hybrid_alpha: float = 0.5,
-        semantic_task_type: str = "RETRIEVAL_QUERY",
-        vertex_ranker_model: str = "semantic-ranker-default@latest",
-        vertex_ranker_title_field: Optional[str] = None,
-        vertex_ranker_content_field: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(
-            project_id=project_id,
-            region=region,
-            index_id=index_id,
-            endpoint_id=endpoint_id,
-            gcs_bucket_name=gcs_bucket_name,
-            credentials_path=credentials_path,
-            text_key=text_key,
-            remove_text_from_metadata=remove_text_from_metadata,
-            api_version=api_version,
-            collection_id=collection_id,
-            batch_size=batch_size,
-            enable_hybrid=enable_hybrid,
-            text_search_fields=text_search_fields,
-            embedding_field=embedding_field,
-            hybrid_ranker=hybrid_ranker,
-            default_hybrid_alpha=default_hybrid_alpha,
-            semantic_task_type=semantic_task_type,
-            vertex_ranker_model=vertex_ranker_model,
-            vertex_ranker_title_field=vertex_ranker_title_field,
-            vertex_ranker_content_field=vertex_ranker_content_field,
+    @override
+    def model_post_init(self, context: Any, /) -> None:
+        """Validate parameters and initialize any required private attributes."""
+        self._sdk_manager = VectorSearchSDKManager(
+            project_id=self.project_id,
+            region=self.region,
+            credentials_path=self.credentials_path,
         )
 
-        """Initialize params."""
-        # Validate parameters based on API version
-        self._validate_parameters()
-
-        # Only initialize v1 resources if using v1 API
-        if self.api_version == "v1":
-            _sdk_manager = VectorSearchSDKManager(
-                project_id=project_id, region=region, credentials_path=credentials_path
-            )
-
-            # get index and endpoint resource names including metadata
-            self._index = _sdk_manager.get_index(index_id=index_id)
-            self._endpoint = _sdk_manager.get_endpoint(endpoint_id=endpoint_id)
-            self._index_metadata = self._index.to_dict()
-
-            # get index update method from index metadata
-            self._stream_update = False
-            if self._index_metadata["indexUpdateMethod"] == "STREAM_UPDATE":
-                self._stream_update = True
-
-            # get bucket object when available
-            if self.gcs_bucket_name:
-                self._staging_bucket = _sdk_manager.get_gcs_bucket(
-                    bucket_name=gcs_bucket_name
-                )
-            else:
-                self._staging_bucket = None
-        else:
-            # v2 initialization will be handled separately
-            # Set private attributes to None for now
-            self._index = None
-            self._endpoint = None
-            self._index_metadata = {}
-            self._stream_update = False
-            self._staging_bucket = None
-
-    def _validate_parameters(self) -> None:
-        """Validate parameters based on API version."""
+        # V1 validation and initialization
         if self.api_version == "v1":
             # v1 requires index_id and endpoint_id
             if not self.index_id:
@@ -236,18 +162,39 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "index_id is required for v1.0 API. "
                     "Please provide a valid index ID."
                 )
+            index = self._sdk_manager.get_index(index_id=self.index_id)
+            self._index = index
+            self._index_metadata = index.to_dict()
+
+            # get index update method from index metadata
+            self._stream_update = (
+                self._index_metadata["indexUpdateMethod"] == "STREAM_UPDATE"
+            )
+
             if not self.endpoint_id:
                 raise ValueError(
                     "endpoint_id is required for v1.0 API. "
                     "Please provide a valid endpoint ID."
                 )
+            self._endpoint = self._sdk_manager.get_endpoint(
+                endpoint_id=self.endpoint_id
+            )
+
+            # get bucket object when available
+            if self.gcs_bucket_name:
+                self._staging_bucket = self._sdk_manager.get_gcs_bucket(
+                    bucket_name=self.gcs_bucket_name
+                )
+
             # v2-exclusive parameters must not be set in v1
             if self.collection_id is not None:
                 raise ValueError(
                     "Parameter 'collection_id' is only valid for api_version='v2'. "
                     "For v1, use index_id and endpoint_id instead."
                 )
-        elif self.api_version == "v2":
+
+        # V2 validation and initialization
+        if self.api_version == "v2":
             # v2 requires collection_id
             if not self.collection_id:
                 raise ValueError(
@@ -288,35 +235,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "Consider setting vertex_ranker_title_field or vertex_ranker_content_field."
                 )
 
-    @classmethod
-    def from_params(
-        cls,
-        project_id: Optional[str] = None,
-        region: Optional[str] = None,
-        index_id: Optional[str] = None,
-        endpoint_id: Optional[str] = None,
-        gcs_bucket_name: Optional[str] = None,
-        credentials_path: Optional[str] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        **kwargs: Any,
-    ) -> "VertexAIVectorStore":
-        """Create VertexAIVectorStore from config."""
-        return cls(
-            project_id=project_id,
-            region=region,
-            index_id=index_id,
-            endpoint_id=endpoint_id,
-            gcs_bucket_name=gcs_bucket_name,
-            credentials_path=credentials_path,
-            text_key=text_key,
-            api_version="v1",  # Always defaults to v1 for backward compatibility
-            **kwargs,
-        )
-
+    @override
     @classmethod
     def class_name(cls) -> str:
         return "VertexAIVectorStore"
 
+    # V1 properties
+    @override
     @property
     def client(self) -> Any:
         """Get client."""
@@ -337,6 +262,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """Get client."""
         return self._staging_bucket
 
+    # V2 properties
+    @cached_property
+    def _collection_parent(self) -> str:
+        """Full resource path for the collection."""
+        return (
+            f"projects/{self.project_id}/locations/{self.region}"
+            f"/collections/{self.collection_id}"
+        )
+
+    @override
     def add(
         self,
         nodes: List[BaseNode],
@@ -429,23 +364,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Adding {len(nodes)} nodes to v2 collection: {self.collection_id}",
         )
 
-        # Get or create v2 client
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            VectorSearchSDKManager,
-        )
-
-        sdk_manager = VectorSearchSDKManager(
-            project_id=self.project_id,
-            region=self.region,
-            credentials_path=self.credentials_path,
-        )
-
         # Get v2 clients
-        clients = sdk_manager.get_v2_client()
+        clients = self._sdk_manager.get_v2_client()
         data_object_client = clients["data_object_service_client"]
-
-        # Build parent path
-        parent = f"projects/{self.project_id}/locations/{self.region}/collections/{self.collection_id}"
 
         # Convert nodes to v2 data objects
         batch_requests = []
@@ -483,7 +404,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
 
             request = vectorsearch.BatchCreateDataObjectsRequest(
-                parent=parent,
+                parent=self._collection_parent,
                 requests=batch,
             )
 
@@ -496,6 +417,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         return ids
 
+    @override
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -506,9 +428,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
-            return self._delete_v2(ref_doc_id, **delete_kwargs)
+            self._delete_v2(ref_doc_id, **delete_kwargs)
         else:
-            return self._delete_v1(ref_doc_id, **delete_kwargs)
+            self._delete_v1(ref_doc_id, **delete_kwargs)
 
     def _delete_v1(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -541,25 +463,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(f"Deleting nodes with ref_doc_id: {ref_doc_id} from v2 collection")
 
         # Get v2 client
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            VectorSearchSDKManager,
-        )
-
-        sdk_manager = VectorSearchSDKManager(
-            project_id=self.project_id,
-            region=self.region,
-            credentials_path=self.credentials_path,
-        )
-        clients = sdk_manager.get_v2_client()
+        clients = self._sdk_manager.get_v2_client()
         data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
 
-        # Build parent path
-        parent = f"projects/{self.project_id}/locations/{self.region}/collections/{self.collection_id}"
-
         # Query for data objects with matching ref_doc_id
         query_request = vectorsearch.QueryDataObjectsRequest(
-            parent=parent,
+            parent=self._collection_parent,
             filter={"ref_doc_id": {"$eq": ref_doc_id}},
             output_fields=vectorsearch.OutputFields(
                 data_fields=["ref_doc_id"],
@@ -581,7 +491,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # Batch delete
             if delete_requests:
                 batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                    parent=parent,
+                    parent=self._collection_parent,
                     requests=delete_requests,
                 )
                 response = data_object_client.batch_delete_data_objects(
@@ -596,6 +506,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.error(f"Failed to delete data objects: {e}")
             raise
 
+    @override
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         if FeatureFlags.should_use_v2(self.api_version):
@@ -674,27 +585,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         # Get v2 clients
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            VectorSearchSDKManager,
-        )
-
-        sdk_manager = VectorSearchSDKManager(
-            project_id=self.project_id,
-            region=self.region,
-            credentials_path=self.credentials_path,
-        )
-        clients = sdk_manager.get_v2_client()
-        parent = f"projects/{self.project_id}/locations/{self.region}/collections/{self.collection_id}"
-
+        clients = self._sdk_manager.get_v2_client()
         # Route based on query mode
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            return self._query_v2_default(query, clients, parent, **kwargs)
+            return self._query_v2_default(query, clients, **kwargs)
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            return self._query_v2_hybrid(query, clients, parent, **kwargs)
+            return self._query_v2_hybrid(query, clients, **kwargs)
         elif query.mode == VectorStoreQueryMode.TEXT_SEARCH:
-            return self._query_v2_text_search(query, clients, parent, **kwargs)
+            return self._query_v2_text_search(query, clients, **kwargs)
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
-            return self._query_v2_semantic_hybrid(query, clients, parent, **kwargs)
+            return self._query_v2_semantic_hybrid(query, clients, **kwargs)
         elif query.mode == VectorStoreQueryMode.SPARSE:
             raise NotImplementedError(
                 "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
@@ -706,13 +606,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.warning(
                 f"Query mode {query.mode} not explicitly supported, falling back to DEFAULT",
             )
-            return self._query_v2_default(query, clients, parent, **kwargs)
+            return self._query_v2_default(query, clients, **kwargs)
 
     def _query_v2_default(
         self,
         query: VectorStoreQuery,
         clients: dict,
-        parent: str,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -721,7 +620,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             query: The vector store query
             clients: V2 client dictionary
-            parent: Parent resource path
             **kwargs: Additional arguments
 
         Returns:
@@ -742,7 +640,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # Build search request
         search_kwargs = {
-            "parent": parent,
+            "parent": self._collection_parent,
             "vector_search": vectorsearch.VectorSearch(
                 search_field=self.embedding_field,
                 vector=vectorsearch.DenseVector(values=query.query_embedding),
@@ -771,7 +669,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self,
         query: VectorStoreQuery,
         clients: dict,
-        parent: str,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -780,7 +677,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             query: The vector store query
             clients: V2 client dictionary
-            parent: Parent resource path
             **kwargs: Additional arguments
 
         Returns:
@@ -803,7 +699,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # Build search request
         search_request = vectorsearch.SearchDataObjectsRequest(
-            parent=parent,
+            parent=self._collection_parent,
             text_search=vectorsearch.TextSearch(
                 search_text=query.query_str,
                 data_field_names=self.text_search_fields,
@@ -827,7 +723,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self,
         query: VectorStoreQuery,
         clients: dict,
-        parent: str,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -836,7 +731,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             query: The vector store query
             clients: V2 client dictionary
-            parent: Parent resource path
             **kwargs: Additional arguments
 
         Returns:
@@ -860,13 +754,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.warning(
                 "HYBRID mode without query_str - falling back to vector-only search"
             )
-            return self._query_v2_default(query, clients, parent, **kwargs)
+            return self._query_v2_default(query, clients, **kwargs)
 
         if self.text_search_fields is None:
             _logger.warning(
                 "No text_search_fields configured - falling back to vector-only search"
             )
-            return self._query_v2_default(query, clients, parent, **kwargs)
+            return self._query_v2_default(query, clients, **kwargs)
 
         # Build filter
         v2_filter = _convert_filters_to_v2(query.filters)
@@ -898,14 +792,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         try:
             # Run vector search
             vector_request = vectorsearch.SearchDataObjectsRequest(
-                parent=parent,
+                parent=self._collection_parent,
                 vector_search=vectorsearch.VectorSearch(**vector_search_kwargs),
             )
             vector_results = list(search_client.search_data_objects(vector_request))
 
             # Run text search
             text_request = vectorsearch.SearchDataObjectsRequest(
-                parent=parent,
+                parent=self._collection_parent,
                 text_search=vectorsearch.TextSearch(
                     search_text=query.query_str,
                     data_field_names=self.text_search_fields,
@@ -930,7 +824,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self,
         query: VectorStoreQuery,
         clients: dict,
-        parent: str,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -939,7 +832,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             query: The vector store query
             clients: V2 client dictionary
-            parent: Parent resource path
             **kwargs: Additional arguments
 
         Returns:
@@ -1008,7 +900,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # Execute batch search
         batch_request = vectorsearch.BatchSearchDataObjectsRequest(
-            parent=parent,
+            parent=self._collection_parent,
             searches=searches,
             combine=vectorsearch.BatchSearchDataObjectsRequest.CombineResultsOptions(
                 ranker=ranker,
@@ -1024,6 +916,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.error(f"Failed to execute SEMANTIC_HYBRID search: {e}")
             raise
 
+    @override
     def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
@@ -1082,23 +975,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(f"Deleting nodes from v2 collection: {self.collection_id}")
 
         # Get v2 client
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            VectorSearchSDKManager,
-        )
-
-        sdk_manager = VectorSearchSDKManager(
-            project_id=self.project_id,
-            region=self.region,
-            credentials_path=self.credentials_path,
-        )
-        clients = sdk_manager.get_v2_client()
+        clients = self._sdk_manager.get_v2_client()
         data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
 
         # Build parent path
-        parent = f"projects/{self.project_id}/locations/{self.region}/collections/{self.collection_id}"
-        collection_name = parent
-
         if node_ids is not None:
             # Delete by node IDs
             _logger.info(f"Deleting {len(node_ids)} nodes by ID")
@@ -1108,14 +989,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             for node_id in node_ids:
                 delete_requests.append(
                     vectorsearch.DeleteDataObjectRequest(
-                        name=f"{collection_name}/dataObjects/{node_id}",
+                        name=f"{self._collection_parent}/dataObjects/{node_id}",
                     ),
                 )
 
             try:
                 if delete_requests:
                     batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                        parent=parent,
+                        parent=self._collection_parent,
                         requests=delete_requests,
                     )
                     response = data_object_client.batch_delete_data_objects(
@@ -1141,6 +1022,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError("Either node_ids or filters must be provided")
 
+    @override
     def clear(self) -> None:
         """Clear all nodes from the vector store."""
         if FeatureFlags.should_use_v2(self.api_version):
@@ -1165,26 +1047,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
 
         # Get v2 client
-        from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
-            VectorSearchSDKManager,
-        )
-
-        sdk_manager = VectorSearchSDKManager(
-            project_id=self.project_id,
-            region=self.region,
-            credentials_path=self.credentials_path,
-        )
-        clients = sdk_manager.get_v2_client()
+        clients = self._sdk_manager.get_v2_client()
         data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
-
-        # Build parent path
-        parent = f"projects/{self.project_id}/locations/{self.region}/collections/{self.collection_id}"
 
         try:
             # Query all data objects (without filter to get all)
             query_request = vectorsearch.QueryDataObjectsRequest(
-                parent=parent,
+                parent=self._collection_parent,
                 page_size=100,  # Process in batches
                 output_fields=vectorsearch.OutputFields(metadata_fields=["*"]),
             )
@@ -1202,7 +1072,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 # Batch delete this page
                 if delete_requests:
                     batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                        parent=parent,
+                        parent=self._collection_parent,
                         requests=delete_requests,
                     )
                     data_object_client.batch_delete_data_objects(batch_delete_request)
