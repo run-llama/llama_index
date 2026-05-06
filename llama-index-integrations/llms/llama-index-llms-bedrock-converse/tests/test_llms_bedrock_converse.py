@@ -317,6 +317,185 @@ def test_stream_chat(bedrock_converse):
     assert final_response.additional_kwargs["total_tokens"] == 41
 
 
+def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
+    """Test that streaming tool call input is parsed from string to dict.
+
+    Bedrock ConverseStream delivers tool use input as string chunks.
+    After accumulation, ToolCallBlock.tool_kwargs should be a dict,
+    not a raw JSON string.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21579
+    """
+
+    class ToolStreamMockClient:
+        def __init__(self):
+            self.exceptions = MockExceptions()
+
+        def converse(self, *args, **kwargs):
+            return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
+
+        def converse_stream(self, *args, **kwargs):
+            def stream_generator():
+                # contentBlockStart: tool use block begins
+                yield {
+                    "contentBlockStart": {
+                        "start": {
+                            "toolUse": {
+                                "toolUseId": "tool-1",
+                                "name": "get_weather",
+                            }
+                        },
+                        "contentBlockIndex": 0,
+                    }
+                }
+                # contentBlockDelta: partial JSON string chunks
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"toolUse": {"input": '{"locat'}},
+                        "contentBlockIndex": 0,
+                    }
+                }
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"toolUse": {"input": 'ion": "London"}'}},
+                        "contentBlockIndex": 0,
+                    }
+                }
+                yield {"messageStop": {"stopReason": "tool_use"}}
+                yield {
+                    "metadata": {
+                        "usage": {
+                            "inputTokens": 10,
+                            "outputTokens": 20,
+                            "totalTokens": 30,
+                        },
+                    }
+                }
+
+            return {"stream": stream_generator()}
+
+    monkeypatch.setattr(
+        "boto3.Session.client", lambda *a, **kw: ToolStreamMockClient()
+    )
+    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
+
+    llm = BedrockConverse(
+        model=EXP_MODEL,
+        max_tokens=EXP_MAX_TOKENS,
+        temperature=EXP_TEMPERATURE,
+    )
+
+    responses = list(llm.stream_chat(messages))
+
+    # Collect all ToolCallBlocks from the final response
+    final = responses[-1]
+    tool_blocks = [
+        b for b in final.message.blocks if isinstance(b, ToolCallBlock)
+    ]
+    assert len(tool_blocks) == 1
+    # tool_kwargs must be a dict, not a JSON string
+    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
+        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    )
+    assert tool_blocks[0].tool_kwargs == {"location": "London"}
+    assert tool_blocks[0].tool_name == "get_weather"
+    assert tool_blocks[0].tool_call_id == "tool-1"
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
+    """Async variant: streaming tool call input is parsed from string to dict.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21579
+    """
+
+    class ToolStreamAsyncMockClient:
+        def __init__(self):
+            self.exceptions = MockExceptions()
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def converse(self, *args, **kwargs):
+            return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
+
+        async def converse_stream(self, *args, **kwargs):
+            async def stream_generator():
+                yield {
+                    "contentBlockStart": {
+                        "start": {
+                            "toolUse": {
+                                "toolUseId": "tool-1",
+                                "name": "get_weather",
+                            }
+                        },
+                        "contentBlockIndex": 0,
+                    }
+                }
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"toolUse": {"input": '{"locat'}},
+                        "contentBlockIndex": 0,
+                    }
+                }
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"toolUse": {"input": 'ion": "London"}'}},
+                        "contentBlockIndex": 0,
+                    }
+                }
+                yield {"messageStop": {"stopReason": "tool_use"}}
+                yield {
+                    "metadata": {
+                        "usage": {
+                            "inputTokens": 10,
+                            "outputTokens": 20,
+                            "totalTokens": 30,
+                        },
+                    }
+                }
+
+            return {"stream": stream_generator()}
+
+    class ToolStreamAsyncSession:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def client(self, *args, **kwargs):
+            return ToolStreamAsyncMockClient()
+
+    monkeypatch.setattr(
+        "boto3.Session.client", lambda *a, **kw: MockClient()
+    )
+    monkeypatch.setattr("aioboto3.Session", ToolStreamAsyncSession)
+
+    llm = BedrockConverse(
+        model=EXP_MODEL,
+        max_tokens=EXP_MAX_TOKENS,
+        temperature=EXP_TEMPERATURE,
+    )
+
+    response_stream = await llm.astream_chat(messages)
+    responses = []
+    async for r in response_stream:
+        responses.append(r)
+
+    final = responses[-1]
+    tool_blocks = [
+        b for b in final.message.blocks if isinstance(b, ToolCallBlock)
+    ]
+    assert len(tool_blocks) == 1
+    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
+        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    )
+    assert tool_blocks[0].tool_kwargs == {"location": "London"}
+    assert tool_blocks[0].tool_name == "get_weather"
+    assert tool_blocks[0].tool_call_id == "tool-1"
+
+
 @pytest.mark.asyncio
 async def test_achat(bedrock_converse):
     response = await bedrock_converse.achat(messages)
