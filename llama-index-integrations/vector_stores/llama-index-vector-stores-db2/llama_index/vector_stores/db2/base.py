@@ -83,11 +83,11 @@ def _handle_exceptions(func: T) -> T:
 
 
 def _escape_str(value: str) -> str:
-    BS = "\\"
-    must_escape = (BS, "'")
-    return (
-        "".join(f"{BS}{c}" if c in must_escape else c for c in value) if value else ""
-    )
+    """Escape single quotes for Db2 SQL string literals.
+
+    Db2 requires single quotes inside string constants to be doubled ('').
+    """
+    return value.replace("'", "''") if value else ""
 
 
 column_config: Dict = {
@@ -115,7 +115,7 @@ column_config: Dict = {
 
 
 def _stringify_list(lst: List) -> str:
-    return "(" + ",".join(f"'{item}'" for item in lst) + ")"
+    return "(" + ",".join(f"'{_escape_str(item)}'" for item in lst) + ")"
 
 
 def table_exists(connection: Connection, table_name: str) -> bool:
@@ -268,7 +268,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
         self, where_str: Optional[str], exact_match_filter: list
     ) -> str:
         filter_str = " AND ".join(
-            f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = '{filter_item.value}'"
+            f"JSON_VALUE({self.metadata_column}, '$.{_escape_str(filter_item.key)}') = '{_escape_str(str(filter_item.value))}'"
             for filter_item in exact_match_filter
         )
         if where_str is None:
@@ -330,7 +330,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
 
     @_handle_exceptions
     def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
-        ddl = f"DELETE FROM {self.table_name} WHERE doc_id = '{ref_doc_id}'"
+        ddl = f"DELETE FROM {self.table_name} WHERE doc_id = '{_escape_str(ref_doc_id)}'"
         cursor = self._client.cursor()
         try:
             cursor.execute(ddl)
