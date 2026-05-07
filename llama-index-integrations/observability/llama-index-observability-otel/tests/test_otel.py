@@ -1,6 +1,8 @@
 import functools
 import inspect
+import logging
 from collections import OrderedDict
+from contextvars import copy_context
 from typing import Any, Optional, Sequence
 
 from llama_index.observability.otel import LlamaIndexOpenTelemetry
@@ -451,18 +453,23 @@ def test_otel_context_is_source_of_truth_when_external_spans_interleave() -> Non
         context.detach(clean_token)
 
 
-def test_span_exit_ends_span_when_context_detach_fails(monkeypatch: Any) -> None:
+def test_span_exit_ends_span_when_context_detach_fails() -> None:
     exporter, handler, provider = make_handler()
     clean_token = context.attach(context.Context())
-    original_detach = context.detach
 
     try:
         handler.span_enter(id_="root-uuid", bound_args=_bound)
 
-        def fail_detach(token: Any) -> None:
-            raise RuntimeError("detach failed")
+        class FailingTokenVar:
+            def reset(self, token: Any) -> None:
+                raise RuntimeError("detach failed")
 
-        monkeypatch.setattr(context, "detach", fail_detach)
+        class FailingToken:
+            var = FailingTokenVar()
+
+        handler._context_tokens["root-uuid"] = (  # type: ignore[assignment]
+            FailingToken()
+        )
         handler.span_exit(id_="root-uuid", bound_args=_bound)
         provider.force_flush()
 
@@ -472,7 +479,25 @@ def test_span_exit_ends_span_when_context_detach_fails(monkeypatch: Any) -> None
         assert handler.all_spans == {}
         assert handler._context_tokens == {}
     finally:
-        monkeypatch.setattr(context, "detach", original_detach)
+        context.detach(clean_token)
+
+
+def test_span_exit_from_copied_context_does_not_log_detach_error(caplog: Any) -> None:
+    exporter, handler, provider = make_handler()
+    clean_token = context.attach(context.Context())
+
+    try:
+        handler.span_enter(id_="root-uuid", bound_args=_bound)
+        caplog.set_level(logging.ERROR, logger="opentelemetry.context")
+
+        copy_context().run(handler.span_exit, id_="root-uuid", bound_args=_bound)
+        provider.force_flush()
+
+        spans = exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].end_time is not None
+        assert "Failed to detach context" not in caplog.text
+    finally:
         context.detach(clean_token)
 
 
