@@ -1,5 +1,5 @@
 """
-Azure CosmosDB MongoDB vCore Vector store index.
+Azure DocumentDB (with MongoDB compatibility) Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
     """
-    Azure CosmosDB MongoDB vCore Vector Store.
+    Azure DocumentDB (with MongoDB compatibility) Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
-    - a connection string associated with an Azure Cosmodb MongoDB vCore Cluster
+    - a connection string associated with an Azure DocumentDB cluster
 
     Examples:
         `pip install llama-index-vector-stores-azurecosmosmongo`
