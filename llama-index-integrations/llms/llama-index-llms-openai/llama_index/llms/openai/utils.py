@@ -833,9 +833,13 @@ def from_openai_message(
     role = openai_message.role
     blocks: List[ContentBlock] = []
 
-    # Extract reasoning_content if present (used by many OpenAI-compatible
-    # providers for chain-of-thought responses)
-    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    # Extract reasoning content if present (used by many OpenAI-compatible
+    # providers for chain-of-thought responses). vLLM (>=0.20.x) exposes
+    # the field as ``reasoning`` for Qwen3-family reasoning models, while
+    # most other providers use ``reasoning_content``; accept either.
+    reasoning_content = getattr(openai_message, "reasoning_content", None) or getattr(
+        openai_message, "reasoning", None
+    )
     if isinstance(reasoning_content, str) and reasoning_content:
         blocks.append(ThinkingBlock(content=reasoning_content))
 
