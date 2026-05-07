@@ -291,10 +291,8 @@ class Anthropic(FunctionCallingLLM):
         elif aws_region:
             aws_credentials_provided = {}
             if aws_access_key_id and aws_secret_access_key:
-                aws_credentials_provided["aws_access_key_id"] = aws_access_key_id
-                aws_credentials_provided["aws_secret_access_key"] = (
-                    aws_secret_access_key
-                )
+                aws_credentials_provided["aws_access_key"] = aws_access_key_id
+                aws_credentials_provided["aws_secret_key"] = aws_secret_access_key
             if aws_bearer_token_bedrock:
                 if aws_credentials_provided:
                     logger.warning(
@@ -311,12 +309,10 @@ class Anthropic(FunctionCallingLLM):
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
-                aws_access_key=aws_access_key_id,
-                aws_secret_key=aws_secret_access_key,
-                api_key=aws_bearer_token_bedrock,
                 max_retries=max_retries,
                 default_headers=merged_headers,
                 timeout=timeout,
+                **aws_credentials_provided,
             )
         else:
             self._client = anthropic.Anthropic(

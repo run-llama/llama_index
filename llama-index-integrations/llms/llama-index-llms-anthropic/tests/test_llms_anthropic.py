@@ -1076,3 +1076,29 @@ def test_structured_output_failure_mock() -> None:
         match="It was not possible to produce a structured response because of max_tokens",
     ):
         sllm.chat(STRUCT_MESSAGES)
+
+
+def test_init_with_aws_credentials_and_bearer_token():
+    llm = Anthropic(
+        model="claude-sonnet-4-5",
+        aws_region="us-east-1",
+        aws_access_key_id="aws_access_key_id",
+        aws_secret_access_key="aws_secret_access_key",
+        aws_bearer_token_bedrock="aws_bearer_token_bedrock",
+    )
+    assert llm._client is not None
+    assert llm._client.aws_access_key == "aws_access_key_id"
+    assert llm._client.aws_secret_key == "aws_secret_access_key"
+    assert llm._client.api_key is None
+
+
+def test_init_with_aws_bearer_token_only():
+    llm = Anthropic(
+        model="claude-sonnet-4-5",
+        aws_region="us-east-1",
+        aws_bearer_token_bedrock="aws_bearer_token_bedrock",
+    )
+    assert llm._client is not None
+    assert llm._client.aws_access_key is None
+    assert llm._client.aws_secret_key is None
+    assert llm._client.api_key == "aws_bearer_token_bedrock"
