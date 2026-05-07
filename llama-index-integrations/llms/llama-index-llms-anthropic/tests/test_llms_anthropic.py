@@ -83,12 +83,13 @@ def test_anthropic_through_vertex_ai():
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-def test_anthropic_through_bedrock():
+def test_anthropic_through_bedrock():  # Load environment variables from .env file if present
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        aws_bearer_token_bedrock=os.getenv("AWS_BEARER_TOKEN_BEDROCK"),
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
@@ -164,6 +165,7 @@ async def test_anthropic_through_bedrock_async():
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-sonnet-4-5-20250929-v1:0"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        aws_bearer_token_bedrock=os.getenv("AWS_BEARER_TOKEN_BEDROCK"),
     )
 
     # Test standard async completion
