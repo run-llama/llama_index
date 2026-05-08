@@ -6,6 +6,7 @@ from unittest.mock import patch
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
+from llama_index.llms.bedrock_converse.base import _parse_tool_input
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -315,6 +316,36 @@ def test_stream_chat(bedrock_converse):
     assert final_response.additional_kwargs["prompt_tokens"] == 15
     assert final_response.additional_kwargs["completion_tokens"] == 26
     assert final_response.additional_kwargs["total_tokens"] == 41
+
+
+
+# -- _parse_tool_input unit tests (pin partial-JSON fallback behavior) --------
+
+
+def test_parse_tool_input_partial_json_returns_empty_dict():
+    """Partial JSON from an intermediate streaming chunk should fall back to {}."""
+    assert _parse_tool_input('{"locat') == {}
+
+
+def test_parse_tool_input_valid_json_returns_dict():
+    """Complete JSON string should be parsed to a dict."""
+    assert _parse_tool_input('{"location": "London"}') == {"location": "London"}
+
+
+def test_parse_tool_input_empty_string_returns_empty_dict():
+    """Empty string (first delta before any input arrives) should return {}."""
+    assert _parse_tool_input("") == {}
+
+
+def test_parse_tool_input_dict_passthrough():
+    """If input is already a dict (non-streaming path), return it unchanged."""
+    d = {"location": "London"}
+    assert _parse_tool_input(d) is d
+
+
+def test_parse_tool_input_non_string_passthrough():
+    """Non-string, non-dict input (e.g. None) should be returned as-is."""
+    assert _parse_tool_input(None) is None
 
 
 def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
