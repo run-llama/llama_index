@@ -805,6 +805,7 @@ async def converse_with_retry_async(
     guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
+    client: Optional[Any] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -881,23 +882,30 @@ async def converse_with_retry_async(
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
+        if client is not None:
+            return await client.converse(**kwargs)
         async with session.client(
             "bedrock-runtime",
             config=config,
             **_boto_client_kwargs,
-        ) as client:
-            return await client.converse(**kwargs)
+        ) as c:
+            return await c.converse(**kwargs)
 
     @retry_decorator
     async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
+        if client is not None:
             response = await client.converse_stream(**kwargs)
             async for event in response["stream"]:
                 yield event
+        else:
+            async with session.client(
+                "bedrock-runtime",
+                config=config,
+                **_boto_client_kwargs,
+            ) as c:
+                response = await c.converse_stream(**kwargs)
+                async for event in response["stream"]:
+                    yield event
 
     if stream:
         return _conversion_stream_with_retry(**converse_kwargs)

@@ -2,6 +2,7 @@ import random
 import string
 import json
 import os
+from unittest.mock import patch
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
@@ -355,6 +356,53 @@ async def test_astream_chat(bedrock_converse):
     assert final_response.additional_kwargs["prompt_tokens"] == 15
     assert final_response.additional_kwargs["completion_tokens"] == 26
     assert final_response.additional_kwargs["total_tokens"] == 41
+
+
+@pytest.mark.asyncio
+async def test_achat_uses_async_client_when_provided(
+    mock_boto3_session, mock_aioboto3_session
+):
+    """When async_client is provided, achat uses it directly without opening a session client."""
+    async_mock = AsyncMockClient()
+    llm = BedrockConverse(
+        model=EXP_MODEL,
+        max_tokens=EXP_MAX_TOKENS,
+        async_client=async_mock,
+    )
+
+    with patch.object(
+        AsyncMockClient, "converse", wraps=async_mock.converse
+    ) as patched_converse:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            response = await llm.achat(messages)
+            patched_converse.assert_called_once()
+            patched_session_client.assert_not_called()
+
+    assert isinstance(response, ChatResponse)
+    assert response.message.content == EXP_RESPONSE
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_uses_async_client_when_provided(
+    mock_boto3_session, mock_aioboto3_session
+):
+    """When async_client is provided, astream_chat uses it directly without opening a session client."""
+    async_mock = AsyncMockClient()
+    llm = BedrockConverse(
+        model=EXP_MODEL,
+        max_tokens=EXP_MAX_TOKENS,
+        async_client=async_mock,
+    )
+
+    with patch.object(
+        AsyncMockClient, "converse_stream", wraps=async_mock.converse_stream
+    ) as patched_stream:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            response_stream = await llm.astream_chat(messages)
+            async for _ in response_stream:
+                pass
+            patched_stream.assert_called_once()
+            patched_session_client.assert_not_called()
 
 
 @pytest.mark.asyncio
