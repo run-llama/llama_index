@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-huggingface-optimum"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index embeddings huggingface optimum integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
@@ -35,7 +35,9 @@ license = "MIT"
 dependencies = [
     "llama-index-embeddings-huggingface>=0.6.0,<0.7",
     "llama-index-core>=0.13.0,<0.15",
-    "optimum[exporters]",
+    # onnxruntime 1.24+ only ships wheels for CPython 3.11+ (3.10 stays in our support matrix).
+    "onnxruntime>=1.15.0,<1.24",
+    "optimum[onnxruntime]>=2.0,<3",
 ]
 
 [tool.codespell]

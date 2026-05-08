@@ -22,8 +22,13 @@ from llama_index.vector_stores.couchbase import (
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import VectorStoreIndex
 from couchbase.cluster import Cluster
-from couchbase.management.logic.search_index_logic import SearchIndex
 from couchbase.exceptions import SearchIndexNotFoundException
+
+try:
+    from couchbase.management.logic.search_index_logic import SearchIndex
+except ModuleNotFoundError:
+    # couchbase Python SDK: SearchIndex exposed publicly since internal layout change
+    from couchbase.management.search import SearchIndex
 
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")

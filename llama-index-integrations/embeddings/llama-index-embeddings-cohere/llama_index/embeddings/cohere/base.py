@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import cohere
 import httpx
@@ -11,7 +11,9 @@ from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embe
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
+from llama_index.core.embeddings.mixed_embedding_utils import MixedEmbeddingContent
 from llama_index.core.schema import ImageType
+from llama_index.core.base.llms.types import ImageBlock, TextBlock
 from PIL import Image
 from tenacity import (
     before_sleep_log,
@@ -288,6 +290,174 @@ class CohereEmbedding(MultiModalEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "CohereEmbedding"
+
+    @property
+    def supports_mixed_embedding(self) -> bool:
+        """Cohere v3/v4 models support joint embedding of interleaved text and images."""
+        return self.model_name in (V3_MODELS + V4_MODELS)
+
+    @staticmethod
+    def _mixed_content_cohere_supported(
+        content: MixedEmbeddingContent,
+    ) -> MixedEmbeddingContent:
+        """Filter to content block types Cohere supports: text and image only."""
+        return [b for b in content if isinstance(b, (TextBlock, ImageBlock))]
+
+    @staticmethod
+    def _blocks_to_cohere_api_format(
+        content: MixedEmbeddingContent,
+    ) -> List[Dict[str, Any]]:
+        """Convert embeddable content blocks to Cohere embed API input format."""
+        out: List[Dict[str, Any]] = []
+        for block in content:
+            if isinstance(block, TextBlock):
+                out.append({"type": "text", "text": block.text})
+            elif isinstance(block, ImageBlock):
+                out.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": block.inline_url()},
+                    }
+                )
+        return out
+
+    def _get_mixed_content_embedding(
+        self, content: MixedEmbeddingContent
+    ) -> List[float]:
+        """Get embedding for interleaved text + image content (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        supported = self._mixed_content_cohere_supported(content)
+        if not supported:
+            raise ValueError(
+                "No Cohere-supported content (text or image blocks) in mixed content."
+            )
+        api_content = self._blocks_to_cohere_api_format(supported)
+        client = self._get_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+
+        @retry_decorator
+        def _embed_with_retry() -> List[List[float]]:
+            result = client.embed(
+                inputs=[{"content": api_content}],
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return _embed_with_retry()[0]
+
+    async def _aget_mixed_content_embedding(
+        self, content: MixedEmbeddingContent
+    ) -> List[float]:
+        """Async get embedding for interleaved text + image content (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        supported = self._mixed_content_cohere_supported(content)
+        if not supported:
+            raise ValueError(
+                "No Cohere-supported content (text or image blocks) in mixed content."
+            )
+        api_content = self._blocks_to_cohere_api_format(supported)
+        async_client = self._get_async_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+
+        @retry_decorator
+        async def _aembed_with_retry() -> List[List[float]]:
+            result = (
+                await async_client.embed(
+                    inputs=[{"content": api_content}],
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return (await _aembed_with_retry())[0]
+
+    def _get_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[List[float]]:
+        """Get embeddings for a batch of interleaved contents (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        if not contents:
+            return []
+        filtered = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in filtered):
+            raise ValueError(
+                "Every mixed content item must contain at least one Cohere-supported "
+                "block (text or image_url)."
+            )
+        client = self._get_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+        inputs = [{"content": self._blocks_to_cohere_api_format(c)} for c in filtered]
+
+        @retry_decorator
+        def _embed_batch_with_retry() -> List[List[float]]:
+            result = client.embed(
+                inputs=inputs,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return _embed_batch_with_retry()
+
+    async def _aget_mixed_content_embeddings(
+        self, contents: List[MixedEmbeddingContent]
+    ) -> List[List[float]]:
+        """Async get embeddings for a batch of interleaved contents (audio/video dropped)."""
+        if self.model_name not in (V3_MODELS + V4_MODELS):
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. "
+                f"Supported models are {V3_MODELS + V4_MODELS}"
+            )
+        if not contents:
+            return []
+        filtered = [self._mixed_content_cohere_supported(c) for c in contents]
+        if any(not c for c in filtered):
+            raise ValueError(
+                "Every mixed content item must contain at least one Cohere-supported "
+                "block (text or image)."
+            )
+        inputs = [{"content": self._blocks_to_cohere_api_format(c)} for c in filtered]
+        async_client = self._get_async_client()
+        input_type = self.input_type or "search_document"
+        retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
+
+        @retry_decorator
+        async def _aembed_batch_with_retry() -> List[List[float]]:
+            result = (
+                await async_client.embed(
+                    inputs=inputs,
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
+            ).embeddings
+            return getattr(result, self.embedding_type, None)
+
+        return await _aembed_batch_with_retry()
 
     def _image_to_base64_data_url(self, image_input: Union[str, Path, BytesIO]) -> str:
         """Convert an image to a base64 Data URL."""

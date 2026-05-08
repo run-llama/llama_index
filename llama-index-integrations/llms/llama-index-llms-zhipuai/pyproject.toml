@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-zhipuai"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index llms zhipuai integration"
 authors = [{name = "nightosong"}]
 requires-python = ">=3.10,<4.0"
@@ -36,6 +36,7 @@ license = "MIT"
 dependencies = [
     "zhipuai>=2.1.5.20230904,<3",
     "llama-index-core>=0.13.0,<0.15",
+    "sniffio>=1.3.0,<2",
 ]
 
 [tool.codespell]

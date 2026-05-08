@@ -173,6 +173,9 @@ def embed_nodes(
     """
     Get embeddings of the given nodes, run embedding model if necessary.
 
+    Uses the embedding model's __call__ so that nodes with mixed (interleaved
+    text + image) content use mixed embedding when the model supports it.
+
     Args:
         nodes (Sequence[BaseNode]): The nodes to embed.
         embed_model (BaseEmbedding): The embedding model to use.
@@ -184,21 +187,16 @@ def embed_nodes(
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 
-    texts_to_embed = []
-    ids_to_embed = []
+    nodes_to_embed = [node for node in nodes if node.embedding is None]
     for node in nodes:
-        if node.embedding is None:
-            ids_to_embed.append(node.node_id)
-            texts_to_embed.append(node.get_content(metadata_mode=MetadataMode.EMBED))
-        else:
+        if node.embedding is not None:
             id_to_embed_map[node.node_id] = node.embedding
 
-    new_embeddings = embed_model.get_text_embedding_batch(
-        texts_to_embed, show_progress=show_progress
-    )
-
-    for new_id, text_embedding in zip(ids_to_embed, new_embeddings):
-        id_to_embed_map[new_id] = text_embedding
+    if nodes_to_embed:
+        embed_model(nodes_to_embed, show_progress=show_progress)
+        for node in nodes_to_embed:
+            if node.embedding is not None:
+                id_to_embed_map[node.node_id] = node.embedding
 
     return id_to_embed_map
 
@@ -247,6 +245,9 @@ async def async_embed_nodes(
     """
     Async get embeddings of the given nodes, run embedding model if necessary.
 
+    Uses the embedding model's acall so that nodes with mixed (interleaved
+    text + image) content use mixed embedding when the model supports it.
+
     Args:
         nodes (Sequence[BaseNode]): The nodes to embed.
         embed_model (BaseEmbedding): The embedding model to use.
@@ -258,21 +259,16 @@ async def async_embed_nodes(
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 
-    texts_to_embed = []
-    ids_to_embed = []
+    nodes_to_embed = [node for node in nodes if node.embedding is None]
     for node in nodes:
-        if node.embedding is None:
-            ids_to_embed.append(node.node_id)
-            texts_to_embed.append(node.get_content(metadata_mode=MetadataMode.EMBED))
-        else:
+        if node.embedding is not None:
             id_to_embed_map[node.node_id] = node.embedding
 
-    new_embeddings = await embed_model.aget_text_embedding_batch(
-        texts_to_embed, show_progress=show_progress
-    )
-
-    for new_id, text_embedding in zip(ids_to_embed, new_embeddings):
-        id_to_embed_map[new_id] = text_embedding
+    if nodes_to_embed:
+        await embed_model.acall(nodes_to_embed, show_progress=show_progress)
+        for node in nodes_to_embed:
+            if node.embedding is not None:
+                id_to_embed_map[node.node_id] = node.embedding
 
     return id_to_embed_map
 

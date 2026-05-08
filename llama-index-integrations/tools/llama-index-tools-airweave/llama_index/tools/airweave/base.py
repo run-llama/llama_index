@@ -3,7 +3,7 @@
 import warnings
 from typing import Any, Dict, List, Optional
 
-from airweave import AirweaveSDK, SearchRequest
+from airweave import AirweaveSDK
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -84,7 +84,9 @@ class AirweaveToolSpec(BaseToolSpec):
         """
         response = self.client.collections.search(
             readable_id=collection_id,
-            request=SearchRequest(query=query, limit=limit, offset=offset),
+            query=query,
+            limit=limit,
+            offset=offset,
         )
 
         return self._parse_search_response(response, collection_id)
@@ -147,8 +149,7 @@ class AirweaveToolSpec(BaseToolSpec):
             search_params["generate_answer"] = generate_answer
 
         response = self.client.collections.search(
-            readable_id=collection_id,
-            request=SearchRequest(**search_params),
+            readable_id=collection_id, **search_params
         )
 
         result: Dict[str, Any] = {
@@ -187,12 +188,10 @@ class AirweaveToolSpec(BaseToolSpec):
         """
         response = self.client.collections.search(
             readable_id=collection_id,
-            request=SearchRequest(
-                query=query,
-                limit=limit,
-                generate_answer=True,
-                rerank=use_reranking,
-            ),
+            query=query,
+            limit=limit,
+            generate_answer=True,
+            rerank=use_reranking,
         )
 
         if hasattr(response, "completion") and response.completion:

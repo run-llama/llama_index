@@ -31,12 +31,17 @@ def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
     return [mock_get_text_embedding(text) for text in texts]
 
 
+@patch.object(
+    MockEmbedding, "_get_query_embedding", side_effect=mock_get_text_embedding
+)
 @patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
 @patch.object(
     MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_vector_memory(
-    _mock_get_text_embeddings: Any, _mock_get_text_embedding: Any
+    _mock_get_text_embeddings: Any,
+    _mock_get_text_embedding: Any,
+    _mock_get_query_embedding: Any,
 ) -> None:
     """Test vector memory."""
     # arrange
