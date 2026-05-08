@@ -347,16 +347,14 @@ def _content_block_to_bedrock_format(
             )
             return {"text": block.content}
 
-        if block.content:
+        signature = block.additional_information.get("signature")
+        if block.content or signature:
             thinking_data = {
-                "reasoningContent": {"reasoningText": {"text": block.content}}
+                "reasoningContent": {"reasoningText": {"text": block.content or ""}}
             }
-            if (
-                "signature" in block.additional_information
-                and block.additional_information["signature"]
-            ):
+            if signature:
                 thinking_data["reasoningContent"]["reasoningText"]["signature"] = (
-                    block.additional_information["signature"]
+                    signature
                 )
 
             return thinking_data
@@ -966,3 +964,4 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 class ThinkingDict(TypedDict):
     type: Literal["enabled", "adaptive"]
     budget_tokens: NotRequired[int]
+    display: NotRequired[Literal["summarized", "omitted"]]
