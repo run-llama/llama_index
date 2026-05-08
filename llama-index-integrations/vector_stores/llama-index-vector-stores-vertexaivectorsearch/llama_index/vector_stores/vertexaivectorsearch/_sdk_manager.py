@@ -1,3 +1,4 @@
+import importlib.util
 from typing import TYPE_CHECKING, Optional, TypedDict, Union
 
 from google.cloud import aiplatform, storage
@@ -69,7 +70,9 @@ class VectorSearchSDKManager:
 
         # v2 client is initialized lazily
         self._v2_client: Optional["V2ClientDict"] = None
-        self._v2_available = None
+        self._v2_available = (
+            importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
+        )
 
         self.initialize_aiplatform()
 
@@ -159,13 +162,21 @@ class VectorSearchSDKManager:
             bool: True if google-cloud-vectorsearch is available
 
         """
-        if self._v2_available is None:
-            import importlib.util
-
-            self._v2_available = (
-                importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
-            )
         return self._v2_available
+
+    def ensure_v2_available(self) -> None:
+        """
+        Ensures v2 SDK is available.
+
+        Raises:
+            ImportError: If the 'v2' extra is not installed with this package
+
+        """
+        if not self._v2_available:
+            raise ImportError(
+                "Vertex v2 operations require the `v2` extra, install with: "
+                '`pip install "llama-index-vector-stores-vertexaivectorsearch[v2]"`'
+            )
 
     def get_v2_client(self) -> "V2ClientDict":
         """
@@ -181,13 +192,8 @@ class VectorSearchSDKManager:
             ImportError: If google-cloud-vectorsearch is not installed
 
         """
+        self.ensure_v2_available()
         if self._v2_client is None:
-            if not self.is_v2_available():
-                raise ImportError(
-                    "v2 requires 'google-cloud-vectorsearch'. "
-                    "Install with: pip install 'llama-index-vector-stores-vertexaivectorsearch[v2]'"
-                )
-
             # Import only when needed, not at module level
             from google.cloud import vectorsearch_v1beta
 
