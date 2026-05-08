@@ -1,12 +1,14 @@
 """Test Vertex AI Vector Store Vector Search functionality."""
 
 import hashlib
+import logging
 import os
 import uuid
 from typing import Iterator, List, Optional, Tuple
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
@@ -14,16 +16,25 @@ from google.cloud.aiplatform.matching_engine import (
 )
 from google.cloud.vectorsearch_v1beta import (
     BatchCreateDataObjectsRequest,
+    BatchDeleteDataObjectsRequest,
     CreateDataObjectRequest,
     DataObject,
     DataObjectSearchServiceAsyncClient,
     DataObjectSearchServiceClient,
     DataObjectServiceAsyncClient,
     DataObjectServiceClient,
+    DeleteDataObjectRequest,
     DenseVector,
+    OutputFields,
+    QueryDataObjectsRequest,
+    QueryDataObjectsResponse,
     SparseVector,
     Vector,
     VectorSearchServiceClient,
+)
+from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
+    QueryDataObjectsAsyncPager,
+    QueryDataObjectsPager,
 )
 from llama_index.core import Settings, StorageContext, VectorStoreIndex
 from llama_index.core.schema import (
@@ -45,7 +56,10 @@ from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore, 
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
-from llama_index.vector_stores.vertexaivectorsearch.base import VertexAIIndexingError
+from llama_index.vector_stores.vertexaivectorsearch.base import (
+    VertexAIDeleteError,
+    VertexAIIndexingError,
+)
 from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
@@ -1608,7 +1622,7 @@ class TestUnitV2Add:
         def test_v2_add_failed_sub_requests(
             self,
             mock_v2_store: VertexAIVectorStore,
-            expected_requests: List[BatchCreateDataObjectsRequest],
+            expected_add_requests: List[BatchCreateDataObjectsRequest],
             mock_v2_data_object_service_client: MagicMock,
             input_dense_nodes: List[TextNode],
             batch_add_side_effect: List[Optional[Exception]],
@@ -1617,7 +1631,7 @@ class TestUnitV2Add:
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``add`` batches fail."""
             # GIVEN
-            expected_calls = [call(request) for request in expected_requests]
+            expected_calls = [call(request) for request in expected_add_requests]
             expected_added = [f"node_{i}" for i in expected_added_ids]
             expected_failed = [f"node_{i}" for i in expected_failed_ids]
             mock_v2_data_object_service_client.batch_create_data_objects.side_effect = (
@@ -1641,7 +1655,7 @@ class TestUnitV2Add:
             self,
             mock_v2_store: VertexAIVectorStore,
             input_dense_nodes: List[TextNode],
-            expected_requests: List[BatchCreateDataObjectsRequest],
+            expected_add_requests: List[BatchCreateDataObjectsRequest],
             mock_v2_data_object_service_async_client: MagicMock,
             batch_add_side_effect: List[Optional[Exception]],
             expected_added_ids: List[int],
@@ -1649,7 +1663,7 @@ class TestUnitV2Add:
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``async_add`` batches fail."""
             # GIVEN
-            expected_calls = [call(request) for request in expected_requests]
+            expected_calls = [call(request) for request in expected_add_requests]
             expected_added = [f"node_{i}" for i in expected_added_ids]
             expected_failed = [f"node_{i}" for i in expected_failed_ids]
             mock_v2_data_object_service_async_client.batch_create_data_objects.side_effect = batch_add_side_effect
@@ -1665,4 +1679,881 @@ class TestUnitV2Add:
             assert exception.failed_ids == expected_failed
             mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
                 expected_calls, any_order=True
+            )
+
+
+class TestUnitV2Delete:
+    """Unit test the behavior of ``(a)delete``, ``(a)delete_nodes``, and ``(a)clear``."""
+
+    COLLECTION_PARENT = (
+        "projects/test-project/locations/us-central1/collections/my-collection"
+    )
+
+    @pytest.fixture
+    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+        )
+
+    @pytest.fixture
+    def expected_delete_requests_ref_id_1(self) -> List[BatchDeleteDataObjectsRequest]:
+        return [
+            BatchDeleteDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=[
+                    DeleteDataObjectRequest(
+                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_2"
+                    ),
+                ],
+            ),
+            BatchDeleteDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=[
+                    DeleteDataObjectRequest(
+                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_3"
+                    ),
+                ],
+            ),
+        ]
+
+    @pytest.fixture
+    def delete_ref_id_query_pager_pages_ref_id_1(self) -> List[MagicMock]:
+        return [
+            MagicMock(
+                spec=QueryDataObjectsResponse,
+                data_objects=[
+                    DataObject(
+                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_2",
+                        data={"node_id": "node_2"},
+                    )
+                ],
+            ),
+            MagicMock(
+                spec=QueryDataObjectsResponse,
+                data_objects=[
+                    DataObject(
+                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_3",
+                        data={"node_id": "node_3"},
+                    )
+                ],
+            ),
+        ]
+
+    @pytest.fixture
+    def expected_delete_nodes_by_id_requests(
+        self,
+    ) -> List[BatchDeleteDataObjectsRequest]:
+        # batch_size=2 → two batches: ["node_0","node_1"] and ["node_2"]
+        def _req(nids: List[str]) -> BatchDeleteDataObjectsRequest:
+            return BatchDeleteDataObjectsRequest(
+                parent=self.COLLECTION_PARENT,
+                requests=[
+                    DeleteDataObjectRequest(
+                        name=f"{self.COLLECTION_PARENT}/dataObjects/{nid}",
+                    )
+                    for nid in nids
+                ],
+            )
+
+        return [_req(["node_0", "node_1"]), _req(["node_2"])]
+
+    @pytest.fixture
+    def input_delete_nodes_filters(self) -> MetadataFilters:
+        # corresponds to `expected_filter_query_request`
+        return MetadataFilters(filters=[MetadataFilter(key="user_id", value=200)])
+
+    @pytest.fixture
+    def expected_filter_query_request(self) -> QueryDataObjectsRequest:
+        # corresponds to `input_delete_nodes_filters`
+        return QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"user_id": {"$eq": 200}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+
+    def test_v2_delete_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+        )
+        input_ref_doc_id = "doc_1"
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"parent_id": {"$eq": input_ref_doc_id}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        mock_v2_store.delete(ref_doc_id=input_ref_doc_id)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    async def test_v2_adelete_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = (
+            delete_ref_id_query_pager_pages_ref_id_1
+        )
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+        input_ref_doc_id = "doc_1"
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"parent_id": {"$eq": input_ref_doc_id}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        await mock_v2_store.adelete(ref_doc_id=input_ref_doc_id)
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    def test_v2_delete_missing_docid_field(
+        self, mock_v2_store: VertexAIVectorStore
+    ) -> None:
+        # GIVEN
+        mock_v2_store.docid_field = None
+        input_ref_doc_id = "doc_1"
+
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            mock_v2_store.delete(ref_doc_id=input_ref_doc_id)
+
+    async def test_v2_adelete_missing_docid_field(
+        self, mock_v2_store: VertexAIVectorStore
+    ) -> None:
+        # GIVEN
+        mock_v2_store.docid_field = None
+        input_ref_doc_id = "doc_1"
+
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            await mock_v2_store.adelete(ref_doc_id=input_ref_doc_id)
+
+    def test_v2_delete_empty_query_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(spec=QueryDataObjectsPager, pages=[])
+        )
+        input_ref_doc_id = "doc_1"
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"parent_id": {"$eq": input_ref_doc_id}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+
+        # WHEN
+        mock_v2_store.delete(ref_doc_id=input_ref_doc_id)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_not_called()
+
+    async def test_v2_adelete_empty_query_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = []
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+        input_ref_doc_id = "doc_1"
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"parent_id": {"$eq": input_ref_doc_id}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+
+        # WHEN
+        await mock_v2_store.adelete(ref_doc_id=input_ref_doc_id)
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
+    )
+    def test_v2_delete_nodes_invalid_input(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_node_ids: List[str] | None,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            mock_v2_store.delete_nodes(node_ids=input_node_ids, filters=None)
+
+    @pytest.mark.parametrize(
+        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
+    )
+    async def test_v2_adelete_nodes_invalid_input(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_node_ids: List[str] | None,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            await mock_v2_store.adelete_nodes(node_ids=input_node_ids, filters=None)
+
+    def test_v2_delete_nodes_by_id_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
+
+        # WHEN
+        mock_v2_store.delete_nodes(node_ids=["node_0", "node_1", "node_2"])
+
+        # THEN
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    async def test_v2_adelete_nodes_by_id_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
+
+        # WHEN
+        await mock_v2_store.adelete_nodes(node_ids=["node_0", "node_1", "node_2"])
+
+        # THEN
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls, any_order=True
+        )
+
+    def test_v2_delete_nodes_by_filters_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        input_delete_nodes_filters: MetadataFilters,
+        expected_filter_query_request: QueryDataObjectsRequest,
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+        )
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        mock_v2_store.delete_nodes(filters=input_delete_nodes_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_filter_query_request,
+        )
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    async def test_v2_adelete_nodes_by_filters_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        input_delete_nodes_filters: MetadataFilters,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_filter_query_request: QueryDataObjectsRequest,
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = (
+            delete_ref_id_query_pager_pages_ref_id_1
+        )
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        await mock_v2_store.adelete_nodes(filters=input_delete_nodes_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_filter_query_request
+        )
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    def test_v2_delete_nodes_by_filters_empty_query_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+        input_delete_nodes_filters: MetadataFilters,
+        expected_filter_query_request: QueryDataObjectsRequest,
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(spec=QueryDataObjectsPager, pages=[])
+        )
+
+        # WHEN
+        mock_v2_store.delete_nodes(filters=input_delete_nodes_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_filter_query_request
+        )
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_not_called()
+
+    async def test_v2_adelete_nodes_by_filters_empty_query_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        input_delete_nodes_filters: MetadataFilters,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_filter_query_request: QueryDataObjectsRequest,
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = []
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+
+        # WHEN
+        await mock_v2_store.adelete_nodes(filters=input_delete_nodes_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_filter_query_request
+        )
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_not_called()
+
+    def test_v2_delete_nodes_by_filters_valid_empty_filters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # GIVEN
+        caplog.set_level(logging.WARNING)
+        input_filters = MetadataFilters(filters=[])
+
+        # WHEN
+        mock_v2_store.delete_nodes(filters=input_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_not_called()
+        assert "Input filter set is empty after conversion" in caplog.text
+
+    async def test_v2_adelete_nodes_by_filters_valid_empty_filters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # GIVEN
+        caplog.set_level(logging.WARNING)
+        input_filters = MetadataFilters(filters=[])
+
+        # WHEN
+        await mock_v2_store.adelete_nodes(filters=input_filters)
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_not_called()
+        assert "Input filter set is empty after conversion" in caplog.text
+
+    def test_v2_clear_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_client: MagicMock,
+        mock_v2_data_object_search_service_client: MagicMock,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+        )
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        mock_v2_store.clear()
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    async def test_v2_aclear_valid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_service_async_client: MagicMock,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = (
+            delete_ref_id_query_pager_pages_ref_id_1
+        )
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+
+        # WHEN
+        await mock_v2_store.aclear()
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+            expected_calls,
+        )
+
+    @pytest.mark.parametrize(
+        (
+            "batch_delete_side_effect",
+            "expected_results",
+            "delete_by_id_expected_results",
+        ),
+        [
+            ([NotFound("not found"), None], (1, 1, 0), (1, 2, 0)),
+            ([None, NotFound("not found")], (1, 1, 0), (2, 1, 0)),
+            ([NotFound("not found"), NotFound("not found")], (0, 2, 0), (0, 3, 0)),
+            ([ValueError(), None], (1, 0, 1), (1, 0, 2)),
+            ([None, ValueError()], (1, 0, 1), (2, 0, 1)),
+            ([ValueError(), ValueError()], (0, 0, 2), (0, 0, 3)),
+            ([NotFound("not found"), ValueError()], (0, 1, 1), (0, 2, 1)),
+            ([ValueError(), NotFound("not found")], (0, 1, 1), (0, 1, 2)),
+        ],
+        ids=[
+            "1 NotFound (1st batch)",
+            "1 NotFound (2nd batch)",
+            "2 NotFound",
+            "1 general error (1st batch)",
+            "1 general error (2nd batch)",
+            "2 general errors",
+            "NotFound + general error",
+            "general error + NotFound",
+        ],
+    )
+    class TestUnitV2DeleteSubBatchFailures:
+        """Tests for when a subset of delete batches fail, with common test parameterization."""
+
+        def test_v2_delete_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_client: MagicMock,
+            mock_v2_data_object_search_service_client: MagicMock,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+            input_ref_doc_id = "doc_1"
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                filter={"parent_id": {"$eq": input_ref_doc_id}},
+                page_size=2,
+                output_fields=OutputFields(metadata_fields=["*"]),
+            )
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_client.batch_delete_data_objects.side_effect = (
+                batch_delete_side_effect
+            )
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                mock_v2_store.delete(ref_doc_id=input_ref_doc_id)
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        async def test_v2_adelete_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_async_client: MagicMock,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+            mock_pager.pages.__aiter__.return_value = (
+                delete_ref_id_query_pager_pages_ref_id_1
+            )
+            mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+            input_ref_doc_id = "doc_1"
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                filter={"parent_id": {"$eq": input_ref_doc_id}},
+                page_size=2,
+                output_fields=OutputFields(metadata_fields=["*"]),
+            )
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.side_effect = batch_delete_side_effect
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                await mock_v2_store.adelete(ref_doc_id=input_ref_doc_id)
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        def test_v2_delete_nodes_by_id_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_client: MagicMock,
+            expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
+            mock_v2_data_object_service_client.batch_delete_data_objects.side_effect = (
+                batch_delete_side_effect
+            )
+            expected_deleted, expected_not_found, expected_failed = (
+                delete_by_id_expected_results
+            )
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                mock_v2_store.delete_nodes(node_ids=["node_0", "node_1", "node_2"])
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        async def test_v2_adelete_nodes_by_id_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_async_client: MagicMock,
+            expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.side_effect = batch_delete_side_effect
+            expected_deleted, expected_not_found, expected_failed = (
+                delete_by_id_expected_results
+            )
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                await mock_v2_store.adelete_nodes(
+                    node_ids=["node_0", "node_1", "node_2"]
+                )
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        def test_v2_delete_nodes_by_filters_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_client: MagicMock,
+            mock_v2_data_object_search_service_client: MagicMock,
+            input_delete_nodes_filters: MetadataFilters,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_filter_query_request: QueryDataObjectsRequest,
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_client.batch_delete_data_objects.side_effect = (
+                batch_delete_side_effect
+            )
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                mock_v2_store.delete_nodes(filters=input_delete_nodes_filters)
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+                expected_filter_query_request,
+            )
+            mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        async def test_v2_adelete_nodes_by_filters_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_async_client: MagicMock,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            input_delete_nodes_filters: MetadataFilters,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_filter_query_request: QueryDataObjectsRequest,
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+            mock_pager.pages.__aiter__.return_value = (
+                delete_ref_id_query_pager_pages_ref_id_1
+            )
+            mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.side_effect = batch_delete_side_effect
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                await mock_v2_store.adelete_nodes(filters=input_delete_nodes_filters)
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+                expected_filter_query_request
+            )
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        def test_v2_clear_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_client: MagicMock,
+            mock_v2_data_object_search_service_client: MagicMock,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
+                spec=QueryDataObjectsPager,
+                pages=delete_ref_id_query_pager_pages_ref_id_1,
+            )
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                page_size=2,
+                output_fields=OutputFields(metadata_fields=["*"]),
+            )
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_client.batch_delete_data_objects.side_effect = (
+                batch_delete_side_effect
+            )
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                mock_v2_store.clear()
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
+            )
+
+        async def test_v2_aclear_failed_sub_request(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_service_async_client: MagicMock,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: List[Optional[Exception]],
+            expected_results: Tuple[int, int, int],
+            delete_by_id_expected_results: Tuple[int, int, int],
+        ) -> None:
+            # GIVEN
+            mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+            mock_pager.pages.__aiter__.return_value = (
+                delete_ref_id_query_pager_pages_ref_id_1
+            )
+            mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                page_size=2,
+                output_fields=OutputFields(metadata_fields=["*"]),
+            )
+            expected_calls = [call(req) for req in expected_delete_requests_ref_id_1]
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.side_effect = batch_delete_side_effect
+            expected_deleted, expected_not_found, expected_failed = expected_results
+            expected_exceptions = [e for e in batch_delete_side_effect if e is not None]
+
+            # WHEN
+            with pytest.raises(VertexAIDeleteError) as exc_info:
+                await mock_v2_store.aclear()
+
+            # THEN
+            raised_exc = exc_info.value
+            assert raised_exc.deleted == expected_deleted
+            assert raised_exc.not_found == expected_not_found
+            assert raised_exc.failed == expected_failed
+            assert raised_exc.exceptions == expected_exceptions
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
+                expected_calls,
             )

@@ -10,9 +10,11 @@ import logging
 import os
 import time
 import typing
+from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, cast
 
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
@@ -44,9 +46,17 @@ from typing_extensions import Self, override
 
 if typing.TYPE_CHECKING:
     from google.cloud.vectorsearch_v1beta import (
+        BatchDeleteDataObjectsRequest,
         CreateDataObjectRequest,
         DataObject,
         DataObjectServiceAsyncClient,
+        OutputFields,
+        QueryDataObjectsRequest,
+        QueryDataObjectsResponse,
+    )
+    from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
+        QueryDataObjectsAsyncPager,
+        QueryDataObjectsPager,
     )
     from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import V2ClientDict
 
@@ -67,6 +77,55 @@ class VertexAIIndexingError(VertexAIException):
         )
         self.failed_ids = failed_ids
         self.added_ids = added_ids
+
+
+class VertexAIDeleteError(VertexAIException):
+    """Raised for errors when indexing content into a vector store."""
+
+    def __init__(
+        self, deleted: int, not_found: int, failed: int, exceptions: List[Exception]
+    ) -> None:
+        """Initialize the exception."""
+        super().__init__(
+            f"Failed to delete all target data objects, deleted={deleted}, "
+            f"not_found={not_found}, failed={failed}, exceptions={exceptions}"
+        )
+        self.failed = failed
+        self.deleted = deleted
+        self.not_found = not_found
+        self.exceptions = exceptions
+
+
+@dataclass
+class _DeleteResult:
+    """Container for tracking individual or batch result from delete operations."""
+
+    deleted: int = 0
+    failed: int = 0
+    not_found: int = 0
+    exceptions: List[Exception] = field(default_factory=list)
+
+    @property
+    def succeeded(self) -> bool:
+        """Indicates whether the batch operation succeeded."""
+        return not self.failed and not self.not_found and not self.exceptions
+
+    def __add__(self, other: "_DeleteResult") -> "_DeleteResult":
+        """Combine the properties of two :py:class:`_DeleteResult` objects."""
+        return _DeleteResult(
+            deleted=self.deleted + other.deleted,
+            failed=self.failed + other.failed,
+            not_found=self.not_found + other.not_found,
+            exceptions=[*self.exceptions, *other.exceptions],
+        )
+
+    @property
+    def summary_line(self) -> str:
+        """Returns a summary count line for logging purposes."""
+        return (
+            f"deleted={self.deleted}, not_found={self.not_found}, "
+            f"failed={self.failed}, exceptions={self.exceptions}"
+        )
 
 
 class FeatureFlags:
@@ -731,58 +790,224 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Delete nodes using ref_doc_id with v2 API.
 
         Args:
-            store: The VertexAIVectorStore instance
             ref_doc_id: The document ID to delete
             **delete_kwargs: Additional keyword arguments
 
         """
-        vectorsearch = _import_v2_sdk()
+        if self.docid_field is None:
+            raise ValueError("The field 'docid_field' must be set to use 'delete'")
 
-        _logger.info(f"Deleting nodes with ref_doc_id: {ref_doc_id} from v2 collection")
-
-        # Get v2 client
         clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
 
-        # Query for data objects with matching ref_doc_id
-        query_request = vectorsearch.QueryDataObjectsRequest(
-            parent=self._collection_parent,
-            filter={"ref_doc_id": {"$eq": ref_doc_id}},
-            output_fields=vectorsearch.OutputFields(
-                data_fields=["ref_doc_id"],
-                metadata_fields=["*"],
-            ),
+        _logger.info(
+            f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
+        )
+        query_request = self._build_filter_query_request(
+            v2_filter={self.docid_field: {"$eq": ref_doc_id}}
+        )
+        query_results = search_client.query_data_objects(query_request)
+        time_taken, result = self._sync_delete_query_result(query_results)
+        _logger.info(
+            f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
+            f"{time_taken:.2f}, {result.summary_line}",
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
+            )
+
+    def _build_filter_query_request(
+        self,
+        v2_filter: Dict[str, Any],
+        output_fields: Optional["OutputFields"] = None,
+    ) -> "QueryDataObjectsRequest":
+        """Build a query request for a given set of V2 filters."""
+        from google.cloud.vectorsearch_v1beta import (
+            OutputFields,
+            QueryDataObjectsRequest,
         )
 
-        try:
-            # Execute query
-            results = search_client.query_data_objects(query_request)
+        # cannot happen at existing call-sites, but include as a fallback
+        if not v2_filter:  # pragma: no cover
+            raise ValueError("Empty filters passed to filter query request")
+        if not output_fields:
+            output_fields = OutputFields(metadata_fields=["*"])
+        return QueryDataObjectsRequest(
+            parent=self._collection_parent,
+            filter=v2_filter,
+            page_size=self.batch_size,
+            output_fields=output_fields,
+        )
 
-            # Build batch delete requests
-            delete_requests = []
-            for data_object in results:
-                delete_requests.append(
-                    vectorsearch.DeleteDataObjectRequest(name=data_object.name),
-                )
+    def _sync_delete_query_result(
+        self, paged_resp: "QueryDataObjectsPager"
+    ) -> Tuple[float, _DeleteResult]:
+        """Synchronously delete all nodes included in the results of a query."""
+        requests = [
+            batch_request
+            for page in paged_resp.pages
+            if (batch_request := self._build_batch_delete_request(page)) is not None
+        ]
+        _logger.debug(f"Deleting query results in {len(requests)} batches")
+        return self._sync_delete_batches(requests)
 
-            # Batch delete
-            if delete_requests:
-                batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                    parent=self._collection_parent,
-                    requests=delete_requests,
+    def _build_batch_delete_request(
+        self, page: "QueryDataObjectsResponse"
+    ) -> Optional["BatchDeleteDataObjectsRequest"]:
+        from google.cloud.vectorsearch_v1beta import (
+            BatchDeleteDataObjectsRequest,
+            DeleteDataObjectRequest,
+        )
+
+        if delete_requests := [
+            DeleteDataObjectRequest(name=obj.name) for obj in page.data_objects
+        ]:
+            return BatchDeleteDataObjectsRequest(
+                parent=self._collection_parent, requests=delete_requests
+            )
+        return None
+
+    def _sync_delete_batches(
+        self, requests: List["BatchDeleteDataObjectsRequest"]
+    ) -> Tuple[float, _DeleteResult]:
+        """Execute a set of batch delete requests and output combined results."""
+        clients = self._sdk_manager.get_v2_client()
+        data_object_client = clients["data_object_service_client"]
+        result = _DeleteResult()
+        time_start = time.perf_counter()
+        for i, batch_request in enumerate(requests):
+            size = len(batch_request.requests)
+            try:
+                _logger.debug(f"Deleting batch {i} ({size} objects)")
+                data_object_client.batch_delete_data_objects(batch_request)
+                result.deleted += size
+            except NotFound as exc:
+                _logger.warning(
+                    f"Delete batch {i} ({size} objects) raised 'NotFound' exception: {exc}"
                 )
-                response = data_object_client.batch_delete_data_objects(
-                    batch_delete_request,
+                result.not_found += size
+                result.exceptions.append(exc)
+            except Exception as exc:
+                _logger.exception(f"Failed to delete batch {i} ({size} objects)")
+                result.failed += size
+                result.exceptions.append(exc)
+        time_taken = time.perf_counter() - time_start
+        return time_taken, result
+
+    @override
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            await self._adelete_v2(ref_doc_id, **delete_kwargs)
+        else:
+            # use the sync API for v1
+            self._delete_v1(ref_doc_id, **delete_kwargs)
+
+    async def _adelete_v2(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Asynchronously delete nodes using ref_doc_id with v2 API.
+
+        Args:
+            ref_doc_id: The document ID to delete
+            **delete_kwargs: Additional keyword arguments
+
+        """
+        if self.docid_field is None:
+            raise ValueError("The field 'docid_field' must be set to use 'adelete'")
+
+        clients = self._sdk_manager.get_v2_client()
+        search_client = clients["data_object_search_service_async_client"]
+
+        _logger.info(
+            f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
+        )
+        query_request = self._build_filter_query_request(
+            v2_filter={self.docid_field: {"$eq": ref_doc_id}}
+        )
+        paged_resp = await search_client.query_data_objects(query_request)
+        time_taken, result = await self._async_delete_query_result(paged_resp)
+        _logger.info(
+            f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
+            f"{time_taken:.2f}, {result.summary_line}",
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
+            )
+
+    async def _async_delete_query_result(
+        self, result_pager: "QueryDataObjectsAsyncPager"
+    ) -> Tuple[float, _DeleteResult]:
+        """
+        Asynchronously delete all nodes included in the results of a query.
+
+        The paged output from the query is converted into a series of tasks that execute
+        asynchronously, respecting the instance-global semaphore controlling
+        simultaneous requests to the collection.
+        """
+        clients = self._sdk_manager.get_v2_client()
+        data_object_client = clients["data_object_service_async_client"]
+
+        tasks = []
+        batch_idx = 1
+        async for page in result_pager.pages:
+            if batch_request := self._build_batch_delete_request(page):
+                tasks.append(
+                    self._async_delete_batch(
+                        data_object_client, batch_idx, batch_request
+                    )
                 )
-                _logger.info(
-                    f"Deleted {len(delete_requests)} data objects with ref_doc_id: {ref_doc_id}",
+                batch_idx += 1
+        time_start = time.perf_counter()
+        results: List[_DeleteResult] = await asyncio.gather(*tasks)
+        time_taken = time.perf_counter() - time_start
+        batch_result = sum(results, _DeleteResult())
+        return time_taken, batch_result
+
+    async def _async_delete_batch(
+        self,
+        client: "DataObjectServiceAsyncClient",
+        batch_idx: int,
+        request: "BatchDeleteDataObjectsRequest",
+    ) -> _DeleteResult:
+        async with self._async_request_semaphore:
+            size = len(request.requests)
+            try:
+                _logger.debug(f"Deleting async batch {batch_idx} ({size} objects)")
+                time_start = time.perf_counter()
+                await client.batch_delete_data_objects(request)
+                time_taken = time.perf_counter() - time_start
+                _logger.debug(
+                    f"Delete request batch {batch_idx} complete, deleted {size} nodes "
+                    f"in {time_taken:.2f}s",
                 )
-            else:
-                _logger.info(f"No data objects found with ref_doc_id: {ref_doc_id}")
-        except Exception as e:
-            _logger.error(f"Failed to delete data objects: {e}")
-            raise
+                return _DeleteResult(deleted=size)
+            except NotFound as exc:
+                _logger.warning(
+                    f"Delete batch {batch_idx} ({size} objects) raised 'NotFound' "
+                    f"exception: {exc}",
+                )
+                return _DeleteResult(not_found=size, exceptions=[exc])
+            except Exception as exc:
+                _logger.exception(
+                    f"Failed to delete async batch {batch_idx} ({size} objects)"
+                )
+                return _DeleteResult(failed=size, exceptions=[exc])
 
     @override
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -1269,57 +1494,159 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             **kwargs: Additional keyword arguments
 
         """
-        vectorsearch = _import_v2_sdk()
-
-        _logger.info(f"Deleting nodes from v2 collection: {self.collection_id}")
-
         # Get v2 client
         clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
 
-        # Build parent path
-        if node_ids is not None:
-            # Delete by node IDs
-            _logger.info(f"Deleting {len(node_ids)} nodes by ID")
-
-            # Build batch delete requests
-            delete_requests = []
-            for node_id in node_ids:
-                delete_requests.append(
-                    vectorsearch.DeleteDataObjectRequest(
-                        name=f"{self._collection_parent}/dataObjects/{node_id}",
-                    ),
-                )
-
-            try:
-                if delete_requests:
-                    batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                        parent=self._collection_parent,
-                        requests=delete_requests,
-                    )
-                    response = data_object_client.batch_delete_data_objects(
-                        batch_delete_request,
-                    )
-                    _logger.info(f"Deleted {len(delete_requests)} data objects by ID")
-                else:
-                    _logger.info("No data objects to delete")
-            except Exception as e:
-                _logger.error(f"Failed to delete data objects by ID: {e}")
-                raise
-        elif filters is not None:
-            # Delete by filters - need to query first then delete
-            _logger.info(f"Deleting nodes matching filters")
-
-            # For now, we'll skip filter conversion and just log
-            _logger.warning(
-                "Filter-based deletion not yet implemented. "
-                "LlamaIndex MetadataFilters need conversion to v2 filter format.",
+        time_taken: float = 0.0
+        result = _DeleteResult()
+        if node_ids:
+            batches = self._prepare_delete_by_id_requests(node_ids)
+            _logger.info(
+                f"Deleting {len(node_ids)} nodes by ID in {len(batches)} batches "
+                f"(batch_size={self.batch_size})"
             )
-            # TODO: Implement filter conversion when we understand the mapping better
-            # This would require converting LlamaIndex MetadataFilters to v2's filter format
+            # execute deletion
+            time_taken, result = self._sync_delete_batches(batches)
+
+        elif filters is not None:
+            if v2_filter := _convert_filters_to_v2(filters):
+                _logger.info(
+                    f"Deleting nodes matching filters={v2_filter} from v2 collection: "
+                    f"{self.collection_id}"
+                )
+                query = self._build_filter_query_request(v2_filter)
+                query_results = search_client.query_data_objects(query)
+                time_taken, result = self._sync_delete_query_result(query_results)
+            else:
+                _logger.warning(
+                    f"Input filter set is empty after conversion, "
+                    f"input={filters}, converted={v2_filter}"
+                )
         else:
             raise ValueError("Either node_ids or filters must be provided")
+
+        _logger.info(
+            f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
+            )
+
+    def _prepare_delete_by_id_requests(
+        self, node_ids: Sequence[str]
+    ) -> List["BatchDeleteDataObjectsRequest"]:
+        """Batch node IDs into a set of batch requests."""
+        from google.cloud.vectorsearch_v1beta import (
+            BatchDeleteDataObjectsRequest,
+            DeleteDataObjectRequest,
+        )
+
+        return [
+            BatchDeleteDataObjectsRequest(
+                parent=self._collection_parent,
+                requests=[
+                    DeleteDataObjectRequest(
+                        name=f"{self._collection_parent}/dataObjects/{node_id}"
+                    )
+                    for node_id in node_ids[start : start + self.batch_size]
+                ],
+            )
+            for start in range(0, len(node_ids), self.batch_size)
+        ]
+
+    @override
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes by IDs or filters.
+
+        Args:
+            node_ids: List of node IDs to delete
+            filters: Metadata filters to select nodes for deletion
+
+        """
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            await self._adelete_nodes_v2(node_ids, filters, **kwargs)
+        else:
+            # use sync for v1
+            self._delete_nodes_v1(node_ids, filters, **kwargs)
+
+    async def _adelete_nodes_v2(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Asynchronously delete nodes by IDs or filters using v2 API.
+
+        Args:
+            node_ids: List of node IDs to delete
+            filters: Metadata filters to select nodes for deletion
+            **kwargs: Additional keyword arguments
+
+        """
+        # Get v2 client
+        clients = self._sdk_manager.get_v2_client()
+        search_client = clients["data_object_search_service_async_client"]
+        data_object_client = clients["data_object_service_async_client"]
+
+        # build the appropriate batch request based on input
+        time_taken: float = 0.0
+        result = _DeleteResult()
+        if node_ids:
+            # batch the calls
+            tasks = [
+                self._async_delete_batch(data_object_client, i, req)
+                for i, req in enumerate(self._prepare_delete_by_id_requests(node_ids))
+            ]
+            # execute deletion
+            _logger.info(
+                f"Deleting {len(node_ids)} nodes by ID in {len(tasks)} batches "
+                f"(batch_size={self.batch_size})"
+            )
+            time_start = time.perf_counter()
+            results: List[_DeleteResult] = await asyncio.gather(*tasks)
+            time_taken = time.perf_counter() - time_start
+            result = sum(results, _DeleteResult())
+
+        elif filters is not None:
+            if v2_filter := _convert_filters_to_v2(filters):
+                _logger.info(
+                    f"Deleting nodes matching filters (batch_size={self.batch_size}): {v2_filter}"
+                )
+                query = self._build_filter_query_request(v2_filter)
+                query_result = await search_client.query_data_objects(query)
+                time_taken, result = await self._async_delete_query_result(query_result)
+            else:
+                _logger.warning(
+                    f"Input filter set is empty after conversion, "
+                    f"input={filters}, converted={v2_filter}"
+                )
+        else:
+            raise ValueError("Either node_ids or filters must be provided")
+
+        _logger.info(
+            f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
+            )
 
     @override
     def clear(self) -> None:
@@ -1342,43 +1669,77 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         Clear all nodes from the collection using v2 API.
         """
-        vectorsearch = _import_v2_sdk()
+        from google.cloud.vectorsearch_v1beta import (
+            OutputFields,
+            QueryDataObjectsRequest,
+        )
 
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
 
         # Get v2 client
         clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_client"]
         search_client = clients["data_object_search_service_client"]
 
-        try:
-            # Query all data objects (without filter to get all)
-            query_request = vectorsearch.QueryDataObjectsRequest(
-                parent=self._collection_parent,
-                page_size=100,  # Process in batches
-                output_fields=vectorsearch.OutputFields(metadata_fields=["*"]),
+        query_request = QueryDataObjectsRequest(
+            parent=self._collection_parent,
+            page_size=self.batch_size,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        paged_resp = search_client.query_data_objects(query_request)
+        time_taken, result = self._sync_delete_query_result(paged_resp)
+        _logger.info(
+            f"Clear operation for collection finished in {time_taken:.2f}s, "
+            f"{result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
             )
 
-            # Iterate through pages and delete all
-            total_deleted = 0
-            paged_response = search_client.query_data_objects(query_request)
-            for page in paged_response.pages:
-                delete_requests = []
-                for data_object in page.data_objects:
-                    delete_requests.append(
-                        vectorsearch.DeleteDataObjectRequest(name=data_object.name),
-                    )
+    @override
+    async def aclear(self) -> None:
+        """Asynchronously clear all nodes from the vector store."""
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            await self._aclear_v2()
+        else:
+            # use sync v1 version
+            self._clear_v1()
 
-                # Batch delete this page
-                if delete_requests:
-                    batch_delete_request = vectorsearch.BatchDeleteDataObjectsRequest(
-                        parent=self._collection_parent,
-                        requests=delete_requests,
-                    )
-                    data_object_client.batch_delete_data_objects(batch_delete_request)
-                    total_deleted += len(delete_requests)
+    async def _aclear_v2(self) -> None:
+        """
+        Asynchronously clear all nodes from the collection using v2 API.
+        """
+        from google.cloud.vectorsearch_v1beta import (
+            OutputFields,
+            QueryDataObjectsRequest,
+        )
 
-            _logger.info(f"Cleared {total_deleted} data objects from collection")
-        except Exception as e:
-            _logger.error(f"Failed to clear collection: {e}")
-            raise
+        _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
+
+        # Get v2 client
+        clients = self._sdk_manager.get_v2_client()
+        search_client = clients["data_object_search_service_async_client"]
+
+        query_request = QueryDataObjectsRequest(
+            parent=self._collection_parent,
+            page_size=self.batch_size,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+        paged_resp = await search_client.query_data_objects(query_request)
+        time_taken, result = await self._async_delete_query_result(paged_resp)
+        _logger.info(
+            f"Clear operation for collection finished in {time_taken:.2f}s, "
+            f"{result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIDeleteError(
+                deleted=result.deleted,
+                not_found=result.not_found,
+                failed=result.failed,
+                exceptions=result.exceptions,
+            )
