@@ -204,6 +204,10 @@ class AzureOpenAIResponses(OpenAIResponses):
         self._http_client = http_client
         self._async_http_client = async_http_client
 
+    @property
+    def _responses_model(self) -> str:
+        return self.engine
+
     def _get_credential_kwargs(
         self, is_async: bool = False, **kwargs: Any
     ) -> Dict[str, Any]:
