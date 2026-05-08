@@ -481,7 +481,9 @@ def test_function_tool_field_default() -> None:
 @pytest.mark.asyncio
 async def test_function_tool_contextvar_propagation() -> None:
     """Test that contextvars are propagated into sync fn via acall."""
-    var: contextvars.ContextVar[str] = contextvars.ContextVar("test_var", default="default")
+    var: contextvars.ContextVar[str] = contextvars.ContextVar(
+        "test_var", default="default"
+    )
 
     def sync_fn() -> str:
         return var.get()
@@ -490,4 +492,3 @@ async def test_function_tool_contextvar_propagation() -> None:
     var.set("expected")
     result = await tool.acall()
     assert result.raw_output == "expected"
-
