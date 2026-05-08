@@ -2,6 +2,7 @@ import pytest
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    DocumentBlock,
     ImageBlock,
     AudioBlock,
     VideoBlock,
@@ -62,6 +63,17 @@ async def test_estimate_token_count_audio(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.audio_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_document(memory):
+    """Test token counting for a document uses the fixed estimate."""
+    block = DocumentBlock(
+        url="http://example.com/doc.pdf", document_mimetype="application/pdf"
+    )
+    message = ChatMessage(role="user", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == memory.document_token_size_estimate
 
 
 @pytest.mark.asyncio
