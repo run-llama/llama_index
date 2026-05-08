@@ -4,7 +4,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -1681,6 +1681,65 @@ class TestUnitV2Add:
                 expected_calls, any_order=True
             )
 
+    class TestUnitV2NodeConversion:
+        """Test bidirectional conversion between ``DataObject`` and ``TextNode``."""
+
+        def test_extract_v2_data_object_from_node(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            input_dense_nodes: List[TextNode],
+            output_dense_data_objects: List[DataObject],
+        ) -> None:
+            """Test round-trip conversion of ``DataObject``s."""
+            # WHEN
+            data_objects_from_nodes = [
+                mock_v2_store.extract_v2_data_object_from_node(node)
+                for node in input_dense_nodes
+            ]
+
+            # THEN
+            assert data_objects_from_nodes == output_dense_data_objects
+
+        def test_extract_node_from_v2_data_object(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            input_dense_nodes: List[TextNode],
+            output_dense_data_objects: List[DataObject],
+        ) -> None:
+            """Test round-trip conversion of ``TextNode``s."""
+            # WHEN
+            nodes_from_data_objects = [
+                mock_v2_store.extract_node_from_v2_data_object(do)
+                for do in output_dense_data_objects
+            ]
+
+            # THEN
+            assert len(nodes_from_data_objects) == len(input_dense_nodes)
+            for actual, expected in zip(nodes_from_data_objects, input_dense_nodes):
+                assert actual.node_id == expected.node_id
+                assert isinstance(actual, TextNode)
+                assert actual.text == expected.text
+                assert actual.relationships == expected.relationships
+                assert pytest.approx(actual.embedding) == expected.embedding
+                assert actual.metadata.keys() == expected.metadata.keys()
+                actual_title_embed = actual.metadata.pop("title_embedding")
+                assert (
+                    pytest.approx(actual_title_embed)
+                    == expected.metadata["title_embedding"]
+                )
+                actual_sparse = actual.metadata.pop("sparse_embedding")
+                assert (
+                    actual_sparse["indices"]
+                    == expected.metadata["sparse_embedding"]["indices"]
+                )
+                assert (
+                    pytest.approx(actual_sparse["values"])
+                    == expected.metadata["sparse_embedding"]["values"]
+                )
+                assert actual.metadata == {
+                    k: v for k, v in expected.metadata.items() if k in actual.metadata
+                }
+
 
 class TestUnitV2Delete:
     """Unit test the behavior of ``(a)delete``, ``(a)delete_nodes``, and ``(a)clear``."""
@@ -2557,3 +2616,367 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
                 expected_calls,
             )
+
+
+params_get_nodes_output_fields = pytest.mark.parametrize(
+    ("get_nodes_output_fields", "expected_output_fields"),
+    [
+        (None, OutputFields(metadata_fields=["*"])),
+        (
+            {"metadata_fields": ["*"], "data_fields": ["title"]},
+            OutputFields(metadata_fields=["*"], data_fields=["title"]),
+        ),
+    ],
+    ids=["vector store default", "modified fields"],
+)
+
+
+class TestUnitV2GetNodes:
+    COLLECTION_PARENT = (
+        "projects/test-project/locations/us-central1/collections/my-collection"
+    )
+
+    @pytest.fixture
+    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+        )
+
+    @pytest.fixture
+    def get_nodes_query_result_data_objects(self) -> list[DataObject]:
+        """DataObjects with ``name`` set, as returned by ``query_data_objects``."""
+        return [
+            DataObject(
+                name=f"{self.COLLECTION_PARENT}/node_{i}",
+                data={"_node_content": f"Content {i}", "title": f"Title {i}"},
+            )
+            for i in range(2)
+        ]
+
+    @pytest.fixture
+    def get_nodes_result_pages(
+        self, get_nodes_query_result_data_objects: list[DataObject]
+    ) -> list[MagicMock]:
+        return [
+            MagicMock(
+                spec=QueryDataObjectsResponse,
+                data_objects=[obj],
+            )
+            for obj in get_nodes_query_result_data_objects
+        ]
+
+    @pytest.mark.parametrize(
+        ("get_nodes_output_fields", "expected_output_fields"),
+        [
+            (None, OutputFields(metadata_fields=["*"])),
+            (
+                {"metadata_fields": ["*"], "data_fields": ["title"]},
+                OutputFields(metadata_fields=["*"], data_fields=["title"]),
+            ),
+        ],
+        ids=["vector store default", "modified fields"],
+    )
+    class TestUnitV2GetNodesValidInput:
+        def test_vertex_ai_vector_store_v2_get_nodes_by_id_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_client: MagicMock,
+            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_result_pages: list[MagicMock],
+            get_nodes_output_fields: Dict[str, List[str]] | None,
+            expected_output_fields: OutputFields,
+        ) -> None:
+            # GIVEN
+            if get_nodes_output_fields is not None:
+                mock_v2_store.get_nodes_output_fields = get_nodes_output_fields
+            mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
+                spec=QueryDataObjectsPager, pages=get_nodes_result_pages
+            )
+            input_node_ids = ["node_0", "node_1"]
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                filter={"object_id": {"$in": input_node_ids}},
+                page_size=2,
+                output_fields=expected_output_fields,
+            )
+
+            # WHEN
+            result = mock_v2_store.get_nodes(node_ids=input_node_ids)
+
+            # THEN
+            mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            assert len(result) == len(get_nodes_query_result_data_objects)
+            assert [node.node_id for node in result] == ["node_0", "node_1"]
+
+        async def test_vertex_ai_vector_store_v2_aget_nodes_by_id_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_result_pages: list[MagicMock],
+            get_nodes_output_fields: Dict[str, List[str]] | None,
+            expected_output_fields: OutputFields,
+        ) -> None:
+            # GIVEN
+            if get_nodes_output_fields is not None:
+                mock_v2_store.get_nodes_output_fields = get_nodes_output_fields
+            mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+            mock_pager.pages.__aiter__.return_value = get_nodes_result_pages
+            mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+            input_node_ids = ["node_0", "node_1"]
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                filter={"object_id": {"$in": input_node_ids}},
+                page_size=2,
+                output_fields=expected_output_fields,
+            )
+
+            # WHEN
+            result = await mock_v2_store.aget_nodes(
+                node_ids=input_node_ids,
+            )
+
+            # THEN
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            assert len(result) == len(get_nodes_query_result_data_objects)
+            assert [node.node_id for node in result] == ["node_0", "node_1"]
+
+        def test_vertex_ai_vector_store_v2_get_nodes_by_filters_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_client: MagicMock,
+            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_result_pages: list[MagicMock],
+            get_nodes_output_fields: Dict[str, List[str]] | None,
+            expected_output_fields: OutputFields,
+        ) -> None:
+            # GIVEN
+            if get_nodes_output_fields is not None:
+                mock_v2_store.get_nodes_output_fields = get_nodes_output_fields
+            mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
+                spec=QueryDataObjectsPager, pages=get_nodes_result_pages
+            )
+            input_filters = MetadataFilters(
+                filters=[MetadataFilter(key="user_id", value=200)]
+            )
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                filter={"user_id": {"$eq": 200}},
+                page_size=2,
+                output_fields=expected_output_fields,
+            )
+
+            # WHEN
+            result = mock_v2_store.get_nodes(filters=input_filters)
+
+            # THEN
+            mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            assert len(result) == len(get_nodes_query_result_data_objects)
+            assert [node.node_id for node in result] == ["node_0", "node_1"]
+
+        async def test_vertex_ai_vector_store_v2_aget_nodes_by_filters_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_result_pages: list[MagicMock],
+            get_nodes_output_fields: Dict[str, List[str]] | None,
+            expected_output_fields: OutputFields,
+        ) -> None:
+            # GIVEN
+            if get_nodes_output_fields is not None:
+                mock_v2_store.get_nodes_output_fields = get_nodes_output_fields
+            mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+            mock_pager.pages.__aiter__.return_value = get_nodes_result_pages
+            mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+            input_filters = MetadataFilters(
+                filters=[MetadataFilter(key="user_id", value=200)]
+            )
+            expected_query_request = QueryDataObjectsRequest(
+                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                filter={"user_id": {"$eq": 200}},
+                page_size=2,
+                output_fields=expected_output_fields,
+            )
+
+            # WHEN
+            result = await mock_v2_store.aget_nodes(
+                filters=input_filters,
+            )
+
+            # THEN
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+                expected_query_request,
+            )
+            assert len(result) == len(get_nodes_query_result_data_objects)
+            assert [node.node_id for node in result] == ["node_0", "node_1"]
+
+    def test_vertex_ai_vector_store_v2_get_nodes_both_inputs_invalid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_client: MagicMock,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            mock_v2_store.get_nodes(
+                node_ids=["node_0"],
+                filters=MetadataFilters(
+                    filters=[MetadataFilter(key="user_id", value=200)]
+                ),
+            )
+        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
+
+    async def test_vertex_ai_vector_store_v2_aget_nodes_both_inputs_invalid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            await mock_v2_store.aget_nodes(
+                node_ids=["node_0"],
+                filters=MetadataFilters(
+                    filters=[MetadataFilter(key="user_id", value=200)]
+                ),
+            )
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
+    )
+    def test_vertex_ai_vector_store_v2_get_nodes_neither_input_invalid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_client: MagicMock,
+        input_node_ids: list[str] | None,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            mock_v2_store.get_nodes(node_ids=input_node_ids, filters=None)
+        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
+    )
+    async def test_vertex_ai_vector_store_v2_aget_nodes_neither_input_invalid(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        input_node_ids: list[str] | None,
+    ) -> None:
+        # WHEN / THEN
+        with pytest.raises(ValueError):
+            await mock_v2_store.aget_nodes(node_ids=input_node_ids, filters=None)
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
+
+    def test_vertex_ai_vector_store_v2_get_nodes_empty_filters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # GIVEN
+        caplog.set_level(logging.WARNING)
+
+        # WHEN
+        result = mock_v2_store.get_nodes(
+            filters=MetadataFilters(filters=[]),
+        )
+
+        # THEN
+        assert result == []
+        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
+        assert "Input filter set is empty after conversion" in caplog.text
+
+    async def test_vertex_ai_vector_store_v2_aget_nodes_empty_filters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # GIVEN
+        caplog.set_level(logging.WARNING)
+
+        # WHEN
+        result = await mock_v2_store.aget_nodes(
+            filters=MetadataFilters(filters=[]),
+        )
+
+        # THEN
+        assert result == []
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
+        assert "Input filter set is empty after conversion" in caplog.text
+
+    def test_vertex_ai_vector_store_v2_get_nodes_empty_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_client: MagicMock,
+    ) -> None:
+        # GIVEN
+        mock_v2_data_object_search_service_client.query_data_objects.return_value = (
+            MagicMock(spec=QueryDataObjectsPager, pages=[])
+        )
+        input_node_ids = ["node_0"]
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"object_id": {"$in": input_node_ids}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+
+        # WHEN
+        result = mock_v2_store.get_nodes(node_ids=input_node_ids)
+
+        # THEN
+        mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        assert result == []
+
+    async def test_vertex_ai_vector_store_v2_aget_nodes_empty_result(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        mock_v2_data_object_search_service_async_client: MagicMock,
+    ) -> None:
+        # GIVEN
+        mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
+        mock_pager.pages.__aiter__.return_value = []
+        mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
+        input_node_ids = ["node_0"]
+        expected_query_request = QueryDataObjectsRequest(
+            parent=self.COLLECTION_PARENT,
+            filter={"object_id": {"$in": input_node_ids}},
+            page_size=2,
+            output_fields=OutputFields(metadata_fields=["*"]),
+        )
+
+        # WHEN
+        result = await mock_v2_store.aget_nodes(
+            node_ids=input_node_ids,
+        )
+
+        # THEN
+        mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
+            expected_query_request,
+        )
+        assert result == []

@@ -12,6 +12,7 @@ import time
 import typing
 from dataclasses import dataclass, field
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, cast
 
 from google.api_core.exceptions import NotFound
@@ -21,7 +22,14 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndexEndpoint,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode
+from llama_index.core.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    RelatedNodeType,
+    TextNode,
+)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -238,6 +246,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # Shared parameters
     batch_size: int = 100
     credentials_path: Optional[str] = None
+
+    # Output field configuration
+    # for (a)get_nodes operations
+    get_nodes_output_fields: Dict[str, List[str]] = {"metadata_fields": ["*"]}
 
     _sdk_manager: VectorSearchSDKManager = PrivateAttr()
     _index: MatchingEngineIndex = PrivateAttr()
@@ -537,7 +549,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         requests: List[CreateDataObjectRequest] = []
         for node in nodes:
             node_ids.append(node.node_id)
-            data_object = self._extract_v2_data_object_from_node(node)
+            data_object = self.extract_v2_data_object_from_node(node)
             requests.append(
                 CreateDataObjectRequest(
                     parent=self._collection_parent,
@@ -547,9 +559,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
         return node_ids, requests
 
-    def _extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
+    def extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
         """
-        Convert a BaseNode to a GCP DataObject for adding.
+        Convert a BaseNode to a Vertex ``DataObject`` for adding.
 
         Handles content, doc ID fields, and dense/sparse embeddings.
 
@@ -624,6 +636,95 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                         f"type={type(sparse_vector)}"
                     )
         return DataObject(data=data, vectors=vectors)
+
+    def extract_node_from_v2_data_object(self, data_obj: "DataObject") -> BaseNode:
+        """
+        Extract a TextNode and its ID from a Vertex ``DataObject``.
+
+        Args:
+            data_obj: A Vertex ``DataObject`` from search results.
+
+        Returns:
+            An extracted ``BaseNode``.
+
+            The return type is ``BaseNode`` instead of ``TextNode`` for API compatability
+            reasons, but currently this implementation always returns ``TextNode`` objects.
+
+        """
+        from google.cloud.vectorsearch_v1beta import DenseVector, SparseVector
+
+        # Extract metadata
+        metadata: Dict[str, Any] = dict(data_obj.data) if data_obj.data else {}
+
+        # Validate node type if required
+        if self.node_type_field and self.node_type_field in metadata:
+            node_type = metadata.pop(self.node_type_field)
+            if node_type != TextNode.class_name():
+                raise NotImplementedError(f"Node type '{node_type}' is not supported")
+
+        # Extract node ID from resource, with multiple fallbacks
+        if self.nodeid_field and self.nodeid_field in metadata:
+            node_id = metadata.pop(self.nodeid_field)
+        elif data_obj.data_object_id:
+            node_id = data_obj.data_object_id
+        elif data_obj.name:
+            node_id = Path(data_obj.name).name
+        else:  # pragma: no cover
+            raise ValueError(f"Input data object has no known ID field: {data_obj}")
+
+        # Extract content if available
+        # NOTE: `TextNode` defaults to empty string for this value
+        text: str = ""
+        if self.content_field and self.content_field in metadata:
+            text = metadata.pop(self.content_field)
+        elif self.text_key and self.text_key in metadata:
+            text = metadata.pop(self.text_key)
+
+        # extract source/parent relationship if configured
+        relationships: Dict[NodeRelationship, RelatedNodeType] = {}
+        if self.docid_field and self.docid_field in metadata:
+            parent_id = metadata.pop(self.docid_field)
+            relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=parent_id)
+
+        # Extract embeddings
+        embedding: Optional[List[float]] = None
+        if hasattr(data_obj, "vectors") and data_obj.vectors:
+            # special case: the default dense embedding
+            if self.embedding_field in data_obj.vectors:
+                vector_data = data_obj.vectors[self.embedding_field]
+                if hasattr(vector_data, "dense") and isinstance(
+                    vector_data.dense, DenseVector
+                ):
+                    embedding = list(vector_data.dense.values)
+            # extract other known dense vectors
+            for dense_field in self.dense_embedding_fields:
+                if dense_field in data_obj.vectors:
+                    vector_data = data_obj.vectors[dense_field]
+                    if hasattr(vector_data, "dense") and isinstance(
+                        vector_data.dense, DenseVector
+                    ):
+                        metadata[dense_field] = list(vector_data.dense.values)
+            # extract any known sparse vectors
+            for sparse_field in self.sparse_embedding_fields.union(
+                {self.sparse_embedding_field}
+            ):
+                if sparse_field in data_obj.vectors:
+                    vector_data = data_obj.vectors[sparse_field]
+                    if hasattr(vector_data, "sparse") and isinstance(
+                        vector_data.sparse, SparseVector
+                    ):
+                        metadata[sparse_field] = {
+                            "indices": vector_data.sparse.indices,
+                            "values": vector_data.sparse.values,
+                        }
+
+        return TextNode(
+            id_=node_id,
+            text=text,
+            metadata=metadata,
+            embedding=embedding,
+            relationships=relationships,
+        )
 
     @override
     async def async_add(
@@ -1392,7 +1493,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             metadata_fields=["*"],
         )
 
-        searches = []
+        searches: List[Search] = []
         # Add vector search if embedding provided
         if query.query_embedding is not None:
             vector_search = VectorSearch(
@@ -1743,3 +1844,217 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 failed=result.failed,
                 exceptions=result.exceptions,
             )
+
+    @override
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Access nodes from the vector store synchronously by ID or filter results.
+
+        This is not a search operation, nodes are retrieved only by ID or metadata
+        filtering. Use :py:meth:`.query` for search operations.
+
+        Args:
+            node_ids: The list of node IDs to query.
+            filters: A set of filters to apply to the query.
+
+        Returns:
+            A list of nodes returned from the store matching in the requested input.
+
+        Raises:
+            ValueError:
+                If ``node_ids`` or ``filters`` are either not provided or both provided.
+
+        """
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            return self._get_nodes_v2(node_ids=node_ids, filters=filters)
+        else:
+            raise NotImplementedError(
+                "The 'get_nodes' method is not implemented for v1 stores"
+            )
+
+    def _get_nodes_v2(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Query nodes from the vector store synchronously by ID or filter results.
+
+        This method constructs a ``QueryDataObjectsRequest`` based on the input. For
+        ``node_ids``, it uses a filter query for ``object_id`` in the set of node IDs.
+        For ``filters``, the filter is converted to the expected format and passed
+        directly. If both arguments are passed, and error is raised.
+
+        The output is then converted to :py:class:`~llama_index.core.schema.TextNode`
+        object and returned.
+
+        Args:
+            node_ids: The list of node IDs to query.
+            filters: A set of filters to apply to the query.
+
+        Returns:
+            A list of nodes returned from the store matching in the requested input.
+
+        Raises:
+            ValueError:
+                If ``node_ids`` or ``filters`` are either not provided or both provided.
+
+        """
+        from google.cloud.vectorsearch_v1beta import DataObject, OutputFields
+
+        clients = self._sdk_manager.get_v2_client()
+        search_client = clients["data_object_search_service_client"]
+
+        # build the appropriate filter set based on input
+        filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
+        if not filter_expr:
+            _logger.warning(
+                f"Input filter set is empty after conversion, input={filters}"
+            )
+            return []
+
+        # send the query
+        query = self._build_filter_query_request(
+            filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
+        )
+        start: float = time.perf_counter()
+        query_results = search_client.query_data_objects(query)
+        time_taken = time.perf_counter() - start
+
+        # load all results and convert to nodes
+        data_objects: List[DataObject] = [
+            obj for page in query_results.pages for obj in page.data_objects
+        ]
+        _logger.debug(f"Retrieved {len(data_objects)} data objects")
+
+        nodes = [self.extract_node_from_v2_data_object(obj) for obj in data_objects]
+        _logger.info(
+            f"Query operation for collection finished in {time_taken:.2f}s, "
+            f"output nodes={len(nodes)}"
+        )
+        return nodes
+
+    @override
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Access nodes from the vector store asynchronously by ID or filter results.
+
+        This is not a search operation, nodes are retrieved only by ID or metadata
+        filtering. Use :py:meth:`.aquery` for search operations.
+
+        Args:
+            node_ids: The list of node IDs to query.
+            filters: A set of filters to apply to the query.
+
+        Returns:
+            A list of nodes returned from the store matching in the requested input.
+
+        Raises:
+            ValueError:
+                If ``node_ids`` or ``filters`` are either not provided or both provided.
+
+        """
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            return await self._aget_nodes_v2(node_ids=node_ids, filters=filters)
+        else:
+            raise NotImplementedError(
+                "The 'aget_nodes' method is not implemented for v1 stores"
+            )
+
+    async def _aget_nodes_v2(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Query nodes from the vector store asynchronously by ID or filter results.
+
+        This method constructs a ``QueryDataObjectsRequest`` based on the input. For
+        ``node_ids``, it uses a filter query for ``object_id`` in the set of node IDs.
+        For ``filters``, the filter is converted to the expected format and passed
+        directly. If both arguments are passed, and error is raised.
+
+        The output is then converted to :py:class:`~llama_index.core.schema.TextNode`
+        object and returned.
+
+        Args:
+            node_ids: The list of node IDs to query.
+            filters: A set of filters to apply to the query.
+
+        Returns:
+            A list of nodes returned from the store matching in the requested input.
+
+        Raises:
+            ValueError:
+                If ``node_ids`` or ``filters`` are either not provided or both provided.
+
+        """
+        from google.cloud.vectorsearch_v1beta import DataObject, OutputFields
+
+        clients = self._sdk_manager.get_v2_client()
+        search_client = clients["data_object_search_service_async_client"]
+
+        # build the appropriate filter set based on input
+        start: float = time.perf_counter()
+        filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
+        if not filter_expr:
+            _logger.warning(
+                f"Input filter set is empty after conversion, input={filters}"
+            )
+            return []
+
+        # send the query and convert results to nodes
+        query = self._build_filter_query_request(
+            filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
+        )
+        query_results = await search_client.query_data_objects(query)
+        time_taken = time.perf_counter() - start
+
+        data_objects: List[DataObject] = [
+            obj async for page in query_results.pages for obj in page.data_objects
+        ]
+        _logger.debug(f"Retrieved {len(data_objects)} data objects")
+
+        nodes = [self.extract_node_from_v2_data_object(obj) for obj in data_objects]
+        _logger.info(
+            f"Query operation for collection finished in {time_taken:.2f}s, "
+            f"output nodes={len(nodes)}"
+        )
+        return nodes
+
+    @staticmethod
+    def _prepare_get_nodes_filters(
+        node_ids: Optional[List[str]], filters: Optional[MetadataFilters]
+    ) -> dict[str, Any]:
+        if node_ids and filters:
+            raise ValueError(
+                f"Only one of node_ids or filters may be provided, "
+                f"node_ids={node_ids}, filters={filters}"
+            )
+        if node_ids:
+            _logger.info("Querying nodes by ID (%d input IDs)", len(node_ids))
+            filter_expr: dict[str, Any] = {"object_id": {"$in": node_ids}}
+        elif filters and (v2_filter := _convert_filters_to_v2(filters)):
+            _logger.info("Querying nodes matching filters: %s", v2_filter)
+            filter_expr = v2_filter
+        elif filters:
+            # filter conversion is empty
+            _logger.warning(
+                "Input filter set is empty after conversion, input=%s", filters
+            )
+            filter_expr = {}
+        else:
+            raise ValueError("Either node_ids or filters must be provided")
+        return filter_expr
