@@ -1,4 +1,5 @@
 """Tests for load_embed_model in loading.py"""
+
 import pytest
 from llama_index.core.embeddings.loading import (
     RECOGNIZED_EMBEDDINGS,
@@ -21,7 +22,7 @@ def test_load_embed_model_invalid_name_shows_available():
     assert "Invalid Embedding name: NonExistentEmbedding" in error_msg
     assert "Available embeddings:" in error_msg
     # Every key in the live registry must appear in the message
-    for key in RECOGNIZED_EMBEDDINGS.keys():
+    for key in RECOGNIZED_EMBEDDINGS:
         assert key in error_msg
 
 

@@ -46,8 +46,7 @@ def load_embed_model(data: dict) -> BaseEmbedding:
     if name not in RECOGNIZED_EMBEDDINGS:
         available = ", ".join(sorted(RECOGNIZED_EMBEDDINGS.keys()))
         raise ValueError(
-            f"Invalid Embedding name: {name}. "
-            f"Available embeddings: {available}"
+            f"Invalid Embedding name: {name}. Available embeddings: {available}"
         )
 
     return RECOGNIZED_EMBEDDINGS[name].from_dict(data)
