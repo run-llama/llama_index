@@ -327,6 +327,11 @@ def test_parse_tool_input_partial_json_returns_empty_dict():
     assert _parse_tool_input('{"locat') == {}
 
 
+def test_parse_tool_input_mid_key_truncation_returns_empty_dict():
+    """Mid-key truncation (no closing quote on key) should fall back to {}."""
+    assert _parse_tool_input('{"loc') == {}
+
+
 def test_parse_tool_input_valid_json_returns_dict():
     """Complete JSON string should be parsed to a dict."""
     assert _parse_tool_input('{"location": "London"}') == {"location": "London"}
