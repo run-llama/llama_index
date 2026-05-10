@@ -98,18 +98,6 @@ def find_integrations(root_path: Path, recursive=False) -> list[Path]:
     return package_roots
 
 
-def find_packs(root_path: Path) -> list[Path]:
-    """Find all llama-index-packs packages in the repo."""
-    package_roots: list[Path] = []
-    packs_root = root_path / "llama-index-packs"
-
-    for package_name in packs_root.iterdir():
-        if is_llama_index_package(package_name):
-            package_roots.append(package_name)
-
-    return package_roots
-
-
 def find_utils(root_path: Path) -> list[Path]:
     """Find all llama-index-utils packages in the repo."""
     package_roots: list[Path] = []
@@ -127,7 +115,6 @@ def find_all_packages(root_path: Path) -> list[Path]:
     return [
         root_path / "llama-index-core",
         *find_integrations(root_path),
-        *find_packs(root_path),
         *find_utils(root_path),
         root_path / "llama-index-instrumentation",
     ]

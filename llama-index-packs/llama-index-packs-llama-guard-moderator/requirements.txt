@@ -1,3 +1,0 @@
-torch
-transformers
-accelerate
