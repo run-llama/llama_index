@@ -978,6 +978,26 @@ class IndexNode(TextNode):
 
         return data
 
+    @model_serializer(mode="wrap")
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
+        from llama_index.core.storage.docstore.utils import doc_to_json
+
+        data = super().custom_model_dump(handler, info)
+        try:
+            if self.obj is None:
+                data["obj"] = None
+            elif isinstance(self.obj, BaseNode):
+                data["obj"] = doc_to_json(self.obj)
+            elif isinstance(self.obj, BaseModel):
+                data["obj"] = self.obj.model_dump()
+            else:
+                data["obj"] = json.dumps(self.obj)
+        except Exception:
+            raise ValueError("IndexNode obj is not serializable: " + str(self.obj))
+        return data
+
     @classmethod
     def from_text_node(
         cls,

@@ -80,6 +80,27 @@ def test_index_node_serdes(index_node: IndexNode):
     assert deserialized_node.index_id == index_node.index_id
 
 
+def test_index_node_with_obj_serdes():
+    """Regression test for #21611: IndexNode with BaseNode obj must round-trip via model_dump."""
+    inner_node = TextNode(text="inner content", id_="inner_node")
+    index_node = IndexNode(
+        id_="index_node",
+        text="outer content",
+        index_id="456",
+        obj=inner_node,
+    )
+    serialized_node = node_to_metadata_dict(index_node)
+    assert "index_node" in serialized_node["_node_content"]
+    assert serialized_node["_node_type"] == index_node.class_name()
+    deserialized_node = metadata_dict_to_node(serialized_node)
+    assert isinstance(deserialized_node, IndexNode)
+    assert deserialized_node.text == index_node.text
+    assert deserialized_node.index_id == index_node.index_id
+    assert isinstance(deserialized_node.obj, TextNode)
+    assert deserialized_node.obj.text == inner_node.text
+    assert deserialized_node.obj.id_ == inner_node.id_
+
+
 def test_multimedia_node_serdes(multimedia_node: Node):
     serialized_node: dict[str, Any] = node_to_metadata_dict(multimedia_node)
     assert "multimedia_node" in serialized_node["_node_content"]
