@@ -67,6 +67,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-5-20251101-v1:0": 200000,
     "anthropic.claude-opus-4-6-v1:0": 200000,
     "anthropic.claude-sonnet-4-6": 1000000,
+    "anthropic.claude-opus-4-7": 1000000,
 }
 
 # GCP Vertex AI Anthropic identifiers
@@ -82,6 +83,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4-5@20251101": 200000,
     "claude-opus-4-6": 200000,
     "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # Anthropic API/SDK identifiers
@@ -108,6 +110,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-5-20251101": 200000,
     "claude-opus-4-6": 200000,
     "claude-sonnet-4-6": 1000000,
+    "claude-opus-4-7": 1000000,
 }
 
 # All provider Anthropic identifiers
@@ -116,6 +119,12 @@ CLAUDE_MODELS: Dict[str, int] = {
     **VERTEX_CLAUDE_MODELS,
     **ANTHROPIC_MODELS,
 }
+
+
+ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
+    "anthropic.claude-opus-4-7",
+    "claude-opus-4-7",
+)
 
 
 def is_function_calling_model(modelname: str) -> bool:

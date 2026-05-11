@@ -202,6 +202,23 @@ def test_deepseek_function_calling_models(model_id, expected):
     assert is_bedrock_function_calling_model(model_id) == expected
 
 
+@pytest.mark.parametrize(
+    ("model_id", "expected_context"),
+    [
+        ("google.gemma-3-12b-it", 128000),
+        ("google.gemma-3-27b-it", 128000),
+        ("google.gemma-3-4b-it", 128000),
+    ],
+)
+def test_gemma_models_registered(model_id, expected_context):
+    assert model_id in BEDROCK_MODELS
+    assert bedrock_modelname_to_context_size(model_id) == expected_context
+
+
+def test_gemma_reasoning_model():
+    assert is_reasoning("google.gemma-3-12b-it") is True
+
+
 def test_get_img_format_jpeg():
     assert __get_img_format_from_image_mimetype("image/jpeg") == "jpeg"
 
@@ -826,6 +843,56 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         call_kwargs = patched_converse.call_args.kwargs
         assert "guardrailConfig" in call_kwargs
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client(
+    mock_aioboto3_session,
+):
+    """When client is provided, converse_with_retry_async uses it directly without opening a session client."""
+    session = aioboto3.Session()
+    async_client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse", wraps=async_client.converse
+    ) as patched_converse:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            await converse_with_retry_async(
+                session=session,
+                config=Config(),
+                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+                messages=[],
+                stream=False,
+                client=async_client,
+            )
+            patched_converse.assert_called_once()
+            patched_session_client.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client_streaming(
+    mock_aioboto3_session,
+):
+    """When client is provided, streaming in converse_with_retry_async uses it directly without opening a session client."""
+    session = aioboto3.Session()
+    async_client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse_stream", wraps=async_client.converse_stream
+    ) as patched_stream:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            response_gen = await converse_with_retry_async(
+                session=session,
+                config=Config(),
+                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+                messages=[],
+                stream=True,
+                client=async_client,
+            )
+            async for _ in response_gen:
+                pass
+            patched_stream.assert_called_once()
+            patched_session_client.assert_not_called()
 
 
 def test_thinking_dict_enabled_requires_budget():

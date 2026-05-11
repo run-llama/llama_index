@@ -345,7 +345,7 @@ pexpect==4.9.0 ; sys_platform != 'win32'
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==11.3.0
+pillow==12.2.0
     # via llama-index-core
 platformdirs==4.3.8
     # via
@@ -397,7 +397,7 @@ pygments==2.19.2
 pylint==2.15.10
 pysnc==1.1.10
     # via llama-index-readers-service-now
-pytest==7.2.1
+pytest==9.0.3
     # via
     #   pytest-cov
     #   pytest-mock
