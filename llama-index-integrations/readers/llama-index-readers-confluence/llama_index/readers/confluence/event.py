@@ -8,11 +8,15 @@ class FileType(Enum):
     DOCUMENT = "document"
     TEXT = "text"
     HTML = "html"
+    PAGE_HTML = "page_html"
     CSV = "csv"
     MARKDOWN = "md"
     SPREADSHEET = "spreadsheet"
+    XLSB = "xlsb"
     PRESENTATION = "presentation"
     PDF = "pdf"
+    MSG = "msg"
+    SVG = "svg"
     UNKNOWN = "unknown"
 
 

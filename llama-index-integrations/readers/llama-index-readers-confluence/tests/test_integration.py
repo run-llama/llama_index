@@ -24,12 +24,12 @@ from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 class TestIntegration:
     """Integration tests for all new features working together."""
 
-    @patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
-    def test_full_feature_integration(self, mock_html_parser_class):
+    @patch(
+        "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+    )
+    def test_full_feature_integration(self, mock_process):
         """Test all new features working together in a realistic scenario."""
-        mock_text_maker = MagicMock()
-        mock_text_maker.convert.return_value = "processed text content"
-        mock_html_parser_class.return_value = mock_text_maker
+        mock_process.return_value = ("processed text content", {})
 
         # Setup custom parser
         mock_parser = MagicMock()
@@ -101,12 +101,12 @@ class TestIntegration:
             }
 
             # Process normal page (should succeed)
-            result1 = reader.process_page(normal_page, False, mock_text_maker)
+            result1 = reader.process_page(normal_page, False)
             assert result1 is not None
             assert result1.doc_id == "normal_page"
 
             # Process draft page (should be skipped by callback)
-            result2 = reader.process_page(draft_page, False, mock_text_maker)
+            result2 = reader.process_page(draft_page, False)
             assert result2 is None  # Skipped by document callback
 
             # Verify events were logged
@@ -118,7 +118,7 @@ class TestIntegration:
             assert "PageSkippedEvent" in event_class_names
 
             # Verify custom folder is set correctly
-            assert reader.custom_folder == temp_dir
+            assert reader.custom_parser_manager.custom_folder == temp_dir
             assert reader.custom_parser_manager is not None
 
             # Verify callbacks are working

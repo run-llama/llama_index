@@ -62,7 +62,7 @@ def run_basic_tests():
             custom_parsers={FileType.PDF: mock_parser},
             custom_folder="/tmp/test",
         )
-        assert reader.custom_folder == "/tmp/test"
+        assert reader.custom_parser_manager.custom_folder == "/tmp/test"
         assert reader.custom_parser_manager is not None
         print("✓ Custom parsers with custom folder works correctly")
     except Exception as e:

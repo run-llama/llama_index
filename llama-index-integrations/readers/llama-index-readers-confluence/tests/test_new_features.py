@@ -1,7 +1,6 @@
 """Tests for new ConfluenceReader features: callbacks, custom parsers, event system."""
 
 from unittest.mock import Mock, MagicMock, patch
-import pytest
 import os
 
 from llama_index.readers.confluence import ConfluenceReader
@@ -18,17 +17,15 @@ from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 class TestCustomParsersAndFolder:
     """Test custom parsers and custom folder functionality."""
 
-    def test_custom_folder_without_parsers_raises_error(self):
-        """Test that custom_folder raises error when used without custom_parsers."""
-        with pytest.raises(
-            ValueError,
-            match="custom_folder can only be used when custom_parsers are provided",
-        ):
-            ConfluenceReader(
-                base_url="https://example.atlassian.net/wiki",
-                api_token="test_token",
-                custom_folder="/tmp/test",
-            )
+    def test_custom_folder_without_parsers_accepted(self):
+        """Test that custom_folder is accepted even without custom_parsers."""
+        reader = ConfluenceReader(
+            base_url="https://example.atlassian.net/wiki",
+            api_token="test_token",
+            custom_folder="/tmp/test",
+        )
+        assert reader.custom_parser_manager.custom_folder == "/tmp/test"
+        assert reader.custom_parser_manager is not None
 
     def test_custom_parsers_with_custom_folder(self):
         """Test that custom_parsers and custom_folder work together."""
@@ -42,8 +39,8 @@ class TestCustomParsersAndFolder:
             custom_folder="/tmp/test",
         )
 
-        assert reader.custom_parsers == custom_parsers
-        assert reader.custom_folder == "/tmp/test"
+        assert reader.custom_parser_manager.custom_parsers[FileType.PDF] is mock_parser
+        assert reader.custom_parser_manager.custom_folder == "/tmp/test"
         assert reader.custom_parser_manager is not None
 
     def test_custom_parsers_with_default_folder(self):
@@ -57,19 +54,18 @@ class TestCustomParsersAndFolder:
             custom_parsers=custom_parsers,
         )
 
-        assert reader.custom_parsers == custom_parsers
-        assert reader.custom_folder == os.getcwd()
+        assert reader.custom_parser_manager.custom_parsers[FileType.PDF] is mock_parser
+        assert reader.custom_parser_manager.custom_folder == os.getcwd()
         assert reader.custom_parser_manager is not None
 
     def test_no_custom_parsers_no_folder(self):
-        """Test that without custom_parsers, custom_folder is None and no parser manager is created."""
+        """Test that without explicit parsers, defaults are loaded and manager is always present."""
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
         )
 
-        assert reader.custom_parsers == {}
-        assert reader.custom_folder is None
-        assert reader.custom_parser_manager is None
+        assert reader.custom_parser_manager.custom_folder == os.getcwd()
+        assert reader.custom_parser_manager is not None
 
 
 class TestCallbacks:
@@ -134,12 +130,12 @@ class TestCallbacks:
         assert document_filter("page1") is False
         assert document_filter("page2") is False
 
-    @patch("llama_index.readers.confluence.html_parser.HtmlTextParser")
-    def test_document_callback_in_process_page(self, mock_html_parser_class):
+    @patch(
+        "llama_index.readers.confluence.base.CustomParserManager.process_with_custom_parser"
+    )
+    def test_document_callback_in_process_page(self, mock_process):
         """Test that document callback is used during page processing."""
-        mock_text_maker = MagicMock()
-        mock_text_maker.convert.return_value = "processed text"
-        mock_html_parser_class.return_value = mock_text_maker
+        mock_process.return_value = ("processed text", {})
 
         def document_filter(page_id: str) -> bool:
             return page_id != "skip_page"
@@ -160,7 +156,7 @@ class TestCallbacks:
             "_links": {"webui": "/pages/123"},
         }
 
-        result = reader.process_page(normal_page, False, mock_text_maker)
+        result = reader.process_page(normal_page, False)
         assert result is not None
         assert result.doc_id == "normal_page"
 
@@ -173,7 +169,7 @@ class TestCallbacks:
             "_links": {"webui": "/pages/456"},
         }
 
-        result = reader.process_page(skip_page, False, mock_text_maker)
+        result = reader.process_page(skip_page, False)
         assert result is None
 
 
