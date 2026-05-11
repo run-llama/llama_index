@@ -80,6 +80,24 @@ def test_index_node_serdes(index_node: IndexNode):
     assert deserialized_node.index_id == index_node.index_id
 
 
+def test_index_node_with_obj_node_serdes():
+    obj_node = TextNode(id_="obj_node", text="Object node text")
+    index_node = IndexNode(
+        id_="index_node_with_obj",
+        text="Index node text",
+        index_id="123",
+        obj=obj_node,
+    )
+
+    serialized_node = node_to_metadata_dict(index_node)
+    deserialized_node = metadata_dict_to_node(serialized_node)
+
+    assert isinstance(deserialized_node, IndexNode)
+    assert isinstance(deserialized_node.obj, TextNode)
+    assert deserialized_node.obj.node_id == obj_node.node_id
+    assert deserialized_node.obj.text == obj_node.text
+
+
 def test_multimedia_node_serdes(multimedia_node: Node):
     serialized_node: dict[str, Any] = node_to_metadata_dict(multimedia_node)
     assert "multimedia_node" in serialized_node["_node_content"]
