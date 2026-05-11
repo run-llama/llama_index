@@ -429,6 +429,14 @@ def test_validates_api_key_is_present() -> None:
         assert OpenAI(api_key="sk-" + ("a" * 48))
 
 
+def test_openai_api_key_is_redacted_from_serialization() -> None:
+    secret = "sk-" + ("a" * 48)
+    llm = OpenAI(api_key=secret)
+
+    assert "api_key" not in llm.model_dump()
+    assert secret not in repr(llm)
+
+
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_completion_model_with_retry(MockSyncOpenAI: MagicMock) -> None:
     mock_instance = MockSyncOpenAI.return_value
