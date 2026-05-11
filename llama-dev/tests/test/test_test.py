@@ -58,7 +58,7 @@ def mocked_success(*args, **kwargs):
     }
 
 
-def _mocked_dependant_fails(package_path, *args, **kwargs):
+def _mocked_dependent_fails(package_path, *args, **kwargs):
     """Return TESTS_FAILED for 'test_integration', TESTS_PASSED for everything else."""
     if package_path.name == "test_integration":
         return {
@@ -537,7 +537,7 @@ def test_coverage_failure(changed_packages, package_data):
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
-def test_dependant_failure_is_warning(
+def test_dependent_failure_is_warning(
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
@@ -545,16 +545,16 @@ def test_dependant_failure_is_warning(
     monkeypatch,
     data_path,
 ):
-    """Dependant-only test failures should produce a warning, not exit(1)."""
+    """Dependent-only test failures should produce a warning, not exit(1)."""
     direct_pkg = data_path / "direct_pkg"
-    dependant_pkg = data_path / "test_integration"
+    dependent_pkg = data_path / "test_integration"
 
-    mock_find_all_packages.return_value = {direct_pkg, dependant_pkg}
+    mock_find_all_packages.return_value = {direct_pkg, dependent_pkg}
     mock_get_changed_files.return_value = {direct_pkg / "file.py"}
     mock_get_changed_packages.return_value = {direct_pkg}
-    mock_get_dependants.return_value = {dependant_pkg}
+    mock_get_dependants.return_value = {dependent_pkg}
 
-    monkeypatch.setattr(llama_dev_test, "_run_tests", _mocked_dependant_fails)
+    monkeypatch.setattr(llama_dev_test, "_run_tests", _mocked_dependent_fails)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -563,7 +563,7 @@ def test_dependant_failure_is_warning(
     )
 
     assert result.exit_code == 0
-    assert "dependant packages had pre-existing test failures" in result.stdout
+    assert "dependent packages had pre-existing test failures" in result.stdout
     assert "test_integration" in result.stdout
 
 
@@ -571,7 +571,7 @@ def test_dependant_failure_is_warning(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
-def test_direct_failure_exits_nonzero_with_dependant_failures(
+def test_direct_failure_exits_nonzero_with_dependent_failures(
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
@@ -579,14 +579,14 @@ def test_direct_failure_exits_nonzero_with_dependant_failures(
     monkeypatch,
     data_path,
 ):
-    """When both direct and dependant packages fail, exit(1) for the direct failure."""
+    """When both direct and dependent packages fail, exit(1) for the direct failure."""
     direct_pkg = data_path / "direct_pkg"
-    dependant_pkg = data_path / "test_integration"
+    dependent_pkg = data_path / "test_integration"
 
-    mock_find_all_packages.return_value = {direct_pkg, dependant_pkg}
+    mock_find_all_packages.return_value = {direct_pkg, dependent_pkg}
     mock_get_changed_files.return_value = {direct_pkg / "file.py"}
     mock_get_changed_packages.return_value = {direct_pkg}
-    mock_get_dependants.return_value = {dependant_pkg}
+    mock_get_dependants.return_value = {dependent_pkg}
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", _mocked_all_fail)
 
@@ -598,7 +598,7 @@ def test_direct_failure_exits_nonzero_with_dependant_failures(
 
     assert result.exit_code == 1
     assert "1 packages had test failures" in result.stdout
-    assert "dependant packages had pre-existing test failures" in result.stdout
+    assert "dependent packages had pre-existing test failures" in result.stdout
 
 
 def test_successful_run(changed_packages, package_data):

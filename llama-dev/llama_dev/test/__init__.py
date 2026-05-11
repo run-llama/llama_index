@@ -311,7 +311,7 @@ def test(
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
         and r["package"] in changed_packages
     ]
-    failed_dependant = [
+    failed_dependent = [
         r["package"].relative_to(repo_root)
         for r in results
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
@@ -355,12 +355,12 @@ def test(
         for p in install_failed:
             print(p)
 
-    if failed_dependant:
+    if failed_dependent:
         console.print(
-            f"\n⚠️  {len(failed_dependant)} dependant packages had pre-existing test failures (not caused by this change):",
+            f"\n⚠️  {len(failed_dependent)} dependent packages had pre-existing test failures (not caused by this change):",
             style="warning",
         )
-        for p in failed_dependant:
+        for p in failed_dependent:
             console.print(f"  {p}", style="warning")
 
     if failed_direct:
