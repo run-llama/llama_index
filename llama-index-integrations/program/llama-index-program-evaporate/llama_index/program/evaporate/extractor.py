@@ -102,7 +102,6 @@ _SANDBOX_BUILTINS = {
     "enumerate": enumerate,
     "filter": filter,
     "float": float,
-    "format": format,
     "frozenset": frozenset,
     "hasattr": hasattr,
     "hash": hash,
