@@ -206,12 +206,15 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
 
         """
         while True:
-            with self._lock:
+            await asyncio.to_thread(self._lock.acquire)
+            try:
                 self._refill()
                 wait = self._wait_time(num_tokens)
                 if wait <= 0:
                     self._consume(num_tokens)
                     return
+            finally:
+                self._lock.release()
             await asyncio.sleep(wait)
 
 
@@ -388,13 +391,16 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         """
         while True:
             now = time.monotonic()
-            with self._lock:
+            await asyncio.to_thread(self._lock.acquire)
+            try:
                 self._prune_request_timestamps(now)
                 self._prune_token_usage(now)
                 wait = self._wait_time(now, num_tokens)
                 if wait <= 0:
                     self._record_usage(now, num_tokens)
                     return
+            finally:
+                self._lock.release()
             await asyncio.sleep(wait)
 
 

@@ -1,6 +1,7 @@
 """Tests for the rate limiter module."""
 
 import asyncio
+import threading
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,6 +15,46 @@ from llama_index.core.rate_limiter import (
     SlidingWindowRateLimiter,
     TokenBucketRateLimiter,
 )
+
+
+async def _assert_async_acquire_does_not_block_on_sync_lock(
+    limiter: TokenBucketRateLimiter | SlidingWindowRateLimiter,
+) -> None:
+    """Regression coverage for async paths avoiding the threading lock."""
+    limiter._lock.acquire()
+    cancel_unlock = threading.Event()
+
+    def unlock_later() -> None:
+        if cancel_unlock.wait(timeout=0.5):
+            return
+        try:
+            limiter._lock.release()
+        except RuntimeError:
+            pass
+
+    unlock_thread = threading.Thread(target=unlock_later)
+    unlock_thread.start()
+    acquire_task = asyncio.create_task(limiter.async_acquire())
+    start = time.monotonic()
+    heartbeat_ticks = 0
+
+    async def heartbeat() -> None:
+        nonlocal heartbeat_ticks
+        while time.monotonic() - start < 0.1:
+            heartbeat_ticks += 1
+            await asyncio.sleep(0.01)
+
+    try:
+        await heartbeat()
+        assert heartbeat_ticks > 1
+        assert time.monotonic() - start < 0.4
+        assert not acquire_task.done()
+    finally:
+        cancel_unlock.set()
+        if limiter._lock.locked():
+            limiter._lock.release()
+        unlock_thread.join(timeout=1.0)
+    await asyncio.wait_for(acquire_task, timeout=1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -153,15 +194,13 @@ async def test_async_acquire_tpm_limiting() -> None:
             "llama_index.core.rate_limiter.asyncio.sleep",
             new_callable=AsyncMock,
         ) as mock_sleep,
-        patch("llama_index.core.rate_limiter.time.monotonic") as mock_time,
     ):
-        base = 1000.0
-        # Align internal clock with mock timeline
-        rl._last_refill_time = base
+
+        async def advance_time(_wait: float) -> None:
+            rl._last_refill_time = time.monotonic() - 60.0
+
         rl._token_tokens = 0.0
-        # First monotonic(): no elapsed time, need 50 tokens but 0 available -> sleep
-        # Second monotonic(): 60s elapsed -> refills 100 tokens -> acquire succeeds
-        mock_time.side_effect = [base, base + 60.0]
+        mock_sleep.side_effect = advance_time
         await rl.async_acquire(num_tokens=50)
         mock_sleep.assert_called_once()
 
@@ -179,6 +218,12 @@ async def test_concurrent_async_rate_limiting() -> None:
     tasks = [worker(i) for i in range(20)]
     await asyncio.gather(*tasks)
     assert len(results) == 20
+
+
+@pytest.mark.asyncio
+async def test_async_acquire_does_not_block_on_sync_lock() -> None:
+    rl = RateLimiter(requests_per_minute=1000)
+    await _assert_async_acquire_does_not_block_on_sync_lock(rl)
 
 
 # ---------------------------------------------------------------------------
@@ -468,6 +513,12 @@ async def test_sliding_window_concurrent_async() -> None:
     tasks = [worker(i) for i in range(25)]
     await asyncio.gather(*tasks)
     assert len(results) == 25
+
+
+@pytest.mark.asyncio
+async def test_sliding_window_async_acquire_does_not_block_on_sync_lock() -> None:
+    rl = SlidingWindowRateLimiter(requests_per_minute=1000)
+    await _assert_async_acquire_does_not_block_on_sync_lock(rl)
 
 
 def test_sliding_window_llm_sync_calls_acquire() -> None:
