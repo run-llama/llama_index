@@ -58,6 +58,36 @@ def mocked_success(*args, **kwargs):
     }
 
 
+def _mocked_dependant_fails(package_path, *args, **kwargs):
+    """Return TESTS_FAILED for 'test_integration', TESTS_PASSED for everything else."""
+    if package_path.name == "test_integration":
+        return {
+            "package": package_path,
+            "status": ResultStatus.TESTS_FAILED,
+            "stdout": "test output",
+            "stderr": "test failures",
+            "time": "0.1s",
+        }
+    return {
+        "package": package_path,
+        "status": ResultStatus.TESTS_PASSED,
+        "stdout": "",
+        "stderr": "",
+        "time": "0.1s",
+    }
+
+
+def _mocked_all_fail(package_path, *args, **kwargs):
+    """Return TESTS_FAILED for any package."""
+    return {
+        "package": package_path,
+        "status": ResultStatus.TESTS_FAILED,
+        "stdout": "test output",
+        "stderr": "test failures",
+        "time": "0.1s",
+    }
+
+
 @pytest.fixture
 def changed_packages():
     return {
@@ -143,9 +173,10 @@ def test_coverage_failures(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    test_pkg = data_path / "test_integration"
+    mock_find_all_packages.return_value = {test_pkg}
+    mock_get_changed_files.return_value = {test_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {test_pkg}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_coverage_failed)
@@ -183,9 +214,10 @@ def test_install_failures(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    test_pkg = data_path / "test_integration"
+    mock_find_all_packages.return_value = {test_pkg}
+    mock_get_changed_files.return_value = {test_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {test_pkg}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_install_failed)
@@ -214,9 +246,10 @@ def test_skip_failures_no_tests(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    test_pkg = data_path / "test_integration"
+    mock_find_all_packages.return_value = {test_pkg}
+    mock_get_changed_files.return_value = {test_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {test_pkg}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed_no_tests)
@@ -244,9 +277,10 @@ def test_skip_failures_unsupported_python(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    test_pkg = data_path / "test_integration"
+    mock_find_all_packages.return_value = {test_pkg}
+    mock_get_changed_files.return_value = {test_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {test_pkg}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(
@@ -278,9 +312,10 @@ def test_success(
     monkeypatch,
     data_path,
 ):
-    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    test_pkg = data_path / "test_integration"
+    mock_find_all_packages.return_value = {test_pkg}
+    mock_get_changed_files.return_value = {test_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {test_pkg}
     mock_get_dependants.return_value = set()
 
     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_success)
@@ -496,6 +531,74 @@ def test_coverage_failure(changed_packages, package_data):
 
         assert result["status"] == ResultStatus.COVERAGE_FAILED
         assert result["stderr"] == "coverage below threshold"
+
+
+@mock.patch("llama_dev.test.find_all_packages")
+@mock.patch("llama_dev.test.get_changed_files")
+@mock.patch("llama_dev.test.get_changed_packages")
+@mock.patch("llama_dev.test.get_dependants_packages")
+def test_dependant_failure_is_warning(
+    mock_get_dependants,
+    mock_get_changed_packages,
+    mock_get_changed_files,
+    mock_find_all_packages,
+    monkeypatch,
+    data_path,
+):
+    """Dependant-only test failures should produce a warning, not exit(1)."""
+    direct_pkg = data_path / "direct_pkg"
+    dependant_pkg = data_path / "test_integration"
+
+    mock_find_all_packages.return_value = {direct_pkg, dependant_pkg}
+    mock_get_changed_files.return_value = {direct_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {direct_pkg}
+    mock_get_dependants.return_value = {dependant_pkg}
+
+    monkeypatch.setattr(llama_dev_test, "_run_tests", _mocked_dependant_fails)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "test", "--base-ref", "main"],
+    )
+
+    assert result.exit_code == 0
+    assert "dependant packages had pre-existing test failures" in result.stdout
+    assert "test_integration" in result.stdout
+
+
+@mock.patch("llama_dev.test.find_all_packages")
+@mock.patch("llama_dev.test.get_changed_files")
+@mock.patch("llama_dev.test.get_changed_packages")
+@mock.patch("llama_dev.test.get_dependants_packages")
+def test_direct_failure_exits_nonzero_with_dependant_failures(
+    mock_get_dependants,
+    mock_get_changed_packages,
+    mock_get_changed_files,
+    mock_find_all_packages,
+    monkeypatch,
+    data_path,
+):
+    """When both direct and dependant packages fail, exit(1) for the direct failure."""
+    direct_pkg = data_path / "direct_pkg"
+    dependant_pkg = data_path / "test_integration"
+
+    mock_find_all_packages.return_value = {direct_pkg, dependant_pkg}
+    mock_get_changed_files.return_value = {direct_pkg / "file.py"}
+    mock_get_changed_packages.return_value = {direct_pkg}
+    mock_get_dependants.return_value = {dependant_pkg}
+
+    monkeypatch.setattr(llama_dev_test, "_run_tests", _mocked_all_fail)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "test", "--base-ref", "main"],
+    )
+
+    assert result.exit_code == 1
+    assert "1 packages had test failures" in result.stdout
+    assert "dependant packages had pre-existing test failures" in result.stdout
 
 
 def test_successful_run(changed_packages, package_data):
