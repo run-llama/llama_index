@@ -39,6 +39,7 @@ from llama_index.llms.openai.utils import (
     ALL_AVAILABLE_MODELS,
     CHAT_MODELS,
     is_chatcomp_api_supported,
+    from_openai_message,
 )
 
 
@@ -572,3 +573,38 @@ def test_gpt_5_4_pro_responses_api_only() -> None:
     assert is_json_schema_supported(model_name) is True, (
         f"{model_name} should support JSON schema"
     )
+
+
+def test_from_openai_message_with_reasoning_content() -> None:
+    """Test that reasoning_content is converted to ThinkingBlock."""
+    from llama_index.core.base.llms.types import ThinkingBlock
+
+    msg = ChatCompletionMessage(
+        role="assistant",
+        content="Hello",
+        reasoning_content="Let's think...",
+    )
+    chat_msg = from_openai_message(msg, modalities=["text"])
+    assert any(
+        isinstance(b, ThinkingBlock) and b.content == "Let's think..."
+        for b in chat_msg.blocks
+    )
+
+
+def test_from_openai_message_with_reasoning_field() -> None:
+    """Test fallback to 'reasoning' field (vLLM Qwen3, #21582)."""
+    from llama_index.core.base.llms.types import ThinkingBlock
+
+    # vLLM Qwen3 uses 'reasoning' instead of 'reasoning_content'
+    msg = ChatCompletionMessage(
+        role="assistant",
+        content="Hello",
+    )
+    # ChatCompletionMessage does not expose 'reasoning' natively, so we attach it manually
+    object.__setattr__(msg, "reasoning", "Step-by-step logic")
+    chat_msg = from_openai_message(msg, modalities=["text"])
+    assert any(
+        isinstance(b, ThinkingBlock) and b.content == "Step-by-step logic"
+        for b in chat_msg.blocks
+    )
+

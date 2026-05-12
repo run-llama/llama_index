@@ -813,7 +813,9 @@ def from_openai_message(
 
     # Extract reasoning_content if present (used by many OpenAI-compatible
     # providers for chain-of-thought responses)
-    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    reasoning_content = getattr(
+        openai_message, "reasoning_content", None
+    ) or getattr(openai_message, "reasoning", None)
     if isinstance(reasoning_content, str) and reasoning_content:
         blocks.append(ThinkingBlock(content=reasoning_content))
 
