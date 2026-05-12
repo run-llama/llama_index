@@ -19,6 +19,7 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [naxytra machine discovery agent](https://www.naxytra.com/v1/agent-discovery-index) - public discovery entry for a live MCP server and A2A card
 
 ## LLMs
 
