@@ -732,7 +732,7 @@ async def test_create_file_part_rejects_large_hybrid_file_for_vertexai() -> None
     mock_client = MagicMock()
     mock_client.vertexai = True
 
-    with pytest.raises(ValueError, match="smaller than 20MB"):
+    with pytest.raises(ValueError, match="vertexai client" and "smaller than 20MB"):
         await create_file_part(file_buffer, "video/mp4", "hybrid", mock_client)
 
     mock_client.aio.files.upload.assert_not_called()
