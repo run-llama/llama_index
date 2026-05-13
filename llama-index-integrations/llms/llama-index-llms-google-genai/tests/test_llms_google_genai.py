@@ -1,6 +1,7 @@
 import os
+from io import BytesIO
 from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from google.genai import types
@@ -22,6 +23,7 @@ from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
+    create_file_part,
     prepare_chat_params,
     chat_from_gemini_response,
 )
@@ -1983,3 +1985,53 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_passes_display_name_to_file_api():
+    mock_file = MagicMock()
+    mock_file.state.name = "ACTIVE"
+    mock_file.uri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    mock_file.name = "files/abc123"
+
+    mock_client = MagicMock()
+    mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
+
+    file_buffer = BytesIO(b"fake pdf content")
+
+    part, file_api_name = await create_file_part(
+        file_buffer,
+        "application/pdf",
+        "fileapi",
+        mock_client,
+        display_name="my_report",
+    )
+
+    mock_client.aio.files.upload.assert_called_once()
+    call_kwargs = mock_client.aio.files.upload.call_args
+    upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
+    assert upload_config.display_name == "my_report"
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_no_display_name_by_default():
+    mock_file = MagicMock()
+    mock_file.state.name = "ACTIVE"
+    mock_file.uri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    mock_file.name = "files/abc123"
+
+    mock_client = MagicMock()
+    mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
+
+    file_buffer = BytesIO(b"fake pdf content")
+
+    part, file_api_name = await create_file_part(
+        file_buffer,
+        "application/pdf",
+        "fileapi",
+        mock_client,
+    )
+
+    call_kwargs = mock_client.aio.files.upload.call_args
+    upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
+    assert upload_config.display_name is None

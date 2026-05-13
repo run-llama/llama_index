@@ -278,6 +278,7 @@ async def create_file_part(
     mime_type: str,
     file_mode: Literal["inline", "fileapi", "hybrid"],
     client: Optional[Client],
+    display_name: Optional[str] = None,
 ) -> tuple[types.Part, Optional[str]]:
     """Create a Part or File object for the given file depending on its size."""
     if file_mode in ("inline", "hybrid"):
@@ -296,9 +297,11 @@ async def create_file_part(
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
 
-    file = await client.aio.files.upload(
-        file=file_buffer, config=types.UploadFileConfig(mime_type=mime_type)
-    )
+    upload_config = types.UploadFileConfig(mime_type=mime_type)
+    if display_name is not None:
+        upload_config.display_name = display_name
+
+    file = await client.aio.files.upload(file=file_buffer, config=upload_config)
 
     # Wait for file processing
     while file.state.name == "PROCESSING":
@@ -378,7 +381,7 @@ async def chat_message_to_gemini(
             )
 
             part, file_api_name = await create_file_part(
-                file_buffer, mime_type, file_mode, client
+                file_buffer, mime_type, file_mode, client, display_name=block.title
             )
         elif isinstance(block, ThinkingBlock):
             if block.content:
