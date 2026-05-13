@@ -290,7 +290,7 @@ async def create_file_part(
                 data=file_buffer.read(),
                 mime_type=mime_type,
             ), None
-        elif file_mode == "inline":
+        elif file_mode == "inline" or (client is not None and client.vertexai):
             raise ValueError("Files in inline mode must be smaller than 20MB.")
 
     if client is None:
