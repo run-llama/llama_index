@@ -833,9 +833,10 @@ def from_openai_message(
     role = openai_message.role
     blocks: List[ContentBlock] = []
 
-    # Extract reasoning_content if present (used by many OpenAI-compatible
-    # providers for chain-of-thought responses)
-    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    # Extract reasoning_content if present. Some OpenAI-compatible providers
+    # (for example vLLM with Qwen reasoning models) expose the same payload as
+    # `reasoning` instead.
+    reasoning_content = get_openai_reasoning_content(openai_message)
     if isinstance(reasoning_content, str) and reasoning_content:
         blocks.append(ThinkingBlock(content=reasoning_content))
 
@@ -864,6 +865,14 @@ def from_openai_message(
         blocks.append(AudioBlock(audio=audio_data, format="mp3"))
 
     return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
+
+
+def get_openai_reasoning_content(message: Any) -> Optional[str]:
+    """Extract reasoning text from OpenAI-compatible message or delta objects."""
+    reasoning_content = getattr(message, "reasoning_content", None)
+    if reasoning_content is None:
+        reasoning_content = getattr(message, "reasoning", None)
+    return reasoning_content if isinstance(reasoning_content, str) else None
 
 
 def from_openai_token_logprob(

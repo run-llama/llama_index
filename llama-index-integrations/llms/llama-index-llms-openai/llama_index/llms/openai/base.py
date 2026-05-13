@@ -70,6 +70,7 @@ from llama_index.llms.openai.utils import (
     O1_MODELS,
     create_retry_decorator,
     from_openai_completion_logprobs,
+    get_openai_reasoning_content,
     from_openai_message,
     from_openai_token_logprobs,
     is_chat_model,
@@ -568,12 +569,8 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # Extract reasoning_content for chain-of-thought streaming.
-                # Many OpenAI-compatible providers surface this extra field.
-                raw_reasoning = getattr(delta, "reasoning_content", None)
-                reasoning_delta = (
-                    raw_reasoning if isinstance(raw_reasoning, str) else ""
-                )
+                # Extract reasoning content for chain-of-thought streaming.
+                reasoning_delta = get_openai_reasoning_content(delta) or ""
                 reasoning_content += reasoning_delta
 
                 if reasoning_content:
@@ -864,12 +861,8 @@ class OpenAI(FunctionCallingLLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # Extract reasoning_content for chain-of-thought streaming.
-                # Many OpenAI-compatible providers surface this extra field.
-                raw_reasoning = getattr(delta, "reasoning_content", None)
-                reasoning_delta = (
-                    raw_reasoning if isinstance(raw_reasoning, str) else ""
-                )
+                # Extract reasoning content for chain-of-thought streaming.
+                reasoning_delta = get_openai_reasoning_content(delta) or ""
                 reasoning_content += reasoning_delta
 
                 if reasoning_content:
