@@ -933,3 +933,117 @@ async def test_async_vector_store_query_server(
     results = await payload_indexed_vector_store.aquery(query)
     assert len(results.nodes) == 1
     assert results.nodes[0].node_id == "11111111-1111-1111-1111-111111111111"
+
+
+# ---------------------------------------------------------------------------
+# New async-only tests for issue #14151
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_acreate_collection_uses_aclient() -> None:
+    """_acreate_collection must create the collection via self._aclient."""
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_acreate_14151",
+        aclient=aclient,
+        client=None,
+    )
+    # Collection should not exist yet
+    assert not await aclient.collection_exists("test_acreate_14151")
+
+    await store._acreate_collection(collection_name="test_acreate_14151", vector_size=2)
+
+    # Collection must now exist on the async client
+    assert await aclient.collection_exists("test_acreate_14151")
+
+
+@pytest.mark.asyncio
+async def test_aadd_with_only_aclient() -> None:
+    """async_add must work when only aclient= is provided (client=None)."""
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_aadd_only_14151",
+        aclient=aclient,
+        client=None,
+    )
+    node1 = TextNode(
+        text="hello",
+        id_="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        embedding=[1.0, 0.0],
+    )
+    node2 = TextNode(
+        text="world",
+        id_="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        embedding=[0.0, 1.0],
+    )
+    ids = await store.async_add([node1, node2])
+    assert len(ids) == 2
+
+
+@pytest.mark.asyncio
+async def test_aadd_raises_if_no_aclient() -> None:
+    """async_add must raise when only a sync client is provided."""
+    client = QdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_aadd_no_aclient_14151",
+        client=client,
+    )
+    node = TextNode(
+        text="hello",
+        id_="cccccccc-cccc-cccc-cccc-cccccccccccc",
+        embedding=[1.0, 0.0],
+    )
+    with pytest.raises((ValueError, RuntimeError), match="[Aa]client|async"):
+        await store.async_add([node])
+
+
+@pytest.mark.asyncio
+async def test_aquery_with_only_aclient() -> None:
+    """Aquery must work when only aclient= is provided."""
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_aquery_only_14151",
+        aclient=aclient,
+        client=None,
+    )
+    node = TextNode(
+        text="hello",
+        id_="dddddddd-dddd-dddd-dddd-dddddddddddd",
+        embedding=[1.0, 0.0],
+    )
+    await store.async_add([node])
+
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=1)
+    result = await store.aquery(query)
+    assert result.nodes is not None
+    assert len(result.nodes) > 0
+
+
+@pytest.mark.asyncio
+async def test_async_hybrid_with_aclient() -> None:
+    """Hybrid async operations must use self._aclient exclusively (no blocking sync calls)."""
+    pytest.importorskip("fastembed")
+
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_hybrid_aclient_14151",
+        aclient=aclient,
+        client=None,
+        enable_hybrid=True,
+        fastembed_sparse_model="Qdrant/bm25",
+    )
+
+    # No sync client should be set
+    assert store._client is None
+
+    node = TextNode(
+        text="hello hybrid async",
+        id_="eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+        embedding=[1.0, 0.0],
+    )
+    ids = await store.async_add([node])
+    assert len(ids) == 1
+
+    # Collection must exist on the async client (was created via async path)
+    assert await aclient.collection_exists("test_hybrid_aclient_14151")

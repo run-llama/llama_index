@@ -845,6 +845,56 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
         assert "streamProcessingMode" not in call_kwargs["guardrailConfig"]
 
 
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client(
+    mock_aioboto3_session,
+):
+    """When client is provided, converse_with_retry_async uses it directly without opening a session client."""
+    session = aioboto3.Session()
+    async_client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse", wraps=async_client.converse
+    ) as patched_converse:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            await converse_with_retry_async(
+                session=session,
+                config=Config(),
+                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+                messages=[],
+                stream=False,
+                client=async_client,
+            )
+            patched_converse.assert_called_once()
+            patched_session_client.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_uses_provided_client_streaming(
+    mock_aioboto3_session,
+):
+    """When client is provided, streaming in converse_with_retry_async uses it directly without opening a session client."""
+    session = aioboto3.Session()
+    async_client = AsyncMockClient()
+
+    with patch.object(
+        AsyncMockClient, "converse_stream", wraps=async_client.converse_stream
+    ) as patched_stream:
+        with patch.object(MockAsyncSession, "client") as patched_session_client:
+            response_gen = await converse_with_retry_async(
+                session=session,
+                config=Config(),
+                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+                messages=[],
+                stream=True,
+                client=async_client,
+            )
+            async for _ in response_gen:
+                pass
+            patched_stream.assert_called_once()
+            patched_session_client.assert_not_called()
+
+
 def test_thinking_dict_enabled_requires_budget():
     td: ThinkingDict = {"type": "enabled", "budget_tokens": 1024}
     assert td["type"] == "enabled"
