@@ -1,5 +1,6 @@
 """Test tools."""
 
+import contextvars
 import json
 from typing import List, Optional
 
@@ -475,3 +476,19 @@ def test_function_tool_field_default() -> None:
     # Calling with an explicit arg should override the default
     result = tool.call(location="Munich")
     assert result.content == "weather in Munich"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_contextvar_propagation() -> None:
+    """Test that contextvars are propagated into sync fn via acall."""
+    var: contextvars.ContextVar[str] = contextvars.ContextVar(
+        "test_var", default="default"
+    )
+
+    def sync_fn() -> str:
+        return var.get()
+
+    tool = FunctionTool.from_defaults(fn=sync_fn, name="ctx_test", description="test")
+    var.set("expected")
+    result = await tool.acall()
+    assert result.raw_output == "expected"
