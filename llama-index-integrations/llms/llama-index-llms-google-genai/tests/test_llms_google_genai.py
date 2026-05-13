@@ -1995,6 +1995,7 @@ async def test_create_file_part_passes_display_name_to_file_api():
     mock_file.name = "files/abc123"
 
     mock_client = MagicMock()
+    mock_client.vertexai = False
     mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
 
     file_buffer = BytesIO(b"fake pdf content")
@@ -2021,6 +2022,7 @@ async def test_create_file_part_no_display_name_by_default():
     mock_file.name = "files/abc123"
 
     mock_client = MagicMock()
+    mock_client.vertexai = False
     mock_client.aio.files.upload = AsyncMock(return_value=mock_file)
 
     file_buffer = BytesIO(b"fake pdf content")
@@ -2035,3 +2037,76 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_raises_on_vertexai_with_fileapi():
+    """
+    A Vertex AI client should surface a clear error before any upload.
+
+    The Gemini File API is not available on Vertex AI, so the call would
+    otherwise fail downstream in google-genai with the cryptic
+    'This method is only supported in the Gemini Developer client.'
+    """
+    mock_client = MagicMock()
+    mock_client.vertexai = True
+    mock_client.aio.files.upload = AsyncMock()
+
+    file_buffer = BytesIO(b"small pdf content")
+
+    with pytest.raises(ValueError, match="Vertex AI"):
+        await create_file_part(
+            file_buffer,
+            "application/pdf",
+            "fileapi",
+            mock_client,
+        )
+
+    mock_client.aio.files.upload.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_raises_on_vertexai_with_large_hybrid_file():
+    """
+    A >20MB file in hybrid mode on Vertex AI falls through to the File API,
+    which Vertex does not support. The error should be raised before the call.
+    """
+    mock_client = MagicMock()
+    mock_client.vertexai = True
+    mock_client.aio.files.upload = AsyncMock()
+
+    file_buffer = BytesIO(b"x" * (21 * 1024 * 1024))
+
+    with pytest.raises(ValueError, match="Vertex AI"):
+        await create_file_part(
+            file_buffer,
+            "application/pdf",
+            "hybrid",
+            mock_client,
+        )
+
+    mock_client.aio.files.upload.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_inline_still_works_on_vertexai():
+    """
+    Small files served via the inline path stay supported on Vertex AI
+    because they never touch the File API.
+    """
+    mock_client = MagicMock()
+    mock_client.vertexai = True
+    mock_client.aio.files.upload = AsyncMock()
+
+    file_buffer = BytesIO(b"small content")
+
+    part, file_api_name = await create_file_part(
+        file_buffer,
+        "application/pdf",
+        "inline",
+        mock_client,
+    )
+
+    assert file_api_name is None
+    assert part is not None
+    mock_client.aio.files.upload.assert_not_called()

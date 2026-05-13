@@ -297,6 +297,16 @@ async def create_file_part(
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
 
+    if getattr(client, "vertexai", False):
+        # The Vertex AI Gemini API does not support uploads through the Gemini
+        # File API. Surface a clear error here instead of letting the call fail
+        # downstream with a cryptic googleapis error.
+        raise ValueError(
+            "Uploading files through the Gemini File API is not supported on "
+            "Vertex AI. Use file_mode='inline' for files smaller than 20MB, or "
+            "upload the file to Google Cloud Storage and reference it by URI."
+        )
+
     upload_config = types.UploadFileConfig(mime_type=mime_type)
     if display_name is not None:
         upload_config.display_name = display_name
