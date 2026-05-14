@@ -90,8 +90,6 @@ class CodeSplitter(TextSplitter):
             id_func: Optional function to generate chunk IDs.
 
         """
-        from tree_sitter import Parser  # pants: no-infer-dep
-
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
 
@@ -128,8 +126,13 @@ class CodeSplitter(TextSplitter):
                     "for a list of valid languages."
                 )
                 raise
-        if not isinstance(parser, Parser):
-            raise ValueError("Parser must be a tree-sitter Parser object.")
+
+        if not hasattr(parser, "parse"):
+            raise ImportError(
+                "The installed version of tree-sitter-language-pack is not compatible. "
+                "Please install a compatible version: "
+                "pip install 'tree-sitter-language-pack<1.0'"
+            )
 
         self._parser = parser
 
