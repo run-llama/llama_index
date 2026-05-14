@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 logger = logging.getLogger(__name__)
+GEMINI_INLINE_FILE_SIZE_LIMIT = 20 * 1024 * 1024
 
 ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
@@ -281,12 +282,12 @@ async def create_file_part(
     display_name: Optional[str] = None,
 ) -> tuple[types.Part, Optional[str]]:
     """Create a Part or File object for the given file depending on its size."""
-    if file_mode in ("inline", "hybrid"):
-        file_buffer.seek(0, 2)  # Seek to end
-        size = file_buffer.tell()  # Get file size
-        file_buffer.seek(0)  # Reset to beginning
+    file_buffer.seek(0, 2)  # Seek to end
+    size = file_buffer.tell()  # Get file size
+    file_buffer.seek(0)  # Reset to beginning
 
-        if size < 20 * 1024 * 1024:  # 20MB is the Gemini inline data size limit
+    if file_mode in ("inline", "hybrid"):
+        if size < GEMINI_INLINE_FILE_SIZE_LIMIT:
             return types.Part.from_bytes(
                 data=file_buffer.read(),
                 mime_type=mime_type,
@@ -296,6 +297,12 @@ async def create_file_part(
 
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
+
+    if getattr(client, "vertexai", False) is True:
+        raise ValueError(
+            "File API uploads are not supported with Vertex AI. Use file_mode='inline' "
+            "with files smaller than 20MB."
+        )
 
     upload_config = types.UploadFileConfig(mime_type=mime_type)
     if display_name is not None:

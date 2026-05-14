@@ -26,6 +26,7 @@ from llama_index.llms.google_genai.utils import (
     create_file_part,
     prepare_chat_params,
     chat_from_gemini_response,
+    GEMINI_INLINE_FILE_SIZE_LIMIT,
 )
 
 
@@ -60,6 +61,35 @@ class Schema(BaseModel):
 
     schema_name: str = Field(description="Schema name")
     tables: List[Table] = Field(description="List of random Table objects")
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_rejects_fileapi_with_vertexai_client() -> None:
+    client = MagicMock()
+    client.vertexai = True
+
+    with pytest.raises(ValueError, match="File API uploads are not supported"):
+        await create_file_part(
+            BytesIO(b"small pdf"),
+            "application/pdf",
+            "fileapi",
+            client,
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_rejects_large_hybrid_vertexai_file() -> None:
+    client = MagicMock()
+    client.vertexai = True
+    file_buffer = BytesIO(b"x" * GEMINI_INLINE_FILE_SIZE_LIMIT)
+
+    with pytest.raises(ValueError, match="File API uploads are not supported"):
+        await create_file_part(
+            file_buffer,
+            "application/pdf",
+            "hybrid",
+            client,
+        )
 
 
 # Define the models to test against
