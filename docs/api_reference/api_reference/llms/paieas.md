@@ -1,4 +1,3 @@
 ::: llama_index.llms.paieas
-    options:
-      members:
-        - PaiEas
+options:
+members: - PaiEas

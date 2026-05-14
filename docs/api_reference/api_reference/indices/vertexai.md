@@ -1,4 +1,3 @@
 ::: llama_index.indices.managed.vertexai
-    options:
-      members:
-        - VertexAIIndex
+options:
+members: - VertexAIIndex

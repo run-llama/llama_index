@@ -1,4 +1,3 @@
 ::: llama_index.readers.faiss
-    options:
-      members:
-        - FaissReader
+options:
+members: - FaissReader

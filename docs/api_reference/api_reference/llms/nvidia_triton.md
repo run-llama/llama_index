@@ -1,4 +1,3 @@
 ::: llama_index.llms.nvidia_triton
-    options:
-      members:
-        - NvidiaTriton
+options:
+members: - NvidiaTriton

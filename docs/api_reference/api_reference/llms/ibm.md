@@ -1,4 +1,3 @@
 ::: llama_index.llms.ibm
-    options:
-      members:
-        - WatsonxLLM
+options:
+members: - WatsonxLLM
