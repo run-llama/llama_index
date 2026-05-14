@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Callable, List, Optional, Union
 
 from llama_index.core.graph_stores.types import PropertyGraphStore
@@ -6,6 +7,8 @@ from llama_index.core.llms import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.settings import Settings
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_RESPONSE_TEMPLATE = (
     "Generated Cypher query:\n{query}\n\nCypher Response:\n{response}"
@@ -111,6 +114,19 @@ class TextToCypherRetriever(BasePGRetriever):
 
     def _clean_query_output(self, query_output: Any) -> Any:
         """Iterate the cypher response, looking for the allowed fields."""
+        try:
+            return self._clean_query_output_impl(query_output)
+        except RecursionError:
+            # A pathologically nested graph result would otherwise propagate
+            # a raw RecursionError out of retrieve() / aretrieve(). Drop the
+            # poisoned result so the retriever keeps serving other queries.
+            _logger.warning(
+                "Cypher query result is too deeply nested to clean; "
+                "dropping the result."
+            )
+            return None
+
+    def _clean_query_output_impl(self, query_output: Any) -> Any:
         if isinstance(query_output, dict):
             filtered_dict = {}
             for key, value in query_output.items():
@@ -120,14 +136,14 @@ class TextToCypherRetriever(BasePGRetriever):
                 ):
                     filtered_dict[key] = value
                 elif isinstance(value, (dict, list)):
-                    filtered_value = self._clean_query_output(value)
+                    filtered_value = self._clean_query_output_impl(value)
                     if filtered_value:
                         filtered_dict[key] = filtered_value
             return filtered_dict
         elif isinstance(query_output, list):
             filtered_list = []
             for item in query_output:
-                filtered_item = self._clean_query_output(item)
+                filtered_item = self._clean_query_output_impl(item)
                 if filtered_item:
                     filtered_list.append(filtered_item)
             return filtered_list

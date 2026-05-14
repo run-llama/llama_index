@@ -96,7 +96,14 @@ class SelectionOutputParser(BaseOutputParser):
         if not isinstance(json_obj, list):
             raise ValueError(f"Failed to convert output to JSON: {output!r}")
 
-        json_output = self._format_output(json_obj)
+        # Guard against pathologically nested LLM-produced JSON triggering a
+        # raw RecursionError in _filter_dict's recursive descent.
+        try:
+            json_output = self._format_output(json_obj)
+        except RecursionError as exc:
+            raise OutputParserException(
+                "Selector output JSON is too deeply nested to parse."
+            ) from exc
         answers = [Answer.from_dict(json_dict) for json_dict in json_output]
         return StructuredOutput(raw_output=output, parsed_output=answers)
 

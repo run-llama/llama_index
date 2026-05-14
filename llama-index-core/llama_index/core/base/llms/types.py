@@ -1267,7 +1267,18 @@ class ChatMessage(BaseRecursiveContentBlock):
 
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
-        return self._recursive_serialization(value)
+        # Guard against deeply nested user-controlled data in
+        # additional_kwargs (e.g. raw LLM response fields or persisted
+        # chat-history payloads) blowing the Python stack and breaking
+        # every subsequent persist / model_dump / event-dispatch call.
+        try:
+            return self._recursive_serialization(value)
+        except RecursionError:
+            _logger.warning(
+                "ChatMessage.additional_kwargs is too deeply nested to serialize; "
+                "returning an empty dict instead."
+            )
+            return {}
 
 
 class LogProb(BaseModel):
