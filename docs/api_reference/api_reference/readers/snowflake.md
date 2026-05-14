@@ -1,3 +1,4 @@
 ::: llama_index.readers.snowflake
-options:
-members: - SnowflakeReader
+    options:
+      members:
+        - SnowflakeReader

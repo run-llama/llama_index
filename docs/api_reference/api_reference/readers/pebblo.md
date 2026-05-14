@@ -1,3 +1,4 @@
 ::: llama_index.readers.pebblo
-options:
-members: - PebbloReader
+    options:
+      members:
+        - PebbloReader

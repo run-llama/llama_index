@@ -1,3 +1,4 @@
 ::: llama_index.retrievers.you
-options:
-members: - YouRetriever
+    options:
+      members:
+        - YouRetriever

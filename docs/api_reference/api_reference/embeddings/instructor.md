@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.instructor
-options:
-members: - InstructorEmbedding
+    options:
+      members:
+        - InstructorEmbedding

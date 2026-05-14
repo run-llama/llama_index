@@ -1,3 +1,4 @@
 ::: llama_index.readers.paddle_ocr
-options:
-members: - PDFPaddleOcrReader
+    options:
+      members:
+        - PDFPaddleOcrReader

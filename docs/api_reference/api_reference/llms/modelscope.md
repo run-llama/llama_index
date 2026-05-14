@@ -1,3 +1,4 @@
 ::: llama_index.llms.modelscope
-options:
-members: - ModelScopeLLM
+    options:
+      members:
+        - ModelScopeLLM

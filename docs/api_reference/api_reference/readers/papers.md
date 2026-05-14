@@ -1,3 +1,5 @@
 ::: llama_index.readers.papers
-options:
-members: - ArxivReader - PubmedReader
+    options:
+      members:
+        - ArxivReader
+        - PubmedReader

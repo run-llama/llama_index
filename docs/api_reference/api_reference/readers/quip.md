@@ -1,3 +1,4 @@
 ::: llama_index.readers.quip
-options:
-members: - QuipReader
+    options:
+      members:
+        - QuipReader

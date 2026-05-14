@@ -1,3 +1,4 @@
 ::: llama_index.readers.whisper
-options:
-members: - WhisperReader
+    options:
+      members:
+        - WhisperReader

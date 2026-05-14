@@ -1,3 +1,5 @@
 ::: llama_index.llms.openai_like
-options:
-members: - OpenAILike
+    options:
+      members:
+        - OpenAILike
+        - OpenAILikeResponses

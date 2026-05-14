@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.clarifai
-options:
-members: - ClarifaiEmbedding
+    options:
+      members:
+        - ClarifaiEmbedding
