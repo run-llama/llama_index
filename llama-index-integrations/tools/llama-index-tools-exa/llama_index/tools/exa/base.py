@@ -90,6 +90,34 @@ class ExaToolSpec(BaseToolSpec):
         response = self.client.get_contents(ids)
         return [Document(text=result.text) for result in response.results]
 
+    def find_similar(
+        self,
+        url: str,
+        num_results: Optional[int] = 3,
+        start_published_date: Optional[str] = None,
+        end_published_date: Optional[str] = None,
+    ) -> List:
+        """
+        Retrieve a list of similar documents to a given url.
+
+        Args:
+            url (str): The web page to find similar results of
+            num_results (Optional[int]): Number of results to return. Default 3.
+            start_published_date (Optional[str]): A date string like "2020-06-15"
+            end_published_date (Optional[str]): End date string
+
+        """
+        response = self.client.find_similar(
+            url,
+            num_results=num_results,
+            start_published_date=start_published_date,
+            end_published_date=end_published_date,
+        )
+        return [
+            {"title": result.title, "url": result.url, "id": result.id}
+            for result in response.results
+        ]
+
     def search_and_retrieve_documents(
         self,
         query: str,
