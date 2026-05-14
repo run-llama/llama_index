@@ -1,3 +1,4 @@
+from io import BytesIO
 import os
 from io import BytesIO
 from typing import Any, Dict, List, Optional
@@ -724,6 +725,18 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     )
     assert isinstance(blogpost, BlogPost)
     assert len(blogpost.contents) >= 3
+
+
+@pytest.mark.asyncio
+async def test_create_file_part_rejects_large_hybrid_file_for_vertexai() -> None:
+    file_buffer = BytesIO(b"x" * (20 * 1024 * 1024))
+    mock_client = MagicMock()
+    mock_client.vertexai = True
+
+    with pytest.raises(ValueError, match="vertexai client" and "smaller than 20MB"):
+        await create_file_part(file_buffer, "video/mp4", "hybrid", mock_client)
+
+    mock_client.aio.files.upload.assert_not_called()
 
 
 @pytest.mark.asyncio

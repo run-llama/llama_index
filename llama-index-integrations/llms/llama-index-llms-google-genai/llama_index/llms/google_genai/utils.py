@@ -293,6 +293,10 @@ async def create_file_part(
             ), None
         elif file_mode == "inline":
             raise ValueError("Files in inline mode must be smaller than 20MB.")
+        elif client is not None and client.vertexai:
+            # The vertexai client doesn't support uploads, so rather than falling through and
+            # letting it fail we'll produce a nicer error here.
+            raise ValueError("Files with vertexai client must be smaller than 20MB.")
 
     if client is None:
         raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
