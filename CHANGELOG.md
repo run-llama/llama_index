@@ -2,6 +2,531 @@
 
 <!--- generated changelog --->
 
+## [2026-05-14]
+
+### llama-index-agent-agentmesh [0.2.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-agentops [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-aim [0.4.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-argilla [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-callbacks-arize-phoenix [0.7.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-honeyhive [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-langfuse [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-literalai [1.4.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-openinference [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-opik [1.3.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-promptlayer [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-uptrain [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-callbacks-wandb [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-core [0.14.22]
+
+- fix(instrumentation): let SparseEmbeddingStartEvent inherit EmbeddingStartEvent ([#21119](https://github.com/run-llama/llama_index/pull/21119))
+- fix: remove stale exports from public **all** lists ([#21133](https://github.com/run-llama/llama_index/pull/21133))
+- Preserve cache writes from multiprocessing workers in IngestionPipeline ([#21301](https://github.com/run-llama/llama_index/pull/21301))
+- feat(core): Multimodal synthesis ([#21374](https://github.com/run-llama/llama_index/pull/21374))
+- fix: avoid mutating response.raw in LLM event model_dump methods ([#21424](https://github.com/run-llama/llama_index/pull/21424))
+- fix(memory): handle DocumentBlock in Memory.\_estimate_token_count ([#21529](https://github.com/run-llama/llama_index/pull/21529))
+- fix: propagate contextvars in sync_to_async for FunctionTool ([#21558](https://github.com/run-llama/llama_index/pull/21558))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-adapter [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-alephalpha [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-alibabacloud-aisearch [0.4.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-anyscale [0.5.1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-autoembeddings [0.3.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-azure-inference [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-azure-openai [0.5.2]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-baseten [0.2.1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-bedrock [0.8.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-clarifai [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-clip [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-cloudflare-workersai [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-cohere [0.8.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-dashscope [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-databricks [0.5.1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-deepinfra [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-elasticsearch [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-fastembed [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-fireworks [0.5.2]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-gaudi [0.4.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- chore(deps): bump the pip group across 2 directories with 2 updates ([#21436](https://github.com/run-llama/llama_index/pull/21436))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-gigachat [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-google-genai [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-heroku [0.2.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-huggingface [0.7.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-huggingface-api [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-huggingface-openvino [0.7.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-huggingface-optimum [0.4.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-huggingface-optimum-intel [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-ibm [0.6.0.post1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-instructor [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-isaacus [0.2.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-jinaai [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-langchain [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-litellm [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-llamafile [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-llm-rails [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-mistralai [0.5.1]
+
+- "fix: replace Mistral with MistralClient for mistralai>=2.0.0" ([#21126](https://github.com/run-llama/llama_index/pull/21126))
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-mixedbreadai [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-modelscope [0.6.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-nebius [0.5.1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-netmind [0.3.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-nomic [0.8.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-nvidia [0.5.1]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-embeddings-oci-data-science [0.3.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-oci-genai [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-ollama [0.9.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-opea [0.3.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-openai [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-openai-like [0.3.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-openvino-genai [0.7.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-oracleai [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-premai [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-sagemaker-endpoint [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-siliconflow [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-text-embeddings-inference [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-textembed [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-together [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-vertex [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-vertex-endpoint [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-vllm [0.1.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-voyageai [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-xinference [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-yandexgpt [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-embeddings-zhipuai [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-evaluation-tonic-validate [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-extractors-entity [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-extractors-marvin [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-extractors-relik [0.4.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-rag-cognee [0.3.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-ApertureDB [0.3.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-falkordb [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-memgraph [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-nebula [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-neo4j [0.7.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-neptune [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-graph-stores-tidb [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-bge-m3 [0.7.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-colbert [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-dashscope [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-google [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-lancedb [0.3.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-llama-cloud [0.11.1]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-postgresml [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-vectara [0.6.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-indices-managed-vertexai [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-ingestion-ray [0.2.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-instrumentation [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-llms-aibadgr [0.2.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-llms-alephalpha [0.5.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-llms-alibabacloud-aisearch [0.4.0]
+
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-llms-anthropic [0.11.4]
+
+- anthropic: propagate thinking_delta in streaming additional_kwargs ([#21423](https://github.com/run-llama/llama_index/pull/21423))
+- bedrock opus + anthropic opus 4.7 support ([#21438](https://github.com/run-llama/llama_index/pull/21438))
+- mass uv lock --upgrade ([#21638](https://github.com/run-llama/llama_index/pull/21638))
+
+### llama-index-llms-azure-openai [0.5.5]
+
+- fix(llms-azure-openai): add pytest-asyncio to dev dependencies ([#21500](https://github.com/run-llama/llama_index/pull/21500))
+- fix(azure-openai): use deployment name in AzureOpenAIResponses structured predict ([#21530](https://github.com/run-llama/llama_index/pull/21530))
+
+### llama-index-llms-bedrock-converse [0.14.10]
+
+- feat(bedrock-converse): Add support for Claude Opus 4.7 ([#21405](https://github.com/run-llama/llama_index/pull/21405))
+- bedrock opus + anthropic opus 4.7 support ([#21438](https://github.com/run-llama/llama_index/pull/21438))
+- do not pass temperature to bedrock retry ([#21439](https://github.com/run-llama/llama_index/pull/21439))
+- feat(bedrock-converse): add async_client param to reuse a shared aioboto3 client ([#21556](https://github.com/run-llama/llama_index/pull/21556))
+
+### llama-index-llms-google-genai [0.9.4]
+
+- fix google genai thought output while streaming ([#21502](https://github.com/run-llama/llama_index/pull/21502))
+- fix(google-genai): pass DocumentBlock.title as display_name to File API ([#21641](https://github.com/run-llama/llama_index/pull/21641))
+- Google LLMs: Error earlier if file is too large with vertexai client ([#21642](https://github.com/run-llama/llama_index/pull/21642))
+- vbump google genai ([#21649](https://github.com/run-llama/llama_index/pull/21649))
+
+### llama-index-llms-mistralai [0.10.2]
+
+- "fix: replace Mistral with MistralClient for mistralai>=2.0.0" ([#21126](https://github.com/run-llama/llama_index/pull/21126))
+- Version bump ([#21547](https://github.com/run-llama/llama_index/pull/21547))
+
+### llama-index-llms-openai [0.7.8]
+
+- fix: JSON-serialize ToolCallBlock.tool_kwargs in to_openai_message_dict ([#21389](https://github.com/run-llama/llama_index/pull/21389))
+- feat(llms-openai): add gpt-5.5 and gpt-5.5-2026-04-23 model support ([#21499](https://github.com/run-llama/llama_index/pull/21499))
+- fix(azure-openai): use deployment name in AzureOpenAIResponses structured predict ([#21530](https://github.com/run-llama/llama_index/pull/21530))
+
+### llama-index-llms-openai-like [0.7.2]
+
+- feat(openai-like): add OpenAILikeResponses class for Responses API ([#21246](https://github.com/run-llama/llama_index/pull/21246))
+
+### llama-index-observability-otel [0.6.2]
+
+- [bugfix] otel spans should attach to context ([#21533](https://github.com/run-llama/llama_index/pull/21533))
+- Fix OTel context detach noise ([#21587](https://github.com/run-llama/llama_index/pull/21587))
+
+### llama-index-utils-azure [0.5.0]
+
+- chore(deps): bump the pip group across 55 directories with 3 updates ([#21435](https://github.com/run-llama/llama_index/pull/21435))
+
+### llama-index-vector-stores-qdrant [0.10.1]
+
+- fix(qdrant): fix async collection creation using AsyncQdrantClient ([#21419](https://github.com/run-llama/llama_index/pull/21419))
+
 ## [2026-04-21]
 
 ### llama-index-callbacks-honeyhive [0.5.0]
