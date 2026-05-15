@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from typing import Literal
 from unittest.mock import MagicMock, patch
@@ -10,6 +11,7 @@ from llama_index.core.base.llms.types import (
     CacheControl,
     CachePoint,
     ChatMessage,
+    DocumentBlock,
     ImageBlock,
     MessageRole,
     TextBlock,
@@ -639,6 +641,93 @@ def test_messages_to_converse_messages_tool_calls():
     )  # Bedrock requires tool results as user role
     assert "toolResult" in converse_messages[1]["content"][0]
     assert converse_messages[1]["content"][0]["toolResult"]["toolUseId"] == "tool_123"
+
+
+def test_messages_to_converse_messages_tool_result_with_document_block():
+    """Tool results containing a DocumentBlock should serialize the document."""
+    doc_block = DocumentBlock(
+        data=base64.b64encode(b"fake-pdf-content"),
+        document_mimetype="application/pdf",
+        title="test_doc",
+    )
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Let me read that file.",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": "tool_doc",
+                        "name": "read_file",
+                        "input": {"path": "report.pdf"},
+                    }
+                ]
+            },
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            blocks=[doc_block],
+            additional_kwargs={"tool_call_id": "tool_doc"},
+        ),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    tool_result_msg = converse_messages[1]
+    assert tool_result_msg["role"] == "user"
+    tool_result = tool_result_msg["content"][0]["toolResult"]
+    assert tool_result["toolUseId"] == "tool_doc"
+    assert len(tool_result["content"]) == 1
+
+    doc = tool_result["content"][0]
+    assert "document" in doc
+    assert doc["document"]["format"] == "pdf"
+    assert doc["document"]["name"] == "test_doc"
+    assert doc["document"]["source"]["bytes"] == b"fake-pdf-content"
+
+
+@patch("llama_index.core.base.llms.types.ImageBlock.resolve_image")
+def test_messages_to_converse_messages_tool_result_with_image_block(mock_resolve):
+    """Tool results containing an ImageBlock should serialize the image."""
+    mock_bytes = BytesIO(b"fake_image_data")
+    mock_bytes.read = MagicMock(return_value=b"fake_image_data")
+    mock_resolve.return_value = mock_bytes
+
+    image_block = ImageBlock(image=b"", image_mimetype="image/png")
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="Let me look at that image.",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": "tool_img",
+                        "name": "get_image",
+                        "input": {"url": "http://example.com/img.png"},
+                    }
+                ]
+            },
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            blocks=[image_block],
+            additional_kwargs={"tool_call_id": "tool_img"},
+        ),
+    ]
+
+    converse_messages, _ = messages_to_converse_messages(messages)
+
+    tool_result_msg = converse_messages[1]
+    assert tool_result_msg["role"] == "user"
+    tool_result = tool_result_msg["content"][0]["toolResult"]
+    assert tool_result["toolUseId"] == "tool_img"
+    assert len(tool_result["content"]) == 1
+
+    img = tool_result["content"][0]
+    assert "image" in img
+    assert img["image"]["format"] == "png"
+    assert img["image"]["source"]["bytes"] == b"fake_image_data"
+    mock_resolve.assert_called_once()
 
 
 # Tests for converse_with_retry function

@@ -481,11 +481,22 @@ def messages_to_converse_messages(
                         )
 
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
-            # convert tool output to the AWS Bedrock Converse format
+            # Serialize tool result blocks using the same converter as user
+            # messages.  Falls back to legacy message.content for plain-text
+            # tool results.
+            tool_content: list[dict[str, Any]] = []
+            for block in message.blocks:
+                bedrock_block = _content_block_to_bedrock_format(
+                    block, MessageRole.USER
+                )
+                if bedrock_block:
+                    tool_content.append(bedrock_block)
+            if not tool_content and message.content:
+                tool_content = [{"text": message.content}]
             content = {
                 "toolResult": {
                     "toolUseId": message.additional_kwargs["tool_call_id"],
-                    "content": [{"text": message.content}] if message.content else [],
+                    "content": tool_content,
                 }
             }
             if status := message.additional_kwargs.get("status"):
