@@ -35,7 +35,7 @@ license = "MIT"
 dependencies = [
     "llama-index-utils-huggingface>=0.4.0,<0.5",
     "llama-index-core>=0.13.0,<0.15",
-    "huggingface-hub[inference]>=0.31.0",
+    "huggingface-hub>=0.31.0",
 ]
 
 [tool.codespell]
