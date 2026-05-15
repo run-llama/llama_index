@@ -41,7 +41,7 @@ def test_embed_texts_mock(mock_client_class):
 
 
 @patch("google.genai.Client")
-def test_task_type_setting_mock(mock_client_class):
+def test_emb_1_task_type_setting_mock(mock_client_class):
     # Setup mock client
     mock_client = mock_client_class.return_value
     mock_models = mock_client.models
@@ -55,8 +55,10 @@ def test_task_type_setting_mock(mock_client_class):
     mock_result.embeddings = [mock_embedding]
     mock_embed_content.return_value = mock_result
 
+    # Force gemini-embedding-001 model to test backwards compatibility
+    emb = GoogleGenAIEmbedding(model_name="gemini-embedding-001", api_key="fake_key")
+
     # Test query embedding (should use RETRIEVAL_QUERY task type)
-    emb = GoogleGenAIEmbedding(api_key="fake_key")
     emb.get_query_embedding("test query")
 
     # Check if task_type was set correctly in the call
@@ -72,6 +74,58 @@ def test_task_type_setting_mock(mock_client_class):
     # Check if task_type was set correctly in the call
     _, kwargs = mock_embed_content.call_args
     assert kwargs.get("config").task_type == "RETRIEVAL_DOCUMENT"
+
+
+@patch("google.genai.Client")
+def test_emb_2_task_type_setting_mock(mock_client_class):
+    # Setup mock client
+    mock_client = mock_client_class.return_value
+    mock_models = mock_client.models
+    mock_embed_content = mock_models.embed_content
+
+    # Create mock embedding result
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+    mock_embed_content.return_value = mock_result
+
+    # Default is gemini-embedding-2
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+
+    # Test query embedding (should use RETRIEVAL_QUERY task type)
+    emb.get_query_embedding("test query")
+
+    _, kwargs = mock_embed_content.call_args
+    # Task type shouldn't be in config for gemini-embedding-2
+    assert getattr(kwargs.get("config", None), "task_type", None) is None
+    # String should be formatted
+    assert kwargs.get("contents") == ["task: search result | query: test query"]
+
+    # Reset mock
+    mock_embed_content.reset_mock()
+
+    # Test standard document formatting
+    emb.get_text_embedding("test text")
+
+    _, kwargs = mock_embed_content.call_args
+    assert getattr(kwargs.get("config", None), "task_type", None) is None
+    assert kwargs.get("contents") == ["title: none | text: test text"]
+
+    # Test pre-formatted query (prevent double prefix)
+    emb.get_query_embedding("task: search result | query: existing query")
+    _, kwargs = mock_embed_content.call_args
+    assert getattr(kwargs.get("config", None), "task_type", None) is None
+    assert kwargs.get("contents") == ["task: search result | query: existing query"]
+
+    mock_embed_content.reset_mock()
+
+    # Test pre-formatted document with custom title (prevent double prefix)
+    emb.get_text_embedding("title: My Custom Title | text: existing text")
+    _, kwargs = mock_embed_content.call_args
+    assert getattr(kwargs.get("config", None), "task_type", None) is None
+    assert kwargs.get("contents") == ["title: My Custom Title | text: existing text"]
 
 
 @pytest.mark.asyncio
