@@ -1,16 +1,19 @@
+import json
 import time
-from typing import Dict, Generator, Union
+from typing import Any, Dict, Generator
 
 import pytest
-import docker
-from docker.models.containers import Container
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import declarative_base
 
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.postgres import PostgresChatStore
-from llama_index.storage.chat_store.postgres.base import get_data_model
+from llama_index.storage.chat_store.postgres.base import (
+    _message_from_stored_value,
+    _message_to_json,
+    get_data_model,
+)
 
 try:
     import asyncpg  # noqa
@@ -27,8 +30,47 @@ def test_class():
     assert BaseChatStore.__name__ in names_of_base_classes
 
 
+class ProtoPlusFunctionCall:
+    _pb = object()
+
+    def __init__(self, name: str, args: Dict[str, int]) -> None:
+        self.name = name
+        self.args = args
+
+    @classmethod
+    def to_dict(cls, value: "ProtoPlusFunctionCall") -> Dict[str, object]:
+        return {"name": value.name, "args": value.args}
+
+
+def test_message_to_json_serializes_proto_plus_function_call():
+    message = ChatMessage(
+        content="",
+        role="assistant",
+        additional_kwargs={
+            "tool_calls": [ProtoPlusFunctionCall(name="add", args={"a": 1, "b": 2})]
+        },
+    )
+
+    stored_message = json.loads(_message_to_json(message))
+
+    assert stored_message["additional_kwargs"]["tool_calls"] == [
+        {"name": "add", "args": {"a": 1, "b": 2}}
+    ]
+    assert _message_from_stored_value(stored_message).additional_kwargs[
+        "tool_calls"
+    ] == [{"name": "add", "args": {"a": 1, "b": 2}}]
+
+
+def test_message_from_stored_value_accepts_legacy_json_string():
+    message = ChatMessage(content="hello", role="user")
+
+    assert _message_from_stored_value(_message_to_json(message)).content == "hello"
+
+
 @pytest.fixture(scope="session")
-def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
+def postgres_container() -> Generator[Dict[str, Any], None, None]:
+    docker = pytest.importorskip("docker")
+
     # Define PostgreSQL settings
     postgres_image = "postgres:latest"
     postgres_env = {
@@ -71,10 +113,12 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
 
 @pytest.fixture()
-@pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def postgres_chat_store(
-    postgres_container: Dict[str, Union[str, Container]],
+    postgres_container: Dict[str, Any],
 ) -> Generator[PostgresChatStore, None, None]:
+    if no_packages:
+        pytest.skip("asyncpg, psycopg and sqlalchemy not installed")
+
     chat_store = None
     try:
         chat_store = PostgresChatStore.from_uri(
@@ -300,7 +344,7 @@ async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore)
 
 @pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_table_name_without_prefix(
-    postgres_container: Dict[str, Union[str, Container]],
+    postgres_container: Dict[str, Any],
 ):
     table_name = "custom_chat_store"
     chat_store = PostgresChatStore.from_uri(
@@ -327,7 +371,7 @@ def test_table_name_without_prefix(
 
 @pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_legacy_table_name_detection(
-    postgres_container: Dict[str, Union[str, Container]],
+    postgres_container: Dict[str, Any],
 ):
     table_name = "legacy_chat_store"
 
@@ -369,7 +413,7 @@ def test_legacy_table_name_detection(
 
 @pytest.mark.skipif(no_packages, reason="asyncpg, psycopg and sqlalchemy not installed")
 def test_empty_table_name_defaults_to_chatstore(
-    postgres_container: Dict[str, Union[str, Container]],
+    postgres_container: Dict[str, Any],
 ):
     table_name = ""
     default_table_name = "chatstore"
