@@ -27,6 +27,8 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
     ContentBlock,
+    DocumentBlock,
+    VideoBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
@@ -289,12 +291,30 @@ class FunctionTool(AsyncBaseTool):
     def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
         """Parse tool output into content blocks."""
         if isinstance(
-            raw_output, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+            raw_output,
+            (
+                TextBlock,
+                ImageBlock,
+                AudioBlock,
+                CitableBlock,
+                CitationBlock,
+                DocumentBlock,
+                VideoBlock,
+            ),
         ):
             return [raw_output]
         elif isinstance(raw_output, list) and all(
             isinstance(
-                item, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+                item,
+                (
+                    TextBlock,
+                    ImageBlock,
+                    AudioBlock,
+                    CitableBlock,
+                    CitationBlock,
+                    DocumentBlock,
+                    VideoBlock,
+                ),
             )
             for item in raw_output
         ):

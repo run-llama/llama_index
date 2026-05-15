@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -190,8 +191,15 @@ class StreamingAgentChatResponse:
                 final_text += chat.delta or ""
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
-                # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                # chat stream, but not all of it (e.g. in react agent).
+                # Only update the text content for single-block messages; multi-block
+                # messages (e.g. reasoning + text) are already assembled correctly by
+                # the stream and ChatMessage.content setter raises ValueError for them.
+                if not chat.message.blocks or (
+                    len(chat.message.blocks) == 1
+                    and isinstance(chat.message.blocks[0], TextBlock)
+                ):
+                    chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
@@ -248,8 +256,15 @@ class StreamingAgentChatResponse:
                     self.is_function_false_event.set()
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
-                # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                # chat stream, but not all of it (e.g. in react agent).
+                # Only update the text content for single-block messages; multi-block
+                # messages (e.g. reasoning + text) are already assembled correctly by
+                # the stream and ChatMessage.content setter raises ValueError for them.
+                if not chat.message.blocks or (
+                    len(chat.message.blocks) == 1
+                    and isinstance(chat.message.blocks[0], TextBlock)
+                ):
+                    chat.message.content = final_text.strip()  # final message
                 await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
