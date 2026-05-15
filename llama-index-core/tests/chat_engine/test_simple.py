@@ -1,16 +1,20 @@
-import gc
 import asyncio
-from llama_index.core.memory import ChatMemoryBuffer
+import gc
+from typing import Any, Sequence
+
+import pytest
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
 )
-from typing import Any
 from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core.llms.mock import MockLLM
-import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.mock import MockFunctionCallingLLM, MockLLM
+from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.chat_engine.simple import SimpleChatEngine
 
 
@@ -71,6 +75,59 @@ async def test_simple_chat_engine_astream():
     assert num_iters > 10
     assert "Hello World!" in response.unformatted_response
     assert "What is the capital of the moon?" in response.unformatted_response
+
+
+@pytest.mark.asyncio
+async def test_simple_chat_engine_astream_multi_block_response_writes_history() -> None:
+    def response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+        return ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text="answer"),
+                ImageBlock(image=b"image"),
+            ],
+        )
+
+    engine = SimpleChatEngine.from_defaults(
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+        memory=ChatMemoryBuffer.from_defaults(),
+    )
+
+    response = await engine.astream_chat("Hello World!")
+    chunks = [chunk async for chunk in response.async_response_gen()]
+
+    assert chunks == ["answer"]
+    assert response.response == "answer"
+    history = engine.chat_history
+    assert len(history) == 2
+    assert history[-1].content == "answer"
+    assert isinstance(history[-1].blocks[1], ImageBlock)
+
+
+def test_simple_chat_engine_stream_multi_block_response_writes_history() -> None:
+    def response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+        return ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text="answer"),
+                ImageBlock(image=b"image"),
+            ],
+        )
+
+    engine = SimpleChatEngine.from_defaults(
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+        memory=ChatMemoryBuffer.from_defaults(),
+    )
+
+    response = engine.stream_chat("Hello World!")
+    chunks = list(response.response_gen)
+
+    assert chunks == ["answer"]
+    assert response.response == "answer"
+    history = engine.chat_history
+    assert len(history) == 2
+    assert history[-1].content == "answer"
+    assert isinstance(history[-1].blocks[1], ImageBlock)
 
 
 def test_simple_chat_engine_astream_exception_handling():
