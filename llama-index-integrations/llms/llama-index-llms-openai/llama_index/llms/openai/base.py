@@ -570,7 +570,10 @@ class OpenAI(FunctionCallingLLM):
 
                 # Extract reasoning_content for chain-of-thought streaming.
                 # Many OpenAI-compatible providers surface this extra field.
+                # vLLM uses "reasoning" instead of "reasoning_content".
                 raw_reasoning = getattr(delta, "reasoning_content", None)
+                if not raw_reasoning:
+                    raw_reasoning = getattr(delta, "reasoning", None)
                 reasoning_delta = (
                     raw_reasoning if isinstance(raw_reasoning, str) else ""
                 )
@@ -866,7 +869,10 @@ class OpenAI(FunctionCallingLLM):
 
                 # Extract reasoning_content for chain-of-thought streaming.
                 # Many OpenAI-compatible providers surface this extra field.
+                # vLLM uses "reasoning" instead of "reasoning_content".
                 raw_reasoning = getattr(delta, "reasoning_content", None)
+                if not raw_reasoning:
+                    raw_reasoning = getattr(delta, "reasoning", None)
                 reasoning_delta = (
                     raw_reasoning if isinstance(raw_reasoning, str) else ""
                 )
