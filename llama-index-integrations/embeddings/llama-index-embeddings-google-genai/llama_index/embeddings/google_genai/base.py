@@ -260,11 +260,15 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         else:
             embedding_config = self.embedding_config
 
+        # Wrap each input in an explicit Content so google-genai>=1.71 returns
+        # one embedding per input instead of aggregating the list into one.
+        contents = [types.Content(parts=[types.Part(text=text)]) for text in texts]
+
         # Create the embedding function with retry logic
         def embed_with_client() -> List[List[float]]:
             results = self._client.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=contents,
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
@@ -293,11 +297,15 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         else:
             embedding_config = self.embedding_config
 
+        # Wrap each input in an explicit Content so google-genai>=1.71 returns
+        # one embedding per input instead of aggregating the list into one.
+        contents = [types.Content(parts=[types.Part(text=text)]) for text in texts]
+
         # Create the async embedding function with retry logic
         async def aembed_with_client() -> List[List[float]]:
             results = await self._client.aio.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=contents,
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
