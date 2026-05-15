@@ -47,15 +47,25 @@ def test_message_to_json_serializes_proto_plus_function_call():
         content="",
         role="assistant",
         additional_kwargs={
-            "tool_calls": [ProtoPlusFunctionCall(name="add", args={"a": 1, "b": 2})]
+            "tool_calls": [ProtoPlusFunctionCall(name="add", args={"a": 1, "b": 2})],
+            "raw_bytes": b"binary",
         },
     )
 
     stored_message = json.loads(_message_to_json(message))
+    expected_message = message.model_copy(
+        update={
+            "additional_kwargs": {
+                "tool_calls": [{"name": "add", "args": {"a": 1, "b": 2}}],
+                "raw_bytes": b"binary",
+            }
+        }
+    )
 
     assert stored_message["additional_kwargs"]["tool_calls"] == [
         {"name": "add", "args": {"a": 1, "b": 2}}
     ]
+    assert stored_message == json.loads(expected_message.model_dump_json())
     assert _message_from_stored_value(stored_message).additional_kwargs[
         "tool_calls"
     ] == [{"name": "add", "args": {"a": 1, "b": 2}}]
