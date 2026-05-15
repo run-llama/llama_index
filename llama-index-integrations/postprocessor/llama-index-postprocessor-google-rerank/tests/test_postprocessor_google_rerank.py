@@ -1,5 +1,5 @@
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -90,7 +90,7 @@ async def test_google_rerank_async():
             {"index": 0, "score": 0.70},
         ]
     )
-    reranker._async_client.rank = AsyncMock(return_value=mock_response)
+    reranker._client.rank.return_value = mock_response
 
     input_nodes = [
         NodeWithScore(node=TextNode(id_="1", text="hello world")),
@@ -107,7 +107,8 @@ async def test_google_rerank_async():
     assert actual_nodes[0].score == pytest.approx(0.90)
     assert actual_nodes[1].node.get_content() == "hello world"
     assert actual_nodes[1].score == pytest.approx(0.70)
-    reranker._async_client.rank.assert_called_once()
+    reranker._client.rank.assert_called_once()
+    reranker._async_client.rank.assert_not_called()
 
 
 def test_google_rerank_empty_nodes():
