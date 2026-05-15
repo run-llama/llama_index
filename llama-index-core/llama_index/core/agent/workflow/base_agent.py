@@ -33,6 +33,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCall,
     ToolCallResult,
 )
+from llama_index.core.agent.workflow.utils import maybe_model_dump
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
@@ -320,11 +321,7 @@ class BaseWorkflowAgent(
             response_stream = await target_llm.astream_chat(llm_input)
             last_response = None
             async for last_response in response_stream:
-                raw = (
-                    last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
-                    else last_response.raw
-                )
+                raw = maybe_model_dump(last_response.raw)
                 if ctx.is_running:
                     ctx.write_event_to_stream(
                         AgentStream(
