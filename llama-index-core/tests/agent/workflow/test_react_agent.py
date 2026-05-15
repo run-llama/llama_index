@@ -45,6 +45,13 @@ class PydanticRaw(BaseModel):
     value: str
 
 
+class FailingDumpRaw(BaseModel):
+    value: str
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("dump failed")
+
+
 class ProblematicRaw:
     def __getattr__(self, name: str) -> Any:
         if name == "__pydantic_validator__":
@@ -85,6 +92,16 @@ async def test_react_agent_dumps_pydantic_raw_response():
     response = await agent.run(user_msg="hello")
 
     assert response.raw == {"value": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_react_agent_preserves_raw_response_when_model_dump_fails():
+    raw = FailingDumpRaw(value="ok")
+    agent = ReActAgent(llm=RawResponseLLM(raw), tools=[])
+
+    response = await agent.run(user_msg="hello")
+
+    assert response.raw is raw
 
 
 @pytest.mark.asyncio

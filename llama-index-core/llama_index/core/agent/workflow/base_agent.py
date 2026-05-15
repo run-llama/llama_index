@@ -500,7 +500,7 @@ class BaseWorkflowAgent(
         output = AgentOutput(
             response=response.message,
             tool_calls=[],
-            raw=response.raw,
+            raw=maybe_model_dump(response.raw),
             current_agent_name=self.name,
         )
 
