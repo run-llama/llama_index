@@ -907,10 +907,7 @@ class ImageNode(TextNode):
             return self.image_path
         elif self.image_url is not None:
             # load image from URL
-            import requests
-
-            _validate_ssrf_url(self.image_url)
-            response = requests.get(self.image_url, timeout=(60, 60))
+            response = _ssrf_safe_get(self.image_url, timeout=(60, 60))
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in node.")
@@ -1348,10 +1345,25 @@ def _validate_ssrf_url(url: str) -> None:
             )
 
 
+def _ssrf_redirect_hook(response: requests.Response, **kwargs: Any) -> None:
+    """Hook that validates every redirect Location before it is followed."""
+    if response.is_redirect:
+        location = response.headers.get("Location", "")
+        _validate_ssrf_url(location)
+
+
+def _ssrf_safe_get(url: str, **kwargs: Any) -> requests.Response:
+    """Perform an HTTP GET that is protected against SSRF via the initial URL
+    and every redirect hop in the chain."""
+    _validate_ssrf_url(url)
+    with requests.Session() as session:
+        session.hooks["response"].append(_ssrf_redirect_hook)
+        return session.get(url, **kwargs)
+
+
 def is_image_url_pil(url: str) -> bool:
     try:
-        _validate_ssrf_url(url)
-        response = requests.get(url, stream=True, timeout=(60, 60))
+        response = _ssrf_safe_get(url, stream=True, timeout=(60, 60))
         response.raise_for_status()  # Raise an exception for bad status codes
         # Open image from the response content
         img = Image.open(BytesIO(response.content))
@@ -1470,8 +1482,7 @@ class ImageDocument(Document):
             return BytesIO(img_bytes)
         elif self.image_resource.url is not None:
             # load image from URL
-            _validate_ssrf_url(str(self.image_resource.url))
-            response = requests.get(str(self.image_resource.url), timeout=(60, 60))
+            response = _ssrf_safe_get(str(self.image_resource.url), timeout=(60, 60))
             img_bytes = response.content
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
