@@ -27,6 +27,10 @@ from typing import (
     Union,
 )
 
+import ipaddress
+import socket
+from urllib.parse import urlparse
+
 import filetype
 import requests
 from dataclasses_json import DataClassJsonMixin
@@ -905,6 +909,7 @@ class ImageNode(TextNode):
             # load image from URL
             import requests
 
+            _validate_ssrf_url(self.image_url)
             response = requests.get(self.image_url, timeout=(60, 60))
             return BytesIO(response.content)
         else:
@@ -1306,15 +1311,53 @@ def is_image_pil(file_path: str) -> bool:
         return False
 
 
+def _validate_ssrf_url(url: str) -> None:
+    """Raise ValueError if *url* resolves to a private/reserved address (SSRF guard).
+
+    Blocks RFC-1918 private ranges, loopback, link-local (169.254/16 – cloud
+    metadata endpoints), and other reserved address space.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"Unsupported URL scheme '{parsed.scheme}'. Only http/https are allowed."
+        )
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError(f"Invalid URL (no hostname): {url!r}")
+    try:
+        resolved = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise ValueError(f"Cannot resolve hostname '{hostname}': {exc}") from exc
+    for *_, sockaddr in resolved:
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+        ):
+            raise ValueError(
+                f"SSRF protection: URL '{url}' resolves to a disallowed address "
+                f"({ip_str}). Requests to private/reserved IP ranges are blocked."
+            )
+
+
 def is_image_url_pil(url: str) -> bool:
     try:
+        _validate_ssrf_url(url)
         response = requests.get(url, stream=True, timeout=(60, 60))
         response.raise_for_status()  # Raise an exception for bad status codes
         # Open image from the response content
         img = Image.open(BytesIO(response.content))
         img.verify()
         return True
-    except (requests.RequestException, IOError, SyntaxError):
+    except (ValueError, requests.RequestException, IOError, SyntaxError):
         return False
 
 
@@ -1427,6 +1470,7 @@ class ImageDocument(Document):
             return BytesIO(img_bytes)
         elif self.image_resource.url is not None:
             # load image from URL
+            _validate_ssrf_url(str(self.image_resource.url))
             response = requests.get(str(self.image_resource.url), timeout=(60, 60))
             img_bytes = response.content
             if as_base64:
