@@ -253,6 +253,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     _milvusclient: MilvusClient = PrivateAttr()
     _async_milvusclient: Optional[AsyncMilvusClient] = PrivateAttr()
+    _async_milvusclient_kwargs: Dict[str, Any] = PrivateAttr()
     _collection_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
@@ -323,14 +324,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # As of writing, milvus sets alias internally in the async client.
         # This will cause an error if not removed.
         kwargs.pop("alias", None)
-        if use_async_client:
-            self._async_milvusclient = AsyncMilvusClient(
-                uri=uri,
-                token=token,
-                **kwargs,  # pass additional arguments such as server_pem_path
-            )
-        else:
-            self._async_milvusclient = None
+        self._async_milvusclient_kwargs = {"uri": uri, "token": token, **kwargs}
+        self._async_milvusclient = None
 
         # Delete previous collection if overwriting
         if overwrite and collection_name in self.client.list_collections():
@@ -431,6 +426,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
     @property
     def aclient(self) -> Optional[AsyncMilvusClient]:
         """Get async client."""
+        if self._async_milvusclient is None and self.use_async_client:
+            self._async_milvusclient = AsyncMilvusClient(
+                **self._async_milvusclient_kwargs
+            )
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -506,7 +505,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous version of the add method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         insert_list = []
@@ -597,7 +596,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Asynchronous version of the delete method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         # Adds ability for multiple doc delete in future.
@@ -665,7 +664,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         """Asynchronous version of the delete_nodes method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
@@ -694,7 +693,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     async def aclear(self) -> None:
         """Asynchronous version of the clear method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         await self.aclient.drop_collection(self.collection_name)
@@ -768,7 +767,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **kwargs,
     ) -> List[BaseNode]:
         """Asynchronous version of the get_nodes method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         if node_ids is None and filters is None:
@@ -878,7 +877,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         """Asynchronous version of the query method."""
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         if query.mode == VectorStoreQueryMode.DEFAULT:
@@ -1003,7 +1002,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous default search.
         """
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         res = await self.aclient.search(
@@ -1093,7 +1092,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         mmr_threshold = kwargs.get("mmr_threshold")
@@ -1189,7 +1188,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous sparse search.
         """
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         search_params = {"params": {"drop_ratio_search": 0.2}}
@@ -1295,7 +1294,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous hybrid search.
         """
-        assert self._async_milvusclient is not None, (
+        assert self.aclient is not None, (
             "Async Client should be non-null to perform async operations. Pass `use_async_client = True` to the constructor to instantiate an async client"
         )
         if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
