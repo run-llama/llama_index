@@ -12,7 +12,9 @@ The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Che
 
 ## Data Loaders
 
-The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
+The full set of data loaders are found on [LlamaHub](https://llamahub.ai/).
+
+- [CVFile Reader](https://pypi.org/project/llama-index-readers-cvfile/) loads `.cv` resume/CV files via the `llama-index-readers-cvfile` package.
 
 ## Agent Tools
 

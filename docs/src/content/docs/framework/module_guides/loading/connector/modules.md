@@ -26,5 +26,6 @@ title: Module Guides
 - [Make Reader](/python/examples/data_connectors/makedemo)
 - [Deplot Reader](/python/examples/data_connectors/deplot/deplotreader)
 - [Docling Reader](/python/examples/data_connectors/doclingreaderdemo)
+- [CVFile Reader](https://pypi.org/project/llama-index-readers-cvfile/) for `.cv` resume/CV files
 - [Google AlloyDB Reader](/python/examples/data_connectors/alloydbreaderdemo)
 - [Google Cloud SQL for PostgreSQL Reader](/python/examples/data_connectors/cloudsqlpgreaderdemo)
