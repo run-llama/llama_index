@@ -1,6 +1,8 @@
+import json
 import unittest
 from pathlib import Path
 from typing import List
+from unittest.mock import patch
 
 import pytest
 
@@ -485,3 +487,59 @@ def test_from_namespaced_persist_dir(persist_dir: str) -> None:
         persist_dir=persist_dir
     )
     assert vector_store is not None
+
+
+def test_from_namespaced_persist_dir_listdir_failure_fallback(monkeypatch):
+    """Test fallback when directory listing fails."""
+
+    def mock_listdir(_):
+        raise Exception("listdir failed")
+
+    monkeypatch.setattr("os.listdir", mock_listdir)
+
+    with patch.object(
+        SimpleVectorStore,
+        "from_persist_dir",
+        return_value=SimpleVectorStore(),
+    ):
+        stores = SimpleVectorStore.from_namespaced_persist_dir()
+
+    assert "default" in stores
+
+
+def test_from_namespaced_persist_dir_backward_compat_fallback(monkeypatch):
+    """Test fallback to backward compatibility load."""
+    call_count = 0
+
+    def mock_from_persist_dir(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+
+        if call_count == 1:
+            raise Exception("default namespace load failed")
+
+        return SimpleVectorStore()
+
+    monkeypatch.setattr(
+        SimpleVectorStore,
+        "from_persist_dir",
+        mock_from_persist_dir,
+    )
+
+    monkeypatch.setattr(
+        "os.listdir",
+        lambda _: (_ for _ in ()).throw(Exception("listdir failed")),
+    )
+
+    stores = SimpleVectorStore.from_namespaced_persist_dir()
+
+    assert "default" in stores
+
+
+def test_from_persist_path_invalid_json(tmp_path):
+    """Test corrupted persisted file raises JSONDecodeError."""
+    persist_file = tmp_path / "vector_store.json"
+    persist_file.write_text("{invalid json")
+
+    with pytest.raises(json.JSONDecodeError):
+        SimpleVectorStore.from_persist_path(str(persist_file))
