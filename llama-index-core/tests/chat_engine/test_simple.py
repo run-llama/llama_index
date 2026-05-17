@@ -1,17 +1,62 @@
-import gc
 import asyncio
-from llama_index.core.memory import ChatMemoryBuffer
+import gc
+from collections.abc import AsyncGenerator, Generator, Sequence
+from typing import Any
+
+import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
+    MessageRole,
+    TextBlock,
 )
-from typing import Any
-from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core.llms.mock import MockLLM
-import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.llms.mock import MockLLM
+from llama_index.core.memory import ChatMemoryBuffer
+
+
+class MultiBlockStreamingLLM(MockLLM):
+    @classmethod
+    def class_name(cls) -> str:
+        return "MultiBlockStreamingLLM"
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> Generator[ChatResponse, None, None]:
+        for delta in ["Hello", " ", "world"]:
+            yield ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    blocks=[
+                        TextBlock(text="stale text"),
+                        TextBlock(text="second stale text"),
+                    ],
+                ),
+                delta=delta,
+            )
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> AsyncGenerator[ChatResponse, None]:
+        async def gen() -> AsyncGenerator[ChatResponse, None]:
+            for delta in ["Hello", " ", "world"]:
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        blocks=[
+                            TextBlock(text="stale text"),
+                            TextBlock(text="second stale text"),
+                        ],
+                    ),
+                    delta=delta,
+                )
+
+        return gen()
 
 
 def test_simple_chat_engine() -> None:
@@ -71,6 +116,29 @@ async def test_simple_chat_engine_astream():
     assert num_iters > 10
     assert "Hello World!" in response.unformatted_response
     assert "What is the capital of the moon?" in response.unformatted_response
+
+
+def test_simple_chat_engine_stream_multiblock_message_history() -> None:
+    engine = SimpleChatEngine.from_defaults(llm=MultiBlockStreamingLLM())
+    response = engine.stream_chat("Hello?")
+
+    assert "".join(response.response_gen) == "Hello world"
+    assert engine.chat_history[-1].content == "Hello world"
+    assert engine.chat_history[-1].blocks == [TextBlock(text="Hello world")]
+
+
+@pytest.mark.asyncio
+async def test_simple_chat_engine_astream_multiblock_message_history() -> None:
+    engine = SimpleChatEngine.from_defaults(llm=MultiBlockStreamingLLM())
+    response = await engine.astream_chat("Hello?")
+
+    chunks = []
+    async for chunk in response.async_response_gen():
+        chunks.append(chunk)
+
+    assert "".join(chunks) == "Hello world"
+    assert engine.chat_history[-1].content == "Hello world"
+    assert engine.chat_history[-1].blocks == [TextBlock(text="Hello world")]
 
 
 def test_simple_chat_engine_astream_exception_handling():
