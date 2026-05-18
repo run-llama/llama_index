@@ -371,6 +371,10 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.complete(messages=messages, **all_kwargs)
 
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         response_message = from_inference_message(response.choices[0].message)
 
         return ChatResponse(

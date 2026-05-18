@@ -250,6 +250,10 @@ class Portkey(CustomLLM):
         )
         self.llm = self._get_llm(response)
 
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         message = response.choices[0].message
         return ChatResponse(message=message, raw=response)
 
@@ -261,6 +265,10 @@ class Portkey(CustomLLM):
 
         config = Config(llms=self.llms)
         response = self._client.Completions.create(prompt=prompt, config=config)
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         text = response.choices[0].text
         return CompletionResponse(text=text, raw=response)
 

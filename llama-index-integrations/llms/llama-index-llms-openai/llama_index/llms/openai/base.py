@@ -510,6 +510,8 @@ class OpenAI(FunctionCallingLLM):
                     **self._get_model_kwargs(**kwargs),
                 )
 
+        if not response.choices:
+            raise ValueError("LLM returned empty response")  # pact: guard empty choices list
         openai_message = response.choices[0].message
         message = from_openai_message(
             openai_message, modalities=self.modalities or ["text"]
@@ -633,6 +635,8 @@ class OpenAI(FunctionCallingLLM):
                     stream=False,
                     **all_kwargs,
                 )
+        if not response.choices:
+            raise ValueError("LLM returned empty response")  # pact: guard empty choices list
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
