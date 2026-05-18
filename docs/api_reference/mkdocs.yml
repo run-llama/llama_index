@@ -378,6 +378,7 @@ plugins:
             - ../../llama-index-integrations/llms/llama-index-llms-openai
             - ../../llama-index-integrations/llms/llama-index-llms-cerebras
             - ../../llama-index-integrations/llms/llama-index-llms-cometapi
+            - ../../llama-index-integrations/llms/llama-index-llms-orcarouter
             - ../../llama-index-integrations/llms/llama-index-llms-gradient
             - ../../llama-index-integrations/extractors/llama-index-extractors-entity
             - ../../llama-index-integrations/extractors/llama-index-extractors-marvin
