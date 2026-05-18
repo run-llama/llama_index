@@ -481,11 +481,22 @@ def messages_to_converse_messages(
                         )
 
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
-            # convert tool output to the AWS Bedrock Converse format
+            # Serialize tool result blocks using the same converter as user
+            # messages.  Falls back to legacy message.content for plain-text
+            # tool results.
+            tool_content: list[dict[str, Any]] = []
+            for block in message.blocks:
+                bedrock_block = _content_block_to_bedrock_format(
+                    block, MessageRole.USER
+                )
+                if bedrock_block:
+                    tool_content.append(bedrock_block)
+            if not tool_content and message.content:
+                tool_content = [{"text": message.content}]
             content = {
                 "toolResult": {
                     "toolUseId": message.additional_kwargs["tool_call_id"],
-                    "content": [{"text": message.content}] if message.content else [],
+                    "content": tool_content,
                 }
             }
             if status := message.additional_kwargs.get("status"):
@@ -805,6 +816,7 @@ async def converse_with_retry_async(
     guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
     boto_client_kwargs: Optional[Dict[str, Any]] = None,
+    client: Optional[Any] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -881,23 +893,30 @@ async def converse_with_retry_async(
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
+        if client is not None:
+            return await client.converse(**kwargs)
         async with session.client(
             "bedrock-runtime",
             config=config,
             **_boto_client_kwargs,
-        ) as client:
-            return await client.converse(**kwargs)
+        ) as c:
+            return await c.converse(**kwargs)
 
     @retry_decorator
     async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as client:
+        if client is not None:
             response = await client.converse_stream(**kwargs)
             async for event in response["stream"]:
                 yield event
+        else:
+            async with session.client(
+                "bedrock-runtime",
+                config=config,
+                **_boto_client_kwargs,
+            ) as c:
+                response = await c.converse_stream(**kwargs)
+                async for event in response["stream"]:
+                    yield event
 
     if stream:
         return _conversion_stream_with_retry(**converse_kwargs)
