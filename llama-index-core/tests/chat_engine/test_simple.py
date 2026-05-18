@@ -1,15 +1,20 @@
 import gc
 import asyncio
+from typing import Any, Sequence
+
+import pytest
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
     CompletionResponse,
     CompletionResponseGen,
+    LLMMetadata,
+    TextBlock,
 )
-from typing import Any
 from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.core.llms.mock import MockLLM
-import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
 
@@ -130,3 +135,40 @@ def test_simple_chat_engine_astream_exception_handling():
         pytest.fail(
             "Exception was not correctly handled - ended up in asyncio cleanup performed during garbage collection"
         )
+
+
+class MultiBlockMockLLM(MockLLM):
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(is_chat_model=True)
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        def gen() -> ChatResponseAsyncGen:
+            yield ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    blocks=[
+                        TextBlock(text="hello "),
+                        TextBlock(text="world"),
+                    ],
+                ),
+                delta="hello world",
+            )
+
+        return gen()
+
+
+@pytest.mark.asyncio
+async def test_simple_chat_engine_astream_multiblock_message() -> None:
+    engine = SimpleChatEngine.from_defaults(llm=MultiBlockMockLLM())
+    response = await engine.astream_chat("Hello world")
+
+    num_iters = 0
+    async for _ in response.async_response_gen():
+        num_iters += 1
+
+    assert num_iters > 0
+    assert len(engine.chat_history) == 2
+    assert engine.chat_history[-1].content == "hello world"

@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -249,7 +250,13 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                final_text = final_text.strip()
+                if len(chat.message.blocks) == 1 and isinstance(
+                    chat.message.blocks[0], TextBlock
+                ):
+                    chat.message.content = final_text  # final message
+                else:
+                    chat.message.blocks = [TextBlock(text=final_text)]
                 await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
