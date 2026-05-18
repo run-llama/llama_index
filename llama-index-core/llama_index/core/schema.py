@@ -29,7 +29,7 @@ from typing import (
 
 import ipaddress
 import socket
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import filetype
 import requests
@@ -1349,7 +1349,8 @@ def _ssrf_redirect_hook(response: requests.Response, **kwargs: Any) -> None:
     """Hook that validates every redirect Location before it is followed."""
     if response.is_redirect:
         location = response.headers.get("Location", "")
-        _validate_ssrf_url(location)
+        absolute_location = urljoin(response.url, location)
+        _validate_ssrf_url(absolute_location)
 
 
 def _ssrf_safe_get(url: str, **kwargs: Any) -> requests.Response:
