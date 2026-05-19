@@ -43,6 +43,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelec
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
+    BEDROCK_NO_TEMP_MODELS,
     ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
@@ -189,6 +190,7 @@ class BedrockConverse(FunctionCallingLLM):
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
     _asession: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr(default=None)
     _boto_client_kwargs: Any = PrivateAttr()
 
     def __init__(
@@ -207,6 +209,7 @@ class BedrockConverse(FunctionCallingLLM):
         endpoint_url: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
@@ -344,6 +347,8 @@ class BedrockConverse(FunctionCallingLLM):
                 **self._boto_client_kwargs,
             )
 
+        self._async_client = async_client
+
     @classmethod
     def class_name(cls) -> str:
         return "Bedrock_Converse_LLM"
@@ -365,6 +370,10 @@ class BedrockConverse(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+        if any(model in self.model for model in BEDROCK_NO_TEMP_MODELS):
+            del base_kwargs["temperature"]
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -742,6 +751,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=self.guardrail_version,
             trace=self.trace,
             boto_client_kwargs=self._boto_client_kwargs,
+            client=self._async_client,
             **all_kwargs,
         )
 
@@ -796,6 +806,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
             boto_client_kwargs=self._boto_client_kwargs,
+            client=self._async_client,
             **all_kwargs,
         )
 
