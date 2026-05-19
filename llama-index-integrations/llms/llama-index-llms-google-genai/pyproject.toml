@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "pillow>=10.2.0",
-    "google-genai>=1.52.0,<2",
+    "google-genai>=1.52.0,<3",
     "llama-index-core>=0.14.5,<0.15",
 ]
 
