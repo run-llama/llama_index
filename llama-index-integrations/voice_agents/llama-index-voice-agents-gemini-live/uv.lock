@@ -1818,7 +1818,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.21"
+version = "0.14.22"
 source = { directory = "../../../llama-index-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -1909,7 +1909,7 @@ dev = [
     { name = "rake-nltk", specifier = "==1.0.6" },
     { name = "ruff", specifier = "==0.11.11" },
     { name = "tree-sitter" },
-    { name = "tree-sitter-language-pack" },
+    { name = "tree-sitter-language-pack", specifier = "<1.0" },
     { name = "types-deprecated", specifier = ">=0.1.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
     { name = "types-requests", specifier = ">=2.28.11.8" },
@@ -1931,7 +1931,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-voice-agents-gemini-live"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-genai" },
@@ -1963,7 +1963,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "google-genai", specifier = ">=1.52.0,<2" },
+    { name = "google-genai", specifier = ">=1.52.0,<3" },
     { name = "llama-index-core", directory = "../../../llama-index-core" },
     { name = "pyaudio", specifier = ">=0.2.14,<0.3" },
 ]

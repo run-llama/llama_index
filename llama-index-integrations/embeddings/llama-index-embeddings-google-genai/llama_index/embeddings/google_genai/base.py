@@ -264,7 +264,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         def embed_with_client() -> List[List[float]]:
             results = self._client.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=[[t] for t in texts],
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
@@ -297,7 +297,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         async def aembed_with_client() -> List[List[float]]:
             results = await self._client.aio.models.embed_content(
                 model=self.model_name,
-                contents=texts,
+                contents=[[t] for t in texts],
                 config=embedding_config,
             )
             return [result.values for result in results.embeddings]
