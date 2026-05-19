@@ -8,6 +8,8 @@ from llama_index.llms.bedrock.utils import (
     AnthropicProvider,
     CohereProvider,
     Ai21Provider,
+    OpenAIProvider,
+    QwenProvider,
 )
 
 
@@ -47,6 +49,16 @@ from llama_index.llms.bedrock.utils import (
         (
             "arn:aws:bedrock:us-east-1::foundation-model/ai21.jamba-1-5-large-v1:0",
             Ai21Provider,
+        ),
+        ("openai.gpt-oss-120b-1:0", OpenAIProvider),
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/openai.gpt-oss-120b-1:0",
+            OpenAIProvider,
+        ),
+        ("qwen.qwen-2.5-72b-instruct-v1:0", QwenProvider),
+        (
+            "arn:aws:bedrock:us-east-1::foundation-model/qwen.qwen-2.5-72b-instruct-v1:0",
+            QwenProvider,
         ),
     ],
 )

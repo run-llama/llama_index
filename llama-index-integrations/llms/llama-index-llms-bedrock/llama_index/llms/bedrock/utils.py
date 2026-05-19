@@ -92,6 +92,11 @@ CHAT_ONLY_MODELS = {
     "apac.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "apac.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "apac.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "openai.gpt-oss-120b-1:0": 128000,
+    "openai.gpt-oss-20b-1:0": 128000,
+    "qwen.qwen-2.5-72b-instruct-v1:0": 128000,
+    "qwen.qwen-2.5-7b-instruct-v1:0": 128000,
+    "qwen.qwen-2.5-14b-instruct-v1:0": 128000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -259,6 +264,28 @@ class MistralProvider(Provider):
         return response["outputs"][0]["text"]
 
 
+class OpenAIProvider(Provider):
+    max_tokens_key = "max_tokens"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["choices"][0]["message"]["content"]
+
+
+class QwenProvider(Provider):
+    max_tokens_key = "max_tokens"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["output"]["text"]
+
+
 class ProviderType(Enum):
     AMAZON = ("amazon", AmazonProvider)
     AI21 = ("ai21", Ai21Provider)
@@ -266,6 +293,8 @@ class ProviderType(Enum):
     COHERE = ("cohere", CohereProvider)
     META = ("meta", MetaProvider)
     MISTRAL = ("mistral", MistralProvider)
+    OPENAI = ("openai", OpenAIProvider)
+    QWEN = ("qwen", QwenProvider)
 
     def __init__(self, value: str, provider_class: type) -> None:
         self._value_ = value
