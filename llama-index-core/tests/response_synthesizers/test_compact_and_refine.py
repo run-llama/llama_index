@@ -128,6 +128,52 @@ class TestCompactAndRefine:
             "information2",
         ]
 
+    def test_synthesize__multimodal(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer1 = CompactAndRefine(llm=llm, multimodal=True)
+        tkn_counter = TokenCounter()
+        qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
+        refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
+        max_prompt = get_biggest_prompt([qa_template, refine_template])
+        prompt_tokens = tkn_counter.estimate_tokens_in_messages(
+            get_empty_prompt_messages(max_prompt)
+        )
+        synthesizer2 = CompactAndRefine(
+            llm=llm,
+            chat_prompt_helper=ChatPromptHelper(
+                context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
+            ),
+            response_padding_size=0,
+            multimodal=True,
+        )
+        with patch.object(
+            Refine,
+            "get_response_from_messages",
+            wraps=Refine(llm=llm, multimodal=True).get_response_from_messages,
+        ) as wraps_get_response:
+            response1 = synthesizer1.synthesize(query="test", nodes=multimodal_nodes)
+            response2 = synthesizer2.synthesize(query="test", nodes=multimodal_nodes)
+        assert str(response1) == " ".join(["text"] * 10)
+        assert str(response2) == " ".join(["text"] * 10)
+        assert llm.last_called_chat_function == ["chat"] * 3, (
+            "First call one compacted node = 1 call "
+            "Second call one compacted node split into 2 = 2 calls "
+            "Total of 3 calls"
+        )
+        assert (
+            len(wraps_get_response.call_args_list[0].kwargs["message_chunks"]) == 1
+        ), "Both nodes compacted into 1 message"
+        assert (
+            len(wraps_get_response.call_args_list[1].kwargs["message_chunks"]) == 2
+        ), "Tight context forces 2 separate messages"
+        assert any(
+            block.block_type == "image"
+            for msg in wraps_get_response.call_args_list[0].kwargs["message_chunks"]
+            for block in msg.blocks
+        ), "Compacted message should contain image block"
+
     @pytest.mark.asyncio
     async def test_asynthesize(self, nodes: list[NodeWithScore]) -> None:
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
@@ -221,62 +267,10 @@ class TestCompactAndRefine:
             "information2",
         ]
 
-    def test_synthesize__multimodal(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        # Arrange
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer1 = CompactAndRefine(llm=llm, multimodal=True)
-        tkn_counter = TokenCounter()
-        qa_template = CHAT_CONTENT_QA_PROMPT.partial_format(query_str="test")
-        refine_template = CHAT_CONTENT_REFINE_PROMPT.partial_format(query_str="test")
-        max_prompt = get_biggest_prompt([qa_template, refine_template])
-        prompt_tokens = tkn_counter.estimate_tokens_in_messages(
-            get_empty_prompt_messages(max_prompt)
-        )
-        synthesizer2 = CompactAndRefine(
-            llm=llm,
-            chat_prompt_helper=ChatPromptHelper(
-                context_window=prompt_tokens + 3, num_output=0, chunk_overlap_ratio=0
-            ),
-            response_padding_size=0,
-            multimodal=True,
-        )
-
-        # Act
-        with patch.object(
-            Refine,
-            "get_response_from_messages",
-            wraps=Refine(llm=llm, multimodal=True).get_response_from_messages,
-        ) as wraps_get_response:
-            response1 = synthesizer1.synthesize(query="test", nodes=multimodal_nodes)
-            response2 = synthesizer2.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
-        assert str(response1) == " ".join(["text"] * 10)
-        assert str(response2) == " ".join(["text"] * 10)
-        assert llm.last_called_chat_function == ["chat"] * 3, (
-            "First call one compacted node = 1 call "
-            "Second call one compacted node split into 2 = 2 calls "
-            "Total of 3 calls"
-        )
-        assert (
-            len(wraps_get_response.call_args_list[0].kwargs["message_chunks"]) == 1
-        ), "Both nodes compacted into 1 message"
-        assert (
-            len(wraps_get_response.call_args_list[1].kwargs["message_chunks"]) == 2
-        ), "Tight context forces 2 separate messages"
-        assert any(
-            block.block_type == "image"
-            for msg in wraps_get_response.call_args_list[0].kwargs["message_chunks"]
-            for block in msg.blocks
-        ), "Compacted message should contain image block"
-
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
         synthesizer1 = CompactAndRefine(llm=llm, multimodal=True)
         tkn_counter = TokenCounter()
@@ -294,8 +288,6 @@ class TestCompactAndRefine:
             response_padding_size=0,
             multimodal=True,
         )
-
-        # Act
         with patch.object(
             Refine,
             "aget_response_from_messages",
@@ -307,8 +299,6 @@ class TestCompactAndRefine:
             response2 = await synthesizer2.asynthesize(
                 query="test", nodes=multimodal_nodes
             )
-
-        # Assert
         assert str(response1) == " ".join(["text"] * 10)
         assert str(response2) == " ".join(["text"] * 10)
         assert set(llm.last_called_chat_function) == {"achat", "chat"}
