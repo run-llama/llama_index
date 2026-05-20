@@ -1365,11 +1365,11 @@ wheels = [
 
 [[package]]
 name = "idna"
-version = "3.11"
+version = "3.15"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6f/6d/0703ccc57f3a7233505399edb88de3cbd678da106337b9fcde432b65ed60/idna-3.11.tar.gz", hash = "sha256:795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902", size = 194582, upload-time = "2025-10-12T14:55:20.501Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz", hash = "sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc", size = 199245, upload-time = "2026-05-12T22:45:57.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl", hash = "sha256:771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea", size = 71008, upload-time = "2025-10-12T14:55:18.883Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl", hash = "sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8", size = 72340, upload-time = "2026-05-12T22:45:55.733Z" },
 ]
 
 [[package]]
@@ -2003,7 +2003,7 @@ dev = [
     { name = "pip", specifier = ">=25.1.1" },
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
-    { name = "pytest", specifier = "==7.2.1" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==0.21.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.11.1" },
@@ -2177,14 +2177,14 @@ wheels = [
 
 [[package]]
 name = "mistune"
-version = "3.2.0"
+version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/55/d01f0c4b45ade6536c51170b9043db8b2ec6ddf4a35c7ea3f5f559ac935b/mistune-3.2.0.tar.gz", hash = "sha256:708487c8a8cdd99c9d90eb3ed4c3ed961246ff78ac82f03418f5183ab70e398a", size = 95467, upload-time = "2025-12-23T11:36:34.994Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/84/620cc3f7e3adf6f5067e10f4dbae71295d8f9e16d5d3f9ef97c40f2f592c/mistune-3.2.1.tar.gz", hash = "sha256:7c8e5501d38bac1582e067e46c8343f17d57ea1aaa735823f3aba1fd59c88a28", size = 98003, upload-time = "2026-05-03T14:33:22.312Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/f7/4a5e785ec9fbd65146a27b6b70b6cdc161a66f2024e4b04ac06a67f5578b/mistune-3.2.0-py3-none-any.whl", hash = "sha256:febdc629a3c78616b94393c6580551e0e34cc289987ec6c35ed3f4be42d0eee1", size = 53598, upload-time = "2025-12-23T11:36:33.211Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/7f/a946aa4f8752b37102b41e64dca18a1976ac705c3a0d1dfe74d820a02552/mistune-3.2.1-py3-none-any.whl", hash = "sha256:78cdb0ba5e938053ccf63651b352508d2efa9411dc8810bfb05f2dc5140c0048", size = 53749, upload-time = "2026-05-03T14:33:20.551Z" },
 ]
 
 [[package]]
@@ -2192,8 +2192,8 @@ name = "mkl"
 version = "2021.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "intel-openmp" },
-    { name = "tbb" },
+    { name = "intel-openmp", marker = "python_full_version < '3.11' or sys_platform == 'win32'" },
+    { name = "tbb", marker = "python_full_version < '3.11' or sys_platform == 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/c6/892fe3bc91e811b78e4f85653864f2d92541d5e5c306b0cb3c2311e9ca64/mkl-2021.4.0-py2.py3-none-win32.whl", hash = "sha256:439c640b269a5668134e3dcbcea4350459c4a8bc46469669b2d67e07e3d330e8", size = 129048357, upload-time = "2021-09-28T17:08:58.256Z" },
@@ -2612,7 +2612,7 @@ name = "nvidia-cudnn-cu12"
 version = "8.9.2.26"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 wheels = [
     { url = "https://pypi.nvidia.com/nvidia-cudnn-cu12/nvidia_cudnn_cu12-8.9.2.26-py3-none-manylinux1_x86_64.whl", hash = "sha256:5ccb288774fdfb07a7e7025ffec286971c06d8d7b4fb162525334616d7629ff9" },
@@ -2639,9 +2639,9 @@ name = "nvidia-cusolver-cu12"
 version = "11.4.5.107"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
-    { name = "nvidia-cusparse-cu12" },
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
+    { name = "nvidia-cusparse-cu12", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
+    { name = "nvidia-nvjitlink-cu12", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 wheels = [
     { url = "https://pypi.nvidia.com/nvidia-cusolver-cu12/nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl", hash = "sha256:8a7ec542f0412294b15072fa7dab71d31334014a69f953004ea7a118206fe0dd" },
@@ -2652,7 +2652,7 @@ name = "nvidia-cusparse-cu12"
 version = "12.1.0.106"
 source = { registry = "https://pypi.nvidia.com/" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 wheels = [
     { url = "https://pypi.nvidia.com/nvidia-cusparse-cu12/nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl", hash = "sha256:f3b50f42cf363f86ab21f720998517a659a48131e8d538dc02f8768237bd884c" },
@@ -2879,7 +2879,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "python_full_version < '3.11' or sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -3260,20 +3260,20 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "7.2.1"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
     { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
+    { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/6c/f3a15217ac72912c28c5d7a7a8e87ff6d6475c9530595ae9f0f8dedd8dd8/pytest-7.2.1.tar.gz", hash = "sha256:d45e0952f3727241918b8fd0f376f5ff6b301cc0777c6f9a556935c92d8a7d42", size = 1301901, upload-time = "2023-01-14T12:17:33.798Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/02/8f59bf194c9a1ceac6330850715e9ec11e21e2408a30a596c65d54cf4d2a/pytest-7.2.1-py3-none-any.whl", hash = "sha256:c7c6ca206e93355074ae32f7403e8ea12163b1163c976fee7d4d84027c162be5", size = 317109, upload-time = "2023-01-14T12:17:32.206Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
@@ -4241,7 +4241,7 @@ name = "triton"
 version = "2.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock" },
+    { name = "filelock", marker = "(python_full_version < '3.11' and sys_platform == 'emscripten') or (python_full_version < '3.11' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/69/8a9fde07d2d27a90e16488cdfe9878e985a247b2496a4b5b1a2126042528/triton-2.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c84595cbe5e546b1b290d2a58b1494df5a2ef066dd890655e5b8a8a92205c33", size = 168055249, upload-time = "2024-05-27T21:44:18.74Z" },

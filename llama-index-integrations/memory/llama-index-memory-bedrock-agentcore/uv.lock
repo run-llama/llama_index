@@ -2825,7 +2825,7 @@ dev = [
     { name = "mypy", specifier = "==1.11.0" },
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
-    { name = "pytest", specifier = "==8.2.1" },
+    { name = "pytest", specifier = "==8.4.2" },
     { name = "pytest-asyncio", specifier = "==1.2.0" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.14.0" },
@@ -4505,7 +4505,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.2.1"
+version = "8.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -4514,11 +4514,12 @@ dependencies = [
     { name = "iniconfig", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "packaging" },
     { name = "pluggy" },
+    { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/4e/0ceea141f0e5d09de4053c5338c62615ae2bd9bd3f013813f5ec62e3cf97/pytest-8.2.1.tar.gz", hash = "sha256:5046e5b46d8e4cac199c373041f26be56fdb81eb4e67dc11d4e10811fc3408fd", size = 1424649, upload-time = "2024-05-19T19:08:03.507Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/c1/27a1274b73712232328cb5115030057b7dec377f36a518c83f2e01d4f305/pytest-8.2.1-py3-none-any.whl", hash = "sha256:faccc5d332b8c3719f40283d0d44aa5cf101cec36f88cde9ed8f2bc0538612b1", size = 339593, upload-time = "2024-05-19T19:07:58.066Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
 ]
 
 [[package]]
