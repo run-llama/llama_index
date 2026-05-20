@@ -67,6 +67,14 @@ DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
       {% elif block.path %}
         {{ (block.path | string) | audio }}
       {% endif %}
+    {% elif block.block_type == "video" %}
+      {% if block.url %}
+        {{ (block.url | string) | video }}
+      {% endif %}
+    {% elif block.block_type == "document" %}
+      {% if block.url %}
+        {{ (block.url | string) | document }}
+      {% endif %}
     {% endif %}
   {% endfor %}
 </{{ block_name }}>
