@@ -260,7 +260,7 @@ def test_mem0_memory_get():
             dummy_messages, "How are you?", limit=mem0_memory.search_msg_limit
         )
         mock_client.search.assert_called_once_with(
-            query=expected_query, user_id="test_user"
+            query=expected_query, filters={"user_id": "test_user"}
         )
 
         # Assert that the result contains the correct number of messages
@@ -286,7 +286,7 @@ def test_mem0_memory_get():
             dummy_messages, limit=mem0_memory.search_msg_limit
         )
         mock_client.search.assert_called_once_with(
-            query=expected_query_no_input, user_id="test_user"
+            query=expected_query_no_input, filters={"user_id": "test_user"}
         )
 
         # Assert that the results are the same as before
@@ -391,7 +391,7 @@ def test_user_id_agent_id_separation() -> None:
         )
         mock_client.search.assert_called_once_with(
             query=expected_query,
-            filters={"OR": [{"user_id": "test_user"}, {"agent_id": "test_agent"}]},
+            filters={"user_id": "test_user", "agent_id": "test_agent"},
         )
         # Assert that the result contains the correct number of messages
         assert len(result) == len(dummy_messages) + 1  # +1 for the system message
