@@ -1885,7 +1885,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-seltz"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1917,12 +1917,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "seltz", specifier = ">=0.2.0" },
+    { name = "seltz", specifier = ">=1.0.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
+    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=26.5.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "ipython", specifier = "==8.10.0" },
