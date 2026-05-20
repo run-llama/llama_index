@@ -1,13 +1,14 @@
 import pytest
 import json
 
-from typing import Optional
+from typing import ClassVar, Optional
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import (
     MockFunctionCallingLLM,
     MockToolCallingLLM,
     BlockToContentCallback,
 )
+from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.tools import FunctionTool
 from llama_index.core.base.llms.types import (
@@ -237,7 +238,8 @@ def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
     assert len(tool_calls) == 0
 
 
-def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
+@pytest.mark.asyncio
+async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
     def get_weather(location: str = "Berlin") -> str:
         return f"weather in {location}"
 
@@ -249,17 +251,61 @@ def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
         FunctionTool.from_defaults(add),
     ]
     llm = MockToolCallingLLM()
+    agent = FunctionAgent(llm=llm, tools=tools)
 
-    response = llm.chat_with_tools(tools=tools, user_msg="call the tools")
-    tool_calls = llm.get_tool_calls_from_response(response)
+    handler = agent.run(user_msg="call the tools")
+    tool_call_results = []
+    async for event in handler.stream_events():
+        if isinstance(event, ToolCallResult):
+            tool_call_results.append(event)
 
-    assert [tool_call.tool_name for tool_call in tool_calls] == [
-        "get_weather",
-        "add",
+    await handler
+
+    assert [result.tool_output.raw_output for result in tool_call_results] == [
+        "weather in Berlin",
+        3,
     ]
-    assert [tool_call.tool_kwargs for tool_call in tool_calls] == [
-        {"location": "Berlin"},
-        {"a": 1, "b": 2},
+
+
+@pytest.mark.asyncio
+async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
+    def get_weather(location: str = "Berlin") -> str:
+        return f"weather in {location}"
+
+    def mul(a: int = 1, b: int = 2) -> int:
+        return a * b
+
+    class MockToolCallingLLMWithParams(MockToolCallingLLM):
+        tool_kwargs_by_name: ClassVar[dict[str, dict[str, object]]] = {
+            "get_weather": {"location": "Chicago"},
+            "mul": {"a": 10, "b": 20},
+        }
+
+        def _build_tool_kwargs(self, tool) -> dict[str, object]:
+            return self.tool_kwargs_by_name[tool.metadata.name]
+
+    tools = [
+        FunctionTool.from_defaults(get_weather),
+        FunctionTool.from_defaults(mul),
+    ]
+    llm = MockToolCallingLLMWithParams()
+    agent = FunctionAgent(llm=llm, tools=tools)
+
+    handler = agent.run(user_msg="call the tools with params")
+    tool_call_results = []
+    async for event in handler.stream_events():
+        if isinstance(event, ToolCallResult):
+            tool_call_results.append(event)
+
+    await handler
+
+    assert [result.tool_output.raw_input["kwargs"] for result in tool_call_results] == [
+        {"location": "Chicago"},
+        {"a": 10, "b": 20},
+    ]
+    assert [result.tool_output.raw_output for result in tool_call_results] == [
+        "weather in Chicago",
+        200,
     ]
 
 
