@@ -5,7 +5,6 @@ from typing import Any, Optional, Sequence
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import (
     MockFunctionCallingLLM,
-    _tool_calling_response_generator,
     BlockToContentCallback,
 )
 from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
@@ -250,7 +249,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
         FunctionTool.from_defaults(get_weather),
         FunctionTool.from_defaults(add),
     ]
-    llm = MockFunctionCallingLLM(response_generator=_tool_calling_response_generator)
+    llm = MockFunctionCallingLLM()
     agent = FunctionAgent(llm=llm, tools=tools)
 
     handler = agent.run(user_msg="call the tools")
@@ -344,7 +343,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
 def test_mock_tool_calling_response_generator_returns_completion_after_tool_result() -> (
     None
 ):
-    llm = MockFunctionCallingLLM(response_generator=_tool_calling_response_generator)
+    llm = MockFunctionCallingLLM()
 
     response = llm.chat(
         messages=[

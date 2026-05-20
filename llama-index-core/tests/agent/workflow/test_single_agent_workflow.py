@@ -444,8 +444,17 @@ async def test_function_agent_with_context_and_chat_message():
         """A no-op function for testing."""
         return "noop executed"
 
+    # Use an echo response generator that ignores tools
+    def echo_generator(messages, **kwargs):
+        if not messages:
+            return ChatMessage(role=MessageRole.ASSISTANT, content="<empty>")
+        content = "".join(
+            block.text for block in messages[-1].blocks if isinstance(block, TextBlock)
+        )
+        return ChatMessage(role=MessageRole.ASSISTANT, content=content or "<empty>")
+
     # Step 1: Construct FunctionAgent
-    llm = MockFunctionCallingLLM()
+    llm = MockFunctionCallingLLM(response_generator=echo_generator)
     function_tools = [FunctionTool.from_defaults(fn=noop)]
     constructor_kwargs = {
         "llm": llm,

@@ -340,9 +340,15 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
             return self._response_generator
 
         # Return a default generator that uses instance's blocks_to_content_callback
+        # and calls all tools if provided
         def default_generator(
             messages: Sequence[ChatMessage], **kwargs: Any
         ) -> ChatMessage:
+            # If tools are provided or tool results exist, delegate to tool-calling generator
+            has_tool_results = any(m.role == MessageRole.TOOL for m in messages)
+            if kwargs.get("tools") or has_tool_results:
+                return _tool_calling_response_generator(messages, **kwargs)
+
             if not messages:
                 return ChatMessage(role="assistant", content="<empty>")
 
