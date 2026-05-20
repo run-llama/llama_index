@@ -1,9 +1,13 @@
+from contextlib import AbstractContextManager, nullcontext
+from typing import Any
+
 from llama_index.core.schema import (
     TextNode,
     NodeRelationship,
     RelatedNodeInfo,
 )
 from llama_index.core.schema import TextNode
+from llama_index.vector_stores.weaviate.base import _is_valid_batch_context_manager
 from llama_index.vector_stores.weaviate import (
     WeaviateVectorStore,
     SyncClientNotProvidedError,
@@ -28,6 +32,31 @@ from weaviate.collections.batch.base import (
 )
 
 TEST_COLLECTION_NAME = "TestCollection"
+
+
+class _FakeBatchWriter:
+    def add_object(self, **kwargs: Any) -> None:
+        pass
+
+
+class _WrappedBatchManager(AbstractContextManager):
+    def __init__(self, batch: Any) -> None:
+        self._ContextManagerSync__current_batch = batch
+
+    def __enter__(self) -> Any:
+        return self._ContextManagerSync__current_batch
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
+
+def test_custom_batch_validation_rejects_generic_context_manager():
+    assert not _is_valid_batch_context_manager(nullcontext(object()))
+
+
+def test_custom_batch_validation_checks_wrapped_writer_interface():
+    assert _is_valid_batch_context_manager(_WrappedBatchManager(_FakeBatchWriter()))
+    assert not _is_valid_batch_context_manager(_WrappedBatchManager(object()))
 
 
 def test_no_weaviate_client_instance_provided():
