@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-    "black[jupyter]>=23.7.0,<=24.3.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "ipykernel>=6.29.5,<7",
     "mypy==1.11.0",
