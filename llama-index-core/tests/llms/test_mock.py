@@ -251,7 +251,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
         FunctionTool.from_defaults(add),
     ]
     llm = MockToolCallingLLM()
-    agent = FunctionAgent(llm=llm, tools=tools)
+    agent = FunctionAgent(llm=llm, tools=tools, allow_parallel_tool_calls=False)
 
     handler = agent.run(user_msg="call the tools")
     tool_call_results = []
@@ -293,7 +293,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
         FunctionTool.from_defaults(mul),
     ]
     llm = MockToolCallingLLMWithParams()
-    agent = FunctionAgent(llm=llm, tools=tools)
+    agent = FunctionAgent(llm=llm, tools=tools, allow_parallel_tool_calls=False)
 
     handler = agent.run(user_msg="call the tools with params")
     tool_call_results = []
