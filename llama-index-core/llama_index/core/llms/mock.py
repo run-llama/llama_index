@@ -291,18 +291,6 @@ ResponseGenerator: TypeAlias = Callable[
 ]
 
 
-def _default_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
-    """Default response generator that echoes the last message's content."""
-    if not messages:
-        return ChatMessage(role="assistant", content="<empty>")
-
-    tool_calls: List[ToolCallBlock] = []
-    content = _default_blocks_to_content_callback(messages[-1].blocks, tool_calls)
-    if not content:
-        content = "<empty>"
-    return ChatMessage(role="assistant", content=content)
-
-
 class MockFunctionCallingLLM(FunctionCallingLLM):
     tool_calls: List[ToolCallBlock] = Field(default_factory=list)
     blocks_to_content_callback: BlockToContentCallback = Field(
