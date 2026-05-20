@@ -52,7 +52,7 @@ beautifulsoup4==4.13.4
 black==26.5.1
 bleach==6.2.0
     # via nbconvert
-certifi==2024.12.14
+certifi==2026.4.22
     # via
     #   httpcore
     #   httpx
