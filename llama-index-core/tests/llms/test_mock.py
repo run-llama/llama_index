@@ -261,6 +261,10 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
 
     await handler
 
+    assert [result.tool_output.raw_input["kwargs"] for result in tool_call_results] == [
+        {"location": "Berlin"},
+        {"a": 1, "b": 2},
+    ]
     assert [result.tool_output.raw_output for result in tool_call_results] == [
         "weather in Berlin",
         3,
