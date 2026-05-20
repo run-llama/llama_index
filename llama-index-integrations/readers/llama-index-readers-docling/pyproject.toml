@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.4",
     "ipython==8.10.0",
