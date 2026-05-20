@@ -251,7 +251,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
         FunctionTool.from_defaults(add),
     ]
     llm = MockToolCallingLLM()
-    agent = FunctionAgent(llm=llm, tools=tools, allow_parallel_tool_calls=False)
+    agent = FunctionAgent(llm=llm, tools=tools)
 
     handler = agent.run(user_msg="call the tools")
     tool_call_results = []
@@ -261,14 +261,20 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
 
     await handler
 
-    assert [result.tool_output.raw_input["kwargs"] for result in tool_call_results] == [
-        {"location": "Berlin"},
-        {"a": 1, "b": 2},
-    ]
-    assert [result.tool_output.raw_output for result in tool_call_results] == [
-        "weather in Berlin",
-        3,
-    ]
+    tool_results_by_name = {result.tool_name: result for result in tool_call_results}
+    assert set(tool_results_by_name) == {"get_weather", "add"}
+    assert tool_results_by_name["get_weather"].tool_output.raw_input["kwargs"] == {
+        "location": "Berlin"
+    }
+    assert (
+        tool_results_by_name["get_weather"].tool_output.raw_output
+        == "weather in Berlin"
+    )
+    assert tool_results_by_name["add"].tool_output.raw_input["kwargs"] == {
+        "a": 1,
+        "b": 2,
+    }
+    assert tool_results_by_name["add"].tool_output.raw_output == 3
 
 
 @pytest.mark.asyncio
@@ -293,7 +299,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
         FunctionTool.from_defaults(mul),
     ]
     llm = MockToolCallingLLMWithParams()
-    agent = FunctionAgent(llm=llm, tools=tools, allow_parallel_tool_calls=False)
+    agent = FunctionAgent(llm=llm, tools=tools)
 
     handler = agent.run(user_msg="call the tools with params")
     tool_call_results = []
@@ -303,14 +309,20 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
 
     await handler
 
-    assert [result.tool_output.raw_input["kwargs"] for result in tool_call_results] == [
-        {"location": "Chicago"},
-        {"a": 10, "b": 20},
-    ]
-    assert [result.tool_output.raw_output for result in tool_call_results] == [
-        "weather in Chicago",
-        200,
-    ]
+    tool_results_by_name = {result.tool_name: result for result in tool_call_results}
+    assert set(tool_results_by_name) == {"get_weather", "mul"}
+    assert tool_results_by_name["get_weather"].tool_output.raw_input["kwargs"] == {
+        "location": "Chicago"
+    }
+    assert (
+        tool_results_by_name["get_weather"].tool_output.raw_output
+        == "weather in Chicago"
+    )
+    assert tool_results_by_name["mul"].tool_output.raw_input["kwargs"] == {
+        "a": 10,
+        "b": 20,
+    }
+    assert tool_results_by_name["mul"].tool_output.raw_output == 200
 
 
 def test_mock_tool_calling_llm_returns_completion_after_tool_result() -> None:
