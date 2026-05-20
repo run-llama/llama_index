@@ -4,6 +4,14 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 from llama_index.core.prompts.base import ChatPromptTemplate
 
+# simple input
+TEXT_SIMPLE_INPUT_TMPL_MSGS = [
+    ChatMessage(content="{query_str}", role=MessageRole.USER)
+]
+CHAT_SIMPLE_INPUT_PROMPT = ChatPromptTemplate(
+    message_templates=TEXT_SIMPLE_INPUT_TMPL_MSGS
+)
+
 # text qa prompt
 TEXT_QA_SYSTEM_PROMPT = ChatMessage(
     content=(
@@ -38,6 +46,39 @@ TEXT_QA_PROMPT_TMPL_MSGS = [
 
 CHAT_TEXT_QA_PROMPT = ChatPromptTemplate(message_templates=TEXT_QA_PROMPT_TMPL_MSGS)
 
+CHAT_CONTENT_QA_PROMPT = RichPromptTemplate(
+    """
+{% chat role="system" %}
+"""
+    + (TEXT_QA_SYSTEM_PROMPT.content or "")
+    + """
+{% endchat %}
+
+{% chat role="user" %}
+Context information is below.
+---------------------
+{% for message in context_messages %}
+{% for block in message.blocks %}
+{% if block.block_type == 'text' %}
+{{ block.text }}
+{% elif block.block_type == 'image' %}
+{{ block.inline_url() | image }}
+{% elif block.block_type == 'audio' %}
+{{ block.inline_url() | audio }}
+{% elif block.block_type == 'video' %}
+{{ block.inline_url() | video }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+---------------------
+Given the context information and not prior knowledge, answer the query.
+Query: {{ query_str }}
+Answer:
+{% endchat %}
+"""
+)
+
 # Tree Summarize
 TREE_SUMMARIZE_PROMPT_TMPL_MSGS = [
     TEXT_QA_SYSTEM_PROMPT,
@@ -60,7 +101,41 @@ CHAT_TREE_SUMMARIZE_PROMPT = ChatPromptTemplate(
     message_templates=TREE_SUMMARIZE_PROMPT_TMPL_MSGS
 )
 
+CHAT_CONTENT_TREE_SUMMARIZE_PROMPT = RichPromptTemplate(
+    """
+{% chat role="system" %}
+"""
+    + (TEXT_QA_SYSTEM_PROMPT.content or "")
+    + """
+{% endchat %}
 
+{% chat role="user" %}
+Context information from multiple sources is below.
+---------------------
+{% for message in context_messages %}
+{% for block in message.blocks %}
+{% if block.block_type == 'text' %}
+{{ block.text }}
+{% elif block.block_type == 'image' %}
+{{ block.inline_url() | image }}
+{% elif block.block_type == 'audio' %}
+{{ block.inline_url() | audio }}
+{% elif block.block_type == 'video' %}
+{{ block.inline_url() | video }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+---------------------
+Given the information from multiple sources and not prior knowledge, answer the query.
+Query: {{ query_str }}
+Answer:
+{% endchat %}
+"""
+)
+
+
+# TODO: Should this be split into a system and user message like the other prompts?
 # Refine Prompt
 CHAT_REFINE_PROMPT_TMPL_MSGS = [
     ChatMessage(
@@ -82,6 +157,38 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
 
 
 CHAT_REFINE_PROMPT = ChatPromptTemplate(message_templates=CHAT_REFINE_PROMPT_TMPL_MSGS)
+
+CHAT_CONTENT_REFINE_PROMPT = RichPromptTemplate("""
+{% chat role="system" %}
+You are an expert Q&A system that strictly operates in two modes when refining existing answers:
+1. **Rewrite** an original answer using the new context.
+2. **Repeat** the original answer if the new context isn't useful.
+Never reference the original answer or context directly in your answer.
+When in doubt, just repeat the original answer.
+{% endchat %}
+{% chat role="user" %}
+New Context:
+---------------------
+{% for message in context_messages %}
+{% for block in message.blocks %}
+{% if block.block_type == 'text' %}
+{{ block.text }}
+{% elif block.block_type == 'image' %}
+{{ block.inline_url() | image }}
+{% elif block.block_type == 'audio' %}
+{{ block.inline_url() | audio }}
+{% elif block.block_type == 'video' %}
+{{ block.inline_url() | video }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+---------------------
+Query: {{ query_str }}
+Original Answer: {{ existing_answer }}
+New Answer:
+{% endchat %}
+""")
 
 
 # Table Context Refine Prompt
@@ -111,7 +218,7 @@ CHAT_REFINE_TABLE_CONTEXT_PROMPT = ChatPromptTemplate(
 
 
 # Choice Select
-CHAT_CHOICE_SELECT_PROMPT = RichPromptTemplate("""
+CHAT_CONTENT_CHOICE_SELECT_PROMPT = RichPromptTemplate("""
 {% chat role="user" %}
 A list of documents is shown below. Each document has a number next to it along \
 with a summary of the document. A question is also provided.
