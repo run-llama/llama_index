@@ -18,7 +18,7 @@ def _response_generator_from_list(responses: List[ChatMessage]):
     """Helper to create a response generator from a list of responses."""
     index = 0
 
-    def generator(messages: List[ChatMessage]) -> ChatMessage:
+    def generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
         nonlocal index
         if not responses:
             return ChatMessage(role=MessageRole.ASSISTANT, content=None)

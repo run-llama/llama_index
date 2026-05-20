@@ -1,11 +1,11 @@
 import pytest
 import json
 
-from typing import ClassVar, Optional
+from typing import Any, Optional, Sequence
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms.mock import (
     MockFunctionCallingLLM,
-    MockToolCallingLLM,
+    _tool_calling_response_generator,
     BlockToContentCallback,
 )
 from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
@@ -250,7 +250,7 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
         FunctionTool.from_defaults(get_weather),
         FunctionTool.from_defaults(add),
     ]
-    llm = MockToolCallingLLM()
+    llm = MockFunctionCallingLLM(response_generator=_tool_calling_response_generator)
     agent = FunctionAgent(llm=llm, tools=tools)
 
     handler = agent.run(user_msg="call the tools")
@@ -279,26 +279,42 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
 
 @pytest.mark.asyncio
 async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
+    from uuid import uuid4
+
     def get_weather(location: str = "Berlin") -> str:
         return f"weather in {location}"
 
     def mul(a: int = 1, b: int = 2) -> int:
         return a * b
 
-    class MockToolCallingLLMWithParams(MockToolCallingLLM):
-        tool_kwargs_by_name: ClassVar[dict[str, dict[str, object]]] = {
-            "get_weather": {"location": "Chicago"},
-            "mul": {"a": 10, "b": 20},
-        }
+    tool_kwargs_by_name: dict[str, dict[str, object]] = {
+        "get_weather": {"location": "Chicago"},
+        "mul": {"a": 10, "b": 20},
+    }
 
-        def _build_tool_kwargs(self, tool) -> dict[str, object]:
-            return self.tool_kwargs_by_name[tool.metadata.name]
+    def custom_tool_response_generator(
+        messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatMessage:
+        if any(m.role == MessageRole.TOOL for m in messages):
+            return ChatMessage(
+                role=MessageRole.ASSISTANT, content="Tool calls complete."
+            )
+        tools = kwargs.get("tools") or []
+        blocks = [
+            ToolCallBlock(
+                tool_call_id=f"mock-tool-call-{uuid4().hex}",
+                tool_name=tool.metadata.name or "",
+                tool_kwargs=tool_kwargs_by_name[tool.metadata.name],
+            )
+            for tool in tools
+        ]
+        return ChatMessage(role=MessageRole.ASSISTANT, blocks=blocks)
 
     tools = [
         FunctionTool.from_defaults(get_weather),
         FunctionTool.from_defaults(mul),
     ]
-    llm = MockToolCallingLLMWithParams()
+    llm = MockFunctionCallingLLM(response_generator=custom_tool_response_generator)
     agent = FunctionAgent(llm=llm, tools=tools)
 
     handler = agent.run(user_msg="call the tools with params")
@@ -325,8 +341,10 @@ async def test_mock_tool_calling_llm_calls_all_tools_with_params() -> None:
     assert tool_results_by_name["mul"].tool_output.raw_output == 200
 
 
-def test_mock_tool_calling_llm_returns_completion_after_tool_result() -> None:
-    llm = MockToolCallingLLM()
+def test_mock_tool_calling_response_generator_returns_completion_after_tool_result() -> (
+    None
+):
+    llm = MockFunctionCallingLLM(response_generator=_tool_calling_response_generator)
 
     response = llm.chat(
         messages=[

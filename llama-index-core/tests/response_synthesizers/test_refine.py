@@ -209,7 +209,7 @@ def tool_call_json_from_messages(
 def mock_chat_message_with_tool_call_generator(
     input_to_query_satisfied,
 ) -> Callable[[Sequence[ChatMessage]], ChatMessage]:
-    def func(messages: Sequence[ChatMessage]) -> ChatMessage:
+    def func(messages: Sequence[ChatMessage], **kwargs) -> ChatMessage:
         tool_args_json = tool_call_json_from_messages(
             messages, input_to_query_satisfied
         )
@@ -232,7 +232,9 @@ def mock_chat_message_with_tool_call_generator(
 def mock_streaming_chat_message_with_tool_call_generator(
     input_to_query_satisfied,
 ) -> Callable[[Sequence[ChatMessage]], Generator[ChatMessage, None, None]]:
-    def func(messages: Sequence[ChatMessage]) -> Generator[ChatMessage, None, None]:
+    def func(
+        messages: Sequence[ChatMessage], **kwargs
+    ) -> Generator[ChatMessage, None, None]:
         tool_args_json = tool_call_json_from_messages(
             messages, input_to_query_satisfied
         )
@@ -271,10 +273,10 @@ def mock_async_streaming_chat_message_with_tool_call_generator(
     input_to_query_satisfied, mock_streaming_chat_message_with_tool_call_generator
 ) -> Coroutine[None, None, AsyncGenerator[ChatMessage, None]]:
     async def coro(
-        messages: Sequence[ChatMessage],
+        messages: Sequence[ChatMessage], **kwargs
     ) -> AsyncGenerator[ChatMessage, None]:
         for chat_message in mock_streaming_chat_message_with_tool_call_generator(
-            messages
+            messages, **kwargs
         ):
             yield chat_message
 

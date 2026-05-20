@@ -23,7 +23,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import (
     MockLLM,
     MockFunctionCallingLLM,
-    MockToolCallingLLM,
+    _tool_calling_response_generator,
 )
 
 __all__ = [
@@ -40,7 +40,7 @@ __all__ = [
     "MessageRole",
     "MockLLM",
     "MockFunctionCallingLLM",
-    "MockToolCallingLLM",
+    "_tool_calling_response_generator",
     "ImageBlock",
     "TextBlock",
     "AudioBlock",
