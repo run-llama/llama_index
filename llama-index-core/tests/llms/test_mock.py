@@ -3,10 +3,16 @@ import json
 
 from typing import Optional
 from llama_index.core.llms import MockLLM
-from llama_index.core.llms.mock import MockFunctionCallingLLM, BlockToContentCallback
+from llama_index.core.llms.mock import (
+    MockFunctionCallingLLM,
+    MockToolCallingLLM,
+    BlockToContentCallback,
+)
 from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.tools import FunctionTool
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    MessageRole,
     TextBlock,
     DocumentBlock,
     ImageBlock,
@@ -229,3 +235,42 @@ def test_mock_function_calling_llm_get_tool_calls_from_response_empty() -> None:
 
     tool_calls = llm.get_tool_calls_from_response(response)
     assert len(tool_calls) == 0
+
+
+def test_mock_tool_calling_llm_calls_all_tools_with_defaults() -> None:
+    def get_weather(location: str = "Berlin") -> str:
+        return f"weather in {location}"
+
+    def add(a: int = 1, b: int = 2) -> int:
+        return a + b
+
+    tools = [
+        FunctionTool.from_defaults(get_weather),
+        FunctionTool.from_defaults(add),
+    ]
+    llm = MockToolCallingLLM()
+
+    response = llm.chat_with_tools(tools=tools, user_msg="call the tools")
+    tool_calls = llm.get_tool_calls_from_response(response)
+
+    assert [tool_call.tool_name for tool_call in tool_calls] == [
+        "get_weather",
+        "add",
+    ]
+    assert [tool_call.tool_kwargs for tool_call in tool_calls] == [
+        {"location": "Berlin"},
+        {"a": 1, "b": 2},
+    ]
+
+
+def test_mock_tool_calling_llm_returns_completion_after_tool_result() -> None:
+    llm = MockToolCallingLLM()
+
+    response = llm.chat(
+        messages=[
+            ChatMessage(role=MessageRole.USER, content="call the tools"),
+            ChatMessage(role=MessageRole.TOOL, content="tool result"),
+        ]
+    )
+
+    assert response.message.content == "Tool calls complete."

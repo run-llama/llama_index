@@ -20,7 +20,11 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.mock import MockLLM, MockFunctionCallingLLM
+from llama_index.core.llms.mock import (
+    MockLLM,
+    MockFunctionCallingLLM,
+    MockToolCallingLLM,
+)
 
 __all__ = [
     "CustomLLM",
@@ -36,6 +40,7 @@ __all__ = [
     "MessageRole",
     "MockLLM",
     "MockFunctionCallingLLM",
+    "MockToolCallingLLM",
     "ImageBlock",
     "TextBlock",
     "AudioBlock",

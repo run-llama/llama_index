@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import TypeAlias
 from base64 import b64decode
 from json import JSONDecodeError
+from uuid import uuid4
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
@@ -526,6 +527,94 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
                 )
             )
         return tool_selections
+
+
+class MockToolCallingLLM(MockFunctionCallingLLM):
+    """
+    A mock LLM that calls all tools with their pre-filled arguments.
+    """
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockToolCallingLLM"
+
+    def _build_tool_kwargs(self, tool: "BaseTool") -> dict[str, Any]:
+        schema = getattr(getattr(tool, "metadata", None), "fn_schema", None)
+        if schema is None:
+            return {}
+
+        tool_kwargs: dict[str, Any] = {}
+        for field_name, field_info in schema.model_fields.items():
+            if not field_info.is_required():
+                tool_kwargs[field_name] = field_info.get_default(
+                    call_default_factory=True
+                )
+        return tool_kwargs
+
+    def _has_tool_result(self, messages: Sequence[ChatMessage]) -> bool:
+        return any(message.role == MessageRole.TOOL for message in messages)
+
+    def _build_tool_call_blocks(
+        self, tools: Sequence["BaseTool"]
+    ) -> list[ToolCallBlock]:
+        return [
+            ToolCallBlock(
+                tool_call_id=f"mock-tool-call-{uuid4().hex}",
+                tool_name=tool.metadata.name or "",
+                tool_kwargs=self._build_tool_kwargs(tool),
+            )
+            for tool in tools
+        ]
+
+    def _chat_response(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        if self._has_tool_result(messages):
+            message = ChatMessage(
+                role=MessageRole.ASSISTANT, content="Tool calls complete."
+            )
+            return ChatResponse(message=message, delta=message.content or "")
+
+        tools = kwargs.get("tools") or []
+        tool_call_blocks = self._build_tool_call_blocks(tools)
+        if not tool_call_blocks:
+            message = ChatMessage(
+                role=MessageRole.ASSISTANT, content="No tools available."
+            )
+            return ChatResponse(message=message, delta=message.content or "")
+
+        message = ChatMessage(role=MessageRole.ASSISTANT, blocks=tool_call_blocks)
+        return ChatResponse(message=message, delta="")
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        return self._chat_response(messages, **kwargs)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        def _gen() -> ChatResponseGen:
+            yield self._chat_response(messages, **kwargs)
+
+        return _gen()
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        return self._chat_response(messages=messages, **kwargs)
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        response = self._chat_response(messages, **kwargs)
+
+        async def _gen() -> ChatResponseAsyncGen:
+            yield response
+
+        return _gen()
 
 
 class MockFunctionCallingLLMWithChatMemoryOfLastCall(MockFunctionCallingLLM):
