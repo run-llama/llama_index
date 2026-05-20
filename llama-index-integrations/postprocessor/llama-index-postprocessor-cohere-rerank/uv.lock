@@ -1988,14 +1988,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cohere", specifier = ">=5.15,<6" },
+    { name = "cohere", specifier = ">=5.15,<7" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "tenacity", specifier = ">=8.2.0,<10" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
+    { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=26.5.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "ipython", specifier = "==8.10.0" },

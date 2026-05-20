@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import pytest
 from pydantic import BaseModel
@@ -450,7 +450,9 @@ class TestTreeSummarize:
             ]
         )
 
-        def response_generator(_messages: Sequence[ChatMessage]) -> ChatMessage:
+        def response_generator(
+            _messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> ChatMessage:
             tool_args_json = mock_summary_bar.model_dump_json()
             return ChatMessage(
                 blocks=[
@@ -821,7 +823,9 @@ class TestTreeSummarize:
             ]
         )
 
-        def response_generator(_messages: Sequence[ChatMessage]) -> ChatMessage:
+        def response_generator(
+            _messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> ChatMessage:
             tool_args_json = mock_summary_bar.model_dump_json()
             return ChatMessage(
                 blocks=[

@@ -1849,7 +1849,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-airweave"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "airweave-sdk" },
@@ -1880,7 +1880,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "airweave-sdk", specifier = ">=0.1.0" },
+    { name = "airweave-sdk", specifier = ">=0.9.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 

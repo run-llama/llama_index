@@ -22,7 +22,7 @@ from llama_index.vector_stores.couchbase import (
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import VectorStoreIndex
 from couchbase.cluster import Cluster
-from couchbase.management.logic.search_index_logic import SearchIndex
+from couchbase.management.logic.search_index_mgmt_types import SearchIndex
 from couchbase.exceptions import SearchIndexNotFoundException
 
 
