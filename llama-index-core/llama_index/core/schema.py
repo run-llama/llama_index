@@ -49,6 +49,7 @@ from llama_index.core.bridge.pydantic import (
     field_serializer,
     field_validator,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -267,6 +268,27 @@ class BaseNode(BaseComponent):
 
     Generic abstract interface for retrievable nodes
 
+    Note:
+        ``ref_doc_id``, ``doc_id``, and ``document_id`` are not constructor
+        arguments. They are read-only properties derived from
+        ``relationships[NodeRelationship.SOURCE]``. To set the source
+        document for a node, assign a ``RelatedNodeInfo`` to the
+        ``SOURCE`` relationship explicitly, for example::
+
+            from llama_index.core.schema import (
+                NodeRelationship,
+                RelatedNodeInfo,
+                TextNode,
+            )
+
+            node = TextNode(text="hello")
+            node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+                node_id="my-doc-id"
+            )
+
+        Passing these legacy keys to the constructor raises a ``ValueError``
+        rather than being silently dropped by pydantic.
+
     """
 
     # hash is computed on local field, during the validation process
@@ -318,6 +340,34 @@ class BaseNode(BaseComponent):
         description="Separator between metadata fields when converting to string.",
         alias="metadata_seperator",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_legacy_source_kwargs(cls, values: Any) -> Any:
+        """
+        Reject legacy ``ref_doc_id``/``doc_id``/``document_id`` kwargs.
+
+        These names look like fields but are actually derived properties on
+        :class:`BaseNode`. Pydantic silently drops unknown kwargs, so users
+        passing them got a node with no source relationship and no warning
+        (see issue #19292). Raise a ``ValueError`` directing callers at the
+        canonical ``relationships[NodeRelationship.SOURCE]`` assignment.
+        """
+        if not isinstance(values, dict):
+            return values
+
+        legacy_keys = ("ref_doc_id", "doc_id", "document_id")
+        found = [key for key in legacy_keys if key in values]
+        if found:
+            raise ValueError(
+                f"{', '.join(found)} is not a valid constructor argument for "
+                f"{cls.__name__}. These are read-only properties derived from "
+                "the node's SOURCE relationship. Set the source document "
+                "explicitly instead, e.g.:\n"
+                "    node.relationships[NodeRelationship.SOURCE] = "
+                "RelatedNodeInfo(node_id=...)"
+            )
+        return values
 
     @classmethod
     @abstractmethod
@@ -763,7 +813,16 @@ class Node(BaseNode):
 
 
 class TextNode(BaseNode):
-    """Provided for backward compatibility."""
+    """
+    Provided for backward compatibility.
+
+    Note:
+        ``ref_doc_id``, ``doc_id``, and ``document_id`` are not valid
+        constructor kwargs; they are read-only properties derived from
+        ``relationships[NodeRelationship.SOURCE]``. See :class:`BaseNode`
+        for the recommended replacement pattern.
+
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""

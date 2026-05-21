@@ -24,9 +24,10 @@ def source_node():
 
 @pytest.fixture
 def text_node(source_node: Document):
-    return TextNode(
-        id_="text_node", text="Hello, world!", ref_doc_id=source_node.ref_doc_id
-    )
+    # The SOURCE relationship is set inside the individual tests that need
+    # it; ``ref_doc_id`` is a read-only property and cannot be set via the
+    # constructor (see issue #19292).
+    return TextNode(id_="text_node", text="Hello, world!")
 
 
 @pytest.fixture

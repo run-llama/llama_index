@@ -9,6 +9,7 @@ from llama_index.core.schema import (
     NodeRelationship,
     ObjectType,
     RelatedNodeInfo,
+    TextNode,
 )
 
 
@@ -170,3 +171,29 @@ def test_get_embedding(MyNode):
 def test_as_related_node_info(MyNode):
     n = MyNode(id_="test_node")
     assert n.as_related_node_info().node_id == "test_node"
+
+
+@pytest.mark.parametrize("legacy_key", ["ref_doc_id", "doc_id", "document_id"])
+def test_textnode_rejects_legacy_source_kwargs(legacy_key):
+    """
+    Legacy ``ref_doc_id``/``doc_id``/``document_id`` kwargs were silently
+    dropped by pydantic (see issue #19292). They should now raise a
+    ``ValueError`` pointing at the canonical ``relationships`` assignment.
+    """
+    with pytest.raises(ValueError, match=legacy_key):
+        TextNode(text="hi", **{legacy_key: "abc"})
+
+    with pytest.raises(ValueError, match="NodeRelationship.SOURCE"):
+        TextNode(text="hi", **{legacy_key: "abc"})
+
+
+def test_textnode_accepts_source_relationship():
+    """
+    The recommended replacement should construct a node with a working
+    ``ref_doc_id`` property derived from the SOURCE relationship.
+    """
+    node = TextNode(
+        text="hi",
+        relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="abc")},
+    )
+    assert node.ref_doc_id == "abc"
