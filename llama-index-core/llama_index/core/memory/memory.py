@@ -67,6 +67,14 @@ DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
       {% elif block.path %}
         {{ (block.path | string) | audio }}
       {% endif %}
+    {% elif block.block_type == "video" %}
+      {% if block.url %}
+        {{ (block.url | string) | video }}
+      {% endif %}
+    {% elif block.block_type == "document" %}
+      {% if block.url %}
+        {{ (block.url | string) | document }}
+      {% endif %}
     {% endif %}
   {% endfor %}
 </{{ block_name }}>
@@ -228,6 +236,10 @@ class Memory(BaseMemory):
     video_token_size_estimate: int = Field(
         default=256,
         description="The token size estimate for video.",
+    )
+    document_token_size_estimate: int = Field(
+        default=2048,
+        description="The token size estimate for documents (e.g. PDFs).",
     )
     tokenizer_fn: Callable[[str], List] = Field(
         default_factory=get_tokenizer,
@@ -423,6 +435,8 @@ class Memory(BaseMemory):
                 token_count += self.video_token_size_estimate
             elif isinstance(block, AudioBlock):
                 token_count += self.audio_token_size_estimate
+            elif isinstance(block, DocumentBlock):
+                token_count += self.document_token_size_estimate
 
         return token_count
 
