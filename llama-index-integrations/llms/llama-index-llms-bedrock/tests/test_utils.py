@@ -8,6 +8,7 @@ from llama_index.llms.bedrock.utils import (
     AnthropicProvider,
     CohereProvider,
     Ai21Provider,
+    OpenAIProvider,
 )
 
 
@@ -48,6 +49,8 @@ from llama_index.llms.bedrock.utils import (
             "arn:aws:bedrock:us-east-1::foundation-model/ai21.jamba-1-5-large-v1:0",
             Ai21Provider,
         ),
+        ("openai.gpt-oss-120b-1:0", OpenAIProvider),
+        ("openai.gpt-oss-20b-1:0", OpenAIProvider),
     ],
 )
 def test_get_provider(model: str, provider_cls):
