@@ -1045,6 +1045,99 @@ def test_thoughts_in_response() -> None:
     assert chat_response.message.content == "This is not a thought."
 
 
+def test_usage_metadata_in_additional_kwargs() -> None:
+    """
+    Token counts from usage_metadata are exposed via additional_kwargs.
+
+    Regression test for #19293: TokenCountingHandler and OpenInference
+    instrumentation read prompt_tokens / completion_tokens / total_tokens
+    from ChatResponse.additional_kwargs. For Gemini 2.5 thinking models the
+    response also carries thoughts_token_count, which should be surfaced
+    alongside the standard counters.
+    """
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Hello."
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
+    mock_response.candidates[0].model_dump = MagicMock(return_value={})
+    mock_response.prompt_feedback = None
+    mock_response.function_calls = None
+    del mock_response.cached_content
+
+    mock_response.usage_metadata = MagicMock()
+    mock_response.usage_metadata.prompt_token_count = 11
+    mock_response.usage_metadata.candidates_token_count = 22
+    mock_response.usage_metadata.total_token_count = 40
+    mock_response.usage_metadata.thoughts_token_count = 7
+    mock_response.usage_metadata.cached_content_token_count = 3
+    mock_response.usage_metadata.model_dump.return_value = {
+        "prompt_token_count": 11,
+        "candidates_token_count": 22,
+        "total_token_count": 40,
+        "thoughts_token_count": 7,
+        "cached_content_token_count": 3,
+    }
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.additional_kwargs["prompt_tokens"] == 11
+    assert chat_response.additional_kwargs["completion_tokens"] == 22
+    assert chat_response.additional_kwargs["total_tokens"] == 40
+    assert chat_response.additional_kwargs["thoughts_token_count"] == 7
+    assert chat_response.additional_kwargs["cached_content_token_count"] == 3
+
+    # The same kwargs are mirrored onto the inner ChatMessage so callbacks
+    # that read message.additional_kwargs see the same values.
+    assert chat_response.message.additional_kwargs["prompt_tokens"] == 11
+    assert chat_response.message.additional_kwargs["thoughts_token_count"] == 7
+
+
+def test_usage_metadata_without_thoughts_token_count() -> None:
+    """Non-thinking Gemini responses omit thoughts_token_count entirely."""
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Hello."
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
+    mock_response.candidates[0].model_dump = MagicMock(return_value={})
+    mock_response.prompt_feedback = None
+    mock_response.function_calls = None
+    del mock_response.cached_content
+
+    mock_response.usage_metadata = MagicMock()
+    mock_response.usage_metadata.prompt_token_count = 5
+    mock_response.usage_metadata.candidates_token_count = 8
+    mock_response.usage_metadata.total_token_count = 13
+    mock_response.usage_metadata.thoughts_token_count = None
+    mock_response.usage_metadata.cached_content_token_count = None
+    mock_response.usage_metadata.model_dump.return_value = {
+        "prompt_token_count": 5,
+        "candidates_token_count": 8,
+        "total_token_count": 13,
+    }
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+
+    assert chat_response.additional_kwargs["prompt_tokens"] == 5
+    assert chat_response.additional_kwargs["completion_tokens"] == 8
+    assert chat_response.additional_kwargs["total_tokens"] == 13
+    assert "thoughts_token_count" not in chat_response.additional_kwargs
+    assert "cached_content_token_count" not in chat_response.additional_kwargs
+
+
 def test_thoughts_without_thought_response() -> None:
     """Test response processing when thought summaries are not present."""
     # Mock response without cached_content

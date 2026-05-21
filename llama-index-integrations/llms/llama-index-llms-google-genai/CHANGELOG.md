@@ -1,5 +1,11 @@
 # CHANGELOG — llama-index-llms-genai
 
+## [v0.9.6]
+
+### Fixed
+
+- Forward `thoughts_token_count` and `cached_content_token_count` from `usage_metadata` into `ChatResponse.additional_kwargs` so Gemini 2.5 thinking-token and prompt-cache usage is visible to `TokenCountingHandler` and OpenInference instrumentation (#19293).
+
 ## [v0.9.4]
 
 ### Changed
