@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
-SEARCH_TYPE = Literal["auto", "fast", "instant", "deep"]
+SEARCH_TYPE = Literal["auto", "fast", "deep"]
 CATEGORY = Literal[
     "company", "people", "research paper", "news", "personal site", "financial report"
 ]
@@ -58,7 +58,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15". Get the date from `current_date`
             end_published_date (Optional[str]): End date string
-            type: Search type — auto, fast, instant, or deep.
+            type: Search type — auto, fast, or deep.
             category: Optional category filter.
 
         """
@@ -139,7 +139,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15".
             end_published_date (Optional[str]): End date string
-            type: Search type — auto, fast, instant, or deep.
+            type: Search type — auto, fast, or deep.
             category: Optional category filter.
 
         """
@@ -179,7 +179,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15".
             end_published_date (Optional[str]): End date string
-            type: Search type — auto, fast, instant, or deep.
+            type: Search type — auto, fast, or deep.
             category: Optional category filter.
 
         """
