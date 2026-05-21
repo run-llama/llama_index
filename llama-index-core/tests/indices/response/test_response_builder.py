@@ -11,6 +11,7 @@ from llama_index.core.response_synthesizers import (
     ResponseMode,
     get_response_synthesizer,
 )
+from llama_index.core.response_synthesizers.refine import DEFAULT_RESPONSE_PADDING_SIZE
 from llama_index.core.schema import Document
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.mock_utils.mock_utils import mock_tokenizer
@@ -63,7 +64,7 @@ def test_compact_response(patch_llm_predictor, patch_token_text_splitter) -> Non
     # max input size is 11, prompt is two tokens (the query) --> 9 tokens
     # --> padding is 1 --> 8 tokens
     prompt_helper = PromptHelper(
-        context_window=11,
+        context_window=11 + DEFAULT_RESPONSE_PADDING_SIZE,
         num_output=0,
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
