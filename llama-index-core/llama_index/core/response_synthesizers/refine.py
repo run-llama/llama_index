@@ -481,6 +481,10 @@ class Refine(BaseSynthesizer):
             program = self._program_factory(prompt_template)
             if resp := self._update_response(program, prompt_kwargs, response_kwargs):
                 response = resp
+                if self._structured_answer_filtering:
+                    if isinstance(response, Generator):
+                        response = get_response_text(response)
+                    break
 
         if isinstance(response, str):
             if self._output_cls is not None:
@@ -563,6 +567,10 @@ class Refine(BaseSynthesizer):
                 program, prompt_kwargs, response_kwargs
             ):
                 response = resp
+                if self._structured_answer_filtering:
+                    if isinstance(response, AsyncGenerator):
+                        response = await aget_response_text(response)
+                    break
 
         if isinstance(response, str):
             if self._output_cls is not None:
