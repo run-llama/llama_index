@@ -115,7 +115,10 @@ def build_metadata_filter_fn(
         ) -> bool:
             """Evaluate a single filter operator against a metadata value."""
             if metadata_value is None:
-                return False
+                # A missing value is, trivially, not equal to / not contained in
+                # the requested value, so negation operators should match. This
+                # keeps `key != value` consistent with `NOT(key == value)`.
+                return operator in (FilterOperator.NE, FilterOperator.NIN)
 
             if operator == FilterOperator.EQ:
                 return metadata_value == value

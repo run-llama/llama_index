@@ -99,6 +99,60 @@ def test_is_empty_matches_missing_and_empty_values() -> None:
     assert fn("n3")
 
 
+def test_ne_matches_nodes_missing_the_key() -> None:
+    # A node that does not have the filtered key is, trivially, not equal to the
+    # given value and should therefore match a `!=` filter. This also keeps
+    # `key != value` consistent with `NOT(key == value)`.
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="category", operator=FilterOperator.NE, value="news")
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # None of the nodes have a "category" key, so all should match.
+    assert fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
+def test_nin_matches_nodes_missing_the_key() -> None:
+    # A node that does not have the filtered key is not contained in the given
+    # list and should match a `nin` filter, mirroring `NOT(key in value)`.
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="category", operator=FilterOperator.NIN, value=["news"])
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # None of the nodes have a "category" key, so all should match.
+    assert fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
+def test_ne_on_missing_key_matches_not_eq_condition() -> None:
+    # `key != value` must produce the same result as `NOT(key == value)` for a
+    # node that is missing the key entirely.
+    ne_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="category", operator=FilterOperator.NE, value="news")
+        ]
+    )
+    not_eq_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="category", operator=FilterOperator.EQ, value="news")
+        ],
+        condition=FilterCondition.NOT,
+    )
+    ne_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, ne_filters)
+    not_eq_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, not_eq_filters)
+
+    for node_id in _METADATA_BY_ID:
+        assert ne_fn(node_id) == not_eq_fn(node_id)
+
+
 def test_text_match_insensitive_uses_case_insensitive_search() -> None:
     filters = MetadataFilters(
         filters=[
