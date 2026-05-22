@@ -385,7 +385,7 @@ class LLM(BaseLLM):
     def _structured_predict_with_response(
         self,
         output_cls: Type[Model],
-        prompt: PromptTemplate,
+        prompt: BasePromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> StructuredPredictionResult[Model]:
@@ -470,7 +470,7 @@ class LLM(BaseLLM):
     async def _astructured_predict_with_response(
         self,
         output_cls: Type[Model],
-        prompt: PromptTemplate,
+        prompt: BasePromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> StructuredPredictionResult[Model]:
