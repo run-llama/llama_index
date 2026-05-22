@@ -43,10 +43,13 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     response = chat_engine.stream_chat("Hello World!")
 
     num_iters = 0
-    for _ in response.response_gen:
+    response_text = ""
+    for chunk in response.response_gen:
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -54,10 +57,13 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
     response = chat_engine.stream_chat("What is the capital of the moon?")
 
     num_iters = 0
-    for _ in response.response_gen:
+    response_text = ""
+    for chunk in response.response_gen:
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
@@ -119,10 +125,13 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     response = await chat_engine.astream_chat("Hello World!")
 
     num_iters = 0
-    async for _ in response.async_response_gen():
+    response_text = ""
+    async for chunk in response.async_response_gen():
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert len(chat_engine.chat_history) == 2
@@ -130,10 +139,13 @@ async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
     response = await chat_engine.astream_chat("What is the capital of the moon?")
 
     num_iters = 0
-    async for _ in response.async_response_gen():
+    response_text = ""
+    async for chunk in response.async_response_gen():
         num_iters += 1
+        response_text += chunk
 
-    assert num_iters == 1
+    assert num_iters > 1
+    assert response_text.rstrip() == str(response)
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
