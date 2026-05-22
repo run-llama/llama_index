@@ -594,7 +594,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=json.loads(tool_call["input"])
+                                    if isinstance(tool_call.get("input"), str)
+                                    else tool_call.get("input", {}),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -650,7 +652,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=json.loads(tool_call["input"])
+                                    if isinstance(tool_call.get("input"), str)
+                                    else tool_call.get("input", {}),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -880,7 +884,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=json.loads(tool_call["input"])
+                                    if isinstance(tool_call.get("input"), str)
+                                    else tool_call.get("input", {}),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -936,7 +942,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=json.loads(tool_call["input"])
+                                    if isinstance(tool_call.get("input"), str)
+                                    else tool_call.get("input", {}),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
