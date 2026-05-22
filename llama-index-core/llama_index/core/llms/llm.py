@@ -1,10 +1,12 @@
 from collections import ChainMap
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
     List,
     Generator,
     AsyncGenerator,
+    Generic,
     Optional,
     Protocol,
     Sequence,
@@ -18,8 +20,10 @@ from typing_extensions import Annotated
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
@@ -81,6 +85,14 @@ class ToolSelection(BaseModel):
             return handler(v)
         except ValidationError:
             return handler({})
+
+
+@dataclass
+class StructuredPredictionResult(Generic[Model]):
+    """Internal structured prediction result with optional source response."""
+
+    output: Model
+    source_response: Optional[Union[ChatResponse, CompletionResponse]] = None
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -370,6 +382,23 @@ class LLM(BaseLLM):
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
+    def _structured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal structured predict hook that may preserve a source response."""
+        return StructuredPredictionResult(
+            output=self.structured_predict(
+                output_cls=output_cls,
+                prompt=prompt,
+                llm_kwargs=llm_kwargs,
+                **prompt_args,
+            )
+        )
+
     @dispatcher.span
     async def astructured_predict(
         self,
@@ -437,6 +466,23 @@ class LLM(BaseLLM):
 
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
+
+    async def _astructured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal async structured predict hook that may preserve a source response."""
+        return StructuredPredictionResult(
+            output=await self.astructured_predict(
+                output_cls=output_cls,
+                prompt=prompt,
+                llm_kwargs=llm_kwargs,
+                **prompt_args,
+            )
+        )
 
     def _structured_stream_call(
         self,

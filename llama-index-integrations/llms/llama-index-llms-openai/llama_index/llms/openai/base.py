@@ -61,7 +61,7 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.llms.llm import Model, StructuredPredictionResult, ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.program.utils import FlexibleModel
@@ -1144,21 +1144,41 @@ class OpenAI(FunctionCallingLLM):
         **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        return self._structured_predict_with_response(
+            output_cls=output_cls,
+            prompt=prompt,
+            llm_kwargs=llm_kwargs,
+            **prompt_args,
+        ).output
+
+    def _structured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal structured predict that preserves the source chat response."""
+        llm_kwargs = dict(llm_kwargs or {})
 
         if self._should_use_structure_outputs():
             messages = self._extend_messages(prompt.format_messages(**prompt_args))
             llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
             response = self.chat(messages, **llm_kwargs)
-            return output_cls.model_validate_json(str(response.message.content))
+            return StructuredPredictionResult(
+                output=output_cls.model_validate_json(str(response.message.content)),
+                source_response=response,
+            )
 
         # when uses function calling to extract structured outputs
         # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        return StructuredPredictionResult(
+            output=super().structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
         )
 
     @dispatcher.span
@@ -1170,21 +1190,43 @@ class OpenAI(FunctionCallingLLM):
         **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
-        llm_kwargs = llm_kwargs or {}
+        return (
+            await self._astructured_predict_with_response(
+                output_cls=output_cls,
+                prompt=prompt,
+                llm_kwargs=llm_kwargs,
+                **prompt_args,
+            )
+        ).output
+
+    async def _astructured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        """Internal async structured predict that preserves the source chat response."""
+        llm_kwargs = dict(llm_kwargs or {})
 
         if self._should_use_structure_outputs():
             messages = self._extend_messages(prompt.format_messages(**prompt_args))
             llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
             response = await self.achat(messages, **llm_kwargs)
-            return output_cls.model_validate_json(str(response.message.content))
+            return StructuredPredictionResult(
+                output=output_cls.model_validate_json(str(response.message.content)),
+                source_response=response,
+            )
 
         # when uses function calling to extract structured outputs
         # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        return StructuredPredictionResult(
+            output=await super().astructured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
         )
 
     def _structured_stream_call(
