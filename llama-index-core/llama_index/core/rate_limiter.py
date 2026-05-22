@@ -107,6 +107,7 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
     _token_refill_rate: float = PrivateAttr(default=0.0)
     _last_refill_time: float = PrivateAttr(default=0.0)
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    _async_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
@@ -206,7 +207,7 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
 
         """
         while True:
-            with self._lock:
+            async with self._async_lock:
                 self._refill()
                 wait = self._wait_time(num_tokens)
                 if wait <= 0:
@@ -284,6 +285,7 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
     _request_timestamps: Deque[float] = PrivateAttr(default_factory=deque)
     _token_usage: Deque[Tuple[float, float]] = PrivateAttr(default_factory=deque)
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    _async_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
 
     @model_validator(mode="after")
     def _check_limits(self) -> "SlidingWindowRateLimiter":
@@ -388,7 +390,7 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         """
         while True:
             now = time.monotonic()
-            with self._lock:
+            async with self._async_lock:
                 self._prune_request_timestamps(now)
                 self._prune_token_usage(now)
                 wait = self._wait_time(now, num_tokens)
