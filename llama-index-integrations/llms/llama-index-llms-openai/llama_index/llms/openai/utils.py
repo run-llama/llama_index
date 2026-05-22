@@ -83,6 +83,8 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
+    "gpt-5.5": 1050000,
+    "gpt-5.5-2026-04-23": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
@@ -231,6 +233,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-5",
     "gpt-5.2",
     "gpt-5.4",
+    "gpt-5.5",
 ]
 
 
@@ -495,11 +498,15 @@ def to_openai_message_dict(
             continue
         elif isinstance(block, ToolCallBlock):
             try:
+                # OpenAI API expects arguments as a JSON string, not a dict
+                arguments = block.tool_kwargs
+                if isinstance(arguments, dict):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
