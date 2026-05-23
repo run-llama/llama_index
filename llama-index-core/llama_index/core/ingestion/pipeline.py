@@ -826,7 +826,7 @@ class IngestionPipeline(BaseModel):
                 )
                 num_workers = num_cpus
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             with ProcessPoolExecutor(max_workers=num_workers) as p:
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
