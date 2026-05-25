@@ -12,6 +12,7 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow.errors import WorkflowRuntimeError
+from llama_index.core.workflow import Context
 
 
 def _response_generator_from_list(responses: List[ChatMessage]):
@@ -513,3 +514,54 @@ async def test_run_id_default(function_agent: FunctionAgent) -> None:
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+@pytest.mark.asyncio
+async def test_function_agent_initial_state_isolated_between_runs():
+    async def bump_and_note(random_arg: str, ctx_val: Context):
+        state = await ctx_val.store.get("state")
+        state["counter"] += 1
+        state["notes"].append("x")
+        await ctx_val.store.set("state", state)
+        return f"state updated: {state}"
+
+    tool_call_msg = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content="calling tool",
+        additional_kwargs={
+            "tool_calls": [
+                ToolSelection(
+                    tool_id="t",
+                    tool_name="bump_and_note",
+                    tool_kwargs={"random_arg": "x"},
+                )
+            ]
+        },
+    )
+    final_msg = ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[bump_and_note],
+        initial_state={"counter": 0, "notes": []},
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [tool_call_msg, final_msg, tool_call_msg, final_msg]
+            )
+        ),
+    )
+
+    handler1 = agent.run(user_msg="go")
+    await handler1
+    state1 = await handler1.ctx.store.get("state")
+    assert state1["counter"] == 1
+    assert state1["notes"] == ["x"]
+
+    handler2 = agent.run(user_msg="go")
+    await handler2
+    state2 = await handler2.ctx.store.get("state")
+    assert state2["counter"] == 1
+    assert state2["notes"] == ["x"]
+
+    assert agent.initial_state == {"counter": 0, "notes": []}
