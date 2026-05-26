@@ -2,7 +2,9 @@ import logging
 import os
 from typing import Any, Callable, List, Optional
 
-import cohere
+from cohere.errors.gateway_timeout_error import GatewayTimeoutError
+from cohere.errors.internal_server_error import InternalServerError
+from cohere.errors.service_unavailable_error import ServiceUnavailableError
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
@@ -38,9 +40,9 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         retry=(
             retry_if_exception_type(
                 (
-                    cohere.errors.ServiceUnavailableError,
-                    cohere.errors.InternalServerError,
-                    cohere.errors.GatewayTimeoutError,
+                    ServiceUnavailableError,
+                    InternalServerError,
+                    GatewayTimeoutError,
                 )
             )
         ),
