@@ -196,9 +196,16 @@ class ExaToolSpec(BaseToolSpec):
             kwargs["category"] = category
 
         response = self.client.search_and_contents(query, **kwargs)
-        return [Document(text=document.highlights[0]) for document in response.results]
+        return [
+            Document(
+                text=document.highlights[0]
+                if document.highlights
+                else ""
+            )
+            for document in response.results
+        ]
 
-    def current_date(self):
+    def current_date(self) -> str:
         """
         A function to return todays date.
 
