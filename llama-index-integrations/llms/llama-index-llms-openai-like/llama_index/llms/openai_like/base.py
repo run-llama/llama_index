@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -105,6 +105,14 @@ class OpenAILike(OpenAI):
         default=False,
         description=LLMMetadata.model_fields["is_function_calling_model"].description,
     )
+    extra_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Extra parameters to include in the request body sent to the API. "
+            "Useful for provider-specific parameters (e.g., DeepSeek thinking). "
+            "These will be merged into additional_kwargs automatically."
+        ),
+    )
     should_use_structured_outputs: bool = Field(
         default=False,
         # https://platform.openai.com/docs/guides/structured-outputs
@@ -123,6 +131,14 @@ class OpenAILike(OpenAI):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
+        # Merge extra_body into additional_kwargs so it gets sent with every request
+        if self.extra_body is not None:
+            if "extra_body" not in self.additional_kwargs:
+                self.additional_kwargs["extra_body"] = {}
+            self.additional_kwargs["extra_body"] = {
+                **self.additional_kwargs.get("extra_body", {}),
+                **self.extra_body,
+            }
         if isinstance(self.tokenizer, str):
             try:
                 import transformers  # noqa: F401
