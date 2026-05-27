@@ -141,3 +141,49 @@ def test_as_retriever(documents: List[Document]) -> None:
         retriever_mode=ListRetrieverMode.EMBEDDING
     )
     assert isinstance(embedding_retriever, BaseRetriever)
+
+
+def test_refresh_ref_docs_preserves_kwargs_across_multiple_documents(
+    documents: List[Document], patch_token_text_splitter
+) -> None:
+    """Regression test for issue #21518.
+
+    ``refresh_ref_docs()`` and ``arefresh_ref_docs()`` called ``.pop()`` on
+    ``insert_kwargs`` / ``update_kwargs`` inside the document loop, silently
+    dropping them after the first document.
+
+    The fix extracts the kwargs before the loop so all documents receive them.
+    """
+    from typing import Any
+    from unittest.mock import MagicMock, patch
+
+    more_documents = [
+        Document(text=f"doc {i}", id_=f"doc_{i}")
+        for i in range(3)
+    ]
+
+    summary_index = SummaryIndex([])
+
+    # Patch insert to capture the kwargs it receives
+    insert_calls: list[dict[str, Any]] = []
+
+    def mock_insert(doc, **kwargs):
+        insert_calls.append(kwargs)
+        # Call original to actually insert
+        original_insert = SummaryIndex.insert
+        return original_insert(summary_index, doc, **kwargs)
+
+    with patch.object(summary_index, "insert", side_effect=mock_insert):
+        summary_index.refresh_ref_docs(
+            more_documents, insert_kwargs={"my_flag": True, "batch": 42}
+        )
+
+    # All three documents should have received the same insert_kwargs
+    assert len(insert_calls) == 3, f"Expected 3 insert calls, got {len(insert_calls)}"
+    for i, call_kwargs in enumerate(insert_calls):
+        assert call_kwargs.get("my_flag") is True, (
+            f"Document {i} did not receive my_flag=True, got: {call_kwargs}"
+        )
+        assert call_kwargs.get("batch") == 42, (
+            f"Document {i} did not receive batch=42, got: {call_kwargs}"
+        )
