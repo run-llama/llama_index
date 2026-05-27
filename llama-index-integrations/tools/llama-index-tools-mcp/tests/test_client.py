@@ -1,10 +1,16 @@
+import base64
 import os
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, patch
+
 from httpx import AsyncClient
 import pytest
 
+from llama_index.core.llms import AudioBlock, ImageBlock, TextBlock
 from llama_index.tools.mcp import BasicMCPClient
 from llama_index.tools.mcp.client import enable_sse
 from mcp import types
+from pydantic import AnyUrl
 
 
 # Path to the test server script - adjust as needed
@@ -259,3 +265,147 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+def _make_mock_client() -> BasicMCPClient:
+    return BasicMCPClient("python", args=["server.py"], timeout=5)
+
+
+def _make_prompt_result(role: str, content) -> types.GetPromptResult:
+    return types.GetPromptResult(
+        messages=[types.PromptMessage(role=role, content=content)]
+    )
+
+
+@asynccontextmanager
+async def _mock_session(prompt_result: types.GetPromptResult):
+    session = AsyncMock()
+    session.get_prompt = AsyncMock(return_value=prompt_result)
+    yield session
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_text_resource():
+    """EmbeddedResource with TextResourceContents yields a TextBlock."""
+    resource = types.TextResourceContents(
+        uri=AnyUrl("file:///hello.txt"), text="hello from resource"
+    )
+    embedded = types.EmbeddedResource(type="resource", resource=resource)
+    prompt_result = _make_prompt_result("user", embedded)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], TextBlock)
+    assert messages[0].blocks[0].text == "hello from resource"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_image_blob_resource():
+    """EmbeddedResource with BlobResourceContents (image) yields an ImageBlock."""
+    fake_png = base64.b64encode(b"\x89PNG\r\n").decode()
+    resource = types.BlobResourceContents(
+        uri=AnyUrl("file:///photo.png"),
+        blob=fake_png,
+        mimeType="image/png",
+    )
+    embedded = types.EmbeddedResource(type="resource", resource=resource)
+    prompt_result = _make_prompt_result("user", embedded)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], ImageBlock)
+    assert messages[0].blocks[0].image_mimetype == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_audio_blob_resource():
+    """EmbeddedResource with BlobResourceContents (audio) yields an AudioBlock."""
+    fake_mp3 = base64.b64encode(b"ID3\x03").decode()
+    resource = types.BlobResourceContents(
+        uri=AnyUrl("file:///clip.mp3"),
+        blob=fake_mp3,
+        mimeType="audio/mpeg",
+    )
+    embedded = types.EmbeddedResource(type="resource", resource=resource)
+    prompt_result = _make_prompt_result("user", embedded)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], AudioBlock)
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_unknown_blob_resource():
+    """EmbeddedResource with BlobResourceContents (unknown type) yields a TextBlock."""
+    fake_data = base64.b64encode(b"\x00\x01\x02").decode()
+    resource = types.BlobResourceContents(
+        uri=AnyUrl("file:///data.bin"),
+        blob=fake_data,
+        mimeType="application/octet-stream",
+    )
+    embedded = types.EmbeddedResource(type="resource", resource=resource)
+    prompt_result = _make_prompt_result("user", embedded)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], TextBlock)
+    assert "application/octet-stream" in messages[0].blocks[0].text
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_audio_content():
+    """AudioContent yields an AudioBlock."""
+    fake_wav = base64.b64encode(b"RIFF").decode()
+    audio = types.AudioContent(type="audio", data=fake_wav, mimeType="audio/wav")
+    prompt_result = _make_prompt_result("user", audio)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], AudioBlock)
+    assert messages[0].blocks[0].format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_resource_link():
+    """ResourceLink yields a TextBlock containing the URI."""
+    link = types.ResourceLink(
+        type="resource_link",
+        uri=AnyUrl("file:///docs/readme.md"),
+        name="README",
+    )
+    prompt_result = _make_prompt_result("user", link)
+    client = _make_mock_client()
+
+    with patch.object(
+        client, "_run_session", return_value=_mock_session(prompt_result)
+    ):
+        messages = await client.get_prompt("test_prompt")
+
+    assert len(messages) == 1
+    assert isinstance(messages[0].blocks[0], TextBlock)
+    assert "readme.md" in messages[0].blocks[0].text
