@@ -438,14 +438,16 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("refresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
+            _insert_kwargs = update_kwargs.get("insert_kwargs", {})
+            _update_kwargs = update_kwargs.get("update_kwargs", {})
             for i, document in enumerate(documents):
                 existing_doc_hash = self._docstore.get_document_hash(document.id_)
                 if existing_doc_hash is None:
-                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    self.insert(document, **_insert_kwargs)
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     self.update_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
+                        document, **_update_kwargs
                     )
                     refreshed_documents[i] = True
 
@@ -463,18 +465,20 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("arefresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
+            _insert_kwargs = update_kwargs.get("insert_kwargs", {})
+            _update_kwargs = update_kwargs.get("update_kwargs", {})
             for i, document in enumerate(documents):
                 existing_doc_hash = await self._docstore.aget_document_hash(
                     document.id_
                 )
                 if existing_doc_hash is None:
                     await self.ainsert(
-                        document, **update_kwargs.pop("insert_kwargs", {})
+                        document, **_insert_kwargs
                     )
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     await self.aupdate_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
+                        document, **_update_kwargs
                     )
                     refreshed_documents[i] = True
             return refreshed_documents
