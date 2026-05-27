@@ -51,6 +51,30 @@ agent = FunctionAgent(
 resp = await agent.run("What is the weather in Tokyo?")
 ```
 
+
+
+## Real-world example: AgentScrape (x402 paid server)
+
+For a working remote MCP server you can hit without running anything locally,
+[AgentScrape](https://agent-scrape.healingsunhaven.workers.dev) is a live
+Streamable HTTP MCP service using the [x402](https://www.x402.org) protocol
+for pay-per-call billing in USDC on Base mainnet. It exposes six web-scraping
+tools and has a 10-call free tier per wallet, so this example works
+zero-config.
+
+```python
+from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
+
+mcp_client = BasicMCPClient(
+    "https://agent-scrape.healingsunhaven.workers.dev/mcp"
+)
+tools = McpToolSpec(client=mcp_client).to_tool_list()
+print(f"Loaded {len(tools)} AgentScrape tools")
+```
+
+A complete LlamaIndex-agent example with payment headers and an agent runtime
+is at [`examples/agentscrape_x402_example.py`](examples/agentscrape_x402_example.py).
+
 ## Helper Functions
 
 This package also includes several helper functions for working with MCP Servers.
