@@ -28,6 +28,38 @@ from llama_index.core.vector_stores.types import (
 
 logger = logging.getLogger()
 
+_SAFE_PICKLE_GLOBALS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("builtins", "dict"),
+        ("builtins", "list"),
+        ("builtins", "set"),
+        ("builtins", "frozenset"),
+        ("builtins", "tuple"),
+        ("builtins", "str"),
+        ("builtins", "bytes"),
+        ("builtins", "bytearray"),
+        ("builtins", "int"),
+        ("builtins", "float"),
+        ("builtins", "complex"),
+        ("builtins", "bool"),
+        ("builtins", "NoneType"),
+    }
+)
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that restricts globals to an allowlist (CWE-502)."""
+
+    def find_class(self, module: str, name: str) -> object:  # type: ignore[override]
+        if (module, name) in _SAFE_PICKLE_GLOBALS:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Refusing to unpickle '{module}.{name}': global not in allowlist. "
+            "If you need to load custom object types, use a purpose-built "
+            "serialization format instead of pickle."
+        )
+
+
 DEFAULT_PERSIST_PATH = os.path.join(
     DEFAULT_PERSIST_DIR, f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
 )
@@ -123,7 +155,7 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         config_path = config_path if jsonconfig else parent_directory / "config"
         # Load configuration
         with open(config_path, "r" if jsonconfig else "rb") as f:
-            config = json.load(f) if jsonconfig else pickle.load(f)
+            config = json.load(f) if jsonconfig else _RestrictedUnpickler(f).load()
 
         logger.info(f"Loading {__name__} from {persist_path}.")
         txtai_index = txtai.ann.ANNFactory.create(config)

@@ -13,6 +13,46 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
 
+_SAFE_PICKLE_GLOBALS: frozenset[tuple[str, str]] = frozenset(
+    {
+        # Builtins
+        ("builtins", "dict"),
+        ("builtins", "list"),
+        ("builtins", "set"),
+        ("builtins", "frozenset"),
+        ("builtins", "tuple"),
+        ("builtins", "str"),
+        ("builtins", "bytes"),
+        ("builtins", "bytearray"),
+        ("builtins", "int"),
+        ("builtins", "float"),
+        ("builtins", "complex"),
+        ("builtins", "bool"),
+        ("builtins", "NoneType"),
+        # NumPy (required for dense/colbert vectors and sparse weights arrays)
+        ("numpy", "dtype"),
+        ("numpy", "ndarray"),
+        ("numpy.core.numeric", "_frombuffer"),
+        ("numpy._core.numeric", "_frombuffer"),
+        ("numpy.core.multiarray", "_reconstruct"),
+        ("numpy._core.multiarray", "_reconstruct"),
+    }
+)
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that restricts globals to an allowlist (CWE-502)."""
+
+    def find_class(self, module: str, name: str) -> object:  # type: ignore[override]
+        if (module, name) in _SAFE_PICKLE_GLOBALS:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Refusing to unpickle '{module}.{name}': global not in allowlist. "
+            "If you need to load custom object types, use a purpose-built "
+            "serialization format instead of pickle."
+        )
+
+
 class BGEM3Index(BaseIndex[IndexDict]):
     """
     Store for BGE-M3 with PLAID indexing.
@@ -154,9 +194,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
             int(k): v for k, v in index.index_struct.nodes_dict.items()
         }
         index._docs_pos_to_node_id = docs_pos_to_node_id
-        index._multi_embed_store = pickle.load(
-            open(Path(persist_dir) / "multi_embed_store.pkl", "rb")
-        )
+        with open(Path(persist_dir) / "multi_embed_store.pkl", "rb") as f:
+            index._multi_embed_store = _RestrictedUnpickler(f).load()
         return index
 
     def query(self, query_str: str, top_k: int = 10) -> List[NodeWithScore]:
