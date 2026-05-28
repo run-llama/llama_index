@@ -436,17 +436,21 @@ class BaseIndex(Generic[IS], ABC):
         updating documents that have any changes in text or metadata. It
         will also insert any documents that previously were not stored.
         """
+        # Extract per-operation kwargs once, outside the loop.  Using .pop()
+        # inside the loop consumed these keys after the first document, so all
+        # subsequent documents silently received empty dicts.  See
+        # https://github.com/run-llama/llama_index/issues/21518
+        insert_kwargs = update_kwargs.get("insert_kwargs", {})
+        doc_update_kwargs = update_kwargs.get("update_kwargs", {})
         with self._callback_manager.as_trace("refresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
                 existing_doc_hash = self._docstore.get_document_hash(document.id_)
                 if existing_doc_hash is None:
-                    self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    self.insert(document, **insert_kwargs)
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
-                    self.update_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
-                    )
+                    self.update_ref_doc(document, **doc_update_kwargs)
                     refreshed_documents[i] = True
 
             return refreshed_documents
@@ -461,6 +465,10 @@ class BaseIndex(Generic[IS], ABC):
         updating documents that have any changes in text or metadata. It
         will also insert any documents that previously were not stored.
         """
+        # Extract per-operation kwargs once, outside the loop (same fix as the
+        # sync version — .pop() inside the loop drops keys after first use).
+        insert_kwargs = update_kwargs.get("insert_kwargs", {})
+        doc_update_kwargs = update_kwargs.get("update_kwargs", {})
         with self._callback_manager.as_trace("arefresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
@@ -468,14 +476,10 @@ class BaseIndex(Generic[IS], ABC):
                     document.id_
                 )
                 if existing_doc_hash is None:
-                    await self.ainsert(
-                        document, **update_kwargs.pop("insert_kwargs", {})
-                    )
+                    await self.ainsert(document, **insert_kwargs)
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
-                    await self.aupdate_ref_doc(
-                        document, **update_kwargs.pop("update_kwargs", {})
-                    )
+                    await self.aupdate_ref_doc(document, **doc_update_kwargs)
                     refreshed_documents[i] = True
             return refreshed_documents
 
