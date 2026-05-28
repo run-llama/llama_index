@@ -24,12 +24,15 @@ over 65 data loaders from various API's and document formats.
 Here is a sample code snippet of showing how to load a document from LlamaHub
 into the JSON format that `/upsert` expects:
 
+```bash
+pip install llama-index-readers-web
+```
+
 ```python
-from llama_index.core import download_loader, Document
+from llama_index.core import Document
 from typing import Dict, List
 import json
 
-# download loader, load documents
 from llama_index.readers.web import SimpleWebPageReader
 
 loader = SimpleWebPageReader(html_to_text=True)
