@@ -100,6 +100,7 @@ async def test_aget_text_embedding_uses_async_client_when_provided(
     async_client = AsyncMockClient()
     bedrock_embedding = BedrockEmbedding(
         model_name=Models.TITAN_EMBEDDING,
+        client=aioboto3.Session().client("bedrock-runtime", region_name="us-east-1"),
         async_client=async_client,
     )
 
@@ -122,6 +123,7 @@ async def test_aget_query_embedding_uses_async_client_when_provided(
     async_client = AsyncMockClient()
     bedrock_embedding = BedrockEmbedding(
         model_name=Models.TITAN_EMBEDDING,
+        client=aioboto3.Session().client("bedrock-runtime", region_name="us-east-1"),
         async_client=async_client,
     )
 
