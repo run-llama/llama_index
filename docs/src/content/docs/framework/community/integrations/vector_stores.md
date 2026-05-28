@@ -1144,7 +1144,7 @@ reader = QdrantReader(host="localhost")
 query_vector = [n1, n2, n3, ...]
 
 # NOTE: Required args are collection_name, query_vector.
-# See the Python client: https;//github.com/qdrant/qdrant_client
+# See the Python client: https://github.com/qdrant/qdrant_client
 # for more details
 
 documents = reader.load_data(

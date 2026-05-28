@@ -26,10 +26,7 @@ def multimodal_nodes(png_1px_b64: bytes) -> list[NodeWithScore]:
 
 class TestGeneration:
     def test_init__multimodal_with_non_chat_model_raises_error(self) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall()
-
-        # Act / Assert
         with pytest.raises(
             ValueError, match="Multimodal synthesis requires a chat LLM."
         ):
@@ -88,14 +85,9 @@ class TestGeneration:
     def test_synthesize__multimodal(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
         synthesizer = Generation(llm=llm, multimodal=True)
-
-        # Act
         response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == "user: test\nassistant: "
         assert llm.last_called_chat_function == ["chat"]
@@ -165,14 +157,9 @@ class TestGeneration:
     async def test_asynthesize__multimodal(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
-        # Arrange
         llm = MockLLMWithChatMemoryOfLastCall(is_chat_model=True)
         synthesizer = Generation(llm=llm, multimodal=True)
-
-        # Act
         response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
         assert isinstance(response, Response)
         assert str(response) == "user: test\nassistant: "
         assert set(llm.last_called_chat_function) == {"chat", "achat"}, (
