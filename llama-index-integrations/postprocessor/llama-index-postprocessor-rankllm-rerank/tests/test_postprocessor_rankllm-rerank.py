@@ -76,9 +76,7 @@ def test_import_with_prompt_mode_from_rankllm_module(monkeypatch):
 
     _clear_rankllm_rerank_modules(monkeypatch)
 
-    rankllm_rerank = importlib.import_module(
-        "llama_index.postprocessor.rankllm_rerank"
-    )
+    rankllm_rerank = importlib.import_module("llama_index.postprocessor.rankllm_rerank")
 
     names_of_base_classes = [b.__name__ for b in rankllm_rerank.RankLLMRerank.__mro__]
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
