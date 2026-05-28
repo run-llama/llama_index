@@ -365,6 +365,65 @@ async def test_workflow_with_state():
 
 
 @pytest.mark.asyncio
+async def test_initial_state_not_leaked_across_runs():
+    """Regression for #21774: initial_state must not leak mutations across runs."""
+
+    async def increment(ctx_val: Context):
+        state = await ctx_val.store.get("state")
+        state["counter"] += 1
+        await ctx_val.store.set("state", state)
+        return f"counter={state['counter']}"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[increment],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="incrementing",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="one",
+                                    tool_name="increment",
+                                    tool_kwargs={},
+                                )
+                            ]
+                        },
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content="done"
+                    ),
+                ]
+            )
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        initial_state={"counter": 0},
+        state_prompt="State: {state}. {msg}",
+    )
+
+    # First run — counter goes 0 → 1
+    handler1 = workflow.run(user_msg="go")
+    await handler1
+    state1 = await handler1.ctx.store.get("state")
+    assert state1["counter"] == 1
+
+    # Second run must start fresh from 0, not from the leaked 1
+    handler2 = workflow.run(user_msg="go again")
+    await handler2
+    state2 = await handler2.ctx.store.get("state")
+    assert state2["counter"] == 1, (
+        f"expected counter=1 on second run (fresh initial_state), got {state2['counter']}"
+    )
+
+
+@pytest.mark.asyncio
 async def test_agent_with_hitl():
     """Test agent with hitl."""
 
