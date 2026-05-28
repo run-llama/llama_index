@@ -63,7 +63,8 @@ if TYPE_CHECKING:
 
 
 def _parse_tool_input(raw_input: Any) -> Any:
-    """Parse tool input from string to dict if needed.
+    """
+    Parse tool input from string to dict if needed.
 
     During streaming, tool call input is accumulated as a concatenated JSON
     string. This helper parses it into a dict so that ToolCallBlock.tool_kwargs
@@ -71,7 +72,7 @@ def _parse_tool_input(raw_input: Any) -> Any:
     """
     if isinstance(raw_input, str):
         try:
-            return json.loads(raw_input)
+            return parse_partial_json(raw_input)
         except (json.JSONDecodeError, ValueError):
             return {}
     return raw_input
@@ -610,7 +611,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -666,7 +669,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -710,7 +715,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )
@@ -896,7 +903,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -952,7 +961,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -997,7 +1008,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=_parse_tool_input(tool_call.get("input", {})),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )

@@ -1,7 +1,13 @@
 import pytest
 from typing import List, Any, Optional, Union
 
-from llama_index.core.base.llms.types import ChatMessage, TextBlock, ContentBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    TextBlock,
+    ContentBlock,
+    VideoBlock,
+    DocumentBlock,
+)
 from llama_index.core.memory.memory import Memory, BaseMemoryBlock, InsertMethod
 
 
@@ -38,6 +44,26 @@ class ContentBlocksMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
         if not content:
             return None
         return content[:-1]
+
+
+class UrlBackedMediaMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
+    """Memory block that returns URL-backed media content blocks."""
+
+    async def _aget(
+        self, messages: List[ChatMessage], **kwargs: Any
+    ) -> List[ContentBlock]:
+        return [
+            TextBlock(text="Media context"),
+            VideoBlock(url="https://example.com/video.mp4"),
+            DocumentBlock(
+                url="https://example.com/document.pdf",
+                document_mimetype="application/pdf",
+            ),
+        ]
+
+    async def _aput(self, messages: List[ChatMessage]) -> None:
+        # Just a no-op for testing
+        pass
 
 
 class ChatMessagesMemoryBlock(BaseMemoryBlock[List[ChatMessage]]):
@@ -290,6 +316,34 @@ async def test_memory_with_all_block_types(memory_with_blocks):
         msg for msg in messages if msg.content == "Historical user message"
     ]
     assert len(user_historical) > 0
+
+
+@pytest.mark.asyncio
+async def test_default_memory_preserves_url_backed_video_and_document_blocks():
+    """Test URL-backed video and document blocks survive default memory insertion."""
+    memory = Memory(
+        token_limit=4096,
+        token_flush_size=700,
+        chat_history_token_ratio=0.9,
+        session_id="test_url_backed_media_blocks",
+        memory_blocks=[UrlBackedMediaMemoryBlock(name="media_block", priority=1)],
+    )
+
+    messages = await memory.aget()
+
+    system_messages = [msg for msg in messages if msg.role == "system"]
+    assert len(system_messages) == 1
+
+    blocks = system_messages[0].blocks
+    text_blocks = [block for block in blocks if isinstance(block, TextBlock)]
+    video_blocks = [block for block in blocks if isinstance(block, VideoBlock)]
+    document_blocks = [block for block in blocks if isinstance(block, DocumentBlock)]
+
+    assert any("Media context" in block.text for block in text_blocks)
+    assert len(video_blocks) == 1
+    assert str(video_blocks[0].url) == "https://example.com/video.mp4"
+    assert len(document_blocks) == 1
+    assert document_blocks[0].url == "https://example.com/document.pdf"
 
 
 @pytest.mark.asyncio
