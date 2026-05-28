@@ -1939,3 +1939,27 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
         else:
             # confirm model metadata was not fetched
             mock_client.models.get.assert_not_called()
+
+
+def test_chat_from_gemini_response_assistant_role():
+    """Test that the 'assistant' role from Gemini responses is mapped to MessageRole.ASSISTANT.
+
+    Regression test for https://github.com/run-llama/llama_index/issues/21799
+    """
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "assistant"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Hello from assistant"
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
+    mock_response.candidates[0].content.parts[0].function_response = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+
+    chat_response = chat_from_gemini_response(mock_response, [])
+    assert chat_response.message.role == MessageRole.ASSISTANT
+    assert len(chat_response.message.blocks) == 1
+    assert chat_response.message.blocks[0].text == "Hello from assistant"

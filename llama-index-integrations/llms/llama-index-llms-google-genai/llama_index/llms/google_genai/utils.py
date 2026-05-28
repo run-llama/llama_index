@@ -72,6 +72,7 @@ ROLES_FROM_GEMINI: dict[str, MessageRole] = {
     "user": MessageRole.USER,
     "model": MessageRole.ASSISTANT,
     "function": MessageRole.TOOL,
+    "assistant": MessageRole.ASSISTANT,
 }
 
 
