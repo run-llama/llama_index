@@ -318,7 +318,6 @@ def test_stream_chat(bedrock_converse):
     assert final_response.additional_kwargs["total_tokens"] == 41
 
 
-
 # -- _parse_tool_input unit tests (pin partial-JSON fallback behavior) --------
 
 
@@ -354,7 +353,8 @@ def test_parse_tool_input_non_string_passthrough():
 
 
 def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
-    """Test that streaming tool call input is parsed from string to dict.
+    """
+    Test that streaming tool call input is parsed from string to dict.
 
     Bedrock ConverseStream delivers tool use input as string chunks.
     After accumulation, ToolCallBlock.tool_kwargs should be a dict,
@@ -410,9 +410,7 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
             return {"stream": stream_generator()}
 
-    monkeypatch.setattr(
-        "boto3.Session.client", lambda *a, **kw: ToolStreamMockClient()
-    )
+    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: ToolStreamMockClient())
     monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
     llm = BedrockConverse(
@@ -425,9 +423,7 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
     # Collect all ToolCallBlocks from the final response
     final = responses[-1]
-    tool_blocks = [
-        b for b in final.message.blocks if isinstance(b, ToolCallBlock)
-    ]
+    tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
     # tool_kwargs must be a dict, not a JSON string
     assert isinstance(tool_blocks[0].tool_kwargs, dict), (
@@ -440,7 +436,8 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
-    """Async variant: streaming tool call input is parsed from string to dict.
+    """
+    Async variant: streaming tool call input is parsed from string to dict.
 
     Regression test for https://github.com/run-llama/llama_index/issues/21579
     """
@@ -503,9 +500,7 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
         def client(self, *args, **kwargs):
             return ToolStreamAsyncMockClient()
 
-    monkeypatch.setattr(
-        "boto3.Session.client", lambda *a, **kw: MockClient()
-    )
+    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: MockClient())
     monkeypatch.setattr("aioboto3.Session", ToolStreamAsyncSession)
 
     llm = BedrockConverse(
@@ -520,9 +515,7 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
         responses.append(r)
 
     final = responses[-1]
-    tool_blocks = [
-        b for b in final.message.blocks if isinstance(b, ToolCallBlock)
-    ]
+    tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
     assert isinstance(tool_blocks[0].tool_kwargs, dict), (
         f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
