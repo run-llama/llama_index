@@ -1,7 +1,9 @@
 """Test text splitter."""
 
 from typing import List
+import logging
 
+import pytest
 import tiktoken
 from llama_index.core.node_parser.text import TokenTextSplitter
 from llama_index.core.node_parser.text.utils import truncate_text
@@ -89,3 +91,52 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_merge_warning_message_is_well_formed(
+       caplog: pytest.LogCaptureFixture,
+   ) -> None:
+    """The 'split larger than chunk size' warning must be emitted cleanly.
+
+    Regression test: previously the warning was constructed with two separate
+    f-string arguments to ``logger.warning(...)`` (trailing commas after each),
+    which made the logging machinery treat the second f-string as an arg for
+    ``%`` formatting against the first. The first f-string had no ``%s``
+    placeholders, so the call raised a ``TypeError: not all arguments
+    converted during string formatting`` inside the logging emit path. The
+    warning record was therefore never delivered to handlers cleanly, and
+    stderr was polluted with a logging-internal traceback whenever the warning
+    path was hit.
+    """
+
+    # A tokenizer that always reports a token count of 10, regardless of the
+    # input. This guarantees ``split_len > chunk_size`` inside ``_merge`` and
+    # exercises the warning branch reliably, without depending on a real
+    # tokenizer's network-downloaded vocabulary.
+    def big_tokenizer(text: str) -> List[int]:
+        return [0] * 10
+
+    splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0, tokenizer=big_tokenizer)
+
+    with caplog.at_level(
+        logging.WARNING, logger="llama_index.core.node_parser.text.token"
+    ):
+        # _merge is called on the result of _split; pass a non-empty text so
+        # _split returns a single oversize element and _merge logs. _merge
+        # itself may raise downstream on an oversize-single-split edge case
+        # unrelated to this regression; we suppress that here because the
+        # warning emission we care about happens before any such raise.
+        try:
+            splitter._merge(["xx"], chunk_size=1)
+        except IndexError:
+            pass
+
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings, "Expected at least one warning when a split exceeds chunk size"
+
+    # The fixed message must contain both halves in a single, well-formed string.
+    # Calling .getMessage() exercises the same code path that raised TypeError
+    # before the fix; if the bug regresses, this assertion fails.
+    msg = warnings[0].getMessage()
+    assert "Got a split of size" in msg
+    assert "larger than chunk size" in msg
