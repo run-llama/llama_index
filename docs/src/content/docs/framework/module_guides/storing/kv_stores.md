@@ -9,6 +9,7 @@ We provide the following key-value stores:
 - **Simple Key-Value Store**: An in-memory KV store. The user can choose to call `persist` on this kv store to persist data to disk.
 - **MongoDB Key-Value Store**: A MongoDB KV store.
 - **Tablestore Key-Value Store**: A Tablestore KV store.
+- **CockroachDB Key-Value Store**: A CockroachDB-backed KV store using the `cockroachdb+psycopg2` and `cockroachdb+asyncpg` SQLAlchemy dialects, so transactions retry transparently on `SERIALIZATION_FAILURE`. Shipped as part of `llama-index-cockroachdb`.
 
 See the [API Reference](/python/framework-api-reference/storage/kvstore) for more details.
 

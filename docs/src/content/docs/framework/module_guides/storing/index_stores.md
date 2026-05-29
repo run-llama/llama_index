@@ -271,3 +271,41 @@ Under the hood, `PostgresIndexStore` connects to the cloud sql postgres database
 You can easily reconnect to your cloud sql postgres database and reload the index by re-initializing a `PostgresIndexStore` with an `PostgresEngine` without initializing a new table.
 
 A more detailed guide can be found [here](/python/examples/docstore/cloudsqlpgdocstoredemo)
+
+### CockroachDB Index Store
+
+We support [CockroachDB](https://www.cockroachlabs.com/) as an index store backend. `CockroachDBIndexStore` uses the `cockroachdb+psycopg2` and `cockroachdb+asyncpg` SQLAlchemy dialects, so transactions retry transparently on `SERIALIZATION_FAILURE`.
+
+```bash
+pip install llama-index-cockroachdb
+```
+
+```python
+from llama_index.storage.index_store.cockroachdb import CockroachDBIndexStore
+from llama_index.core import VectorStoreIndex
+
+index_store = CockroachDBIndexStore.from_params(
+    host="localhost",
+    port=26257,
+    database="defaultdb",
+    user="root",
+    password="",
+    sslmode="disable",  # local insecure cluster only
+    table_name="indexstore",
+)
+
+# create storage context
+storage_context = StorageContext.from_defaults(index_store=index_store)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+
+# or alternatively, load index
+from llama_index.core import load_index_from_storage
+
+index = load_index_from_storage(storage_context)
+```
+
+> Note: You can configure the `schema_name` along with the `table_name` when instantiating `CockroachDBIndexStore`. By default the `schema_name` is `public`.
+
+A more detailed guide can be found [here](/python/examples/docstore/cockroachdbdocstoredemo).
