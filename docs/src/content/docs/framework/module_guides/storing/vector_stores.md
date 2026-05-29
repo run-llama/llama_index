@@ -26,7 +26,7 @@ We are actively adding more integrations and improving feature coverage for each
 | BaiduVectorDB              | cloud                   | ✓                  | ✓             |        | ✓               |                               |
 | ChatGPT Retrieval Plugin   | aggregator              |                    |               | ✓      | ✓               |                               |
 | Chroma                     | self-hosted             | ✓                  |               | ✓      | ✓               |                               |
-| CockroachDB                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               | ✓                             |
+| CockroachDB                | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Couchbase                  | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | DashVector                 | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
 | Databricks                 | cloud                   | ✓                  |               | ✓      | ✓               |                               |
