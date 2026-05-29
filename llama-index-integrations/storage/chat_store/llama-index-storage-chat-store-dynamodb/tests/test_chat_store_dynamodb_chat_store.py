@@ -1,9 +1,47 @@
+import asyncio
+import inspect
+import time
+
+import boto3
 import pytest
 from moto import mock_aws
-import boto3
-import time
-from llama_index.storage.chat_store.dynamodb.base import DynamoDBChatStore
+
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.storage.chat_store.dynamodb.base import DynamoDBChatStore
+
+
+class FakeAsyncDynamoDBTable:
+    def __init__(self, primary_key: str) -> None:
+        self.primary_key = primary_key
+        self.items = {}
+
+    async def put_item(self, Item):
+        self.items[Item[self.primary_key]] = Item
+
+    async def get_item(self, Key):
+        key = Key[self.primary_key]
+        if key not in self.items:
+            return {}
+        return {"Item": self.items[key]}
+
+    async def delete_item(self, Key):
+        self.items.pop(Key[self.primary_key], None)
+
+    async def scan(self, ProjectionExpression, ExclusiveStartKey=None):
+        keys = sorted(self.items)
+        if ExclusiveStartKey is None and len(keys) > 1:
+            return {
+                "Items": [{ProjectionExpression: keys[0]}],
+                "LastEvaluatedKey": {self.primary_key: keys[0]},
+            }
+
+        if ExclusiveStartKey is None:
+            page_keys = keys
+        else:
+            last_key = ExclusiveStartKey[self.primary_key]
+            page_keys = keys[keys.index(last_key) + 1 :]
+
+        return {"Items": [{ProjectionExpression: key} for key in page_keys]}
 
 
 @pytest.fixture()
@@ -119,6 +157,62 @@ def test_get_keys(chat_store):
     assert len(keys) == 2
     assert "1" in keys
     assert "2" in keys
+
+
+def test_async_table_defaults_to_none(chat_store):
+    assert chat_store._atable is None
+
+
+def test_async_methods_initialize_table_and_return_values(chat_store, monkeypatch):
+    table = FakeAsyncDynamoDBTable(primary_key=chat_store.primary_key)
+    init_calls = 0
+
+    async def init_async_table(self):
+        nonlocal init_calls
+        init_calls += 1
+        self._atable = table
+
+    monkeypatch.setattr(DynamoDBChatStore, "init_async_table", init_async_table)
+
+    async def run_test():
+        await chat_store.aset_messages(
+            "TestSession",
+            [ChatMessage(content="Hello"), ChatMessage(content="World")],
+        )
+        retrieved_messages = await chat_store.aget_messages("TestSession")
+        assert [message.content for message in retrieved_messages] == [
+            "Hello",
+            "World",
+        ]
+
+        await chat_store.async_add_message("TestSession", ChatMessage(content="Added"))
+        retrieved_messages = await chat_store.aget_messages("TestSession")
+        assert [message.content for message in retrieved_messages] == [
+            "Hello",
+            "World",
+            "Added",
+        ]
+
+        deleted_message = await chat_store.adelete_message("TestSession", 1)
+        assert deleted_message is not None
+        assert deleted_message.content == "World"
+
+        last_message = await chat_store.adelete_last_message("TestSession")
+        assert not inspect.iscoroutine(last_message)
+        assert last_message is not None
+        assert last_message.content == "Added"
+
+        deleted_messages = await chat_store.adelete_messages("TestSession")
+        assert deleted_messages is not None
+        assert [message.content for message in deleted_messages] == ["Hello"]
+        assert await chat_store.aget_messages("TestSession") == []
+
+        await chat_store.aset_messages("KeyA", [])
+        await chat_store.aset_messages("KeyB", [])
+        assert await chat_store.aget_keys() == ["KeyA", "KeyB"]
+
+    asyncio.run(run_test())
+    assert init_calls > 0
 
 
 def test_ttl_set_messages(chat_store_with_ttl):
