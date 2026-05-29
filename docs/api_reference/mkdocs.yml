@@ -389,6 +389,7 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-duckduckgo
             - ../../llama-index-integrations/tools/llama-index-tools-finance
             - ../../llama-index-integrations/tools/llama-index-tools-brave-search
+            - ../../llama-index-integrations/tools/llama-index-tools-bocha-search
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-vertex
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-premai
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-premai/llama_index/embeddings/premai
