@@ -59,6 +59,29 @@ def test_custom_batch_validation_checks_wrapped_writer_interface():
     assert not _is_valid_batch_context_manager(_WrappedBatchManager(object()))
 
 
+def test_get_query_parameters_with_node_ids_uses_by_id_filter():
+    """Regression test for #15743: node_ids must produce Filter.by_id() targeting the Weaviate UUID."""
+    import uuid
+
+    vs = object.__new__(WeaviateVectorStore)
+    object.__setattr__(vs, "_is_self_created_weaviate_client", False)
+
+    node_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
+    query = VectorStoreQuery(
+        query_embedding=[0.1, 0.2, 0.3],
+        node_ids=node_ids,
+        similarity_top_k=5,
+    )
+
+    params = vs.get_query_parameters(query)
+    filters = params["filters"]
+
+    assert filters is not None
+    assert filters.target == "_id"
+    assert filters.operator == "ContainsAny"
+    assert list(filters.value) == node_ids
+
+
 def test_no_weaviate_client_instance_provided():
     """Tests that the creation of a Weaviate client within the WeaviateVectorStore constructor works."""
     vector_store = WeaviateVectorStore(
