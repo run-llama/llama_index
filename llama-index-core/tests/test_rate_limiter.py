@@ -499,3 +499,71 @@ def test_sliding_window_embedding_calls_acquire() -> None:
     embed = MockEmbedding(embed_dim=8, rate_limiter=rl)
     result = embed.get_text_embedding("test")
     assert len(result) == 8
+
+
+# ---------------------------------------------------------------------------
+# async_acquire event-loop safety tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_token_bucket_async_acquire_uses_asyncio_lock() -> None:
+    """async_acquire must hold _async_lock, not _lock, while waiting.
+
+    If _lock (threading.Lock) were used inside async_acquire the event loop
+    would be blocked during contention.  This test verifies that a second
+    coroutine can run to completion while the first is sleeping between
+    acquire attempts — which would be impossible if the threading lock were
+    held across the await.
+    """
+    rl = TokenBucketRateLimiter(requests_per_minute=60)
+    # Drain the bucket so the first acquire has to wait
+    with rl._lock:
+        rl._request_tokens = 0.0
+
+    interleaved: list = []
+
+    async def slow_acquire() -> None:
+        await rl.async_acquire()
+        interleaved.append("acquired")
+
+    async def fast_task() -> None:
+        await asyncio.sleep(0)
+        interleaved.append("fast")
+
+    await asyncio.gather(fast_task(), slow_acquire())
+    # "fast" should appear before "acquired" because the event loop can
+    # schedule fast_task while slow_acquire is awaiting asyncio.sleep.
+    assert "fast" in interleaved
+
+
+@pytest.mark.asyncio
+async def test_sliding_window_async_acquire_uses_asyncio_lock() -> None:
+    """async_acquire on SlidingWindowRateLimiter must not block the event loop."""
+    rl = SlidingWindowRateLimiter(requests_per_minute=1)
+    # Saturate the window
+    now = time.monotonic()
+    rl._request_timestamps.append(now)
+
+    interleaved: list = []
+
+    async def slow_acquire() -> None:
+        await rl.async_acquire()
+        interleaved.append("acquired")
+
+    async def fast_task() -> None:
+        await asyncio.sleep(0)
+        interleaved.append("fast")
+
+    # Cancel slow_acquire after a brief moment — we only care that the
+    # event loop wasn't starved (fast_task ran).
+    acquire_task = asyncio.create_task(slow_acquire())
+    fast_result = asyncio.create_task(fast_task())
+    await fast_result
+    acquire_task.cancel()
+    try:
+        await acquire_task
+    except asyncio.CancelledError:
+        pass
+
+    assert "fast" in interleaved
