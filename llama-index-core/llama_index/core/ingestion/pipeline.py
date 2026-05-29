@@ -456,13 +456,13 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         existing_hashes = self.docstore.get_all_document_hashes()
-        current_hashes = []
+        current_hashes: set[str] = set()
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
                 self.docstore.set_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
-                current_hashes.append(node.hash)
+                current_hashes.add(node.hash)
 
         return nodes_to_run
 
@@ -691,13 +691,13 @@ class IngestionPipeline(BaseModel):
         assert self.docstore is not None
 
         existing_hashes = await self.docstore.aget_all_document_hashes()
-        current_hashes = []
+        current_hashes: set[str] = set()
         nodes_to_run = []
         for node in nodes:
             if node.hash not in existing_hashes and node.hash not in current_hashes:
                 await self.docstore.aset_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
-                current_hashes.append(node.hash)
+                current_hashes.add(node.hash)
 
         return nodes_to_run
 
