@@ -1,10 +1,10 @@
 """Test summary index."""
 
-from typing import List
+from typing import Any, List
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import BaseNode, Document, TransformComponent
 
 
 def test_build_list(documents: List[Document], patch_token_text_splitter) -> None:
@@ -128,6 +128,38 @@ def test_list_delete(documents: List[Document], patch_token_text_splitter) -> No
     assert nodes[1].get_content() == "This is a test."
     assert nodes[2].ref_doc_id == "test_id_3"
     assert nodes[2].get_content() == "This is a test v2."
+
+
+def test_refresh_ref_docs_insert_kwargs_propagated_to_all_documents() -> None:
+    """Regression test for https://github.com/run-llama/llama_index/issues/21518.
+
+    insert_kwargs passed to refresh_ref_docs() must be forwarded to every
+    inserted document, not just the first.  The bug was that .pop() was called
+    on update_kwargs inside the document loop, consuming 'insert_kwargs' after
+    the first document and silently passing {} to subsequent ones.
+    """
+
+    received: list[dict] = []
+
+    class RecordKwargs(TransformComponent):
+        def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+            received.append(dict(kwargs))
+            return nodes
+
+    docs = [
+        Document(text=f"doc {i}", id_=f"doc-{i}") for i in range(3)
+    ]
+    index = SummaryIndex([], transformations=[RecordKwargs()])
+
+    received.clear()
+    index.refresh_ref_docs(docs, insert_kwargs={"my_flag": True})
+
+    # All three documents must have been inserted (index was empty)
+    assert len(received) == 3, f"Expected 3 inserts, got {len(received)}"
+    for i, kwargs in enumerate(received):
+        assert kwargs.get("my_flag") is True, (
+            f"Document {i} did not receive insert_kwargs: got {kwargs}"
+        )
 
 
 def test_as_retriever(documents: List[Document]) -> None:
