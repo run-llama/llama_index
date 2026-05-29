@@ -39,3 +39,4 @@ Currently supported callbacks are as follows:
 - [AimCallback](/python/examples/observability/aimcallback) -> Tracking of LLM inputs and outputs. Example usage can be found in the notebook below.
 - [OpenInferenceCallbackHandler](/python/examples/observability/openinferencecallback) -> Tracking of AI model inferences. Example usage can be found in the notebook below.
 - [OpenAIFineTuningHandler](https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb) -> Records all LLM inputs and outputs. Then, provides a function `save_finetuning_events()` to save inputs and outputs in a format suitable for fine-tuning with OpenAI.
+- [VaultakCallbackHandler](/python/framework/module_guides/observability#vaultak) -> Runtime security monitoring — risk-scores every function call, enforces policy rules, masks PII in outputs, and triggers rollback on exceptions.
