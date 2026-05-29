@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-milvus"
-version = "1.1.0"
+version = "1.1.1"
 description = "llama-index vector_stores milvus integration"
 authors = []
 requires-python = ">=3.10,<4.0"
