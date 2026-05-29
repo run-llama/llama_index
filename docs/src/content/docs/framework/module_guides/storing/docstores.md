@@ -318,3 +318,27 @@ Under the hood, `PostgresDocumentStore` connects to the cloud sql for pg databas
 You can easily reconnect to your Postgres database and reload the index by re-initializing a `PostgresDocumentStore` with an `PostgresEngine` without initializing a new table.
 
 A more detailed guide can be found [here](/python/examples/docstore/cloudsqlpgdocstoredemo)
+
+### CockroachDB Document Store
+
+We support [CockroachDB](https://www.cockroachlabs.com/) as a document store backend. `CockroachDBDocumentStore` uses the `cockroachdb+psycopg2` and `cockroachdb+asyncpg` SQLAlchemy dialects, so transactions retry transparently on `SERIALIZATION_FAILURE`.
+
+```bash
+pip install llama-index-cockroachdb
+```
+
+```python
+from llama_index.storage.docstore.cockroachdb import CockroachDBDocumentStore
+
+doc_store = CockroachDBDocumentStore.from_params(
+    host="localhost",
+    port=26257,
+    database="defaultdb",
+    user="root",
+    password="",
+    sslmode="disable",  # local insecure cluster only
+    table_name="docs",
+)
+```
+
+A more detailed guide can be found [here](/python/examples/docstore/cockroachdbdocstoredemo).
