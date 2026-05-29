@@ -552,6 +552,51 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             return cast(bytes, f.read())
 
     @staticmethod
+    def _get_reader_and_metadata(
+        input_file: Path | PurePosixPath,
+        file_metadata: Callable[[str], dict] | None,
+        file_extractor: dict[str, BaseReader],
+    ) -> tuple[BaseReader | None, dict | None]:
+        metadata = file_metadata(str(input_file)) if file_metadata is not None else None
+        file_suffix = input_file.suffix.lower()
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        if file_suffix in default_file_reader_cls or file_suffix in file_extractor:
+            if file_suffix not in file_extractor:
+                reader_cls = default_file_reader_cls[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            return file_extractor[file_suffix], metadata
+        return None, metadata
+
+    @staticmethod
+    def _raw_read_file(
+        input_file: Path | PurePosixPath,
+        metadata: dict | None,
+        filename_as_id: bool,
+        encoding: str,
+        errors: str,
+        fs: fsspec.AbstractFileSystem | None,
+    ) -> list[Document]:
+        fs = fs or get_default_fs()
+        with fs.open(input_file, errors=errors, encoding=encoding) as f:
+            data = cast(bytes, f.read()).decode(encoding, errors=errors)
+
+        doc = Document(text=data, metadata=metadata or {})  # type: ignore
+        if filename_as_id:
+            doc.id_ = str(input_file)
+        return [doc]
+
+    @staticmethod
+    def _finalize_reader_docs(
+        input_file: Path | PurePosixPath,
+        docs: list[Document],
+        filename_as_id: bool,
+    ) -> list[Document]:
+        if filename_as_id:
+            for i, doc in enumerate(docs):
+                doc.id_ = f"{input_file!s}_part_{i}"
+        return docs
+
+    @staticmethod
     def load_file(
         input_file: Path | PurePosixPath,
         file_metadata: Callable[[str], dict],
@@ -587,24 +632,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             List[Document]: loaded documents
 
         """
-        # TODO: make this less redundant
-        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
-        default_file_reader_suffix = list(default_file_reader_cls.keys())
-        metadata: dict | None = None
-        documents: list[Document] = []
-
-        if file_metadata is not None:
-            metadata = file_metadata(str(input_file))
-
-        file_suffix = input_file.suffix.lower()
-        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
-            # use file readers
-            if file_suffix not in file_extractor:
-                # instantiate file reader if not already
-                reader_cls = default_file_reader_cls[file_suffix]
-                file_extractor[file_suffix] = reader_cls()
-            reader = file_extractor[file_suffix]
-
+        reader, metadata = SimpleDirectoryReader._get_reader_and_metadata(
+            input_file=input_file,
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+        )
+        if reader is not None:
             # load data -- catch all errors except for ImportError
             try:
                 kwargs: dict[str, Any] = {"extra_info": metadata}
@@ -624,26 +657,20 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     flush=True,
                 )
                 return []
+            return SimpleDirectoryReader._finalize_reader_docs(
+                input_file=input_file,
+                docs=docs,
+                filename_as_id=filename_as_id,
+            )
 
-            # iterate over docs if needed
-            if filename_as_id:
-                for i, doc in enumerate(docs):
-                    doc.id_ = f"{input_file!s}_part_{i}"
-
-            documents.extend(docs)
-        else:
-            # do standard read
-            fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
-                data = cast(bytes, f.read()).decode(encoding, errors=errors)
-
-            doc = Document(text=data, metadata=metadata or {})  # type: ignore
-            if filename_as_id:
-                doc.id_ = str(input_file)
-
-            documents.append(doc)
-
-        return documents
+        return SimpleDirectoryReader._raw_read_file(
+            input_file=input_file,
+            metadata=metadata,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            fs=fs,
+        )
 
     @staticmethod
     async def aload_file(
@@ -657,24 +684,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         fs: fsspec.AbstractFileSystem | None = None,
     ) -> list[Document]:
         """Load file asynchronously."""
-        # TODO: make this less redundant
-        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
-        default_file_reader_suffix = list(default_file_reader_cls.keys())
-        metadata: dict | None = None
-        documents: list[Document] = []
-
-        if file_metadata is not None:
-            metadata = file_metadata(str(input_file))
-
-        file_suffix = input_file.suffix.lower()
-        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
-            # use file readers
-            if file_suffix not in file_extractor:
-                # instantiate file reader if not already
-                reader_cls = default_file_reader_cls[file_suffix]
-                file_extractor[file_suffix] = reader_cls()
-            reader = file_extractor[file_suffix]
-
+        reader, metadata = SimpleDirectoryReader._get_reader_and_metadata(
+            input_file=input_file,
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+        )
+        if reader is not None:
             # load data -- catch all errors except for ImportError
             try:
                 kwargs: dict[str, Any] = {"extra_info": metadata}
@@ -694,26 +709,20 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     flush=True,
                 )
                 return []
+            return SimpleDirectoryReader._finalize_reader_docs(
+                input_file=input_file,
+                docs=docs,
+                filename_as_id=filename_as_id,
+            )
 
-            # iterate over docs if needed
-            if filename_as_id:
-                for i, doc in enumerate(docs):
-                    doc.id_ = f"{input_file!s}_part_{i}"
-
-            documents.extend(docs)
-        else:
-            # do standard read
-            fs = fs or get_default_fs()
-            with fs.open(input_file, errors=errors, encoding=encoding) as f:
-                data = cast(bytes, f.read()).decode(encoding, errors=errors)
-
-            doc = Document(text=data, metadata=metadata or {})  # type: ignore
-            if filename_as_id:
-                doc.id_ = str(input_file)
-
-            documents.append(doc)
-
-        return documents
+        return SimpleDirectoryReader._raw_read_file(
+            input_file=input_file,
+            metadata=metadata,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            fs=fs,
+        )
 
     def load_data(
         self,
