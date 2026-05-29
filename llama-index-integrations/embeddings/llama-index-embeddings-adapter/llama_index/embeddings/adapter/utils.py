@@ -36,7 +36,9 @@ class BaseAdapter(nn.Module):
     def save(self, output_path: str) -> None:
         """Save model."""
         os.makedirs(output_path, exist_ok=True)
-        with open(os.path.join(output_path, "config.json"), "w", encoding="utf-8") as fOut:
+        with open(
+            os.path.join(output_path, "config.json"), "w", encoding="utf-8"
+        ) as fOut:
             json.dump(self.get_config_dict(), fOut)
         torch.save(self.state_dict(), os.path.join(output_path, "pytorch_model.bin"))
 
