@@ -26,6 +26,7 @@ We are actively adding more integrations and improving feature coverage for each
 | BaiduVectorDB              | cloud                   | ✓                  | ✓             |        | ✓               |                               |
 | ChatGPT Retrieval Plugin   | aggregator              |                    |               | ✓      | ✓               |                               |
 | Chroma                     | self-hosted             | ✓                  |               | ✓      | ✓               |                               |
+| CockroachDB                | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓                             |
 | Couchbase                  | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |                               |
 | DashVector                 | cloud                   | ✓                  | ✓             | ✓      | ✓               |                               |
 | Databricks                 | cloud                   | ✓                  |               | ✓      | ✓               |                               |
@@ -83,6 +84,7 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [Baidu](/python/examples/vector_stores/baiduvectordbindexdemo)
 - [Caasandra](/python/examples/vector_stores/cassandraindexdemo)
 - [Chromadb](/python/examples/vector_stores/chromaindexdemo)
+- [CockroachDB](/python/examples/vector_stores/cockroachdbdemo)
 - [Couchbase](/python/examples/vector_stores/couchbasevectorstoredemo)
 - [Dash](/python/examples/vector_stores/dashvectorindexdemo)
 - [Databricks](/python/examples/vector_stores/databricksvectorsearchdemo)
