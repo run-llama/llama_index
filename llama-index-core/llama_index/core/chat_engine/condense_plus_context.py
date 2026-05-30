@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.base.response.schema import (
     AsyncStreamingResponse,
+    RESPONSE_TYPE,
     StreamingResponse,
 )
 from llama_index.core.callbacks import CallbackManager, trace_method
@@ -102,6 +103,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        respond_with_llm_on_empty_context: bool = False,
     ):
         self._retriever = retriever
         self._llm = llm
@@ -133,6 +135,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         self._token_counter = TokenCounter()
         self._verbose = verbose
+        self._respond_with_llm_on_empty_context = respond_with_llm_on_empty_context
 
     @classmethod
     def from_defaults(
@@ -148,6 +151,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
+        respond_with_llm_on_empty_context: bool = False,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
@@ -170,6 +174,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
+            respond_with_llm_on_empty_context=respond_with_llm_on_empty_context,
         )
 
     def _condense_question(
@@ -319,13 +324,37 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         return response_synthesizer, context_source, context_nodes
 
+    def _synthesize(
+        self,
+        synthesizer: CompactAndRefine,
+        message: str,
+        context_nodes: List[NodeWithScore],
+    ) -> RESPONSE_TYPE:
+        if context_nodes or not self._respond_with_llm_on_empty_context:
+            return synthesizer.synthesize(message, context_nodes)
+
+        response = synthesizer.get_response(query_str=message, text_chunks=[""])
+        return synthesizer._prepare_response_output(response, [])
+
+    async def _asynthesize(
+        self,
+        synthesizer: CompactAndRefine,
+        message: str,
+        context_nodes: List[NodeWithScore],
+    ) -> RESPONSE_TYPE:
+        if context_nodes or not self._respond_with_llm_on_empty_context:
+            return await synthesizer.asynthesize(message, context_nodes)
+
+        response = await synthesizer.aget_response(query_str=message, text_chunks=[""])
+        return synthesizer._prepare_response_output(response, [])
+
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self._synthesize(synthesizer, message, context_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -348,7 +377,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = synthesizer.synthesize(message, context_nodes)
+        response = self._synthesize(synthesizer, message, context_nodes)
         assert isinstance(response, StreamingResponse)
 
         self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
@@ -384,7 +413,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self._asynthesize(synthesizer, message, context_nodes)
 
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         assistant_message = ChatMessage(
@@ -407,7 +436,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             message, chat_history, streaming=True
         )
 
-        response = await synthesizer.asynthesize(message, context_nodes)
+        response = await self._asynthesize(synthesizer, message, context_nodes)
         assert isinstance(response, AsyncStreamingResponse)
 
         await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
