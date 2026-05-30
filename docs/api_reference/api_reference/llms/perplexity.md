@@ -1,3 +1,3 @@
 ::: llama_index.llms.perplexity
 options:
-members: - Perplexity
+members: - Perplexity - PerplexitySearch - PerplexitySearchToolSpec
