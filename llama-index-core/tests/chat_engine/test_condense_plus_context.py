@@ -26,6 +26,27 @@ def chat_engine() -> CondensePlusContextChatEngine:
     )
 
 
+@pytest.fixture()
+def empty_chat_engine() -> CondensePlusContextChatEngine:
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    retriever = index.as_retriever()
+    return CondensePlusContextChatEngine.from_defaults(
+        retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
+    )
+
+
+@pytest.fixture()
+def empty_chat_engine_with_llm_fallback() -> CondensePlusContextChatEngine:
+    index = VectorStoreIndex.from_documents([], embed_model=MockEmbedding(embed_dim=3))
+    retriever = index.as_retriever()
+    return CondensePlusContextChatEngine.from_defaults(
+        retriever,
+        llm=MockLLM(),
+        system_prompt=SYSTEM_PROMPT,
+        respond_with_llm_on_empty_context=True,
+    )
+
+
 def test_chat(chat_engine: CondensePlusContextChatEngine):
     response = chat_engine.chat("Hello World!")
     assert SYSTEM_PROMPT in str(response)
@@ -37,6 +58,44 @@ def test_chat(chat_engine: CondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+def test_chat_empty_context_returns_empty_response_by_default(
+    empty_chat_engine: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine.chat("Hello World!")
+
+    assert str(response) == "Empty Response"
+    assert response.source_nodes == []
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+def test_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine_with_llm_fallback.chat("Hello World!")
+
+    assert str(response) != "Empty Response"
+    assert SYSTEM_PROMPT in str(response)
+    assert "Hello World!" in str(response)
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
+
+
+def test_stream_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = empty_chat_engine_with_llm_fallback.stream_chat("Hello World!")
+
+    full_response = ""
+    for token in response.response_gen:
+        full_response += token
+
+    assert full_response != "Empty Response"
+    assert SYSTEM_PROMPT in full_response
+    assert "Hello World!" in full_response
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
 
 
 def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
@@ -82,6 +141,51 @@ def test_stream_chat_memory_not_lost_on_incomplete_consumption(
     assert response.is_done
     assert len(chat_engine.chat_history) == 2
     assert chat_engine.chat_history[1].role == MessageRole.ASSISTANT
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_empty_context_returns_empty_response_by_default(
+    empty_chat_engine: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine.astream_chat("Hello World!")
+
+    full_response = ""
+    async for token in response.async_response_gen():
+        full_response += token
+
+    assert full_response == "Empty Response"
+    assert response.source_nodes == []
+    assert len(empty_chat_engine.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine_with_llm_fallback.astream_chat("Hello World!")
+
+    full_response = ""
+    async for token in response.async_response_gen():
+        full_response += token
+
+    assert full_response != "Empty Response"
+    assert SYSTEM_PROMPT in full_response
+    assert "Hello World!" in full_response
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
+
+
+@pytest.mark.asyncio
+async def test_achat_empty_context_can_respond_with_llm(
+    empty_chat_engine_with_llm_fallback: CondensePlusContextChatEngine,
+):
+    response = await empty_chat_engine_with_llm_fallback.achat("Hello World!")
+
+    assert str(response) != "Empty Response"
+    assert SYSTEM_PROMPT in str(response)
+    assert "Hello World!" in str(response)
+    assert response.source_nodes == []
+    assert len(empty_chat_engine_with_llm_fallback.chat_history) == 2
 
 
 @pytest.mark.asyncio
