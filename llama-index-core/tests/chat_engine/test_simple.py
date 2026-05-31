@@ -1,17 +1,23 @@
-import gc
 import asyncio
-from llama_index.core.memory import ChatMemoryBuffer
+import gc
+from collections.abc import Sequence
+from typing import Any
+
+import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
     CompletionResponse,
     CompletionResponseGen,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
 )
-from typing import Any
-from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core.llms.mock import MockLLM
-import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.llms.mock import MockLLM
+from llama_index.core.memory import ChatMemoryBuffer
 
 
 def test_simple_chat_engine() -> None:
@@ -71,6 +77,40 @@ async def test_simple_chat_engine_astream():
     assert num_iters > 10
     assert "Hello World!" in response.unformatted_response
     assert "What is the capital of the moon?" in response.unformatted_response
+
+
+@pytest.mark.asyncio
+async def test_simple_chat_engine_astream_multi_block_message_history() -> None:
+    class MultiBlockStreamLLM(MockLLM):
+        @llm_chat_callback()
+        async def astream_chat(
+            self, messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> ChatResponseAsyncGen:
+            message = ChatMessage(
+                role=MessageRole.ASSISTANT,
+                blocks=[TextBlock(text="stale"), ImageBlock()],
+            )
+
+            async def gen() -> ChatResponseAsyncGen:
+                yield ChatResponse(message=message, delta="hel")
+                yield ChatResponse(message=message, delta="lo")
+
+            return gen()
+
+    engine = SimpleChatEngine.from_defaults(
+        llm=MultiBlockStreamLLM(is_chat_model=True),
+        memory=ChatMemoryBuffer.from_defaults(),
+    )
+
+    response = await engine.astream_chat("Hello World!")
+    chunks = [chunk async for chunk in response.async_response_gen()]
+
+    assert chunks == ["hel", "lo"]
+    assert len(engine.chat_history) == 2
+    assistant_message = engine.chat_history[-1]
+    assert assistant_message.role == MessageRole.ASSISTANT
+    assert assistant_message.content == "hello"
+    assert assistant_message.blocks == [TextBlock(text="hello"), ImageBlock()]
 
 
 def test_simple_chat_engine_astream_exception_handling():
