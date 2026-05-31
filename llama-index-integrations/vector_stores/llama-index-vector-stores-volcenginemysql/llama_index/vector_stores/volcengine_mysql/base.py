@@ -7,11 +7,16 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import quote_plus
 
 import sqlalchemy
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# SQL injection via the JSON path embedded in the WHERE clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 from sqlalchemy.ext.asyncio import create_async_engine
 from llama_index.core.bridge.pydantic import PrivateAttr
 
@@ -523,6 +528,11 @@ class VolcengineMySQLVectorStore(BasePydanticVectorStore):
         - For ``IN``/``NIN`` operators build a ``(v1, v2, ...)`` value
           list.
         """
+        if not _SAFE_METADATA_KEY.match(filter_.key or ""):
+            raise ValueError(
+                f"Unsafe metadata filter key {filter_.key!r}; "
+                f"must match {_SAFE_METADATA_KEY.pattern}"
+            )
         key_expr = f"JSON_EXTRACT(metadata, '$.{filter_.key}')"
         value = filter_.value
 
