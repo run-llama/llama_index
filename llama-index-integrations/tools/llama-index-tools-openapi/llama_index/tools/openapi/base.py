@@ -90,7 +90,16 @@ class OpenAPIToolSpec(BaseToolSpec):
             return reduced
 
         def dereference_openapi(openapi_doc):
-            """Dereferences a Swagger/OpenAPI document by resolving all $ref pointers."""
+            """
+            Dereference a Swagger/OpenAPI document by resolving all $ref pointers.
+
+            Tracks the set of ``$ref`` URIs currently being resolved so that
+            self-referential or mutually-recursive schemas (which are valid
+            OpenAPI and common in real-world specs) do not send the recursive
+            walker into infinite recursion. When a cycle is detected the
+            offending ``$ref`` is collapsed to an empty object, terminating
+            that branch of the walk.
+            """
             try:
                 import jsonschema
             except ImportError:
@@ -101,18 +110,22 @@ class OpenAPIToolSpec(BaseToolSpec):
 
             resolver = jsonschema.RefResolver.from_schema(openapi_doc)
 
-            def _dereference(obj):
+            def _dereference(obj, seen_refs):
                 if isinstance(obj, dict):
-                    if "$ref" in obj:
-                        with resolver.resolving(obj["$ref"]) as resolved:
-                            return _dereference(resolved)
-                    return {k: _dereference(v) for k, v in obj.items()}
+                    ref = obj.get("$ref")
+                    if ref is not None:
+                        if ref in seen_refs:
+                            # Cycle: stop expanding this branch.
+                            return {}
+                        with resolver.resolving(ref) as resolved:
+                            return _dereference(resolved, seen_refs | {ref})
+                    return {k: _dereference(v, seen_refs) for k, v in obj.items()}
                 elif isinstance(obj, list):
-                    return [_dereference(item) for item in obj]
+                    return [_dereference(item, seen_refs) for item in obj]
                 else:
                     return obj
 
-            return _dereference(openapi_doc)
+            return _dereference(openapi_doc, frozenset())
 
         spec = dereference_openapi(spec)
         endpoints = []
