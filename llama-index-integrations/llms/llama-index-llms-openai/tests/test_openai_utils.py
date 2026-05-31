@@ -10,7 +10,10 @@ from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
     Function,
 )
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.chat.chat_completion_token_logprob import (
+    ChatCompletionTokenLogprob,
+    TopLogprob,
+)
 from openai.types.completion_choice import Logprobs
 
 from llama_index.core.base.llms.types import (
@@ -343,6 +346,31 @@ def test_from_openai_token_logprob_none_top_logprob() -> None:
     logprob.top_logprobs = None
     result: List[LogProb] = from_openai_token_logprob(logprob)
     assert isinstance(result, list)
+
+
+def test_from_openai_token_logprob_error_does_not_print_token(
+    capsys,
+) -> None:
+    sensitive_token = "secret-token-123"
+    logprob = ChatCompletionTokenLogprob(
+        token="",
+        logprob=1.0,
+        top_logprobs=[
+            TopLogprob(
+                token=sensitive_token,
+                logprob=1.0,
+                bytes=[],
+            )
+        ],
+    )
+    logprob.top_logprobs[0].logprob = "not-a-float"  # type: ignore[assignment]
+
+    with pytest.raises(Exception):
+        from_openai_token_logprob(logprob)
+
+    captured = capsys.readouterr()
+    assert sensitive_token not in captured.out
+    assert sensitive_token not in captured.err
 
 
 def test_from_openai_token_logprobs_none_top_logprobs() -> None:
