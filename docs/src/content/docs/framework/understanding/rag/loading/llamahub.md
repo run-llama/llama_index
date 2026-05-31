@@ -3,7 +3,7 @@ title: LlamaHub
 ---
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-LlamaHub contains a registry of open-source data connectors that you can easily plug into any LlamaIndex application (+ Agent Tools, and Llama Packs).
+LlamaHub contains a registry of open-source data connector packages that you can easily plug into any LlamaIndex application (+ Agent Tools, and Llama Packs).
 
 ![](./../../../_static/data_connectors/llamahub.png)
 
@@ -11,9 +11,11 @@ LlamaHub contains a registry of open-source data connectors that you can easily 
 
 Get started with:
 
-```python
-from llama_index.core import download_loader
+```bash
+pip install llama-index-readers-google
+```
 
+```python
 from llama_index.readers.google import GoogleDocsReader
 
 loader = GoogleDocsReader()
