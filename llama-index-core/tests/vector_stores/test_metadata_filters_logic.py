@@ -120,6 +120,91 @@ def test_ne_and_nin_match_missing_metadata_values() -> None:
     assert nin_fn("n1")
 
 
+def test_ne_matches_nodes_missing_the_key() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.NE, value="news")
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # No node has the "missing" key, so all are trivially not equal to "news".
+    assert fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
+def test_nin_matches_nodes_missing_the_key() -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="missing",
+                operator=FilterOperator.NIN,
+                value=["news", "blog"],
+            )
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    # No node has the "missing" key, so it is in none of the listed values.
+    assert fn("n1")
+    assert fn("n2")
+    assert fn("n3")
+
+
+def test_eq_still_excludes_nodes_missing_the_key() -> None:
+    # Regression guard: the missing-key fix for NE/NIN must not change the
+    # behavior of positive operators like EQ.
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.EQ, value="news")
+        ]
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    assert not fn("n1")
+    assert not fn("n2")
+    assert not fn("n3")
+
+
+def test_ne_on_missing_key_agrees_with_not_eq_condition() -> None:
+    # `key != value` must produce the same result as `NOT(key == value)` for a
+    # node that does not have the key.
+    ne_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.NE, value="news")
+        ]
+    )
+    not_eq_filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.EQ, value="news")
+        ],
+        condition=FilterCondition.NOT,
+    )
+    ne_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, ne_filters)
+    not_eq_fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, not_eq_filters)
+
+    for node_id in _METADATA_BY_ID:
+        assert ne_fn(node_id) == not_eq_fn(node_id)
+
+
+def test_and_condition_with_ne_on_missing_key_combines_with_present_filters() -> None:
+    # NE on a missing key should match every node, so the AND result is driven
+    # entirely by the second filter on a key that is actually present.
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="missing", operator=FilterOperator.NE, value="news"),
+            MetadataFilter(key="rank", operator=FilterOperator.EQ, value="b"),
+        ],
+        condition=FilterCondition.AND,
+    )
+    fn = build_metadata_filter_fn(_METADATA_BY_ID.__getitem__, filters)
+
+    assert not fn("n1")
+    assert fn("n2")
+    assert not fn("n3")
+
+
 def test_text_match_insensitive_uses_case_insensitive_search() -> None:
     filters = MetadataFilters(
         filters=[
