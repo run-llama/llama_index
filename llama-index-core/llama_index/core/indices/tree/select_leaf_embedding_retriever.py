@@ -76,6 +76,7 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
         cur_node_ids: Dict[int, str],
         query_bundle: QueryBundle,
         level: int = 0,
+        source_nodes: Optional[List[BaseNode]] = None,
     ) -> str:
         """Answer a query recursively."""
         cur_nodes = {
@@ -98,7 +99,11 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
 
             # Get the response for the selected node
             result_response = self._query_with_selected_node(
-                node, query_bundle, level=level, prev_response=result_response
+                node,
+                query_bundle,
+                level=level,
+                prev_response=result_response,
+                source_nodes=source_nodes,
             )
 
         return cast(str, result_response)

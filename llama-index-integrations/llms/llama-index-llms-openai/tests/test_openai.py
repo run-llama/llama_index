@@ -695,6 +695,17 @@ def _make_reasoning_stream_chunks() -> list[ChatCompletionChunk]:
     ]
 
 
+def _make_vllm_reasoning_stream_chunks() -> list[ChatCompletionChunk]:
+    """Simulate vLLM streaming reasoning then content."""
+    return [
+        _make_chunk({"role": "assistant"}),
+        _make_chunk({"content": None, "__extra__": {"reasoning": "Let me think"}}),
+        _make_chunk({"content": None, "__extra__": {"reasoning": " about this."}}),
+        _make_chunk({"content": "The answer"}),
+        _make_chunk({}, finish_reason="stop"),
+    ]
+
+
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_stream_chat_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
     """Test that reasoning_content from streaming is captured as ThinkingBlock and thinking_delta."""
@@ -719,6 +730,34 @@ def test_stream_chat_reasoning_content(MockSyncOpenAI: MagicMock) -> None:
         assert text_blocks[0].text == "The answer is 42."
 
         # Exactly 2 chunks carry thinking_delta (the two reasoning chunks)
+        reasoning_chunks = [
+            r for r in responses if r.additional_kwargs.get("thinking_delta")
+        ]
+        assert len(reasoning_chunks) == 2
+        assert reasoning_chunks[0].additional_kwargs["thinking_delta"] == "Let me think"
+        assert reasoning_chunks[1].additional_kwargs["thinking_delta"] == " about this."
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_stream_chat_vllm_reasoning_field(MockSyncOpenAI: MagicMock) -> None:
+    """Test that vLLM's reasoning field is captured while streaming."""
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = iter(
+            _make_vllm_reasoning_stream_chunks()
+        )
+
+        llm = OpenAI(model="gpt-4o", api_key="test-key")
+        responses = list(llm.stream_chat([ChatMessage(role="user", content="test")]))
+
+        final = responses[-1]
+        thinking_blocks = [
+            b for b in final.message.blocks if isinstance(b, ThinkingBlock)
+        ]
+
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].content == "Let me think about this."
+
         reasoning_chunks = [
             r for r in responses if r.additional_kwargs.get("thinking_delta")
         ]
@@ -848,6 +887,27 @@ def test_from_openai_message_with_reasoning_content() -> None:
         content="The answer is 42.",
     )
     openai_msg.__pydantic_extra__ = {"reasoning_content": "Let me think..."}
+
+    result = from_openai_message(openai_msg, modalities=["text"])
+
+    thinking_blocks = [b for b in result.blocks if isinstance(b, ThinkingBlock)]
+    text_blocks = [b for b in result.blocks if isinstance(b, TextBlock)]
+
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0].content == "Let me think..."
+    assert len(text_blocks) == 1
+    assert text_blocks[0].text == "The answer is 42."
+
+
+def test_from_openai_message_with_vllm_reasoning_field() -> None:
+    """Test that from_openai_message extracts vLLM reasoning as ThinkingBlock."""
+    from llama_index.llms.openai.utils import from_openai_message
+
+    openai_msg = ChatCompletionMessage(
+        role="assistant",
+        content="The answer is 42.",
+    )
+    openai_msg.__pydantic_extra__ = {"reasoning": "Let me think..."}
 
     result = from_openai_message(openai_msg, modalities=["text"])
 
