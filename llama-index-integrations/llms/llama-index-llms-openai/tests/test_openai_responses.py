@@ -114,6 +114,82 @@ def test_get_model_kwargs_excludes_params_with_reasoning(default_responses_llm):
         assert "reasoning" not in kwargs
 
 
+_REASONING_SAMPLING_PARAMS = (
+    "top_p",
+    "temperature",
+    "presence_penalty",
+    "frequency_penalty",
+)
+
+
+def test_reasoning_options_strips_sampling_params_from_class_args(
+    default_responses_llm,
+):
+    """Sampling params set as class args are absent when reasoning_options is set."""
+    llm = default_responses_llm
+    llm.reasoning_options = {"effort": "low"}
+    llm.temperature = 0.7
+    llm.top_p = 0.5
+
+    kwargs = llm._get_model_kwargs()
+
+    for param in _REASONING_SAMPLING_PARAMS:
+        assert param not in kwargs, f"{param} must be absent when reasoning is set"
+
+
+def test_reasoning_options_strips_sampling_params_from_additional_kwargs(
+    default_responses_llm,
+):
+    """additional_kwargs must not re-introduce sampling params (after-merge strip).
+
+    Regression test for #20459: the strip must run after additional_kwargs are
+    merged, otherwise a user-supplied top_p/penalty re-triggers the 400.
+    """
+    llm = default_responses_llm
+    llm.reasoning_options = {"effort": "low"}
+    llm.additional_kwargs = {
+        "top_p": 0.5,
+        "presence_penalty": 0.2,
+        "frequency_penalty": 0.3,
+    }
+
+    kwargs = llm._get_model_kwargs()
+
+    for param in _REASONING_SAMPLING_PARAMS:
+        assert param not in kwargs, f"{param} re-introduced via additional_kwargs"
+
+
+def test_reasoning_options_strips_sampling_params_from_runtime_kwargs(
+    default_responses_llm,
+):
+    """Runtime kwargs must not re-introduce sampling params (after-merge strip)."""
+    llm = default_responses_llm
+    llm.reasoning_options = {"effort": "low"}
+
+    kwargs = llm._get_model_kwargs(
+        top_p=0.9, temperature=0.1, presence_penalty=0.4, frequency_penalty=0.5
+    )
+
+    for param in _REASONING_SAMPLING_PARAMS:
+        assert param not in kwargs, f"{param} re-introduced via runtime kwargs"
+
+
+def test_no_reasoning_options_preserves_sampling_params(default_responses_llm):
+    """No behavior change when reasoning is inactive (gpt-4o-mini, no options)."""
+    llm = default_responses_llm
+    assert llm.reasoning_options is None
+    assert llm.model not in O1_MODELS
+
+    llm.temperature = 0.7
+    llm.top_p = 0.5
+
+    kwargs = llm._get_model_kwargs(presence_penalty=0.2)
+
+    assert kwargs["temperature"] == 0.7
+    assert kwargs["top_p"] == 0.5
+    assert kwargs["presence_penalty"] == 0.2
+
+
 def test_get_model_kwargs_with_tools_none(default_responses_llm):
     """Test model kwargs generation when tools is explicitly None.
 
