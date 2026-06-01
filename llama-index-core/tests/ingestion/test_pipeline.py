@@ -249,6 +249,71 @@ def test_pipeline_dedup_duplicates_only() -> None:
     assert len(nodes) == 0
 
 
+def test_pipeline_dedup_within_single_batch() -> None:
+    """
+    `_handle_duplicates` should deduplicate nodes that share a hash
+    within a single ingestion run, not just against the docstore.
+
+    Documents with identical text and metadata produce identical
+    `node.hash` values, so the set-based dedup must collapse them to one.
+    """
+    documents = [
+        Document(text="same content", doc_id="a"),
+        Document(text="same content", doc_id="b"),
+        Document(text="same content", doc_id="c"),
+        Document(text="unique content", doc_id="d"),
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)],
+        docstore=SimpleDocumentStore(),
+        docstore_strategy=DocstoreStrategy.DUPLICATES_ONLY,
+    )
+    nodes = pipeline.run(documents=documents)
+
+    hashes = {n.hash for n in nodes}
+    assert len(nodes) == len(hashes), (
+        "within-batch duplicates must be collapsed to one node per hash"
+    )
+
+
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+def test_pipeline_parallel_cache_populated() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+
+    cache_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+    assert cache_size == num_workers
+
+
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+def test_pipeline_parallel_cache_reused_on_second_run() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+    first_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+
+    pipeline.run(documents=docs, num_workers=num_workers)
+    second_size = len(
+        pipeline.cache.cache.get_all(collection=pipeline.cache.collection)
+    )
+
+    assert first_size == num_workers
+    assert second_size == first_size
+
+
 def test_pipeline_parallel() -> None:
     document1 = Document.example()
     document1.id_ = "1"
@@ -425,6 +490,46 @@ async def test_async_pipeline_dedup_duplicates_only() -> None:
 
     nodes = await pipeline.arun(documents=documents)
     assert len(nodes) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+async def test_async_pipeline_parallel_cache_populated() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+
+    cache_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+    assert cache_size == num_workers
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(cpu_count() < 2, reason="requires at least 2 CPUs")
+async def test_async_pipeline_parallel_cache_reused_on_second_run() -> None:
+    num_workers = 2
+    docs = [
+        Document(text=f"Sample document {i}." * 20, doc_id=str(i)) for i in range(4)
+    ]
+    pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(chunk_size=25, chunk_overlap=0)]
+    )
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+    first_size = len(pipeline.cache.cache.get_all(collection=pipeline.cache.collection))
+
+    await pipeline.arun(documents=docs, num_workers=num_workers)
+    second_size = len(
+        pipeline.cache.cache.get_all(collection=pipeline.cache.collection)
+    )
+
+    assert first_size == num_workers
+    assert second_size == first_size
 
 
 @pytest.mark.asyncio

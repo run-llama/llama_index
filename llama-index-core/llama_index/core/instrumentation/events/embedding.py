@@ -41,17 +41,19 @@ class EmbeddingEndEvent(BaseEvent):
         return "EmbeddingEndEvent"
 
 
-class SparseEmbeddingStartEvent(BaseEvent):
+class SparseEmbeddingStartEvent(EmbeddingStartEvent):
     """
-    EmbeddingStartEvent.
+    SparseEmbeddingStartEvent.
+
+    Inherits from EmbeddingStartEvent so that observability integrations using
+    singledispatch (e.g. openinference-instrumentation-llama-index) route this
+    event to the existing EmbeddingStartEvent handler instead of logging an
+    "Unhandled event" warning.
 
     Args:
         model_dict (dict): Model dictionary containing details about the embedding model.
 
     """
-
-    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
-    model_dict: dict
 
     @classmethod
     def class_name(cls) -> str:
@@ -61,11 +63,11 @@ class SparseEmbeddingStartEvent(BaseEvent):
 
 class SparseEmbeddingEndEvent(BaseEvent):
     """
-    EmbeddingEndEvent.
+    SparseEmbeddingEndEvent.
 
     Args:
         chunks (List[str]): List of chunks.
-        embeddings (List[List[float]]): List of embeddings.
+        embeddings (List[Dict[int, float]]): List of sparse embeddings (token-id to weight).
 
     """
 
