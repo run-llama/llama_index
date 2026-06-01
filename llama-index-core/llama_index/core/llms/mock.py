@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import TypeAlias
 from base64 import b64decode
 from json import JSONDecodeError
+from uuid import uuid4
 from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
@@ -283,23 +284,11 @@ BlockToContentCallback: TypeAlias = Callable[
 ]
 
 ResponseGenerator: TypeAlias = Callable[
-    [Sequence[ChatMessage]],
+    ...,
     ChatMessage
     | Generator[ChatMessage, None, None]
     | AsyncGenerator[ChatMessage, None],
 ]
-
-
-def _default_response_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
-    """Default response generator that echoes the last message's content."""
-    if not messages:
-        return ChatMessage(role="assistant", content="<empty>")
-
-    tool_calls: List[ToolCallBlock] = []
-    content = _default_blocks_to_content_callback(messages[-1].blocks, tool_calls)
-    if not content:
-        content = "<empty>"
-    return ChatMessage(role="assistant", content=content)
 
 
 class MockFunctionCallingLLM(FunctionCallingLLM):
@@ -351,7 +340,15 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
             return self._response_generator
 
         # Return a default generator that uses instance's blocks_to_content_callback
-        def default_generator(messages: Sequence[ChatMessage]) -> ChatMessage:
+        # and calls all tools if provided
+        def default_generator(
+            messages: Sequence[ChatMessage], **kwargs: Any
+        ) -> ChatMessage:
+            # If tools are provided or tool results exist, delegate to tool-calling generator
+            has_tool_results = any(m.role == MessageRole.TOOL for m in messages)
+            if kwargs.get("tools") or has_tool_results:
+                return _tool_calling_response_generator(messages, **kwargs)
+
             if not messages:
                 return ChatMessage(role="assistant", content="<empty>")
 
@@ -415,7 +412,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        response_msg_or_gen = self._get_response_generator()(messages)
+        response_msg_or_gen = self._get_response_generator()(messages, **kwargs)
 
         def _gen() -> Generator[ChatResponse, None, None]:
             if isinstance(response_msg_or_gen, ChatMessage):
@@ -435,7 +432,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        response_msg_or_gen = self._get_response_generator()(messages)
+        response_msg_or_gen = self._get_response_generator()(messages, **kwargs)
 
         async def _gen() -> AsyncGenerator[ChatResponse, None]:
             if isinstance(response_msg_or_gen, ChatMessage):
@@ -453,7 +450,9 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        response_msg = cast(ChatMessage, self._get_response_generator()(messages))
+        response_msg = cast(
+            ChatMessage, self._get_response_generator()(messages, **kwargs)
+        )
         content = response_msg.content or ""
         return ChatResponse(
             message=response_msg,
@@ -465,7 +464,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        return self.chat(messages=messages)
+        return self.chat(messages=messages, **kwargs)
 
     def _prepare_chat_with_tools(
         self,
@@ -526,6 +525,38 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
                 )
             )
         return tool_selections
+
+
+def _tool_calling_response_generator(
+    messages: Sequence[ChatMessage], **kwargs: Any
+) -> ChatMessage:
+    """Response generator that calls all provided tools with their default arguments."""
+    if any(message.role == MessageRole.TOOL for message in messages):
+        return ChatMessage(role=MessageRole.ASSISTANT, content="Tool calls complete.")
+
+    tools: Sequence["BaseTool"] = kwargs.get("tools") or []
+    if not tools:
+        return ChatMessage(role=MessageRole.ASSISTANT, content="No tools available.")
+
+    tool_call_blocks: list[ToolCallBlock] = []
+    for tool in tools:
+        schema = getattr(getattr(tool, "metadata", None), "fn_schema", None)
+        tool_kwargs: dict[str, Any] = {}
+        if schema is not None:
+            for field_name, field_info in schema.model_fields.items():
+                if not field_info.is_required():
+                    tool_kwargs[field_name] = field_info.get_default(
+                        call_default_factory=True
+                    )
+        tool_call_blocks.append(
+            ToolCallBlock(
+                tool_call_id=f"mock-tool-call-{uuid4().hex}",
+                tool_name=tool.metadata.name or "",
+                tool_kwargs=tool_kwargs,
+            )
+        )
+
+    return ChatMessage(role=MessageRole.ASSISTANT, blocks=tool_call_blocks)
 
 
 class MockFunctionCallingLLMWithChatMemoryOfLastCall(MockFunctionCallingLLM):

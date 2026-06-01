@@ -115,7 +115,7 @@ def build_metadata_filter_fn(
         ) -> bool:
             """Evaluate a single filter operator against a metadata value."""
             if metadata_value is None:
-                return False
+                return operator in (FilterOperator.NE, FilterOperator.NIN)
 
             if operator == FilterOperator.EQ:
                 return metadata_value == value
