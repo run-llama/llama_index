@@ -76,12 +76,12 @@ def test_gel_docstore(
     assert len(ds.docs) == 2
 
     # test getting documents
-    doc0 = ds.get_document(documents[0].get_doc_id())
+    doc0 = ds.get_document(documents[0].id_)
     assert doc0 is not None
     assert documents[0].get_content() == doc0.get_content()
 
     # test deleting documents
-    ds.delete_document(documents[0].get_doc_id())
+    ds.delete_document(documents[0].id_)
     assert len(ds.docs) == 1
 
 
