@@ -104,6 +104,17 @@ if TYPE_CHECKING:
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
+# Reasoning models (o-series, and any model with reasoning_options set) reject
+# sampling parameters with a 400 Bad Request. These are stripped from the
+# request payload when reasoning is active.
+# See: https://github.com/run-llama/llama_index/issues/20459
+_REASONING_UNSUPPORTED_SAMPLING_PARAMS = (
+    "top_p",
+    "temperature",
+    "presence_penalty",
+    "frequency_penalty",
+)
+
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(f)
@@ -424,21 +435,18 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.model in O1_MODELS and self.reasoning_options is not None:
             model_kwargs["reasoning"] = self.reasoning_options
 
-        if self.reasoning_options is not None or self.model in O1_MODELS:
-            params_to_exclude_for_reasoning = {
-                "top_p",
-                "temperature",
-                "presence_penalty",
-                "frequency_penalty",
-            }
-            for param in params_to_exclude_for_reasoning:
-                model_kwargs.pop(param, None)
-
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)
 
         kwargs = kwargs or {}
         model_kwargs.update(kwargs)
+
+        # Strip sampling params AFTER merging additional_kwargs and runtime kwargs
+        # so they cannot be re-introduced through those paths and re-trigger the
+        # 400 from reasoning models. See issue #20459.
+        if self.reasoning_options is not None or self.model in O1_MODELS:
+            for param in _REASONING_UNSUPPORTED_SAMPLING_PARAMS:
+                model_kwargs.pop(param, None)
 
         return model_kwargs
 
