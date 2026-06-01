@@ -5,14 +5,14 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.minimax.utils import get_context_window, FUNCTION_CALLING_MODELS
 
 DEFAULT_API_BASE = "https://api.minimax.io/v1"
-DEFAULT_MODEL = "MiniMax-M2.7"
+DEFAULT_MODEL = "MiniMax-M3"
 
 
 class MiniMax(OpenAILike):
     """
     MiniMax LLM.
 
-    MiniMax offers powerful language models with up to 204,800 tokens context window
+    MiniMax offers powerful language models with up to 524,288 tokens context window
     through an OpenAI-compatible API.
 
     Examples:
@@ -22,7 +22,7 @@ class MiniMax(OpenAILike):
         from llama_index.llms.minimax import MiniMax
 
         # Set up the MiniMax class with the required model and API key
-        llm = MiniMax(model="MiniMax-M2.7", api_key="your_api_key")
+        llm = MiniMax(model="MiniMax-M3", api_key="your_api_key")
 
         # Call the complete method with a query
         response = llm.complete("Explain the importance of low latency LLMs")

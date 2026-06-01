@@ -13,7 +13,7 @@ pip install llama-index-llms-minimax
 ```python
 from llama_index.llms.minimax import MiniMax
 
-llm = MiniMax(model="MiniMax-M2.7", api_key="your-api-key")
+llm = MiniMax(model="MiniMax-M3", api_key="your-api-key")
 
 response = llm.complete("Explain the importance of low latency LLMs")
 print(response)
@@ -21,14 +21,11 @@ print(response)
 
 ### Available Models
 
-| Model                    | Description                                              |
-| ------------------------ | -------------------------------------------------------- |
-| `MiniMax-M2.7`           | Latest flagship model with enhanced reasoning and coding |
-| `MiniMax-M2.7-highspeed` | High-speed version of M2.7 for low-latency scenarios     |
-| `MiniMax-M2.5`           | Peak Performance. Ultimate Value. Master the Complex.    |
-| `MiniMax-M2.5-highspeed` | Same performance, faster and more agile.                 |
-
-Both models support a 204,800-token context window.
+| Model                    | Context Window | Description                                              |
+| ------------------------ | -------------- | -------------------------------------------------------- |
+| `MiniMax-M3`             | 524,288        | Latest flagship model, default                           |
+| `MiniMax-M2.7`           | 204,800        | Previous-generation model, kept for backward compatibility |
+| `MiniMax-M2.7-highspeed` | 204,800        | High-speed variant of M2.7 for low-latency scenarios     |
 
 ### Environment Variables
 
@@ -41,7 +38,7 @@ export MINIMAX_API_KEY="your-api-key"
 ```python
 from llama_index.llms.minimax import MiniMax
 
-llm = MiniMax(model="MiniMax-M2.7")
+llm = MiniMax(model="MiniMax-M3")
 ```
 
 ### Custom Base URL
@@ -50,7 +47,7 @@ For users in mainland China, use the domestic API endpoint:
 
 ```python
 llm = MiniMax(
-    model="MiniMax-M2.7",
+    model="MiniMax-M3",
     api_base="https://api.minimaxi.com/v1",
 )
 ```
