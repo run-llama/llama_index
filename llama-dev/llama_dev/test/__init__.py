@@ -77,6 +77,15 @@ def _generate_status_table(
     help="Exit the command at the first failure",
 )
 @click.option(
+    "--strict",
+    is_flag=True,
+    default=False,
+    help=(
+        "Treat dependent package failures as hard failures (exit 1). "
+        "Default: dependent failures are warnings only and do not block."
+    ),
+)
+@click.option(
     "--cov",
     is_flag=True,
     default=False,
@@ -94,6 +103,7 @@ def _generate_status_table(
 def test(
     obj: dict,
     fail_fast: bool,
+    strict: bool,
     cov: bool,
     cov_fail_under: int,
     base_ref: str,
@@ -305,10 +315,17 @@ def test(
                 )
 
     # Print summary
-    failed = [
+    failed_direct = [
         r["package"].relative_to(repo_root)
         for r in results
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
+        and r["package"] in changed_packages
+    ]
+    failed_dependent = [
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
+        and r["package"] not in changed_packages
     ]
     install_failed = [
         r["package"].relative_to(repo_root)
@@ -348,10 +365,32 @@ def test(
         for p in install_failed:
             print(p)
 
-    if failed:
-        console.print(f"\n{len(failed)} packages had test failures:")
-        for p in failed:
+    if failed_dependent:
+        # Emit a GitHub Actions workflow command so the warning surfaces in
+        # the PR Checks tab even when CI logs are collapsed. Uses plain
+        # `print` (not Rich) so the annotation is parsed regardless of TTY.
+        print(
+            f"::warning::{len(failed_dependent)} dependent packages had "
+            f"pre-existing test failures: "
+            f"{', '.join(str(p) for p in failed_dependent)}"
+        )
+        console.print(
+            f"\n⚠️  {len(failed_dependent)} dependent packages had pre-existing test failures (not caused by this change):",
+            style="warning",
+        )
+        for p in failed_dependent:
+            console.print(f"  {p}", style="warning")
+
+    if failed_direct:
+        console.print(f"\n{len(failed_direct)} packages had test failures:")
+        for p in failed_direct:
             console.print(p)
+        exit(1)
+    elif strict and failed_dependent:
+        console.print(
+            f"\nFailing due to --strict: {len(failed_dependent)} dependent package failures present.",
+            style="red",
+        )
         exit(1)
     else:
         console.print(
