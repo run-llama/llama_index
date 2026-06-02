@@ -64,6 +64,17 @@ def test_init_and_properties(default_responses_llm):
     assert metadata.is_chat_model is True
 
 
+def test_openai_responses_api_key_is_redacted_from_serialization():
+    """Test API key is not exposed through model serialization or repr."""
+    secret = "sk-" + ("a" * 48)
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(api_key=secret)
+
+    assert "api_key" not in llm.model_dump()
+    assert secret not in repr(llm)
+
+
 def test_get_model_name():
     """Test different model name formats are properly handled."""
     with patch("llama_index.llms.openai.responses.SyncOpenAI"):

@@ -10,6 +10,14 @@ def test_openai_embedding_class():
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
+def test_openai_embedding_api_key_is_redacted_from_serialization():
+    secret = "sk-" + ("a" * 48)
+    embedding = OpenAIEmbedding(api_key=secret)
+
+    assert "api_key" not in embedding.model_dump()
+    assert secret not in repr(embedding)
+
+
 @pytest.fixture()
 def embedding_instance():
     """Fixture for creating an OpenAIEmbedding instance."""
