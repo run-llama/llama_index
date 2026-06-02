@@ -4,7 +4,7 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -17,6 +17,8 @@ from google.cloud.aiplatform.matching_engine import (
 from google.cloud.vectorsearch_v1beta import (
     BatchCreateDataObjectsRequest,
     BatchDeleteDataObjectsRequest,
+    BatchSearchDataObjectsRequest,
+    BatchSearchDataObjectsResponse,
     CreateDataObjectRequest,
     DataObject,
     DataObjectSearchServiceAsyncClient,
@@ -28,13 +30,24 @@ from google.cloud.vectorsearch_v1beta import (
     OutputFields,
     QueryDataObjectsRequest,
     QueryDataObjectsResponse,
+    Ranker,
+    ReciprocalRankFusion,
+    Search,
+    SearchDataObjectsRequest,
+    SearchDataObjectsResponse,
+    SearchResult,
+    SemanticSearch,
     SparseVector,
+    TextSearch,
     Vector,
+    VectorSearch,
     VectorSearchServiceClient,
 )
 from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
     QueryDataObjectsAsyncPager,
     QueryDataObjectsPager,
+    SearchDataObjectsAsyncPager,
+    SearchDataObjectsPager,
 )
 from llama_index.core import Settings, StorageContext, VectorStoreIndex
 from llama_index.core.schema import (
@@ -46,9 +59,11 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.embeddings.vertex import VertexTextEmbedding
@@ -59,6 +74,7 @@ from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
 from llama_index.vector_stores.vertexaivectorsearch.base import (
     VertexAIDeleteError,
     VertexAIIndexingError,
+    VertexAIQueryError,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
 
@@ -2977,3 +2993,561 @@ class TestUnitV2GetNodes:
             expected_query_request,
         )
         assert result == []
+
+
+QUERY_OUTPUT_FIELDS = OutputFields(data_fields=["*"], metadata_fields=["*"])
+INPUT_FILTERS = MetadataFilters(
+    filters=[MetadataFilter(key="some_key", value=3, operator=FilterOperator.GT)]
+)
+VECTOR_SEARCH_BASIC = VectorSearch(
+    search_field="embedding",
+    vector=DenseVector(values=[0.1, 0.2, 0.3, 0.4]),
+    top_k=3,
+    output_fields=QUERY_OUTPUT_FIELDS,
+)
+VECTOR_SEARCH_FILTERS = VectorSearch(
+    search_field="other_embedding",
+    vector=DenseVector(values=[0.1, 0.2, 0.3, 0.4]),
+    top_k=3,
+    output_fields=QUERY_OUTPUT_FIELDS,
+    filter={"some_key": {"$gt": 3}},
+)
+TEXT_SEARCH_BASIC = TextSearch(
+    search_text="my search query",
+    data_field_names=["text", "title"],
+    top_k=5,
+    output_fields=QUERY_OUTPUT_FIELDS,
+)
+TEXT_SEARCH_FILTERS = TextSearch(
+    search_text="my search query",
+    data_field_names=["text", "title"],
+    top_k=3,
+    output_fields=QUERY_OUTPUT_FIELDS,
+    filter={"some_key": {"$gt": 3}},
+)
+TEXT_SEARCH_FILTERS_K5 = TextSearch(
+    search_text="my search query",
+    data_field_names=["text", "title"],
+    top_k=5,
+    output_fields=QUERY_OUTPUT_FIELDS,
+    filter={"some_key": {"$gt": 3}},
+)
+SEMANTIC_SEARCH_BASIC = SemanticSearch(
+    search_text="my search query",
+    search_field="embedding",
+    task_type="RETRIEVAL_QUERY",
+    top_k=3,
+    output_fields=QUERY_OUTPUT_FIELDS,
+)
+SEMANTIC_SEARCH_FILTERS = SemanticSearch(
+    search_text="my search query",
+    search_field="other_embedding",
+    task_type="RETRIEVAL_QUERY",
+    top_k=3,
+    output_fields=QUERY_OUTPUT_FIELDS,
+    filter={"some_key": {"$gt": 3}},
+)
+RRF_RANKER_1_SEARCH = BatchSearchDataObjectsRequest.CombineResultsOptions(
+    ranker=Ranker(rrf=ReciprocalRankFusion(weights=[1.0])),
+    top_k=6,
+    output_fields=QUERY_OUTPUT_FIELDS,
+)
+RRF_RANKER_2_SEARCHES = BatchSearchDataObjectsRequest.CombineResultsOptions(
+    ranker=Ranker(rrf=ReciprocalRankFusion(weights=[0.5, 0.5])),
+    top_k=6,
+    output_fields=QUERY_OUTPUT_FIELDS,
+)
+
+
+class TestUnitV2Query:
+    """Test behavior of ``query`` and ``aquery`` methods."""
+
+    @pytest.fixture
+    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text", "title"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+            enable_hybrid=True,
+        )
+
+    @pytest.fixture
+    def output_dense_search_results(self) -> list[SearchResult]:
+        return [
+            SearchResult(
+                data_object=DataObject(
+                    data={
+                        "node_id": f"node_{i}",
+                        "text": f"Text {i}",
+                        "title": f"Title {i}",
+                        "user_id": i * 100,
+                        "node_type": "TextNode",
+                        "parent_id": f"doc_{i // 2}",
+                    },
+                ),
+                distance=score,
+            )
+            for i, score in enumerate([0.9, 0.8, 0.7, 0.6, 0.5])
+        ]
+
+    @pytest.fixture
+    def expected_query_result(self) -> VectorStoreQueryResult:
+        scores = [0.9, 0.8, 0.7, 0.6, 0.5]
+        nodes = [
+            TextNode(
+                id_=f"node_{i}",
+                text=f"Text {i}",
+                metadata={
+                    "title": f"Title {i}",
+                    "user_id": i * 100,
+                },
+                embedding=None,
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"doc_{i // 2}")
+                },
+            )
+            for i in range(5)
+        ]
+        ids = [node.id_ for node in nodes]
+        return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
+
+    @pytest.mark.parametrize(
+        ("input_query", "expected_search", "uses_batch_request"),
+        [
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    similarity_top_k=3,
+                ),
+                SearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_BASIC
+                ),
+                False,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    embedding_field="other_embedding",
+                    similarity_top_k=3,
+                    filters=INPUT_FILTERS,
+                ),
+                SearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_FILTERS
+                ),
+                False,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_str="my search query",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                ),
+                SearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT, text_search=TEXT_SEARCH_BASIC
+                ),
+                False,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_str="my search query",
+                    similarity_top_k=3,
+                    filters=INPUT_FILTERS,
+                ),
+                SearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT, text_search=TEXT_SEARCH_FILTERS
+                ),
+                False,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(text_search=TEXT_SEARCH_BASIC),
+                        Search(vector_search=VECTOR_SEARCH_BASIC),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    embedding_field="other_embedding",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                    filters=INPUT_FILTERS,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(text_search=TEXT_SEARCH_FILTERS_K5),
+                        Search(vector_search=VECTOR_SEARCH_FILTERS),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(text_search=TEXT_SEARCH_BASIC),
+                        Search(semantic_search=SEMANTIC_SEARCH_BASIC),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    embedding_field="other_embedding",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                    filters=INPUT_FILTERS,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(text_search=TEXT_SEARCH_FILTERS_K5),
+                        Search(semantic_search=SEMANTIC_SEARCH_FILTERS),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(semantic_search=SEMANTIC_SEARCH_BASIC),
+                        Search(vector_search=VECTOR_SEARCH_BASIC),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my search query",
+                    embedding_field="other_embedding",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                    filters=INPUT_FILTERS,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[
+                        Search(semantic_search=SEMANTIC_SEARCH_FILTERS),
+                        Search(vector_search=VECTOR_SEARCH_FILTERS),
+                    ],
+                    combine=RRF_RANKER_2_SEARCHES,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my search query",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                BatchSearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT,
+                    searches=[Search(semantic_search=SEMANTIC_SEARCH_BASIC)],
+                    combine=RRF_RANKER_1_SEARCH,
+                ),
+                True,
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.MMR,  # unsupported, falls back to DEFAULT
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    similarity_top_k=3,
+                ),
+                SearchDataObjectsRequest(
+                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_BASIC
+                ),
+                False,
+            ),
+        ],
+        ids=[
+            "mode=dense, embedding_field=store, filter=no",
+            "mode=dense, embedding_field=query, filter=yes",
+            "mode=text_search, filter=no, top_k=sparse",
+            "mode=text_search, filter=yes, top_k=similarity",
+            "mode=hybrid, dense_search=client, embedding_field=store, filter=no, top_k=hybrid",
+            "mode=hybrid, dense_search=client, embedding_field=query, filter=yes, top_k=hybrid",
+            "mode=hybrid, dense_search=auto-embed, embedding_field=store, filter=no, top_k=hybrid",
+            "mode=hybrid, dense_search=auto-embed, embedding_field=query, filter=yes, top_k=hybrid",
+            "mode=semantic_hybrid, vector_search=true, embedding_field=store, filter=no, top_k=hybrid",
+            "mode=semantic_hybrid, vector_search=true, embedding_field=query, filter=yes, top_k=hybrid",
+            "mode=semantic_hybrid, vector_search=false, embedding_field=store, filter=no, top_k=hybrid",
+            "mode=mmr (fallback to default), embedding_field=store, filter=no",
+        ],
+    )
+    class TestValidInput:
+        def test_v2_query_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_client: MagicMock,
+            input_query: VectorStoreQuery,
+            expected_search: SearchDataObjectsRequest,
+            uses_batch_request: bool,
+            output_dense_search_results: list[SearchResult],
+            expected_query_result: VectorStoreQueryResult,
+        ) -> None:
+            # GIVEN
+            if uses_batch_request:
+                raw_results = MagicMock(
+                    spec=BatchSearchDataObjectsResponse,
+                    results=[
+                        MagicMock(
+                            spec=SearchDataObjectsResponse,
+                            results=output_dense_search_results,
+                        )
+                    ],
+                )
+                mock_v2_data_object_search_service_client.batch_search_data_objects.return_value = raw_results
+            else:
+                raw_results = MagicMock(spec=SearchDataObjectsPager)
+                raw_results.__iter__.return_value = output_dense_search_results
+                mock_v2_data_object_search_service_client.search_data_objects.return_value = raw_results
+
+            # WHEN
+            actual_query_result = mock_v2_store.query(input_query)
+
+            # THEN
+            assert actual_query_result == expected_query_result
+            if uses_batch_request:
+                mock_v2_data_object_search_service_client.batch_search_data_objects.assert_called_with(
+                    expected_search
+                )
+                mock_v2_data_object_search_service_client.search_data_objects.assert_not_called()
+            else:
+                mock_v2_data_object_search_service_client.search_data_objects.assert_called_with(
+                    expected_search
+                )
+                mock_v2_data_object_search_service_client.batch_search_data_objects.assert_not_called()
+
+        async def test_v2_aquery_valid(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            input_query: VectorStoreQuery,
+            expected_search: SearchDataObjectsRequest,
+            uses_batch_request: bool,
+            output_dense_search_results: list[SearchResult],
+            expected_query_result: VectorStoreQueryResult,
+        ) -> None:
+            # GIVEN
+            if uses_batch_request:
+                raw_results = MagicMock(
+                    spec=BatchSearchDataObjectsResponse,
+                    results=[
+                        MagicMock(
+                            spec=SearchDataObjectsResponse,
+                            results=output_dense_search_results,
+                        )
+                    ],
+                )
+                mock_v2_data_object_search_service_async_client.batch_search_data_objects.return_value = raw_results
+            else:
+                raw_results = MagicMock(spec=SearchDataObjectsAsyncPager)
+                raw_results.__aiter__.return_value = output_dense_search_results
+                mock_v2_data_object_search_service_async_client.search_data_objects.return_value = raw_results
+
+            # WHEN
+            actual_query_result = await mock_v2_store.aquery(input_query)
+
+            # THEN
+            assert actual_query_result == expected_query_result
+            if uses_batch_request:
+                mock_v2_data_object_search_service_async_client.batch_search_data_objects.assert_called_with(
+                    expected_search
+                )
+                mock_v2_data_object_search_service_async_client.search_data_objects.assert_not_called()
+            else:
+                mock_v2_data_object_search_service_async_client.search_data_objects.assert_called_with(
+                    expected_search
+                )
+                mock_v2_data_object_search_service_async_client.batch_search_data_objects.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("input_query", "vector_store_update_fields", "error_match"),
+        [
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_str="my query",
+                    similarity_top_k=3,
+                ),
+                {},
+                r".*query_embedding. field must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                ),
+                {},
+                r".*query_str. field must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_str="my query",
+                    sparse_top_k=5,
+                ),
+                {"text_search_fields": None},
+                r".*vector store field .text_search_fields. must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"enable_hybrid": False},
+                r".*vector store field .enable_hybrid. must be True",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    hybrid_top_k=6,
+                ),
+                {},
+                r".*query_str. field must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"text_search_fields": None},
+                r".*vector store field .text_search_fields. must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"enable_hybrid": False},
+                r".*vector store field .enable_hybrid. must be True",
+            ),
+            (
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    hybrid_top_k=6,
+                ),
+                {},
+                r".*query_str. field must be set",
+            ),
+            (
+                VectorStoreQuery(
+                    # mode that will likely be valid in the future
+                    mode=VectorStoreQueryMode.SPARSE,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    hybrid_top_k=6,
+                ),
+                {},
+                r"SPARSE mode is planned for Phase 2",
+            ),
+        ],
+        ids=[
+            "mode=dense, query_embedding=null",
+            "mode=text_search, query_str=null",
+            "mode=text_search, store.text_search_fields=null",
+            "mode=hybrid, store.enable_hybrid=false",
+            "mode=hybrid, query_str=null",
+            "mode=hybrid, store.text_search_fields=null",
+            "mode=semantic_hybrid, store.enable_hybrid=false",
+            "mode=semantic_hybrid, query_str=null",
+            "mode=sparse, currently unsupported",
+        ],
+    )
+    class TestInvalidInput:
+        def test_v2_query_invalid_input(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            input_query: VectorStoreQuery,
+            vector_store_update_fields: dict[str, Any],
+            error_match: str,
+        ) -> None:
+            # GIVEN
+            if vector_store_update_fields:
+                for key, val in vector_store_update_fields.items():
+                    setattr(mock_v2_store, key, val)
+
+            # WHEN / THEN
+            with pytest.raises(VertexAIQueryError, match=error_match):
+                _ = mock_v2_store.query(input_query)
+
+        async def test_v2_aquery_invalid_input(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            input_query: VectorStoreQuery,
+            vector_store_update_fields: dict[str, Any],
+            error_match: str,
+        ) -> None:
+            # GIVEN
+            if vector_store_update_fields:
+                for key, val in vector_store_update_fields.items():
+                    setattr(mock_v2_store, key, val)
+
+            # WHEN / THEN
+            with pytest.raises(VertexAIQueryError, match=error_match):
+                _ = await mock_v2_store.aquery(input_query)
