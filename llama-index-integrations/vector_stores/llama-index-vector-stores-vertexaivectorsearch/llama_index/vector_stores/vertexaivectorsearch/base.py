@@ -75,33 +75,50 @@ class VertexAIException(Exception):
     """Vertex AI Exception."""
 
 
+@dataclass
+class _AddResult:
+    added_ids: list[str] = field(default_factory=list)
+    failed_ids: list[str] = field(default_factory=list)
+    exceptions: list[Exception] = field(default_factory=list)
+
+    @property
+    def succeeded(self) -> bool:
+        """Indicates whether the batch operation succeeded."""
+        return not self.failed_ids
+
+    def __add__(self, other: "_AddResult") -> "_AddResult":
+        """Combine the properties of two :py:class:`_AddResult` objects."""
+        return _AddResult(
+            added_ids=self.added_ids + other.added_ids,
+            failed_ids=self.failed_ids + other.failed_ids,
+            exceptions=[*self.exceptions, *other.exceptions],
+        )
+
+    def __iadd__(self, other: "_AddResult") -> Self:
+        """In-place addition to combine results."""
+        self.added_ids.extend(other.added_ids)
+        self.failed_ids.extend(other.failed_ids)
+        self.exceptions.extend(other.exceptions)
+        return self
+
+    @property
+    def summary_line(self) -> str:
+        """Returns a summary count line for logging purposes."""
+        return (
+            f"added={len(self.added_ids)}, failed={len(self.failed_ids)}, "
+            f"exceptions={self.exceptions}"
+        )
+
+
 class VertexAIIndexingError(VertexAIException):
     """Raised for errors when indexing content into a vector store."""
 
-    def __init__(self, failed_ids: List[str], added_ids: List[str]) -> None:
+    def __init__(self, result: _AddResult) -> None:
         """Initialize the exception."""
         super().__init__(
-            f"Failed to add {len(failed_ids)} nodes to the index: {failed_ids}"
+            f"Failed to add all objects to the index, {result.summary_line}"
         )
-        self.failed_ids = failed_ids
-        self.added_ids = added_ids
-
-
-class VertexAIDeleteError(VertexAIException):
-    """Raised for errors when indexing content into a vector store."""
-
-    def __init__(
-        self, deleted: int, not_found: int, failed: int, exceptions: List[Exception]
-    ) -> None:
-        """Initialize the exception."""
-        super().__init__(
-            f"Failed to delete all target data objects, deleted={deleted}, "
-            f"not_found={not_found}, failed={failed}, exceptions={exceptions}"
-        )
-        self.failed = failed
-        self.deleted = deleted
-        self.not_found = not_found
-        self.exceptions = exceptions
+        self.result = result
 
 
 @dataclass
@@ -127,6 +144,14 @@ class _DeleteResult:
             exceptions=[*self.exceptions, *other.exceptions],
         )
 
+    def __iadd__(self, other: "_DeleteResult") -> Self:
+        """In-place addition to combine results."""
+        self.deleted += other.deleted
+        self.failed += other.failed
+        self.not_found += other.not_found
+        self.exceptions += other.exceptions
+        return self
+
     @property
     def summary_line(self) -> str:
         """Returns a summary count line for logging purposes."""
@@ -134,6 +159,17 @@ class _DeleteResult:
             f"deleted={self.deleted}, not_found={self.not_found}, "
             f"failed={self.failed}, exceptions={self.exceptions}"
         )
+
+
+class VertexAIDeleteError(VertexAIException):
+    """Raised for errors when indexing content into a vector store."""
+
+    def __init__(self, result: _DeleteResult) -> None:
+        """Initialize the exception."""
+        super().__init__(
+            f"Failed to delete all target data objects, {result.summary_line}"
+        )
+        self.result = result
 
 
 class FeatureFlags:
@@ -512,8 +548,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # Batch create data objects
         time_start = time.perf_counter()
-        added_ids: List[str] = []
-        failed_ids: List[str] = []
+        result = _AddResult()
         for i, start in enumerate(range(0, len(batch_requests), self.batch_size)):
             batch = batch_requests[start : start + self.batch_size]
             batch_ids = ids[start : start + self.batch_size]
@@ -526,19 +561,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             try:
                 response = data_object_client.batch_create_data_objects(request)
                 _logger.debug(f"Batch create response: {response}")
-                added_ids.extend(batch_ids)
+                result.added_ids.extend(batch_ids)
                 _logger.debug(f"Add request batch {i} complete, indexed {size} nodes")
-            except Exception:
+            except Exception as exc:
                 _logger.exception(f"Failed to create batch {i} ({size} objects)")
-                failed_ids.extend(batch_ids)
+                exc.add_note(f"Batch {i} ({size} objects)")
+                result.failed_ids.extend(batch_ids)
+                result.exceptions.append(exc)
 
         time_taken = time.perf_counter() - time_start
         _logger.info(
-            f"Added {len(added_ids)} nodes in {time_taken:.2f}s (failed={len(failed_ids)})"
+            f"Completed 'add' operation in {time_taken:.2f}s, {result.summary_line}"
         )
-        if failed_ids:
-            raise VertexAIIndexingError(failed_ids=failed_ids, added_ids=added_ids)
-        return added_ids
+        if not result.succeeded:
+            raise VertexAIIndexingError(result)
+        return result.added_ids
 
     def _build_v2_create_requests(
         self, nodes: Sequence[BaseNode]
@@ -647,7 +684,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Returns:
             An extracted ``BaseNode``.
 
-            The return type is ``BaseNode`` instead of ``TextNode`` for API compatability
+            The return type is ``BaseNode`` instead of ``TextNode`` for API compatibility
             reasons, but currently this implementation always returns ``TextNode`` objects.
 
         """
@@ -793,23 +830,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         time_start = time.perf_counter()
-        results: List[Tuple[bool, List[str]]] = await asyncio.gather(*tasks)
+        results: List[_AddResult] = await asyncio.gather(*tasks)
         time_taken = time.perf_counter() - time_start
 
-        added_ids: List[str] = []
-        failed_ids: List[str] = []
-        for success, batch_ids in results:
-            if success:
-                added_ids.extend(batch_ids)
-            else:
-                failed_ids.extend(batch_ids)
-
+        result = sum(results, _AddResult())
         _logger.info(
-            f"Added {len(added_ids)} nodes in {time_taken:.2f}s (failed={len(failed_ids)})"
+            f"Completed 'async_add' operation in {time_taken:.2f}s, {result.summary_line}"
         )
-        if failed_ids:
-            raise VertexAIIndexingError(failed_ids=failed_ids, added_ids=added_ids)
-        return added_ids
+        if not result.succeeded:
+            raise VertexAIIndexingError(result)
+        return result.added_ids
 
     async def _async_create_batch(
         self,
@@ -817,7 +847,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         batch_idx: int,
         batch_ids: List[str],
         create_requests: List["CreateDataObjectRequest"],
-    ) -> Tuple[bool, List[str]]:
+    ) -> _AddResult:
         """
         Execute an async add for a single batch of data objects.
 
@@ -827,7 +857,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             create_requests: List of CreateDataObjectRequest protos to create.
 
         Returns:
-            Tuple of (success, list of node IDs in this batch).
+            An object containing lists of added and failed IDs.
 
         """
         from google.cloud.vectorsearch_v1beta import (
@@ -847,12 +877,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.debug(
                     f"Add request batch {batch_idx} complete, indexed {size} nodes"
                 )
-                return True, batch_ids
-            except Exception:
+                return _AddResult(added_ids=batch_ids)
+            except Exception as exc:
                 _logger.exception(
                     f"Failed to index async batch {batch_idx} ({size} objects)"
                 )
-                return False, batch_ids
+                exc.add_note(f"Batch {batch_idx} ({size} objects)")
+                return _AddResult(failed_ids=batch_ids, exceptions=[exc])
 
     @override
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -914,12 +945,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"{time_taken:.2f}, {result.summary_line}",
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     def _build_filter_query_request(
         self,
@@ -987,12 +1013,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 data_object_client.batch_delete_data_objects(batch_request)
                 result.deleted += size
             except NotFound as exc:
+                exc.add_note(f"Batch {i}")
                 _logger.warning(
                     f"Delete batch {i} ({size} objects) raised 'NotFound' exception: {exc}"
                 )
                 result.not_found += size
                 result.exceptions.append(exc)
             except Exception as exc:
+                exc.add_note(f"Batch {i}")
                 _logger.exception(f"Failed to delete batch {i} ({size} objects)")
                 result.failed += size
                 result.exceptions.append(exc)
@@ -1044,12 +1072,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"{time_taken:.2f}, {result.summary_line}",
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     async def _async_delete_query_result(
         self, result_pager: "QueryDataObjectsAsyncPager"
@@ -1103,11 +1126,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Delete batch {batch_idx} ({size} objects) raised 'NotFound' "
                     f"exception: {exc}",
                 )
+                exc.add_note(f"Batch {batch_idx}")
                 return _DeleteResult(not_found=size, exceptions=[exc])
             except Exception as exc:
                 _logger.exception(
                     f"Failed to delete async batch {batch_idx} ({size} objects)"
                 )
+                exc.add_note(f"Batch {batch_idx}")
                 return _DeleteResult(failed=size, exceptions=[exc])
 
     @override
@@ -1631,12 +1656,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     def _prepare_delete_by_id_requests(
         self, node_ids: Sequence[str]
@@ -1742,12 +1762,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     @override
     def clear(self) -> None:
@@ -1793,12 +1808,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"{result.summary_line}"
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     @override
     async def aclear(self) -> None:
@@ -1838,12 +1848,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"{result.summary_line}"
         )
         if not result.succeeded:
-            raise VertexAIDeleteError(
-                deleted=result.deleted,
-                not_found=result.not_found,
-                failed=result.failed,
-                exceptions=result.exceptions,
-            )
+            raise VertexAIDeleteError(result)
 
     @override
     def get_nodes(

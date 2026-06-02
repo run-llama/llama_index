@@ -1645,8 +1645,8 @@ class TestUnitV2Add:
             # THEN
             exception = exc_info.value
             assert isinstance(exception, VertexAIIndexingError)
-            assert exception.added_ids == expected_added
-            assert exception.failed_ids == expected_failed
+            assert exception.result.added_ids == expected_added
+            assert exception.result.failed_ids == expected_failed
             mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
                 expected_calls,
             )
@@ -1675,8 +1675,8 @@ class TestUnitV2Add:
             # THEN
             exception = exc_info.value
             assert isinstance(exception, VertexAIIndexingError)
-            assert exception.added_ids == expected_added
-            assert exception.failed_ids == expected_failed
+            assert exception.result.added_ids == expected_added
+            assert exception.result.failed_ids == expected_failed
             mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
                 expected_calls, any_order=True
             )
@@ -2322,10 +2322,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
                 expected_query_request,
             )
@@ -2368,10 +2368,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
                 expected_query_request,
             )
@@ -2404,10 +2404,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_service_client.batch_delete_data_objects.assert_has_calls(
                 expected_calls,
             )
@@ -2437,10 +2437,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_service_async_client.batch_delete_data_objects.assert_has_calls(
                 expected_calls,
             )
@@ -2476,10 +2476,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
                 expected_filter_query_request,
             )
@@ -2517,10 +2517,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
                 expected_filter_query_request
             )
@@ -2562,10 +2562,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_client.query_data_objects.assert_called_with(
                 expected_query_request,
             )
@@ -2606,10 +2606,10 @@ class TestUnitV2Delete:
 
             # THEN
             raised_exc = exc_info.value
-            assert raised_exc.deleted == expected_deleted
-            assert raised_exc.not_found == expected_not_found
-            assert raised_exc.failed == expected_failed
-            assert raised_exc.exceptions == expected_exceptions
+            assert raised_exc.result.deleted == expected_deleted
+            assert raised_exc.result.not_found == expected_not_found
+            assert raised_exc.result.failed == expected_failed
+            assert raised_exc.result.exceptions == expected_exceptions
             mock_v2_data_object_search_service_async_client.query_data_objects.assert_called_with(
                 expected_query_request,
             )
