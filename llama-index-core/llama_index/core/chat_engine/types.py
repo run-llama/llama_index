@@ -14,6 +14,8 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    ContentBlock,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -40,6 +42,30 @@ def is_function(message: ChatMessage) -> bool:
         "tool_calls" in message.additional_kwargs
         and len(message.additional_kwargs["tool_calls"]) > 0
     )
+
+
+def _set_message_content(message: ChatMessage, content: str) -> None:
+    """Set text content on a message without dropping non-text blocks."""
+    if not message.blocks or (
+        len(message.blocks) == 1 and isinstance(message.blocks[0], TextBlock)
+    ):
+        message.content = content
+        return
+
+    updated_blocks: list[ContentBlock] = []
+    content_added = False
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            if not content_added:
+                updated_blocks.append(TextBlock(text=content))
+                content_added = True
+        else:
+            updated_blocks.append(block)
+
+    if not content_added:
+        updated_blocks.insert(0, TextBlock(text=content))
+
+    message.blocks = updated_blocks
 
 
 class ChatResponseMode(str, Enum):
@@ -191,7 +217,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_content(chat.message, final_text.strip())  # final message
                 memory.put(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
@@ -249,7 +275,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_content(chat.message, final_text.strip())  # final message
                 await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
