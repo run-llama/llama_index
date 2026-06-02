@@ -124,14 +124,16 @@ def to_node(match: MatchNeighbor, text_key: str) -> TextNode:
         }
         if "_node_content" in entry:
             entry["_node_content"] = entry["_node_content"][0]
-            node_content = json.loads(entry["_node_content"])
+            node_content = json.loads(entry["_node_content"])  # type: ignore[arg-type]
 
     id = match.id
-    embedding = list(match.feature_vector)
+    embedding = list(match.feature_vector) if match.feature_vector else []
     text = node_content.get(text_key, "")
 
     try:
         node = metadata_dict_to_node(entry)
+        if not isinstance(node, TextNode):
+            raise ValueError(f"Node type mismatch, expected TextNode: {node}")
         node.text = text
         node.embedding = embedding
     except Exception as e:
@@ -344,11 +346,9 @@ def find_neighbors(
         numeric_filter=numeric_filter,
         return_full_datapoint=True,
     )
-
     if len(neighbors) > 0:
-        neighbors = neighbors[0]
-
-    return neighbors
+        return neighbors[0]
+    return []
 
 
 def _get_deployed_index_id(
@@ -363,7 +363,7 @@ def _get_deployed_index_id(
     """
     for deployed_index in endpoint.deployed_indexes:
         if deployed_index.index == index.resource_name:
-            return deployed_index.id
+            return deployed_index.id  # type: ignore[no-any-return]
 
     raise ValueError(
         f"No index with id {index.resource_name} "
@@ -385,6 +385,8 @@ def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
         num_filters = []
         txt_filters = []
         for filter in filters.filters:
+            if not isinstance(filter, MetadataFilter):
+                raise ValueError(f"Nested filters are not supported: {filter}")
             num_filter = None
             txt_filter = None
             if filter.operator not in FILTER_MAP:
