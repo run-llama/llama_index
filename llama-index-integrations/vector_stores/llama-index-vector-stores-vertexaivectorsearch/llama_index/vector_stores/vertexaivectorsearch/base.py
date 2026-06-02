@@ -56,7 +56,10 @@ if typing.TYPE_CHECKING:
         BatchSearchDataObjectsResponse,
         CreateDataObjectRequest,
         DataObject,
+        DataObjectSearchServiceAsyncClient,
+        DataObjectSearchServiceClient,
         DataObjectServiceAsyncClient,
+        DataObjectServiceClient,
         OutputFields,
         QueryDataObjectsRequest,
         QueryDataObjectsResponse,
@@ -66,6 +69,7 @@ if typing.TYPE_CHECKING:
         TextSearch,
         Vector,
         VectorSearch,
+        VectorSearchServiceClient,
     )
     from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
         QueryDataObjectsAsyncPager,
@@ -439,6 +443,36 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"/collections/{self.collection_id}"
         )
 
+    @cached_property
+    def v2_vector_search_client(self) -> "VectorSearchServiceClient":
+        """Access shared ``DataObjectServiceClient`` instance."""
+        clients = self._sdk_manager.get_v2_client()
+        return clients["vector_search_service_client"]
+
+    @cached_property
+    def v2_data_object_client(self) -> "DataObjectServiceClient":
+        """Access shared ``DataObjectServiceClient`` instance."""
+        clients = self._sdk_manager.get_v2_client()
+        return clients["data_object_service_client"]
+
+    @cached_property
+    def v2_data_object_async_client(self) -> "DataObjectServiceAsyncClient":
+        """Access shared ``DataObjectServiceClient`` instance."""
+        clients = self._sdk_manager.get_v2_client()
+        return clients["data_object_service_async_client"]
+
+    @cached_property
+    def v2_search_client(self) -> "DataObjectSearchServiceClient":
+        """Access shared ``DataObjectServiceClient`` instance."""
+        clients = self._sdk_manager.get_v2_client()
+        return clients["data_object_search_service_client"]
+
+    @cached_property
+    def v2_search_async_client(self) -> "DataObjectSearchServiceAsyncClient":
+        """Access shared ``DataObjectServiceClient`` instance."""
+        clients = self._sdk_manager.get_v2_client()
+        return clients["data_object_search_service_async_client"]
+
     @override
     def add(
         self,
@@ -539,10 +573,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Adding {len(nodes)} nodes to v2 collection: {self.collection_id}",
         )
 
-        # Get v2 clients
-        clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_client"]
-
         # Convert nodes to v2 data objects
         ids, batch_requests = self._build_v2_create_requests(nodes)
 
@@ -559,7 +589,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
 
             try:
-                response = data_object_client.batch_create_data_objects(request)
+                response = self.v2_data_object_client.batch_create_data_objects(request)
                 _logger.debug(f"Batch create response: {response}")
                 result.added_ids.extend(batch_ids)
                 _logger.debug(f"Add request batch {i} complete, indexed {size} nodes")
@@ -822,13 +852,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             List of node IDs
 
         """
-        clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_async_client"]
-
         node_ids, add_reqs = self._build_v2_create_requests(nodes)
         tasks = [
             self._async_create_batch(
-                client=data_object_client,
                 batch_idx=i,
                 batch_ids=node_ids[start : start + self.batch_size],
                 create_requests=add_reqs[start : start + self.batch_size],
@@ -854,7 +880,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     async def _async_create_batch(
         self,
-        client: "DataObjectServiceAsyncClient",
         batch_idx: int,
         batch_ids: List[str],
         create_requests: List["CreateDataObjectRequest"],
@@ -883,7 +908,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 request = BatchCreateDataObjectsRequest(
                     parent=self._collection_parent, requests=create_requests
                 )
-                response = await client.batch_create_data_objects(request)
+                response = (
+                    await self.v2_data_object_async_client.batch_create_data_objects(
+                        request
+                    )
+                )
                 _logger.debug(f"Batch create response: {response}")
                 _logger.debug(
                     f"Add request batch {batch_idx} complete, indexed {size} nodes"
@@ -939,16 +968,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if self.docid_field is None:
             raise ValueError("The field 'docid_field' must be set to use 'delete'")
 
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_client"]
-
         _logger.info(
             f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
         )
         query_request = self._build_filter_query_request(
             v2_filter={self.docid_field: {"$eq": ref_doc_id}}
         )
-        query_results = search_client.query_data_objects(query_request)
+        query_results = self.v2_search_client.query_data_objects(query_request)
         time_taken, result = self._sync_delete_query_result(query_results)
         _logger.info(
             f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
@@ -1012,15 +1038,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self, requests: List["BatchDeleteDataObjectsRequest"]
     ) -> Tuple[float, _DeleteResult]:
         """Execute a set of batch delete requests and output combined results."""
-        clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_client"]
         result = _DeleteResult()
         time_start = time.perf_counter()
         for i, batch_request in enumerate(requests):
             size = len(batch_request.requests)
             try:
                 _logger.debug(f"Deleting batch {i} ({size} objects)")
-                data_object_client.batch_delete_data_objects(batch_request)
+                self.v2_data_object_client.batch_delete_data_objects(batch_request)
                 result.deleted += size
             except NotFound as exc:
                 _logger.warning(
@@ -1064,16 +1088,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if self.docid_field is None:
             raise ValueError("The field 'docid_field' must be set to use 'adelete'")
 
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_async_client"]
-
         _logger.info(
             f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
         )
         query_request = self._build_filter_query_request(
             v2_filter={self.docid_field: {"$eq": ref_doc_id}}
         )
-        paged_resp = await search_client.query_data_objects(query_request)
+        paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
         time_taken, result = await self._async_delete_query_result(paged_resp)
         _logger.info(
             f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
@@ -1092,18 +1113,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         asynchronously, respecting the instance-global semaphore controlling
         simultaneous requests to the collection.
         """
-        clients = self._sdk_manager.get_v2_client()
-        data_object_client = clients["data_object_service_async_client"]
-
         tasks = []
         batch_idx = 1
         async for page in result_pager.pages:
             if batch_request := self._build_batch_delete_request(page):
-                tasks.append(
-                    self._async_delete_batch(
-                        data_object_client, batch_idx, batch_request
-                    )
-                )
+                tasks.append(self._async_delete_batch(batch_idx, batch_request))
                 batch_idx += 1
         time_start = time.perf_counter()
         results: List[_DeleteResult] = await asyncio.gather(*tasks)
@@ -1113,7 +1127,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     async def _async_delete_batch(
         self,
-        client: "DataObjectServiceAsyncClient",
         batch_idx: int,
         request: "BatchDeleteDataObjectsRequest",
     ) -> _DeleteResult:
@@ -1122,7 +1135,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             try:
                 _logger.debug(f"Deleting async batch {batch_idx} ({size} objects)")
                 time_start = time.perf_counter()
-                await client.batch_delete_data_objects(request)
+                await self.v2_data_object_async_client.batch_delete_data_objects(
+                    request
+                )
                 time_taken = time.perf_counter() - time_start
                 _logger.debug(
                     f"Delete request batch {batch_idx} complete, deleted {size} nodes "
@@ -1248,30 +1263,32 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 "for keyword search or HYBRID mode for combined vector + keyword search.",
             )
 
-        # Route based on query mode
-        clients = self._sdk_manager.get_v2_client()
-        client = clients["data_object_search_service_client"]
-
         # prepare filters once for all search types
         v2_filter = _convert_filters_to_v2(query.filters)
+
+        # Route based on query mode
         if query.mode == VectorStoreQueryMode.TEXT_SEARCH:
             text_search = self._build_text_search(query, v2_filter)
             request = SearchDataObjectsRequest(
                 parent=self._collection_parent, text_search=text_search
             )
-            results = client.search_data_objects(request)
+            results = self.v2_search_client.search_data_objects(request)
             return self._process_search_results(results)
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
             batch_request = self._build_hybrid_query_request(query, v2_filter)
-            batch_results = client.batch_search_data_objects(batch_request)
+            batch_results = self.v2_search_client.batch_search_data_objects(
+                batch_request
+            )
             return self._process_batch_search_results(
                 batch_results, batch_request.combine.top_k
             )
 
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             batch_request = self._build_semantic_hybrid_query_request(query, v2_filter)
-            batch_results = client.batch_search_data_objects(batch_request)
+            batch_results = self.v2_search_client.batch_search_data_objects(
+                batch_request
+            )
             return self._process_batch_search_results(
                 batch_results, batch_request.combine.top_k
             )
@@ -1286,7 +1303,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             request = SearchDataObjectsRequest(
                 parent=self._collection_parent, vector_search=vector_search
             )
-            results = client.search_data_objects(request)
+            results = self.v2_search_client.search_data_objects(request)
             return self._process_search_results(results)
 
     async def _aquery_v2(
@@ -1323,30 +1340,32 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 "for keyword search or HYBRID mode for combined vector + keyword search.",
             )
 
-        # Route based on query mode
-        clients = self._sdk_manager.get_v2_client()
-        client = clients["data_object_search_service_async_client"]
-
         # prepare filters once for all search types
         v2_filter = _convert_filters_to_v2(query.filters)
+
+        # Route based on query mode
         if query.mode == VectorStoreQueryMode.TEXT_SEARCH:
             text_search = self._build_text_search(query, v2_filter)
             request = SearchDataObjectsRequest(
                 parent=self._collection_parent, text_search=text_search
             )
-            results = await client.search_data_objects(request)
+            results = await self.v2_search_async_client.search_data_objects(request)
             return await self._process_async_search_results(results)
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
             batch_request = self._build_hybrid_query_request(query, v2_filter)
-            batch_results = await client.batch_search_data_objects(batch_request)
+            batch_results = await self.v2_search_async_client.batch_search_data_objects(
+                batch_request
+            )
             return self._process_batch_search_results(
                 batch_results, batch_request.combine.top_k
             )
 
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             batch_request = self._build_semantic_hybrid_query_request(query, v2_filter)
-            batch_results = await client.batch_search_data_objects(batch_request)
+            batch_results = await self.v2_search_async_client.batch_search_data_objects(
+                batch_request
+            )
             return self._process_batch_search_results(
                 batch_results, batch_request.combine.top_k
             )
@@ -1361,7 +1380,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             request = SearchDataObjectsRequest(
                 parent=self._collection_parent, vector_search=vector_search
             )
-            results = await client.search_data_objects(request)
+            results = await self.v2_search_async_client.search_data_objects(request)
             return await self._process_async_search_results(results)
 
     def _build_vector_search(
@@ -1775,10 +1794,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             **kwargs: Additional keyword arguments
 
         """
-        # Get v2 client
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_client"]
-
         time_taken: float = 0.0
         result = _DeleteResult()
         if node_ids:
@@ -1797,7 +1812,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"{self.collection_id}"
                 )
                 query = self._build_filter_query_request(v2_filter)
-                query_results = search_client.query_data_objects(query)
+                query_results = self.v2_search_client.query_data_objects(query)
                 time_taken, result = self._sync_delete_query_result(query_results)
             else:
                 _logger.warning(
@@ -1873,18 +1888,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             **kwargs: Additional keyword arguments
 
         """
-        # Get v2 client
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_async_client"]
-        data_object_client = clients["data_object_service_async_client"]
-
         # build the appropriate batch request based on input
         time_taken: float = 0.0
         result = _DeleteResult()
         if node_ids:
             # batch the calls
             tasks = [
-                self._async_delete_batch(data_object_client, i, req)
+                self._async_delete_batch(i, req)
                 for i, req in enumerate(self._prepare_delete_by_id_requests(node_ids))
             ]
             # execute deletion
@@ -1903,7 +1913,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Deleting nodes matching filters (batch_size={self.batch_size}): {v2_filter}"
                 )
                 query = self._build_filter_query_request(v2_filter)
-                query_result = await search_client.query_data_objects(query)
+                query_result = await self.v2_search_async_client.query_data_objects(
+                    query
+                )
                 time_taken, result = await self._async_delete_query_result(query_result)
             else:
                 _logger.warning(
@@ -1946,17 +1958,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
-
-        # Get v2 client
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_client"]
-
         query_request = QueryDataObjectsRequest(
             parent=self._collection_parent,
             page_size=self.batch_size,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
-        paged_resp = search_client.query_data_objects(query_request)
+        paged_resp = self.v2_search_client.query_data_objects(query_request)
         time_taken, result = self._sync_delete_query_result(paged_resp)
         _logger.info(
             f"Clear operation for collection finished in {time_taken:.2f}s, "
@@ -1986,17 +1993,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
-
-        # Get v2 client
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_async_client"]
-
         query_request = QueryDataObjectsRequest(
             parent=self._collection_parent,
             page_size=self.batch_size,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
-        paged_resp = await search_client.query_data_objects(query_request)
+        paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
         time_taken, result = await self._async_delete_query_result(paged_resp)
         _logger.info(
             f"Clear operation for collection finished in {time_taken:.2f}s, "
@@ -2068,9 +2070,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         from google.cloud.vectorsearch_v1beta import DataObject, OutputFields
 
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_client"]
-
         # build the appropriate filter set based on input
         filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
         if not filter_expr:
@@ -2084,7 +2083,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
         )
         start: float = time.perf_counter()
-        query_results = search_client.query_data_objects(query)
+        query_results = self.v2_search_client.query_data_objects(query)
         time_taken = time.perf_counter() - start
 
         # load all results and convert to nodes
@@ -2163,9 +2162,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         from google.cloud.vectorsearch_v1beta import DataObject, OutputFields
 
-        clients = self._sdk_manager.get_v2_client()
-        search_client = clients["data_object_search_service_async_client"]
-
         # build the appropriate filter set based on input
         start: float = time.perf_counter()
         filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
@@ -2179,7 +2175,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         query = self._build_filter_query_request(
             filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
         )
-        query_results = await search_client.query_data_objects(query)
+        query_results = await self.v2_search_async_client.query_data_objects(query)
         time_taken = time.perf_counter() - start
 
         data_objects: List[DataObject] = [
