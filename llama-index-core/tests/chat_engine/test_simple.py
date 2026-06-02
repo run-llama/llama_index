@@ -130,3 +130,61 @@ def test_simple_chat_engine_astream_exception_handling():
         pytest.fail(
             "Exception was not correctly handled - ended up in asyncio cleanup performed during garbage collection"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tests for _set_message_text (fix for issue #21679)
+# ---------------------------------------------------------------------------
+def test_set_message_text_single_text_block() -> None:
+    """_set_message_text updates a single-TextBlock message without error."""
+    from llama_index.core.chat_engine.types import _set_message_text
+    from llama_index.core.base.llms.types import TextBlock
+
+    msg = ChatMessage(role=MessageRole.ASSISTANT, content="original text")
+    _set_message_text(msg, "updated text")
+
+    assert msg.content == "updated text"
+    assert len(msg.blocks) == 1
+    assert isinstance(msg.blocks[0], TextBlock)
+
+
+def test_set_message_text_multi_block_no_error() -> None:
+    """_set_message_text must NOT raise ValueError on a multi-block message.
+
+    This is the regression test for issue #21679: the legacy .content setter
+    raises ValueError when called on a ChatMessage with more than one block.
+    """
+    from llama_index.core.chat_engine.types import _set_message_text
+    from llama_index.core.base.llms.types import TextBlock, ImageBlock
+
+    # Build a message that simulates a multi-modal response:
+    # one image block followed by one text block.
+    img_block = ImageBlock(url="https://example.com/img.png")
+    txt_block = TextBlock(text="caption")
+    msg = ChatMessage(role=MessageRole.ASSISTANT)
+    msg.blocks = [img_block, txt_block]
+
+    # Must not raise; previously this raised ValueError.
+    _set_message_text(msg, "final streamed text")
+
+    # The text block should be updated; non-text blocks preserved.
+    text_blocks = [b for b in msg.blocks if isinstance(b, TextBlock)]
+    non_text_blocks = [b for b in msg.blocks if not isinstance(b, TextBlock)]
+    assert len(text_blocks) == 1
+    assert text_blocks[0].text == "final streamed text"
+    assert len(non_text_blocks) == 1  # image block still present
+
+
+def test_set_message_text_empty_blocks() -> None:
+    """_set_message_text creates a TextBlock when the message has no blocks."""
+    from llama_index.core.chat_engine.types import _set_message_text
+    from llama_index.core.base.llms.types import TextBlock
+
+    msg = ChatMessage(role=MessageRole.ASSISTANT)
+    msg.blocks = []
+
+    _set_message_text(msg, "new text")
+
+    assert len(msg.blocks) == 1
+    assert isinstance(msg.blocks[0], TextBlock)
+    assert msg.blocks[0].text == "new text"
