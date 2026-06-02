@@ -1272,6 +1272,74 @@ class TestUnitV2Add:
         assert actual_output_ids == []
         mock_v2_data_object_service_async_client.batch_create_data_objects.assert_not_awaited()
 
+    def test_v2_add_invalid_parameters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: List[TextNode],
+    ) -> None:
+        """Test that an error is raised for invalid parameters in v2 ``add``."""
+        # WHEN / THEN
+        with pytest.raises(
+            ValueError,
+            match=r".is_complete_overwrite. is only valid for api_version=.v1.",
+        ):
+            _ = mock_v2_store.add(input_dense_nodes, is_complete_overwrite=True)
+
+    async def test_v2_async_add_invalid_parameters(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: List[TextNode],
+    ) -> None:
+        """Test that an error is raised for invalid parameters in v2 ``async_add``."""
+        # WHEN / THEN
+        with pytest.raises(
+            ValueError,
+            match=r".is_complete_overwrite. is only valid for api_version=.v1.",
+        ):
+            _ = await mock_v2_store.async_add(
+                input_dense_nodes, is_complete_overwrite=True
+            )
+
+    @pytest.mark.parametrize(
+        ("input_metadata", "error_msg"),
+        [
+            (
+                {"title_embedding": 0.5},
+                "Invalid dense embedding field 'title_embedding'",
+            ),
+            (
+                {"sparse_embedding": [0.1, 0.2, 0.3]},
+                "Invalid sparse embedding field 'sparse_embedding'",
+            ),
+        ],
+        ids=["invalid dense vector format", "invalid sparse vector format"],
+    )
+    def test_v2_add_logs_invalid_data_objects(
+        self,
+        caplog: pytest.LogCaptureFixture,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: List[TextNode],
+        input_metadata: Dict[str, Any],
+        error_msg: str,
+    ) -> None:
+        """Test that appropriate errors logs are made for badly structured data."""
+        # GIVEN
+        input_nodes = [
+            TextNode(
+                id_="node_1",
+                text="Text 1",
+                embedding=[0.1, 0.2, 0.3],
+                metadata=input_metadata,
+            )
+        ]
+
+        # WHEN
+        with caplog.at_level(logging.ERROR):
+            _ = mock_v2_store.add(input_nodes)
+
+        # THEN
+        assert error_msg in caplog.text
+
     @pytest.mark.parametrize(
         ("batch_add_side_effect", "expected_added_ids", "expected_failed_ids"),
         [
