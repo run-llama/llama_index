@@ -2042,7 +2042,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     @staticmethod
     def _prepare_get_nodes_filters(
         node_ids: Optional[List[str]], filters: Optional[MetadataFilters]
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         if node_ids and filters:
             raise ValueError(
                 f"Only one of node_ids or filters may be provided, "
@@ -2050,7 +2050,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
         if node_ids:
             _logger.info("Querying nodes by ID (%d input IDs)", len(node_ids))
-            filter_expr: dict[str, Any] = {"object_id": {"$in": node_ids}}
+            filter_expr: Dict[str, Any] = {"object_id": {"$in": node_ids}}
         elif filters and (v2_filter := _convert_filters_to_v2(filters)):
             _logger.info("Querying nodes matching filters: %s", v2_filter)
             filter_expr = v2_filter
