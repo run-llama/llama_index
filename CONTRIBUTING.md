@@ -78,7 +78,7 @@ We also do not recommend working on these areas:
    ```bash
    git checkout -b your-feature-branch
    ```
-4. **Set up your environment** (follow the [Quick Start Guide](#quick-start-guide)).
+4. **Set up your environment** (follow the [Quick Start Guide](#quick-start-guide)uide)).
 5. **Work on your feature or bugfix**, ensuring you have unit tests covering your code.
 6. **Commit** your changes, then push them to your fork.
    ```bash
