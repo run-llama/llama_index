@@ -18,8 +18,9 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
+from llama_index.core.agent.workflow.utils import maybe_model_dump
 from llama_index.core.base.llms.types import ChatResponse, TextBlock
-from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
+from llama_index.core.bridge.pydantic import Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import BaseMemory
@@ -95,11 +96,7 @@ class ReActAgent(BaseWorkflowAgent):
         # We initialize it so it's valid even when 'response' is empty
         last_chat_response = ChatResponse(message=ChatMessage())
         async for last_chat_response in response:
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
+            raw = maybe_model_dump(last_chat_response.raw)
             # some code paths (namely react agent via llm.predict_and_call for non function calling llms) pass through a context without starting the workflow.
             # They do so in order to conform to the interface, and share state between tools, however the events are discarded and not exposed to the caller,
             # so just don't write events if the context is not running.
@@ -173,11 +170,7 @@ class ReActAgent(BaseWorkflowAgent):
                 "Thought: <what you are thinking>\n"
                 "Answer: <your final response to the user>"
             )
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
+            raw = maybe_model_dump(last_chat_response.raw)
 
             return AgentOutput(
                 response=last_chat_response.message,
@@ -208,11 +201,7 @@ class ReActAgent(BaseWorkflowAgent):
                 "```\n"
             )
 
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
+            raw = maybe_model_dump(last_chat_response.raw)
             # Return with retry messages to let the LLM fix the error
             return AgentOutput(
                 response=last_chat_response.message,
@@ -229,11 +218,7 @@ class ReActAgent(BaseWorkflowAgent):
         await ctx.store.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
-        raw = (
-            last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
-            else last_chat_response.raw
-        )
+        raw = maybe_model_dump(last_chat_response.raw)
         if reasoning_step.is_done:
             return AgentOutput(
                 response=last_chat_response.message,

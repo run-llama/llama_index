@@ -8,8 +8,9 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
+from llama_index.core.agent.workflow.utils import maybe_model_dump
 from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import AsyncBaseTool
@@ -78,11 +79,7 @@ class FunctionAgent(BaseWorkflowAgent):
             tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
                 last_chat_response, error_on_no_tool_call=False
             )
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
+            raw = maybe_model_dump(last_chat_response.raw)
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=last_chat_response.delta or "",
@@ -133,11 +130,7 @@ class FunctionAgent(BaseWorkflowAgent):
         scratchpad.append(last_chat_response.message)
         await ctx.store.set(self.scratchpad_key, scratchpad)
 
-        raw = (
-            last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
-            else last_chat_response.raw
-        )
+        raw = maybe_model_dump(last_chat_response.raw)
         return AgentOutput(
             response=last_chat_response.message,
             tool_calls=tool_calls or [],
