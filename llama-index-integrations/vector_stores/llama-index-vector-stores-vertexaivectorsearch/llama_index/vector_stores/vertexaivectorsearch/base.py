@@ -565,7 +565,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.debug(f"Add request batch {i} complete, indexed {size} nodes")
             except Exception as exc:
                 _logger.exception(f"Failed to create batch {i} ({size} objects)")
-                exc.add_note(f"Batch {i} ({size} objects)")
                 result.failed_ids.extend(batch_ids)
                 result.exceptions.append(exc)
 
@@ -894,7 +893,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.exception(
                     f"Failed to index async batch {batch_idx} ({size} objects)"
                 )
-                exc.add_note(f"Batch {batch_idx} ({size} objects)")
                 return _AddResult(failed_ids=batch_ids, exceptions=[exc])
 
     @override
@@ -1025,14 +1023,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 data_object_client.batch_delete_data_objects(batch_request)
                 result.deleted += size
             except NotFound as exc:
-                exc.add_note(f"Batch {i}")
                 _logger.warning(
                     f"Delete batch {i} ({size} objects) raised 'NotFound' exception: {exc}"
                 )
                 result.not_found += size
                 result.exceptions.append(exc)
             except Exception as exc:
-                exc.add_note(f"Batch {i}")
                 _logger.exception(f"Failed to delete batch {i} ({size} objects)")
                 result.failed += size
                 result.exceptions.append(exc)
@@ -1138,13 +1134,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Delete batch {batch_idx} ({size} objects) raised 'NotFound' "
                     f"exception: {exc}",
                 )
-                exc.add_note(f"Batch {batch_idx}")
                 return _DeleteResult(not_found=size, exceptions=[exc])
             except Exception as exc:
                 _logger.exception(
                     f"Failed to delete async batch {batch_idx} ({size} objects)"
                 )
-                exc.add_note(f"Batch {batch_idx}")
                 return _DeleteResult(failed=size, exceptions=[exc])
 
     @override
