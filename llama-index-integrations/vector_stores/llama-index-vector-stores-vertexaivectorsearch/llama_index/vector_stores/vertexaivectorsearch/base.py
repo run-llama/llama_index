@@ -284,11 +284,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # SemanticSearch configuration
     semantic_task_type: str = Field(default="RETRIEVAL_QUERY")
 
-    # VertexRanker-specific parameters
-    vertex_ranker_model: str = Field(default="semantic-ranker-default@latest")
-    vertex_ranker_title_field: Optional[str] = Field(default=None)
-    vertex_ranker_content_field: Optional[str] = Field(default=None)
-
     # Shared parameters
     batch_size: int = 100
     credentials_path: Optional[str] = None

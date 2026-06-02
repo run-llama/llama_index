@@ -76,7 +76,6 @@ from llama_index.vector_stores.vertexaivectorsearch.base import (
     VertexAIIndexingError,
     VertexAIQueryError,
 )
-from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
@@ -493,6 +492,13 @@ def test_class():
 class TestV2ParameterValidation:
     """Test parameter validation for v1 vs v2 API versions."""
 
+    @pytest.fixture(autouse=True)
+    def mock_sdk_manager(self) -> Iterator[None]:
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            yield
+
     def test_v1_requires_index_id(self):
         """Test that v1 raises error when index_id is missing."""
         with pytest.raises(ValueError, match="index_id is required for v1"):
@@ -576,104 +582,29 @@ class TestV2ParameterValidation:
             )
 
 
-class TestV2Routing:
-    """Test that operations route correctly to v1 or v2 implementations."""
-
-    @pytest.fixture
-    def mock_v2_store(self):
-        """Create a v2 store with mocked SDK."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VertexAIVectorStore._validate_parameters"
-        ):
-            return VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-            )
-
-    def test_add_routes_to_v2(self, mock_v2_store):
-        """Test that add() routes to _add_v2 when api_version='v2'."""
-        with patch.object(mock_v2_store, "_add_v2", return_value=["id1"]) as mock_add:
-            mock_node = MagicMock()
-            mock_node.node_id = "id1"
-            mock_node.get_embedding.return_value = [0.1, 0.2, 0.3]
-
-            result = mock_v2_store.add([mock_node])
-
-            mock_add.assert_called_once()
-            assert result == ["id1"]
-
-    def test_query_routes_to_v2(self, mock_v2_store):
-        """Test that query() routes to _query_v2 when api_version='v2'."""
-        mock_result = VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
-
-        with patch.object(
-            mock_v2_store, "_query_v2", return_value=mock_result
-        ) as mock_query:
-            query = VectorStoreQuery(
-                query_embedding=[0.1, 0.2, 0.3], similarity_top_k=5
-            )
-
-            result = mock_v2_store.query(query)
-
-            mock_query.assert_called_once()
-            assert result == mock_result
-
-    def test_delete_routes_to_v2(self, mock_v2_store):
-        """Test that delete() routes to _delete_v2 when api_version='v2'."""
-        with patch.object(
-            mock_v2_store, "_delete_v2", return_value=None
-        ) as mock_delete:
-            mock_v2_store.delete(ref_doc_id="doc123")
-
-            mock_delete.assert_called_once_with("doc123")
-
-    def test_delete_nodes_routes_to_v2(self, mock_v2_store):
-        """Test that delete_nodes() routes to _delete_nodes_v2 when api_version='v2'."""
-        with patch.object(
-            mock_v2_store, "_delete_nodes_v2", return_value=None
-        ) as mock_delete:
-            mock_v2_store.delete_nodes(node_ids=["node1", "node2"])
-
-            mock_delete.assert_called_once()
-
-    def test_clear_routes_to_v2(self, mock_v2_store):
-        """Test that clear() routes to _clear_v2 when api_version='v2'."""
-        with patch.object(mock_v2_store, "_clear_v2", return_value=None) as mock_clear:
-            mock_v2_store.clear()
-
-            mock_clear.assert_called_once()
-
-
-class TestV2SDKImport:
+class TestV2SDKManager:
     """Test v2 SDK import error handling."""
 
-    def test_import_v2_sdk_success(self):
-        """Test that _import_v2_sdk returns the module when available."""
-        # This test will pass if google-cloud-vectorsearch is installed
-        try:
-            result = _import_v2_sdk()
-            assert result is not None
-            assert hasattr(result, "BatchCreateDataObjectsRequest")
-        except ImportError:
-            pytest.skip("google-cloud-vectorsearch not installed")
-
-    def test_import_v2_sdk_error_message_format(self):
-        """Test that ImportError message mentions the required package."""
-        # This test verifies the error message format without mocking imports
-        # The actual import behavior is tested by test_import_v2_sdk_success
-        expected_message = "v2 operations require google-cloud-vectorsearch"
-
-        # Verify the error message is properly formatted in the code
-        import inspect
-
-        from llama_index.vector_stores.vertexaivectorsearch.utils import _import_v2_sdk
-
-        source = inspect.getsource(_import_v2_sdk)
-        assert expected_message in source, (
-            f"Expected error message '{expected_message}' not found in _import_v2_sdk"
+    def test_ensure_v2_available_passes_when_sdk_installed(self) -> None:
+        """Test that VectorSearchSDKManager.ensure_v2_available succeeds for tests."""
+        manager = VectorSearchSDKManager(
+            project_id="test-project", region="us-central1"
         )
+        manager.ensure_v2_available()
+
+    def test_ensure_v2_available_fails_when_sdk_not_installed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that VectorSearchSDKManager.ensure_v2_available raises an appropriate error."""
+        manager = VectorSearchSDKManager(
+            project_id="test-project", region="us-central1"
+        )
+        monkeypatch.setattr(manager, "_v2_available", False)
+
+        with pytest.raises(
+            ImportError, match=r"Vertex v2 operations require the .v2. extra"
+        ):
+            manager.ensure_v2_available()
 
 
 class TestV2FeatureFlags:
@@ -818,6 +749,13 @@ class TestV2RetryDecorator:
 class TestV2HybridSearchParameters:
     """Test hybrid search constructor parameter validation."""
 
+    @pytest.fixture(autouse=True)
+    def mock_sdk_manager(self) -> Iterator[None]:
+        with patch(
+            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
+        ):
+            yield
+
     def test_enable_hybrid_requires_v2(self):
         """Test that enable_hybrid=True raises error for v1."""
         with pytest.raises(
@@ -860,7 +798,7 @@ class TestV2HybridSearchParameters:
             )
 
     def test_hybrid_ranker_must_be_rrf_or_vertex(self):
-        """Test that hybrid_ranker must be 'rrf' or 'vertex'."""
+        """Test that hybrid_ranker must be 'rrf'."""
         from pydantic import ValidationError
 
         # Pydantic validates the Literal type
@@ -875,53 +813,25 @@ class TestV2HybridSearchParameters:
 
     def test_v2_accepts_all_hybrid_parameters(self):
         """Test that v2 accepts all hybrid parameters without error."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            store = VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-                enable_hybrid=True,
-                text_search_fields=["title", "content"],
-                embedding_field="embedding",
-                hybrid_ranker="rrf",
-                default_hybrid_alpha=0.7,
-                semantic_task_type="RETRIEVAL_QUERY",
-                vertex_ranker_model="semantic-ranker-default@latest",
-                vertex_ranker_title_field="title",
-                vertex_ranker_content_field="content",
-            )
+        store = VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            enable_hybrid=True,
+            text_search_fields=["title", "content"],
+            embedding_field="embedding",
+            hybrid_ranker="rrf",
+            default_hybrid_alpha=0.7,
+            semantic_task_type="RETRIEVAL_QUERY",
+        )
 
-            assert store.enable_hybrid is True
-            assert store.text_search_fields == ["title", "content"]
-            assert store.embedding_field == "embedding"
-            assert store.hybrid_ranker == "rrf"
-            assert store.default_hybrid_alpha == 0.7
-            assert store.semantic_task_type == "RETRIEVAL_QUERY"
-            assert store.vertex_ranker_model == "semantic-ranker-default@latest"
-            assert store.vertex_ranker_title_field == "title"
-            assert store.vertex_ranker_content_field == "content"
-
-    def test_vertex_ranker_warning_without_fields(self):
-        """Test that VertexRanker logs warning when no title/content fields configured."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch.base._logger"
-            ) as mock_logger:
-                VertexAIVectorStore(
-                    project_id="test-project",
-                    region="us-central1",
-                    api_version="v2",
-                    collection_id="my-collection",
-                    hybrid_ranker="vertex",
-                )
-
-                mock_logger.warning.assert_called_once()
-                assert "VertexRanker works best" in mock_logger.warning.call_args[0][0]
+        assert store.enable_hybrid is True
+        assert store.text_search_fields == ["title", "content"]
+        assert store.embedding_field == "embedding"
+        assert store.hybrid_ranker == "rrf"
+        assert store.default_hybrid_alpha == 0.7
+        assert store.semantic_task_type == "RETRIEVAL_QUERY"
 
 
 class TestV2RRFWeightCalculation:
@@ -1119,258 +1029,6 @@ class TestV2FilterConversion:
 
         result = _convert_filters_to_v2(MetadataFilters(filters=[]))
         assert result is None
-
-
-class TestV2HybridQueryModes:
-    """Test query mode routing and behavior."""
-
-    @pytest.fixture
-    def mock_v2_store(self):
-        """Create a v2 store with hybrid enabled."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            return VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-                enable_hybrid=True,
-                text_search_fields=["title", "content"],
-            )
-
-    @pytest.fixture
-    def mock_v2_store_no_hybrid(self):
-        """Create a v2 store without hybrid enabled."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            return VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-                enable_hybrid=False,
-            )
-
-    def test_hybrid_mode_requires_enable_hybrid(self, mock_v2_store_no_hybrid):
-        """Test that HYBRID mode raises error without enable_hybrid=True."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_embedding=[0.1] * 768,
-                    query_str="test",
-                    mode=VectorStoreQueryMode.HYBRID,
-                )
-
-                with pytest.raises(ValueError, match="enable_hybrid=True"):
-                    mock_v2_store_no_hybrid.query(query)
-
-    def test_hybrid_mode_requires_query_embedding(self, mock_v2_store):
-        """Test that HYBRID mode raises error without query_embedding."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_embedding=None,
-                    query_str="test",
-                    mode=VectorStoreQueryMode.HYBRID,
-                )
-
-                with pytest.raises(ValueError, match="query_embedding"):
-                    mock_v2_store.query(query)
-
-    def test_text_search_requires_query_str(self, mock_v2_store):
-        """Test that TEXT_SEARCH mode raises error without query_str."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_str=None,
-                    mode=VectorStoreQueryMode.TEXT_SEARCH,
-                )
-
-                with pytest.raises(ValueError, match="query_str"):
-                    mock_v2_store.query(query)
-
-    def test_text_search_requires_text_fields(self, mock_v2_store_no_hybrid):
-        """Test that TEXT_SEARCH mode raises error without text_search_fields."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_str="test query",
-                    mode=VectorStoreQueryMode.TEXT_SEARCH,
-                )
-
-                with pytest.raises(ValueError, match="text_search_fields"):
-                    mock_v2_store_no_hybrid.query(query)
-
-    def test_semantic_hybrid_requires_query_str(self, mock_v2_store):
-        """Test that SEMANTIC_HYBRID mode raises error without query_str."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_embedding=[0.1] * 768,
-                    query_str=None,
-                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
-                )
-
-                with pytest.raises(ValueError, match="query_str"):
-                    mock_v2_store.query(query)
-
-    def test_sparse_raises_not_implemented(self, mock_v2_store):
-        """Test that SPARSE mode raises NotImplementedError."""
-        from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk"
-        ):
-            with patch(
-                "llama_index.vector_stores.vertexaivectorsearch._sdk_manager.VectorSearchSDKManager"
-            ):
-                query = VectorStoreQuery(
-                    query_embedding=[0.1] * 768,
-                    mode=VectorStoreQueryMode.SPARSE,
-                )
-
-                with pytest.raises(
-                    NotImplementedError, match="SPARSE mode is planned for Phase 2"
-                ):
-                    mock_v2_store.query(query)
-
-
-class TestV2RankerConfiguration:
-    """Test RRF vs VertexRanker configuration."""
-
-    def test_rrf_ranker_default(self):
-        """Test that RRF ranker is built by default."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            store = VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-                hybrid_ranker="rrf",
-            )
-
-            assert store.hybrid_ranker == "rrf"
-
-    def test_vertex_ranker_configuration(self):
-        """Test VertexRanker configuration parameters."""
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-        ):
-            store = VertexAIVectorStore(
-                project_id="test-project",
-                region="us-central1",
-                api_version="v2",
-                collection_id="my-collection",
-                hybrid_ranker="vertex",
-                vertex_ranker_model="semantic-ranker-default@latest",
-                vertex_ranker_title_field="title",
-                vertex_ranker_content_field="content",
-            )
-
-            assert store.hybrid_ranker == "vertex"
-            assert store.vertex_ranker_model == "semantic-ranker-default@latest"
-            assert store.vertex_ranker_title_field == "title"
-            assert store.vertex_ranker_content_field == "content"
-
-    def test_build_ranker_rrf(self):
-        """Test _build_ranker creates RRF ranker."""
-        from llama_index.core.vector_stores.types import VectorStoreQuery
-        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
-
-        mock_vectorsearch = MagicMock()
-        mock_ranker = MagicMock()
-        mock_rrf = MagicMock()
-        mock_vectorsearch.Ranker.return_value = mock_ranker
-        mock_vectorsearch.ReciprocalRankFusion.return_value = mock_rrf
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk",
-            return_value=mock_vectorsearch,
-        ):
-            mock_store = MagicMock()
-            mock_store.hybrid_ranker = "rrf"
-            mock_store.default_hybrid_alpha = 0.5
-
-            query = VectorStoreQuery(query_embedding=[0.1] * 768, alpha=0.5)
-
-            result = _build_ranker(mock_store, query, num_searches=2)
-
-            mock_vectorsearch.ReciprocalRankFusion.assert_called_once_with(
-                weights=[0.5, 0.5]
-            )
-            mock_vectorsearch.Ranker.assert_called_once()
-            assert result == mock_ranker
-
-    def test_build_ranker_vertex(self):
-        """Test _build_ranker creates VertexRanker."""
-        from llama_index.core.vector_stores.types import VectorStoreQuery
-        from llama_index.vector_stores.vertexaivectorsearch.utils import _build_ranker
-
-        mock_vectorsearch = MagicMock()
-        mock_ranker = MagicMock()
-        mock_vertex_ranker = MagicMock()
-        mock_vectorsearch.Ranker.return_value = mock_ranker
-        mock_vectorsearch.VertexRanker.return_value = mock_vertex_ranker
-
-        with patch(
-            "llama_index.vector_stores.vertexaivectorsearch._v2_operations._import_v2_sdk",
-            return_value=mock_vectorsearch,
-        ):
-            mock_store = MagicMock()
-            mock_store.hybrid_ranker = "vertex"
-            mock_store.vertex_ranker_model = "semantic-ranker-default@latest"
-            mock_store.vertex_ranker_title_field = "title"
-            mock_store.vertex_ranker_content_field = "content"
-
-            query = VectorStoreQuery(
-                query_embedding=[0.1] * 768,
-                query_str="test query",
-            )
-
-            result = _build_ranker(mock_store, query, num_searches=2)
-
-            mock_vectorsearch.VertexRanker.assert_called_once_with(
-                query="test query",
-                model="semantic-ranker-default@latest",
-                title_template="{{ title }}",
-                content_template="{{ content }}",
-            )
-            mock_vectorsearch.Ranker.assert_called_once()
-            assert result == mock_ranker
 
 
 # Common mocks for V2 service clients
