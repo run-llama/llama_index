@@ -248,6 +248,10 @@ class AI21(FunctionCallingLLM):
             **all_kwargs,
         )
 
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         message = from_ai21_message_to_chat_message(response.choices[0].message)
 
         return ChatResponse(
@@ -346,6 +350,10 @@ class AI21(FunctionCallingLLM):
             **kwargs,
         )
 
+        if not response.outputs:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty outputs list
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
