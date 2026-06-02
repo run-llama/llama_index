@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -41,6 +41,8 @@ class IntelEmbedding(BaseEmbedding):
         cache_folder: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
+        model_kwargs: Optional[Dict[str, Any]] = None,
+        tokenizer_kwargs: Optional[Dict[str, Any]] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         device: Optional[str] = None,
@@ -54,9 +56,19 @@ class IntelEmbedding(BaseEmbedding):
                 "optimum-intel neural-compressor intel_extension_for_pytorch`"
             )
 
+        model_kwargs = model_kwargs or {}
+        tokenizer_kwargs = tokenizer_kwargs or {}
+
+        if cache_folder:
+            model_kwargs.setdefault("cache_dir", cache_folder)
+            tokenizer_kwargs.setdefault("cache_dir", cache_folder)
+
         device = device or infer_torch_device()
-        model = model or IPEXModel.from_pretrained(folder_name).to(device)
-        tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        model_kwargs.setdefault("weights_only", False)
+        model = model or IPEXModel.from_pretrained(folder_name, **model_kwargs).to(device)
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(
+            folder_name, **tokenizer_kwargs
+        )
 
         if max_length is None:
             try:
@@ -83,6 +95,7 @@ class IntelEmbedding(BaseEmbedding):
             normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
+            cache_folder=cache_folder,
         )
         self._model = model
         self._tokenizer = tokenizer
