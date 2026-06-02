@@ -7,7 +7,7 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
-from google.oauth2.service_account import Credentials  # type: ignore
+from google.oauth2.service_account import Credentials
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     get_client_info,
     get_user_agent,
@@ -62,9 +62,11 @@ class VectorSearchSDKManager:
         self._region = region
 
         if credentials is not None:
-            self._credentials = credentials
+            self._credentials: Optional[Credentials] = credentials
         elif credentials_path is not None:
-            self._credentials = Credentials.from_service_account_file(credentials_path)
+            self._credentials = Credentials.from_service_account_file(  # type: ignore[no-untyped-call]
+                credentials_path
+            )
         else:
             self._credentials = None
 
@@ -174,7 +176,7 @@ class VectorSearchSDKManager:
         """
         if not self._v2_available:
             raise ImportError(
-                "Vertex v2 operations require the `v2` extra, install with: "
+                "Vertex v2 operations require the 'v2' extra, install with: "
                 '`pip install "llama-index-vector-stores-vertexaivectorsearch[v2]"`'
             )
 
