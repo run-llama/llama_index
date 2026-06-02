@@ -145,3 +145,36 @@ def test_sandbox_basic_builtins_available():
 
     exec("z = sorted([3, 1, 2])", sandbox)
     assert sandbox["z"] == [1, 2, 3]
+
+def test_validate_rejects_format_call():
+    """Direct .format() calls can bypass the dunder filter via string interpolation."""
+    code = 'x = "{0.__class__}".format(1)\n'
+    with pytest.raises(RuntimeError, match="calls '.format\\(\\)'"):
+        _validate_generated_code(code)
+
+
+def test_validate_rejects_format_map_call():
+    code = 'x = "{a}".format_map({"a": 1})\n'
+    with pytest.raises(RuntimeError, match="calls '.format_map\\(\\)'"):
+        _validate_generated_code(code)
+
+
+def test_validate_rejects_dunder_in_format_string():
+    """Dunder patterns inside braces in string constants are disallowed."""
+    code = 'x = "{0.__base__.__subclasses__}"\n'
+    with pytest.raises(RuntimeError, match="format string with dunder"):
+        _validate_generated_code(code)
+
+
+def test_validate_allows_safe_format_string():
+    """Normal format strings without dunder patterns should be allowed."""
+    code = 'x = "Hello {name}"\n'
+    # Should not raise
+    _validate_generated_code(code)
+
+
+def test_validate_allows_dunder_in_docstring():
+    """Dunder mentions outside of braces (e.g. docstrings) should be allowed."""
+    code = '"""Use __init__ to initialize."""\nx = 1\n'
+    # Should not raise
+    _validate_generated_code(code)
