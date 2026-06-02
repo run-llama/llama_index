@@ -90,6 +90,7 @@ async def test_google_rerank_async():
             {"index": 0, "score": 0.70},
         ]
     )
+    reranker._async_client = MagicMock()
     reranker._async_client.rank = AsyncMock(return_value=mock_response)
 
     input_nodes = [
@@ -108,6 +109,35 @@ async def test_google_rerank_async():
     assert actual_nodes[1].node.get_content() == "hello world"
     assert actual_nodes[1].score == pytest.approx(0.70)
     reranker._async_client.rank.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_google_rerank_async_client_created_lazily():
+    mock_response = _make_mock_response([{"index": 0, "score": 0.95}])
+    mock_async_client = MagicMock()
+    mock_async_client.rank = AsyncMock(return_value=mock_response)
+
+    with mock.patch(
+        "llama_index.postprocessor.google_rerank.base.discoveryengine",
+        create=True,
+    ) as mock_discoveryengine:
+        mock_discoveryengine.RankServiceClient.return_value = MagicMock()
+        mock_discoveryengine.RankServiceAsyncClient.return_value = mock_async_client
+
+        reranker = GoogleRerank(project_id="test-project")
+
+        mock_discoveryengine.RankServiceAsyncClient.assert_not_called()
+
+        actual_nodes = await reranker.apostprocess_nodes(
+            [NodeWithScore(node=TextNode(id_="1", text="hello world"))],
+            query_bundle=QueryBundle(query_str="hello"),
+        )
+
+    assert len(actual_nodes) == 1
+    assert actual_nodes[0].node.get_content() == "hello world"
+    assert actual_nodes[0].score == pytest.approx(0.95)
+    mock_discoveryengine.RankServiceAsyncClient.assert_called_once()
+    mock_async_client.rank.assert_called_once()
 
 
 def test_google_rerank_empty_nodes():
