@@ -1414,10 +1414,13 @@ def mock_v2_sdk_manager(
         yield mock_inst
 
 
+V2_COLLECTION_PARENT = (
+    "projects/test-project/locations/us-central1/collections/my-collection"
+)
+
+
 class TestUnitV2Add:
-    COLLECTION_PARENT = (
-        "projects/test-project/locations/us-central1/collections/my-collection"
-    )
+    """Test the behavior of ``add`` and ``async_add`` methods."""
 
     @pytest.fixture
     def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
@@ -1501,7 +1504,7 @@ class TestUnitV2Add:
         # corresponds to `input_dense_nodes`
         return [
             CreateDataObjectRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 data_object_id=f"node_{i}",
                 data_object=obj,
             )
@@ -1514,15 +1517,15 @@ class TestUnitV2Add:
     ) -> List[BatchCreateDataObjectsRequest]:
         return [
             BatchCreateDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=output_dense_create_data_object_requests[0:2],
             ),
             BatchCreateDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=output_dense_create_data_object_requests[2:4],
             ),
             BatchCreateDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=output_dense_create_data_object_requests[4:],
             ),
         ]
@@ -1616,7 +1619,7 @@ class TestUnitV2Add:
             "3 excs, pos=1,2,3",
         ],
     )
-    class TestUnitV2AddSubBatchFailures:
+    class TestSubBatchFailures:
         """Tests for when a subset of add batches fail, with common test parameterization."""
 
         def test_v2_add_failed_sub_requests(
@@ -1681,7 +1684,7 @@ class TestUnitV2Add:
                 expected_calls, any_order=True
             )
 
-    class TestUnitV2NodeConversion:
+    class TestNodeConversion:
         """Test bidirectional conversion between ``DataObject`` and ``TextNode``."""
 
         def test_extract_v2_data_object_from_node(
@@ -1744,10 +1747,6 @@ class TestUnitV2Add:
 class TestUnitV2Delete:
     """Unit test the behavior of ``(a)delete``, ``(a)delete_nodes``, and ``(a)clear``."""
 
-    COLLECTION_PARENT = (
-        "projects/test-project/locations/us-central1/collections/my-collection"
-    )
-
     @pytest.fixture
     def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
         return VertexAIVectorStore(
@@ -1772,18 +1771,18 @@ class TestUnitV2Delete:
     def expected_delete_requests_ref_id_1(self) -> List[BatchDeleteDataObjectsRequest]:
         return [
             BatchDeleteDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=[
                     DeleteDataObjectRequest(
-                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_2"
+                        name=f"{V2_COLLECTION_PARENT}/dataObjects/node_2"
                     ),
                 ],
             ),
             BatchDeleteDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=[
                     DeleteDataObjectRequest(
-                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_3"
+                        name=f"{V2_COLLECTION_PARENT}/dataObjects/node_3"
                     ),
                 ],
             ),
@@ -1796,7 +1795,7 @@ class TestUnitV2Delete:
                 spec=QueryDataObjectsResponse,
                 data_objects=[
                     DataObject(
-                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_2",
+                        name=f"{V2_COLLECTION_PARENT}/dataObjects/node_2",
                         data={"node_id": "node_2"},
                     )
                 ],
@@ -1805,7 +1804,7 @@ class TestUnitV2Delete:
                 spec=QueryDataObjectsResponse,
                 data_objects=[
                     DataObject(
-                        name=f"{self.COLLECTION_PARENT}/dataObjects/node_3",
+                        name=f"{V2_COLLECTION_PARENT}/dataObjects/node_3",
                         data={"node_id": "node_3"},
                     )
                 ],
@@ -1819,10 +1818,10 @@ class TestUnitV2Delete:
         # batch_size=2 → two batches: ["node_0","node_1"] and ["node_2"]
         def _req(nids: List[str]) -> BatchDeleteDataObjectsRequest:
             return BatchDeleteDataObjectsRequest(
-                parent=self.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 requests=[
                     DeleteDataObjectRequest(
-                        name=f"{self.COLLECTION_PARENT}/dataObjects/{nid}",
+                        name=f"{V2_COLLECTION_PARENT}/dataObjects/{nid}",
                     )
                     for nid in nids
                 ],
@@ -1839,7 +1838,7 @@ class TestUnitV2Delete:
     def expected_filter_query_request(self) -> QueryDataObjectsRequest:
         # corresponds to `input_delete_nodes_filters`
         return QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"user_id": {"$eq": 200}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -1862,7 +1861,7 @@ class TestUnitV2Delete:
         )
         input_ref_doc_id = "doc_1"
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"parent_id": {"$eq": input_ref_doc_id}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -1896,7 +1895,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
         input_ref_doc_id = "doc_1"
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"parent_id": {"$eq": input_ref_doc_id}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -1948,7 +1947,7 @@ class TestUnitV2Delete:
         )
         input_ref_doc_id = "doc_1"
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"parent_id": {"$eq": input_ref_doc_id}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -1975,7 +1974,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
         input_ref_doc_id = "doc_1"
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"parent_id": {"$eq": input_ref_doc_id}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -2207,7 +2206,7 @@ class TestUnitV2Delete:
             )
         )
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
@@ -2239,7 +2238,7 @@ class TestUnitV2Delete:
         )
         mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
@@ -2283,7 +2282,7 @@ class TestUnitV2Delete:
             "general error + NotFound",
         ],
     )
-    class TestUnitV2DeleteSubBatchFailures:
+    class TestSubBatchFailures:
         """Tests for when a subset of delete batches fail, with common test parameterization."""
 
         def test_v2_delete_failed_sub_request(
@@ -2304,7 +2303,7 @@ class TestUnitV2Delete:
             )
             input_ref_doc_id = "doc_1"
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"parent_id": {"$eq": input_ref_doc_id}},
                 page_size=2,
                 output_fields=OutputFields(metadata_fields=["*"]),
@@ -2352,7 +2351,7 @@ class TestUnitV2Delete:
             mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
             input_ref_doc_id = "doc_1"
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"parent_id": {"$eq": input_ref_doc_id}},
                 page_size=2,
                 output_fields=OutputFields(metadata_fields=["*"]),
@@ -2545,7 +2544,7 @@ class TestUnitV2Delete:
                 pages=delete_ref_id_query_pager_pages_ref_id_1,
             )
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 page_size=2,
                 output_fields=OutputFields(metadata_fields=["*"]),
             )
@@ -2591,7 +2590,7 @@ class TestUnitV2Delete:
             )
             mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2Delete.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 page_size=2,
                 output_fields=OutputFields(metadata_fields=["*"]),
             )
@@ -2632,9 +2631,7 @@ params_get_nodes_output_fields = pytest.mark.parametrize(
 
 
 class TestUnitV2GetNodes:
-    COLLECTION_PARENT = (
-        "projects/test-project/locations/us-central1/collections/my-collection"
-    )
+    """Test the behavior of ``get_nodes`` and ``aget_nodes`` methods."""
 
     @pytest.fixture
     def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
@@ -2661,7 +2658,7 @@ class TestUnitV2GetNodes:
         """DataObjects with ``name`` set, as returned by ``query_data_objects``."""
         return [
             DataObject(
-                name=f"{self.COLLECTION_PARENT}/node_{i}",
+                name=f"{V2_COLLECTION_PARENT}/node_{i}",
                 data={"_node_content": f"Content {i}", "title": f"Title {i}"},
             )
             for i in range(2)
@@ -2690,8 +2687,8 @@ class TestUnitV2GetNodes:
         ],
         ids=["vector store default", "modified fields"],
     )
-    class TestUnitV2GetNodesValidInput:
-        def test_vertex_ai_vector_store_v2_get_nodes_by_id_valid(
+    class TestValidInput:
+        def test_v2_get_nodes_by_id_valid(
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_client: MagicMock,
@@ -2708,7 +2705,7 @@ class TestUnitV2GetNodes:
             )
             input_node_ids = ["node_0", "node_1"]
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"object_id": {"$in": input_node_ids}},
                 page_size=2,
                 output_fields=expected_output_fields,
@@ -2724,7 +2721,7 @@ class TestUnitV2GetNodes:
             assert len(result) == len(get_nodes_query_result_data_objects)
             assert [node.node_id for node in result] == ["node_0", "node_1"]
 
-        async def test_vertex_ai_vector_store_v2_aget_nodes_by_id_valid(
+        async def test_v2_aget_nodes_by_id_valid(
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2741,7 +2738,7 @@ class TestUnitV2GetNodes:
             mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
             input_node_ids = ["node_0", "node_1"]
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"object_id": {"$in": input_node_ids}},
                 page_size=2,
                 output_fields=expected_output_fields,
@@ -2759,7 +2756,7 @@ class TestUnitV2GetNodes:
             assert len(result) == len(get_nodes_query_result_data_objects)
             assert [node.node_id for node in result] == ["node_0", "node_1"]
 
-        def test_vertex_ai_vector_store_v2_get_nodes_by_filters_valid(
+        def test_v2_get_nodes_by_filters_valid(
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_client: MagicMock,
@@ -2778,7 +2775,7 @@ class TestUnitV2GetNodes:
                 filters=[MetadataFilter(key="user_id", value=200)]
             )
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"user_id": {"$eq": 200}},
                 page_size=2,
                 output_fields=expected_output_fields,
@@ -2794,7 +2791,7 @@ class TestUnitV2GetNodes:
             assert len(result) == len(get_nodes_query_result_data_objects)
             assert [node.node_id for node in result] == ["node_0", "node_1"]
 
-        async def test_vertex_ai_vector_store_v2_aget_nodes_by_filters_valid(
+        async def test_v2_aget_nodes_by_filters_valid(
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2813,7 +2810,7 @@ class TestUnitV2GetNodes:
                 filters=[MetadataFilter(key="user_id", value=200)]
             )
             expected_query_request = QueryDataObjectsRequest(
-                parent=TestUnitV2GetNodes.COLLECTION_PARENT,
+                parent=V2_COLLECTION_PARENT,
                 filter={"user_id": {"$eq": 200}},
                 page_size=2,
                 output_fields=expected_output_fields,
@@ -2831,7 +2828,7 @@ class TestUnitV2GetNodes:
             assert len(result) == len(get_nodes_query_result_data_objects)
             assert [node.node_id for node in result] == ["node_0", "node_1"]
 
-    def test_vertex_ai_vector_store_v2_get_nodes_both_inputs_invalid(
+    def test_v2_get_nodes_both_inputs_invalid(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_client: MagicMock,
@@ -2846,7 +2843,7 @@ class TestUnitV2GetNodes:
             )
         mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
 
-    async def test_vertex_ai_vector_store_v2_aget_nodes_both_inputs_invalid(
+    async def test_v2_aget_nodes_both_inputs_invalid(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2864,7 +2861,7 @@ class TestUnitV2GetNodes:
     @pytest.mark.parametrize(
         "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
     )
-    def test_vertex_ai_vector_store_v2_get_nodes_neither_input_invalid(
+    def test_v2_get_nodes_neither_input_invalid(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_client: MagicMock,
@@ -2878,7 +2875,7 @@ class TestUnitV2GetNodes:
     @pytest.mark.parametrize(
         "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
     )
-    async def test_vertex_ai_vector_store_v2_aget_nodes_neither_input_invalid(
+    async def test_v2_aget_nodes_neither_input_invalid(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2889,7 +2886,7 @@ class TestUnitV2GetNodes:
             await mock_v2_store.aget_nodes(node_ids=input_node_ids, filters=None)
         mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
 
-    def test_vertex_ai_vector_store_v2_get_nodes_empty_filters(
+    def test_v2_get_nodes_empty_filters(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_client: MagicMock,
@@ -2908,7 +2905,7 @@ class TestUnitV2GetNodes:
         mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
         assert "Input filter set is empty after conversion" in caplog.text
 
-    async def test_vertex_ai_vector_store_v2_aget_nodes_empty_filters(
+    async def test_v2_aget_nodes_empty_filters(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2927,7 +2924,7 @@ class TestUnitV2GetNodes:
         mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
         assert "Input filter set is empty after conversion" in caplog.text
 
-    def test_vertex_ai_vector_store_v2_get_nodes_empty_result(
+    def test_v2_get_nodes_empty_result(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_client: MagicMock,
@@ -2938,7 +2935,7 @@ class TestUnitV2GetNodes:
         )
         input_node_ids = ["node_0"]
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"object_id": {"$in": input_node_ids}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
@@ -2953,7 +2950,7 @@ class TestUnitV2GetNodes:
         )
         assert result == []
 
-    async def test_vertex_ai_vector_store_v2_aget_nodes_empty_result(
+    async def test_v2_aget_nodes_empty_result(
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_search_service_async_client: MagicMock,
@@ -2964,7 +2961,7 @@ class TestUnitV2GetNodes:
         mock_v2_data_object_search_service_async_client.query_data_objects.return_value = mock_pager
         input_node_ids = ["node_0"]
         expected_query_request = QueryDataObjectsRequest(
-            parent=self.COLLECTION_PARENT,
+            parent=V2_COLLECTION_PARENT,
             filter={"object_id": {"$in": input_node_ids}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
