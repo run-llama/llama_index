@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -32,6 +33,31 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+
+
+def _set_message_text(message: ChatMessage, text: str) -> None:
+    """Safely update the text content of a ChatMessage.
+
+    Uses the blocks list directly so it works correctly when the message
+    contains multiple or non-text blocks (e.g. image blocks in a multi-modal
+    response).  In that case the legacy .content setter would raise a
+    ValueError.
+
+    Args:
+        message: The ChatMessage whose text content should be updated.
+        text: The new text to set.
+
+    """
+    text_blocks = [b for b in message.blocks if isinstance(b, TextBlock)]
+    non_text_blocks = [b for b in message.blocks if not isinstance(b, TextBlock)]
+
+    if text_blocks:
+        # Update the first TextBlock in-place; discard any subsequent text
+        # blocks that accumulated during streaming.
+        text_blocks[0].text = text
+        message.blocks = [text_blocks[0]] + non_text_blocks
+    else:
+        message.blocks = [TextBlock(text=text)]
 
 
 def is_function(message: ChatMessage) -> bool:
@@ -191,7 +217,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_text(chat.message, final_text.strip())  # final message
                 memory.put(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
@@ -249,7 +275,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                _set_message_text(chat.message, final_text.strip())  # final message
                 await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
