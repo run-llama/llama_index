@@ -21,11 +21,11 @@ print(response)
 
 ### Available Models
 
-| Model                    | Context Window | Description                                              |
-| ------------------------ | -------------- | -------------------------------------------------------- |
-| `MiniMax-M3`             | 524,288        | Latest flagship model, default                           |
+| Model                    | Context Window | Description                                                |
+| ------------------------ | -------------- | ---------------------------------------------------------- |
+| `MiniMax-M3`             | 524,288        | Latest flagship model, default                             |
 | `MiniMax-M2.7`           | 204,800        | Previous-generation model, kept for backward compatibility |
-| `MiniMax-M2.7-highspeed` | 204,800        | High-speed variant of M2.7 for low-latency scenarios     |
+| `MiniMax-M2.7-highspeed` | 204,800        | High-speed variant of M2.7 for low-latency scenarios       |
 
 ### Environment Variables
 
