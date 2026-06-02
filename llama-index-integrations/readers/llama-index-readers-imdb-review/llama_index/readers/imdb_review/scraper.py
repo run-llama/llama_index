@@ -103,7 +103,7 @@ def process_muted_text(mute_text: str) -> (float, float):
     Post processing the muted text.
 
     Args:
-        mute_text (str): text on how many people people found it helpful
+        mute_text (str): text on how many people found it helpful
 
     Returns:
         found_helpful (float): Number of people found the review helpful
