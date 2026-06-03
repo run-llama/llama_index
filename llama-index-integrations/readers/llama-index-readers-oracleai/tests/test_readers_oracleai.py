@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.oracleai import OracleReader, OracleTextSplitter
@@ -12,9 +13,9 @@ def test_class():
 
 
 # unit tests
-uname = ""
-passwd = ""
-v_dsn = ""
+uname = os.environ.get("VECDB_USER")
+passwd = os.environ.get("VECDB_PASS")
+v_dsn = os.environ.get("VECDB_HOST")
 
 
 ### Test OracleReader #####

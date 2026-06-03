@@ -34,6 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
+    "llama-index-embeddings-oracleai>=0.1.0",
     "oracledb>=2.2",
 ]
 
