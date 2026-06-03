@@ -9,7 +9,7 @@ from llama_index.core.schema import Document
 
 class FireCrawlWebReader(BasePydanticReader):
     """
-    turn a url to llm accessible markdown with `Firecrawl.dev`.
+    turn a url to llm accessible markdown with [Firecrawl](https://www.firecrawl.dev).
 
     Args:
         api_key (str): The Firecrawl API key.
