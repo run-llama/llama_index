@@ -10,9 +10,10 @@ import logging
 import time
 import uuid
 import warnings
+from collections.abc import Callable
 from functools import wraps
 from importlib import metadata
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar
 
 from google.api_core.gapic_v1.client_info import ClientInfo
 from google.cloud.aiplatform.compat.types import (  # type: ignore[attr-defined, unused-ignore]
@@ -28,6 +29,7 @@ from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint impo
     NumericNamespace,
 )
 from google.cloud.storage import Bucket  # type: ignore[import-untyped, unused-ignore]
+
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -68,7 +70,7 @@ def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
     return aiplatform
 
 
-def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
+def get_user_agent(module: str | None = None) -> tuple[str, str]:
     r"""
     Returns a custom user agent header.
 
@@ -95,7 +97,7 @@ def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
     )
 
 
-def get_client_info(module: Optional[str] = None) -> "ClientInfo":
+def get_client_info(module: str | None = None) -> "ClientInfo":
     r"""
     Returns a client info object with a custom user agent header.
 
@@ -153,7 +155,7 @@ def to_node(match: MatchNeighbor, text_key: str) -> TextNode:
 
 
 def stream_update_index(
-    index: MatchingEngineIndex, data_points: List["meidx_types.IndexDataPoint"]
+    index: MatchingEngineIndex, data_points: list["meidx_types.IndexDataPoint"]
 ) -> None:
     """
     Updates an index using stream updating.
@@ -168,10 +170,10 @@ def stream_update_index(
 
 def batch_update_index(
     index: MatchingEngineIndex,
-    data_points: List["meidx_types.IndexDataPoint"],
+    data_points: list["meidx_types.IndexDataPoint"],
     *,
     staging_bucket: Bucket,
-    prefix: Union[str, None] = None,
+    prefix: str | None = None,
     file_name: str = "documents.json",
     is_complete_overwrite: bool = False,
 ) -> None:
@@ -208,10 +210,10 @@ def batch_update_index(
 
 
 def to_data_points(
-    ids: List[str],
-    embeddings: List[List[float]],
-    metadatas: Union[List[Dict[str, Any]], None],
-) -> List["meidx_types.IndexDataPoint"]:
+    ids: list[str],
+    embeddings: list[list[float]],
+    metadatas: list[dict[str, Any]] | None,
+) -> list["meidx_types.IndexDataPoint"]:
     """
     Converts triplets id, embedding, metadata into IndexDataPoints instances.
 
@@ -230,11 +232,11 @@ def to_data_points(
     data_points = []
     ignored_fields = set()
 
-    for id_, embedding, metadata in zip(ids, embeddings, metadatas):
+    for id_, embedding, metadata_ in zip(ids, embeddings, metadatas, strict=False):
         restricts = []
         numeric_restricts = []
 
-        for namespace, value in metadata.items():
+        for namespace, value in metadata_.items():
             if not isinstance(namespace, str):
                 raise ValueError("All metadata keys must be strings")
 
@@ -250,7 +252,7 @@ def to_data_points(
                     namespace=namespace, allow_list=value
                 )
                 restricts.append(restriction)
-            elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            elif isinstance(value, int | float) and not isinstance(value, bool):
                 restriction = meidx_types.IndexDatapoint.NumericRestriction(
                     namespace=namespace, value_float=value
                 )
@@ -262,7 +264,8 @@ def to_data_points(
             warnings.warn(
                 f"Some values in fields {', '.join(ignored_fields)} are not usable for"
                 f" restrictions. In order to be used they must be str, list[str] or"
-                f" numeric."
+                f" numeric.",
+                stacklevel=2,
             )
 
         data_point = meidx_types.IndexDatapoint(
@@ -278,8 +281,8 @@ def to_data_points(
 
 
 def data_points_to_batch_update_records(
-    data_points: List["meidx_types.IndexDataPoint"],
-) -> List[Dict[str, Any]]:
+    data_points: list["meidx_types.IndexDataPoint"],
+) -> list[dict[str, Any]]:
     """
     Given a list of datapoints, generates a list of records in the input format
     required to do a bactch update.
@@ -315,15 +318,15 @@ def data_points_to_batch_update_records(
     return records
 
 
-def find_neighbors(
+def find_neighbors(  # noqa: D417
     index: MatchingEngineIndex,
     endpoint: MatchingEngineIndexEndpoint,
-    embeddings: List[List[float]],
+    embeddings: list[list[float]],
     top_k: int = 4,
-    filter: Union[List[Namespace], None] = None,
-    numeric_filter: Union[List[NumericNamespace], None] = None,
+    filter: list[Namespace] | None = None,
+    numeric_filter: list[NumericNamespace] | None = None,
     return_full_datapoint: bool = True,
-) -> List[MatchNeighbor]:
+) -> list[MatchNeighbor]:
     """
     Finds the k closes neighbors of each instance of embeddings.
 
@@ -421,14 +424,16 @@ def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
 def get_datapoints_by_filter(
     index: MatchingEngineIndex,
     endpoint: MatchingEngineIndexEndpoint,
-    metadata: dict = {},
+    metadata: dict | None = None,
     max_datapoints: int = MAX_DATA_POINTS,
-) -> List[str]:
+) -> list[str]:
     """
     Gets all the datapoints matching the metadata filters (text only)
     on the specified deployed index.
     """
     # configure filter based on metadata
+    if metadata is None:
+        metadata = {}
     index_config = index.to_dict()["metadata"]["config"]
     embeddings = [[0.0] * int(index_config.get("dimensions", 1))]
     filter = None
@@ -477,7 +482,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
             for attempt in range(max_attempts):
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception as e:  # noqa: PERF203
                     if attempt == max_attempts - 1:
                         # Last attempt, raise the exception
                         raise
@@ -500,71 +505,71 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
 # Helper Functions for Hybrid Search
 # =============================================================================
 
+# type aliases for type enforcement
+_SimpleFilter: TypeAlias = dict[
+    str, dict[str, int | list[int] | float | list[float] | str | list[str] | None]
+]
+_CompoundFilter: TypeAlias = dict[str, list["_SimpleFilter | _CompoundFilter"]]
+V2FilterDict: TypeAlias = _SimpleFilter | _CompoundFilter
 
-def _calculate_rrf_weights(alpha: float, num_searches: int = 2) -> List[float]:
+_OPERATOR_MAP = {
+    FilterOperator.EQ: "$eq",
+    FilterOperator.NE: "$ne",
+    FilterOperator.GT: "$gt",
+    FilterOperator.GTE: "$gte",
+    FilterOperator.LT: "$lt",
+    FilterOperator.LTE: "$lte",
+    FilterOperator.IN: "$in",
+    FilterOperator.NIN: "$nin",
+    FilterOperator.CONTAINS: "$contains",
+}
+
+
+def _convert_single_filter(f: MetadataFilter) -> _SimpleFilter:
+    v2_op = _OPERATOR_MAP.get(f.operator, "$eq")
+    return {f.key: {v2_op: f.value}}
+
+
+def convert_filters_to_v2_format(
+    filters: MetadataFilters | None,
+) -> V2FilterDict | None:
     """
-    Calculate RRF weights from alpha value.
-
-    Args:
-        alpha: Weight for vector search (0 = text only, 1 = vector only)
-        num_searches: Number of searches being combined
-
-    Returns:
-        List of weights [vector_weight, text_weight]
-
-    """
-    if num_searches == 2:
-        return [alpha, 1.0 - alpha]
-    return [1.0 / num_searches] * num_searches
-
-
-def _convert_filters_to_v2(filters: Optional[MetadataFilters]) -> Optional[dict]:
-    """
-    Convert LlamaIndex MetadataFilters to V2 filter format.
+    Convert llama-index MetadataFilters to Vertex V2 filter dictionary.
 
     V2 filter format:
-    - Simple: {"field": {"$eq": "value"}}
-    - AND: {"$and": [{...}, {...}]}
-    - OR: {"$or": [{...}, {...}]}
+    - Simple: ``{"field": {"$eq": "value"}}``
+    - AND: ``{"$and": [{...}, {...}]}``
+    - OR: ``{"$or": [{...}, {...}]}``
 
     Args:
-        filters: LlamaIndex MetadataFilters object
+        filters: llama-index ``MetadataFilters`` object, or None.
 
     Returns:
-        V2 filter dict or None
+        A converted V2 filter dictionary, or ``None`` if no filters are provided.
 
     """
-    if filters is None or len(filters.filters) == 0:
+    if not filters or not filters.filters:
         return None
-
-    op_map = {
-        FilterOperator.EQ: "$eq",
-        FilterOperator.NE: "$ne",
-        FilterOperator.GT: "$gt",
-        FilterOperator.GTE: "$gte",
-        FilterOperator.LT: "$lt",
-        FilterOperator.LTE: "$lte",
-        FilterOperator.IN: "$in",
-        FilterOperator.NIN: "$nin",
-        FilterOperator.CONTAINS: "$contains",
-    }
-
-    def convert_single(f: MetadataFilter) -> dict:
-        v2_op = op_map.get(f.operator, "$eq")
-        return {f.key: {v2_op: f.value}}
 
     if len(filters.filters) == 1:
         f = filters.filters[0]
         if isinstance(f, MetadataFilters):
-            return _convert_filters_to_v2(f)
-        return convert_single(f)
+            return convert_filters_to_v2_format(f)
+        return _convert_single_filter(f)
 
-    converted = []
+    converted: list[_SimpleFilter | _CompoundFilter] = []
     for f in filters.filters:
         if isinstance(f, MetadataFilters):
-            converted.append(_convert_filters_to_v2(f))
+            if compound := convert_filters_to_v2_format(f):
+                converted.append(compound)
         else:
-            converted.append(convert_single(f))
+            if single := _convert_single_filter(f):
+                converted.append(single)
 
-    condition = "$and" if filters.condition == FilterCondition.AND else "$or"
-    return {condition: converted}
+    match filters.condition:
+        case FilterCondition.AND:
+            return {"$and": converted}
+        case FilterCondition.OR:
+            return {"$or": converted}
+        case _:
+            raise ValueError(f"Unsupported filter condition: {filters.condition}")

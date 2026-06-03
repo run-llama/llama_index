@@ -1,5 +1,5 @@
 import importlib.util
-from typing import TYPE_CHECKING, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, TypedDict
 
 from google.cloud import aiplatform, storage
 from google.cloud.aiplatform import telemetry
@@ -8,6 +8,7 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndexEndpoint,
 )
 from google.oauth2.service_account import Credentials
+
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     get_client_info,
     get_user_agent,
@@ -42,8 +43,8 @@ class VectorSearchSDKManager:
         *,
         project_id: str,
         region: str,
-        credentials: Union[Credentials, None] = None,
-        credentials_path: Union[str, None] = None,
+        credentials: Credentials | None = None,
+        credentials_path: str | None = None,
     ) -> None:
         """
         Constructor.
@@ -62,7 +63,7 @@ class VectorSearchSDKManager:
         self._region = region
 
         if credentials is not None:
-            self._credentials: Optional[Credentials] = credentials
+            self._credentials: Credentials | None = credentials
         elif credentials_path is not None:
             self._credentials = Credentials.from_service_account_file(  # type: ignore[no-untyped-call]
                 credentials_path
@@ -71,7 +72,7 @@ class VectorSearchSDKManager:
             self._credentials = None
 
         # v2 client is initialized lazily
-        self._v2_client: Optional["V2ClientDict"] = None
+        self._v2_client: V2ClientDict | None = None
         self._v2_available = (
             importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
         )
@@ -200,7 +201,7 @@ class VectorSearchSDKManager:
             from google.cloud import vectorsearch_v1beta
 
             # Initialize all three clients needed for v2
-            clients: "V2ClientDict" = {
+            clients: V2ClientDict = {
                 "vector_search_service_client": vectorsearch_v1beta.VectorSearchServiceClient(
                     credentials=self._credentials
                 ),
