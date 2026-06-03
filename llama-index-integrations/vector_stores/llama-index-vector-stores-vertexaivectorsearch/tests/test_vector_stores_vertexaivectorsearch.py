@@ -1,6 +1,7 @@
 """Test Vertex AI Vector Store Vector Search functionality."""
 
 import hashlib
+import importlib.util
 import logging
 import os
 import uuid
@@ -14,41 +15,6 @@ from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
-)
-from google.cloud.vectorsearch_v1beta import (
-    BatchCreateDataObjectsRequest,
-    BatchDeleteDataObjectsRequest,
-    BatchSearchDataObjectsRequest,
-    BatchSearchDataObjectsResponse,
-    CreateDataObjectRequest,
-    DataObject,
-    DataObjectSearchServiceAsyncClient,
-    DataObjectSearchServiceClient,
-    DataObjectServiceAsyncClient,
-    DataObjectServiceClient,
-    DeleteDataObjectRequest,
-    DenseVector,
-    OutputFields,
-    QueryDataObjectsRequest,
-    QueryDataObjectsResponse,
-    Ranker,
-    ReciprocalRankFusion,
-    Search,
-    SearchDataObjectsRequest,
-    SearchDataObjectsResponse,
-    SearchResult,
-    SemanticSearch,
-    SparseVector,
-    TextSearch,
-    Vector,
-    VectorSearch,
-    VectorSearchServiceClient,
-)
-from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
-    QueryDataObjectsAsyncPager,
-    QueryDataObjectsPager,
-    SearchDataObjectsAsyncPager,
-    SearchDataObjectsPager,
 )
 from pydantic import ValidationError
 
@@ -85,6 +51,45 @@ from llama_index.vector_stores.vertexaivectorsearch.utils import (
     convert_filters_to_v2_format,
     retry,
 )
+
+V2_AVAILABLE = importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
+xfail_if_missing_v2 = pytest.mark.xfail(
+    condition=not V2_AVAILABLE, reason="requires v2 support"
+)
+xpass_if_missing_v2 = pytest.mark.xpass(
+    condition=V2_AVAILABLE, reason="requires v2 support"
+)
+
+if V2_AVAILABLE:
+    from google.cloud.vectorsearch_v1beta import (
+        BatchCreateDataObjectsRequest,
+        BatchDeleteDataObjectsRequest,
+        BatchSearchDataObjectsRequest,
+        BatchSearchDataObjectsResponse,
+        CreateDataObjectRequest,
+        DataObject,
+        DataObjectSearchServiceAsyncClient,
+        DataObjectSearchServiceClient,
+        DataObjectServiceAsyncClient,
+        DataObjectServiceClient,
+        DeleteDataObjectRequest,
+        DenseVector,
+        OutputFields,
+        QueryDataObjectsRequest,
+        QueryDataObjectsResponse,
+        SearchDataObjectsRequest,
+        SearchDataObjectsResponse,
+        SearchResult,
+        SparseVector,
+        Vector,
+        VectorSearchServiceClient,
+    )
+    from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers import (
+        QueryDataObjectsAsyncPager,
+        QueryDataObjectsPager,
+        SearchDataObjectsAsyncPager,
+        SearchDataObjectsPager,
+    )
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
 REGION = os.getenv("REGION", "")
@@ -613,6 +618,7 @@ class TestV2FeatureFlags:
 class TestV2SDKManager:
     """Test SDK manager v2 client functionality."""
 
+    @xfail_if_missing_v2
     def test_ensure_v2_available_passes_when_sdk_installed(self) -> None:
         """Test that VectorSearchSDKManager.ensure_v2_available succeeds for tests."""
         manager = VectorSearchSDKManager(
@@ -620,6 +626,7 @@ class TestV2SDKManager:
         )
         manager.ensure_v2_available()
 
+    @xpass_if_missing_v2
     def test_ensure_v2_available_fails_when_sdk_not_installed(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -973,6 +980,7 @@ V2_COLLECTION_PARENT = (
 )
 
 
+@xfail_if_missing_v2
 class TestUnitV2Add:
     """Test the behavior of ``add`` and ``async_add`` methods."""
 
@@ -1022,7 +1030,7 @@ class TestUnitV2Add:
         ]
 
     @pytest.fixture
-    def output_dense_data_objects(self) -> list[DataObject]:
+    def output_dense_data_objects(self) -> list["DataObject"]:
         # corresponds to `input_dense_nodes`
         return [
             DataObject(
@@ -1053,8 +1061,8 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def output_dense_create_data_object_requests(
-        self, output_dense_data_objects: list[DataObject]
-    ) -> list[CreateDataObjectRequest]:
+        self, output_dense_data_objects: list["DataObject"]
+    ) -> list["CreateDataObjectRequest"]:
         # corresponds to `input_dense_nodes`
         return [
             CreateDataObjectRequest(
@@ -1067,8 +1075,8 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def expected_add_requests(
-        self, output_dense_create_data_object_requests: list[CreateDataObjectRequest]
-    ) -> list[BatchCreateDataObjectsRequest]:
+        self, output_dense_create_data_object_requests: list["CreateDataObjectRequest"]
+    ) -> list["BatchCreateDataObjectsRequest"]:
         return [
             BatchCreateDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
@@ -1087,7 +1095,7 @@ class TestUnitV2Add:
     def test_v2_add_valid(
         self,
         mock_v2_store: VertexAIVectorStore,
-        expected_add_requests: list[BatchCreateDataObjectsRequest],
+        expected_add_requests: list["BatchCreateDataObjectsRequest"],
         mock_v2_data_object_service_client: MagicMock,
         input_dense_nodes: list[TextNode],
     ) -> None:
@@ -1109,7 +1117,7 @@ class TestUnitV2Add:
         self,
         mock_v2_store: VertexAIVectorStore,
         input_dense_nodes: list[TextNode],
-        expected_add_requests: list[BatchCreateDataObjectsRequest],
+        expected_add_requests: list["BatchCreateDataObjectsRequest"],
         mock_v2_data_object_service_async_client: MagicMock,
     ) -> None:
         """Test that appropriate calls are made with prepared data objects when ``async_add`` is called."""
@@ -1247,7 +1255,7 @@ class TestUnitV2Add:
         def test_v2_add_failed_sub_requests(
             self,
             mock_v2_store: VertexAIVectorStore,
-            expected_add_requests: list[BatchCreateDataObjectsRequest],
+            expected_add_requests: list["BatchCreateDataObjectsRequest"],
             mock_v2_data_object_service_client: MagicMock,
             input_dense_nodes: list[TextNode],
             batch_add_side_effect: list[Exception | None],
@@ -1280,7 +1288,7 @@ class TestUnitV2Add:
             self,
             mock_v2_store: VertexAIVectorStore,
             input_dense_nodes: list[TextNode],
-            expected_add_requests: list[BatchCreateDataObjectsRequest],
+            expected_add_requests: list["BatchCreateDataObjectsRequest"],
             mock_v2_data_object_service_async_client: MagicMock,
             batch_add_side_effect: list[Exception | None],
             expected_added_ids: list[int],
@@ -1313,7 +1321,7 @@ class TestUnitV2Add:
             self,
             mock_v2_store: VertexAIVectorStore,
             input_dense_nodes: list[TextNode],
-            output_dense_data_objects: list[DataObject],
+            output_dense_data_objects: list["DataObject"],
         ) -> None:
             """Test round-trip conversion of ``DataObject``s."""
             # WHEN
@@ -1329,7 +1337,7 @@ class TestUnitV2Add:
             self,
             mock_v2_store: VertexAIVectorStore,
             input_dense_nodes: list[TextNode],
-            output_dense_data_objects: list[DataObject],
+            output_dense_data_objects: list["DataObject"],
         ) -> None:
             """Test round-trip conversion of ``TextNode``s."""
             # WHEN
@@ -1368,6 +1376,7 @@ class TestUnitV2Add:
                 }
 
 
+@xfail_if_missing_v2
 class TestUnitV2Delete:
     """Unit test the behavior of ``(a)delete``, ``(a)delete_nodes``, and ``(a)clear``."""
 
@@ -1392,7 +1401,9 @@ class TestUnitV2Delete:
         )
 
     @pytest.fixture
-    def expected_delete_requests_ref_id_1(self) -> list[BatchDeleteDataObjectsRequest]:
+    def expected_delete_requests_ref_id_1(
+        self,
+    ) -> list["BatchDeleteDataObjectsRequest"]:
         return [
             BatchDeleteDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
@@ -1438,7 +1449,7 @@ class TestUnitV2Delete:
     @pytest.fixture
     def expected_delete_nodes_by_id_requests(
         self,
-    ) -> list[BatchDeleteDataObjectsRequest]:
+    ) -> list["BatchDeleteDataObjectsRequest"]:
         # batch_size=2 → two batches: ["node_0","node_1"] and ["node_2"]
         def _req(nids: list[str]) -> BatchDeleteDataObjectsRequest:
             return BatchDeleteDataObjectsRequest(
@@ -1459,7 +1470,7 @@ class TestUnitV2Delete:
         return MetadataFilters(filters=[MetadataFilter(key="user_id", value=200)])
 
     @pytest.fixture
-    def expected_filter_query_request(self) -> QueryDataObjectsRequest:
+    def expected_filter_query_request(self) -> "QueryDataObjectsRequest":
         # corresponds to `input_delete_nodes_filters`
         return QueryDataObjectsRequest(
             parent=V2_COLLECTION_PARENT,
@@ -1474,7 +1485,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1509,7 +1520,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1641,7 +1652,7 @@ class TestUnitV2Delete:
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_client: MagicMock,
-        expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+        expected_delete_nodes_by_id_requests: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -1658,7 +1669,7 @@ class TestUnitV2Delete:
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_async_client: MagicMock,
-        expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+        expected_delete_nodes_by_id_requests: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -1678,8 +1689,8 @@ class TestUnitV2Delete:
         mock_v2_data_object_search_service_client: MagicMock,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
         input_delete_nodes_filters: MetadataFilters,
-        expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_filter_query_request: "QueryDataObjectsRequest",
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1708,8 +1719,8 @@ class TestUnitV2Delete:
         mock_v2_data_object_search_service_async_client: MagicMock,
         input_delete_nodes_filters: MetadataFilters,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_filter_query_request: "QueryDataObjectsRequest",
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1736,7 +1747,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
         input_delete_nodes_filters: MetadataFilters,
-        expected_filter_query_request: QueryDataObjectsRequest,
+        expected_filter_query_request: "QueryDataObjectsRequest",
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1759,8 +1770,8 @@ class TestUnitV2Delete:
         mock_v2_data_object_search_service_async_client: MagicMock,
         input_delete_nodes_filters: MetadataFilters,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_filter_query_request: "QueryDataObjectsRequest",
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1820,7 +1831,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1853,7 +1864,7 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
         delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1915,7 +1926,7 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_client: MagicMock,
             mock_v2_data_object_search_service_client: MagicMock,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -1962,7 +1973,7 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_async_client: MagicMock,
             mock_v2_data_object_search_service_async_client: MagicMock,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2006,7 +2017,7 @@ class TestUnitV2Delete:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_client: MagicMock,
-            expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+            expected_delete_nodes_by_id_requests: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2039,7 +2050,7 @@ class TestUnitV2Delete:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_async_client: MagicMock,
-            expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+            expected_delete_nodes_by_id_requests: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2075,8 +2086,8 @@ class TestUnitV2Delete:
             mock_v2_data_object_search_service_client: MagicMock,
             input_delete_nodes_filters: MetadataFilters,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_filter_query_request: QueryDataObjectsRequest,
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_filter_query_request: "QueryDataObjectsRequest",
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2117,8 +2128,8 @@ class TestUnitV2Delete:
             mock_v2_data_object_search_service_async_client: MagicMock,
             input_delete_nodes_filters: MetadataFilters,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_filter_query_request: QueryDataObjectsRequest,
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_filter_query_request: "QueryDataObjectsRequest",
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2157,7 +2168,7 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_client: MagicMock,
             mock_v2_data_object_search_service_client: MagicMock,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2202,7 +2213,7 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_async_client: MagicMock,
             mock_v2_data_object_search_service_async_client: MagicMock,
             delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
-            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            expected_delete_requests_ref_id_1: list["BatchDeleteDataObjectsRequest"],
             batch_delete_side_effect: list[Exception | None],
             expected_results: tuple[int, int, int],
             delete_by_id_expected_results: tuple[int, int, int],
@@ -2241,19 +2252,7 @@ class TestUnitV2Delete:
             )
 
 
-params_get_nodes_output_fields = pytest.mark.parametrize(
-    ("get_nodes_output_fields", "expected_output_fields"),
-    [
-        (None, OutputFields(metadata_fields=["*"])),
-        (
-            {"metadata_fields": ["*"], "data_fields": ["title"]},
-            OutputFields(metadata_fields=["*"], data_fields=["title"]),
-        ),
-    ],
-    ids=["vector store default", "modified fields"],
-)
-
-
+@xfail_if_missing_v2
 class TestUnitV2GetNodes:
     """Test the behavior of ``get_nodes`` and ``aget_nodes`` methods."""
 
@@ -2278,7 +2277,7 @@ class TestUnitV2GetNodes:
         )
 
     @pytest.fixture
-    def get_nodes_query_result_data_objects(self) -> list[DataObject]:
+    def get_nodes_query_result_data_objects(self) -> list["DataObject"]:
         """DataObjects with ``name`` set, as returned by ``query_data_objects``."""
         return [
             DataObject(
@@ -2290,7 +2289,7 @@ class TestUnitV2GetNodes:
 
     @pytest.fixture
     def get_nodes_result_pages(
-        self, get_nodes_query_result_data_objects: list[DataObject]
+        self, get_nodes_query_result_data_objects: list["DataObject"]
     ) -> list[MagicMock]:
         return [
             MagicMock(
@@ -2303,10 +2302,10 @@ class TestUnitV2GetNodes:
     @pytest.mark.parametrize(
         ("get_nodes_output_fields", "expected_output_fields"),
         [
-            (None, OutputFields(metadata_fields=["*"])),
+            (None, {"metadata_fields": ["*"]}),
             (
                 {"metadata_fields": ["*"], "data_fields": ["title"]},
-                OutputFields(metadata_fields=["*"], data_fields=["title"]),
+                {"metadata_fields": ["*"], "data_fields": ["title"]},
             ),
         ],
         ids=["vector store default", "modified fields"],
@@ -2316,10 +2315,10 @@ class TestUnitV2GetNodes:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_client: MagicMock,
-            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_query_result_data_objects: list["DataObject"],
             get_nodes_result_pages: list[MagicMock],
             get_nodes_output_fields: dict[str, list[str]] | None,
-            expected_output_fields: OutputFields,
+            expected_output_fields: dict[str, list[str]],
         ) -> None:
             # GIVEN
             if get_nodes_output_fields is not None:
@@ -2349,10 +2348,10 @@ class TestUnitV2GetNodes:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_async_client: MagicMock,
-            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_query_result_data_objects: list["DataObject"],
             get_nodes_result_pages: list[MagicMock],
             get_nodes_output_fields: dict[str, list[str]] | None,
-            expected_output_fields: OutputFields,
+            expected_output_fields: dict[str, list[str]],
         ) -> None:
             # GIVEN
             if get_nodes_output_fields is not None:
@@ -2384,10 +2383,10 @@ class TestUnitV2GetNodes:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_client: MagicMock,
-            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_query_result_data_objects: list["DataObject"],
             get_nodes_result_pages: list[MagicMock],
             get_nodes_output_fields: dict[str, list[str]] | None,
-            expected_output_fields: OutputFields,
+            expected_output_fields: dict[str, list[str]],
         ) -> None:
             # GIVEN
             if get_nodes_output_fields is not None:
@@ -2419,10 +2418,10 @@ class TestUnitV2GetNodes:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_async_client: MagicMock,
-            get_nodes_query_result_data_objects: list[DataObject],
+            get_nodes_query_result_data_objects: list["DataObject"],
             get_nodes_result_pages: list[MagicMock],
             get_nodes_output_fields: dict[str, list[str]] | None,
-            expected_output_fields: OutputFields,
+            expected_output_fields: dict[str, list[str]],
         ) -> None:
             # GIVEN
             if get_nodes_output_fields is not None:
@@ -2603,70 +2602,61 @@ class TestUnitV2GetNodes:
         assert result == []
 
 
-QUERY_OUTPUT_FIELDS = OutputFields(data_fields=["*"], metadata_fields=["*"])
+QUERY_OUTPUT_FIELDS = {"data_fields": ["*"], "metadata_fields": ["*"]}
 INPUT_FILTERS = MetadataFilters(
     filters=[MetadataFilter(key="some_key", value=3, operator=FilterOperator.GT)]
 )
-VECTOR_SEARCH_BASIC = VectorSearch(
-    search_field="embedding",
-    vector=DenseVector(values=[0.1, 0.2, 0.3, 0.4]),
-    top_k=3,
-    output_fields=QUERY_OUTPUT_FIELDS,
-)
-VECTOR_SEARCH_FILTERS = VectorSearch(
-    search_field="other_embedding",
-    vector=DenseVector(values=[0.1, 0.2, 0.3, 0.4]),
-    top_k=3,
-    output_fields=QUERY_OUTPUT_FIELDS,
-    filter={"some_key": {"$gt": 3}},
-)
-TEXT_SEARCH_BASIC = TextSearch(
-    search_text="my search query",
-    data_field_names=["text", "title"],
-    top_k=5,
-    output_fields=QUERY_OUTPUT_FIELDS,
-)
-TEXT_SEARCH_FILTERS = TextSearch(
-    search_text="my search query",
-    data_field_names=["text", "title"],
-    top_k=3,
-    output_fields=QUERY_OUTPUT_FIELDS,
-    filter={"some_key": {"$gt": 3}},
-)
-TEXT_SEARCH_FILTERS_K5 = TextSearch(
-    search_text="my search query",
-    data_field_names=["text", "title"],
-    top_k=5,
-    output_fields=QUERY_OUTPUT_FIELDS,
-    filter={"some_key": {"$gt": 3}},
-)
-SEMANTIC_SEARCH_BASIC = SemanticSearch(
-    search_text="my search query",
-    search_field="embedding",
-    task_type="RETRIEVAL_QUERY",
-    top_k=3,
-    output_fields=QUERY_OUTPUT_FIELDS,
-)
-SEMANTIC_SEARCH_FILTERS = SemanticSearch(
-    search_text="my search query",
-    search_field="other_embedding",
-    task_type="RETRIEVAL_QUERY",
-    top_k=3,
-    output_fields=QUERY_OUTPUT_FIELDS,
-    filter={"some_key": {"$gt": 3}},
-)
-RRF_RANKER_1_SEARCH = BatchSearchDataObjectsRequest.CombineResultsOptions(
-    ranker=Ranker(rrf=ReciprocalRankFusion(weights=[1.0])),
-    top_k=6,
-    output_fields=QUERY_OUTPUT_FIELDS,
-)
-RRF_RANKER_2_SEARCHES = BatchSearchDataObjectsRequest.CombineResultsOptions(
-    ranker=Ranker(rrf=ReciprocalRankFusion(weights=[0.5, 0.5])),
-    top_k=6,
-    output_fields=QUERY_OUTPUT_FIELDS,
-)
+VECTOR_SEARCH_BASIC = {
+    "search_field": "embedding",
+    "vector": {"values": [0.1, 0.2, 0.3, 0.4]},
+    "top_k": 3,
+    "output_fields": QUERY_OUTPUT_FIELDS,
+}
+VECTOR_SEARCH_FILTERS = {
+    **VECTOR_SEARCH_BASIC,
+    "search_field": "other_embedding",
+    "filter": {"some_key": {"$gt": 3}},
+}
+TEXT_SEARCH_BASIC = {
+    "search_text": "my search query",
+    "data_field_names": ["text", "title"],
+    "top_k": 5,
+    "output_fields": QUERY_OUTPUT_FIELDS,
+}
+TEXT_SEARCH_FILTERS_K3 = {
+    **TEXT_SEARCH_BASIC,
+    "top_k": 3,
+    "filter": {"some_key": {"$gt": 3}},
+}
+TEXT_SEARCH_FILTERS_K5 = {
+    **TEXT_SEARCH_BASIC,
+    "filter": {"some_key": {"$gt": 3}},
+}
+SEMANTIC_SEARCH_BASIC = {
+    "search_text": "my search query",
+    "search_field": "embedding",
+    "task_type": "RETRIEVAL_QUERY",
+    "top_k": 3,
+    "output_fields": QUERY_OUTPUT_FIELDS,
+}
+SEMANTIC_SEARCH_FILTERS = {
+    **SEMANTIC_SEARCH_BASIC,
+    "search_field": "other_embedding",
+    "filter": {"some_key": {"$gt": 3}},
+}
+RRF_RANKER_1_SEARCH = {
+    "ranker": {"rrf": {"weights": [1.0]}},
+    "top_k": 6,
+    "output_fields": QUERY_OUTPUT_FIELDS,
+}
+RRF_RANKER_2_SEARCHES = {
+    "ranker": {"rrf": {"weights": [0.5, 0.5]}},
+    "top_k": 6,
+    "output_fields": QUERY_OUTPUT_FIELDS,
+}
 
 
+@xfail_if_missing_v2
 class TestUnitV2Query:
     """Test behavior of ``query`` and ``aquery`` methods."""
 
@@ -2692,7 +2682,7 @@ class TestUnitV2Query:
         )
 
     @pytest.fixture
-    def output_dense_search_results(self) -> list[SearchResult]:
+    def output_dense_search_results(self) -> list["SearchResult"]:
         return [
             SearchResult(
                 data_object=DataObject(
@@ -2740,9 +2730,7 @@ class TestUnitV2Query:
                     query_embedding=[0.1, 0.2, 0.3, 0.4],
                     similarity_top_k=3,
                 ),
-                SearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_BASIC
-                ),
+                {"parent": V2_COLLECTION_PARENT, "vector_search": VECTOR_SEARCH_BASIC},
                 False,
             ),
             (
@@ -2753,9 +2741,10 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     filters=INPUT_FILTERS,
                 ),
-                SearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_FILTERS
-                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "vector_search": VECTOR_SEARCH_FILTERS,
+                },
                 False,
             ),
             (
@@ -2765,9 +2754,7 @@ class TestUnitV2Query:
                     sparse_top_k=5,
                     similarity_top_k=3,
                 ),
-                SearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT, text_search=TEXT_SEARCH_BASIC
-                ),
+                {"parent": V2_COLLECTION_PARENT, "text_search": TEXT_SEARCH_BASIC},
                 False,
             ),
             (
@@ -2777,9 +2764,7 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     filters=INPUT_FILTERS,
                 ),
-                SearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT, text_search=TEXT_SEARCH_FILTERS
-                ),
+                {"parent": V2_COLLECTION_PARENT, "text_search": TEXT_SEARCH_FILTERS_K3},
                 False,
             ),
             (
@@ -2791,14 +2776,14 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(text_search=TEXT_SEARCH_BASIC),
-                        Search(vector_search=VECTOR_SEARCH_BASIC),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_BASIC},
+                        {"vector_search": VECTOR_SEARCH_BASIC},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2812,14 +2797,14 @@ class TestUnitV2Query:
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(text_search=TEXT_SEARCH_FILTERS_K5),
-                        Search(vector_search=VECTOR_SEARCH_FILTERS),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_FILTERS_K5},
+                        {"vector_search": VECTOR_SEARCH_FILTERS},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2830,14 +2815,14 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(text_search=TEXT_SEARCH_BASIC),
-                        Search(semantic_search=SEMANTIC_SEARCH_BASIC),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_BASIC},
+                        {"semantic_search": SEMANTIC_SEARCH_BASIC},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2850,14 +2835,14 @@ class TestUnitV2Query:
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(text_search=TEXT_SEARCH_FILTERS_K5),
-                        Search(semantic_search=SEMANTIC_SEARCH_FILTERS),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_FILTERS_K5},
+                        {"semantic_search": SEMANTIC_SEARCH_FILTERS},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2869,14 +2854,14 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(semantic_search=SEMANTIC_SEARCH_BASIC),
-                        Search(vector_search=VECTOR_SEARCH_BASIC),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"semantic_search": SEMANTIC_SEARCH_BASIC},
+                        {"vector_search": VECTOR_SEARCH_BASIC},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2890,14 +2875,14 @@ class TestUnitV2Query:
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[
-                        Search(semantic_search=SEMANTIC_SEARCH_FILTERS),
-                        Search(vector_search=VECTOR_SEARCH_FILTERS),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"semantic_search": SEMANTIC_SEARCH_FILTERS},
+                        {"vector_search": VECTOR_SEARCH_FILTERS},
                     ],
-                    combine=RRF_RANKER_2_SEARCHES,
-                ),
+                    "combine": RRF_RANKER_2_SEARCHES,
+                },
                 True,
             ),
             (
@@ -2908,11 +2893,11 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                 ),
-                BatchSearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT,
-                    searches=[Search(semantic_search=SEMANTIC_SEARCH_BASIC)],
-                    combine=RRF_RANKER_1_SEARCH,
-                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [{"semantic_search": SEMANTIC_SEARCH_BASIC}],
+                    "combine": RRF_RANKER_1_SEARCH,
+                },
                 True,
             ),
             (
@@ -2921,9 +2906,7 @@ class TestUnitV2Query:
                     query_embedding=[0.1, 0.2, 0.3, 0.4],
                     similarity_top_k=3,
                 ),
-                SearchDataObjectsRequest(
-                    parent=V2_COLLECTION_PARENT, vector_search=VECTOR_SEARCH_BASIC
-                ),
+                {"parent": V2_COLLECTION_PARENT, "vector_search": VECTOR_SEARCH_BASIC},
                 False,
             ),
         ],
@@ -2948,9 +2931,9 @@ class TestUnitV2Query:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_client: MagicMock,
             input_query: VectorStoreQuery,
-            expected_search: SearchDataObjectsRequest,
+            expected_search: dict[str, Any],
             uses_batch_request: bool,
-            output_dense_search_results: list[SearchResult],
+            output_dense_search_results: list["SearchResult"],
             expected_query_result: VectorStoreQueryResult,
         ) -> None:
             # GIVEN
@@ -2977,12 +2960,12 @@ class TestUnitV2Query:
             assert actual_query_result == expected_query_result
             if uses_batch_request:
                 mock_v2_data_object_search_service_client.batch_search_data_objects.assert_called_with(
-                    expected_search
+                    BatchSearchDataObjectsRequest(expected_search)
                 )
                 mock_v2_data_object_search_service_client.search_data_objects.assert_not_called()
             else:
                 mock_v2_data_object_search_service_client.search_data_objects.assert_called_with(
-                    expected_search
+                    SearchDataObjectsRequest(expected_search)
                 )
                 mock_v2_data_object_search_service_client.batch_search_data_objects.assert_not_called()
 
@@ -2991,9 +2974,9 @@ class TestUnitV2Query:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_search_service_async_client: MagicMock,
             input_query: VectorStoreQuery,
-            expected_search: SearchDataObjectsRequest,
+            expected_search: dict[str, Any],
             uses_batch_request: bool,
-            output_dense_search_results: list[SearchResult],
+            output_dense_search_results: list["SearchResult"],
             expected_query_result: VectorStoreQueryResult,
         ) -> None:
             # GIVEN
@@ -3020,12 +3003,12 @@ class TestUnitV2Query:
             assert actual_query_result == expected_query_result
             if uses_batch_request:
                 mock_v2_data_object_search_service_async_client.batch_search_data_objects.assert_called_with(
-                    expected_search
+                    BatchSearchDataObjectsRequest(expected_search)
                 )
                 mock_v2_data_object_search_service_async_client.search_data_objects.assert_not_called()
             else:
                 mock_v2_data_object_search_service_async_client.search_data_objects.assert_called_with(
-                    expected_search
+                    SearchDataObjectsRequest(expected_search)
                 )
                 mock_v2_data_object_search_service_async_client.batch_search_data_objects.assert_not_called()
 
