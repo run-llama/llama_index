@@ -18,6 +18,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [CometAPI](/python/examples/llm/cometapi)
 - [Dashscope](/python/examples/llm/dashscope)
 - [Dashscope Multi-Modal](/python/examples/multi_modal/dashscope_multi_modal)
+- [Doubleword](/python/examples/llm/doubleword)
 - [EverlyAI](/python/examples/llm/everlyai)
 - [Featherless AI](/python/examples/llm/featherlessai)
 - [Fireworks](/python/examples/llm/fireworks)

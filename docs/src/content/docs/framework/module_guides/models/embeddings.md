@@ -419,6 +419,7 @@ LlamaIndex integrates with a wide range of embedding providers: hosted APIs, sel
 - [Cohere](/python/examples/embeddings/cohereai)
 - [Custom](/python/examples/embeddings/custom_embeddings)
 - [Dashscope](/python/examples/embeddings/dashscope_embeddings)
+- [Doubleword](/python/examples/embeddings/doubleword)
 - [ElasticSearch](/python/examples/embeddings/elasticsearch)
 - [FastEmbed](/python/examples/embeddings/fastembed)
 - [Fireworks AI](/python/examples/embeddings/fireworks)
