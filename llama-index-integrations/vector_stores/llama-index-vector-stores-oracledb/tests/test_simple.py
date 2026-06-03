@@ -3,8 +3,12 @@ import threading
 import unittest
 from typing import List
 
-import oracledb
 import pytest
+
+try:
+    import oracledb  # type: ignore
+except Exception:
+    oracledb = None  # allow collection even if client not installed
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores import FilterCondition, FilterOperator
@@ -17,11 +21,35 @@ from llama_index.core.vector_stores.types import (
 from llama_index.vector_stores.oracledb import OraLlamaVS
 from llama_index.vector_stores.oracledb import base as orallamavs
 
-username = os.environ.get("VECDB_USER")
-password = os.environ.get("VECDB_PASS")
-dsn = os.environ.get("VECDB_HOST")
 
-connection = oracledb.create_pool(user=username, password=password, dsn=dsn, max=4)
+connection = None
+
+
+def _env_or_default(name: str, default: str) -> str:
+    val = os.getenv(name)
+    return val if val else default
+
+
+def _connect_or_skip():
+    if oracledb is None:
+        pytest.skip("oracledb client not installed")
+    # Reuse the same VECDB_* names as the rest of this test package.
+    username = _env_or_default("VECDB_USER", "")
+    password = _env_or_default("VECDB_PASS", "")
+    dsn = _env_or_default("VECDB_HOST", "")
+    if not username or not password or not dsn:
+        pytest.skip("Oracle test credentials are not set")
+    pool = None
+    try:
+        pool = oracledb.create_pool(user=username, password=password, dsn=dsn, max=4)
+        with pool.acquire():
+            pass
+        return pool
+    except Exception as exc:
+        if pool is not None:
+            pool.close()
+        pytest.skip(f"Could not connect to Oracle: {exc}")
+
 
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
 _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
@@ -30,9 +58,15 @@ _NODE_ID_WEIGHT_3_RANK_C = "452D24AB-F185-414C-A352-590B4B9EE51B"
 
 @pytest.fixture(autouse=True)
 def drop_table():
+    global connection
+    connection = _connect_or_skip()
     orallamavs.drop_table_purge(connection, "TABLEHELLO")
-    yield
-    orallamavs.drop_table_purge(connection, "TABLEHELLO")
+    try:
+        yield
+    finally:
+        orallamavs.drop_table_purge(connection, "TABLEHELLO")
+        connection.close()
+        connection = None
 
 
 def _node_embeddings_for_test() -> List[TextNode]:

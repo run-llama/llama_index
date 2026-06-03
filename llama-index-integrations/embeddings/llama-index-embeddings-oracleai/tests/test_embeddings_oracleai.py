@@ -1,6 +1,5 @@
 import os
 import json
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,8 +7,10 @@ import pytest
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.embeddings.oracleai import OracleEmbeddings
 
-if TYPE_CHECKING:
-    import oracledb
+try:
+    import oracledb  # type: ignore
+except Exception:
+    oracledb = None  # allow collection even if client not installed
 
 
 def test_class():
@@ -17,19 +18,30 @@ def test_class():
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
-# unit tests
-uname = os.environ.get("VECDB_USER")
-passwd = os.environ.get("VECDB_PASS")
-v_dsn = os.environ.get("VECDB_HOST")
+def _env_or_default(name: str, default: str) -> str:
+    val = os.getenv(name)
+    return val if val else default
+
+
+def _connect_or_skip():
+    if oracledb is None:
+        pytest.skip("oracledb client not installed")
+    # Reuse the same VECDB_* names as the rest of the Oracle integration tests.
+    username = _env_or_default("VECDB_USER", "")
+    password = _env_or_default("VECDB_PASS", "")
+    dsn = _env_or_default("VECDB_HOST", "")
+    if not username or not password or not dsn:
+        pytest.skip("Oracle test credentials are not set")
+    try:
+        return oracledb.connect(user=username, password=password, dsn=dsn)
+    except Exception as exc:
+        pytest.skip(f"Could not connect to Oracle: {exc}")
 
 
 ### Test OracleEmbeddings #####
-# @pytest.mark.requires("oracledb")
 def test_embeddings_test() -> None:
+    connection = _connect_or_skip()
     try:
-        connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)
-        # print("Connection Successful!")
-
         doc = """Hello World!!!"""
 
         # get oracle embeddings
@@ -40,11 +52,8 @@ def test_embeddings_test() -> None:
         # verify
         assert len(embedding) != 0
         # print(f"Embedding: {embedding}")
-
+    finally:
         connection.close()
-    except Exception as e:
-        # print("Error: ", e)
-        pass
 
 
 # test embedder

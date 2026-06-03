@@ -1,10 +1,14 @@
 import os
-from typing import TYPE_CHECKING
+
+import pytest
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.oracleai import OracleReader, OracleTextSplitter
 
-if TYPE_CHECKING:
-    import oracledb
+try:
+    import oracledb  # type: ignore
+except Exception:
+    oracledb = None  # allow collection even if client not installed
 
 
 def test_class():
@@ -12,19 +16,30 @@ def test_class():
     assert BaseReader.__name__ in names_of_base_classes
 
 
-# unit tests
-uname = os.environ.get("VECDB_USER")
-passwd = os.environ.get("VECDB_PASS")
-v_dsn = os.environ.get("VECDB_HOST")
+def _env_or_default(name: str, default: str) -> str:
+    val = os.getenv(name)
+    return val if val else default
+
+
+def _connect_or_skip():
+    if oracledb is None:
+        pytest.skip("oracledb client not installed")
+    # Reuse the same VECDB_* names as the rest of the Oracle integration tests.
+    username = _env_or_default("VECDB_USER", "")
+    password = _env_or_default("VECDB_PASS", "")
+    dsn = _env_or_default("VECDB_HOST", "")
+    if not username or not password or not dsn:
+        pytest.skip("Oracle test credentials are not set")
+    try:
+        return oracledb.connect(user=username, password=password, dsn=dsn)
+    except Exception as exc:
+        pytest.skip(f"Could not connect to Oracle: {exc}")
 
 
 ### Test OracleReader #####
-# @pytest.mark.requires("oracledb")
 def test_loader_test() -> None:
+    connection = _connect_or_skip()
     try:
-        connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)
-        # print("Connection Successful!")
-
         cursor = connection.cursor()
         cursor.execute("drop table if exists llama_demo")
         cursor.execute("create table llama_demo(id number, text varchar2(25))")
@@ -45,7 +60,7 @@ def test_loader_test() -> None:
 
         # load from database column
         loader_params = {
-            "owner": uname,
+            "owner": _env_or_default("VECDB_USER", ""),
             "tablename": "llama_demo",
             "colname": "text",
         }
@@ -55,20 +70,14 @@ def test_loader_test() -> None:
         # verify
         assert len(docs) != 0
         # print(f"Document#1: {docs[0].text}")
-
+    finally:
         connection.close()
-    except Exception as e:
-        # print("Error: ", e)
-        pass
 
 
 ### Test OracleTextSplitter ####
-# @pytest.mark.requires("oracledb")
 def test_splitter_test() -> None:
+    connection = _connect_or_skip()
     try:
-        connection = oracledb.connect(user=uname, password=passwd, dsn=v_dsn)
-        # print("Connection Successful!")
-
         doc = """Llamaindex is a wonderful framework to load, split, chunk
                 and embed your data!!"""
 
@@ -132,10 +141,8 @@ def test_splitter_test() -> None:
         # verify
         assert len(chunks) != 0
         # print(f"4. Number of chunks: {len(chunks)}")
-
+    finally:
         connection.close()
-    except Exception:
-        pass
 
 
 # test loader and splitter
