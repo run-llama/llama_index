@@ -43,6 +43,11 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.coverage.run]
+omit = [
+    "tests/*",
+]
+
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
