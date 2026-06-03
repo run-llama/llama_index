@@ -4,7 +4,8 @@ import hashlib
 import logging
 import os
 import uuid
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from collections.abc import Iterator
+from typing import Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -49,6 +50,8 @@ from google.cloud.vectorsearch_v1beta.services.data_object_search_service.pagers
     SearchDataObjectsAsyncPager,
     SearchDataObjectsPager,
 )
+from pydantic import ValidationError
+
 from llama_index.core import Settings, StorageContext, VectorStoreIndex
 from llama_index.core.schema import (
     Document,
@@ -59,6 +62,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterCondition,
     FilterOperator,
     MetadataFilter,
     MetadataFilters,
@@ -72,9 +76,14 @@ from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
 from llama_index.vector_stores.vertexaivectorsearch.base import (
+    FeatureFlags,
     VertexAIDeleteError,
     VertexAIIndexingError,
     VertexAIQueryError,
+)
+from llama_index.vector_stores.vertexaivectorsearch.utils import (
+    convert_filters_to_v2_format,
+    retry,
 )
 
 PROJECT_ID = os.getenv("PROJECT_ID", "")
@@ -95,7 +104,7 @@ def create_uuid(text: str):
 
 
 @pytest.fixture(scope="session")
-def node_embeddings() -> List[TextNode]:
+def node_embeddings() -> list[TextNode]:
     record_data = [
         {
             "description": "A versatile pair of dark-wash denim jeans."
@@ -298,7 +307,7 @@ class TestVertexAIVectorStore:
         endpoint = sdk_manager.get_endpoint(endpoint_id=ENDPOINT_ID)
         assert isinstance(endpoint, MatchingEngineIndexEndpoint)
 
-    def test_add_documents(self, node_embeddings: List[TextNode]) -> None:
+    def test_add_documents(self, node_embeddings: list[TextNode]) -> None:
         """Test adding documents to Vertex AI Vector Search vector store."""
         vector_store = self.vector_store()
 
@@ -311,7 +320,7 @@ class TestVertexAIVectorStore:
         for doc_id in doc_ids:
             assert doc_id in input_doc_ids
 
-    def test_search(self, node_embeddings: List[TextNode]) -> None:
+    def test_search(self, node_embeddings: list[TextNode]) -> None:
         """Test end to end Vertex AI Vector Search."""
         # Add nodes to the Vertex AI Vector Search index
         vector_store = self.vector_store()
@@ -330,7 +339,7 @@ class TestVertexAIVectorStore:
         )
         assert result.similarities is not None
 
-    def test_search_with_filter(self, node_embeddings: List[TextNode]) -> None:
+    def test_search_with_filter(self, node_embeddings: list[TextNode]) -> None:
         """Test end to end Vertex AI Vector Search with filter."""
         # Add nodes to the Vertex AI Vector Search index
         vector_store = self.vector_store()
@@ -402,7 +411,7 @@ class TestVertexAIVectorStore:
         )
         assert len(result) == 0
 
-    def test_batch_update_index(self, node_embeddings: List[TextNode]) -> None:
+    def test_batch_update_index(self, node_embeddings: list[TextNode]) -> None:
         """Test batch update path consistency and end-to-end functionality."""
         if not GCS_BUCKET_NAME:
             pytest.skip("GCS_BUCKET_NAME not set, skipping batch update test")
@@ -582,8 +591,27 @@ class TestV2ParameterValidation:
             )
 
 
+class TestV2FeatureFlags:
+    """Test feature flag behavior for v2."""
+
+    def test_should_use_v2_with_v2_enabled(self):
+        """Test that should_use_v2 returns True when api_version='v2' and flag enabled."""
+        with patch.object(FeatureFlags, "ENABLE_V2", True):
+            assert FeatureFlags.should_use_v2("v2") is True
+
+    def test_should_use_v2_with_v2_disabled(self):
+        """Test that should_use_v2 returns False when flag is disabled."""
+        with patch.object(FeatureFlags, "ENABLE_V2", False):
+            assert FeatureFlags.should_use_v2("v2") is False
+
+    def test_should_use_v2_with_v1_version(self):
+        """Test that should_use_v2 returns False when api_version='v1'."""
+        with patch.object(FeatureFlags, "ENABLE_V2", True):
+            assert FeatureFlags.should_use_v2("v1") is False
+
+
 class TestV2SDKManager:
-    """Test v2 SDK import error handling."""
+    """Test SDK manager v2 client functionality."""
 
     def test_ensure_v2_available_passes_when_sdk_installed(self) -> None:
         """Test that VectorSearchSDKManager.ensure_v2_available succeeds for tests."""
@@ -605,35 +633,6 @@ class TestV2SDKManager:
             ImportError, match=r"Vertex v2 operations require the .v2. extra"
         ):
             manager.ensure_v2_available()
-
-
-class TestV2FeatureFlags:
-    """Test feature flag behavior for v2."""
-
-    def test_should_use_v2_with_v2_enabled(self):
-        """Test that should_use_v2 returns True when api_version='v2' and flag enabled."""
-        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
-
-        with patch.object(FeatureFlags, "ENABLE_V2", True):
-            assert FeatureFlags.should_use_v2("v2") is True
-
-    def test_should_use_v2_with_v2_disabled(self):
-        """Test that should_use_v2 returns False when flag is disabled."""
-        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
-
-        with patch.object(FeatureFlags, "ENABLE_V2", False):
-            assert FeatureFlags.should_use_v2("v2") is False
-
-    def test_should_use_v2_with_v1_version(self):
-        """Test that should_use_v2 returns False when api_version='v1'."""
-        from llama_index.vector_stores.vertexaivectorsearch.base import FeatureFlags
-
-        with patch.object(FeatureFlags, "ENABLE_V2", True):
-            assert FeatureFlags.should_use_v2("v1") is False
-
-
-class TestV2SDKManager:
-    """Test SDK manager v2 client functionality."""
 
     def test_is_v2_available_when_installed(self):
         """Test is_v2_available returns True when SDK is installed."""
@@ -689,8 +688,6 @@ class TestV2RetryDecorator:
 
     def test_retry_succeeds_on_first_attempt(self):
         """Test that function returns immediately on success."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
-
         call_count = 0
 
         @retry(max_attempts=3, delay=0.01)
@@ -706,8 +703,6 @@ class TestV2RetryDecorator:
 
     def test_retry_retries_on_failure(self):
         """Test that function retries on failure."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
-
         call_count = 0
 
         @retry(max_attempts=3, delay=0.01)
@@ -725,8 +720,6 @@ class TestV2RetryDecorator:
 
     def test_retry_raises_after_max_attempts(self):
         """Test that function raises exception after max attempts."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import retry
-
         call_count = 0
 
         @retry(max_attempts=3, delay=0.01)
@@ -773,8 +766,6 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_must_be_between_0_and_1(self):
         """Test that default_hybrid_alpha must be in [0, 1] range."""
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError):
             VertexAIVectorStore(
                 project_id="test-project",
@@ -786,8 +777,6 @@ class TestV2HybridSearchParameters:
 
     def test_alpha_negative_raises_error(self):
         """Test that negative alpha raises error."""
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError):
             VertexAIVectorStore(
                 project_id="test-project",
@@ -799,8 +788,6 @@ class TestV2HybridSearchParameters:
 
     def test_hybrid_ranker_must_be_rrf_or_vertex(self):
         """Test that hybrid_ranker must be 'rrf'."""
-        from pydantic import ValidationError
-
         # Pydantic validates the Literal type
         with pytest.raises(ValidationError):
             VertexAIVectorStore(
@@ -834,112 +821,33 @@ class TestV2HybridSearchParameters:
         assert store.semantic_task_type == "RETRIEVAL_QUERY"
 
 
-class TestV2RRFWeightCalculation:
-    """Test RRF weight calculation from alpha."""
-
-    def test_alpha_0_pure_text(self):
-        """Test that alpha=0 gives pure text weight."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _calculate_rrf_weights,
-        )
-
-        weights = _calculate_rrf_weights(alpha=0.0, num_searches=2)
-        assert weights == [0.0, 1.0]  # [vector, text]
-
-    def test_alpha_1_pure_vector(self):
-        """Test that alpha=1 gives pure vector weight."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _calculate_rrf_weights,
-        )
-
-        weights = _calculate_rrf_weights(alpha=1.0, num_searches=2)
-        assert weights == [1.0, 0.0]  # [vector, text]
-
-    def test_alpha_0_5_balanced(self):
-        """Test that alpha=0.5 gives balanced weights."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _calculate_rrf_weights,
-        )
-
-        weights = _calculate_rrf_weights(alpha=0.5, num_searches=2)
-        assert weights == [0.5, 0.5]  # [vector, text]
-
-    def test_alpha_0_7_favors_vector(self):
-        """Test that alpha=0.7 favors vector search."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _calculate_rrf_weights,
-        )
-
-        weights = _calculate_rrf_weights(alpha=0.7, num_searches=2)
-        assert weights[0] == pytest.approx(0.7)
-        assert weights[1] == pytest.approx(0.3)
-
-    def test_three_searches_equal_weights(self):
-        """Test that 3 searches get equal weights when not two."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _calculate_rrf_weights,
-        )
-
-        weights = _calculate_rrf_weights(alpha=0.5, num_searches=3)
-        expected = 1.0 / 3
-        assert all(w == pytest.approx(expected) for w in weights)
-
-
 class TestV2FilterConversion:
     """Test LlamaIndex filter to V2 filter conversion."""
 
     def test_simple_eq_filter(self):
         """Test simple equality filter conversion."""
-        from llama_index.core.vector_stores.types import (
-            FilterOperator,
-            MetadataFilter,
-            MetadataFilters,
-        )
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="category", value="tech", operator=FilterOperator.EQ)
             ]
         )
 
-        result = _convert_filters_to_v2(filters)
+        result = convert_filters_to_v2_format(filters)
 
         assert result == {"category": {"$eq": "tech"}}
 
     def test_gt_filter(self):
         """Test greater than filter conversion."""
-        from llama_index.core.vector_stores.types import (
-            FilterOperator,
-            MetadataFilter,
-            MetadataFilters,
-        )
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
         filters = MetadataFilters(
             filters=[MetadataFilter(key="price", value=50, operator=FilterOperator.GT)]
         )
 
-        result = _convert_filters_to_v2(filters)
+        result = convert_filters_to_v2_format(filters)
 
         assert result == {"price": {"$gt": 50}}
 
     def test_and_filter(self):
         """Test AND filter conversion."""
-        from llama_index.core.vector_stores.types import (
-            FilterCondition,
-            FilterOperator,
-            MetadataFilter,
-            MetadataFilters,
-        )
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(
@@ -950,7 +858,7 @@ class TestV2FilterConversion:
             condition=FilterCondition.AND,
         )
 
-        result = _convert_filters_to_v2(filters)
+        result = convert_filters_to_v2_format(filters)
 
         assert result == {
             "$and": [
@@ -961,16 +869,6 @@ class TestV2FilterConversion:
 
     def test_or_filter(self):
         """Test OR filter conversion."""
-        from llama_index.core.vector_stores.types import (
-            FilterCondition,
-            FilterOperator,
-            MetadataFilter,
-            MetadataFilters,
-        )
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="color", value="red", operator=FilterOperator.EQ),
@@ -979,7 +877,7 @@ class TestV2FilterConversion:
             condition=FilterCondition.OR,
         )
 
-        result = _convert_filters_to_v2(filters)
+        result = convert_filters_to_v2_format(filters)
 
         assert result == {
             "$or": [
@@ -990,15 +888,6 @@ class TestV2FilterConversion:
 
     def test_in_filter(self):
         """Test IN filter conversion."""
-        from llama_index.core.vector_stores.types import (
-            FilterOperator,
-            MetadataFilter,
-            MetadataFilters,
-        )
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(
@@ -1007,27 +896,18 @@ class TestV2FilterConversion:
             ]
         )
 
-        result = _convert_filters_to_v2(filters)
+        result = convert_filters_to_v2_format(filters)
 
         assert result == {"tags": {"$in": ["ml", "ai"]}}
 
     def test_none_filters(self):
         """Test that None filters returns None."""
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
-        result = _convert_filters_to_v2(None)
+        result = convert_filters_to_v2_format(None)
         assert result is None
 
     def test_empty_filters(self):
         """Test that empty filters returns None."""
-        from llama_index.core.vector_stores.types import MetadataFilters
-        from llama_index.vector_stores.vertexaivectorsearch.utils import (
-            _convert_filters_to_v2,
-        )
-
-        result = _convert_filters_to_v2(MetadataFilters(filters=[]))
+        result = convert_filters_to_v2_format(MetadataFilters(filters=[]))
         assert result is None
 
 
@@ -1117,7 +997,7 @@ class TestUnitV2Add:
         )
 
     @pytest.fixture
-    def input_dense_nodes(self) -> List[TextNode]:
+    def input_dense_nodes(self) -> list[TextNode]:
         # corresponds to `output_dense_data_objects`
         return [
             TextNode(
@@ -1142,7 +1022,7 @@ class TestUnitV2Add:
         ]
 
     @pytest.fixture
-    def output_dense_data_objects(self) -> List[DataObject]:
+    def output_dense_data_objects(self) -> list[DataObject]:
         # corresponds to `input_dense_nodes`
         return [
             DataObject(
@@ -1173,8 +1053,8 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def output_dense_create_data_object_requests(
-        self, output_dense_data_objects: List[DataObject]
-    ) -> List[CreateDataObjectRequest]:
+        self, output_dense_data_objects: list[DataObject]
+    ) -> list[CreateDataObjectRequest]:
         # corresponds to `input_dense_nodes`
         return [
             CreateDataObjectRequest(
@@ -1187,8 +1067,8 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def expected_add_requests(
-        self, output_dense_create_data_object_requests: List[CreateDataObjectRequest]
-    ) -> List[BatchCreateDataObjectsRequest]:
+        self, output_dense_create_data_object_requests: list[CreateDataObjectRequest]
+    ) -> list[BatchCreateDataObjectsRequest]:
         return [
             BatchCreateDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
@@ -1207,9 +1087,9 @@ class TestUnitV2Add:
     def test_v2_add_valid(
         self,
         mock_v2_store: VertexAIVectorStore,
-        expected_add_requests: List[BatchCreateDataObjectsRequest],
+        expected_add_requests: list[BatchCreateDataObjectsRequest],
         mock_v2_data_object_service_client: MagicMock,
-        input_dense_nodes: List[TextNode],
+        input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that appropriate calls are made with prepared data objects when ``add`` is called."""
         # GIVEN
@@ -1228,8 +1108,8 @@ class TestUnitV2Add:
     async def test_v2_async_add_valid(
         self,
         mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: List[TextNode],
-        expected_add_requests: List[BatchCreateDataObjectsRequest],
+        input_dense_nodes: list[TextNode],
+        expected_add_requests: list[BatchCreateDataObjectsRequest],
         mock_v2_data_object_service_async_client: MagicMock,
     ) -> None:
         """Test that appropriate calls are made with prepared data objects when ``async_add`` is called."""
@@ -1275,7 +1155,7 @@ class TestUnitV2Add:
     def test_v2_add_invalid_parameters(
         self,
         mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: List[TextNode],
+        input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that an error is raised for invalid parameters in v2 ``add``."""
         # WHEN / THEN
@@ -1288,7 +1168,7 @@ class TestUnitV2Add:
     async def test_v2_async_add_invalid_parameters(
         self,
         mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: List[TextNode],
+        input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that an error is raised for invalid parameters in v2 ``async_add``."""
         # WHEN / THEN
@@ -1318,8 +1198,8 @@ class TestUnitV2Add:
         self,
         caplog: pytest.LogCaptureFixture,
         mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: List[TextNode],
-        input_metadata: Dict[str, Any],
+        input_dense_nodes: list[TextNode],
+        input_metadata: dict[str, Any],
         error_msg: str,
     ) -> None:
         """Test that appropriate errors logs are made for badly structured data."""
@@ -1367,12 +1247,12 @@ class TestUnitV2Add:
         def test_v2_add_failed_sub_requests(
             self,
             mock_v2_store: VertexAIVectorStore,
-            expected_add_requests: List[BatchCreateDataObjectsRequest],
+            expected_add_requests: list[BatchCreateDataObjectsRequest],
             mock_v2_data_object_service_client: MagicMock,
-            input_dense_nodes: List[TextNode],
-            batch_add_side_effect: List[Optional[Exception]],
-            expected_added_ids: List[int],
-            expected_failed_ids: List[int],
+            input_dense_nodes: list[TextNode],
+            batch_add_side_effect: list[Exception | None],
+            expected_added_ids: list[int],
+            expected_failed_ids: list[int],
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``add`` batches fail."""
             # GIVEN
@@ -1399,12 +1279,12 @@ class TestUnitV2Add:
         async def test_v2_async_add_failed_sub_requests(
             self,
             mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: List[TextNode],
-            expected_add_requests: List[BatchCreateDataObjectsRequest],
+            input_dense_nodes: list[TextNode],
+            expected_add_requests: list[BatchCreateDataObjectsRequest],
             mock_v2_data_object_service_async_client: MagicMock,
-            batch_add_side_effect: List[Optional[Exception]],
-            expected_added_ids: List[int],
-            expected_failed_ids: List[int],
+            batch_add_side_effect: list[Exception | None],
+            expected_added_ids: list[int],
+            expected_failed_ids: list[int],
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``async_add`` batches fail."""
             # GIVEN
@@ -1432,8 +1312,8 @@ class TestUnitV2Add:
         def test_extract_v2_data_object_from_node(
             self,
             mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: List[TextNode],
-            output_dense_data_objects: List[DataObject],
+            input_dense_nodes: list[TextNode],
+            output_dense_data_objects: list[DataObject],
         ) -> None:
             """Test round-trip conversion of ``DataObject``s."""
             # WHEN
@@ -1448,8 +1328,8 @@ class TestUnitV2Add:
         def test_extract_node_from_v2_data_object(
             self,
             mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: List[TextNode],
-            output_dense_data_objects: List[DataObject],
+            input_dense_nodes: list[TextNode],
+            output_dense_data_objects: list[DataObject],
         ) -> None:
             """Test round-trip conversion of ``TextNode``s."""
             # WHEN
@@ -1460,7 +1340,9 @@ class TestUnitV2Add:
 
             # THEN
             assert len(nodes_from_data_objects) == len(input_dense_nodes)
-            for actual, expected in zip(nodes_from_data_objects, input_dense_nodes):
+            for actual, expected in zip(
+                nodes_from_data_objects, input_dense_nodes, strict=False
+            ):
                 assert actual.node_id == expected.node_id
                 assert isinstance(actual, TextNode)
                 assert actual.text == expected.text
@@ -1510,7 +1392,7 @@ class TestUnitV2Delete:
         )
 
     @pytest.fixture
-    def expected_delete_requests_ref_id_1(self) -> List[BatchDeleteDataObjectsRequest]:
+    def expected_delete_requests_ref_id_1(self) -> list[BatchDeleteDataObjectsRequest]:
         return [
             BatchDeleteDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
@@ -1531,7 +1413,7 @@ class TestUnitV2Delete:
         ]
 
     @pytest.fixture
-    def delete_ref_id_query_pager_pages_ref_id_1(self) -> List[MagicMock]:
+    def delete_ref_id_query_pager_pages_ref_id_1(self) -> list[MagicMock]:
         return [
             MagicMock(
                 spec=QueryDataObjectsResponse,
@@ -1556,9 +1438,9 @@ class TestUnitV2Delete:
     @pytest.fixture
     def expected_delete_nodes_by_id_requests(
         self,
-    ) -> List[BatchDeleteDataObjectsRequest]:
+    ) -> list[BatchDeleteDataObjectsRequest]:
         # batch_size=2 → two batches: ["node_0","node_1"] and ["node_2"]
-        def _req(nids: List[str]) -> BatchDeleteDataObjectsRequest:
+        def _req(nids: list[str]) -> BatchDeleteDataObjectsRequest:
             return BatchDeleteDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
                 requests=[
@@ -1591,8 +1473,8 @@ class TestUnitV2Delete:
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1626,8 +1508,8 @@ class TestUnitV2Delete:
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1737,7 +1619,7 @@ class TestUnitV2Delete:
     def test_v2_delete_nodes_invalid_input(
         self,
         mock_v2_store: VertexAIVectorStore,
-        input_node_ids: List[str] | None,
+        input_node_ids: list[str] | None,
     ) -> None:
         # WHEN / THEN
         with pytest.raises(ValueError):
@@ -1749,7 +1631,7 @@ class TestUnitV2Delete:
     async def test_v2_adelete_nodes_invalid_input(
         self,
         mock_v2_store: VertexAIVectorStore,
-        input_node_ids: List[str] | None,
+        input_node_ids: list[str] | None,
     ) -> None:
         # WHEN / THEN
         with pytest.raises(ValueError):
@@ -1759,7 +1641,7 @@ class TestUnitV2Delete:
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_client: MagicMock,
-        expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+        expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -1776,7 +1658,7 @@ class TestUnitV2Delete:
         self,
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_async_client: MagicMock,
-        expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
+        expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -1794,10 +1676,10 @@ class TestUnitV2Delete:
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
         input_delete_nodes_filters: MetadataFilters,
         expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1825,9 +1707,9 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
         input_delete_nodes_filters: MetadataFilters,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
         expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1876,9 +1758,9 @@ class TestUnitV2Delete:
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
         input_delete_nodes_filters: MetadataFilters,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
         expected_filter_query_request: QueryDataObjectsRequest,
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -1937,8 +1819,8 @@ class TestUnitV2Delete:
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_client: MagicMock,
         mock_v2_data_object_search_service_client: MagicMock,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_v2_data_object_search_service_client.query_data_objects.return_value = (
@@ -1970,8 +1852,8 @@ class TestUnitV2Delete:
         mock_v2_store: VertexAIVectorStore,
         mock_v2_data_object_service_async_client: MagicMock,
         mock_v2_data_object_search_service_async_client: MagicMock,
-        delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-        expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
+        delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+        expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
     ) -> None:
         # GIVEN
         mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -2032,11 +1914,11 @@ class TestUnitV2Delete:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_client: MagicMock,
             mock_v2_data_object_search_service_client: MagicMock,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
@@ -2079,11 +1961,11 @@ class TestUnitV2Delete:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_async_client: MagicMock,
             mock_v2_data_object_search_service_async_client: MagicMock,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -2124,10 +2006,10 @@ class TestUnitV2Delete:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_client: MagicMock,
-            expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -2157,10 +2039,10 @@ class TestUnitV2Delete:
             self,
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_async_client: MagicMock,
-            expected_delete_nodes_by_id_requests: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            expected_delete_nodes_by_id_requests: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             expected_calls = [call(req) for req in expected_delete_nodes_by_id_requests]
@@ -2192,12 +2074,12 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_client: MagicMock,
             mock_v2_data_object_search_service_client: MagicMock,
             input_delete_nodes_filters: MetadataFilters,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
             expected_filter_query_request: QueryDataObjectsRequest,
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
@@ -2234,12 +2116,12 @@ class TestUnitV2Delete:
             mock_v2_data_object_service_async_client: MagicMock,
             mock_v2_data_object_search_service_async_client: MagicMock,
             input_delete_nodes_filters: MetadataFilters,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
             expected_filter_query_request: QueryDataObjectsRequest,
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -2274,11 +2156,11 @@ class TestUnitV2Delete:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_client: MagicMock,
             mock_v2_data_object_search_service_client: MagicMock,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_v2_data_object_search_service_client.query_data_objects.return_value = MagicMock(
@@ -2319,11 +2201,11 @@ class TestUnitV2Delete:
             mock_v2_store: VertexAIVectorStore,
             mock_v2_data_object_service_async_client: MagicMock,
             mock_v2_data_object_search_service_async_client: MagicMock,
-            delete_ref_id_query_pager_pages_ref_id_1: List[MagicMock],
-            expected_delete_requests_ref_id_1: List[BatchDeleteDataObjectsRequest],
-            batch_delete_side_effect: List[Optional[Exception]],
-            expected_results: Tuple[int, int, int],
-            delete_by_id_expected_results: Tuple[int, int, int],
+            delete_ref_id_query_pager_pages_ref_id_1: list[MagicMock],
+            expected_delete_requests_ref_id_1: list[BatchDeleteDataObjectsRequest],
+            batch_delete_side_effect: list[Exception | None],
+            expected_results: tuple[int, int, int],
+            delete_by_id_expected_results: tuple[int, int, int],
         ) -> None:
             # GIVEN
             mock_pager = MagicMock(spec=QueryDataObjectsAsyncPager)
@@ -2436,7 +2318,7 @@ class TestUnitV2GetNodes:
             mock_v2_data_object_search_service_client: MagicMock,
             get_nodes_query_result_data_objects: list[DataObject],
             get_nodes_result_pages: list[MagicMock],
-            get_nodes_output_fields: Dict[str, List[str]] | None,
+            get_nodes_output_fields: dict[str, list[str]] | None,
             expected_output_fields: OutputFields,
         ) -> None:
             # GIVEN
@@ -2469,7 +2351,7 @@ class TestUnitV2GetNodes:
             mock_v2_data_object_search_service_async_client: MagicMock,
             get_nodes_query_result_data_objects: list[DataObject],
             get_nodes_result_pages: list[MagicMock],
-            get_nodes_output_fields: Dict[str, List[str]] | None,
+            get_nodes_output_fields: dict[str, list[str]] | None,
             expected_output_fields: OutputFields,
         ) -> None:
             # GIVEN
@@ -2504,7 +2386,7 @@ class TestUnitV2GetNodes:
             mock_v2_data_object_search_service_client: MagicMock,
             get_nodes_query_result_data_objects: list[DataObject],
             get_nodes_result_pages: list[MagicMock],
-            get_nodes_output_fields: Dict[str, List[str]] | None,
+            get_nodes_output_fields: dict[str, list[str]] | None,
             expected_output_fields: OutputFields,
         ) -> None:
             # GIVEN
@@ -2539,7 +2421,7 @@ class TestUnitV2GetNodes:
             mock_v2_data_object_search_service_async_client: MagicMock,
             get_nodes_query_result_data_objects: list[DataObject],
             get_nodes_result_pages: list[MagicMock],
-            get_nodes_output_fields: Dict[str, List[str]] | None,
+            get_nodes_output_fields: dict[str, list[str]] | None,
             expected_output_fields: OutputFields,
         ) -> None:
             # GIVEN
@@ -3277,3 +3159,28 @@ class TestUnitV2Query:
             # WHEN / THEN
             with pytest.raises(VertexAIQueryError, match=error_match):
                 _ = await mock_v2_store.aquery(input_query)
+
+    @pytest.mark.parametrize(
+        ("alpha", "num_searches", "expected"),
+        [
+            (0.0, 2, [0.0, 1.0]),
+            (1.0, 2, [1.0, 0.0]),
+            (0.5, 2, [0.5, 0.5]),
+            (0.7, 2, [pytest.approx(0.7), pytest.approx(0.3)]),
+            (0.5, 3, [pytest.approx(1.0 / 3) for _ in range(3)]),
+        ],
+        ids=[
+            "alpha=0.0 gives pure text weight",
+            "alpha=1.0 gives pure vector weight",
+            "alpha=0.5 gives balanced weights",
+            "alpha=0.7 favors vector search",
+            "3 searches get equal weights when not two",
+        ],
+    )
+    def test_rrf_weight_calculation(
+        self, alpha: float, num_searches: int, expected: list[float]
+    ) -> None:
+        weights = VertexAIVectorStore._calculate_rrf_weights(
+            alpha=alpha, num_searches=num_searches
+        )
+        assert weights == expected
