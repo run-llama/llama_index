@@ -9,12 +9,11 @@ import asyncio
 import logging
 import os
 import time
-import typing
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, cast
 
 from annotated_types import Ge, Le
 from google.api_core.exceptions import NotFound
@@ -23,6 +22,9 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
+from pydantic import PositiveInt, model_validator
+from typing_extensions import Self, override
+
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -40,9 +42,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY, node_to_metadata_dict
-from pydantic import PositiveInt, model_validator
-from typing_extensions import Self, override
-
 from llama_index.vector_stores.vertexaivectorsearch import utils
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
@@ -51,7 +50,7 @@ from llama_index.vector_stores.vertexaivectorsearch.utils import (
     convert_filters_to_v2_format,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from google.cloud.vectorsearch_v1beta import (
         BatchDeleteDataObjectsRequest,
         BatchSearchDataObjectsRequest,
