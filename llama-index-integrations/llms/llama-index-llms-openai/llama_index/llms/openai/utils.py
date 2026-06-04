@@ -833,9 +833,9 @@ def from_openai_message(
     role = openai_message.role
     blocks: List[ContentBlock] = []
 
-    # Extract reasoning_content if present (used by many OpenAI-compatible
-    # providers for chain-of-thought responses)
-    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    # Extract reasoning content if present. Many OpenAI-compatible providers
+    # use reasoning_content, while vLLM exposes the same trace as reasoning.
+    reasoning_content = get_openai_reasoning_content(openai_message)
     if isinstance(reasoning_content, str) and reasoning_content:
         blocks.append(ThinkingBlock(content=reasoning_content))
 
@@ -864,6 +864,19 @@ def from_openai_message(
         blocks.append(AudioBlock(audio=audio_data, format="mp3"))
 
     return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
+
+
+def get_openai_reasoning_content(message: Any) -> Optional[str]:
+    """Return reasoning text from OpenAI-compatible message objects."""
+    reasoning_content = getattr(message, "reasoning_content", None)
+    if isinstance(reasoning_content, str):
+        return reasoning_content
+
+    reasoning = getattr(message, "reasoning", None)
+    if isinstance(reasoning, str):
+        return reasoning
+
+    return None
 
 
 def from_openai_token_logprob(
