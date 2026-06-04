@@ -155,3 +155,5 @@ Join us on Discord <https://discord.gg/dGcwcsnxhU>
 Thank you for considering contributing to LlamaIndex! Every contribution—whether it’s code, documentation, or ideas—helps make this project better for everyone.
 
 Happy coding! 😊
+
+Setty bhavana - AI/ML Enthusiast
