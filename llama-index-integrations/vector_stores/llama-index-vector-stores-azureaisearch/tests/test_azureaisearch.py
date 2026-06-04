@@ -503,3 +503,57 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_default_index_mapping_preserves_falsy_metadata_values() -> None:
+    """Regression for #21385: `_default_index_mapping` previously used a truthy
+    test (`if metadata_value`) to decide whether to copy a metadata field into
+    the index document. Falsy values that are still legitimate data — `0`,
+    `""`, `[]`, `False` — were silently dropped (stored as `None` on retrieval).
+    Switch to `if metadata_value is not None` so only genuinely absent values
+    are skipped."""
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys=[
+            "count",
+            "label",
+            "tags",
+            "enabled",
+        ],
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+    )
+
+    # `_field_mapping` keys are the canonical field names (id/chunk/embedding/metadata/doc_id),
+    # not the user-supplied column names.
+    enriched_doc = {
+        "id": "doc-1",
+        "chunk": "x",
+        "embedding": [0.5, 0.5],
+        "metadata": "{}",
+        "doc_id": "doc-1",
+    }
+    metadata = {
+        "count": 0,
+        "label": "",
+        "tags": [],
+        "enabled": False,
+        "absent": None,  # must still be skipped
+    }
+
+    index_doc = vector_store._default_index_mapping(enriched_doc, metadata)
+
+    assert index_doc["count"] == 0
+    assert index_doc["label"] == ""
+    assert index_doc["tags"] == []
+    assert index_doc["enabled"] is False
+    assert "absent" not in index_doc
