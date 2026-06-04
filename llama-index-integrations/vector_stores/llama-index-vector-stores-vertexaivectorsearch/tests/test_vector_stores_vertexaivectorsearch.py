@@ -6,7 +6,7 @@ import logging
 import os
 import uuid
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -66,6 +66,7 @@ if V2_AVAILABLE:
         BatchDeleteDataObjectsRequest,
         BatchSearchDataObjectsRequest,
         BatchSearchDataObjectsResponse,
+        BatchUpdateDataObjectsRequest,
         CreateDataObjectRequest,
         DataObject,
         DataObjectSearchServiceAsyncClient,
@@ -81,6 +82,7 @@ if V2_AVAILABLE:
         SearchDataObjectsResponse,
         SearchResult,
         SparseVector,
+        UpdateDataObjectRequest,
         Vector,
         VectorSearchServiceClient,
     )
@@ -975,17 +977,76 @@ def mock_v2_sdk_manager(
         yield mock_inst
 
 
+@pytest.fixture
+def input_dense_nodes() -> list[TextNode]:
+    # corresponds to `output_dense_data_objects`
+    return [
+        TextNode(
+            id_=f"node_{i}",
+            text=f"Text {i}",
+            embedding=[i / 100 for _ in range(4)],
+            # for ref_doc_id / source_node
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"doc_{i // 2}")
+            },
+            metadata={
+                "title": f"Title {i}",
+                "user_id": i * 100,
+                "title_embedding": [i / 200 for _ in range(4)],
+                "sparse_embedding": {
+                    "indices": [2, 4, 6, 8],
+                    "values": [0.2, 0.4, 0.6, 0.8],
+                },
+            },
+        )
+        for i in range(5)
+    ]
+
+
+@pytest.fixture
+def output_dense_data_objects() -> list["DataObject"]:
+    # corresponds to `input_dense_nodes`
+    return [
+        DataObject(
+            data={
+                "node_id": f"node_{i}",
+                "text": f"Text {i}",
+                "title": f"Title {i}",
+                "user_id": i * 100,
+                "node_type": "TextNode",
+                "parent_id": f"doc_{i // 2}",
+            },
+            vectors={
+                "embedding": Vector(
+                    dense=DenseVector(values=[i / 100 for _ in range(4)])
+                ),
+                "title_embedding": Vector(
+                    dense=DenseVector(values=[i / 200 for _ in range(4)])
+                ),
+                "sparse_embedding": Vector(
+                    sparse=SparseVector(
+                        indices=[2, 4, 6, 8], values=[0.2, 0.4, 0.6, 0.8]
+                    )
+                ),
+            },
+        )
+        for i in range(5)
+    ]
+
+
 V2_COLLECTION_PARENT = (
     "projects/test-project/locations/us-central1/collections/my-collection"
 )
 
 
 @xfail_if_missing_v2
-class TestUnitV2Add:
-    """Test the behavior of ``add`` and ``async_add`` methods."""
+class TestUnitV2NodeDataObjectConversion:
+    """Test bidirectional conversion between ``DataObject`` and ``TextNode``."""
 
     @pytest.fixture
-    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+    def mock_v2_store(
+        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+    ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
             region="us-central1",
@@ -995,6 +1056,133 @@ class TestUnitV2Add:
             node_type_field="node_type",
             docid_field="parent_id",
             content_field="text",
+            default_add_operation="create",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+        )
+
+    def test_extract_v2_data_object_from_node(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: list[TextNode],
+        output_dense_data_objects: list["DataObject"],
+    ) -> None:
+        """Test round-trip conversion of ``DataObject``s."""
+        # WHEN
+        data_objects_from_nodes = [
+            mock_v2_store.extract_v2_data_object_from_node(node)
+            for node in input_dense_nodes
+        ]
+
+        # THEN
+        assert data_objects_from_nodes == output_dense_data_objects
+
+    def test_extract_node_from_v2_data_object(
+        self,
+        mock_v2_store: VertexAIVectorStore,
+        input_dense_nodes: list[TextNode],
+        output_dense_data_objects: list["DataObject"],
+    ) -> None:
+        """Test round-trip conversion of ``TextNode``s."""
+        # WHEN
+        nodes_from_data_objects = [
+            mock_v2_store.extract_node_from_v2_data_object(do)
+            for do in output_dense_data_objects
+        ]
+
+        # THEN
+        assert len(nodes_from_data_objects) == len(input_dense_nodes)
+        for actual, expected in zip(
+            nodes_from_data_objects, input_dense_nodes, strict=False
+        ):
+            assert actual.node_id == expected.node_id
+            assert isinstance(actual, TextNode)
+            assert actual.text == expected.text
+            assert actual.relationships == expected.relationships
+            assert pytest.approx(actual.embedding) == expected.embedding
+            assert actual.metadata.keys() == expected.metadata.keys()
+            actual_title_embed = actual.metadata.pop("title_embedding")
+            assert (
+                pytest.approx(actual_title_embed)
+                == expected.metadata["title_embedding"]
+            )
+            actual_sparse = actual.metadata.pop("sparse_embedding")
+            assert (
+                actual_sparse["indices"]
+                == expected.metadata["sparse_embedding"]["indices"]
+            )
+            assert (
+                pytest.approx(actual_sparse["values"])
+                == expected.metadata["sparse_embedding"]["values"]
+            )
+            assert actual.metadata == {
+                k: v for k, v in expected.metadata.items() if k in actual.metadata
+            }
+
+
+@pytest.mark.parametrize(
+    (
+        "vector_store_fixture_name",
+        "requests_fixture_name",
+        "extra_args",
+        "add_operation_type",
+    ),
+    [
+        (
+            "mock_v2_store_add_create",
+            "expected_add_create_requests",
+            {},
+            "create",
+        ),
+        (
+            "mock_v2_store_add_update",
+            "expected_add_create_requests",
+            {"add_operation": "create"},
+            "create",
+        ),
+        (
+            "mock_v2_store_add_update",
+            "expected_add_update_requests",
+            {},
+            "update",
+        ),
+        (
+            "mock_v2_store_add_create",
+            "expected_add_update_requests",
+            {"add_operation": "update"},
+            "update",
+        ),
+    ],
+    ids=[
+        "add_operation=CREATE (via default)",
+        "add_operation=CREATE (via override)",
+        "add_operation=UPDATE (via default)",
+        "add_operation=UPDATE (via override)",
+    ],
+)
+@xfail_if_missing_v2
+class TestUnitV2Add:
+    """Test the behavior of ``add`` and ``async_add`` methods."""
+
+    @pytest.fixture
+    def mock_v2_store_add_create(
+        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+    ) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            default_add_operation="create",
             batch_size=2,
             max_concurrent_requests=5,
             text_search_fields=["text"],
@@ -1005,63 +1193,33 @@ class TestUnitV2Add:
         )
 
     @pytest.fixture
-    def input_dense_nodes(self) -> list[TextNode]:
-        # corresponds to `output_dense_data_objects`
-        return [
-            TextNode(
-                id_=f"node_{i}",
-                text=f"Text {i}",
-                embedding=[i / 100 for _ in range(4)],
-                # for ref_doc_id / source_node
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"doc_{i // 2}"),
-                },
-                metadata={
-                    "title": f"Title {i}",
-                    "user_id": i * 100,
-                    "title_embedding": [i / 200 for _ in range(4)],
-                    "sparse_embedding": {
-                        "indices": [2, 4, 6, 8],
-                        "values": [0.2, 0.4, 0.6, 0.8],
-                    },
-                },
-            )
-            for i in range(5)
-        ]
-
-    @pytest.fixture
-    def output_dense_data_objects(self) -> list["DataObject"]:
-        # corresponds to `input_dense_nodes`
-        return [
-            DataObject(
-                data={
-                    "node_id": f"node_{i}",
-                    "text": f"Text {i}",
-                    "title": f"Title {i}",
-                    "user_id": i * 100,
-                    "node_type": "TextNode",
-                    "parent_id": f"doc_{i // 2}",
-                },
-                vectors={
-                    "embedding": Vector(
-                        dense=DenseVector(values=[i / 100 for _ in range(4)])
-                    ),
-                    "title_embedding": Vector(
-                        dense=DenseVector(values=[i / 200 for _ in range(4)])
-                    ),
-                    "sparse_embedding": Vector(
-                        sparse=SparseVector(
-                            indices=[2, 4, 6, 8], values=[0.2, 0.4, 0.6, 0.8]
-                        )
-                    ),
-                },
-            )
-            for i in range(5)
-        ]
+    def mock_v2_store_add_update(
+        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+    ) -> VertexAIVectorStore:
+        return VertexAIVectorStore(
+            project_id="test-project",
+            region="us-central1",
+            api_version="v2",
+            collection_id="my-collection",
+            nodeid_field="node_id",
+            node_type_field="node_type",
+            docid_field="parent_id",
+            content_field="text",
+            default_add_operation="update",
+            batch_size=2,
+            max_concurrent_requests=5,
+            text_search_fields=["text"],
+            embedding_field="embedding",
+            sparse_embedding_field="sparse_embedding",
+            dense_embedding_fields={"title_embedding"},
+            sparse_embedding_fields={"sparse_embedding"},
+        )
 
     @pytest.fixture
     def output_dense_create_data_object_requests(
-        self, output_dense_data_objects: list["DataObject"]
+        self,
+        output_dense_data_objects: list["DataObject"],
+        **kwargs: Any,
     ) -> list["CreateDataObjectRequest"]:
         # corresponds to `input_dense_nodes`
         return [
@@ -1074,8 +1232,28 @@ class TestUnitV2Add:
         ]
 
     @pytest.fixture
-    def expected_add_requests(
-        self, output_dense_create_data_object_requests: list["CreateDataObjectRequest"]
+    def output_dense_update_data_object_requests(
+        self,
+        output_dense_data_objects: list["DataObject"],
+        **kwargs: Any,
+    ) -> list["UpdateDataObjectRequest"]:
+        # corresponds to `input_dense_nodes` for UPDATE operations
+        return [
+            UpdateDataObjectRequest(
+                data_object=DataObject(
+                    name=f"{V2_COLLECTION_PARENT}/dataObjects/node_{i}",
+                    data=obj.data,
+                    vectors=obj.vectors,
+                )
+            )
+            for i, obj in enumerate(output_dense_data_objects)
+        ]
+
+    @pytest.fixture
+    def expected_add_create_requests(
+        self,
+        output_dense_create_data_object_requests: list["CreateDataObjectRequest"],
+        **kwargs: Any,
     ) -> list["BatchCreateDataObjectsRequest"]:
         return [
             BatchCreateDataObjectsRequest(
@@ -1092,99 +1270,182 @@ class TestUnitV2Add:
             ),
         ]
 
+    @pytest.fixture
+    def expected_add_update_requests(
+        self,
+        output_dense_update_data_object_requests: list["UpdateDataObjectRequest"],
+        **kwargs: Any,
+    ) -> list["BatchUpdateDataObjectsRequest"]:
+        return [
+            BatchUpdateDataObjectsRequest(
+                parent=V2_COLLECTION_PARENT,
+                requests=output_dense_update_data_object_requests[0:2],
+            ),
+            BatchUpdateDataObjectsRequest(
+                parent=V2_COLLECTION_PARENT,
+                requests=output_dense_update_data_object_requests[2:4],
+            ),
+            BatchUpdateDataObjectsRequest(
+                parent=V2_COLLECTION_PARENT,
+                requests=output_dense_update_data_object_requests[4:],
+            ),
+        ]
+
     def test_v2_add_valid(
         self,
-        mock_v2_store: VertexAIVectorStore,
-        expected_add_requests: list["BatchCreateDataObjectsRequest"],
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         mock_v2_data_object_service_client: MagicMock,
         input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that appropriate calls are made with prepared data objects when ``add`` is called."""
         # GIVEN
-        expected_calls = [call(request) for request in expected_add_requests]
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+        expected_requests = request.getfixturevalue(requests_fixture_name)
+        expected_calls = [call(request) for request in expected_requests]
         expected_output_ids = [f"node_{i}" for i in range(5)]
 
         # WHEN
-        actual_output_ids = mock_v2_store.add(input_dense_nodes)
+        actual_output_ids = vector_store.add(input_dense_nodes, **extra_args)
 
         # THEN
         assert actual_output_ids == expected_output_ids
-        mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
-            expected_calls,
-        )
+        match add_operation_type:
+            case "create":
+                mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
+                    expected_calls,
+                )
+                mock_v2_data_object_service_client.batch_update_data_objects.assert_not_called()
+            case "update":
+                mock_v2_data_object_service_client.batch_create_data_objects.assert_not_called()
+                mock_v2_data_object_service_client.batch_update_data_objects.assert_has_calls(
+                    expected_calls
+                )
+            case _:
+                raise ValueError("Update the test!")
 
     async def test_v2_async_add_valid(
         self,
-        mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: list[TextNode],
-        expected_add_requests: list["BatchCreateDataObjectsRequest"],
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         mock_v2_data_object_service_async_client: MagicMock,
+        input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that appropriate calls are made with prepared data objects when ``async_add`` is called."""
         # GIVEN
-        expected_calls = [call(request) for request in expected_add_requests]
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+        expected_requests = request.getfixturevalue(requests_fixture_name)
+        expected_calls = [call(request) for request in expected_requests]
         expected_output_ids = [f"node_{i}" for i in range(5)]
 
         # WHEN
-        actual_output_ids = await mock_v2_store.async_add(input_dense_nodes)
+        actual_output_ids = await vector_store.async_add(
+            input_dense_nodes, **extra_args
+        )
 
         # THEN
         assert sorted(actual_output_ids) == expected_output_ids
-        mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
-            expected_calls, any_order=True
-        )
+        match add_operation_type:
+            case "create":
+                mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
+                    expected_calls, any_order=True
+                )
+                mock_v2_data_object_service_async_client.batch_update_data_objects.assert_not_awaited()
+            case "update":
+                mock_v2_data_object_service_async_client.batch_create_data_objects.assert_not_awaited()
+                mock_v2_data_object_service_async_client.batch_update_data_objects.assert_has_awaits(
+                    expected_calls, any_order=True
+                )
+            case _:
+                raise ValueError("Update the test!")
 
     def test_v2_add_empty(
         self,
-        mock_v2_store: VertexAIVectorStore,
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         mock_v2_data_object_service_client: MagicMock,
     ) -> None:
         """Test that no calls are made when an empty list of nodes is passed to ``add``."""
+        # GIVEN
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+
         # WHEN
-        actual_output_ids = mock_v2_store.add([])
+        actual_output_ids = vector_store.add([], **extra_args)
 
         # THEN
         assert actual_output_ids == []
         mock_v2_data_object_service_client.batch_create_data_objects.assert_not_called()
+        mock_v2_data_object_service_client.batch_update_data_objects.assert_not_called()
 
     async def test_v2_async_add_empty(
         self,
-        mock_v2_store: VertexAIVectorStore,
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         mock_v2_data_object_service_async_client: MagicMock,
     ) -> None:
         """Test that no calls are made when an empty list of nodes is passed to ``async_add``."""
+        # GIVEN
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+
         # WHEN
-        actual_output_ids = await mock_v2_store.async_add([])
+        actual_output_ids = await vector_store.async_add([], **extra_args)
 
         # THEN
         assert actual_output_ids == []
         mock_v2_data_object_service_async_client.batch_create_data_objects.assert_not_awaited()
+        mock_v2_data_object_service_async_client.batch_update_data_objects.assert_not_awaited()
 
     def test_v2_add_invalid_parameters(
         self,
-        mock_v2_store: VertexAIVectorStore,
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that an error is raised for invalid parameters in v2 ``add``."""
+        # GIVEN
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+
         # WHEN / THEN
         with pytest.raises(
             ValueError,
             match=r".is_complete_overwrite. is only valid for api_version=.v1.",
         ):
-            _ = mock_v2_store.add(input_dense_nodes, is_complete_overwrite=True)
+            _ = vector_store.add(input_dense_nodes, is_complete_overwrite=True)
 
     async def test_v2_async_add_invalid_parameters(
         self,
-        mock_v2_store: VertexAIVectorStore,
+        request: pytest.FixtureRequest,
+        vector_store_fixture_name: str,
+        requests_fixture_name: str,
+        extra_args: dict[str, Any],
+        add_operation_type: Literal["create", "update"],
         input_dense_nodes: list[TextNode],
     ) -> None:
         """Test that an error is raised for invalid parameters in v2 ``async_add``."""
+        # GIVEN
+        vector_store = request.getfixturevalue(vector_store_fixture_name)
+
         # WHEN / THEN
         with pytest.raises(
             ValueError,
             match=r".is_complete_overwrite. is only valid for api_version=.v1.",
         ):
-            _ = await mock_v2_store.async_add(
+            _ = await vector_store.async_add(
                 input_dense_nodes, is_complete_overwrite=True
             )
 
@@ -1202,34 +1463,71 @@ class TestUnitV2Add:
         ],
         ids=["invalid dense vector format", "invalid sparse vector format"],
     )
-    def test_v2_add_logs_invalid_data_objects(
-        self,
-        caplog: pytest.LogCaptureFixture,
-        mock_v2_store: VertexAIVectorStore,
-        input_dense_nodes: list[TextNode],
-        input_metadata: dict[str, Any],
-        error_msg: str,
-    ) -> None:
-        """Test that appropriate errors logs are made for badly structured data."""
-        # GIVEN
-        input_nodes = [
-            TextNode(
-                id_="node_1",
-                text="Text 1",
-                embedding=[0.1, 0.2, 0.3],
-                metadata=input_metadata,
-            )
-        ]
+    class TestLogsInvalidDataObjects:
+        def test_v2_add_logs_invalid_data_objects(
+            self,
+            caplog: pytest.LogCaptureFixture,
+            request: pytest.FixtureRequest,
+            vector_store_fixture_name: str,
+            requests_fixture_name: str,
+            extra_args: dict[str, Any],
+            add_operation_type: Literal["create", "update"],
+            input_dense_nodes: list[TextNode],
+            input_metadata: dict[str, Any],
+            error_msg: str,
+        ) -> None:
+            """Test that appropriate errors logs are made for badly structured data."""
+            # GIVEN
+            vector_store = request.getfixturevalue(vector_store_fixture_name)
+            input_nodes = [
+                TextNode(
+                    id_="node_1",
+                    text="Text 1",
+                    embedding=[0.1, 0.2, 0.3],
+                    metadata=input_metadata,
+                )
+            ]
 
-        # WHEN
-        with caplog.at_level(logging.ERROR):
-            _ = mock_v2_store.add(input_nodes)
+            # WHEN
+            with caplog.at_level(logging.ERROR):
+                _ = vector_store.add(input_nodes, **extra_args)
 
-        # THEN
-        assert error_msg in caplog.text
+            # THEN
+            assert error_msg in caplog.text
+
+        async def test_v2_async_add_logs_invalid_data_objects(
+            self,
+            caplog: pytest.LogCaptureFixture,
+            request: pytest.FixtureRequest,
+            vector_store_fixture_name: str,
+            requests_fixture_name: str,
+            extra_args: dict[str, Any],
+            add_operation_type: Literal["create", "update"],
+            input_dense_nodes: list[TextNode],
+            input_metadata: dict[str, Any],
+            error_msg: str,
+        ) -> None:
+            """Test that appropriate errors logs are made for badly structured data."""
+            # GIVEN
+            vector_store = request.getfixturevalue(vector_store_fixture_name)
+            input_nodes = [
+                TextNode(
+                    id_="node_1",
+                    text="Text 1",
+                    embedding=[0.1, 0.2, 0.3],
+                    metadata=input_metadata,
+                )
+            ]
+
+            # WHEN
+            with caplog.at_level(logging.ERROR):
+                _ = await vector_store.async_add(input_nodes, **extra_args)
+
+            # THEN
+            assert error_msg in caplog.text
 
     @pytest.mark.parametrize(
-        ("batch_add_side_effect", "expected_added_ids", "expected_failed_ids"),
+        ("batch_add_side_effect", "expected_changed_ids", "expected_failed_ids"),
         [
             ([ValueError, None, None], [2, 3, 4], [0, 1]),
             ([None, ValueError, None], [0, 1, 4], [2, 3]),
@@ -1254,126 +1552,117 @@ class TestUnitV2Add:
 
         def test_v2_add_failed_sub_requests(
             self,
-            mock_v2_store: VertexAIVectorStore,
-            expected_add_requests: list["BatchCreateDataObjectsRequest"],
+            request: pytest.FixtureRequest,
+            vector_store_fixture_name: str,
+            requests_fixture_name: str,
+            extra_args: dict[str, Any],
+            add_operation_type: Literal["create", "update"],
             mock_v2_data_object_service_client: MagicMock,
             input_dense_nodes: list[TextNode],
             batch_add_side_effect: list[Exception | None],
-            expected_added_ids: list[int],
+            expected_changed_ids: list[int],
             expected_failed_ids: list[int],
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``add`` batches fail."""
             # GIVEN
-            expected_calls = [call(request) for request in expected_add_requests]
-            expected_added = [f"node_{i}" for i in expected_added_ids]
+            vector_store = request.getfixturevalue(vector_store_fixture_name)
+            expected_requests = request.getfixturevalue(requests_fixture_name)
+            expected_calls = [call(request) for request in expected_requests]
+            expected_changed = [f"node_{i}" for i in expected_changed_ids]
             expected_failed = [f"node_{i}" for i in expected_failed_ids]
-            mock_v2_data_object_service_client.batch_create_data_objects.side_effect = (
-                batch_add_side_effect
-            )
+            match add_operation_type:
+                case "create":
+                    mock_v2_data_object_service_client.batch_create_data_objects.side_effect = batch_add_side_effect
+                    mock_v2_data_object_service_client.batch_update_data_objects.side_effect = ValueError(
+                        "wrong request!"
+                    )
+                case "update":
+                    mock_v2_data_object_service_client.batch_create_data_objects.side_effect = ValueError(
+                        "wrong request!"
+                    )
+                    mock_v2_data_object_service_client.batch_update_data_objects.side_effect = batch_add_side_effect
 
             # WHEN
             with pytest.raises(VertexAIIndexingError) as exc_info:
-                _ = mock_v2_store.add(input_dense_nodes)
+                _ = vector_store.add(input_dense_nodes, **extra_args)
 
             # THEN
             exception = exc_info.value
             assert isinstance(exception, VertexAIIndexingError)
-            assert exception.result.added_ids == expected_added
-            assert exception.result.failed_ids == expected_failed
-            mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
-                expected_calls,
-            )
+            match add_operation_type:
+                case "create":
+                    assert exception.result.added_ids == expected_changed
+                    assert exception.result.failed_ids == expected_failed
+                    mock_v2_data_object_service_client.batch_create_data_objects.assert_has_calls(
+                        expected_calls,
+                    )
+                    mock_v2_data_object_service_client.batch_update_data_objects.assert_not_called()
+                case "update":
+                    assert exception.result.updated_ids == expected_changed
+                    assert exception.result.failed_ids == expected_failed
+                    mock_v2_data_object_service_client.batch_create_data_objects.assert_not_called()
+                    mock_v2_data_object_service_client.batch_update_data_objects.assert_has_calls(
+                        expected_calls
+                    )
+                case _:
+                    raise ValueError("Update the test!")
 
         async def test_v2_async_add_failed_sub_requests(
             self,
-            mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: list[TextNode],
-            expected_add_requests: list["BatchCreateDataObjectsRequest"],
+            request: pytest.FixtureRequest,
+            vector_store_fixture_name: str,
+            requests_fixture_name: str,
+            extra_args: dict[str, Any],
+            add_operation_type: Literal["create", "update"],
             mock_v2_data_object_service_async_client: MagicMock,
+            input_dense_nodes: list[TextNode],
             batch_add_side_effect: list[Exception | None],
-            expected_added_ids: list[int],
+            expected_changed_ids: list[int],
             expected_failed_ids: list[int],
         ) -> None:
             """Test that the appropriate exception is raised when a subset of ``async_add`` batches fail."""
             # GIVEN
-            expected_calls = [call(request) for request in expected_add_requests]
-            expected_added = [f"node_{i}" for i in expected_added_ids]
+            vector_store = request.getfixturevalue(vector_store_fixture_name)
+            expected_requests = request.getfixturevalue(requests_fixture_name)
+            expected_calls = [call(request) for request in expected_requests]
+            expected_changed = [f"node_{i}" for i in expected_changed_ids]
             expected_failed = [f"node_{i}" for i in expected_failed_ids]
-            mock_v2_data_object_service_async_client.batch_create_data_objects.side_effect = batch_add_side_effect
+            match add_operation_type:
+                case "create":
+                    mock_v2_data_object_service_async_client.batch_create_data_objects.side_effect = batch_add_side_effect
+                    mock_v2_data_object_service_async_client.batch_update_data_objects.side_effect = ValueError(
+                        "wrong request!"
+                    )
+                case "update":
+                    mock_v2_data_object_service_async_client.batch_create_data_objects.side_effect = ValueError(
+                        "wrong request!"
+                    )
+                    mock_v2_data_object_service_async_client.batch_update_data_objects.side_effect = batch_add_side_effect
 
             # WHEN
             with pytest.raises(VertexAIIndexingError) as exc_info:
-                _ = await mock_v2_store.async_add(input_dense_nodes)
+                _ = await vector_store.async_add(input_dense_nodes, **extra_args)
 
             # THEN
             exception = exc_info.value
             assert isinstance(exception, VertexAIIndexingError)
-            assert exception.result.added_ids == expected_added
-            assert exception.result.failed_ids == expected_failed
-            mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
-                expected_calls, any_order=True
-            )
-
-    class TestNodeConversion:
-        """Test bidirectional conversion between ``DataObject`` and ``TextNode``."""
-
-        def test_extract_v2_data_object_from_node(
-            self,
-            mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: list[TextNode],
-            output_dense_data_objects: list["DataObject"],
-        ) -> None:
-            """Test round-trip conversion of ``DataObject``s."""
-            # WHEN
-            data_objects_from_nodes = [
-                mock_v2_store.extract_v2_data_object_from_node(node)
-                for node in input_dense_nodes
-            ]
-
-            # THEN
-            assert data_objects_from_nodes == output_dense_data_objects
-
-        def test_extract_node_from_v2_data_object(
-            self,
-            mock_v2_store: VertexAIVectorStore,
-            input_dense_nodes: list[TextNode],
-            output_dense_data_objects: list["DataObject"],
-        ) -> None:
-            """Test round-trip conversion of ``TextNode``s."""
-            # WHEN
-            nodes_from_data_objects = [
-                mock_v2_store.extract_node_from_v2_data_object(do)
-                for do in output_dense_data_objects
-            ]
-
-            # THEN
-            assert len(nodes_from_data_objects) == len(input_dense_nodes)
-            for actual, expected in zip(
-                nodes_from_data_objects, input_dense_nodes, strict=False
-            ):
-                assert actual.node_id == expected.node_id
-                assert isinstance(actual, TextNode)
-                assert actual.text == expected.text
-                assert actual.relationships == expected.relationships
-                assert pytest.approx(actual.embedding) == expected.embedding
-                assert actual.metadata.keys() == expected.metadata.keys()
-                actual_title_embed = actual.metadata.pop("title_embedding")
-                assert (
-                    pytest.approx(actual_title_embed)
-                    == expected.metadata["title_embedding"]
-                )
-                actual_sparse = actual.metadata.pop("sparse_embedding")
-                assert (
-                    actual_sparse["indices"]
-                    == expected.metadata["sparse_embedding"]["indices"]
-                )
-                assert (
-                    pytest.approx(actual_sparse["values"])
-                    == expected.metadata["sparse_embedding"]["values"]
-                )
-                assert actual.metadata == {
-                    k: v for k, v in expected.metadata.items() if k in actual.metadata
-                }
+            match add_operation_type:
+                case "create":
+                    assert exception.result.added_ids == expected_changed
+                    assert exception.result.failed_ids == expected_failed
+                    mock_v2_data_object_service_async_client.batch_create_data_objects.assert_has_awaits(
+                        expected_calls, any_order=True
+                    )
+                    mock_v2_data_object_service_async_client.batch_update_data_objects.assert_not_awaited()
+                case "update":
+                    assert exception.result.updated_ids == expected_changed
+                    assert exception.result.failed_ids == expected_failed
+                    mock_v2_data_object_service_async_client.batch_create_data_objects.assert_not_awaited()
+                    mock_v2_data_object_service_async_client.batch_update_data_objects.assert_has_awaits(
+                        expected_calls, any_order=True
+                    )
+                case _:
+                    raise ValueError("Update the test!")
 
 
 @xfail_if_missing_v2
