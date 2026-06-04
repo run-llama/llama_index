@@ -45,6 +45,10 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
+from llama_index.core.instrumentation.events.llm import (
+    LLMStructuredPredictEndEvent,
+    LLMStructuredPredictInProgressEvent,
+)
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
@@ -650,21 +654,21 @@ class GoogleGenAI(FunctionCallingLLM):
         if self.file_mode in ("fileapi", "hybrid"):
             delete_uploaded_files(file_api_names, self._client)
 
-        token_usage = extract_token_usage_from_response(response)
-        if token_usage:
-            try:
-                current_span = dispatcher.get_current_span()
-                if current_span:
-                    for key, value in token_usage.items():
-                        if isinstance(value, (int, float, str, bool)):
-                            current_span.set_attribute(f"llm.token_usage.{key}", value)
-            except AttributeError:
-                pass
-
         if isinstance(response.parsed, BaseModel):
-            return response.parsed
+            result = response.parsed
         else:
             raise ValueError("Response is not a BaseModel")
+
+        # Emit event with token usage metadata
+        token_usage = extract_token_usage_from_response(response)
+        dispatcher.event(
+            LLMStructuredPredictEndEvent(
+                output=result,
+                additional_kwargs=token_usage if token_usage else None,
+            )
+        )
+
+        return result
 
     @dispatcher.span
     def structured_predict(
@@ -706,24 +710,22 @@ class GoogleGenAI(FunctionCallingLLM):
             if self.file_mode in ("fileapi", "hybrid"):
                 delete_uploaded_files(file_api_names, self._client)
 
-            token_usage = extract_token_usage_from_response(response)
-            if token_usage:
-                try:
-                    current_span = dispatcher.get_current_span()
-                    if current_span:
-                        for key, value in token_usage.items():
-                            if isinstance(value, (int, float, str, bool)):
-                                current_span.set_attribute(
-                                    f"llm.token_usage.{key}", value
-                                )
-                except AttributeError:
-                    pass
-
             if isinstance(response.parsed, BaseModel):
-                return response.parsed
+                result = response.parsed
             else:
                 # Try to parse the response text as JSON into the output_cls
-                return output_cls.model_validate_json(response.text)
+                result = output_cls.model_validate_json(response.text)
+
+            # Emit event with token usage metadata
+            token_usage = extract_token_usage_from_response(response)
+            dispatcher.event(
+                LLMStructuredPredictEndEvent(
+                    output=result,
+                    additional_kwargs=token_usage if token_usage else None,
+                )
+            )
+
+            return result
 
         else:
             return super().structured_predict(
@@ -770,24 +772,22 @@ class GoogleGenAI(FunctionCallingLLM):
             if self.file_mode in ("fileapi", "hybrid"):
                 await adelete_uploaded_files(file_api_names, self._client)
 
-            token_usage = extract_token_usage_from_response(response)
-            if token_usage:
-                try:
-                    current_span = dispatcher.get_current_span()
-                    if current_span:
-                        for key, value in token_usage.items():
-                            if isinstance(value, (int, float, str, bool)):
-                                current_span.set_attribute(
-                                    f"llm.token_usage.{key}", value
-                                )
-                except AttributeError:
-                    pass
-
             if isinstance(response.parsed, BaseModel):
-                return response.parsed
+                result = response.parsed
             else:
                 # Try to parse the response text as JSON into the output_cls
-                return output_cls.model_validate_json(response.text)
+                result = output_cls.model_validate_json(response.text)
+
+            # Emit event with token usage metadata
+            token_usage = extract_token_usage_from_response(response)
+            dispatcher.event(
+                LLMStructuredPredictEndEvent(
+                    output=result,
+                    additional_kwargs=token_usage if token_usage else None,
+                )
+            )
+
+            return result
 
         else:
             return super().structured_predict(
@@ -825,12 +825,6 @@ class GoogleGenAI(FunctionCallingLLM):
             contents = [it[0] for it in contents_and_names]
             file_api_names = [name for it in contents_and_names for name in it[1]]
 
-            current_span = None
-            try:
-                current_span = dispatcher.get_current_span()
-            except AttributeError:
-                pass
-
             def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
                 flexible_model = create_flexible_model(output_cls)
                 response_gen = self._client.models.generate_content_stream(
@@ -844,6 +838,9 @@ class GoogleGenAI(FunctionCallingLLM):
                 for chunk in response_gen:
                     if chunk.parsed:
                         yield chunk.parsed
+                        dispatcher.event(
+                            LLMStructuredPredictInProgressEvent(output=chunk.parsed)
+                        )
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
                             current_json,
@@ -853,16 +850,23 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+                            dispatcher.event(
+                                LLMStructuredPredictInProgressEvent(
+                                    output=streaming_model
+                                )
+                            )
                         final_response = chunk
 
+                # Emit final event with token usage metadata
                 if final_response:
                     token_usage = extract_token_usage_from_response(final_response)
-                    if token_usage and current_span:
-                        for key, value in token_usage.items():
-                            if isinstance(value, (int, float, str, bool)):
-                                current_span.set_attribute(
-                                    f"llm.token_usage.{key}", value
-                                )
+                    if token_usage:
+                        dispatcher.event(
+                            LLMStructuredPredictInProgressEvent(
+                                output=None,
+                                additional_kwargs=token_usage,
+                            )
+                        )
 
                 if self.file_mode in ("fileapi", "hybrid"):
                     delete_uploaded_files(file_api_names, self._client)
@@ -904,15 +908,9 @@ class GoogleGenAI(FunctionCallingLLM):
             contents = [it[0] for it in contents_and_names]
             file_api_names = [name for it in contents_and_names for name in it[1]]
 
-            current_span = None
-            try:
-                current_span = dispatcher.get_current_span()
-            except AttributeError:
-                pass
-
             async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
                 flexible_model = create_flexible_model(output_cls)
-                response_gen = await self._client.aio.models.generate_content_stream(
+                response_gen = self._client.aio.models.generate_content_stream(
                     model=self.model,
                     contents=contents,
                     config=generation_config,
@@ -923,6 +921,9 @@ class GoogleGenAI(FunctionCallingLLM):
                 async for chunk in response_gen:
                     if chunk.parsed:
                         yield chunk.parsed
+                        dispatcher.event(
+                            LLMStructuredPredictInProgressEvent(output=chunk.parsed)
+                        )
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
                             current_json,
@@ -932,16 +933,23 @@ class GoogleGenAI(FunctionCallingLLM):
                         )
                         if streaming_model:
                             yield streaming_model
+                            dispatcher.event(
+                                LLMStructuredPredictInProgressEvent(
+                                    output=streaming_model
+                                )
+                            )
                         final_response = chunk
 
+                # Emit final event with token usage metadata
                 if final_response:
                     token_usage = extract_token_usage_from_response(final_response)
-                    if token_usage and current_span:
-                        for key, value in token_usage.items():
-                            if isinstance(value, (int, float, str, bool)):
-                                current_span.set_attribute(
-                                    f"llm.token_usage.{key}", value
-                                )
+                    if token_usage:
+                        dispatcher.event(
+                            LLMStructuredPredictInProgressEvent(
+                                output=None,
+                                additional_kwargs=token_usage,
+                            )
+                        )
 
                 if self.file_mode in ("fileapi", "hybrid"):
                     await adelete_uploaded_files(file_api_names, self._client)
