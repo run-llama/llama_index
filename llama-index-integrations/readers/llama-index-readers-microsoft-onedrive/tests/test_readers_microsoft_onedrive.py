@@ -1,3 +1,7 @@
+import os
+import tempfile
+from unittest.mock import patch, MagicMock
+
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
@@ -60,3 +64,30 @@ def test_mixins(real_onedrive_reader: OneDriveReader):
     file_content = real_onedrive_reader.read_file_content(resource)
     assert file_content is not None
     assert len(file_content) == resource_info["file_size"]
+
+
+def test_download_file_by_url_strips_path_traversal():
+    """Regression test for #21867: filenames with path traversal sequences
+    must not escape the download directory."""
+    reader = OneDriveReader.__new__(OneDriveReader)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_dir = os.path.join(tmpdir, "downloads")
+        os.makedirs(local_dir)
+
+        mock_response = MagicMock()
+        mock_response.content = b"test content"
+
+        # Traversal filename: should be stripped to just "evil.txt"
+        item = {
+            "name": "../../evil.txt",
+            "@microsoft.graph.downloadUrl": "http://example.com/file",
+        }
+
+        with patch("requests.get", return_value=mock_response):
+            result = reader._download_file_by_url(item, local_dir)
+
+        # Result must be inside local_dir
+        assert os.path.realpath(result).startswith(os.path.realpath(local_dir) + os.sep)
+        assert result == os.path.join(local_dir, "evil.txt")
+        assert os.path.isfile(result)
