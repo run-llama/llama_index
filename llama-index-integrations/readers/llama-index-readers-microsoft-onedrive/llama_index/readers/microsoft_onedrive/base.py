@@ -269,11 +269,31 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
 
+        # Strip any directory components from the server-supplied name and
+        # confirm the resolved destination stays inside `local_dir`. The
+        # Microsoft Graph API can in principle return a filename containing
+        # `..` or absolute-path components; without this guard a downloaded
+        # file could land outside the caller-supplied download directory
+        # (CWE-22 / path traversal — #21867).
+        sanitized_name = os.path.basename(file_name)
+        if not sanitized_name or sanitized_name in (os.curdir, os.pardir):
+            raise ValueError(
+                f"Refusing to download file with unsafe name: {file_name!r}"
+            )
+        file_path = os.path.join(local_dir, sanitized_name)
+        resolved_dir = os.path.realpath(local_dir)
+        resolved_path = os.path.realpath(file_path)
+        if (
+            os.path.commonpath([resolved_dir, resolved_path]) != resolved_dir
+        ):  # pragma: no cover -- defense-in-depth after basename strip
+            raise ValueError(
+                f"Refusing to download file that escapes local_dir: {file_name!r}"
+            )
+
         # Download the file.
         file_data = requests.get(file_download_url)
 
         # Save the downloaded file to the specified local directory.
-        file_path = os.path.join(local_dir, file_name)
         with open(file_path, "wb") as f:
             f.write(file_data.content)
 
