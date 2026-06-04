@@ -68,6 +68,7 @@ if TYPE_CHECKING:
         SearchResult,
         SemanticSearch,
         TextSearch,
+        UpdateDataObjectRequest,
         Vector,
         VectorSearch,
         VectorSearchServiceClient,
@@ -95,27 +96,30 @@ class VertexAIQueryError(VertexAIError):
 
 
 @dataclass
-class _AddResult:
+class _IndexResult:
     added_ids: list[str] = field(default_factory=list)
+    updated_ids: list[str] = field(default_factory=list)
     failed_ids: list[str] = field(default_factory=list)
     exceptions: list[Exception] = field(default_factory=list)
 
     @property
     def succeeded(self) -> bool:
         """Indicates whether the batch operation succeeded."""
-        return not self.failed_ids
+        return not self.failed_ids and not self.exceptions
 
-    def __add__(self, other: "_AddResult") -> "_AddResult":
+    def __add__(self, other: "_IndexResult") -> "_IndexResult":
         """Combine the properties of two :py:class:`_AddResult` objects."""
-        return _AddResult(
+        return _IndexResult(
             added_ids=self.added_ids + other.added_ids,
+            updated_ids=self.updated_ids + other.updated_ids,
             failed_ids=self.failed_ids + other.failed_ids,
             exceptions=[*self.exceptions, *other.exceptions],
         )
 
-    def __iadd__(self, other: "_AddResult") -> Self:
+    def __iadd__(self, other: "_IndexResult") -> Self:
         """In-place addition to combine results."""
         self.added_ids.extend(other.added_ids)
+        self.updated_ids.extend(other.updated_ids)
         self.failed_ids.extend(other.failed_ids)
         self.exceptions.extend(other.exceptions)
         return self
@@ -124,18 +128,18 @@ class _AddResult:
     def summary_line(self) -> str:
         """Returns a summary count line for logging purposes."""
         return (
-            f"added={len(self.added_ids)}, failed={len(self.failed_ids)}, "
-            f"exceptions={self.exceptions}"
+            f"added={len(self.added_ids)}, updated={len(self.updated_ids)}, "
+            f"failed={len(self.failed_ids)}, exceptions={self.exceptions}"
         )
 
 
 class VertexAIIndexingError(VertexAIError):
     """Raised for errors when indexing content into a vector store."""
 
-    def __init__(self, result: _AddResult) -> None:
+    def __init__(self, result: _IndexResult) -> None:
         """Initialize the exception."""
         super().__init__(
-            f"Failed to add all objects to the index, {result.summary_line}"
+            f"Failed to add/update all requested objects, {result.summary_line}"
         )
         self.result = result
 
@@ -270,14 +274,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # V2 Hybrid Search parameters
     enable_hybrid: bool = False
     text_search_fields: list[str] | None = None
-    embedding_field: str = "embedding"
-    sparse_embedding_field: str = "sparse_embedding"
 
     # V2 indexing-related fields
+    default_add_operation: Literal["create", "update"] = "create"
+    batch_size: PositiveInt = 100
+    max_concurrent_requests: PositiveInt = 5
+
+    # V2 fields shared between indexing and query time
+    embedding_field: str = "embedding"
+    sparse_embedding_field: str = "sparse_embedding"
     # allow users to specify additional fields for V2 indexing (add) operations
     dense_embedding_fields: set[str] = Field(default_factory=set)
     sparse_embedding_fields: set[str] = Field(default_factory=set)
-    max_concurrent_requests: PositiveInt = 5
 
     # optional field names for non-metadata properties in nodes being indexed
     nodeid_field: str | None = None
@@ -294,7 +302,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     semantic_task_type: str = "RETRIEVAL_QUERY"
 
     # Shared parameters
-    batch_size: int = 100
     credentials_path: str | None = None
 
     # Output field configuration
@@ -483,14 +490,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         nodes: Sequence[BaseNode],
         *,
         is_complete_overwrite: bool = False,
+        add_operation: Literal["create", "update"] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """
         Add nodes to index.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
-            is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
+            nodes: List[BaseNode]: list of nodes
+            is_complete_overwrite: bool:
+                (V1 only) whether it is an append or overwrite operation
+            add_operation: Literal["create", "update"] | None:
+                (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **kwargs: additional keyword arguments to be passed to implementations
 
         """
@@ -505,8 +516,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 raise VertexAIInputError(
                     "The argument 'is_complete_overwrite' is only valid for api_version='v1'."
                 )
-            return self._add_v2(nodes, **kwargs)
+
+            op = add_operation or self.default_add_operation
+            _logger.debug(f"Using operation='{op}' for V2 call to 'add'")
+            match op:
+                case "create":
+                    return self._add_v2_create(nodes, **kwargs)
+                case "update":
+                    return self._add_v2_update(nodes, **kwargs)
+                case _:
+                    raise VertexAIInputError(f"Unknown add operation: {op}")
         else:
+            if add_operation:
+                raise VertexAIInputError(
+                    "The argument 'add_operation' is only valid for api_version='v2'"
+                )
             return self._add_v1(
                 nodes, is_complete_overwrite=is_complete_overwrite, **kwargs
             )
@@ -514,6 +538,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     def _add_v1(
         self,
         nodes: Sequence[BaseNode],
+        *,
         is_complete_overwrite: bool = False,
         **kwargs: Any,
     ) -> list[str]:
@@ -558,17 +583,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
         return ids
 
-    def _add_v2(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
+    def _add_v2_create(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
         """
-        Add nodes to collection using v2 API.
+        Add nodes to index using the V2 'create' API.
 
         Args:
-            nodes: List of nodes with embeddings
-            is_complete_overwrite: Whether to overwrite existing data
+            nodes: List[BaseNode]: list of nodes
             **kwargs: additional keyword arguments (not used)
-
-        Returns:
-            List of node IDs
 
         """
         from google.cloud.vectorsearch_v1beta import BatchCreateDataObjectsRequest
@@ -576,16 +597,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(
             f"Adding {len(nodes)} nodes to v2 collection: {self.collection_id}",
         )
-
-        # Convert nodes to v2 data objects
-        ids, batch_requests = self._build_v2_create_requests(nodes)
-
-        # Batch create data objects
+        node_ids, batch_requests = self._build_v2_create_requests(nodes)
+        result = _IndexResult()
         time_start = time.perf_counter()
-        result = _AddResult()
         for i, start in enumerate(range(0, len(batch_requests), self.batch_size)):
             batch = batch_requests[start : start + self.batch_size]
-            batch_ids = ids[start : start + self.batch_size]
+            batch_ids = node_ids[start : start + self.batch_size]
             size = len(batch)
             _logger.info(f"Creating batch {i} ({size} objects)")
             request = BatchCreateDataObjectsRequest(
@@ -610,6 +627,49 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             raise VertexAIIndexingError(result)
         return result.added_ids
 
+    def _add_v2_update(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
+        """
+        Add nodes to index using the V2 'update' API.
+
+        Args:
+            nodes: List[BaseNode]: list of nodes
+            **kwargs: additional keyword arguments (not used)
+
+        """
+        from google.cloud.vectorsearch_v1beta import BatchUpdateDataObjectsRequest
+
+        _logger.info(
+            f"Updating {len(nodes)} nodes to v2 collection: {self.collection_id}",
+        )
+        node_ids, update_requests = self._build_v2_update_requests(nodes)
+        result = _IndexResult()
+        time_start = time.perf_counter()
+        for i, chunk in enumerate(range(0, len(update_requests), self.batch_size)):
+            batch = update_requests[chunk : chunk + self.batch_size]
+            batch_ids = node_ids[chunk : chunk + self.batch_size]
+            size = len(batch)
+            try:
+                _logger.info(f"Updating batch {i} ({size} objects)")
+                batch_request = BatchUpdateDataObjectsRequest(
+                    parent=self._collection_parent, requests=batch
+                )
+                self.v2_data_object_client.batch_update_data_objects(batch_request)
+                result.updated_ids.extend(batch_ids)
+                _logger.debug(
+                    f"Update request batch {i} complete, indexed {size} nodes"
+                )
+            except Exception as exc:
+                _logger.exception(f"Failed to update batch {i} ({size} objects)")
+                result.failed_ids.extend(batch_ids)
+                result.exceptions.append(exc)
+        time_taken = time.perf_counter() - time_start
+        _logger.info(
+            f"Completed 'update' operation in {time_taken:.2f}s, {result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIIndexingError(result)
+        return result.updated_ids
+
     def _build_v2_create_requests(
         self, nodes: Sequence[BaseNode]
     ) -> tuple[list[str], list["CreateDataObjectRequest"]]:
@@ -627,6 +687,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     data_object=data_object,
                 )
             )
+        return node_ids, requests
+
+    def _build_v2_update_requests(
+        self, nodes: Sequence[BaseNode]
+    ) -> tuple[list[str], list["UpdateDataObjectRequest"]]:
+        from google.cloud.vectorsearch_v1beta import UpdateDataObjectRequest
+
+        node_ids: list[str] = []
+        requests: list[UpdateDataObjectRequest] = []
+        for node in nodes:
+            node_ids.append(node.node_id)
+            data_object = self.extract_v2_data_object_from_node(node)
+            # updates must include the fully qualified name of the object being updated
+            data_object.name = f"{self._collection_parent}/dataObjects/{node.node_id}"
+            requests.append(UpdateDataObjectRequest(data_object=data_object))
         return node_ids, requests
 
     def extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
@@ -816,6 +891,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         nodes: Sequence[BaseNode],
         *,
         is_complete_overwrite: bool = False,
+        add_operation: Literal["create", "update"] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """
@@ -823,7 +899,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
-            is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
+            is_complete_overwrite: bool:
+                (V1 only) whether it is an append or overwrite operation
+            add_operation: Literal["create", "update"] | None:
+                (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **kwargs: additional keyword arguments to be passed to implementations
 
         """
@@ -838,35 +917,37 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 raise VertexAIInputError(
                     "The argument 'is_complete_overwrite' is only valid for api_version='v1'."
                 )
-            return await self._async_add_v2(nodes, **kwargs)
+
+            op = add_operation or self.default_add_operation
+            _logger.debug(f"Using operation='{op}' for V2 call to 'async_add'")
+            match op:
+                case "create":
+                    return await self._async_add_v2_create(nodes, **kwargs)
+                case "update":
+                    return await self._async_add_v2_update(nodes, **kwargs)
+                case _:
+                    raise VertexAIInputError(f"Unknown add operation: {op}")
         else:
             # use the synchronous V1 implementation
+            if add_operation:
+                raise VertexAIInputError(
+                    "The argument 'add_operation' is only valid for api_version='v2'"
+                )
             return self._add_v1(
                 nodes, is_complete_overwrite=is_complete_overwrite, **kwargs
             )
 
-    async def _async_add_v2(
+    async def _async_add_v2_create(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> list[str]:
-        """
-        Asynchronously add nodes to collection using v2 API.
-
-        Args:
-            nodes: List of nodes with embeddings
-            **kwargs: Additional keyword arguments (not used)
-
-        Returns:
-            List of node IDs
-
-        """
-        node_ids, add_reqs = self._build_v2_create_requests(nodes)
+        node_ids, requests = self._build_v2_create_requests(nodes)
         tasks = [
             self._async_create_batch(
                 batch_idx=i,
                 batch_ids=node_ids[start : start + self.batch_size],
-                create_requests=add_reqs[start : start + self.batch_size],
+                create_requests=requests[start : start + self.batch_size],
             )
-            for i, start in enumerate(range(0, len(add_reqs), self.batch_size), start=1)
+            for i, start in enumerate(range(0, len(requests), self.batch_size), start=1)
         ]
         _logger.info(
             f"Async adding {len(nodes)} nodes to v2 collection='{self.collection_id}' in "
@@ -874,10 +955,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         time_start = time.perf_counter()
-        results: list[_AddResult] = await asyncio.gather(*tasks)
+        results: list[_IndexResult] = await asyncio.gather(*tasks)
         time_taken = time.perf_counter() - time_start
 
-        result = sum(results, _AddResult())
+        result = sum(results, _IndexResult())
         _logger.info(
             f"Completed 'async_add' operation in {time_taken:.2f}s, {result.summary_line}"
         )
@@ -890,7 +971,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         batch_idx: int,
         batch_ids: list[str],
         create_requests: list["CreateDataObjectRequest"],
-    ) -> _AddResult:
+    ) -> _IndexResult:
         """
         Execute an async add for a single batch of data objects.
 
@@ -903,9 +984,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             An object containing lists of added and failed IDs.
 
         """
-        from google.cloud.vectorsearch_v1beta import (
-            BatchCreateDataObjectsRequest,
-        )
+        from google.cloud.vectorsearch_v1beta import BatchCreateDataObjectsRequest
 
         # the request will not execute until the semaphore can be acquired
         size = len(create_requests)
@@ -924,12 +1003,96 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.debug(
                     f"Add request batch {batch_idx} complete, indexed {size} nodes"
                 )
-                return _AddResult(added_ids=batch_ids)
+                return _IndexResult(added_ids=batch_ids)
             except Exception as exc:
                 _logger.exception(
                     f"Failed to index async batch {batch_idx} ({size} objects)"
                 )
-                return _AddResult(failed_ids=batch_ids, exceptions=[exc])
+                return _IndexResult(failed_ids=batch_ids, exceptions=[exc])
+
+    async def _async_add_v2_update(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> list[str]:
+        """
+        Asynchronously update nodes in the collection using v2 API.
+
+        Args:
+            nodes: List of nodes
+            **kwargs: Additional keyword arguments (not used)
+
+        Returns:
+            List of node IDs
+
+        """
+        node_ids, requests = self._build_v2_update_requests(nodes)
+        tasks = [
+            self._async_update_batch(
+                batch_idx=i,
+                batch_ids=node_ids[start : start + self.batch_size],
+                update_requests=requests[start : start + self.batch_size],
+            )
+            for i, start in enumerate(range(0, len(requests), self.batch_size), start=1)
+        ]
+        _logger.info(
+            f"Async updating {len(nodes)} nodes to v2 collection='{self.collection_id}' in "
+            f"{len(tasks)} batches (batch_size={self.batch_size})"
+        )
+
+        time_start = time.perf_counter()
+        results: list[_IndexResult] = await asyncio.gather(*tasks)
+        time_taken = time.perf_counter() - time_start
+
+        result = sum(results, _IndexResult())
+        _logger.info(
+            f"Completed 'async_update' operation in {time_taken:.2f}s, {result.summary_line}"
+        )
+        if not result.succeeded:
+            raise VertexAIIndexingError(result)
+        return result.updated_ids
+
+    async def _async_update_batch(
+        self,
+        batch_idx: int,
+        batch_ids: list[str],
+        update_requests: list["UpdateDataObjectRequest"],
+    ) -> _IndexResult:
+        """
+        Execute an async update for a single batch of data objects.
+
+        Args:
+            batch_idx: Index of the batch for logging.
+            batch_ids: List of IDs included in the requests.
+            update_requests: List of UpdateDataObjectRequest protos to update.
+
+        Returns:
+            An object containing lists of updated and failed IDs.
+
+        """
+        from google.cloud.vectorsearch_v1beta import BatchUpdateDataObjectsRequest
+
+        # the request will not execute until the semaphore can be acquired
+        size = len(update_requests)
+        async with self._async_request_semaphore:
+            try:
+                _logger.debug(f"Updating async batch {batch_idx} ({size} objects)")
+                request = BatchUpdateDataObjectsRequest(
+                    parent=self._collection_parent, requests=update_requests
+                )
+                response = (
+                    await self.v2_data_object_async_client.batch_update_data_objects(
+                        request
+                    )
+                )
+                _logger.debug(f"Batch update response: {response}")
+                _logger.debug(
+                    f"Update request batch {batch_idx} complete, updated {size} nodes"
+                )
+                return _IndexResult(updated_ids=batch_ids)
+            except Exception as exc:
+                _logger.exception(
+                    f"Failed to update async batch {batch_idx} ({size} objects)"
+                )
+                return _IndexResult(failed_ids=batch_ids, exceptions=[exc])
 
     @override
     def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
