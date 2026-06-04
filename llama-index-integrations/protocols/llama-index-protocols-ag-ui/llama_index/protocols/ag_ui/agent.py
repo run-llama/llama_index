@@ -24,6 +24,25 @@ from llama_index.protocols.ag_ui.utils import (
 )
 
 
+def _validate_unique_static_tool_names(
+    frontend_tools: List[BaseTool], backend_tools: List[BaseTool]
+) -> None:
+    seen: Dict[str, str] = {}
+    for tool_group, tools in (
+        ("frontend_tools", frontend_tools),
+        ("backend_tools", backend_tools),
+    ):
+        for tool in tools:
+            name = tool.metadata.name
+            if name in seen:
+                raise ValueError(
+                    f"AG-UI tool name {name!r} appears in both {seen[name]} "
+                    f"and {tool_group}; tool names must be unique across "
+                    "frontend_tools and backend_tools."
+                )
+            seen[name] = tool_group
+
+
 def _ag_ui_tool_to_llama_index(tool: AGUITool) -> BaseTool:
     """
     Convert an AG-UI Tool definition to a LlamaIndex FunctionTool.
@@ -129,6 +148,9 @@ class AGUIChatWorkflow(Workflow):
         validated_backend_tools: List[BaseTool] = [
             validate_tool(tool) for tool in backend_tools or []
         ]
+        _validate_unique_static_tool_names(
+            validated_frontend_tools, validated_backend_tools
+        )
 
         self.frontend_tools = {
             tool.metadata.name: tool for tool in validated_frontend_tools
