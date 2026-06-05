@@ -96,6 +96,9 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
 )
 
+def _supports_reasoning(model: str) -> bool:
+    """Prefix-based check so dated snapshots are handled automatically."""
+    return model.startswith(("o1-", "o3-", "o4-", "gpt-5-", "gpt-5."))
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -315,7 +318,10 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         # TODO: Temp forced to 1.0 for o1
-        if model in O1_MODELS:
+        if _supports_reasoning(model) and (
+            reasoning_options is None
+            or reasoning_options.get("effort", "none") != "none"
+        ):
             temperature = 1.0
 
         super().__init__(
@@ -421,10 +427,15 @@ class OpenAIResponses(FunctionCallingLLM):
             "user": self.user,
         }
 
-        if self.model in O1_MODELS and self.reasoning_options is not None:
+        if _supports_reasoning(self.model) and self.reasoning_options is not None:
             model_kwargs["reasoning"] = self.reasoning_options
 
-        if self.reasoning_options is not None or self.model in O1_MODELS:
+        _reasoning_active = (
+            _supports_reasoning(self.model)
+            and self.reasoning_options is not None
+            and self.reasoning_options.get("effort", "none") != "none"
+        )
+        if _reasoning_active:
             params_to_exclude_for_reasoning = {
                 "top_p",
                 "temperature",
@@ -475,6 +486,10 @@ class OpenAIResponses(FunctionCallingLLM):
         blocks: List[ContentBlock] = []
         for item in output:
             if isinstance(item, ResponseOutputMessage):
+                item_phase = getattr(item, "phase", None)
+                if item_phase in ("commentary", "final_answer"):
+                    additional_kwargs["phase"] = item_phase
+
                 for part in item.content:
                     if hasattr(part, "text"):
                         blocks.append(TextBlock(text=part.text))
@@ -552,11 +567,14 @@ class OpenAIResponses(FunctionCallingLLM):
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
         if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
-            for block in chat_response.message.blocks:
-                if isinstance(block, ThinkingBlock):
-                    block.num_tokens = (
-                        response.usage.output_tokens_details.reasoning_tokens
-                    )
+            thinking_blocks = [
+                b for b in chat_response.message.blocks if isinstance(b, ThinkingBlock)
+            ]
+            if thinking_blocks:
+                total_reasoning = response.usage.output_tokens_details.reasoning_tokens or 0
+                per_block, remainder = divmod(total_reasoning, len(thinking_blocks))
+                for i, block in enumerate(thinking_blocks):
+                    block.num_tokens = per_block + (1 if i < remainder else 0)
 
         return chat_response
 
