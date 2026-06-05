@@ -9,7 +9,7 @@ import asyncio
 import logging
 import os
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -25,6 +25,7 @@ from google.cloud.aiplatform.matching_engine import (
 from pydantic import PositiveInt, model_validator
 from typing_extensions import Self, override
 
+from llama_index.core.base.embeddings.base_sparse import SparseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
         BatchDeleteDataObjectsRequest,
         BatchSearchDataObjectsRequest,
         BatchSearchDataObjectsResponse,
+        Collection,
         CreateDataObjectRequest,
         DataObject,
         DataObjectSearchServiceAsyncClient,
@@ -299,6 +301,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     default_hybrid_alpha: Annotated[float, Ge(0.0), Le(1.0)] = 0.5
 
     # SemanticSearch configuration
+    semantic_search_embedding_field: str | None = None
     semantic_task_type: str = "RETRIEVAL_QUERY"
 
     # Shared parameters
@@ -483,6 +486,48 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """Access shared ``DataObjectServiceClient`` instance."""
         clients = self._sdk_manager.get_v2_client()
         return clients["data_object_search_service_async_client"]
+
+    @cached_property
+    def v2_collection(self) -> "Collection":
+        """The V2 collection represented by this vector store instance."""
+        self._sdk_manager.ensure_v2_available()
+        return self.v2_vector_search_client.get_collection(name=self._collection_parent)
+
+    @cached_property
+    def v2_data_fields(self) -> set[str]:
+        """The data fields in the V2 collection."""
+        # mypy can't infer this type, but we know it's a mapping type
+        fields = cast(Mapping, self.v2_collection.data_schema["properties"])
+        return set(fields.keys())
+
+    @cached_property
+    def v2_vector_fields(self) -> set[str]:
+        """The vector fields in the V2 collection."""
+        return set(self.v2_collection.vector_schema.keys())
+
+    @cached_property
+    def v2_vertex_embedding_fields(self) -> set[str]:
+        """
+        The set of vector fields in the V2 collection that support Vertex auto-embedding.
+
+        This queries the collection schema once and caches the result. At query-time,
+        the semantic search type (i.e., passing a query text for embedding on the Vertex
+        server, rather than with a supplied embedding) is only available if the search
+        field supports auto-embedding.
+
+        Returns:
+            A set of vector fields in the V2 collection that support Vertex auto-embedding.
+
+        """
+        return {
+            name
+            for name, vec_cfg in self.v2_collection.vector_schema.items()
+            if (
+                vec_cfg.dense_vector
+                and vec_cfg.dense_vector.vertex_embedding_config
+                and vec_cfg.dense_vector.vertex_embedding_config.model_id
+            )
+        }
 
     @override
     def add(
@@ -925,7 +970,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     return await self._async_add_v2_create(nodes, **kwargs)
                 case "update":
                     return await self._async_add_v2_update(nodes, **kwargs)
-                case _:
+                case _:  # pragma: no cover
                     raise VertexAIInputError(f"Unknown add operation: {op}")
         else:
             # use the synchronous V1 implementation
@@ -1334,26 +1379,51 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return _DeleteResult(failed=size, exceptions=[exc])
 
     @override
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes."""
-        if FeatureFlags.should_use_v2(self.api_version):
-            # No fallback - v2 requires v2 SDK
-            self._sdk_manager.ensure_v2_available()
-            return self._query_v2(query, **kwargs)
-        else:
-            return self._query_v1(query, **kwargs)
-
-    @override
-    async def aquery(
-        self, query: VectorStoreQuery, **kwargs: Any
+    def query(
+        self,
+        query: VectorStoreQuery,
+        *,
+        sparse_embedding: SparseEmbedding | None = None,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes."""
+        """
+        Search index for nodes using a specific search mode.
+
+        Supported modes:
+
+        * DEFAULT: Dense vector similarity search via ``query.query_embedding`` or (v2
+          only) server-side semantic search. via ``query.query_embedding`` or (V2
+          only) server-side semantic search.
+        * SPARSE: (V2 only) Sparse vector search
+        * TEXT_SEARCH: (V2 only) Full-text keyword search
+        * HYBRID: (V2 only) Dense vector + text search with RRF ranker
+        * SEMANTIC_HYBRID: (V2 only) Dense vector + semantic search with ranker
+
+        Args:
+            query: The vector store query with mode specification
+            sparse_embedding:
+                (V2 only) A sparse embedding for the query, if query.mode is ``SPARSE``.
+
+                ``VectorStoreQuery`` does not currently have a field for sparse embeddings,
+                so it must be supplied as a keyword argument for now.
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            Vector store query result
+
+        Raises:
+            VertexAIQueryError: For invalid ``query`` parameters for the selected mode.
+
+        """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
             self._sdk_manager.ensure_v2_available()
-            return await self._aquery_v2(query, **kwargs)
+            return self._query_v2(query, sparse_embedding=sparse_embedding, **kwargs)
         else:
-            # use sync version
+            if sparse_embedding is not None:
+                raise VertexAIInputError(
+                    "Sparse vector search is not supported in api_version='v1'"
+                )
             return self._query_v1(query, **kwargs)
 
     def _query_v1(
@@ -1407,46 +1477,63 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
     def _query_v2(
-        self, query: VectorStoreQuery, **kwargs: Any
+        self,
+        query: VectorStoreQuery,
+        *,
+        sparse_embedding: SparseEmbedding | None = None,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """
-        Query collection using v2 API with support for multiple query modes.
-
-        Args:
-            store: The VertexAIVectorStore instance
-            query: The vector store query with mode specification
-            **kwargs: Additional keyword arguments
-
-        Returns:
-            Vector store query result
-
-        Supported modes:
-            - DEFAULT: Dense vector similarity search
-            - TEXT_SEARCH: Full-text keyword search
-            - HYBRID: Dense vector + text search with RRF/VertexRanker
-            - SEMANTIC_HYBRID: Dense vector + semantic search with ranker
-            - SPARSE: (Phase 2) Sparse vector search
-
-        """
+        """Search V2 collection for nodes using a specific search mode."""
         from google.cloud.vectorsearch_v1beta import SearchDataObjectsRequest
 
         _logger.info(
-            f"Querying v2 collection: {self.collection_id} with mode: {query.mode}",
+            f"Querying (sync) V2 collection='{self.collection_id}' using mode='{query.mode.value}'"
         )
-        # prepare filters once for all search types
+        # prepare filters and output fields once for all search types
         v2_filter = convert_filters_to_v2_format(query.filters)
+        output_fields = self._get_output_fields(query.output_fields)
 
         # Route based on query mode
         match query.mode:
+            case VectorStoreQueryMode.DEFAULT:
+                if query.query_embedding:
+                    _logger.debug(f"Using dense search for mode={query.mode.value}")
+                    dense_search = self._build_dense_vector_search(
+                        query, v2_filter, output_fields
+                    )
+                    request = SearchDataObjectsRequest(
+                        parent=self._collection_parent, vector_search=dense_search
+                    )
+                else:
+                    _logger.debug(f"Using semantic search for mode={query.mode.value}")
+                    semantic_search = self._build_semantic_search(
+                        query, v2_filter, output_fields
+                    )
+                    request = SearchDataObjectsRequest(
+                        parent=self._collection_parent, semantic_search=semantic_search
+                    )
+                results = self.v2_search_client.search_data_objects(request)
+                return self._process_search_results(results)
+            case VectorStoreQueryMode.SPARSE:
+                sparse_search = self._build_sparse_vector_search(
+                    query, sparse_embedding, v2_filter, output_fields
+                )
+                request = SearchDataObjectsRequest(
+                    parent=self._collection_parent, vector_search=sparse_search
+                )
+                results = self.v2_search_client.search_data_objects(request)
+                return self._process_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
-                text_search = self._build_text_search(query, v2_filter)
+                text_search = self._build_text_search(query, v2_filter, output_fields)
                 request = SearchDataObjectsRequest(
                     parent=self._collection_parent, text_search=text_search
                 )
                 results = self.v2_search_client.search_data_objects(request)
                 return self._process_search_results(results)
             case VectorStoreQueryMode.HYBRID:
-                batch_request = self._build_hybrid_query_request(query, v2_filter)
+                batch_request = self._build_hybrid_query_request(
+                    query, sparse_embedding, v2_filter, output_fields
+                )
                 batch_results = self.v2_search_client.batch_search_data_objects(
                     batch_request
                 )
@@ -1455,121 +1542,180 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 )
             case VectorStoreQueryMode.SEMANTIC_HYBRID:
                 batch_request = self._build_semantic_hybrid_query_request(
-                    query, v2_filter
+                    query, sparse_embedding, v2_filter, output_fields
                 )
                 batch_results = self.v2_search_client.batch_search_data_objects(
                     batch_request
                 )
                 return self._process_batch_search_results(
                     batch_results, batch_request.combine.top_k
-                )
-            case VectorStoreQueryMode.SPARSE:
-                raise VertexAIQueryError(
-                    "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
-                    "configured in the collection schema. Consider using TEXT_SEARCH mode "
-                    "for keyword search or HYBRID mode for combined vector + keyword search.",
-                )
-            case _:  # Fall back to default for unsupported modes
-                if query.mode != VectorStoreQueryMode.DEFAULT:
-                    _logger.warning(
-                        f"Query mode {query.mode} not explicitly supported, falling back to DEFAULT",
-                    )
-                vector_search = self._build_vector_search(query, v2_filter)
-                request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, vector_search=vector_search
-                )
-                results = self.v2_search_client.search_data_objects(request)
-                return self._process_search_results(results)
-
-    async def _aquery_v2(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> VectorStoreQueryResult:
-        """
-        Query collection using v2 API with support for multiple query modes.
-
-        Args:
-            store: The VertexAIVectorStore instance
-            query: The vector store query with mode specification
-            **kwargs: Additional keyword arguments
-
-        Returns:
-            Vector store query result
-
-        Supported modes:
-            - DEFAULT: Dense vector similarity search
-            - TEXT_SEARCH: Full-text keyword search
-            - HYBRID: Dense vector + text search with RRF/VertexRanker
-            - SEMANTIC_HYBRID: Dense vector + semantic search with ranker
-            - SPARSE: (Phase 2) Sparse vector search
-
-        """
-        from google.cloud.vectorsearch_v1beta import SearchDataObjectsRequest
-
-        _logger.info(
-            f"Async querying v2 collection: {self.collection_id} with mode: {query.mode}",
-        )
-        if query.mode == VectorStoreQueryMode.SPARSE:
-            raise VertexAIQueryError(
-                "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
-                "configured in the collection schema. Consider using TEXT_SEARCH mode "
-                "for keyword search or HYBRID mode for combined vector + keyword search.",
-            )
-
-        # prepare filters once for all search types
-        v2_filter = convert_filters_to_v2_format(query.filters)
-
-        # Route based on query mode
-        match query.mode:
-            case VectorStoreQueryMode.TEXT_SEARCH:
-                text_search = self._build_text_search(query, v2_filter)
-                request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, text_search=text_search
-                )
-                results = await self.v2_search_async_client.search_data_objects(request)
-                return await self._process_async_search_results(results)
-            case VectorStoreQueryMode.HYBRID:
-                batch_request = self._build_hybrid_query_request(query, v2_filter)
-                batch_results = (
-                    await self.v2_search_async_client.batch_search_data_objects(
-                        batch_request
-                    )
-                )
-                return self._process_batch_search_results(
-                    batch_results, batch_request.combine.top_k
-                )
-            case VectorStoreQueryMode.SEMANTIC_HYBRID:
-                batch_request = self._build_semantic_hybrid_query_request(
-                    query, v2_filter
-                )
-                batch_results = (
-                    await self.v2_search_async_client.batch_search_data_objects(
-                        batch_request
-                    )
-                )
-                return self._process_batch_search_results(
-                    batch_results, batch_request.combine.top_k
-                )
-            case VectorStoreQueryMode.SPARSE:
-                raise VertexAIQueryError(
-                    "SPARSE mode is planned for Phase 2 and requires a sparse vector field "
-                    "configured in the collection schema. Consider using TEXT_SEARCH mode "
-                    "for keyword search or HYBRID mode for combined vector + keyword search.",
                 )
             case _:
-                # Fall back to default for unsupported modes
-                if query.mode != VectorStoreQueryMode.DEFAULT:
-                    _logger.warning(
-                        f"Query mode {query.mode} not explicitly supported, falling back to DEFAULT",
+                raise VertexAIQueryError(
+                    f"Unsupported query mode: {query.mode}, supported modes: "
+                    f"DEFAULT, SPARSE, TEXT_SEARCH, HYBRID, SEMANTIC_HYBRID"
+                )
+
+    @override
+    async def aquery(
+        self,
+        query: VectorStoreQuery,
+        *,
+        sparse_embedding: SparseEmbedding | None = None,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
+        """
+        Asynchronously search index for nodes using a specific search mode.
+
+        Supported modes:
+
+        * DEFAULT: Dense vector similarity search via ``query.query_embedding`` or (v2
+          only) server-side semantic search.
+        * SPARSE: (V2 only) Sparse vector search
+        * TEXT_SEARCH: (V2 only) Full-text keyword search
+        * HYBRID: (V2 only) Dense vector + text search with RRF ranker
+        * SEMANTIC_HYBRID: (V2 only) Dense vector + semantic search with ranker
+
+        Args:
+            query: The vector store query with mode specification
+            sparse_embedding:
+                (V2 only) A sparse embedding for the query, if query.mode is ``SPARSE``.
+
+                ``VectorStoreQuery`` does not currently have a field for sparse embeddings,
+                so it must be supplied as a keyword argument for now.
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            Vector store query result
+
+        Raises:
+            VertexAIQueryError: For invalid ``query`` parameters for the selected mode.
+
+        """
+        if FeatureFlags.should_use_v2(self.api_version):
+            # No fallback - v2 requires v2 SDK
+            self._sdk_manager.ensure_v2_available()
+            return await self._aquery_v2(
+                query, sparse_embedding=sparse_embedding, **kwargs
+            )
+        else:
+            if sparse_embedding is not None:
+                raise VertexAIInputError(
+                    "Sparse vector search is not supported in api_version='v1'"
+                )
+            # use sync version
+            return self._query_v1(query, **kwargs)
+
+    async def _aquery_v2(
+        self,
+        query: VectorStoreQuery,
+        *,
+        sparse_embedding: SparseEmbedding | None = None,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
+        """Asynchronously search V2 collection for nodes using a specific search mode."""
+        from google.cloud.vectorsearch_v1beta import SearchDataObjectsRequest
+
+        _logger.info(
+            f"Querying (async) V2 collection='{self.collection_id}' using mode='{query.mode.value}'"
+        )
+        # prepare filters and output fields once for all search types
+        v2_filter = convert_filters_to_v2_format(query.filters)
+        output_fields = self._get_output_fields(query.output_fields)
+
+        # Route based on query mode
+        match query.mode:
+            case VectorStoreQueryMode.DEFAULT:
+                if query.query_embedding:
+                    _logger.debug(f"Using dense search for mode={query.mode.value}")
+                    dense_search = self._build_dense_vector_search(
+                        query, v2_filter, output_fields
                     )
-                vector_search = self._build_vector_search(query, v2_filter)
+                    request = SearchDataObjectsRequest(
+                        parent=self._collection_parent, vector_search=dense_search
+                    )
+                else:
+                    _logger.debug(f"Using semantic search for mode={query.mode.value}")
+                    semantic_search = self._build_semantic_search(
+                        query, v2_filter, output_fields
+                    )
+                    request = SearchDataObjectsRequest(
+                        parent=self._collection_parent, semantic_search=semantic_search
+                    )
+                results = await self.v2_search_async_client.search_data_objects(request)
+                return await self._process_async_search_results(results)
+            case VectorStoreQueryMode.SPARSE:
+                sparse_search = self._build_sparse_vector_search(
+                    query, sparse_embedding, v2_filter, output_fields
+                )
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, vector_search=vector_search
+                    parent=self._collection_parent, vector_search=sparse_search
                 )
                 results = await self.v2_search_async_client.search_data_objects(request)
                 return await self._process_async_search_results(results)
+            case VectorStoreQueryMode.TEXT_SEARCH:
+                text_search = self._build_text_search(query, v2_filter, output_fields)
+                request = SearchDataObjectsRequest(
+                    parent=self._collection_parent, text_search=text_search
+                )
+                results = await self.v2_search_async_client.search_data_objects(request)
+                return await self._process_async_search_results(results)
+            case VectorStoreQueryMode.HYBRID:
+                batch_request = self._build_hybrid_query_request(
+                    query, sparse_embedding, v2_filter, output_fields
+                )
+                batch_results = (
+                    await self.v2_search_async_client.batch_search_data_objects(
+                        batch_request
+                    )
+                )
+                return self._process_batch_search_results(
+                    batch_results, batch_request.combine.top_k
+                )
+            case VectorStoreQueryMode.SEMANTIC_HYBRID:
+                batch_request = self._build_semantic_hybrid_query_request(
+                    query, sparse_embedding, v2_filter, output_fields
+                )
+                batch_results = (
+                    await self.v2_search_async_client.batch_search_data_objects(
+                        batch_request
+                    )
+                )
+                return self._process_batch_search_results(
+                    batch_results, batch_request.combine.top_k
+                )
+            case _:
+                raise VertexAIQueryError(
+                    f"Unsupported query mode: {query.mode}, supported modes: "
+                    f"DEFAULT, SPARSE, TEXT_SEARCH, HYBRID, SEMANTIC_HYBRID"
+                )
 
-    def _build_vector_search(
-        self, query: VectorStoreQuery, v2_filter: dict[str, Any] | None
+    def _get_output_fields(
+        self, output_fields: list[str] | None
+    ) -> dict[str, list[str]]:
+        if not output_fields:
+            return self.query_output_fields
+        data_fields: list[str] = []
+        vector_fields: list[str] = []
+        for field_ in set(output_fields):
+            if field_ in self.v2_data_fields:
+                data_fields.append(field_)
+            elif field_ in self.v2_vector_fields:
+                vector_fields.append(field_)
+            else:
+                _logger.error(f"Unknown field passed in query output fields: {field_}")
+        out_fields = {**self.query_output_fields}
+        if data_fields:
+            out_fields["data_fields"] = sorted(data_fields)
+        if vector_fields:
+            out_fields["vector_fields"] = sorted(vector_fields)
+        return out_fields
+
+    def _build_dense_vector_search(
+        self,
+        query: VectorStoreQuery,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
     ) -> "VectorSearch":
         """
         Build a search object for dense vector similarity search.
@@ -1577,9 +1723,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         This search type relies on client-side embedding of the query text, and thus
         requires a vector to be passed in the query.
 
+        The field to use can be passed as ``query.embedding_field``; otherwise, the
+        default ``.embedding_field`` is used.
+
         Args:
             query: Query with ``query_embedding`` set.
             v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
 
         Returns:
             A vector search object to be included in a search request.
@@ -1598,14 +1748,64 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             "search_field": query.embedding_field or self.embedding_field,
             "vector": DenseVector(values=query.query_embedding),
             "top_k": query.similarity_top_k,
-            "output_fields": self.query_output_fields,
+            "output_fields": output_fields,
+        }
+        if v2_filter:
+            search_args["filter"] = v2_filter
+        return VectorSearch(search_args)
+
+    def _build_sparse_vector_search(
+        self,
+        query: VectorStoreQuery,
+        sparse_embedding: SparseEmbedding | None,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
+    ) -> "VectorSearch":
+        """
+        Build a search object for sparse vector similarity search.
+
+        This search type relies on client-side embedding of the query text, and thus
+        requires a vector to be passed in the query.
+
+        The field to use can be passed as ``query.embedding_field``; otherwise, the
+        default ``.sparse_embedding_field`` is used.
+
+        Args:
+            query: Query with relevant optional fields set.
+            sparse_embedding: Sparse embedding of the query.
+            v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
+
+        Returns:
+            A vector search object to be included in a search request.
+
+        Raises:
+            VertexAIQueryError: If a non-null ``sparse_embedding`` is not passed.
+
+        """
+        from google.cloud.vectorsearch_v1beta import SparseVector, VectorSearch
+
+        if not sparse_embedding:
+            raise VertexAIQueryError(
+                "For mode=SPARSE, a 'sparse_embedding' must be passed"
+            )
+        search_args: dict[str, Any] = {
+            "search_field": query.embedding_field or self.sparse_embedding_field,
+            "sparse_vector": SparseVector(
+                indices=sparse_embedding.keys(), values=sparse_embedding.values()
+            ),
+            "top_k": query.sparse_top_k or query.similarity_top_k,
+            "output_fields": output_fields,
         }
         if v2_filter:
             search_args["filter"] = v2_filter
         return VectorSearch(search_args)
 
     def _build_text_search(
-        self, query: VectorStoreQuery, v2_filter: dict[str, Any] | None
+        self,
+        query: VectorStoreQuery,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
     ) -> "TextSearch":
         """
         Build a search object for full-text keyword search.
@@ -1613,6 +1813,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             query: Query with ``query_str`` set.
             v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
 
         Returns:
             A text search object to be included in a search request.
@@ -1637,54 +1838,96 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             "search_text": query.query_str,
             "data_field_names": self.text_search_fields,
             "top_k": query.sparse_top_k or query.similarity_top_k,
-            "output_fields": self.query_output_fields,
+            "output_fields": output_fields,
         }
         if v2_filter:
             search_args["filter"] = v2_filter
         return TextSearch(search_args)
 
     def _build_semantic_search(
-        self, query: VectorStoreQuery, v2_filter: dict[str, Any] | None
+        self,
+        query: VectorStoreQuery,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
     ) -> "SemanticSearch":
         """
         Build a search object for semantic similarity search.
 
         This search type relies on server-side auto-embedding of the query text, so it
-        does not require a vector in the input query.
+        does not use any vectors passed with the input query. The embedding field configured in
+        ``.semantic_search_embedding_field`` is used if defined, otherwise the
+
+        To facilitate use with hybrid search (either HYBRID or SEMANTIC_HYBRID), the
+        following priority order is used to determine the 'search_field' used:
+
+        1. The store's ``.semantic_search_embedding_field``, if defined
+        2. The value of ``query.embedding_field``, if defined and enabled for auto-embedding
+        2. The store's of ``.embedding_field``, if defined and enabled for auto-embedding
 
         Args:
-            query: Query with ``query_embedding`` set.
+            query: Query with ``query_str`` set.
             v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
 
         Returns:
             A semantic search object to be included in a search request.
 
         Raises:
-            VertexAIQueryError: If ``query_embedding`` is not set.
+            VertexAIQueryError:
+                If ``query.query_str`` is null, or the target embedding field does not
+                support auto-embedding.
 
         """
         from google.cloud.vectorsearch_v1beta import SemanticSearch
 
+        if query.query_str is None:
+            raise VertexAIQueryError(
+                f"For semantic search with mode={query.mode.value}, the "
+                f"'query.query_str' field must be set"
+            )
+
+        # determine the appropriate field; complexity is due to requirement support
+        # both individual and hybrid semantic searches + limited llama-index API
+        search_field: str | None = None
+        for field_ in [
+            self.semantic_search_embedding_field,
+            query.embedding_field,
+            self.embedding_field,
+        ]:
+            if field_ in self.v2_vertex_embedding_fields:
+                search_field = field_
+                break
+        if not search_field:
+            raise VertexAIQueryError(
+                f"No valid auto-embedding field passed for semantic search, available "
+                f"fields: {self.v2_vertex_embedding_fields}"
+            )
+
         search_args: dict[str, Any] = {
             "search_text": query.query_str,
-            "search_field": query.embedding_field or self.embedding_field,
+            "search_field": search_field,
             "task_type": self.semantic_task_type,
             "top_k": query.similarity_top_k,
-            "output_fields": self.query_output_fields,
+            "output_fields": output_fields,
         }
         if v2_filter:
             search_args["filter"] = v2_filter
         return SemanticSearch(search_args)
 
     def _build_hybrid_query_request(
-        self, query: VectorStoreQuery, v2_filter: dict[str, Any] | None
+        self,
+        query: VectorStoreQuery,
+        sparse_embedding: SparseEmbedding | None,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
     ) -> "BatchSearchDataObjectsRequest":
         """
-        Build a query for hybrid search: dense + TextSearch with server-side RRF.
+        Build a query for hybrid search: vector + text search with server-side RRF.
 
-        When ``query_embedding`` is provided, uses VectorSearch (client-side
-        embeddings) for the dense leg. Otherwise, falls back to SemanticSearch
-        (server-side auto-embedding).
+        Text search based on ``query.query_str`` is always used. When
+        ``query.query_embedding`` and/or ``sparse_embedding`` are provided, the vector
+        search uses all that are provided. Otherwise, this falls back to semantic search
+        (server-side auto-embedding) for the vector leg.
 
         Uses ``BatchSearchDataObjectsRequest`` with ``CombineResultsOptions``
         to perform server-side result fusion.
@@ -1693,8 +1936,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             query:
                 Query with ``query_str`` set.
 
-                Optionally ``query_embedding`` for client-side embedding mode.
+                Optionally include ``query_embedding`` for client-side embedding mode.
+            sparse_embedding: Sparse embedding of the query, if needed.
             v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
 
         Returns:
             A request to execute a hybrid search based on the query.
@@ -1724,16 +1969,26 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # always use text search
         searches: list[Search] = [
-            Search(text_search=self._build_text_search(query, v2_filter))
+            Search(text_search=self._build_text_search(query, v2_filter, output_fields))
         ]
 
         # use dense search if an embedding exists
         if query.query_embedding is not None:
-            vector_search = self._build_vector_search(query, v2_filter)
-            searches.append(Search(vector_search=vector_search))
-        # otherwise use server-side auto-embedding
-        else:
-            semantic_search = self._build_semantic_search(query, v2_filter)
+            dense_search = self._build_dense_vector_search(
+                query, v2_filter, output_fields
+            )
+            searches.append(Search(vector_search=dense_search))
+        # use sparse vector search if the embedding is passed
+        if sparse_embedding is not None:
+            sparse_search = self._build_sparse_vector_search(
+                query, sparse_embedding, v2_filter, output_fields
+            )
+            searches.append(Search(vector_search=sparse_search))
+        # if neither dense nor sparse were passed, fall back to semantic search
+        if len(searches) == 1:
+            semantic_search = self._build_semantic_search(
+                query, v2_filter, output_fields
+            )
             searches.append(Search(semantic_search=semantic_search))
 
         # set up ranker
@@ -1743,23 +1998,34 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             searches=searches,
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
                 ranker=ranker,
-                top_k=query.hybrid_top_k or query.similarity_top_k,
-                output_fields=self.query_output_fields,
+                top_k=(
+                    query.hybrid_top_k or query.sparse_top_k or query.similarity_top_k
+                ),
+                output_fields=output_fields,
             ),
         )
 
     def _build_semantic_hybrid_query_request(
-        self, query: VectorStoreQuery, v2_filter: dict[str, Any] | None
+        self,
+        query: VectorStoreQuery,
+        sparse_embedding: SparseEmbedding | None,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
     ) -> "BatchSearchDataObjectsRequest":
         """
-        Build a query for semantic hybrid: VectorSearch + SemanticSearch with RRF.
+        Build a query for semantic hybrid: dense/sparse vector + semantic search with RRF.
 
         Uses ``BatchSearchDataObjectsRequest`` combining a dense vector search
         with semantic search and server-side RRF ranking.
 
         Args:
-            query: Query with ``query_str`` set.
+            query:
+                Query with ``query_str`` set.
+
+                Optionally include ``query_embedding`` for client-side embedding mode.
+            sparse_embedding: Sparse embedding of the query, if needed.
             v2_filter: V2-compatible filters to be applied to the search, if any.
+            output_fields: The fields to return in search results.
 
         Returns:
             A request to execute a semantic hybrid search based on the query.
@@ -1786,13 +2052,27 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # always use semantic search
         searches: list[Search] = [
-            Search(semantic_search=self._build_semantic_search(query, v2_filter))
+            Search(
+                semantic_search=self._build_semantic_search(
+                    query, v2_filter, output_fields
+                )
+            )
         ]
         # use dense search if an embedding exists
         if query.query_embedding is not None:
             searches.append(
-                Search(vector_search=self._build_vector_search(query, v2_filter))
+                Search(
+                    vector_search=self._build_dense_vector_search(
+                        query, v2_filter, output_fields
+                    )
+                )
             )
+        # use sparse vector search if the embedding is passed
+        if sparse_embedding is not None:
+            sparse_search = self._build_sparse_vector_search(
+                query, sparse_embedding, v2_filter, output_fields
+            )
+            searches.append(Search(vector_search=sparse_search))
 
         # set up ranker
         ranker = self._build_ranker(query, num_searches=len(searches))
@@ -1802,7 +2082,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
                 ranker=ranker,
                 top_k=query.hybrid_top_k or query.similarity_top_k,
-                output_fields=self.query_output_fields,
+                output_fields=output_fields,
             ),
         )
 
