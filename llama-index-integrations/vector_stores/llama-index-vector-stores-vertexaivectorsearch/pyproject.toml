@@ -95,7 +95,23 @@ import_path = "llama_index.vector_stores.vertexaivectorsearch"
 VertexAIVectorStore = "llama-index"
 
 [tool.mypy]
-disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+python_version = "3.10"
+disallow_untyped_defs = true
 ignore_missing_imports = true
-python_version = "3.8"
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_unused_configs = true
+no_implicit_optional = true
+namespace_packages = true
+explicit_package_bases = true
+warn_unreachable = true
+show_error_context = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+plugins = [
+    "pydantic.mypy",
+]
