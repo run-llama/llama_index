@@ -67,6 +67,7 @@ if V2_AVAILABLE:
         BatchSearchDataObjectsRequest,
         BatchSearchDataObjectsResponse,
         BatchUpdateDataObjectsRequest,
+        Collection,
         CreateDataObjectRequest,
         DataObject,
         DataObjectSearchServiceAsyncClient,
@@ -924,10 +925,46 @@ class TestV2FilterConversion:
 
 
 @pytest.fixture
-def mock_v2_vector_search_service_client() -> MagicMock:
+def mock_v2_collection() -> "Collection":
+    return Collection(
+        {
+            "name": V2_COLLECTION_PARENT,
+            "create_time": "2026-04-01T10:00:00.000Z",
+            "update_time": "2026-04-02T11:00:00.000Z",
+            "data_schema": {
+                "type": "object",
+                "required": ["text", "user_id"],
+                "properties": {
+                    "publish_time": {"type": "number"},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                    "text": {"type": "string"},
+                    "title": {"type": "string"},
+                    "user_id": {"type": "number"},
+                },
+            },
+            "vector_schema": {
+                "embedding": {"dense_vector": {"dimensions": 1024}},
+                "sparse_embedding": {"sparse_vector": {}},
+                "semantic_embedding": {
+                    "dense_vector": {
+                        "dimensions": 1024,
+                        "vertex_embedding_config": {
+                            "model_id": "model1",
+                            "text_template": "{text}",
+                            "task_type": "RETRIEVAL_QUERY",
+                        },
+                    },
+                },
+            },
+        }
+    )
+
+
+@pytest.fixture
+def mock_v2_vector_search_service_client(mock_v2_collection: "Collection") -> MagicMock:
     return MagicMock(
         spec=VectorSearchServiceClient,
-        get_collection=MagicMock(return_value=MagicMock(vector_schema={})),
+        get_collection=MagicMock(return_value=mock_v2_collection),
     )
 
 
@@ -2891,57 +2928,92 @@ class TestUnitV2GetNodes:
         assert result == []
 
 
-QUERY_OUTPUT_FIELDS = {"data_fields": ["*"], "metadata_fields": ["*"]}
+DEFAULT_OUTPUT_FIELDS = {"data_fields": ["*"], "metadata_fields": ["*"]}
+CUSTOM_OUTPUT_FIELDS = {
+    "data_fields": ["text", "title"],
+    "vector_fields": ["embedding"],
+    "metadata_fields": ["*"],
+}
 INPUT_FILTERS = MetadataFilters(
     filters=[MetadataFilter(key="some_key", value=3, operator=FilterOperator.GT)]
 )
-VECTOR_SEARCH_BASIC = {
+DENSE_SEARCH_BASIC = {
     "search_field": "embedding",
     "vector": {"values": [0.1, 0.2, 0.3, 0.4]},
     "top_k": 3,
-    "output_fields": QUERY_OUTPUT_FIELDS,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
 }
-VECTOR_SEARCH_FILTERS = {
-    **VECTOR_SEARCH_BASIC,
+DENSE_SEARCH_FILTERS = {
+    **DENSE_SEARCH_BASIC,
     "search_field": "other_embedding",
     "filter": {"some_key": {"$gt": 3}},
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
+}
+SPARSE_SEARCH_BASIC_K3 = {
+    "search_field": "sparse_embedding",
+    "sparse_vector": {"indices": [1, 2, 3, 4], "values": [0.1, 0.2, 0.3, 0.4]},
+    "top_k": 3,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
+}
+SPARSE_SEARCH_BASIC_K5 = {
+    **SPARSE_SEARCH_BASIC_K3,
+    "top_k": 5,
+}
+SPARSE_SEARCH_FILTERS = {
+    **SPARSE_SEARCH_BASIC_K3,
+    "search_field": "other_sparse_embedding",
+    "filter": {"some_key": {"$gt": 3}},
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
 }
 TEXT_SEARCH_BASIC = {
     "search_text": "my search query",
     "data_field_names": ["text", "title"],
     "top_k": 5,
-    "output_fields": QUERY_OUTPUT_FIELDS,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
 }
 TEXT_SEARCH_FILTERS_K3 = {
     **TEXT_SEARCH_BASIC,
     "top_k": 3,
     "filter": {"some_key": {"$gt": 3}},
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
 }
 TEXT_SEARCH_FILTERS_K5 = {
     **TEXT_SEARCH_BASIC,
     "filter": {"some_key": {"$gt": 3}},
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
 }
 SEMANTIC_SEARCH_BASIC = {
     "search_text": "my search query",
-    "search_field": "embedding",
+    "search_field": "semantic_embedding",
     "task_type": "RETRIEVAL_QUERY",
     "top_k": 3,
-    "output_fields": QUERY_OUTPUT_FIELDS,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
 }
 SEMANTIC_SEARCH_FILTERS = {
     **SEMANTIC_SEARCH_BASIC,
-    "search_field": "other_embedding",
+    "search_field": "semantic_embedding",
     "filter": {"some_key": {"$gt": 3}},
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
 }
-RRF_RANKER_1_SEARCH = {
+RRF_RANKER_1 = {
     "ranker": {"rrf": {"weights": [1.0]}},
     "top_k": 6,
-    "output_fields": QUERY_OUTPUT_FIELDS,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
 }
-RRF_RANKER_2_SEARCHES = {
+RRF_RANKER_2 = {
     "ranker": {"rrf": {"weights": [0.5, 0.5]}},
     "top_k": 6,
-    "output_fields": QUERY_OUTPUT_FIELDS,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
+}
+RRF_RANKER_2_CUSTOM_FIELDS = {
+    "ranker": {"rrf": {"weights": [0.5, 0.5]}},
+    "top_k": 6,
+    "output_fields": CUSTOM_OUTPUT_FIELDS,
+}
+RRF_RANKER_3 = {
+    "ranker": {"rrf": {"weights": [1 / 3, 1 / 3, 1 / 3]}},
+    "top_k": 6,
+    "output_fields": DEFAULT_OUTPUT_FIELDS,
 }
 
 
@@ -2965,6 +3037,7 @@ class TestUnitV2Query:
             text_search_fields=["text", "title"],
             embedding_field="embedding",
             sparse_embedding_field="sparse_embedding",
+            semantic_search_embedding_field="semantic_embedding",
             dense_embedding_fields={"title_embedding"},
             sparse_embedding_fields={"sparse_embedding"},
             enable_hybrid=True,
@@ -3011,32 +3084,98 @@ class TestUnitV2Query:
         return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
 
     @pytest.mark.parametrize(
-        ("input_query", "expected_search", "uses_batch_request"),
+        ("input_query", "expected_search", "query_kwargs", "uses_batch_request"),
         [
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.DEFAULT,
                     query_embedding=[0.1, 0.2, 0.3, 0.4],
                     similarity_top_k=3,
                 ),
-                {"parent": V2_COLLECTION_PARENT, "vector_search": VECTOR_SEARCH_BASIC},
+                {"parent": V2_COLLECTION_PARENT, "vector_search": DENSE_SEARCH_BASIC},
+                {},
                 False,
+                id="mode=default (dense), embedding_field=store, filter=no",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.DEFAULT,
                     query_embedding=[0.1, 0.2, 0.3, 0.4],
                     embedding_field="other_embedding",
                     similarity_top_k=3,
                     filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
                 ),
                 {
                     "parent": V2_COLLECTION_PARENT,
-                    "vector_search": VECTOR_SEARCH_FILTERS,
+                    "vector_search": DENSE_SEARCH_FILTERS,
                 },
+                {},
                 False,
+                id="mode=default (dense), embedding_field=query, filter=yes",
             ),
-            (
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_str="my search query",
+                    similarity_top_k=3,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "semantic_search": SEMANTIC_SEARCH_BASIC,
+                },
+                {},
+                False,
+                id="mode=default (semantic), embedding_field=store-semantic, filter=no",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_str="my search query",
+                    embedding_field="embedding",
+                    similarity_top_k=3,
+                    filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "semantic_search": SEMANTIC_SEARCH_FILTERS,
+                },
+                {},
+                False,
+                id="mode=default (semantic), embedding_field=query, filter=yes",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SPARSE,
+                    query_embedding=None,
+                    sparse_top_k=3,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "vector_search": SPARSE_SEARCH_BASIC_K3,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                False,
+                id="mode=sparse, embedding_field=store, top_k=sparse, filter=no",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SPARSE,
+                    embedding_field="other_sparse_embedding",
+                    similarity_top_k=3,
+                    filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "vector_search": SPARSE_SEARCH_FILTERS,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                False,
+                id="mode=sparse, embedding_field=query, top_k=similarity, filter=yes",
+            ),
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.TEXT_SEARCH,
                     query_str="my search query",
@@ -3044,19 +3183,24 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                 ),
                 {"parent": V2_COLLECTION_PARENT, "text_search": TEXT_SEARCH_BASIC},
+                {},
                 False,
+                id="mode=text_search, filter=no, top_k=sparse",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.TEXT_SEARCH,
                     query_str="my search query",
                     similarity_top_k=3,
                     filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
                 ),
                 {"parent": V2_COLLECTION_PARENT, "text_search": TEXT_SEARCH_FILTERS_K3},
+                {},
                 False,
+                id="mode=text_search, filter=yes, top_k=similarity",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.HYBRID,
                     query_str="my search query",
@@ -3069,13 +3213,15 @@ class TestUnitV2Query:
                     "parent": V2_COLLECTION_PARENT,
                     "searches": [
                         {"text_search": TEXT_SEARCH_BASIC},
-                        {"vector_search": VECTOR_SEARCH_BASIC},
+                        {"vector_search": DENSE_SEARCH_BASIC},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2,
                 },
+                {},
                 True,
+                id="mode=hybrid, vector_search=dense, embedding_field=store, filter=no, top_k=hybrid",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.HYBRID,
                     query_str="my search query",
@@ -3085,18 +3231,21 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
                 ),
                 {
                     "parent": V2_COLLECTION_PARENT,
                     "searches": [
                         {"text_search": TEXT_SEARCH_FILTERS_K5},
-                        {"vector_search": VECTOR_SEARCH_FILTERS},
+                        {"vector_search": DENSE_SEARCH_FILTERS},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2_CUSTOM_FIELDS,
                 },
+                {},
                 True,
+                id="mode=hybrid, vector_search=dense, embedding_field=query, filter=yes, top_k=hybrid",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.HYBRID,
                     query_str="my search query",
@@ -3110,11 +3259,13 @@ class TestUnitV2Query:
                         {"text_search": TEXT_SEARCH_BASIC},
                         {"semantic_search": SEMANTIC_SEARCH_BASIC},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2,
                 },
+                {},
                 True,
+                id="mode=hybrid, vector_search=semantic, embedding_field=store, filter=no, top_k=hybrid",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.HYBRID,
                     query_str="my search query",
@@ -3123,6 +3274,7 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
                 ),
                 {
                     "parent": V2_COLLECTION_PARENT,
@@ -3130,11 +3282,76 @@ class TestUnitV2Query:
                         {"text_search": TEXT_SEARCH_FILTERS_K5},
                         {"semantic_search": SEMANTIC_SEARCH_FILTERS},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2_CUSTOM_FIELDS,
                 },
+                {},
                 True,
+                id="mode=hybrid, vector_search=semantic, embedding_field=query, filter=yes, top_k=hybrid",
             ),
-            (
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_BASIC},
+                        {"vector_search": DENSE_SEARCH_BASIC},
+                    ],
+                    "combine": RRF_RANKER_2,
+                },
+                {},
+                True,
+                id="mode=hybrid, vector_search=dense, embedding_field=store, filter=no, top_k=hybrid",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_BASIC},
+                        {"vector_search": SPARSE_SEARCH_BASIC_K5},
+                    ],
+                    "combine": RRF_RANKER_2,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                True,
+                id="mode=hybrid, vector_search=sparse, embedding_field=store, filter=no, top_k=hybrid",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"text_search": TEXT_SEARCH_BASIC},
+                        {"vector_search": DENSE_SEARCH_BASIC},
+                        {"vector_search": SPARSE_SEARCH_BASIC_K5},
+                    ],
+                    "combine": RRF_RANKER_3,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                True,
+                id="mode=hybrid, vector_search=dense+sparse, embedding_field=store, filter=no, top_k=hybrid",
+            ),
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
                     query_str="my search query",
@@ -3147,13 +3364,57 @@ class TestUnitV2Query:
                     "parent": V2_COLLECTION_PARENT,
                     "searches": [
                         {"semantic_search": SEMANTIC_SEARCH_BASIC},
-                        {"vector_search": VECTOR_SEARCH_BASIC},
+                        {"vector_search": DENSE_SEARCH_BASIC},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2,
                 },
+                {},
                 True,
+                id="mode=semantic_hybrid, vector_search=dense, embedding_field=store, filter=no, top_k=hybrid",
             ),
-            (
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my search query",
+                    sparse_top_k=3,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"semantic_search": SEMANTIC_SEARCH_BASIC},
+                        {"vector_search": SPARSE_SEARCH_BASIC_K3},
+                    ],
+                    "combine": RRF_RANKER_2,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                True,
+                id="mode=semantic_hybrid, vector_search=sparse, embedding_field=store, filter=no, top_k=hybrid",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my search query",
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                    similarity_top_k=3,
+                    hybrid_top_k=6,
+                ),
+                {
+                    "parent": V2_COLLECTION_PARENT,
+                    "searches": [
+                        {"semantic_search": SEMANTIC_SEARCH_BASIC},
+                        {"vector_search": DENSE_SEARCH_BASIC},
+                        {"vector_search": SPARSE_SEARCH_BASIC_K5},
+                    ],
+                    "combine": RRF_RANKER_3,
+                },
+                {"sparse_embedding": {1: 0.1, 2: 0.2, 3: 0.3, 4: 0.4}},
+                True,
+                id="mode=semantic_hybrid, vector_search=dense+sparse, embedding_field=store, filter=no, top_k=hybrid",
+            ),
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
                     query_str="my search query",
@@ -3163,18 +3424,21 @@ class TestUnitV2Query:
                     similarity_top_k=3,
                     hybrid_top_k=6,
                     filters=INPUT_FILTERS,
+                    output_fields=["text", "title", "embedding"],
                 ),
                 {
                     "parent": V2_COLLECTION_PARENT,
                     "searches": [
                         {"semantic_search": SEMANTIC_SEARCH_FILTERS},
-                        {"vector_search": VECTOR_SEARCH_FILTERS},
+                        {"vector_search": DENSE_SEARCH_FILTERS},
                     ],
-                    "combine": RRF_RANKER_2_SEARCHES,
+                    "combine": RRF_RANKER_2_CUSTOM_FIELDS,
                 },
+                {},
                 True,
+                id="mode=semantic_hybrid, vector_search=dense, embedding_field=query, filter=yes, top_k=hybrid",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
                     query_str="my search query",
@@ -3185,33 +3449,12 @@ class TestUnitV2Query:
                 {
                     "parent": V2_COLLECTION_PARENT,
                     "searches": [{"semantic_search": SEMANTIC_SEARCH_BASIC}],
-                    "combine": RRF_RANKER_1_SEARCH,
+                    "combine": RRF_RANKER_1,
                 },
+                {},
                 True,
+                id="mode=semantic_hybrid, vector_search=none, embedding_field=store, filter=no, top_k=hybrid",
             ),
-            (
-                VectorStoreQuery(
-                    mode=VectorStoreQueryMode.MMR,  # unsupported, falls back to DEFAULT
-                    query_embedding=[0.1, 0.2, 0.3, 0.4],
-                    similarity_top_k=3,
-                ),
-                {"parent": V2_COLLECTION_PARENT, "vector_search": VECTOR_SEARCH_BASIC},
-                False,
-            ),
-        ],
-        ids=[
-            "mode=dense, embedding_field=store, filter=no",
-            "mode=dense, embedding_field=query, filter=yes",
-            "mode=text_search, filter=no, top_k=sparse",
-            "mode=text_search, filter=yes, top_k=similarity",
-            "mode=hybrid, dense_search=client, embedding_field=store, filter=no, top_k=hybrid",
-            "mode=hybrid, dense_search=client, embedding_field=query, filter=yes, top_k=hybrid",
-            "mode=hybrid, dense_search=auto-embed, embedding_field=store, filter=no, top_k=hybrid",
-            "mode=hybrid, dense_search=auto-embed, embedding_field=query, filter=yes, top_k=hybrid",
-            "mode=semantic_hybrid, vector_search=true, embedding_field=store, filter=no, top_k=hybrid",
-            "mode=semantic_hybrid, vector_search=true, embedding_field=query, filter=yes, top_k=hybrid",
-            "mode=semantic_hybrid, vector_search=false, embedding_field=store, filter=no, top_k=hybrid",
-            "mode=mmr (fallback to default), embedding_field=store, filter=no",
         ],
     )
     class TestValidInput:
@@ -3221,6 +3464,7 @@ class TestUnitV2Query:
             mock_v2_data_object_search_service_client: MagicMock,
             input_query: VectorStoreQuery,
             expected_search: dict[str, Any],
+            query_kwargs: dict[str, Any],
             uses_batch_request: bool,
             output_dense_search_results: list["SearchResult"],
             expected_query_result: VectorStoreQueryResult,
@@ -3243,7 +3487,7 @@ class TestUnitV2Query:
                 mock_v2_data_object_search_service_client.search_data_objects.return_value = raw_results
 
             # WHEN
-            actual_query_result = mock_v2_store.query(input_query)
+            actual_query_result = mock_v2_store.query(input_query, **query_kwargs)
 
             # THEN
             assert actual_query_result == expected_query_result
@@ -3264,6 +3508,7 @@ class TestUnitV2Query:
             mock_v2_data_object_search_service_async_client: MagicMock,
             input_query: VectorStoreQuery,
             expected_search: dict[str, Any],
+            query_kwargs: dict[str, Any],
             uses_batch_request: bool,
             output_dense_search_results: list["SearchResult"],
             expected_query_result: VectorStoreQueryResult,
@@ -3286,7 +3531,9 @@ class TestUnitV2Query:
                 mock_v2_data_object_search_service_async_client.search_data_objects.return_value = raw_results
 
             # WHEN
-            actual_query_result = await mock_v2_store.aquery(input_query)
+            actual_query_result = await mock_v2_store.aquery(
+                input_query, **query_kwargs
+            )
 
             # THEN
             assert actual_query_result == expected_query_result
@@ -3304,99 +3551,125 @@ class TestUnitV2Query:
     @pytest.mark.parametrize(
         ("input_query", "vector_store_update_fields", "error_match"),
         [
-            (
+            pytest.param(
                 VectorStoreQuery(
                     mode=VectorStoreQueryMode.DEFAULT,
-                    query_str="my query",
                     similarity_top_k=3,
                 ),
                 {},
-                r".*query_embedding. field must be set",
-            ),
-            (
-                VectorStoreQuery(
-                    mode=VectorStoreQueryMode.TEXT_SEARCH,
-                    query_embedding=[0.1, 0.2, 0.3, 0.4],
-                    sparse_top_k=5,
-                ),
-                {},
                 r".*query_str. field must be set",
+                id="mode=default, query_embedding=null, query_str=null",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
-                    mode=VectorStoreQueryMode.TEXT_SEARCH,
-                    query_str="my query",
-                    sparse_top_k=5,
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_str="my search query",
+                    similarity_top_k=3,
                 ),
-                {"text_search_fields": None},
-                r".*vector store field .text_search_fields. must be set",
+                {"semantic_search_embedding_field": "bad_field"},
+                r"No valid auto-embedding field passed for semantic search",
+                id="mode=default, store field doesn't support auto-embedding",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
-                    mode=VectorStoreQueryMode.HYBRID,
-                    query_str="my query",
-                    hybrid_top_k=6,
+                    mode=VectorStoreQueryMode.DEFAULT,
+                    query_str="my search query",
+                    embedding_field="bad_field",
+                    similarity_top_k=3,
                 ),
-                {"enable_hybrid": False},
-                r".*vector store field .enable_hybrid. must be True",
+                {"semantic_search_embedding_field": None},
+                r"No valid auto-embedding field passed for semantic search",
+                id="mode=default, no store auto-embedding, bad query embedding field",
             ),
-            (
+            pytest.param(
                 VectorStoreQuery(
-                    mode=VectorStoreQueryMode.HYBRID,
-                    query_embedding=[0.1, 0.2, 0.3, 0.4],
-                    hybrid_top_k=6,
-                ),
-                {},
-                r".*query_str. field must be set",
-            ),
-            (
-                VectorStoreQuery(
-                    mode=VectorStoreQueryMode.HYBRID,
-                    query_str="my query",
-                    hybrid_top_k=6,
-                ),
-                {"text_search_fields": None},
-                r".*vector store field .text_search_fields. must be set",
-            ),
-            (
-                VectorStoreQuery(
-                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
-                    query_str="my query",
-                    hybrid_top_k=6,
-                ),
-                {"enable_hybrid": False},
-                r".*vector store field .enable_hybrid. must be True",
-            ),
-            (
-                VectorStoreQuery(
-                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
-                    query_embedding=[0.1, 0.2, 0.3, 0.4],
-                    hybrid_top_k=6,
-                ),
-                {},
-                r".*query_str. field must be set",
-            ),
-            (
-                VectorStoreQuery(
-                    # mode that will likely be valid in the future
                     mode=VectorStoreQueryMode.SPARSE,
+                    similarity_top_k=3,
+                ),
+                {},
+                r"a .sparse_embedding. must be passed",
+                id="mode=sparse, sparse_embedding=null",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    sparse_top_k=5,
+                ),
+                {},
+                r".*query_str. field must be set",
+                id="mode=text_search, query_str=null",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.TEXT_SEARCH,
+                    query_str="my query",
+                    sparse_top_k=5,
+                ),
+                {"text_search_fields": None},
+                r".*vector store field .text_search_fields. must be set",
+                id="mode=text_search, store.text_search_fields=null",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"enable_hybrid": False},
+                r".*vector store field .enable_hybrid. must be True",
+                id="mode=hybrid, store.enable_hybrid=false",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
                     query_embedding=[0.1, 0.2, 0.3, 0.4],
                     hybrid_top_k=6,
                 ),
                 {},
-                r"SPARSE mode is planned for Phase 2",
+                r".*query_str. field must be set",
+                id="mode=hybrid, query_str=null",
             ),
-        ],
-        ids=[
-            "mode=dense, query_embedding=null",
-            "mode=text_search, query_str=null",
-            "mode=text_search, store.text_search_fields=null",
-            "mode=hybrid, store.enable_hybrid=false",
-            "mode=hybrid, query_str=null",
-            "mode=hybrid, store.text_search_fields=null",
-            "mode=semantic_hybrid, store.enable_hybrid=false",
-            "mode=semantic_hybrid, query_str=null",
-            "mode=sparse, currently unsupported",
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"text_search_fields": None},
+                r".*vector store field .text_search_fields. must be set",
+                id="mode=hybrid, store.text_search_fields=null",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_str="my query",
+                    hybrid_top_k=6,
+                ),
+                {"enable_hybrid": False},
+                r".*vector store field .enable_hybrid. must be True",
+                id="mode=semantic_hybrid, store.enable_hybrid=false",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    hybrid_top_k=6,
+                ),
+                {},
+                r".*query_str. field must be set",
+                id="mode=semantic_hybrid, query_str=null",
+            ),
+            pytest.param(
+                VectorStoreQuery(
+                    mode=VectorStoreQueryMode.MMR,  # unsupported, falls back to DEFAULT
+                    query_embedding=[0.1, 0.2, 0.3, 0.4],
+                    similarity_top_k=3,
+                ),
+                {},
+                "Unsupported query mode",
+                id="mode=mmr, not supported",
+            ),
         ],
     )
     class TestInvalidInput:
