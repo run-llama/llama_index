@@ -192,12 +192,17 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     content_field_metadata_mode: MetadataMode = MetadataMode.NONE
 
     # Ranker configuration
-    hybrid_ranker: Literal["rrf"] = "rrf"
+    hybrid_ranker: Literal["rrf", "vertex"] = "rrf"
     default_hybrid_alpha: Annotated[float, Ge(0.0), Le(1.0)] = 0.5
 
     # SemanticSearch configuration
     semantic_search_embedding_field: str | None = None
     semantic_task_type: str = "RETRIEVAL_QUERY"
+
+    # VertexRanker-specific parameters
+    vertex_ranker_model: str = Field(default="semantic-ranker-default@latest")
+    vertex_ranker_title_field: str | None = Field(default=None)
+    vertex_ranker_content_field: str | None = Field(default=None)
 
     # Shared parameters
     credentials_path: str | None = None
@@ -314,6 +319,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 raise ValueError(
                     "Parameter 'gcs_bucket_name' is only valid for api_version='v1'. "
                     "v2 does not require a staging bucket."
+                )
+
+        if self.hybrid_ranker == "vertex":
+            if (
+                self.vertex_ranker_title_field is None
+                and self.vertex_ranker_content_field is None
+            ):
+                _logger.warning(
+                    "VertexRanker works best with title_field and/or content_field configured. "
+                    "Consider setting vertex_ranker_title_field or vertex_ranker_content_field."
                 )
 
     @override
@@ -1899,16 +1914,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             searches.append(Search(semantic_search=semantic_search))
 
         # set up ranker
-        ranker = self._build_ranker(query, num_searches=len(searches))
+        top_k = query.hybrid_top_k or query.sparse_top_k or query.similarity_top_k
+        ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
             parent=self._collection_parent,
             searches=searches,
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
-                ranker=ranker,
-                top_k=(
-                    query.hybrid_top_k or query.sparse_top_k or query.similarity_top_k
-                ),
-                output_fields=output_fields,
+                ranker=ranker, top_k=top_k, output_fields=output_fields
             ),
         )
 
@@ -1982,14 +1994,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             searches.append(Search(vector_search=sparse_search))
 
         # set up ranker
-        ranker = self._build_ranker(query, num_searches=len(searches))
+        top_k = query.hybrid_top_k or query.similarity_top_k
+        ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
             parent=self._collection_parent,
             searches=searches,
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
-                ranker=ranker,
-                top_k=query.hybrid_top_k or query.similarity_top_k,
-                output_fields=output_fields,
+                ranker=ranker, top_k=top_k, output_fields=output_fields
             ),
         )
 
@@ -2092,13 +2103,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             return float(result.rank_score)
         return 1.0
 
-    def _build_ranker(self, query: VectorStoreQuery, num_searches: int) -> "Ranker":
+    def _build_ranker(
+        self, query: VectorStoreQuery, num_searches: int, top_k: int
+    ) -> "Ranker":
         """
         Build the appropriate ranker based on store configuration.
 
         Args:
             query: The query being executed
             num_searches: Number of searches being combined
+            top_k: Maximum number of results to return.
 
         Returns:
             Ranker object (RRF only currently)
@@ -2106,10 +2120,49 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         from google.cloud.vectorsearch_v1beta import Ranker, ReciprocalRankFusion
 
-        # RRF ranker (default)
-        alpha = query.alpha if query.alpha is not None else self.default_hybrid_alpha
-        weights = self._calculate_rrf_weights(alpha, num_searches)
-        return Ranker(rrf=ReciprocalRankFusion(weights=weights))
+        match self.hybrid_ranker:
+            case "rrf":
+                alpha = (
+                    query.alpha
+                    if query.alpha is not None
+                    else self.default_hybrid_alpha
+                )
+                weights = self._calculate_rrf_weights(alpha, num_searches)
+                return Ranker(rrf=ReciprocalRankFusion(weights=weights))
+
+            case "vertex":
+                try:
+                    from google.cloud.vectorsearch_v1beta import (  # type: ignore[attr-defined]
+                        VertexRanker,
+                    )
+                except ImportError as e:
+                    raise ImportError(
+                        "Support for hybrid_ranker='vertex' requires "
+                        "'google-cloud-vectorsearch>=0.11.0' and is not available in "
+                        "the currently installed version"
+                    ) from e
+
+                title_template: str | None = None
+                content_template: str | None = None
+                if self.vertex_ranker_title_field:
+                    title_template = f"{{{{ {self.vertex_ranker_title_field} }}}}"
+                if self.vertex_ranker_content_field:
+                    content_template = f"{{{{ {self.vertex_ranker_content_field} }}}}"
+                return Ranker(
+                    vertex=VertexRanker(
+                        text_record_spec=VertexRanker.TextRecordSpec(
+                            query=query.query_str or "",
+                            title_template=title_template,
+                            content_template=content_template,
+                        ),
+                        model=self.vertex_ranker_model,
+                        top_n=top_k,
+                    )
+                )
+            case _:  # pragma: no cover
+                raise NotImplementedError(
+                    f"Unsupported ranker type: {self.hybrid_ranker}"
+                )
 
     @staticmethod
     def _calculate_rrf_weights(alpha: float, num_searches: int = 2) -> list[float]:
