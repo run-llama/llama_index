@@ -12,7 +12,7 @@ import time
 from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from annotated_types import Ge, Le
 from google.api_core.exceptions import NotFound
@@ -1112,7 +1112,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     def _build_filter_query_request(
         self,
         v2_filter: dict[str, Any],
-        output_fields: Optional["OutputFields"] = None,
+        output_fields: "OutputFields | None" = None,
     ) -> "QueryDataObjectsRequest":
         """Build a query request for a given set of V2 filters."""
         from google.cloud.vectorsearch_v1beta import (
@@ -1146,7 +1146,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def _build_batch_delete_request(
         self, page: "QueryDataObjectsResponse"
-    ) -> Optional["BatchDeleteDataObjectsRequest"]:
+    ) -> "BatchDeleteDataObjectsRequest | None":
         from google.cloud.vectorsearch_v1beta import (
             BatchDeleteDataObjectsRequest,
             DeleteDataObjectRequest,
