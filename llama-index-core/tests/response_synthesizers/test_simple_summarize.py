@@ -40,58 +40,6 @@ class TestSimpleSummarize:
         ):
             SimpleSummarize(llm=llm, multimodal=True)
 
-    def test_synthesize__multimodal(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        # Arrange
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = SimpleSummarize(llm=llm, multimodal=True)
-
-        # Act
-        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
-        assert isinstance(response, Response)
-        assert str(response) == " ".join(["text"] * 10)
-        assert llm.last_called_chat_function == ["chat"]
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
-
-    @pytest.mark.asyncio
-    async def test_asynthesize__multimodal(
-        self, multimodal_nodes: list[NodeWithScore]
-    ) -> None:
-        # Arrange
-        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
-        synthesizer = SimpleSummarize(llm=llm, multimodal=True)
-
-        # Act
-        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
-
-        # Assert
-        assert isinstance(response, Response)
-        assert str(response) == " ".join(["text"] * 10)
-        assert len(llm.last_called_chat_function) == 2
-        assert set(llm.last_called_chat_function) == {"chat", "achat"}, (
-            "Async calls sync under hood"
-        )
-        assert [msg.role for msg in llm.last_chat_messages] == [
-            MessageRole.SYSTEM,
-            MessageRole.USER,
-        ]
-        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
-            "text",
-            "image",
-            "text",
-        ]
-
     @pytest.mark.parametrize(
         "llm",
         [
@@ -135,6 +83,30 @@ class TestSimpleSummarize:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    def test_synthesize__multimodal(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        # Arrange
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer = SimpleSummarize(llm=llm, multimodal=True)
+
+        # Act
+        response = synthesizer.synthesize(query="test", nodes=multimodal_nodes)
+
+        # Assert
+        assert isinstance(response, Response)
+        assert str(response) == " ".join(["text"] * 10)
+        assert llm.last_called_chat_function == ["chat"]
+        assert [msg.role for msg in llm.last_chat_messages] == [
+            MessageRole.SYSTEM,
+            MessageRole.USER,
+        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]
 
     @pytest.mark.parametrize(
         "llm",
@@ -190,3 +162,26 @@ class TestSimpleSummarize:
         else:
             assert llm.last_called_chat_function == []
             assert llm.last_chat_messages is None
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__multimodal(
+        self, multimodal_nodes: list[NodeWithScore]
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=10, is_chat_model=True)
+        synthesizer = SimpleSummarize(llm=llm, multimodal=True)
+        response = await synthesizer.asynthesize(query="test", nodes=multimodal_nodes)
+        assert isinstance(response, Response)
+        assert str(response) == " ".join(["text"] * 10)
+        assert len(llm.last_called_chat_function) == 2
+        assert set(llm.last_called_chat_function) == {"chat", "achat"}, (
+            "Async calls sync under hood"
+        )
+        assert [msg.role for msg in llm.last_chat_messages] == [
+            MessageRole.SYSTEM,
+            MessageRole.USER,
+        ]
+        assert [block.block_type for block in llm.last_chat_messages[-1].blocks] == [
+            "text",
+            "image",
+            "text",
+        ]

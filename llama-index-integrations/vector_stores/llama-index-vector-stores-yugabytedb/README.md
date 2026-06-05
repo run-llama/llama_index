@@ -28,4 +28,4 @@ vector_store = YBVectorStore.from_params(
 )
 ```
 
-> **Note**: Please see the YugabyteDB psycopge2 driver documentation for more yugabytedb specific parameters [here](https://docs.yugabyte.com/preview/drivers-orms/python/yugabyte-psycopg2/#step-2-set-up-the-database-connection).
+> **Note**: Please see the YugabyteDB psycopg2 driver documentation for more yugabytedb specific parameters [here](https://docs.yugabyte.com/preview/drivers-orms/python/yugabyte-psycopg2/#step-2-set-up-the-database-connection).
