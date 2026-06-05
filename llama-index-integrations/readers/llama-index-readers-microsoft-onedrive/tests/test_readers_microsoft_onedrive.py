@@ -33,6 +33,22 @@ def test_serialize():
     assert new_reader.required_exts == reader.required_exts
 
 
+def test_download_file_by_url_path_traversal():
+    import os
+    from unittest.mock import MagicMock, patch
+    reader = OneDriveReader(client_id="dummy", tenant_id="dummy")
+    item = {
+        "@microsoft.graph.downloadUrl": "https://example.com/download",
+        "name": "../../path_traversal_test.txt"
+    }
+    with patch("llama_index.readers.microsoft_onedrive.base.requests.get") as mock_get:
+        mock_get.return_value = MagicMock(content=b"file content")
+        with patch("llama_index.readers.microsoft_onedrive.base.open", create=True) as mock_open:
+            result_path = reader._download_file_by_url(item, "/tmp/allowed_dir")
+            expected_path = os.path.join("/tmp/allowed_dir", "path_traversal_test.txt")
+            assert os.path.normpath(result_path) == os.path.normpath(expected_path)
+
+
 @pytest.fixture()
 def real_onedrive_reader():
     raise pytest.skip("Fill in redacted values to run this test")
