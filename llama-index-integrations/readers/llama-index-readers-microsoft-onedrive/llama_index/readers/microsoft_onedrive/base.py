@@ -268,6 +268,11 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         # Extract download URL and filename from the provided item.
         file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
+        
+        # Sanitize file name to prevent path traversal
+        file_name = os.path.basename(file_name.replace("\\", "/"))
+        if not file_name or file_name in (".", ".."):
+            raise ValueError(f"Invalid file name: {item['name']}")
 
         # Download the file.
         file_data = requests.get(file_download_url)
