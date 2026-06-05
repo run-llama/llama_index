@@ -898,6 +898,34 @@ openlit.init()
 
 - [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
 
+### Spanlens
+
+[Spanlens](https://spanlens.io) is an open-source LLM observability platform (MIT, [github.com/spanlens/Spanlens](https://github.com/spanlens/Spanlens)). The LlamaIndex integration is a `BaseCallbackHandler` subclass that maps every `CBEventType` (LLM, RETRIEVE, EMBEDDING, FUNCTION_CALL, QUERY) to a typed span, so the dashboard trace tree mirrors your RAG topology 1:1 with token usage, cost, and parent/child linkage from the framework's per-event UUIDs.
+
+#### Install
+
+```shell
+pip install "spanlens[llama-index]"
+```
+
+#### Usage Pattern
+
+```python
+import os
+from llama_index.core import Settings
+from spanlens import SpanlensClient
+from spanlens.integrations.llama_index import SpanlensCallbackHandler
+
+client = SpanlensClient(api_key=os.environ["SPANLENS_API_KEY"])
+Settings.callback_manager.add_handler(SpanlensCallbackHandler(client=client))
+```
+
+Every query engine, agent, or workflow created after this gets full trace capture with no further code changes.
+
+#### Guides
+
+- [Spanlens LlamaIndex docs](https://www.spanlens.io/docs/integrations/llamaindex)
+
 ### AgentOps
 
 [AgentOps](https://github.com/AgentOps-AI/agentops) helps developers build, evaluate,
