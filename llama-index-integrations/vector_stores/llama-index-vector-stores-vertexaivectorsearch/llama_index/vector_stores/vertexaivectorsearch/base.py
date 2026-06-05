@@ -10,7 +10,6 @@ import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, cast
@@ -46,6 +45,14 @@ from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY, node_to_metad
 from llama_index.vector_stores.vertexaivectorsearch import utils
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
+)
+from llama_index.vector_stores.vertexaivectorsearch._types import (
+    AddBatchResult,
+    DeleteBatchResult,
+    VertexAIDeleteError,
+    VertexAIIndexingError,
+    VertexAIInputError,
+    VertexAIQueryError,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     convert_filters_to_v2_format,
@@ -83,118 +90,6 @@ if TYPE_CHECKING:
     )
 
 _logger = logging.getLogger(__name__)
-
-
-class VertexAIError(Exception):
-    """Vertex AI Exception."""
-
-
-class VertexAIInputError(VertexAIError, ValueError):
-    """Errors related to invalid input data."""
-
-
-class VertexAIQueryError(VertexAIError):
-    """Errors during query operations."""
-
-
-@dataclass
-class _IndexResult:
-    added_ids: list[str] = field(default_factory=list)
-    updated_ids: list[str] = field(default_factory=list)
-    failed_ids: list[str] = field(default_factory=list)
-    exceptions: list[Exception] = field(default_factory=list)
-
-    @property
-    def succeeded(self) -> bool:
-        """Indicates whether the batch operation succeeded."""
-        return not self.failed_ids and not self.exceptions
-
-    def __add__(self, other: "_IndexResult") -> "_IndexResult":
-        """Combine the properties of two :py:class:`_AddResult` objects."""
-        return _IndexResult(
-            added_ids=self.added_ids + other.added_ids,
-            updated_ids=self.updated_ids + other.updated_ids,
-            failed_ids=self.failed_ids + other.failed_ids,
-            exceptions=[*self.exceptions, *other.exceptions],
-        )
-
-    def __iadd__(self, other: "_IndexResult") -> Self:
-        """In-place addition to combine results."""
-        self.added_ids.extend(other.added_ids)
-        self.updated_ids.extend(other.updated_ids)
-        self.failed_ids.extend(other.failed_ids)
-        self.exceptions.extend(other.exceptions)
-        return self
-
-    @property
-    def summary_line(self) -> str:
-        """Returns a summary count line for logging purposes."""
-        return (
-            f"added={len(self.added_ids)}, updated={len(self.updated_ids)}, "
-            f"failed={len(self.failed_ids)}, exceptions={self.exceptions}"
-        )
-
-
-class VertexAIIndexingError(VertexAIError):
-    """Raised for errors when indexing content into a vector store."""
-
-    def __init__(self, result: _IndexResult) -> None:
-        """Initialize the exception."""
-        super().__init__(
-            f"Failed to add/update all requested objects, {result.summary_line}"
-        )
-        self.result = result
-
-
-@dataclass
-class _DeleteResult:
-    """Container for tracking individual or batch result from delete operations."""
-
-    deleted: int = 0
-    failed: int = 0
-    not_found: int = 0
-    exceptions: list[Exception] = field(default_factory=list)
-
-    @property
-    def succeeded(self) -> bool:
-        """Indicates whether the batch operation succeeded."""
-        return not self.failed and not self.not_found and not self.exceptions
-
-    def __add__(self, other: "_DeleteResult") -> "_DeleteResult":
-        """Combine the properties of two :py:class:`_DeleteResult` objects."""
-        return _DeleteResult(
-            deleted=self.deleted + other.deleted,
-            failed=self.failed + other.failed,
-            not_found=self.not_found + other.not_found,
-            exceptions=[*self.exceptions, *other.exceptions],
-        )
-
-    def __iadd__(self, other: "_DeleteResult") -> Self:
-        """In-place addition to combine results."""
-        self.deleted += other.deleted
-        self.failed += other.failed
-        self.not_found += other.not_found
-        self.exceptions += other.exceptions
-        return self
-
-    @property
-    def summary_line(self) -> str:
-        """Returns a summary count line for logging purposes."""
-        return (
-            f"deleted={self.deleted}, not_found={self.not_found}, "
-            f"failed={self.failed}, exceptions={self.exceptions}"
-        )
-
-
-class VertexAIDeleteError(VertexAIError):
-    """Raised for errors when indexing content into a vector store."""
-
-    def __init__(self, result: _DeleteResult) -> None:
-        """Initialize the exception."""
-        super().__init__(
-            f"Failed to delete all target data objects, {result.summary_line}"
-        )
-        self.result = result
 
 
 class FeatureFlags:
@@ -459,33 +354,45 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     @cached_property
     def v2_vector_search_client(self) -> "VectorSearchServiceClient":
-        """Access shared ``DataObjectServiceClient`` instance."""
-        clients = self._sdk_manager.get_v2_client()
-        return clients["vector_search_service_client"]
+        """Access shared ``VectorSearchServiceClient`` instance."""
+        from google.cloud.vectorsearch_v1beta import VectorSearchServiceClient
+
+        credentials = self._sdk_manager.get_v2_credentials()
+        return VectorSearchServiceClient(credentials=credentials)
 
     @cached_property
     def v2_data_object_client(self) -> "DataObjectServiceClient":
         """Access shared ``DataObjectServiceClient`` instance."""
-        clients = self._sdk_manager.get_v2_client()
-        return clients["data_object_service_client"]
+        from google.cloud.vectorsearch_v1beta import DataObjectServiceClient
+
+        credentials = self._sdk_manager.get_v2_credentials()
+        return DataObjectServiceClient(credentials=credentials)
 
     @cached_property
     def v2_data_object_async_client(self) -> "DataObjectServiceAsyncClient":
-        """Access shared ``DataObjectServiceClient`` instance."""
-        clients = self._sdk_manager.get_v2_client()
-        return clients["data_object_service_async_client"]
+        """Access shared ``DataObjectServiceAsyncClient`` instance."""
+        from google.cloud.vectorsearch_v1beta import DataObjectServiceAsyncClient
+
+        credentials = self._sdk_manager.get_v2_credentials()
+        # NOTE: async clients *must* be lazy initialized to ensure the right async loop
+        return DataObjectServiceAsyncClient(credentials=credentials)
 
     @cached_property
     def v2_search_client(self) -> "DataObjectSearchServiceClient":
-        """Access shared ``DataObjectServiceClient`` instance."""
-        clients = self._sdk_manager.get_v2_client()
-        return clients["data_object_search_service_client"]
+        """Access shared ``DataObjectSearchServiceClient`` instance."""
+        from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceClient
+
+        credentials = self._sdk_manager.get_v2_credentials()
+        return DataObjectSearchServiceClient(credentials=credentials)
 
     @cached_property
     def v2_search_async_client(self) -> "DataObjectSearchServiceAsyncClient":
-        """Access shared ``DataObjectServiceClient`` instance."""
-        clients = self._sdk_manager.get_v2_client()
-        return clients["data_object_search_service_async_client"]
+        """Access shared ``DataObjectSearchServiceAsyncClient`` instance."""
+        from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceAsyncClient
+
+        credentials = self._sdk_manager.get_v2_credentials()
+        # NOTE: async clients *must* be lazy initialized to ensure the right async loop
+        return DataObjectSearchServiceAsyncClient(credentials=credentials)
 
     @cached_property
     def v2_collection(self) -> "Collection":
@@ -643,7 +550,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Adding {len(nodes)} nodes to v2 collection: {self.collection_id}",
         )
         node_ids, batch_requests = self._build_v2_create_requests(nodes)
-        result = _IndexResult()
+        result = AddBatchResult()
         time_start = time.perf_counter()
         for i, start in enumerate(range(0, len(batch_requests), self.batch_size)):
             batch = batch_requests[start : start + self.batch_size]
@@ -687,7 +594,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             f"Updating {len(nodes)} nodes to v2 collection: {self.collection_id}",
         )
         node_ids, update_requests = self._build_v2_update_requests(nodes)
-        result = _IndexResult()
+        result = AddBatchResult()
         time_start = time.perf_counter()
         for i, chunk in enumerate(range(0, len(update_requests), self.batch_size)):
             batch = update_requests[chunk : chunk + self.batch_size]
@@ -1000,10 +907,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         time_start = time.perf_counter()
-        results: list[_IndexResult] = await asyncio.gather(*tasks)
+        results: list[AddBatchResult] = await asyncio.gather(*tasks)
         time_taken = time.perf_counter() - time_start
 
-        result = sum(results, _IndexResult())
+        result = sum(results, AddBatchResult())
         _logger.info(
             f"Completed 'async_add' operation in {time_taken:.2f}s, {result.summary_line}"
         )
@@ -1016,7 +923,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         batch_idx: int,
         batch_ids: list[str],
         create_requests: list["CreateDataObjectRequest"],
-    ) -> _IndexResult:
+    ) -> AddBatchResult:
         """
         Execute an async add for a single batch of data objects.
 
@@ -1048,12 +955,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.debug(
                     f"Add request batch {batch_idx} complete, indexed {size} nodes"
                 )
-                return _IndexResult(added_ids=batch_ids)
+                return AddBatchResult(added_ids=batch_ids)
             except Exception as exc:
                 _logger.exception(
                     f"Failed to index async batch {batch_idx} ({size} objects)"
                 )
-                return _IndexResult(failed_ids=batch_ids, exceptions=[exc])
+                return AddBatchResult(failed_ids=batch_ids, exceptions=[exc])
 
     async def _async_add_v2_update(
         self, nodes: Sequence[BaseNode], **kwargs: Any
@@ -1084,10 +991,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         time_start = time.perf_counter()
-        results: list[_IndexResult] = await asyncio.gather(*tasks)
+        results: list[AddBatchResult] = await asyncio.gather(*tasks)
         time_taken = time.perf_counter() - time_start
 
-        result = sum(results, _IndexResult())
+        result = sum(results, AddBatchResult())
         _logger.info(
             f"Completed 'async_update' operation in {time_taken:.2f}s, {result.summary_line}"
         )
@@ -1100,7 +1007,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         batch_idx: int,
         batch_ids: list[str],
         update_requests: list["UpdateDataObjectRequest"],
-    ) -> _IndexResult:
+    ) -> AddBatchResult:
         """
         Execute an async update for a single batch of data objects.
 
@@ -1132,12 +1039,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.debug(
                     f"Update request batch {batch_idx} complete, updated {size} nodes"
                 )
-                return _IndexResult(updated_ids=batch_ids)
+                return AddBatchResult(updated_ids=batch_ids)
             except Exception as exc:
                 _logger.exception(
                     f"Failed to update async batch {batch_idx} ({size} objects)"
                 )
-                return _IndexResult(failed_ids=batch_ids, exceptions=[exc])
+                return AddBatchResult(failed_ids=batch_ids, exceptions=[exc])
 
     @override
     def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
@@ -1227,7 +1134,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def _sync_delete_query_result(
         self, paged_resp: "QueryDataObjectsPager"
-    ) -> tuple[float, _DeleteResult]:
+    ) -> tuple[float, DeleteBatchResult]:
         """Synchronously delete all nodes included in the results of a query."""
         requests = [
             batch_request
@@ -1255,9 +1162,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def _sync_delete_batches(
         self, requests: list["BatchDeleteDataObjectsRequest"]
-    ) -> tuple[float, _DeleteResult]:
+    ) -> tuple[float, DeleteBatchResult]:
         """Execute a set of batch delete requests and output combined results."""
-        result = _DeleteResult()
+        result = DeleteBatchResult()
         time_start = time.perf_counter()
         for i, batch_request in enumerate(requests):
             size = len(batch_request.requests)
@@ -1327,7 +1234,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     async def _async_delete_query_result(
         self, result_pager: "QueryDataObjectsAsyncPager"
-    ) -> tuple[float, _DeleteResult]:
+    ) -> tuple[float, DeleteBatchResult]:
         """
         Asynchronously delete all nodes included in the results of a query.
 
@@ -1342,16 +1249,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 tasks.append(self._async_delete_batch(batch_idx, batch_request))
                 batch_idx += 1
         time_start = time.perf_counter()
-        results: list[_DeleteResult] = await asyncio.gather(*tasks)
+        results: list[DeleteBatchResult] = await asyncio.gather(*tasks)
         time_taken = time.perf_counter() - time_start
-        batch_result = sum(results, _DeleteResult())
+        batch_result = sum(results, DeleteBatchResult())
         return time_taken, batch_result
 
     async def _async_delete_batch(
         self,
         batch_idx: int,
         request: "BatchDeleteDataObjectsRequest",
-    ) -> _DeleteResult:
+    ) -> DeleteBatchResult:
         async with self._async_request_semaphore:
             size = len(request.requests)
             try:
@@ -1365,18 +1272,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Delete request batch {batch_idx} complete, deleted {size} nodes "
                     f"in {time_taken:.2f}s",
                 )
-                return _DeleteResult(deleted=size)
+                return DeleteBatchResult(deleted=size)
             except NotFound as exc:
                 _logger.warning(
                     f"Delete batch {batch_idx} ({size} objects) raised 'NotFound' "
                     f"exception: {exc}",
                 )
-                return _DeleteResult(not_found=size, exceptions=[exc])
+                return DeleteBatchResult(not_found=size, exceptions=[exc])
             except Exception as exc:
                 _logger.exception(
                     f"Failed to delete async batch {batch_idx} ({size} objects)"
                 )
-                return _DeleteResult(failed=size, exceptions=[exc])
+                return DeleteBatchResult(failed=size, exceptions=[exc])
 
     @override
     def query(
@@ -2278,7 +2185,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         """
         time_taken: float = 0.0
-        result = _DeleteResult()
+        result = DeleteBatchResult()
         if node_ids:
             batches = self._prepare_delete_by_id_requests(node_ids)
             _logger.info(
@@ -2374,7 +2281,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         # build the appropriate batch request based on input
         time_taken: float = 0.0
-        result = _DeleteResult()
+        result = DeleteBatchResult()
         if node_ids:
             # batch the calls
             tasks = [
@@ -2387,9 +2294,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 f"(batch_size={self.batch_size})"
             )
             time_start = time.perf_counter()
-            results: list[_DeleteResult] = await asyncio.gather(*tasks)
+            results: list[DeleteBatchResult] = await asyncio.gather(*tasks)
             time_taken = time.perf_counter() - time_start
-            result = sum(results, _DeleteResult())
+            result = sum(results, DeleteBatchResult())
 
         elif filters is not None:
             if v2_filter := convert_filters_to_v2_format(filters):
