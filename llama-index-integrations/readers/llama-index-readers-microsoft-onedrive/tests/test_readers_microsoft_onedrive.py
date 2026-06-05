@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
@@ -31,6 +33,34 @@ def test_serialize():
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
     assert new_reader.required_exts == reader.required_exts
+
+
+@pytest.mark.parametrize("remote_name", ["../proof.txt", "..\\proof.txt"])
+def test_download_file_by_url_keeps_remote_name_inside_local_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, remote_name: str
+):
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+
+    class Response:
+        content = b"downloaded"
+
+    monkeypatch.setattr("requests.get", lambda _: Response())
+
+    downloaded_path = Path(
+        reader._download_file_by_url(
+            {
+                "name": remote_name,
+                "@microsoft.graph.downloadUrl": "https://example.com/file",
+            },
+            str(download_dir),
+        )
+    )
+
+    assert downloaded_path == download_dir.resolve() / "proof.txt"
+    assert downloaded_path.read_bytes() == b"downloaded"
+    assert not (tmp_path / "proof.txt").exists()
 
 
 @pytest.fixture()
