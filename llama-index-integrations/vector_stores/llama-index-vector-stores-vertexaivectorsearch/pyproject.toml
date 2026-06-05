@@ -57,6 +57,28 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self\\.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if (typing\\.)?TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "assert_never\\(.*\\)",
+]
+ignore_errors = true
+
+[tool.coverage.run]
+omit = [
+    ".venv/*",
+    "tests/*",
+]
+
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
