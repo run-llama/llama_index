@@ -115,3 +115,7 @@ disallow_untyped_decorators = true
 plugins = [
     "pydantic.mypy",
 ]
+
+[tool.pytest.ini_options]
+# see https://pytest-asyncio.readthedocs.io/en/latest/reference/configuration.html
+asyncio_mode = "auto"
