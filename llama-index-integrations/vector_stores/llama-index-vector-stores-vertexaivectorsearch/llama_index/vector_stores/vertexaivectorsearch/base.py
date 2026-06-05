@@ -155,10 +155,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     region: str
 
     # API version - defaults to v1 for backward compatibility
-    api_version: Literal["v1", "v2"] = Field(
-        default="v1",
-        frozen=True,  # updates not allowed for initialization reasons
-    )
+    # updates not allowed for initialization reasons
+    api_version: Literal["v1", "v2"] = Field(default="v1", frozen=True)
 
     # v1-exclusive parameters
     index_id: str | None = None
@@ -168,14 +166,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # v2-exclusive parameters
     collection_id: str | None = None
 
+    # V2 indexing-related fields
+    default_add_operation: Literal["create", "update"] = "create"
+    max_concurrent_requests: PositiveInt = 5
+
     # V2 Hybrid Search parameters
     enable_hybrid: bool = False
     text_search_fields: list[str] | None = None
-
-    # V2 indexing-related fields
-    default_add_operation: Literal["create", "update"] = "create"
-    batch_size: PositiveInt = 100
-    max_concurrent_requests: PositiveInt = 5
 
     # V2 fields shared between indexing and query time
     embedding_field: str = "embedding"
@@ -196,15 +193,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     default_hybrid_alpha: Annotated[float, Ge(0.0), Le(1.0)] = 0.5
 
     # SemanticSearch configuration
-    semantic_search_embedding_field: str | None = None
     semantic_task_type: str = "RETRIEVAL_QUERY"
+    semantic_search_embedding_field: str | None = None
 
     # VertexRanker-specific parameters
     vertex_ranker_model: str = Field(default="semantic-ranker-default@latest")
-    vertex_ranker_title_field: str | None = Field(default=None)
-    vertex_ranker_content_field: str | None = Field(default=None)
+    vertex_ranker_title_field: str | None = None
+    vertex_ranker_content_field: str | None = None
 
     # Shared parameters
+    batch_size: PositiveInt = 100
     credentials_path: str | None = None
 
     # Output field configuration
@@ -550,13 +548,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
         return ids
 
-    def _add_v2_create(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
+    def _add_v2_create(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:
         """
         Add nodes to index using the V2 'create' API.
 
         Args:
             nodes: List[BaseNode]: list of nodes
-            **kwargs: additional keyword arguments (not used)
+            **add_kwargs: additional keyword arguments (not used)
 
         """
         from google.cloud.vectorsearch_v1beta import BatchCreateDataObjectsRequest
@@ -594,13 +592,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             raise VertexAIIndexingError(result)
         return result.added_ids
 
-    def _add_v2_update(self, nodes: Sequence[BaseNode], **kwargs: Any) -> list[str]:
+    def _add_v2_update(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:
         """
         Add nodes to index using the V2 'update' API.
 
         Args:
             nodes: List[BaseNode]: list of nodes
-            **kwargs: additional keyword arguments (not used)
+            **add_kwargs: additional keyword arguments (not used)
 
         """
         from google.cloud.vectorsearch_v1beta import BatchUpdateDataObjectsRequest
@@ -859,7 +857,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         *,
         is_complete_overwrite: bool = False,
         add_operation: Literal["create", "update"] | None = None,
-        **kwargs: Any,
+        **add_kwargs: Any,
     ) -> list[str]:
         """
         Asynchronously dd nodes to index.
@@ -870,7 +868,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 (V1 only) whether it is an append or overwrite operation
             add_operation: Literal["create", "update"] | None:
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
-            **kwargs: additional keyword arguments to be passed to implementations
+            **add_kwargs: additional keyword arguments to be passed to implementations
 
         """
         if not nodes:
@@ -889,9 +887,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.debug(f"Using operation='{op}' for V2 call to 'async_add'")
             match op:
                 case "create":
-                    return await self._async_add_v2_create(nodes, **kwargs)
+                    return await self._async_add_v2_create(nodes, **add_kwargs)
                 case "update":
-                    return await self._async_add_v2_update(nodes, **kwargs)
+                    return await self._async_add_v2_update(nodes, **add_kwargs)
                 case _:  # pragma: no cover
                     raise VertexAIInputError(f"Unknown add operation: {op}")
         else:
@@ -901,11 +899,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "The argument 'add_operation' is only valid for api_version='v2'"
                 )
             return self._add_v1(
-                nodes, is_complete_overwrite=is_complete_overwrite, **kwargs
+                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
             )
 
     async def _async_add_v2_create(
-        self, nodes: Sequence[BaseNode], **kwargs: Any
+        self, nodes: Sequence[BaseNode], **add_kwargs: Any
     ) -> list[str]:
         node_ids, requests = self._build_v2_create_requests(nodes)
         tasks = [
@@ -978,14 +976,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return AddBatchResult(failed_ids=batch_ids, exceptions=[exc])
 
     async def _async_add_v2_update(
-        self, nodes: Sequence[BaseNode], **kwargs: Any
+        self, nodes: Sequence[BaseNode], **add_kwargs: Any
     ) -> list[str]:
         """
         Asynchronously update nodes in the collection using v2 API.
 
         Args:
             nodes: List of nodes
-            **kwargs: Additional keyword arguments (not used)
+            **add_kwargs: Additional keyword arguments (not used)
 
         Returns:
             List of node IDs
@@ -1062,21 +1060,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return AddBatchResult(failed_ids=batch_ids, exceptions=[exc])
 
     @override
-    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
-            **kwargs: Additional keyword arguments to be passed to implementations
+            **delete_kwargs: Additional keyword arguments to be passed to implementations
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
             self._sdk_manager.ensure_v2_available()
-            self._delete_v2(ref_doc_id, **kwargs)
+            self._delete_v2(ref_doc_id, **delete_kwargs)
         else:
-            self._delete_v1(ref_doc_id, **kwargs)
+            self._delete_v1(ref_doc_id, **delete_kwargs)
 
     def _delete_v1(self, ref_doc_id: str, **kwargs: Any) -> None:
         """
@@ -1095,13 +1093,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         # remove datapoints
         self._index.remove_datapoints(datapoint_ids=ids)
 
-    def _delete_v2(self, ref_doc_id: str, **kwargs: Any) -> None:
+    def _delete_v2(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using ref_doc_id with v2 API.
 
         Args:
             ref_doc_id: The document ID to delete
-            **kwargs: Additional keyword arguments (not used)
+            **delete_kwargs: Additional keyword arguments (not used)
 
         """
         if self.docid_field is None:
@@ -1201,30 +1199,30 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         return time_taken, result
 
     @override
-    async def adelete(self, ref_doc_id: str, **kwargs: Any) -> None:
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
-            **kwargs: Additional keyword arguments
+            **delete_kwargs: Additional keyword arguments
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
             self._sdk_manager.ensure_v2_available()
-            await self._adelete_v2(ref_doc_id, **kwargs)
+            await self._adelete_v2(ref_doc_id, **delete_kwargs)
         else:
             # use the sync API for v1
-            self._delete_v1(ref_doc_id, **kwargs)
+            self._delete_v1(ref_doc_id, **delete_kwargs)
 
-    async def _adelete_v2(self, ref_doc_id: str, **kwargs: Any) -> None:
+    async def _adelete_v2(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Asynchronously delete nodes using ref_doc_id with v2 API.
 
         Args:
             ref_doc_id: The document ID to delete
-            **kwargs: Additional keyword arguments
+            **delete_kwargs: Additional keyword arguments
 
         """
         if self.docid_field is None:
@@ -1625,7 +1623,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             elif field_ in self.v2_vector_fields:
                 vector_fields.append(field_)
             else:
-                _logger.error(f"Unknown field passed in query output fields: {field_}")
+                _logger.warning(
+                    f"Unknown field passed in query output fields: {field_}"
+                )
         out_fields = {**self.query_output_fields}
         if data_fields:
             out_fields["data_fields"] = sorted(data_fields)
