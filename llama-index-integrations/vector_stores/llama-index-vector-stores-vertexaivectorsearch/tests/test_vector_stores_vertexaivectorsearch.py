@@ -41,11 +41,13 @@ from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore, 
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
-from llama_index.vector_stores.vertexaivectorsearch.base import (
-    FeatureFlags,
+from llama_index.vector_stores.vertexaivectorsearch._types import (
     VertexAIDeleteError,
     VertexAIIndexingError,
     VertexAIQueryError,
+)
+from llama_index.vector_stores.vertexaivectorsearch.base import (
+    FeatureFlags,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
     convert_filters_to_v2_format,
@@ -61,6 +63,7 @@ xpass_if_missing_v2 = pytest.mark.xpass(
 )
 
 if V2_AVAILABLE:
+    from google.cloud import vectorsearch_v1beta
     from google.cloud.vectorsearch_v1beta import (
         BatchCreateDataObjectsRequest,
         BatchDeleteDataObjectsRequest,
@@ -673,25 +676,6 @@ class TestV2SDKManager:
         # Check that _v2_available is set (not None)
         assert sdk_manager._v2_available is not None
 
-    def test_get_v2_client_returns_three_clients(self):
-        """Test that get_v2_client returns dict with three client types."""
-        try:
-            import google.cloud.vectorsearch_v1beta  # noqa: F401
-
-            sdk_manager = VectorSearchSDKManager(
-                project_id="test-project",
-                region="us-central1",
-            )
-
-            clients = sdk_manager.get_v2_client()
-
-            assert isinstance(clients, dict)
-            assert "vector_search_service_client" in clients
-            assert "data_object_service_client" in clients
-            assert "data_object_search_service_client" in clients
-        except ImportError:
-            pytest.skip("google-cloud-vectorsearch not installed")
-
 
 class TestV2RetryDecorator:
     """Test the retry decorator for v2 operations."""
@@ -992,26 +976,28 @@ def mock_v2_data_object_search_service_async_client() -> MagicMock:
 
 
 @pytest.fixture
-def mock_v2_sdk_manager(
+def mock_v2_service_clients(
     mock_v2_vector_search_service_client: MagicMock,
     mock_v2_data_object_service_client: MagicMock,
     mock_v2_data_object_service_async_client: MagicMock,
     mock_v2_data_object_search_service_client: MagicMock,
     mock_v2_data_object_search_service_async_client: MagicMock,
-) -> Iterator[MagicMock]:
-    with patch(
-        "llama_index.vector_stores.vertexaivectorsearch.base.VectorSearchSDKManager"
-    ) as cls_:
-        mock_inst = MagicMock(spec=VectorSearchSDKManager)
-        mock_inst.get_v2_client.return_value = {
-            "vector_search_service_client": mock_v2_vector_search_service_client,
-            "data_object_service_client": mock_v2_data_object_service_client,
-            "data_object_service_async_client": mock_v2_data_object_service_async_client,
-            "data_object_search_service_client": mock_v2_data_object_search_service_client,
-            "data_object_search_service_async_client": mock_v2_data_object_search_service_async_client,
-        }
-        cls_.return_value = mock_inst
-        yield mock_inst
+) -> Iterator[None]:
+    with (
+        patch.object(vectorsearch_v1beta, "VectorSearchServiceClient") as vs_cls,
+        patch.object(vectorsearch_v1beta, "DataObjectServiceClient") as do_cls,
+        patch.object(vectorsearch_v1beta, "DataObjectServiceAsyncClient") as ado_cls,
+        patch.object(vectorsearch_v1beta, "DataObjectSearchServiceClient") as ds_cls,
+        patch.object(
+            vectorsearch_v1beta, "DataObjectSearchServiceAsyncClient"
+        ) as ads_cls,
+    ):
+        vs_cls.return_value = mock_v2_vector_search_service_client
+        do_cls.return_value = mock_v2_data_object_service_client
+        ado_cls.return_value = mock_v2_data_object_service_async_client
+        ds_cls.return_value = mock_v2_data_object_search_service_client
+        ads_cls.return_value = mock_v2_data_object_search_service_async_client
+        yield
 
 
 @pytest.fixture
@@ -1082,7 +1068,7 @@ class TestUnitV2NodeDataObjectConversion:
 
     @pytest.fixture
     def mock_v2_store(
-        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+        self, mock_v2_service_clients: Iterator[None], **kwargs: Any
     ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
@@ -1208,7 +1194,7 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def mock_v2_store_add_create(
-        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+        self, mock_v2_service_clients: Iterator[None], **kwargs: Any
     ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
@@ -1231,7 +1217,7 @@ class TestUnitV2Add:
 
     @pytest.fixture
     def mock_v2_store_add_update(
-        self, mock_v2_sdk_manager: MagicMock, **kwargs: Any
+        self, mock_v2_service_clients: Iterator[None], **kwargs: Any
     ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
@@ -1707,7 +1693,9 @@ class TestUnitV2Delete:
     """Unit test the behavior of ``(a)delete``, ``(a)delete_nodes``, and ``(a)clear``."""
 
     @pytest.fixture
-    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+    def mock_v2_store(
+        self, mock_v2_service_clients: Iterator[None]
+    ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
             region="us-central1",
@@ -2583,7 +2571,9 @@ class TestUnitV2GetNodes:
     """Test the behavior of ``get_nodes`` and ``aget_nodes`` methods."""
 
     @pytest.fixture
-    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+    def mock_v2_store(
+        self, mock_v2_service_clients: Iterator[None]
+    ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
             region="us-central1",
@@ -3022,7 +3012,9 @@ class TestUnitV2Query:
     """Test behavior of ``query`` and ``aquery`` methods."""
 
     @pytest.fixture
-    def mock_v2_store(self, mock_v2_sdk_manager: MagicMock) -> VertexAIVectorStore:
+    def mock_v2_store(
+        self, mock_v2_service_clients: Iterator[None]
+    ) -> VertexAIVectorStore:
         return VertexAIVectorStore(
             project_id="test-project",
             region="us-central1",

@@ -1,5 +1,4 @@
 import importlib.util
-from typing import TYPE_CHECKING, TypedDict
 
 from google.cloud import aiplatform, storage
 from google.cloud.aiplatform import telemetry
@@ -13,22 +12,6 @@ from llama_index.vector_stores.vertexaivectorsearch.utils import (
     get_client_info,
     get_user_agent,
 )
-
-if TYPE_CHECKING:
-    from google.cloud.vectorsearch_v1beta import (
-        DataObjectSearchServiceAsyncClient,
-        DataObjectSearchServiceClient,
-        DataObjectServiceAsyncClient,
-        DataObjectServiceClient,
-        VectorSearchServiceClient,
-    )
-
-    class V2ClientDict(TypedDict):
-        vector_search_service_client: VectorSearchServiceClient
-        data_object_service_client: DataObjectServiceClient
-        data_object_service_async_client: DataObjectServiceAsyncClient
-        data_object_search_service_client: DataObjectSearchServiceClient
-        data_object_search_service_async_client: DataObjectSearchServiceAsyncClient
 
 
 class VectorSearchSDKManager:
@@ -72,7 +55,6 @@ class VectorSearchSDKManager:
             self._credentials = None
 
         # v2 client is initialized lazily
-        self._v2_client: V2ClientDict | None = None
         self._v2_available = (
             importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
         )
@@ -181,44 +163,13 @@ class VectorSearchSDKManager:
                 '`pip install "llama-index-vector-stores-vertexaivectorsearch[v2]"`'
             )
 
-    def get_v2_client(self) -> "V2ClientDict":
+    def get_v2_credentials(self) -> "Credentials | None":
         """
-        Get v2 clients only when needed - lazy import.
-
-        Returns:
-            dict: Dictionary containing the five v2 clients:
-                - vector_search_service_client: For collection and index operations
-                - data_object_service_client: For CRUD operations on data objects
-                - data_object_search_service_client: For search/query operations
+        Access the prepared credentials for the V2 collection, if available.
 
         Raises:
-            ImportError: If google-cloud-vectorsearch is not installed
+            ImportError: If the 'v2' extra is not installed with this package
 
         """
         self.ensure_v2_available()
-        if self._v2_client is None:
-            # Import only when needed, not at module level
-            from google.cloud import vectorsearch_v1beta
-
-            # Initialize all three clients needed for v2
-            clients: V2ClientDict = {
-                "vector_search_service_client": vectorsearch_v1beta.VectorSearchServiceClient(
-                    credentials=self._credentials
-                ),
-                "data_object_service_client": vectorsearch_v1beta.DataObjectServiceClient(
-                    credentials=self._credentials
-                ),
-                "data_object_service_async_client": vectorsearch_v1beta.DataObjectServiceAsyncClient(
-                    credentials=self._credentials
-                ),
-                "data_object_search_service_client": vectorsearch_v1beta.DataObjectSearchServiceClient(
-                    credentials=self._credentials
-                ),
-                "data_object_search_service_async_client": vectorsearch_v1beta.DataObjectSearchServiceAsyncClient(
-                    credentials=self._credentials
-                ),
-            }
-            self._v2_client = clients
-            return clients
-
-        return self._v2_client
+        return self._credentials
