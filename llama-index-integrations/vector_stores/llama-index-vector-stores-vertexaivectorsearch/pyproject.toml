@@ -156,3 +156,74 @@ known-first-party = ["llama_index.core", "llama_index.embeddings"]
     "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
     "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
 ]
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = [
+    "clean",
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["default", "v2"]]},
+    "coverage-report",
+]
+
+[tool.tox.env.clean]
+description = "Erase previous coverage data"
+skip_install = true
+deps = ["coverage"]
+commands = [["coverage", "erase"]]
+
+[tool.tox.env.coverage-report]
+description = "Combine and report accumulated coverage"
+skip_install = true
+parallel_show_output = true
+deps = ["coverage"]
+commands = [
+    ["coverage", "xml"],
+    ["coverage", "report", "--show-missing"],
+]
+# ensure tests run and finish before executing the report phase
+depends = ["3.*-default", "3.*-v2"]
+
+[tool.tox.env.lint-fix]
+description = "Format and fix issues with ruff"
+depends = ["3.12"]
+extras = ["v2"]
+commands = [
+    ["ruff", "format", "llama_index", "tests"],
+    ["ruff", "check", "--fix-only", "-e", "llama_index", "tests"],
+]
+
+[tool.tox.env.lint-mypy]
+description = "Run mypy type checks"
+depends = ["3.12", "lint-fix"]
+extras = ["v2"]
+commands = [["mypy", "llama_index"]]
+
+[tool.tox.env.lint-ruff]
+description = "Check code style with ruff"
+depends = ["3.12", "lint-fix"]
+extras = ["v2"]
+commands = [
+    ["ruff", "format", "--check", "llama_index", "tests"],
+    ["ruff", "check", "llama_index", "tests"],
+]
+
+[tool.tox.env_run_base]
+description = "Run tests with coverage under {base_python}"
+runner = "uv-venv-lock-runner"
+# always clean up .coverage before running pytest with coverage
+depends = ["clean"]
+commands = [
+    [
+        "pytest",
+        "--cov=llama_index.vector_stores.vertexaivectorsearch",
+        "--cov-append",  # for multienvironment coverage aggregation
+        "--cov-branch",
+        "--cov-config=pyproject.toml",
+        "--cov-report=term-missing",
+        {replace = "posargs", default = ["tests"], extend = true},
+    ],
+]
+# install 'v2' extra only in tests for v2 environment
+extras = [
+    {replace = "if", condition = "factor.v2", then = ["v2"], extend = true},
+]
