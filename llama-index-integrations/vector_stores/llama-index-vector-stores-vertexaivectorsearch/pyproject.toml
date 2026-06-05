@@ -119,3 +119,40 @@ plugins = [
 [tool.pytest.ini_options]
 # see https://pytest-asyncio.readthedocs.io/en/latest/reference/configuration.html
 asyncio_mode = "auto"
+
+[tool.ruff]
+extend = "../../../pyproject.toml"
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+extend-select = [
+    "ASYNC",  # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "B",  # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "D417",  # https://docs.astral.sh/ruff/rules/undocumented-param/
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "E",  # https://docs.astral.sh/ruff/rules/#error-e
+    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "FURB",  # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "G",  # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
+    "ICN",  # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "LOG",  # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "RUF",  # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "UP",  # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "W",  # https://docs.astral.sh/ruff/rules/#warning-w
+]
+extend-ignore = [
+    "E501",  # too strict
+    "G004",  # too aggressive for existing code
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["llama_index.core", "llama_index.embeddings"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+]
