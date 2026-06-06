@@ -15,7 +15,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BasePydanticProgram, Model, PydanticProgramMode
-from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 
 _logger = logging.getLogger(__name__)
 
@@ -163,22 +163,23 @@ def _repair_incomplete_json(json_str: str) -> str:
 
 
 def process_streaming_objects(
-    chat_response: ChatResponse,
+    chat_response: ChatResponse | CompletionResponse,
     output_cls: Type[Model],
     cur_objects: Optional[Sequence[Model]] = None,
     allow_parallel_tool_calls: bool = False,
     flexible_mode: bool = True,
-    llm: Optional[FunctionCallingLLM] = None,
+    llm: Optional[FunctionCallingLLM | LLM] = None,
 ) -> Union[Model, List[Model], FlexibleModel, List[FlexibleModel]]:
     """
     Process streaming response into structured objects.
 
     Args:
-        chat_response (ChatResponse): The chat response to process
+        chat_response (ChatResponse | CompletionResponse): The response to process
         output_cls (Type[BaseModel]): The target output class
         cur_objects (Optional[List[BaseModel]]): Current accumulated objects
         allow_parallel_tool_calls (bool): Whether to allow multiple tool calls
         flexible_mode (bool): Whether to use flexible schema during parsing
+        llm: (Optional[FunctionCallingLLM | LLM]): The LLM object to use
 
     Returns:
         Union[BaseModel, List[BaseModel]]: Processed object(s)
@@ -190,15 +191,18 @@ def process_streaming_objects(
     else:
         partial_output_cls = output_cls  # type: ignore
 
+    if isinstance(chat_response, CompletionResponse):
+        output_cls_args = [chat_response.text]
     # Get tool calls from response, if there are any
-    if not chat_response.message.additional_kwargs.get("tool_calls"):
-        output_cls_args = [chat_response.message.content]
+    elif not chat_response.message.additional_kwargs.get("tool_calls"):
+        output_cls_args = [chat_response.message.content or ""]
     else:
         tool_calls: List[ToolSelection] = []
         if not llm:
             raise ValueError("LLM is required to get tool calls")
 
         if isinstance(chat_response.message.additional_kwargs.get("tool_calls"), list):
+            assert isinstance(llm, FunctionCallingLLM)
             tool_calls = llm.get_tool_calls_from_response(
                 chat_response, error_on_no_tool_call=False
             )

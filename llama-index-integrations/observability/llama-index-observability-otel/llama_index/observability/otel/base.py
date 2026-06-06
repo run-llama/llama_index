@@ -56,6 +56,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     _context_tokens: Dict[str, Token[context.Context]] = PrivateAttr(
         default_factory=dict
     )
+    _previous_contexts: Dict[str, context.Context] = PrivateAttr(default_factory=dict)
     all_spans: Dict[str, trace.Span] = Field(
         default_factory=dict, description="All the registered OpenTelemetry spans."
     )
@@ -84,6 +85,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         self._tracer_provider = tracer_provider
         self._events_by_span = {}
         self._context_tokens = {}
+        self._previous_contexts = {}
         self.debug = debug
 
     def close(self) -> None:
@@ -140,9 +142,17 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
 
     def _detach_context_and_end_span(self, id_: str, span: trace.Span) -> None:
         token = self._context_tokens.pop(id_, None)
+        previous_context = self._previous_contexts.pop(id_, None)
         try:
             if token is not None:
-                context.detach(token)
+                token.var.reset(token)
+        except ValueError as err:
+            if "different Context" not in str(err):
+                _logger.warning(
+                    "Error detaching OTel context for %s", id_, exc_info=True
+                )
+            elif previous_context is not None and trace.get_current_span() is span:
+                context.attach(previous_context)
         except BaseException:
             _logger.warning("Error detaching OTel context for %s", id_, exc_info=True)
         finally:
@@ -173,8 +183,10 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         otel_span = self._tracer.start_span(name=span_name, context=ctx)
         self.all_spans.update({id_: otel_span})
 
+        current_context = context.get_current()
         token = context.attach(set_span_in_context(otel_span))
         self._context_tokens[id_] = token
+        self._previous_contexts[id_] = current_context
 
         # Record instrument_tags as span attributes
         if tags is not None:
