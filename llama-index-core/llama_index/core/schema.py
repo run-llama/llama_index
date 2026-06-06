@@ -278,6 +278,10 @@ class BaseNode(BaseComponent):
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
+    embeddings: Optional[Dict[str, List[float]]] = Field(
+        default=None,
+        description="Dictionary of named embeddings for the node (e.g. dense, sparse, colbert).",
+    )
 
     """"
     metadata fields
@@ -480,16 +484,41 @@ class BaseNode(BaseComponent):
         )
         return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
-    def get_embedding(self) -> List[float]:
+    def get_embedding(
+        self, name: Optional[str] = None
+    ) -> List[float]:
         """
         Get embedding.
 
-        Errors if embedding is None.
+        If `name` is provided, returns the named embedding from the `embeddings` dict.
+        If `name` is None (default), returns the single `embedding` field.
+
+        Errors if the requested embedding is None.
 
         """
+        if name is not None:
+            if self.embeddings is None or name not in self.embeddings:
+                raise ValueError(f"Embedding '{name}' not set.")
+            return self.embeddings[name]
+
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+
+    def set_embedding(
+        self, name: str, embedding: List[float]
+    ) -> None:
+        """
+        Set a named embedding in the `embeddings` dict.
+
+        Args:
+            name: Name of the embedding (e.g. 'dense', 'sparse', 'colbert').
+            embedding: The embedding vector to store.
+
+        """
+        if self.embeddings is None:
+            self.embeddings = {}
+        self.embeddings[name] = embedding
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
@@ -1078,6 +1107,10 @@ class NodeWithScore(BaseComponent):
     def embedding(self) -> Optional[List[float]]:
         return self.node.embedding
 
+    @property
+    def embeddings(self) -> Optional[Dict[str, List[float]]]:
+        return self.node.embeddings
+
     def get_text(self) -> str:
         if isinstance(self.node, TextNode):
             return self.node.get_text()
@@ -1087,8 +1120,8 @@ class NodeWithScore(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         return self.node.get_content(metadata_mode=metadata_mode)
 
-    def get_embedding(self) -> List[float]:
-        return self.node.get_embedding()
+    def get_embedding(self, name: Optional[str] = None) -> List[float]:
+        return self.node.get_embedding(name=name)
 
 
 # Document Classes for Readers
