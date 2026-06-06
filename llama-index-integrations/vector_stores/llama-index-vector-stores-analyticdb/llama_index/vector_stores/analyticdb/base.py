@@ -2,7 +2,6 @@
 
 import logging
 import json
-import re
 from typing import Any, List, Union
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -41,13 +40,6 @@ OPERATOR_MAP = {
 }
 
 
-def _validate_metadata_key(key: str) -> str:
-    # The key becomes part of the SQL/JSON-path text; allow a safe identifier charset only.
-    if not re.fullmatch(r"[A-Za-z0-9_]+", str(key)):
-        raise ValueError(f"Invalid metadata filter key: {key!r}")
-    return str(key)
-
-
 def _escape_sql_str(value: Any) -> str:
     # The filter is sent to AnalyticDB as a raw SQL string (the request `filter` field has
     # no bind-parameter support), so single quotes in values must be escaped.
@@ -56,7 +48,7 @@ def _escape_sql_str(value: Any) -> str:
 
 def _build_filter_clause(filter_: MetadataFilter) -> str:
     adb_operator = OPERATOR_MAP.get(filter_.operator)
-    key = _validate_metadata_key(filter_.key)
+    key = _escape_sql_str(filter_.key)
     if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
         values = ", ".join(f"'{_escape_sql_str(v)}'" for v in filter_.value)
         return f"metadata_->>'{key}' {adb_operator} ({values})"

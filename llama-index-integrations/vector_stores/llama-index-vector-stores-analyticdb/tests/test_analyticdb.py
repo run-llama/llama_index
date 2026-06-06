@@ -76,12 +76,36 @@ def test_build_filter_clause_escapes_sql_values() -> None:
     assert filter_clause == "metadata_->>'author' = 'x'' OR ''1''=''1'"
 
 
-def test_build_filter_clause_rejects_unsafe_metadata_key() -> None:
-    with pytest.raises(ValueError, match="Invalid metadata filter key"):
+def test_build_filter_clause_escapes_metadata_keys_and_values() -> None:
+    assert (
         _build_filter_clause(
             MetadataFilter(
-                key="author' OR '1'='1",
-                value="x",
+                key="source.file",
+                value="O'Reilly",
                 operator=FilterOperator.EQ,
             )
         )
+        == "metadata_->>'source.file' = 'O''Reilly'"
+    )
+
+    assert (
+        _build_filter_clause(
+            MetadataFilter(
+                key="content type",
+                value="text/plain",
+                operator=FilterOperator.EQ,
+            )
+        )
+        == "metadata_->>'content type' = 'text/plain'"
+    )
+
+    assert (
+        _build_filter_clause(
+            MetadataFilter(
+                key="author' OR '1'='1",
+                value="x' OR '1'='1",
+                operator=FilterOperator.EQ,
+            )
+        )
+        == "metadata_->>'author'' OR ''1''=''1' = 'x'' OR ''1''=''1'"
+    )
