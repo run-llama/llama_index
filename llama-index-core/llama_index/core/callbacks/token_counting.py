@@ -59,6 +59,7 @@ def get_tokens_from_response(
         "completion_tokens",
         "output_tokens",
         "candidates_token_count",
+        "response_token_count",
     )
 
     prompt_tokens = 0
