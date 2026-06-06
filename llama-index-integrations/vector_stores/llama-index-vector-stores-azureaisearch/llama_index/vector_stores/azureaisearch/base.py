@@ -1052,7 +1052,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             return
 
         # Locate documents to delete
-        filter = f"{self._field_mapping['doc_id']} eq '{ref_doc_id}'"
+        escaped_ref_doc_id = str(ref_doc_id).replace("'", "''")
+        filter = f"{self._field_mapping['doc_id']} eq '{escaped_ref_doc_id}'"
         batch_size = 1000
 
         while True:
@@ -1083,7 +1084,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             return
 
         # Locate documents to delete
-        filter = f"{self._field_mapping['doc_id']} eq '{ref_doc_id}'"
+        escaped_ref_doc_id = str(ref_doc_id).replace("'", "''")
+        filter = f"{self._field_mapping['doc_id']} eq '{escaped_ref_doc_id}'"
         batch_size = 1000
 
         while True:
