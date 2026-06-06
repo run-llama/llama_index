@@ -312,7 +312,11 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         """
         items = self._container.query_items(
-            query=f"SELECT c.id, c.id AS partitionKey FROM c WHERE c.{self._metadata_key}.ref_doc_id = '{ref_doc_id}'",
+            query=(
+                "SELECT c.id, c.id AS partitionKey FROM c "
+                f"WHERE c.{self._metadata_key}.ref_doc_id = @ref_doc_id"
+            ),
+            parameters=[{"name": "@ref_doc_id", "value": ref_doc_id}],
             enable_cross_partition_query=True,
         )
         for item in items:
