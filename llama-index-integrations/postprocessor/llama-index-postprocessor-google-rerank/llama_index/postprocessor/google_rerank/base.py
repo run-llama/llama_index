@@ -1,5 +1,6 @@
 """Google Rerank postprocessor using Discovery Engine Ranking API."""
 
+import asyncio
 import os
 from typing import Any, List, Optional
 
@@ -53,7 +54,9 @@ class GoogleRerank(BaseNodePostprocessor):
     )
 
     _client: Any = PrivateAttr()
-    _async_client: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr(default=None)
+    _async_client_loop: Any = PrivateAttr(default=None)
+    _credentials: Any = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -82,9 +85,7 @@ class GoogleRerank(BaseNodePostprocessor):
             self.project_id = resolved_project
 
         self._client = discoveryengine.RankServiceClient(credentials=credentials)
-        self._async_client = discoveryengine.RankServiceAsyncClient(
-            credentials=credentials
-        )
+        self._credentials = credentials
 
     @classmethod
     def class_name(cls) -> str:
@@ -107,6 +108,15 @@ class GoogleRerank(BaseNodePostprocessor):
                 )
             )
         return records
+
+    def _get_async_client(self) -> Any:
+        current_loop = asyncio.get_running_loop()
+        if self._async_client is None or self._async_client_loop is not current_loop:
+            self._async_client = discoveryengine.RankServiceAsyncClient(
+                credentials=self._credentials
+            )
+            self._async_client_loop = current_loop
+        return self._async_client
 
     @dispatcher.span
     def _postprocess_nodes(
@@ -185,7 +195,7 @@ class GoogleRerank(BaseNodePostprocessor):
             records=records,
         )
 
-        response = await self._async_client.rank(request=request)
+        response = await self._get_async_client().rank(request=request)
 
         new_nodes = []
         for record in response.records:
