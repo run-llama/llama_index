@@ -551,25 +551,27 @@ def convert_filters_to_v2_format(
     if not filters or not filters.filters:
         return None
 
-    if len(filters.filters) == 1:
-        f = filters.filters[0]
-        if isinstance(f, MetadataFilters):
-            return convert_filters_to_v2_format(f)
-        return _convert_single_filter(f)
-
     converted: list[_SimpleFilter | _CompoundFilter] = []
-    for f in filters.filters:
-        if isinstance(f, MetadataFilters):
-            if compound := convert_filters_to_v2_format(f):
+    for filter_ in list(filters.filters):
+        if isinstance(filter_, MetadataFilters):
+            if compound := convert_filters_to_v2_format(filter_):
                 converted.append(compound)
-        else:
-            if single := _convert_single_filter(f):
-                converted.append(single)
+        elif single := _convert_single_filter(filter_):
+            converted.append(single)
+        else:  # pragma: no cover
+            _logger.error(
+                f"Filter instance of type={type(filter_)} could not be converted"
+            )
 
-    match filters.condition:
-        case FilterCondition.AND:
+    match filters.condition, len(converted):
+        case _, 1:
+            return converted[0]
+        case FilterCondition.AND, _:
             return {"$and": converted}
-        case FilterCondition.OR:
+        case FilterCondition.OR, _:
             return {"$or": converted}
         case _:
-            raise ValueError(f"Unsupported filter condition: {filters.condition}")
+            raise ValueError(
+                f"Unsupported filter case, condition={filters.condition}, "
+                f"count={len(converted)}"
+            )
