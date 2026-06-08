@@ -13,6 +13,7 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 test:	## Run tests via pytest.
 	uv run --extra=v2 pytest tests
 
+.PHONY: testcov
 testcov:	## Run tests (with coverage) via pytest and tox.
 	# tests multiple versions and extra dependencies (e.g., 'v2')
 	uv run tox run-parallel
