@@ -37,7 +37,9 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 class SimilarityMode(str, Enum):
-    """Modes for similarity/distance."""
+    """Modes for similarityblock to achieve this:
+
+**SEARCH:**distance."""
 
     DEFAULT = "cosine"
     DOT_PRODUCT = "dot_product"
