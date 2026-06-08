@@ -2060,8 +2060,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """
         Convert GCP batch search (RRF combined) results to llama-index format.
 
-        Handles both ``combined_results`` and ``results`` response structures from
-        the ``batch_search_data_objects()`` API.
+        Handles the ``results`` response structure from the
+        ``batch_search_data_objects()`` API. Because all this implementation's hybrid
+        searches use a ``combine`` ranker, the results are already fused and ranked
+        server-side, so there should typically only be one batch result.
 
         Args:
             batch_results: Batch search response from ``batch_search_data_objects()``.
@@ -2131,7 +2133,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 )
                 weights = self._calculate_rrf_weights(alpha, num_searches)
                 return Ranker(rrf=ReciprocalRankFusion(weights=weights))
-
             case "vertex":
                 try:
                     from google.cloud.vectorsearch_v1beta import (  # type: ignore[attr-defined]
