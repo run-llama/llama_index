@@ -74,6 +74,7 @@ if TYPE_CHECKING:
         QueryDataObjectsRequest,
         QueryDataObjectsResponse,
         Ranker,
+        SearchDataObjectsRequest,
         SearchResult,
         SemanticSearch,
         TextSearch,
@@ -1416,37 +1417,24 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         # Route based on query mode
         match query.mode:
             case VectorStoreQueryMode.DEFAULT:
-                if query.query_embedding:
-                    _logger.debug(f"Using dense search for mode={query.mode.value}")
-                    dense_search = self._build_dense_vector_search(
-                        query, v2_filter, output_fields
-                    )
-                    request = SearchDataObjectsRequest(
-                        parent=self._collection_parent, vector_search=dense_search
-                    )
-                else:
-                    _logger.debug(f"Using semantic search for mode={query.mode.value}")
-                    semantic_search = self._build_semantic_search(
-                        query, v2_filter, output_fields
-                    )
-                    request = SearchDataObjectsRequest(
-                        parent=self._collection_parent, semantic_search=semantic_search
-                    )
+                request = self._build_default_request(query, v2_filter, output_fields)
                 results = self.v2_search_client.search_data_objects(request)
                 return self._process_search_results(results)
             case VectorStoreQueryMode.SPARSE:
-                sparse_search = self._build_sparse_vector_search(
-                    query, sparse_embedding, v2_filter, output_fields
-                )
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, vector_search=sparse_search
+                    parent=self._collection_parent,
+                    vector_search=self._build_sparse_vector_search(
+                        query, sparse_embedding, v2_filter, output_fields
+                    ),
                 )
                 results = self.v2_search_client.search_data_objects(request)
                 return self._process_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
-                text_search = self._build_text_search(query, v2_filter, output_fields)
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, text_search=text_search
+                    parent=self._collection_parent,
+                    text_search=self._build_text_search(
+                        query, v2_filter, output_fields
+                    ),
                 )
                 results = self.v2_search_client.search_data_objects(request)
                 return self._process_search_results(results)
@@ -1546,37 +1534,24 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         # Route based on query mode
         match query.mode:
             case VectorStoreQueryMode.DEFAULT:
-                if query.query_embedding:
-                    _logger.debug(f"Using dense search for mode={query.mode.value}")
-                    dense_search = self._build_dense_vector_search(
-                        query, v2_filter, output_fields
-                    )
-                    request = SearchDataObjectsRequest(
-                        parent=self._collection_parent, vector_search=dense_search
-                    )
-                else:
-                    _logger.debug(f"Using semantic search for mode={query.mode.value}")
-                    semantic_search = self._build_semantic_search(
-                        query, v2_filter, output_fields
-                    )
-                    request = SearchDataObjectsRequest(
-                        parent=self._collection_parent, semantic_search=semantic_search
-                    )
+                request = self._build_default_request(query, v2_filter, output_fields)
                 results = await self.v2_search_async_client.search_data_objects(request)
                 return await self._process_async_search_results(results)
             case VectorStoreQueryMode.SPARSE:
-                sparse_search = self._build_sparse_vector_search(
-                    query, sparse_embedding, v2_filter, output_fields
-                )
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, vector_search=sparse_search
+                    parent=self._collection_parent,
+                    vector_search=self._build_sparse_vector_search(
+                        query, sparse_embedding, v2_filter, output_fields
+                    ),
                 )
                 results = await self.v2_search_async_client.search_data_objects(request)
                 return await self._process_async_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
-                text_search = self._build_text_search(query, v2_filter, output_fields)
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent, text_search=text_search
+                    parent=self._collection_parent,
+                    text_search=self._build_text_search(
+                        query, v2_filter, output_fields
+                    ),
                 )
                 results = await self.v2_search_async_client.search_data_objects(request)
                 return await self._process_async_search_results(results)
@@ -1632,6 +1607,33 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if vector_fields:
             out_fields["vector_fields"] = sorted(vector_fields)
         return out_fields
+
+    def _build_default_request(
+        self,
+        query: VectorStoreQuery,
+        v2_filter: dict[str, Any] | None,
+        output_fields: dict[str, list[str]],
+    ) -> "SearchDataObjectsRequest":
+        """Build request for either dense (client-side) or semantic (server-side) embedding."""
+        from google.cloud.vectorsearch_v1beta import SearchDataObjectsRequest
+
+        if query.query_embedding:
+            _logger.debug(f"Using dense search for mode={query.mode.value}")
+            request = SearchDataObjectsRequest(
+                parent=self._collection_parent,
+                vector_search=self._build_dense_vector_search(
+                    query, v2_filter, output_fields
+                ),
+            )
+        else:
+            _logger.debug(f"Using semantic search for mode={query.mode.value}")
+            request = SearchDataObjectsRequest(
+                parent=self._collection_parent,
+                semantic_search=self._build_semantic_search(
+                    query, v2_filter, output_fields
+                ),
+            )
+        return request
 
     def _build_dense_vector_search(
         self,
