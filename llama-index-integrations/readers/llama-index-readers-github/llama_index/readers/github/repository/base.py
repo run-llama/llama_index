@@ -200,7 +200,9 @@ class GithubRepositoryReader(BaseReader):
         """
         Check if a tree object should be allowed based on the directories.
 
-        :param `tree_obj_path`: path of the tree object i.e. 'llama_index/readers'
+        :param `tree_obj_path`: path of the tree object i.e. 'llama_indexblock to fix this bug:
+
+**SEARCH:**readers'
 
         :return: True if the tree object should be allowed, False otherwise
         """
