@@ -10,6 +10,11 @@ get started.
 
 We use `uv` as the package and project manager for all the Python packages in this repository. Before contributing, make sure you have `uv` installed (see [installation guide](https://docs.astral.sh/uv/getting-started/installation/)).
 
+> **Note for Windows users:** If you encounter issues with `uv` on Windows, you may need to:
+> - Install via `pip install uv` or download from [GitHub releases](https://github.com/astral-sh/uv/releases)
+> - Use `uv` commands in PowerShell or Command Prompt
+> - Ensure Python is in your system PATH
+
 If you're ready to dive in, here’s a quick setup guide to get you going:
 
 1. **Fork** the GitHub repo, clone your fork and open a terminal at the root of the git repository `llama_index`.
