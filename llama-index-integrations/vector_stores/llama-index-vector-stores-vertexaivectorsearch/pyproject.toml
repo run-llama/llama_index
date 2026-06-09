@@ -160,48 +160,56 @@ known-first-party = ["llama_index.core", "llama_index.embeddings"]
 ]
 
 [tool.tox]
-requires = ["tox>=4.19"]
+requires = ["tox>=4.55", "tox-uv"]
 env_list = [
-    "clean",
+    # version-specific clean tasks
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["clean"]]},
+    # test environments for each supported Python version, with and without 'v2' extra
     {product = [{prefix = "3.", start = 10, stop = 14}, ["default", "v2"]]},
-    "coverage-report",
+    # coverage report creation for each version, across 'default' and 'v2' environments
+    {product = [{prefix = "3.", start = 10, stop = 14}, ["report"]]},
 ]
-
-[tool.tox.env.clean]
-description = "Erase previous coverage data"
-skip_install = true
-deps = ["coverage"]
-commands = [["coverage", "erase"]]
-
-[tool.tox.env.coverage-report]
-description = "Combine and report accumulated coverage"
-skip_install = true
-parallel_show_output = true
-deps = ["coverage"]
-commands = [
-    ["coverage", "xml"],
-    ["coverage", "report", "--show-missing"],
-]
-# ensure tests run and finish before executing the report phase
-depends = ["3.*-default", "3.*-v2"]
 
 [tool.tox.env_run_base]
 description = "Run tests with coverage under {base_python}"
 runner = "uv-venv-lock-runner"
-# always clean up .coverage before running pytest with coverage
-depends = ["clean"]
-commands = [
-    [
-        "pytest",
-        "--cov=llama_index.vector_stores.vertexaivectorsearch",
-        "--cov-append",  # for multienvironment coverage aggregation
-        "--cov-branch",
-        "--cov-config=pyproject.toml",
-        "--cov-report=term-missing",
-        {replace = "posargs", default = ["tests"], extend = true},
-    ],
-]
+set_env = {COVERAGE_FILE = ".coverage.{py_dot_ver}"}
 # install 'v2' extra only in tests for v2 environment
 extras = [
     {replace = "if", condition = "factor.v2", then = ["v2"], extend = true},
+]
+# show command-line coverage report when running in parallel
+parallel_show_output = {replace = "if", condition = "factor.report", then = true, "else" = false, extend = true}
+depends = [
+    # always clean up .coverage before running pytest with coverage
+    {replace = "if", condition = "not factor.clean and not factor.report", then = [
+        "{py_dot_ver}-clean",
+    ], extend = true},
+    # ensure tests run prior to reporting in parallel runs
+    {replace = "if", condition = "factor.report", then = [
+        "{py_dot_ver}-default",
+        "{py_dot_ver}-v2",
+    ], extend = true},
+]
+commands = [
+    # command for pytest with coverage
+    {replace = "if", condition = "not factor.clean and not factor.report", then = [
+        [
+            "pytest",
+            "--cov=llama_index.vector_stores.vertexaivectorsearch",
+            "--cov-append",  # for multienvironment coverage aggregation
+            "--cov-branch",
+            "--cov-config=pyproject.toml",
+            "--cov-report=term-missing",
+        ],
+    ], extend = true},
+    # report compilation for each python version across 'default' and 'v2' environments
+    {replace = "if", condition = "factor.report", then = [
+        ["coverage", "xml", "--data-file=.coverage.{py_dot_ver}", "-o", "coverage-{py_dot_ver}.xml"],
+        ["coverage", "report", "--data-file=.coverage.{py_dot_ver}", "--show-missing"],
+    ], extend = true},
+    # command for cleaning up coverage files prior to test runs
+    {replace = "if", condition = "factor.clean", then = [
+        ["coverage", "erase", "--data-file=.coverage.{py_dot_ver}"],
+    ], extend = true},
 ]
