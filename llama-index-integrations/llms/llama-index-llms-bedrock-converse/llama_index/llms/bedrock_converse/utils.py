@@ -934,9 +934,12 @@ async def converse_with_retry_async(
                 return await c.converse(**kwargs)
 
         @retry_decorator
+        async def _converse_stream_with_retry(c: Any, **kwargs: Any) -> Any:
+            return await c.converse_stream(**kwargs)
+
         async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
             if client is not None:
-                response = await client.converse_stream(**kwargs)
+                response = await _converse_stream_with_retry(client, **kwargs)
                 async for event in response["stream"]:
                     yield event
             else:
@@ -945,7 +948,7 @@ async def converse_with_retry_async(
                     config=config,
                     **_boto_client_kwargs,
                 ) as c:
-                    response = await c.converse_stream(**kwargs)
+                    response = await _converse_stream_with_retry(c, **kwargs)
                     async for event in response["stream"]:
                         yield event
 
