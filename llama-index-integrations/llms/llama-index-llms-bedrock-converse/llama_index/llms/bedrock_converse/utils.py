@@ -30,7 +30,6 @@ from llama_index.core.base.llms.types import (
 from tenacity import (
     before_sleep_log,
     retry,
-    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
@@ -706,28 +705,6 @@ def _is_retryable_client_error(exception: BaseException) -> bool:
     return False
 
 
-def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    try:
-        import aioboto3  # noqa
-    except ImportError as e:
-        raise ImportError(
-            "You must install the `aioboto3` package to use Bedrock."
-            "Please `pip install aioboto3`"
-        ) from e
-
-    return retry(
-        reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=retry_if_exception(_is_retryable_client_error),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-    )
-
-
 def converse_with_retry(
     client: Any,
     model: str,
@@ -785,9 +762,9 @@ def converse_with_retry(
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
         if guardrail_stream_processing_mode and stream:
-            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
-                guardrail_stream_processing_mode
-            )
+            converse_kwargs["guardrailConfig"][
+                "streamProcessingMode"
+            ] = guardrail_stream_processing_mode
 
     converse_kwargs = join_two_dicts(
         converse_kwargs,
@@ -816,8 +793,7 @@ def converse_with_retry(
 
 
 async def converse_with_retry_async(
-    session: Any,
-    config: Any,
+    client: Any,
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
@@ -831,113 +807,89 @@ async def converse_with_retry_async(
     guardrail_version: Optional[str] = None,
     guardrail_stream_processing_mode: Optional[Literal["sync", "async"]] = None,
     trace: Optional[str] = None,
-    boto_client_kwargs: Optional[Dict[str, Any]] = None,
-    client: Optional[Any] = None,
     **kwargs: Any,
 ) -> Any:
-    """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
-    inference_config: Dict[str, Any] = {
-        "maxTokens": max_tokens,
-    }
-    if temperature is not None:
-        inference_config["temperature"] = temperature
-    converse_kwargs = {
-        "modelId": model,
-        "messages": messages,
-        "inferenceConfig": inference_config,
-    }
-    if "thinking" in kwargs:
-        converse_kwargs["additionalModelRequestFields"] = {
-            "thinking": kwargs["thinking"]
-        }
+    """
+    Async wrapper for Bedrock Converse API calls.
 
-    if system_prompt:
-        if isinstance(system_prompt, str):
-            # if the system prompt is a simple text (for retro compatibility)
-            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
-        else:
-            system_messages: list[dict[str, Any]] = system_prompt
-        if (
-            system_prompt_caching
-            and len(system_messages) > 0
-            and system_messages[-1].get("cachePoint", None) is None
-        ):
-            # "Adding cache point to system prompt if not present"
-            system_messages.append({"cachePoint": {"type": "default"}})
-        converse_kwargs["system"] = system_messages
+    Delegates to the sync converse_with_retry via asyncio.to_thread to avoid
+    blocking the event loop. Requires a pre-configured boto3 bedrock-runtime
+    client via the `client` parameter.
 
-    if tool_config := kwargs.get("tools"):
-        converse_kwargs["toolConfig"] = tool_config
-        if tool_caching and "tools" in converse_kwargs["toolConfig"]:
-            converse_kwargs["toolConfig"]["tools"].append(
-                {"cachePoint": {"type": "default"}}
-            )
-    if guardrail_identifier and guardrail_version:
-        converse_kwargs["guardrailConfig"] = {}
-        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
-        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
-        if trace:
-            converse_kwargs["guardrailConfig"]["trace"] = trace
-        if guardrail_stream_processing_mode and stream:
-            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
-                guardrail_stream_processing_mode
-            )
-    converse_kwargs = join_two_dicts(
-        converse_kwargs,
-        {
-            k: v
-            for k, v in kwargs.items()
-            if k
-            not in [
-                "tools",
-                "guardrail_identifier",
-                "guardrail_version",
-                "trace",
-                "thinking",
-            ]
-        },
-    )
-    _boto_client_kwargs = {}
-    if boto_client_kwargs is not None:
-        _boto_client_kwargs |= boto_client_kwargs
+    For streaming, uses a thread + asyncio.Queue to yield chunks incrementally
+    as they arrive from the Bedrock API.
+    """
+    import asyncio
 
-    ## NOTE: Returning the generator directly from converse_stream doesn't work
-    # So, we have to use two separate functions for streaming and non-streaming
-    # This differs from the synchronous version, and is a bit of a hack
-    # Further investigation is needed
+    if client is None:
+        raise ValueError(
+            "A sync boto3 bedrock-runtime client must be provided via the 'client' parameter."
+        )
 
-    @retry_decorator
-    async def _conversion_with_retry(**kwargs: Any) -> Any:
-        if client is not None:
-            return await client.converse(**kwargs)
-        async with session.client(
-            "bedrock-runtime",
-            config=config,
-            **_boto_client_kwargs,
-        ) as c:
-            return await c.converse(**kwargs)
-
-    @retry_decorator
-    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        if client is not None:
-            response = await client.converse_stream(**kwargs)
-            async for event in response["stream"]:
-                yield event
-        else:
-            async with session.client(
-                "bedrock-runtime",
-                config=config,
-                **_boto_client_kwargs,
-            ) as c:
-                response = await c.converse_stream(**kwargs)
-                async for event in response["stream"]:
-                    yield event
-
-    if stream:
-        return _conversion_stream_with_retry(**converse_kwargs)
+    if not stream:
+        return await asyncio.to_thread(
+            converse_with_retry,
+            client=client,
+            model=model,
+            messages=messages,
+            max_retries=max_retries,
+            system_prompt=system_prompt,
+            system_prompt_caching=system_prompt_caching,
+            tool_caching=tool_caching,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream=False,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            guardrail_stream_processing_mode=guardrail_stream_processing_mode,
+            trace=trace,
+            **kwargs,
+        )
     else:
-        return await _conversion_with_retry(**converse_kwargs)
+        # Stream chunks incrementally via a queue bridging the sync iterator
+        # to an async generator. This avoids buffering the entire response.
+        queue: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+
+        def _producer():
+            try:
+                response = converse_with_retry(
+                    client=client,
+                    model=model,
+                    messages=messages,
+                    max_retries=max_retries,
+                    system_prompt=system_prompt,
+                    system_prompt_caching=system_prompt_caching,
+                    tool_caching=tool_caching,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=True,
+                    guardrail_identifier=guardrail_identifier,
+                    guardrail_version=guardrail_version,
+                    guardrail_stream_processing_mode=guardrail_stream_processing_mode,
+                    trace=trace,
+                    **kwargs,
+                )
+                for event in response["stream"]:
+                    loop.call_soon_threadsafe(queue.put_nowait, event)
+            except BaseException as e:
+                loop.call_soon_threadsafe(queue.put_nowait, e)
+            finally:
+                loop.call_soon_threadsafe(queue.put_nowait, None)
+
+        thread = loop.run_in_executor(None, _producer)
+
+        async def _async_gen():
+            while True:
+                chunk = await queue.get()
+                if chunk is None:
+                    break
+                if isinstance(chunk, BaseException):
+                    raise chunk
+                yield chunk
+            await thread  # ensure thread completes cleanly
+
+        return _async_gen()
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:

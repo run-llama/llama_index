@@ -37,7 +37,6 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "boto3>=1.38.27,<2",
-    "aioboto3>=15.0.0,<16",
     "llama-index-core>=0.14.5,<0.15",
 ]
 

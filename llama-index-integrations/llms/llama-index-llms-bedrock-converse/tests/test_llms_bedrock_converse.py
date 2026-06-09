@@ -123,40 +123,6 @@ class MockExceptions:
         pass
 
 
-class AsyncMockClient:
-    def __init__(self) -> "AsyncMockClient":
-        self.exceptions = MockExceptions()
-
-    async def __aenter__(self) -> "AsyncMockClient":
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        pass
-
-    async def converse(self, *args, **kwargs):
-        return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
-
-    async def converse_stream(self, *args, **kwargs):
-        async def stream_generator():
-            for element in EXP_STREAM_RESPONSE:
-                yield {
-                    "contentBlockDelta": {
-                        "delta": {"text": element},
-                        "contentBlockIndex": 0,
-                    }
-                }
-            # Add messageStop and metadata events for token usage testing
-            yield {"messageStop": {"stopReason": "end_turn"}}
-            yield {
-                "metadata": {
-                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
-                    "metrics": {"latencyMs": 886},
-                }
-            }
-
-        return {"stream": stream_generator()}
-
-
 class MockClient:
     def __init__(self) -> "MockClient":
         self.exceptions = MockExceptions()
@@ -185,14 +151,6 @@ class MockClient:
         return {"stream": stream_generator()}
 
 
-class MockAsyncSession:
-    def __init__(self, *args, **kwargs) -> "MockAsyncSession":
-        pass
-
-    def client(self, *args, **kwargs):
-        return AsyncMockClient()
-
-
 @pytest.fixture()
 def mock_boto3_session(monkeypatch):
     def mock_client(*args, **kwargs):
@@ -202,12 +160,7 @@ def mock_boto3_session(monkeypatch):
 
 
 @pytest.fixture()
-def mock_aioboto3_session(monkeypatch):
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
-
-
-@pytest.fixture()
-def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
+def bedrock_converse(mock_boto3_session):
     return BedrockConverse(
         model=EXP_MODEL,
         max_tokens=EXP_MAX_TOKENS,
@@ -220,9 +173,7 @@ def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
 
 
 @pytest.fixture()
-def bedrock_converse_with_application_inference_profile(
-    mock_boto3_session, mock_aioboto3_session
-):
+def bedrock_converse_with_application_inference_profile(mock_boto3_session):
     """
     Create a BedrockConverse client that uses an application inference profile for invoking the LLM.
     See AWS documentation for details about creating and using application inference profiles.
@@ -411,7 +362,6 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
             return {"stream": stream_generator()}
 
     monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: ToolStreamMockClient())
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
     llm = BedrockConverse(
         model=EXP_MODEL,
@@ -426,9 +376,9 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
     # tool_kwargs must be a dict, not a JSON string
-    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
-        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
-    )
+    assert isinstance(
+        tool_blocks[0].tool_kwargs, dict
+    ), f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
     assert tool_blocks[0].tool_kwargs == {"location": "London"}
     assert tool_blocks[0].tool_name == "get_weather"
     assert tool_blocks[0].tool_call_id == "tool-1"
@@ -439,24 +389,21 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     """
     Async variant: streaming tool call input is parsed from string to dict.
 
+    Since converse_with_retry_async now uses asyncio.to_thread with a sync client,
+    we mock the sync client's converse_stream method which returns a sync iterator.
+
     Regression test for https://github.com/run-llama/llama_index/issues/21579
     """
 
-    class ToolStreamAsyncMockClient:
+    class ToolStreamMockClient:
         def __init__(self):
             self.exceptions = MockExceptions()
 
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            pass
-
-        async def converse(self, *args, **kwargs):
+        def converse(self, *args, **kwargs):
             return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
 
-        async def converse_stream(self, *args, **kwargs):
-            async def stream_generator():
+        def converse_stream(self, *args, **kwargs):
+            def stream_generator():
                 yield {
                     "contentBlockStart": {
                         "start": {
@@ -493,15 +440,7 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
             return {"stream": stream_generator()}
 
-    class ToolStreamAsyncSession:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def client(self, *args, **kwargs):
-            return ToolStreamAsyncMockClient()
-
-    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: MockClient())
-    monkeypatch.setattr("aioboto3.Session", ToolStreamAsyncSession)
+    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: ToolStreamMockClient())
 
     llm = BedrockConverse(
         model=EXP_MODEL,
@@ -517,9 +456,9 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     final = responses[-1]
     tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
-    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
-        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
-    )
+    assert isinstance(
+        tool_blocks[0].tool_kwargs, dict
+    ), f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
     assert tool_blocks[0].tool_kwargs == {"location": "London"}
     assert tool_blocks[0].tool_name == "get_weather"
     assert tool_blocks[0].tool_call_id == "tool-1"
@@ -567,11 +506,11 @@ async def test_astream_chat(bedrock_converse):
 
 
 @pytest.mark.asyncio
-async def test_achat_uses_async_client_when_provided(
-    mock_boto3_session, mock_aioboto3_session
-):
+async def test_achat_uses_async_client_when_provided(mock_boto3_session):
     """When async_client is provided, achat uses it directly without opening a session client."""
-    async_mock = AsyncMockClient()
+    # async_client is now a sync client passed to converse_with_retry_async
+    # which uses asyncio.to_thread internally
+    async_mock = MockClient()
     llm = BedrockConverse(
         model=EXP_MODEL,
         max_tokens=EXP_MAX_TOKENS,
@@ -579,23 +518,19 @@ async def test_achat_uses_async_client_when_provided(
     )
 
     with patch.object(
-        AsyncMockClient, "converse", wraps=async_mock.converse
+        async_mock, "converse", wraps=async_mock.converse
     ) as patched_converse:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            response = await llm.achat(messages)
-            patched_converse.assert_called_once()
-            patched_session_client.assert_not_called()
+        response = await llm.achat(messages)
+        patched_converse.assert_called_once()
 
     assert isinstance(response, ChatResponse)
     assert response.message.content == EXP_RESPONSE
 
 
 @pytest.mark.asyncio
-async def test_astream_chat_uses_async_client_when_provided(
-    mock_boto3_session, mock_aioboto3_session
-):
+async def test_astream_chat_uses_async_client_when_provided(mock_boto3_session):
     """When async_client is provided, astream_chat uses it directly without opening a session client."""
-    async_mock = AsyncMockClient()
+    async_mock = MockClient()
     llm = BedrockConverse(
         model=EXP_MODEL,
         max_tokens=EXP_MAX_TOKENS,
@@ -603,14 +538,12 @@ async def test_astream_chat_uses_async_client_when_provided(
     )
 
     with patch.object(
-        AsyncMockClient, "converse_stream", wraps=async_mock.converse_stream
+        async_mock, "converse_stream", wraps=async_mock.converse_stream
     ) as patched_stream:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            response_stream = await llm.astream_chat(messages)
-            async for _ in response_stream:
-                pass
-            patched_stream.assert_called_once()
-            patched_session_client.assert_not_called()
+        response_stream = await llm.astream_chat(messages)
+        async for _ in response_stream:
+            pass
+        patched_stream.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -1224,9 +1157,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         if r.additional_kwargs.get("thinking_delta") is not None
         and len(r.additional_kwargs.get("thinking_delta", "")) > 0
     ]
-    assert len(thinking_responses) > 0, (
-        "Should have at least one response with non-empty thinking_delta in additional_kwargs"
-    )
+    assert (
+        len(thinking_responses) > 0
+    ), "Should have at least one response with non-empty thinking_delta in additional_kwargs"
 
     # Check that text deltas are separate from thinking deltas
     text_responses = [
@@ -1255,9 +1188,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         for r in async_responses
         if r.additional_kwargs.get("thinking_delta") is not None
     ]
-    assert len(async_thinking_responses) > 0, (
-        "Async streaming should also have thinking_delta in additional_kwargs"
-    )
+    assert (
+        len(async_thinking_responses) > 0
+    ), "Async streaming should also have thinking_delta in additional_kwargs"
 
 
 @needs_aws_creds
@@ -1315,13 +1248,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
     response_1 = await llm.achat(messages=cache_test_messages_1)
     # Verify cache write tokens are present (first call should write to cache)
     additional_kwargs_1 = getattr(response_1, "additional_kwargs", {})
-    assert "cache_creation_input_tokens" in additional_kwargs_1, (
-        "First call should show cache creation tokens"
-    )
+    assert (
+        "cache_creation_input_tokens" in additional_kwargs_1
+    ), "First call should show cache creation tokens"
     cache_write_tokens_1 = additional_kwargs_1.get("cache_creation_input_tokens", 0)
-    assert cache_write_tokens_1 > 0, (
-        f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
-    )
+    assert (
+        cache_write_tokens_1 > 0
+    ), f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
 
     # Second call - should read from cache with different user message
     cache_test_messages_2 = [
@@ -1343,13 +1276,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
 
     # Verify cache read tokens are present (second call should read from cache)
     additional_kwargs_2 = getattr(response_2, "additional_kwargs", {})
-    assert "cache_read_input_tokens" in additional_kwargs_2, (
-        "Second call should show cache read tokens"
-    )
+    assert (
+        "cache_read_input_tokens" in additional_kwargs_2
+    ), "Second call should show cache read tokens"
     cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
-    assert cache_read_tokens_2 > 0, (
-        f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
-    )
+    assert (
+        cache_read_tokens_2 > 0
+    ), f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
 
     # Verify cache efficiency - cache read tokens should be close to cache write tokens
     # (since we're using the same cached content)
@@ -1414,13 +1347,13 @@ async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
 
     # Verify cache write tokens are present (first call should write to cache automatically)
     additional_kwargs = getattr(response, "additional_kwargs", {})
-    assert "cache_creation_input_tokens" in additional_kwargs, (
-        "First call should show cache creation tokens when system_prompt_caching=True"
-    )
+    assert (
+        "cache_creation_input_tokens" in additional_kwargs
+    ), "First call should show cache creation tokens when system_prompt_caching=True"
     cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
-    assert cache_write_tokens > 0, (
-        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
-    )
+    assert (
+        cache_write_tokens > 0
+    ), f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
 
     # Verify response is meaningful
     assert len(str(response.message.content)) > 50, "Response should be substantial"
