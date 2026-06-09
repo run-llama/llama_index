@@ -185,30 +185,6 @@ commands = [
 # ensure tests run and finish before executing the report phase
 depends = ["3.*-default", "3.*-v2"]
 
-[tool.tox.env.lint-fix]
-description = "Format and fix issues with ruff"
-depends = ["3.12"]
-extras = ["v2"]
-commands = [
-    ["ruff", "format", "llama_index", "tests"],
-    ["ruff", "check", "--fix-only", "-e", "llama_index", "tests"],
-]
-
-[tool.tox.env.lint-mypy]
-description = "Run mypy type checks"
-depends = ["3.12", "lint-fix"]
-extras = ["v2"]
-commands = [["mypy", "llama_index"]]
-
-[tool.tox.env.lint-ruff]
-description = "Check code style with ruff"
-depends = ["3.12", "lint-fix"]
-extras = ["v2"]
-commands = [
-    ["ruff", "format", "--check", "llama_index", "tests"],
-    ["ruff", "check", "llama_index", "tests"],
-]
-
 [tool.tox.env_run_base]
 description = "Run tests with coverage under {base_python}"
 runner = "uv-venv-lock-runner"
