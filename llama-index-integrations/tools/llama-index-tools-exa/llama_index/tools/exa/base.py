@@ -197,11 +197,7 @@ class ExaToolSpec(BaseToolSpec):
 
         response = self.client.search_and_contents(query, **kwargs)
         return [
-            Document(
-                text=document.highlights[0]
-                if document.highlights
-                else ""
-            )
+            Document(text=document.highlights[0] if document.highlights else "")
             for document in response.results
         ]
 
