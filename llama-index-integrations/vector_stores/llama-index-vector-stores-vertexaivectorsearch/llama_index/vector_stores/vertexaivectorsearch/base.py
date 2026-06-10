@@ -132,15 +132,30 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                            system.
 
     Examples:
-        `pip install llama-index-vector-stores-vertexaivectorsearch`
+        V1 API: `pip install llama-index-vector-stores-vertexaivectorsearch`
 
         ```python
         from
         vector_store = VertexAIVectorStore(
+            api_version="v1",
             project_id=PROJECT_ID,
             region=REGION,
             index_id="<index_resource_name>"
             endpoint_id="<index_endpoint_resource_name>"
+        )
+        ```
+
+        V2 API: `pip install llama-index-vector-stores-vertexaivectorsearch[v2]`
+
+        ```python
+        from
+        vector_store = VertexAIVectorStore(
+            api_version="v2",
+            project_id=PROJECT_ID,
+            region=REGION,
+            collection_id="<Vertex collection name>"
+            credentials=... # already built credentials object, OR
+            credential_path="..."
         )
         ```
 
