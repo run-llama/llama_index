@@ -257,14 +257,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         default=None,
         description=(
             "[V2] Name of the collection field where node IDs are stored (if "
-            "applicable)"
+            "applicable)."
         ),
     )
     node_type_field: str | None = Field(
         default=None,
         description=(
             "[V2] Name of the collection field where node type descriptors are stored "
-            "(if applicable)"
+            "(if applicable)."
         ),
     )
     doc_id_field: str | None = Field(
@@ -279,7 +279,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         default=None,
         description=(
             "[V2] Name of the collection field where node text content is stored (if "
-            "applicable)"
+            "applicable)."
         ),
     )
     content_field_metadata_mode: MetadataMode = Field(
@@ -367,6 +367,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         default=None,
         description="[V2] The path where access credentials are stored (if applicable).",
     )
+    v2_client_options: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "[V2] Custom values to pass as 'client_options' to any created service client."
+        ),
+    )
 
     # Output field configuration
     # for (a)get_nodes operations
@@ -429,7 +435,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # v1 requires index_id and endpoint_id
             if not self.index_id:
                 raise ValueError(
-                    "Parameter 'index_id' is required for api_version='v1'"
+                    "Parameter 'index_id' is required for api_version='v1'."
                 )
             index = self._sdk_manager.get_index(index_id=self.index_id)
             self._index = index
@@ -442,7 +448,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
             if not self.endpoint_id:
                 raise ValueError(
-                    "Parameter 'endpoint_id' is required for api_version='v1'"
+                    "Parameter 'endpoint_id' is required for api_version='v1'."
                 )
             self._endpoint = self._sdk_manager.get_endpoint(
                 endpoint_id=self.endpoint_id
@@ -679,7 +685,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             if add_operation:
                 raise VertexAIInputError(
-                    "The argument 'add_operation' is only valid for api_version='v2'"
+                    "The argument 'add_operation' is only valid for api_version='v2'."
                 )
             return self._add_v1(
                 nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
@@ -1356,7 +1362,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             if sparse_embedding is not None:
                 raise VertexAIInputError(
-                    "Sparse vector search is not supported in api_version='v1'"
+                    "Sparse vector search is not supported in api_version='v1'."
                 )
             return self._query_v1(query, **kwargs)
 
@@ -1522,7 +1528,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             if sparse_embedding is not None:
                 raise VertexAIInputError(
-                    "Sparse vector search is not supported in api_version='v1'"
+                    "Sparse vector search is not supported in api_version='v1'."
                 )
             # use sync version
             return self._query_v1(query, **kwargs)
