@@ -41,6 +41,7 @@ from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
 )
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIInputError
 
 _logger = logging.getLogger(__name__)
 
@@ -502,7 +503,7 @@ def retry(max_attempts: int = 3, delay: float = 1.0) -> Callable:
 
 
 # =============================================================================
-# Helper Functions for Hybrid Search
+# Helper Functions for Search
 # =============================================================================
 
 # type aliases for type enforcement
@@ -547,6 +548,9 @@ def convert_filters_to_v2_format(
     Returns:
         A converted V2 filter dictionary, or ``None`` if no filters are provided.
 
+    Raises:
+        VertexAIInputError: For invalid filter inputs.
+
     """
     if not filters or not filters.filters:
         return None
@@ -571,7 +575,24 @@ def convert_filters_to_v2_format(
         case FilterCondition.OR, _:
             return {"$or": converted}
         case _:
-            raise ValueError(
+            raise VertexAIInputError(
                 f"Unsupported filter case, condition={filters.condition}, "
                 f"count={len(converted)}"
             )
+
+
+def calculate_rrf_weights(alpha: float, num_searches: int = 2) -> list[float]:
+    """
+    Calculate RRF weights from alpha value.
+
+    Args:
+        alpha: Weight for vector search (0 = text only, 1 = vector only)
+        num_searches: Number of searches being combined
+
+    Returns:
+        List of weights [vector_weight, text_weight]
+
+    """
+    if num_searches == 2:
+        return [alpha, 1.0 - alpha]
+    return [1.0 / num_searches] * num_searches

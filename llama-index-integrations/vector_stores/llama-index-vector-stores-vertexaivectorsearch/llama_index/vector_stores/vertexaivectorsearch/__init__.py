@@ -1,17 +1,15 @@
 from llama_index.vector_stores.vertexaivectorsearch._types import (
+    VertexAIAddError,
     VertexAIDeleteError,
     VertexAIError,
-    VertexAIIndexingError,
     VertexAIInputError,
-    VertexAIQueryError,
 )
 from llama_index.vector_stores.vertexaivectorsearch.base import VertexAIVectorStore
 
 __all__ = [
+    "VertexAIAddError",
     "VertexAIDeleteError",
     "VertexAIError",
-    "VertexAIIndexingError",
     "VertexAIInputError",
-    "VertexAIQueryError",
     "VertexAIVectorStore",
 ]

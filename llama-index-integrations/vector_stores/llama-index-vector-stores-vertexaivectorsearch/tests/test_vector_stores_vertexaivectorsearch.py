@@ -42,14 +42,15 @@ from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
 from llama_index.vector_stores.vertexaivectorsearch._types import (
+    VertexAIAddError,
     VertexAIDeleteError,
-    VertexAIIndexingError,
-    VertexAIQueryError,
+    VertexAIInputError,
 )
 from llama_index.vector_stores.vertexaivectorsearch.base import (
     FeatureFlags,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
+    calculate_rrf_weights,
     convert_filters_to_v2_format,
     retry,
 )
@@ -1606,12 +1607,12 @@ class TestUnitV2Add:
                     mock_v2_data_object_service_client.batch_update_data_objects.side_effect = batch_add_side_effect
 
             # WHEN
-            with pytest.raises(VertexAIIndexingError) as exc_info:
+            with pytest.raises(VertexAIAddError) as exc_info:
                 _ = vector_store.add(input_dense_nodes, **extra_args)
 
             # THEN
             exception = exc_info.value
-            assert isinstance(exception, VertexAIIndexingError)
+            assert isinstance(exception, VertexAIAddError)
             match add_operation_type:
                 case "create":
                     assert exception.result.added_ids == expected_changed
@@ -1663,12 +1664,12 @@ class TestUnitV2Add:
                     mock_v2_data_object_service_async_client.batch_update_data_objects.side_effect = batch_add_side_effect
 
             # WHEN
-            with pytest.raises(VertexAIIndexingError) as exc_info:
+            with pytest.raises(VertexAIAddError) as exc_info:
                 _ = await vector_store.async_add(input_dense_nodes, **extra_args)
 
             # THEN
             exception = exc_info.value
-            assert isinstance(exception, VertexAIIndexingError)
+            assert isinstance(exception, VertexAIAddError)
             match add_operation_type:
                 case "create":
                     assert exception.result.added_ids == expected_changed
@@ -3678,7 +3679,7 @@ class TestUnitV2Query:
                     setattr(mock_v2_store, key, val)
 
             # WHEN / THEN
-            with pytest.raises(VertexAIQueryError, match=error_match):
+            with pytest.raises(VertexAIInputError, match=error_match):
                 _ = mock_v2_store.query(input_query)
 
         async def test_v2_aquery_invalid_input(
@@ -3694,7 +3695,7 @@ class TestUnitV2Query:
                     setattr(mock_v2_store, key, val)
 
             # WHEN / THEN
-            with pytest.raises(VertexAIQueryError, match=error_match):
+            with pytest.raises(VertexAIInputError, match=error_match):
                 _ = await mock_v2_store.aquery(input_query)
 
     @pytest.mark.parametrize(
@@ -3717,7 +3718,5 @@ class TestUnitV2Query:
     def test_rrf_weight_calculation(
         self, alpha: float, num_searches: int, expected: list[float]
     ) -> None:
-        weights = VertexAIVectorStore._calculate_rrf_weights(
-            alpha=alpha, num_searches=num_searches
-        )
+        weights = calculate_rrf_weights(alpha=alpha, num_searches=num_searches)
         assert weights == expected

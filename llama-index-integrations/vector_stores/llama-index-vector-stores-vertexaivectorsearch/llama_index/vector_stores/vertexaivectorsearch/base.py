@@ -12,9 +12,8 @@ import time
 from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-from annotated_types import Ge, Le
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from google.cloud.aiplatform.matching_engine import (
@@ -49,12 +48,12 @@ from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
 from llama_index.vector_stores.vertexaivectorsearch._types import (
     AddBatchResult,
     DeleteBatchResult,
+    VertexAIAddError,
     VertexAIDeleteError,
-    VertexAIIndexingError,
     VertexAIInputError,
-    VertexAIQueryError,
 )
 from llama_index.vector_stores.vertexaivectorsearch.utils import (
+    calculate_rrf_weights,
     convert_filters_to_v2_format,
 )
 
@@ -150,70 +149,212 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     remove_text_from_metadata: bool = True
     flat_metadata: bool = False
 
-    text_key: str = DEFAULT_TEXT_KEY
+    text_key: str = Field(
+        default=DEFAULT_TEXT_KEY, description="[V1] Text content key name."
+    )
 
-    project_id: str
-    region: str
+    project_id: str = Field(description="Project ID")
+    region: str = Field(description="Project region")
 
     # API version - defaults to v1 for backward compatibility
     # updates not allowed for initialization reasons
-    api_version: Literal["v1", "v2"] = Field(default="v1", frozen=True)
+    api_version: Literal["v1", "v2"] = Field(
+        default="v1",
+        frozen=True,
+        description="Vertex API version (cannot be changed once set)",
+    )
 
     # v1-exclusive parameters
-    index_id: str | None = None
-    endpoint_id: str | None = None
-    gcs_bucket_name: str | None = None
+    index_id: str | None = Field(default=None, description="[V1] Index ID")
+    endpoint_id: str | None = Field(default=None, description="[V1] Endpoint ID")
+    gcs_bucket_name: str | None = Field(
+        default=None, description="[V1] GCC Bucket name"
+    )
 
     # v2-exclusive parameters
-    collection_id: str | None = None
+    collection_id: str | None = Field(default=None, description="[V2] Collection ID")
 
     # V2 indexing-related fields
-    default_add_operation: Literal["create", "update"] = "create"
-    max_concurrent_requests: PositiveInt = 5
+    default_add_operation: Literal["create", "update"] = Field(
+        default="create",
+        description="[V2] Default operation when calling 'add'/'async_add'.",
+    )
+    max_concurrent_requests: PositiveInt = Field(
+        default=5,
+        description=(
+            "[V2] Max concurrent requests (only applies to async methods). Calls "
+            "beyond this number will wait to acquire a semaphore before executing."
+        ),
+    )
 
     # V2 Hybrid Search parameters
-    enable_hybrid: bool = False
-    text_search_fields: list[str] | None = None
+    enable_hybrid: bool = Field(
+        default=False,
+        description=(
+            "[V2] Whether to enable hybrid search. Queries passed to 'query'/'aquery' "
+            "will still use the method requested by the 'mode' parameter, "
+            "but 'HYBRID' and 'SEMANTIC_HYBRID' will error unless this is enabled."
+        ),
+    )
+    text_search_fields: list[str] | None = Field(
+        default=None,
+        description="[V2] Search fields for calls to 'query'/'aquery' with mode=TEXT_SEARCH.",
+    )
 
     # V2 fields shared between indexing and query time
-    embedding_field: str = "embedding"
-    sparse_embedding_field: str = "sparse_embedding"
+    embedding_field: str = Field(
+        default="embedding",
+        description=(
+            "[V2] Default dense embedding field. For queries, this is the default "
+            "search field if not specified in the query. For indexing operations, "
+            "this name of the field 'BaseNode.embedding' is stored in."
+        ),
+    )
+    sparse_embedding_field: str = Field(
+        default="sparse_embedding",
+        description=(
+            "[V2] Default sparse embedding field. For queries, this is the default "
+            "search field if not specified in the query. For indexing operations, "
+            "this name of the field a sparse embedding is stored in."
+        ),
+    )
     # allow users to specify additional fields for V2 indexing (add) operations
-    dense_embedding_fields: set[str] = Field(default_factory=set)
-    sparse_embedding_fields: set[str] = Field(default_factory=set)
+    dense_embedding_fields: set[str] = Field(
+        default_factory=set,
+        description=(
+            "[V2] Extra dense embedding fields used at indexing time. If present in node "
+            "metadata, these fields will be stored as dense vector fields in the "
+            "collection."
+        ),
+    )
+    sparse_embedding_fields: set[str] = Field(
+        default_factory=set,
+        description=(
+            "[V2] Extra sparse embedding fields used at indexing time. If present in "
+            "node metadata, these fields will be stored as sparse vector fields in "
+            "the collection."
+        ),
+    )
 
     # optional field names for non-metadata properties in nodes being indexed
-    nodeid_field: str | None = None
-    node_type_field: str | None = None
-    docid_field: str | None = None
-    content_field: str | None = None
-    content_field_metadata_mode: MetadataMode = MetadataMode.NONE
+    nodeid_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] Name of the collection field where node IDs are stored (if "
+            "applicable)"
+        ),
+    )
+    node_type_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] Name of the collection field where node type descriptors are stored "
+            "(if applicable)"
+        ),
+    )
+    docid_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] Name of the collection field where ref/parent document IDs are "
+            "stored (if applicable)"
+        ),
+    )
+    content_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] Name of the collection field where node text content is stored (if "
+            "applicable)"
+        ),
+    )
+    content_field_metadata_mode: MetadataMode = Field(
+        default=MetadataMode.NONE,
+        description=(
+            "[V2] The mode to pass to 'TextNode.get_content()' when extracting text "
+            "content for indexing. By default, uses 'NONE', meaning no metadata "
+            "transformations are applied."
+        ),
+    )
 
     # Ranker configuration
-    hybrid_ranker: Literal["rrf", "vertex"] = "rrf"
-    default_hybrid_alpha: Annotated[float, Ge(0.0), Le(1.0)] = 0.5
+    hybrid_ranker: Literal["rrf", "vertex"] = Field(
+        default="rrf",
+        description=(
+            "[V2] The ranker type to be used to combine results when performing "
+            'hybrid search. The "vertex" ranker requires '
+            "'google.cloud.vectorsearch_v1beta>=0.11'."
+        ),
+    )
+    default_hybrid_alpha: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="[V2] Default alpha value for hybrid search.",
+    )
 
     # SemanticSearch configuration
-    semantic_task_type: str = "RETRIEVAL_QUERY"
-    semantic_search_embedding_field: str | None = None
+    semantic_task_type: str = Field(
+        default="RETRIEVAL_QUERY",
+        description=(
+            "[V2] The default task type for search embedding creation when using "
+            "server-side semantic vector search."
+        ),
+    )
+    semantic_search_embedding_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] Default embedding search field for server-side semantic vector "
+            "search. This field must have a Vertex embedding configuration in the "
+            "collection vector schema."
+        ),
+    )
 
     # VertexRanker-specific parameters
-    vertex_ranker_model: str = Field(default="semantic-ranker-default@latest")
-    vertex_ranker_title_field: str | None = None
-    vertex_ranker_content_field: str | None = None
+    vertex_ranker_model: str = Field(
+        default="semantic-ranker-default@latest",
+        description=(
+            "[V2] The ranker model to use for hybrid search when "
+            "'hybrid_ranker=\"vertex\"'."
+        ),
+    )
+    vertex_ranker_title_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] The title field to use for hybrid search when "
+            "'hybrid_ranker=\"vertex\"'."
+        ),
+    )
+    vertex_ranker_content_field: str | None = Field(
+        default=None,
+        description=(
+            "[V2] The text content field to use for hybrid search when "
+            "'hybrid_ranker=\"vertex\"'."
+        ),
+    )
 
     # Shared parameters
-    batch_size: PositiveInt = 100
-    credentials_path: str | None = None
+    batch_size: PositiveInt = Field(
+        default=100,
+        description=(
+            "[V2] The batch size to use when performing add or delete operations on "
+            "the collection."
+        ),
+    )
+    credentials_path: str | None = Field(
+        default=None,
+        description="[V2] The path where access credentials are stored (if applicable).",
+    )
 
     # Output field configuration
     # for (a)get_nodes operations
     get_nodes_output_fields: dict[str, list[str]] = Field(
-        default={"metadata_fields": ["*"]}
+        default={"metadata_fields": ["*"]},
+        description=(
+            "[V2] The default fields to return when calling 'get_nodes'/'aget_nodes'."
+        ),
     )
     # for (a)query operations
     query_output_fields: dict[str, list[str]] = Field(
-        default={"metadata_fields": ["*"], "data_fields": ["*"]}
+        default={"metadata_fields": ["*"], "data_fields": ["*"]},
+        description="[V2] The default fields to return when calling 'query'/'aquery'.",
     )
 
     _sdk_manager: VectorSearchSDKManager = PrivateAttr()
@@ -357,15 +498,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         """Get client."""
         return self._staging_bucket
 
-    # V2 properties
-    @cached_property
-    def _collection_parent(self) -> str:
-        """Full resource path for the collection."""
-        return (
-            f"projects/{self.project_id}/locations/{self.region}"
-            f"/collections/{self.collection_id}"
-        )
-
     @cached_property
     def v2_vector_search_client(self) -> "VectorSearchServiceClient":
         """Access shared ``VectorSearchServiceClient`` instance."""
@@ -408,11 +540,22 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         # NOTE: async clients *must* be lazy initialized to ensure the right async loop
         return DataObjectSearchServiceAsyncClient(credentials=credentials)
 
+    # V2 properties
+    @cached_property
+    def v2_collection_parent(self) -> str:
+        """Full resource path for the V2 collection."""
+        return (
+            f"projects/{self.project_id}/locations/{self.region}"
+            f"/collections/{self.collection_id}"
+        )
+
     @cached_property
     def v2_collection(self) -> "Collection":
         """The V2 collection represented by this vector store instance."""
         self._sdk_manager.ensure_v2_available()
-        return self.v2_vector_search_client.get_collection(name=self._collection_parent)
+        return self.v2_vector_search_client.get_collection(
+            name=self.v2_collection_parent
+        )
 
     @cached_property
     def v2_data_fields(self) -> set[str]:
@@ -469,6 +612,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             add_operation: Literal["create", "update"] | None:
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **kwargs: additional keyword arguments to be passed to implementations
+
+        Returns:
+            The IDs of the nodes added to the index.
+
+        Raises:
+            VertexAIInputError: For invalid arguments.
+            VertexAIIndexingError: For errors encountered while running indexing operations.
 
         """
         if not nodes:
@@ -572,7 +722,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             size = len(batch)
             _logger.info(f"Creating batch {i} ({size} objects)")
             request = BatchCreateDataObjectsRequest(
-                parent=self._collection_parent, requests=batch
+                parent=self.v2_collection_parent, requests=batch
             )
 
             try:
@@ -586,11 +736,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 result.exceptions.append(exc)
 
         time_taken = time.perf_counter() - time_start
-        _logger.info(
-            f"Completed 'add' operation in {time_taken:.2f}s, {result.summary_line}"
-        )
+        _logger.info(f"Completed 'add' operation in {time_taken:.2f}s, {result!s}")
         if not result.succeeded:
-            raise VertexAIIndexingError(result)
+            raise VertexAIAddError(result)
         return result.added_ids
 
     def _add_v2_update(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:
@@ -617,7 +765,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             try:
                 _logger.info(f"Updating batch {i} ({size} objects)")
                 batch_request = BatchUpdateDataObjectsRequest(
-                    parent=self._collection_parent, requests=batch
+                    parent=self.v2_collection_parent, requests=batch
                 )
                 self.v2_data_object_client.batch_update_data_objects(batch_request)
                 result.updated_ids.extend(batch_ids)
@@ -629,11 +777,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 result.failed_ids.extend(batch_ids)
                 result.exceptions.append(exc)
         time_taken = time.perf_counter() - time_start
-        _logger.info(
-            f"Completed 'update' operation in {time_taken:.2f}s, {result.summary_line}"
-        )
+        _logger.info(f"Completed 'update' operation in {time_taken:.2f}s, {result!s}")
         if not result.succeeded:
-            raise VertexAIIndexingError(result)
+            raise VertexAIAddError(result)
         return result.updated_ids
 
     def _build_v2_create_requests(
@@ -648,7 +794,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             data_object = self.extract_v2_data_object_from_node(node)
             requests.append(
                 CreateDataObjectRequest(
-                    parent=self._collection_parent,
+                    parent=self.v2_collection_parent,
                     data_object_id=node.node_id,
                     data_object=data_object,
                 )
@@ -666,7 +812,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             node_ids.append(node.node_id)
             data_object = self.extract_v2_data_object_from_node(node)
             # updates must include the fully qualified name of the object being updated
-            data_object.name = f"{self._collection_parent}/dataObjects/{node.node_id}"
+            data_object.name = f"{self.v2_collection_parent}/dataObjects/{node.node_id}"
             requests.append(UpdateDataObjectRequest(data_object=data_object))
         return node_ids, requests
 
@@ -750,7 +896,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
     def extract_node_from_v2_data_object(self, data_obj: "DataObject") -> BaseNode:
         """
-        Extract a TextNode and its ID from a Vertex ``DataObject``.
+        Extract a ``TextNode`` and its ID from a Vertex ``DataObject``.
 
         Args:
             data_obj: A Vertex ``DataObject`` from search results.
@@ -760,6 +906,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
             The return type is ``BaseNode`` instead of ``TextNode`` for API compatibility
             reasons, but currently this implementation always returns ``TextNode`` objects.
+
+        Raises:
+            NotImplementedError: For nodes with a type field other than 'TextNode'.
 
         """
         # Extract metadata
@@ -788,8 +937,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         text: str = ""
         if self.content_field and self.content_field in metadata:
             text = metadata.pop(self.content_field)
-        elif self.text_key and self.text_key in metadata:
-            text = metadata.pop(self.text_key)
 
         # extract source/parent relationship if configured
         relationships: dict[NodeRelationship, RelatedNodeType] = {}
@@ -861,7 +1008,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         **add_kwargs: Any,
     ) -> list[str]:
         """
-        Asynchronously dd nodes to index.
+        Asynchronously add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -870,6 +1017,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             add_operation: Literal["create", "update"] | None:
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **add_kwargs: additional keyword arguments to be passed to implementations
+
+        Returns:
+            The IDs of the nodes added to the index.
+
+        Raises:
+            VertexAIInputError: For invalid arguments.
+            VertexAIIndexingError: For errors encountered while running indexing operations.
 
         """
         if not nodes:
@@ -926,10 +1080,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         result = sum(results, AddBatchResult())
         _logger.info(
-            f"Completed 'async_add' operation in {time_taken:.2f}s, {result.summary_line}"
+            f"Completed 'async_add' operation in {time_taken:.2f}s, {result!s}"
         )
         if not result.succeeded:
-            raise VertexAIIndexingError(result)
+            raise VertexAIAddError(result)
         return result.added_ids
 
     async def _async_create_batch(
@@ -958,7 +1112,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             try:
                 _logger.debug(f"Adding async batch {batch_idx} ({size} objects)")
                 request = BatchCreateDataObjectsRequest(
-                    parent=self._collection_parent, requests=create_requests
+                    parent=self.v2_collection_parent, requests=create_requests
                 )
                 response = (
                     await self.v2_data_object_async_client.batch_create_data_objects(
@@ -1010,10 +1164,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         result = sum(results, AddBatchResult())
         _logger.info(
-            f"Completed 'async_update' operation in {time_taken:.2f}s, {result.summary_line}"
+            f"Completed 'async_update' operation in {time_taken:.2f}s, {result!s}"
         )
         if not result.succeeded:
-            raise VertexAIIndexingError(result)
+            raise VertexAIAddError(result)
         return result.updated_ids
 
     async def _async_update_batch(
@@ -1042,7 +1196,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             try:
                 _logger.debug(f"Updating async batch {batch_idx} ({size} objects)")
                 request = BatchUpdateDataObjectsRequest(
-                    parent=self._collection_parent, requests=update_requests
+                    parent=self.v2_collection_parent, requests=update_requests
                 )
                 response = (
                     await self.v2_data_object_async_client.batch_update_data_objects(
@@ -1068,6 +1222,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
             **delete_kwargs: Additional keyword arguments to be passed to implementations
+
+        Raises:
+            VertexAIInputError: For invalid input arguments.
+            VertexAIDeleteError: For errors raised during delete operations.
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
@@ -1118,7 +1276,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         time_taken, result = self._sync_delete_query_result(query_results)
         _logger.info(
             f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
-            f"{time_taken:.2f}, {result.summary_line}",
+            f"{time_taken:.2f}, {result!s}",
         )
         if not result.succeeded:
             raise VertexAIDeleteError(result)
@@ -1140,7 +1298,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if not output_fields:
             output_fields = OutputFields(metadata_fields=["*"])
         return QueryDataObjectsRequest(
-            parent=self._collection_parent,
+            parent=self.v2_collection_parent,
             filter=v2_filter,
             page_size=self.batch_size,
             output_fields=output_fields,
@@ -1170,7 +1328,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             DeleteDataObjectRequest(name=obj.name) for obj in page.data_objects
         ]:
             return BatchDeleteDataObjectsRequest(
-                parent=self._collection_parent, requests=delete_requests
+                parent=self.v2_collection_parent, requests=delete_requests
             )
         return None
 
@@ -1208,6 +1366,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
             **delete_kwargs: Additional keyword arguments
 
+        Raises:
+            VertexAIInputError: For invalid input arguments.
+            VertexAIDeleteError: For errors raised during delete operations.
+
         """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
@@ -1241,7 +1403,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         time_taken, result = await self._async_delete_query_result(paged_resp)
         _logger.info(
             f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
-            f"{time_taken:.2f}, {result.summary_line}",
+            f"{time_taken:.2f}, {result!s}",
         )
         if not result.succeeded:
             raise VertexAIDeleteError(result)
@@ -1313,7 +1475,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Supported modes:
 
         * DEFAULT: Dense vector similarity search via ``query.query_embedding`` or (v2
-          only) server-side semantic search. via ``query.query_embedding`` or (V2
           only) server-side semantic search.
         * SPARSE: (V2 only) Sparse vector search
         * TEXT_SEARCH: (V2 only) Full-text keyword search
@@ -1333,7 +1494,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             Vector store query result
 
         Raises:
-            VertexAIQueryError: For invalid ``query`` parameters for the selected mode.
+            VertexAIInputError: For invalid ``query`` parameters for the selected mode.
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
@@ -1422,7 +1583,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return self._process_search_results(results)
             case VectorStoreQueryMode.SPARSE:
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent,
+                    parent=self.v2_collection_parent,
                     vector_search=self._build_sparse_vector_search(
                         query, sparse_embedding, v2_filter, output_fields
                     ),
@@ -1431,7 +1592,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return self._process_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent,
+                    parent=self.v2_collection_parent,
                     text_search=self._build_text_search(
                         query, v2_filter, output_fields
                     ),
@@ -1459,7 +1620,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     batch_results, batch_request.combine.top_k
                 )
             case _:
-                raise VertexAIQueryError(
+                raise VertexAIInputError(
                     f"Unsupported query mode: {query.mode}, supported modes: "
                     f"DEFAULT, SPARSE, TEXT_SEARCH, HYBRID, SEMANTIC_HYBRID"
                 )
@@ -1497,7 +1658,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             Vector store query result
 
         Raises:
-            VertexAIQueryError: For invalid ``query`` parameters for the selected mode.
+            VertexAIInputError: For invalid ``query`` parameters for the selected mode.
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
@@ -1539,7 +1700,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return await self._process_async_search_results(results)
             case VectorStoreQueryMode.SPARSE:
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent,
+                    parent=self.v2_collection_parent,
                     vector_search=self._build_sparse_vector_search(
                         query, sparse_embedding, v2_filter, output_fields
                     ),
@@ -1548,7 +1709,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 return await self._process_async_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
                 request = SearchDataObjectsRequest(
-                    parent=self._collection_parent,
+                    parent=self.v2_collection_parent,
                     text_search=self._build_text_search(
                         query, v2_filter, output_fields
                     ),
@@ -1580,7 +1741,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     batch_results, batch_request.combine.top_k
                 )
             case _:
-                raise VertexAIQueryError(
+                raise VertexAIInputError(
                     f"Unsupported query mode: {query.mode}, supported modes: "
                     f"DEFAULT, SPARSE, TEXT_SEARCH, HYBRID, SEMANTIC_HYBRID"
                 )
@@ -1620,7 +1781,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if query.query_embedding:
             _logger.debug(f"Using dense search for mode={query.mode.value}")
             request = SearchDataObjectsRequest(
-                parent=self._collection_parent,
+                parent=self.v2_collection_parent,
                 vector_search=self._build_dense_vector_search(
                     query, v2_filter, output_fields
                 ),
@@ -1628,7 +1789,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             _logger.debug(f"Using semantic search for mode={query.mode.value}")
             request = SearchDataObjectsRequest(
-                parent=self._collection_parent,
+                parent=self.v2_collection_parent,
                 semantic_search=self._build_semantic_search(
                     query, v2_filter, output_fields
                 ),
@@ -1659,13 +1820,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A vector search object to be included in a search request.
 
         Raises:
-            VertexAIQueryError: If ``query_embedding`` is not set.
+            VertexAIInputError: If ``query_embedding`` is not set.
 
         """
         from google.cloud.vectorsearch_v1beta import DenseVector, VectorSearch
 
         if query.query_embedding is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 "For mode=DEFAULT (dense), 'query_embedding' field must be set"
             )
         search_args: dict[str, Any] = {
@@ -1704,13 +1865,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A vector search object to be included in a search request.
 
         Raises:
-            VertexAIQueryError: If a non-null ``sparse_embedding`` is not passed.
+            VertexAIInputError: If a non-null ``sparse_embedding`` is not passed.
 
         """
         from google.cloud.vectorsearch_v1beta import SparseVector, VectorSearch
 
         if not sparse_embedding:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 "For mode=SPARSE, a 'sparse_embedding' must be passed"
             )
         search_args: dict[str, Any] = {
@@ -1743,18 +1904,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A text search object to be included in a search request.
 
         Raises:
-            VertexAIQueryError:
+            VertexAIInputError:
                 If ``query_str`` or ``text_search_fields`` are not configured.
 
         """
         from google.cloud.vectorsearch_v1beta import TextSearch
 
         if query.query_str is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 "For mode=TEXT_SEARCH, 'query_str' field must be set"
             )
         if self.text_search_fields is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"For mode=TEXT_SEARCH, vector store field 'text_search_fields' "
                 f"must be set, current={self.text_search_fields}"
             )
@@ -1797,7 +1958,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A semantic search object to be included in a search request.
 
         Raises:
-            VertexAIQueryError:
+            VertexAIInputError:
                 If ``query.query_str`` is null, or the target embedding field does not
                 support auto-embedding.
 
@@ -1805,7 +1966,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.cloud.vectorsearch_v1beta import SemanticSearch
 
         if query.query_str is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"For semantic search with mode={query.mode.value}, the "
                 f"'query.query_str' field must be set"
             )
@@ -1822,7 +1983,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 search_field = field_
                 break
         if not search_field:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"No valid auto-embedding field passed for semantic search, available "
                 f"fields: {self.v2_vertex_embedding_fields}"
             )
@@ -1869,7 +2030,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A request to execute a hybrid search based on the query.
 
         Raises:
-            VertexAIQueryError:
+            VertexAIInputError:
                 If hybrid is not enabled or required fields are missing.
 
         """
@@ -1879,14 +2040,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         if not self.enable_hybrid:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"For mode=HYBRID, vector store field 'enable_hybrid' "
                 f"must be True, current={self.enable_hybrid}"
             )
         if query.query_str is None:
-            raise VertexAIQueryError("For mode=HYBRID, 'query_str' field must be set")
+            raise VertexAIInputError("For mode=HYBRID, 'query_str' field must be set")
         if self.text_search_fields is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"For mode=HYBRID, vector store field 'text_search_fields' "
                 f"must be set, current={self.text_search_fields}"
             )
@@ -1919,7 +2080,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         top_k = query.hybrid_top_k or query.sparse_top_k or query.similarity_top_k
         ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
-            parent=self._collection_parent,
+            parent=self.v2_collection_parent,
             searches=searches,
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
                 ranker=ranker, top_k=top_k, output_fields=output_fields
@@ -1952,7 +2113,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             A request to execute a semantic hybrid search based on the query.
 
         Raises:
-            VertexAIQueryError:
+            VertexAIInputError:
                 If hybrid is not enabled or ``query_str`` is missing.
 
         """
@@ -1962,12 +2123,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
         if not self.enable_hybrid:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 f"For mode=SEMANTIC_HYBRID, vector store field 'enable_hybrid' "
                 f"must be True, current={self.enable_hybrid}"
             )
         if query.query_str is None:
-            raise VertexAIQueryError(
+            raise VertexAIInputError(
                 "For mode=SEMANTIC_HYBRID, 'query_str' field must be set"
             )
 
@@ -1999,7 +2160,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         top_k = query.hybrid_top_k or query.similarity_top_k
         ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
-            parent=self._collection_parent,
+            parent=self.v2_collection_parent,
             searches=searches,
             combine=BatchSearchDataObjectsRequest.CombineResultsOptions(
                 ranker=ranker, top_k=top_k, output_fields=output_fields
@@ -2131,7 +2292,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     if query.alpha is not None
                     else self.default_hybrid_alpha
                 )
-                weights = self._calculate_rrf_weights(alpha, num_searches)
+                weights = calculate_rrf_weights(alpha, num_searches)
                 return Ranker(rrf=ReciprocalRankFusion(weights=weights))
             case "vertex":
                 try:
@@ -2167,23 +2328,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Unsupported ranker type: {self.hybrid_ranker}"
                 )
 
-    @staticmethod
-    def _calculate_rrf_weights(alpha: float, num_searches: int = 2) -> list[float]:
-        """
-        Calculate RRF weights from alpha value.
-
-        Args:
-            alpha: Weight for vector search (0 = text only, 1 = vector only)
-            num_searches: Number of searches being combined
-
-        Returns:
-            List of weights [vector_weight, text_weight]
-
-        """
-        if num_searches == 2:
-            return [alpha, 1.0 - alpha]
-        return [1.0 / num_searches] * num_searches
-
     @override
     def delete_nodes(
         self,
@@ -2198,6 +2342,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             node_ids: List of node IDs to delete
             filters: Metadata filters to select nodes for deletion
             **kwargs: Additional keyword arguments
+
+        Raises:
+            VertexAIInputError: For invalid input arguments.
+            VertexAIDeleteError: For errors raised during delete operations.
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
@@ -2268,9 +2416,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             raise VertexAIInputError("Either node_ids or filters must be provided")
 
-        _logger.info(
-            f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
-        )
+        _logger.info(f"Delete for collection finished in {time_taken:.2f}s, {result!s}")
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
@@ -2285,10 +2431,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         return [
             BatchDeleteDataObjectsRequest(
-                parent=self._collection_parent,
+                parent=self.v2_collection_parent,
                 requests=[
                     DeleteDataObjectRequest(
-                        name=f"{self._collection_parent}/dataObjects/{node_id}"
+                        name=f"{self.v2_collection_parent}/dataObjects/{node_id}"
                     )
                     for node_id in node_ids[start : start + self.batch_size]
                 ],
@@ -2310,6 +2456,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             node_ids: List of node IDs to delete
             filters: Metadata filters to select nodes for deletion
             **kwargs: Additional keyword arguments
+
+        Raises:
+            VertexAIInputError: For invalid input arguments.
+            VertexAIDeleteError: For errors raised during delete operations.
 
         """
         if FeatureFlags.should_use_v2(self.api_version):
@@ -2372,15 +2522,19 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             raise VertexAIInputError("Either node_ids or filters must be provided")
 
-        _logger.info(
-            f"Delete for collection finished in {time_taken:.2f}s, {result.summary_line}"
-        )
+        _logger.info(f"Delete for collection finished in {time_taken:.2f}s, {result!s}")
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
     @override
     def clear(self) -> None:
-        """Clear all nodes from the vector store."""
+        """
+        Clear all nodes from the vector store.
+
+        Raises:
+            VertexAIDeleteError: For errors raised during delete operations.
+
+        """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
             self._sdk_manager.ensure_v2_available()
@@ -2406,22 +2560,27 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
         query_request = QueryDataObjectsRequest(
-            parent=self._collection_parent,
+            parent=self.v2_collection_parent,
             page_size=self.batch_size,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
         paged_resp = self.v2_search_client.query_data_objects(query_request)
         time_taken, result = self._sync_delete_query_result(paged_resp)
         _logger.info(
-            f"Clear operation for collection finished in {time_taken:.2f}s, "
-            f"{result.summary_line}"
+            f"Clear operation for collection finished in {time_taken:.2f}s, {result!s}"
         )
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
     @override
     async def aclear(self) -> None:
-        """Asynchronously clear all nodes from the vector store."""
+        """
+        Asynchronously clear all nodes from the vector store.
+
+        Raises:
+            VertexAIDeleteError: For errors raised during delete operations.
+
+        """
         if FeatureFlags.should_use_v2(self.api_version):
             # No fallback - v2 requires v2 SDK
             self._sdk_manager.ensure_v2_available()
@@ -2441,15 +2600,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         _logger.info(f"Clearing all nodes from v2 collection: {self.collection_id}")
         query_request = QueryDataObjectsRequest(
-            parent=self._collection_parent,
+            parent=self.v2_collection_parent,
             page_size=self.batch_size,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
         paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
         time_taken, result = await self._async_delete_query_result(paged_resp)
         _logger.info(
-            f"Clear operation for collection finished in {time_taken:.2f}s, "
-            f"{result.summary_line}"
+            f"Clear operation for collection finished in {time_taken:.2f}s, {result!s}"
         )
         if not result.succeeded:
             raise VertexAIDeleteError(result)

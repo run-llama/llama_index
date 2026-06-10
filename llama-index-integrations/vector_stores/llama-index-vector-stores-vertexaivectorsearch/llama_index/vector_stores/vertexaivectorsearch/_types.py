@@ -2,9 +2,25 @@
 
 from dataclasses import dataclass, field
 
+from typing_extensions import override
 
-@dataclass
+
+class VertexAIError(Exception):
+    """Base Vertex AI exception type."""
+
+
+class VertexAIInputError(VertexAIError, ValueError):
+    """Errors related to invalid input data."""
+
+
+class VertexAIQueryError(VertexAIError):
+    """Errors during query operations."""
+
+
+@dataclass(kw_only=True, slots=True)
 class AddBatchResult:
+    """Container for tracking individual or batch results for add/update operations."""
+
     added_ids: list[str] = field(default_factory=list)
     updated_ids: list[str] = field(default_factory=list)
     failed_ids: list[str] = field(default_factory=list)
@@ -24,8 +40,8 @@ class AddBatchResult:
             exceptions=[*self.exceptions, *other.exceptions],
         )
 
-    @property
-    def summary_line(self) -> str:
+    @override
+    def __str__(self) -> str:
         """Returns a summary count line for logging purposes."""
         return (
             f"added={len(self.added_ids)}, updated={len(self.updated_ids)}, "
@@ -33,9 +49,18 @@ class AddBatchResult:
         )
 
 
-@dataclass
+class VertexAIAddError(VertexAIError):
+    """Raised for errors when adding or updating content in a vector store."""
+
+    def __init__(self, result: AddBatchResult) -> None:
+        """Initialize the exception."""
+        super().__init__(f"Failed to add/update all requested objects, {result!s}")
+        self.result = result
+
+
+@dataclass(kw_only=True, slots=True)
 class DeleteBatchResult:
-    """Container for tracking individual or batch result from delete operations."""
+    """Container for tracking individual or batch results for delete operations."""
 
     deleted: int = 0
     failed: int = 0
@@ -56,8 +81,8 @@ class DeleteBatchResult:
             exceptions=[*self.exceptions, *other.exceptions],
         )
 
-    @property
-    def summary_line(self) -> str:
+    @override
+    def __str__(self) -> str:
         """Returns a summary count line for logging purposes."""
         return (
             f"deleted={self.deleted}, not_found={self.not_found}, "
@@ -65,35 +90,10 @@ class DeleteBatchResult:
         )
 
 
-class VertexAIError(Exception):
-    """Vertex AI Exception."""
-
-
-class VertexAIInputError(VertexAIError, ValueError):
-    """Errors related to invalid input data."""
-
-
-class VertexAIQueryError(VertexAIError):
-    """Errors during query operations."""
-
-
-class VertexAIIndexingError(VertexAIError):
-    """Raised for errors when indexing content into a vector store."""
-
-    def __init__(self, result: AddBatchResult) -> None:
-        """Initialize the exception."""
-        super().__init__(
-            f"Failed to add/update all requested objects, {result.summary_line}"
-        )
-        self.result = result
-
-
 class VertexAIDeleteError(VertexAIError):
     """Raised for errors when indexing content into a vector store."""
 
     def __init__(self, result: DeleteBatchResult) -> None:
         """Initialize the exception."""
-        super().__init__(
-            f"Failed to delete all target data objects, {result.summary_line}"
-        )
+        super().__init__(f"Failed to delete all target data objects, {result!s}")
         self.result = result
