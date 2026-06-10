@@ -956,6 +956,11 @@ class OpenAIResponses(FunctionCallingLLM):
 
         return tool_selections
 
+    @property
+    def _responses_model(self) -> str:
+        """Model name passed to the Responses API. Subclasses may override (e.g. Azure uses a deployment name)."""
+        return self.model
+
     @dispatcher.span
     def structured_predict(
         self,
@@ -974,7 +979,7 @@ class OpenAIResponses(FunctionCallingLLM):
             messages, model=self.model, is_responses_api=True
         )
         response = self._client.responses.parse(
-            model=self.model,
+            model=self._responses_model,
             input=message_dicts,
             text_format=output_cls,
             tool_choice="none",
@@ -1003,7 +1008,7 @@ class OpenAIResponses(FunctionCallingLLM):
             messages, model=self.model, is_responses_api=True
         )
         response = await self._aclient.responses.parse(
-            model=self.model,
+            model=self._responses_model,
             input=message_dicts,
             text_format=output_cls,
             tool_choice="none",

@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -59,6 +60,22 @@ from llama_index.llms.bedrock_converse.utils import (
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+def _parse_tool_input(raw_input: Any) -> Any:
+    """
+    Parse tool input from string to dict if needed.
+
+    During streaming, tool call input is accumulated as a concatenated JSON
+    string. This helper parses it into a dict so that ToolCallBlock.tool_kwargs
+    is always a dict, matching the non-streaming behavior.
+    """
+    if isinstance(raw_input, str):
+        try:
+            return parse_partial_json(raw_input)
+        except (json.JSONDecodeError, ValueError):
+            return {}
+    return raw_input
 
 
 class BedrockConverse(FunctionCallingLLM):
@@ -190,6 +207,7 @@ class BedrockConverse(FunctionCallingLLM):
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
     _asession: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr(default=None)
     _boto_client_kwargs: Any = PrivateAttr()
 
     def __init__(
@@ -208,6 +226,7 @@ class BedrockConverse(FunctionCallingLLM):
         endpoint_url: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
@@ -344,6 +363,8 @@ class BedrockConverse(FunctionCallingLLM):
                 config=self._config,
                 **self._boto_client_kwargs,
             )
+
+        self._async_client = async_client
 
     @classmethod
     def class_name(cls) -> str:
@@ -590,7 +611,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -646,7 +669,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -690,7 +715,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )
@@ -747,6 +774,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=self.guardrail_version,
             trace=self.trace,
             boto_client_kwargs=self._boto_client_kwargs,
+            client=self._async_client,
             **all_kwargs,
         )
 
@@ -801,6 +829,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
             boto_client_kwargs=self._boto_client_kwargs,
+            client=self._async_client,
             **all_kwargs,
         )
 
@@ -874,7 +903,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -930,7 +961,9 @@ class BedrockConverse(FunctionCallingLLM):
                         for tool_call in tool_calls:
                             blocks.append(
                                 ToolCallBlock(
-                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_kwargs=_parse_tool_input(
+                                        tool_call.get("input", {})
+                                    ),
                                     tool_name=tool_call.get("name", ""),
                                     tool_call_id=tool_call.get("toolUseId"),
                                 )
@@ -975,7 +1008,9 @@ class BedrockConverse(FunctionCallingLLM):
                             for tool_call in tool_calls:
                                 blocks.append(
                                     ToolCallBlock(
-                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_kwargs=_parse_tool_input(
+                                            tool_call.get("input", {})
+                                        ),
                                         tool_name=tool_call.get("name", ""),
                                         tool_call_id=tool_call.get("toolUseId"),
                                     )
