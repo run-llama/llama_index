@@ -34,3 +34,15 @@ def test_default_parse_choice_select_answer_fn(answer):
     answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
     assert answer_nums == [2, 4]
     assert answer_relevances == [8, 6]
+
+
+def test_default_parse_choice_select_answer_fn_unparseable_relevance():
+    """A valid doc with an unparseable relevance must not desync the two lists."""
+    from llama_index.core.indices.utils import default_parse_choice_select_answer_fn
+
+    # second line has no digits in the relevance field -> relevance parse fails
+    answer = "Doc: 1, Relevance: 8\nDoc: 2, Relevance: high"
+    answer_nums, answer_relevances = default_parse_choice_select_answer_fn(answer, 5)
+    assert answer_nums == [1]
+    assert answer_relevances == [8]
+    assert len(answer_nums) == len(answer_relevances)
