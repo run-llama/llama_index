@@ -237,7 +237,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     )
 
     # optional field names for non-metadata properties in nodes being indexed
-    nodeid_field: str | None = Field(
+    node_id_field: str | None = Field(
         default=None,
         description=(
             "[V2] Name of the collection field where node IDs are stored (if "
@@ -604,7 +604,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         *,
         is_complete_overwrite: bool = False,
         add_operation: Literal["create", "update"] | None = None,
-        **kwargs: Any,
+        **add_kwargs: Any,
     ) -> list[str]:
         """
         Add nodes to index.
@@ -615,7 +615,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 (V1 only) whether it is an append or overwrite operation
             add_operation: Literal["create", "update"] | None:
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
-            **kwargs: additional keyword arguments to be passed to implementations
+            **add_kwargs: additional keyword arguments to be passed to implementations
 
         Returns:
             The IDs of the nodes added to the index.
@@ -641,9 +641,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.debug(f"Using operation='{op}' for V2 call to 'add'")
             match op:
                 case "create":
-                    return self._add_v2_create(nodes, **kwargs)
+                    return self._add_v2_create(nodes, **add_kwargs)
                 case "update":
-                    return self._add_v2_update(nodes, **kwargs)
+                    return self._add_v2_update(nodes, **add_kwargs)
                 case _:
                     raise VertexAIInputError(f"Unknown add operation: {op}")
         else:
@@ -652,7 +652,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "The argument 'add_operation' is only valid for api_version='v2'"
                 )
             return self._add_v1(
-                nodes, is_complete_overwrite=is_complete_overwrite, **kwargs
+                nodes, is_complete_overwrite=is_complete_overwrite, **add_kwargs
             )
 
     def _add_v1(
@@ -660,7 +660,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         nodes: Sequence[BaseNode],
         *,
         is_complete_overwrite: bool = False,
-        **kwargs: Any,
+        **add_kwargs: Any,
     ) -> list[str]:
         """
         Add nodes to index using v1 API.
@@ -668,7 +668,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
             is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
-            **kwargs: additional keyword arguments (not used)
+            **add_kwargs: additional keyword arguments (not used)
 
         """
         ids = []
@@ -819,188 +819,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             data_object.name = f"{self.v2_collection_parent}/dataObjects/{node.node_id}"
             requests.append(UpdateDataObjectRequest(data_object=data_object))
         return node_ids, requests
-
-    def extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
-        """
-        Convert a BaseNode to a Vertex ``DataObject`` for adding.
-
-        Handles content, doc ID fields, and dense/sparse embeddings.
-
-        Args:
-            node: The llama-index node to convert.
-
-        Returns:
-            A ``DataObject`` ready to include in a batch request.
-
-        """
-        from google.cloud.vectorsearch_v1beta import (
-            DataObject,
-            DenseVector,
-            SparseVector,
-            Vector,
-        )
-
-        data: dict[str, Any] = {**node.metadata}
-        vectors: dict[str, Vector] = {}
-
-        # node ID field (if not duplicated in metadata)
-        if self.nodeid_field:
-            data[self.nodeid_field] = node.node_id
-
-        # parent document ID field
-        if self.docid_field and node.ref_doc_id:
-            data[self.docid_field] = node.ref_doc_id
-
-        # the type of the node
-        if self.node_type_field:
-            data[self.node_type_field] = node.class_name()
-
-        # node content (e.g., 'node.text' for TextNode)
-        if self.content_field:
-            data[self.content_field] = node.get_content(
-                metadata_mode=self.content_field_metadata_mode
-            )
-
-        # dense embeddings
-        if node.embedding:
-            # special case: embedding stored in node.embedding
-            vectors[self.embedding_field] = Vector(
-                dense=DenseVector(values=node.get_embedding())
-            )
-        # all other embeddings are pulled from metadata
-        for field_ in self.dense_embedding_fields:
-            if field_ in data:
-                # remove from the data dict
-                vector = data.pop(field_)
-                if isinstance(vector, Sequence):
-                    vectors[field_] = Vector(dense=DenseVector(values=vector))
-                else:
-                    _logger.error(
-                        f"Invalid dense embedding field '{field_}', type={type(vector)}"
-                    )
-
-        # sparse embeddings
-        for field_ in self.sparse_embedding_fields.union({self.sparse_embedding_field}):
-            if field_ in data:
-                # remove from the data dict
-                sparse_vector = data.pop(field_)
-                if isinstance(sparse_vector, dict):
-                    vectors[field_] = Vector(
-                        sparse=SparseVector(
-                            indices=sparse_vector.get("indices", []),
-                            values=sparse_vector.get("values", []),
-                        )
-                    )
-                else:
-                    _logger.error(
-                        f"Invalid sparse embedding field '{field_}', "
-                        f"type={type(sparse_vector)}"
-                    )
-        return DataObject(data=data, vectors=vectors)
-
-    def extract_node_from_v2_data_object(self, data_obj: "DataObject") -> BaseNode:
-        """
-        Extract a ``TextNode`` and its ID from a Vertex ``DataObject``.
-
-        Args:
-            data_obj: A Vertex ``DataObject`` from search results.
-
-        Returns:
-            An extracted ``BaseNode``.
-
-            The return type is ``BaseNode`` instead of ``TextNode`` for API compatibility
-            reasons, but currently this implementation always returns ``TextNode`` objects.
-
-        Raises:
-            NotImplementedError: For nodes with a type field other than 'TextNode'.
-
-        """
-        # Extract metadata
-        metadata: dict[str, Any] = dict(data_obj.data) if data_obj.data else {}
-
-        # Validate node type if required
-        if self.node_type_field and self.node_type_field in metadata:
-            node_type = metadata.pop(self.node_type_field)
-            if node_type != TextNode.class_name():
-                raise NotImplementedError(f"Node type '{node_type}' is not supported")
-
-        # Extract node ID from resource, with multiple fallbacks
-        if self.nodeid_field and self.nodeid_field in metadata:
-            node_id = metadata.pop(self.nodeid_field)
-        elif data_obj.data_object_id:
-            node_id = data_obj.data_object_id
-        elif data_obj.name:
-            node_id = Path(data_obj.name).name
-        else:  # pragma: no cover
-            raise VertexAIInputError(
-                f"Input data object has no known ID field: {data_obj}"
-            )
-
-        # Extract content if available
-        # NOTE: `TextNode` defaults to empty string for this value
-        text: str = ""
-        if self.content_field and self.content_field in metadata:
-            text = metadata.pop(self.content_field)
-
-        # extract source/parent relationship if configured
-        relationships: dict[NodeRelationship, RelatedNodeType] = {}
-        if self.docid_field and self.docid_field in metadata:
-            parent_id = metadata.pop(self.docid_field)
-            relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=parent_id)
-
-        # Extract embeddings
-        embedding: list[float] | None = None
-        if hasattr(data_obj, "vectors") and data_obj.vectors:
-            # special case: the default dense embedding
-            if self.embedding_field in data_obj.vectors:
-                vector_data = data_obj.vectors[self.embedding_field]
-                vector = self._extract_dense_vector(vector_data)
-                if vector is not None:
-                    embedding = vector
-            # extract other known dense vectors
-            for dense_field in self.dense_embedding_fields:
-                if dense_field in data_obj.vectors:
-                    vector_data = data_obj.vectors[dense_field]
-                    vector = self._extract_dense_vector(vector_data)
-                    if vector is not None:
-                        metadata[dense_field] = vector
-            # extract any known sparse vectors
-            for sparse_field in self.sparse_embedding_fields.union(
-                {self.sparse_embedding_field}
-            ):
-                if sparse_field in data_obj.vectors:
-                    sparse_data = data_obj.vectors[sparse_field]
-                    sparse_vector = self._extract_sparse_vector(sparse_data)
-                    if sparse_vector is not None:
-                        metadata[sparse_field] = sparse_vector
-        return TextNode(
-            id_=node_id,
-            text=text,
-            metadata=metadata,
-            embedding=embedding,
-            relationships=relationships,
-        )
-
-    @staticmethod
-    def _extract_dense_vector(vector: "Vector") -> list[float] | None:
-        from google.cloud.vectorsearch_v1beta import DenseVector
-
-        if hasattr(vector, "dense") and isinstance(vector.dense, DenseVector):
-            return list(vector.dense.values)
-        return None
-
-    @staticmethod
-    def _extract_sparse_vector(
-        vector: "Vector",
-    ) -> dict[str, list[float] | list[int]] | None:
-        from google.cloud.vectorsearch_v1beta import SparseVector
-
-        if hasattr(vector, "sparse") and isinstance(vector.sparse, SparseVector):
-            return {
-                "indices": list(vector.sparse.indices),
-                "values": list(vector.sparse.values),
-            }
-        return None
 
     @override
     async def async_add(
@@ -2823,3 +2641,185 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             raise VertexAIInputError("Either node_ids or filters must be provided")
         return filter_expr
+
+    def extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
+        """
+        Convert a BaseNode to a Vertex ``DataObject`` for adding.
+
+        Handles content, doc ID fields, and dense/sparse embeddings.
+
+        Args:
+            node: The llama-index node to convert.
+
+        Returns:
+            A ``DataObject`` ready to include in a batch request.
+
+        """
+        from google.cloud.vectorsearch_v1beta import (
+            DataObject,
+            DenseVector,
+            SparseVector,
+            Vector,
+        )
+
+        data: dict[str, Any] = {**node.metadata}
+        vectors: dict[str, Vector] = {}
+
+        # node ID field (if not duplicated in metadata)
+        if self.node_id_field:
+            data[self.node_id_field] = node.node_id
+
+        # parent document ID field
+        if self.docid_field and node.ref_doc_id:
+            data[self.docid_field] = node.ref_doc_id
+
+        # the type of the node
+        if self.node_type_field:
+            data[self.node_type_field] = node.class_name()
+
+        # node content (e.g., 'node.text' for TextNode)
+        if self.content_field:
+            data[self.content_field] = node.get_content(
+                metadata_mode=self.content_field_metadata_mode
+            )
+
+        # dense embeddings
+        if node.embedding:
+            # special case: embedding stored in node.embedding
+            vectors[self.embedding_field] = Vector(
+                dense=DenseVector(values=node.get_embedding())
+            )
+        # all other embeddings are pulled from metadata
+        for field_ in self.dense_embedding_fields:
+            if field_ in data:
+                # remove from the data dict
+                vector = data.pop(field_)
+                if isinstance(vector, Sequence):
+                    vectors[field_] = Vector(dense=DenseVector(values=vector))
+                else:
+                    _logger.error(
+                        f"Invalid dense embedding field '{field_}', type={type(vector)}"
+                    )
+
+        # sparse embeddings
+        for field_ in self.sparse_embedding_fields.union({self.sparse_embedding_field}):
+            if field_ in data:
+                # remove from the data dict
+                sparse_vector = data.pop(field_)
+                if isinstance(sparse_vector, dict):
+                    vectors[field_] = Vector(
+                        sparse=SparseVector(
+                            indices=sparse_vector.get("indices", []),
+                            values=sparse_vector.get("values", []),
+                        )
+                    )
+                else:
+                    _logger.error(
+                        f"Invalid sparse embedding field '{field_}', "
+                        f"type={type(sparse_vector)}"
+                    )
+        return DataObject(data=data, vectors=vectors)
+
+    def extract_node_from_v2_data_object(self, data_obj: "DataObject") -> BaseNode:
+        """
+        Extract a ``TextNode`` and its ID from a Vertex ``DataObject``.
+
+        Args:
+            data_obj: A Vertex ``DataObject`` from search results.
+
+        Returns:
+            An extracted ``BaseNode``.
+
+            The return type is ``BaseNode`` instead of ``TextNode`` for API compatibility
+            reasons, but currently this implementation always returns ``TextNode`` objects.
+
+        Raises:
+            NotImplementedError: For nodes with a type field other than 'TextNode'.
+
+        """
+        # Extract metadata
+        metadata: dict[str, Any] = dict(data_obj.data) if data_obj.data else {}
+
+        # Validate node type if required
+        if self.node_type_field and self.node_type_field in metadata:
+            node_type = metadata.pop(self.node_type_field)
+            if node_type != TextNode.class_name():
+                raise NotImplementedError(f"Node type '{node_type}' is not supported")
+
+        # Extract node ID from resource, with multiple fallbacks
+        if self.node_id_field and self.node_id_field in metadata:
+            node_id = metadata.pop(self.node_id_field)
+        elif data_obj.data_object_id:
+            node_id = data_obj.data_object_id
+        elif data_obj.name:
+            node_id = Path(data_obj.name).name
+        else:  # pragma: no cover
+            raise VertexAIInputError(
+                f"Input data object has no known ID field: {data_obj}"
+            )
+
+        # Extract content if available
+        # NOTE: `TextNode` defaults to empty string for this value
+        text: str = ""
+        if self.content_field and self.content_field in metadata:
+            text = metadata.pop(self.content_field)
+
+        # extract source/parent relationship if configured
+        relationships: dict[NodeRelationship, RelatedNodeType] = {}
+        if self.docid_field and self.docid_field in metadata:
+            parent_id = metadata.pop(self.docid_field)
+            relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=parent_id)
+
+        # Extract embeddings
+        embedding: list[float] | None = None
+        if hasattr(data_obj, "vectors") and data_obj.vectors:
+            # special case: the default dense embedding
+            if self.embedding_field in data_obj.vectors:
+                vector_data = data_obj.vectors[self.embedding_field]
+                vector = self._extract_dense_vector(vector_data)
+                if vector is not None:
+                    embedding = vector
+            # extract other known dense vectors
+            for dense_field in self.dense_embedding_fields:
+                if dense_field in data_obj.vectors:
+                    vector_data = data_obj.vectors[dense_field]
+                    vector = self._extract_dense_vector(vector_data)
+                    if vector is not None:
+                        metadata[dense_field] = vector
+            # extract any known sparse vectors
+            for sparse_field in self.sparse_embedding_fields.union(
+                {self.sparse_embedding_field}
+            ):
+                if sparse_field in data_obj.vectors:
+                    sparse_data = data_obj.vectors[sparse_field]
+                    sparse_vector = self._extract_sparse_vector(sparse_data)
+                    if sparse_vector is not None:
+                        metadata[sparse_field] = sparse_vector
+        return TextNode(
+            id_=node_id,
+            text=text,
+            metadata=metadata,
+            embedding=embedding,
+            relationships=relationships,
+        )
+
+    @staticmethod
+    def _extract_dense_vector(vector: "Vector") -> list[float] | None:
+        from google.cloud.vectorsearch_v1beta import DenseVector
+
+        if hasattr(vector, "dense") and isinstance(vector.dense, DenseVector):
+            return list(vector.dense.values)
+        return None
+
+    @staticmethod
+    def _extract_sparse_vector(
+        vector: "Vector",
+    ) -> dict[str, list[float] | list[int]] | None:
+        from google.cloud.vectorsearch_v1beta import SparseVector
+
+        if hasattr(vector, "sparse") and isinstance(vector.sparse, SparseVector):
+            return {
+                "indices": list(vector.sparse.indices),
+                "values": list(vector.sparse.values),
+            }
+        return None
