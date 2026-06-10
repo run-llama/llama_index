@@ -1143,15 +1143,14 @@ class TestSamplingParamStripping:
         kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "high"})
         assert "frequency_penalty" not in kwargs
 
-
-    def test_top_p_kept_when_effort_is_none(self):
-        """GPT-5.2+ accepts sampling params when effort='none'."""
+    def test_top_p_stripped_for_reasoning_model_regardless_of_effort(self):
+        """Sampling params stripped for any reasoning model, even effort='none'."""
         kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "none"})
-        assert "top_p" in kwargs
+        assert "top_p" not in kwargs
 
-    def test_temperature_kept_when_effort_is_none(self):
+    def test_temperature_stripped_for_reasoning_model_regardless_of_effort(self):
         kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "none"})
-        assert "temperature" in kwargs
+        assert "temperature" not in kwargs
 
     # ── Non-reasoning models must never have params stripped ──────────────────
 

@@ -432,8 +432,7 @@ class OpenAIResponses(FunctionCallingLLM):
 
         _reasoning_active = (
             _supports_reasoning(self.model)
-            and self.reasoning_options is not None
-            and self.reasoning_options.get("effort", "none") != "none"
+            or self.reasoning_options is not None
         )
         if _reasoning_active:
             params_to_exclude_for_reasoning = {
