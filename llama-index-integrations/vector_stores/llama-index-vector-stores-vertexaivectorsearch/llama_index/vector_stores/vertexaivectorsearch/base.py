@@ -267,11 +267,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             "(if applicable)"
         ),
     )
-    docid_field: str | None = Field(
+    doc_id_field: str | None = Field(
         default=None,
         description=(
-            "[V2] Name of the collection field where ref/parent document IDs are "
-            "stored (if applicable)"
+            "[V2] Name of the collection field where parent document IDs are stored "
+            "(if applicable). This is used for serializing node relationships of "
+            "type=SOURCE."
         ),
     )
     content_field: str | None = Field(
@@ -1112,21 +1113,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             **delete_kwargs: Additional keyword arguments (not used)
 
         """
-        if self.docid_field is None:
+        if self.doc_id_field is None:
             raise VertexAIInputError(
                 "The field 'docid_field' must be set to use 'delete'"
             )
 
         _logger.info(
-            f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
+            f"Deleting nodes with '{self.doc_id_field}'={ref_doc_id} from v2 collection"
         )
         query_request = self._build_filter_query_request(
-            v2_filter={self.docid_field: {"$eq": ref_doc_id}}
+            v2_filter={self.doc_id_field: {"$eq": ref_doc_id}}
         )
         query_results = self.v2_search_client.query_data_objects(query_request)
         time_taken, result = self._sync_delete_query_result(query_results)
         _logger.info(
-            f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
+            f"Delete operation for {self.doc_id_field}={ref_doc_id} finished in "
             f"{time_taken:.2f}, {result!s}",
         )
         if not result.succeeded:
@@ -1239,21 +1240,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             **delete_kwargs: Additional keyword arguments
 
         """
-        if self.docid_field is None:
+        if self.doc_id_field is None:
             raise VertexAIInputError(
                 "The field 'docid_field' must be set to use 'adelete'"
             )
 
         _logger.info(
-            f"Deleting nodes with '{self.docid_field}'={ref_doc_id} from v2 collection"
+            f"Deleting nodes with '{self.doc_id_field}'={ref_doc_id} from v2 collection"
         )
         query_request = self._build_filter_query_request(
-            v2_filter={self.docid_field: {"$eq": ref_doc_id}}
+            v2_filter={self.doc_id_field: {"$eq": ref_doc_id}}
         )
         paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
         time_taken, result = await self._async_delete_query_result(paged_resp)
         _logger.info(
-            f"Delete operation for {self.docid_field}={ref_doc_id} finished in "
+            f"Delete operation for {self.doc_id_field}={ref_doc_id} finished in "
             f"{time_taken:.2f}, {result!s}",
         )
         if not result.succeeded:
@@ -2699,8 +2700,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             data[self.node_id_field] = node.node_id
 
         # parent document ID field
-        if self.docid_field and node.ref_doc_id:
-            data[self.docid_field] = node.ref_doc_id
+        if self.doc_id_field and node.ref_doc_id:
+            data[self.doc_id_field] = node.ref_doc_id
 
         # the type of the node
         if self.node_type_field:
@@ -2795,8 +2796,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # extract source/parent relationship if configured
         relationships: dict[NodeRelationship, RelatedNodeType] = {}
-        if self.docid_field and self.docid_field in metadata:
-            parent_id = metadata.pop(self.docid_field)
+        if self.doc_id_field and self.doc_id_field in metadata:
+            parent_id = metadata.pop(self.doc_id_field)
             relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=parent_id)
 
         # Extract embeddings

@@ -1084,7 +1084,7 @@ class TestUnitV2NodeDataObjectConversion:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             default_add_operation="create",
             batch_size=2,
@@ -1210,7 +1210,7 @@ class TestUnitV2Add:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             default_add_operation="create",
             batch_size=2,
@@ -1233,7 +1233,7 @@ class TestUnitV2Add:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             default_add_operation="update",
             batch_size=2,
@@ -1710,7 +1710,7 @@ class TestUnitV2Delete:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             batch_size=2,
             max_concurrent_requests=5,
@@ -1873,7 +1873,7 @@ class TestUnitV2Delete:
         self, mock_v2_store: VertexAIVectorStore
     ) -> None:
         # GIVEN
-        mock_v2_store.docid_field = None
+        mock_v2_store.doc_id_field = None
         input_ref_doc_id = "doc_1"
 
         # WHEN / THEN
@@ -1884,7 +1884,7 @@ class TestUnitV2Delete:
         self, mock_v2_store: VertexAIVectorStore
     ) -> None:
         # GIVEN
-        mock_v2_store.docid_field = None
+        mock_v2_store.doc_id_field = None
         input_ref_doc_id = "doc_1"
 
         # WHEN / THEN
@@ -2588,7 +2588,7 @@ class TestUnitV2GetNodes:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             batch_size=2,
             max_concurrent_requests=5,
@@ -3029,7 +3029,7 @@ class TestUnitV2Query:
             collection_id="my-collection",
             node_id_field="node_id",
             node_type_field="node_type",
-            docid_field="parent_id",
+            doc_id_field="parent_id",
             content_field="text",
             batch_size=2,
             max_concurrent_requests=5,
