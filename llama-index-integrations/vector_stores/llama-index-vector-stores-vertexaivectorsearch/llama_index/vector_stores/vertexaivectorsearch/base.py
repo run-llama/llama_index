@@ -12,7 +12,7 @@ import time
 from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -20,7 +20,8 @@ from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
 )
-from pydantic import PositiveInt, model_validator
+from google.oauth2.service_account import Credentials
+from pydantic import ConfigDict, PositiveInt, model_validator
 from typing_extensions import Self, override
 
 from llama_index.core.base.embeddings.base_sparse import SparseEmbedding
@@ -338,6 +339,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             "the collection."
         ),
     )
+    credentials: Credentials | None = Field(
+        default=None,
+        description=(
+            "[V2] The credentials to use for authentication (if applicable). Takes "
+            "precedents over 'credentials_path'."
+        ),
+        exclude=True,  # not serializable
+    )
     credentials_path: str | None = Field(
         default=None,
         description="[V2] The path where access credentials are stored (if applicable).",
@@ -368,6 +377,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     # simultaneous requests are executed by the same vector store instance
     _async_request_semaphore: asyncio.Semaphore = PrivateAttr()
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        arbitrary_types_allowed=True,  # allow non-Pydantic types to be included
+    )
+
     @model_validator(mode="after")
     def _validate_embedding_fields(self) -> Self:
         """Validate that embedding fields are not duplicated in metadata."""
@@ -389,6 +402,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self._sdk_manager = VectorSearchSDKManager(
             project_id=self.project_id,
             region=self.region,
+            credentials=self.credentials,
             credentials_path=self.credentials_path,
         )
         # initialize the semaphore with the input value
