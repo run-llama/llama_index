@@ -983,12 +983,12 @@ def to_openai_tool(
     pydantic_class: Type[BaseModel], description: Optional[str] = None
 ) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI tool."""
-    schema = pydantic_class.schema()
+    schema = pydantic_class.model_json_schema()
     schema_description = schema.get("description", None) or description
     function = {
         "name": schema["title"],
         "description": schema_description,
-        "parameters": pydantic_class.schema(),
+        "parameters": pydantic_class.model_json_schema(),
     }
     return {"type": "function", "function": function}
 
