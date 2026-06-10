@@ -1,4 +1,5 @@
-"""Regression tests for splitters crashing on an indivisible unit that is
+"""
+Regression tests for splitters crashing on an indivisible unit that is
 larger than ``chunk_size`` -- e.g. a multi-token CJK / emoji character with a
 small ``chunk_size``.
 
@@ -16,9 +17,7 @@ def test_token_splitter_oversized_unit_is_kept_not_recursed() -> None:
     # "🚀" encodes to 3 tokens; with chunk_size=1 it cannot be split further.
     # (A separate, pre-existing malformed warning in _merge is handled in #21796,
     # so silence that logger here to keep this test focused on the crash.)
-    logging.getLogger("llama_index.core.node_parser.text.token").setLevel(
-        logging.ERROR
-    )
+    logging.getLogger("llama_index.core.node_parser.text.token").setLevel(logging.ERROR)
     splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
     assert splitter.split_text("🚀") == ["🚀"]
     assert splitter.split_text("🚀" * 20) == ["🚀"] * 20
