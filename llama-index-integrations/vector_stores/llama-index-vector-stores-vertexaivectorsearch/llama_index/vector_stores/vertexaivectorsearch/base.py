@@ -541,44 +541,64 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     @cached_property
     def v2_vector_search_client(self) -> "VectorSearchServiceClient":
         """Access shared ``VectorSearchServiceClient`` instance."""
+        from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import VectorSearchServiceClient
 
         credentials = self._sdk_manager.get_v2_credentials()
-        return VectorSearchServiceClient(credentials=credentials)
+        return VectorSearchServiceClient(
+            credentials=credentials,
+            client_options=ClientOptions(**self.v2_client_options),
+        )
 
     @cached_property
     def v2_data_object_client(self) -> "DataObjectServiceClient":
         """Access shared ``DataObjectServiceClient`` instance."""
+        from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectServiceClient
 
         credentials = self._sdk_manager.get_v2_credentials()
-        return DataObjectServiceClient(credentials=credentials)
+        return DataObjectServiceClient(
+            credentials=credentials,
+            client_options=ClientOptions(**self.v2_client_options),
+        )
 
     @cached_property
     def v2_data_object_async_client(self) -> "DataObjectServiceAsyncClient":
         """Access shared ``DataObjectServiceAsyncClient`` instance."""
+        from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectServiceAsyncClient
 
         credentials = self._sdk_manager.get_v2_credentials()
         # NOTE: async clients *must* be lazy initialized to ensure the right async loop
-        return DataObjectServiceAsyncClient(credentials=credentials)
+        return DataObjectServiceAsyncClient(
+            credentials=credentials,
+            client_options=ClientOptions(**self.v2_client_options),
+        )
 
     @cached_property
     def v2_search_client(self) -> "DataObjectSearchServiceClient":
         """Access shared ``DataObjectSearchServiceClient`` instance."""
+        from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceClient
 
         credentials = self._sdk_manager.get_v2_credentials()
-        return DataObjectSearchServiceClient(credentials=credentials)
+        return DataObjectSearchServiceClient(
+            credentials=credentials,
+            client_options=ClientOptions(**self.v2_client_options),
+        )
 
     @cached_property
     def v2_search_async_client(self) -> "DataObjectSearchServiceAsyncClient":
         """Access shared ``DataObjectSearchServiceAsyncClient`` instance."""
+        from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceAsyncClient
 
         credentials = self._sdk_manager.get_v2_credentials()
         # NOTE: async clients *must* be lazy initialized to ensure the right async loop
-        return DataObjectSearchServiceAsyncClient(credentials=credentials)
+        return DataObjectSearchServiceAsyncClient(
+            credentials=credentials,
+            client_options=ClientOptions(**self.v2_client_options),
+        )
 
     # V2 properties
     @cached_property
