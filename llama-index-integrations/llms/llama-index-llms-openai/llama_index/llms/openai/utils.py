@@ -88,6 +88,16 @@ O1_MODELS: Dict[str, int] = {
 }
 
 RESPONSES_API_ONLY_MODELS = {
+    # Per OpenAI's model pages, the pro reasoning models are "available in the
+    # Responses API only". The o1-pro/o3-pro/gpt-5-pro entries stay in O1_MODELS
+    # too so context-window lookup and reasoning handling keep working for
+    # OpenAIResponses; membership here only gates the Chat Completions class.
+    "o1-pro": 200000,
+    "o1-pro-2025-03-19": 200000,
+    "o3-pro": 200000,
+    "o3-pro-2025-06-10": 200000,
+    "gpt-5-pro": 400000,
+    "gpt-5-pro-2025-10-06": 400000,
     "gpt-5.2-pro": 400000,
     "gpt-5.2-pro-2025-12-11": 400000,
     "gpt-5.4-pro": 1050000,
