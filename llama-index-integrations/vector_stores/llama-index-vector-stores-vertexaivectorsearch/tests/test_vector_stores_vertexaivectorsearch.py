@@ -2652,7 +2652,7 @@ class TestUnitV2GetNodes:
             input_node_ids = ["node_0", "node_1"]
             expected_query_request = QueryDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
-                filter={"object_id": {"$in": input_node_ids}},
+                filter={"node_id": {"$in": input_node_ids}},
                 page_size=2,
                 output_fields=expected_output_fields,
             )
@@ -2685,7 +2685,7 @@ class TestUnitV2GetNodes:
             input_node_ids = ["node_0", "node_1"]
             expected_query_request = QueryDataObjectsRequest(
                 parent=V2_COLLECTION_PARENT,
-                filter={"object_id": {"$in": input_node_ids}},
+                filter={"node_id": {"$in": input_node_ids}},
                 page_size=2,
                 output_fields=expected_output_fields,
             )
@@ -2774,64 +2774,6 @@ class TestUnitV2GetNodes:
             assert len(result) == len(get_nodes_query_result_data_objects)
             assert [node.node_id for node in result] == ["node_0", "node_1"]
 
-    def test_v2_get_nodes_both_inputs_invalid(
-        self,
-        mock_v2_store: VertexAIVectorStore,
-        mock_v2_data_object_search_service_client: MagicMock,
-    ) -> None:
-        # WHEN / THEN
-        with pytest.raises(ValueError):
-            mock_v2_store.get_nodes(
-                node_ids=["node_0"],
-                filters=MetadataFilters(
-                    filters=[MetadataFilter(key="user_id", value=200)]
-                ),
-            )
-        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
-
-    async def test_v2_aget_nodes_both_inputs_invalid(
-        self,
-        mock_v2_store: VertexAIVectorStore,
-        mock_v2_data_object_search_service_async_client: MagicMock,
-    ) -> None:
-        # WHEN / THEN
-        with pytest.raises(ValueError):
-            await mock_v2_store.aget_nodes(
-                node_ids=["node_0"],
-                filters=MetadataFilters(
-                    filters=[MetadataFilter(key="user_id", value=200)]
-                ),
-            )
-        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
-    )
-    def test_v2_get_nodes_neither_input_invalid(
-        self,
-        mock_v2_store: VertexAIVectorStore,
-        mock_v2_data_object_search_service_client: MagicMock,
-        input_node_ids: list[str] | None,
-    ) -> None:
-        # WHEN / THEN
-        with pytest.raises(ValueError):
-            mock_v2_store.get_nodes(node_ids=input_node_ids, filters=None)
-        mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
-
-    @pytest.mark.parametrize(
-        "input_node_ids", [[], None], ids=["node_ids=[]", "node_ids=None"]
-    )
-    async def test_v2_aget_nodes_neither_input_invalid(
-        self,
-        mock_v2_store: VertexAIVectorStore,
-        mock_v2_data_object_search_service_async_client: MagicMock,
-        input_node_ids: list[str] | None,
-    ) -> None:
-        # WHEN / THEN
-        with pytest.raises(ValueError):
-            await mock_v2_store.aget_nodes(node_ids=input_node_ids, filters=None)
-        mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
-
     def test_v2_get_nodes_empty_filters(
         self,
         mock_v2_store: VertexAIVectorStore,
@@ -2882,7 +2824,7 @@ class TestUnitV2GetNodes:
         input_node_ids = ["node_0"]
         expected_query_request = QueryDataObjectsRequest(
             parent=V2_COLLECTION_PARENT,
-            filter={"object_id": {"$in": input_node_ids}},
+            filter={"node_id": {"$in": input_node_ids}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
@@ -2908,7 +2850,7 @@ class TestUnitV2GetNodes:
         input_node_ids = ["node_0"]
         expected_query_request = QueryDataObjectsRequest(
             parent=V2_COLLECTION_PARENT,
-            filter={"object_id": {"$in": input_node_ids}},
+            filter={"node_id": {"$in": input_node_ids}},
             page_size=2,
             output_fields=OutputFields(metadata_fields=["*"]),
         )
@@ -2923,6 +2865,72 @@ class TestUnitV2GetNodes:
             expected_query_request,
         )
         assert result == []
+
+    @pytest.mark.parametrize(
+        ("input_node_ids", "input_filters", "vector_store_update_fields", "error_msg"),
+        [
+            (
+                ["node_0"],
+                MetadataFilters(filters=[MetadataFilter(key="user_id", value=200)]),
+                {},
+                "Only one of node_ids or filters may be provided",
+            ),
+            (
+                ["node_0"],
+                None,
+                {"node_id_field": None},
+                r"The field .node_id_field. must be set",
+            ),
+            ([], None, {}, r"Either .node_ids. or .filters. must be provided"),
+            (None, None, {}, r"Either .node_ids. or .filters. must be provided"),
+        ],
+        ids=[
+            "both 'node_ids' and 'filters'",
+            "missing 'node_id_field' when passing 'node_ids'",
+            "node_ids=[], filters=None",
+            "node_ids=None, filters=None",
+        ],
+    )
+    class TestInvalidInput:
+        def test_v2_get_nodes_invalid_input(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_client: MagicMock,
+            input_node_ids: list[str] | None,
+            input_filters: MetadataFilters | None,
+            vector_store_update_fields: dict[str, Any],
+            error_msg: str,
+        ) -> None:
+            # GIVEN
+            if vector_store_update_fields:
+                for key, val in vector_store_update_fields.items():
+                    setattr(mock_v2_store, key, val)
+
+            # WHEN / THEN
+            with pytest.raises(ValueError, match=error_msg):
+                mock_v2_store.get_nodes(node_ids=input_node_ids, filters=input_filters)
+            mock_v2_data_object_search_service_client.query_data_objects.assert_not_called()
+
+        async def test_v2_aget_nodes_invalid_input(
+            self,
+            mock_v2_store: VertexAIVectorStore,
+            mock_v2_data_object_search_service_async_client: MagicMock,
+            input_node_ids: list[str] | None,
+            input_filters: MetadataFilters | None,
+            vector_store_update_fields: dict[str, Any],
+            error_msg: str,
+        ) -> None:
+            # GIVEN
+            if vector_store_update_fields:
+                for key, val in vector_store_update_fields.items():
+                    setattr(mock_v2_store, key, val)
+
+            # WHEN / THEN
+            with pytest.raises(ValueError, match=error_msg):
+                await mock_v2_store.aget_nodes(
+                    node_ids=input_node_ids, filters=input_filters
+                )
+            mock_v2_data_object_search_service_async_client.query_data_objects.assert_not_called()
 
 
 DEFAULT_OUTPUT_FIELDS = {"data_fields": ["*"], "metadata_fields": ["*"]}

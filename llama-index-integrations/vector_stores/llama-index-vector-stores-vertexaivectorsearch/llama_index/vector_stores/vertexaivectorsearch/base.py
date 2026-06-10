@@ -2673,9 +2673,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
         return nodes
 
-    @staticmethod
     def _prepare_get_nodes_filters(
-        node_ids: list[str] | None, filters: MetadataFilters | None
+        self, node_ids: list[str] | None, filters: MetadataFilters | None
     ) -> dict[str, Any]:
         if node_ids and filters:
             raise VertexAIInputError(
@@ -2683,19 +2682,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 f"node_ids={node_ids}, filters={filters}"
             )
         if node_ids:
-            _logger.info("Querying nodes by ID (%d input IDs)", len(node_ids))
-            filter_expr: dict[str, Any] = {"object_id": {"$in": node_ids}}
+            if self.node_id_field is None:
+                raise VertexAIInputError(
+                    "The field 'node_id_field' must be set to get nodes by ID"
+                )
+            _logger.info(f"Querying nodes by ID ({len(node_ids)} input IDs)")
+            filter_expr: dict[str, Any] = {self.node_id_field: {"$in": node_ids}}
         elif filters and (v2_filter := convert_filters_to_v2_format(filters)):
-            _logger.info("Querying nodes matching filters: %s", v2_filter)
+            _logger.info("Querying nodes matching input filters")
             filter_expr = v2_filter
         elif filters:
             # filter conversion is empty
-            _logger.warning(
-                "Input filter set is empty after conversion, input=%s", filters
-            )
+            _logger.warning("Input filter set is empty after conversion")
             filter_expr = {}
         else:
-            raise VertexAIInputError("Either node_ids or filters must be provided")
+            raise VertexAIInputError("Either 'node_ids' or 'filters' must be provided")
         return filter_expr
 
     def extract_v2_data_object_from_node(self, node: BaseNode) -> "DataObject":
