@@ -371,11 +371,15 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     @model_validator(mode="after")
     def _validate_embedding_fields(self) -> Self:
         """Validate that embedding fields are not duplicated in metadata."""
-        if self.dense_embedding_fields.intersection(self.sparse_embedding_fields):
+        if self.embedding_field == self.sparse_embedding_field:
             raise ValueError(
-                f"Field name='{self.embedding_field}' is duplicated in "
-                f"'dense_embedding_fields' and 'sparse_embedding_fields'"
+                f"Default dense and sparse embedding fields cannot have the same name, "
+                f"dense={self.embedding_field}, sparse={self.sparse_embedding_field}"
             )
+        dense = self.dense_embedding_fields.union({self.embedding_field})
+        sparse = self.sparse_embedding_fields.union({self.sparse_embedding_field})
+        if overlap := dense.intersection(sparse):
+            raise ValueError(f"Dense and sparse fields names overlap: {overlap}")
         return self
 
     @override
@@ -395,8 +399,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # v1 requires index_id and endpoint_id
             if not self.index_id:
                 raise ValueError(
-                    "index_id is required for v1.0 API. "
-                    "Please provide a valid index ID."
+                    "Parameter 'index_id' is required for api_version='v1'"
                 )
             index = self._sdk_manager.get_index(index_id=self.index_id)
             self._index = index
@@ -409,8 +412,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
             if not self.endpoint_id:
                 raise ValueError(
-                    "endpoint_id is required for v1.0 API. "
-                    "Please provide a valid endpoint ID."
+                    "Parameter 'endpoint_id' is required for api_version='v1'"
                 )
             self._endpoint = self._sdk_manager.get_endpoint(
                 endpoint_id=self.endpoint_id
@@ -425,15 +427,16 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # v2-exclusive parameters must not be set in v1
             if self.collection_id is not None:
                 raise ValueError(
-                    "Parameter 'collection_id' is only valid for api_version='v2'. "
-                    "For v1, use index_id and endpoint_id instead."
+                    "Parameter 'collection_id' is only valid for api_version='v2', "
+                    "use 'index_id' and 'endpoint_id' instead for 'v1'."
                 )
 
             # Hybrid search validation (applies to both v1 and v2, but some features are v2-only)
             if self.enable_hybrid:
                 raise ValueError(
-                    "enable_hybrid=True is only supported for api_version='v2'. "
-                    "V1 hybrid search uses HybridQuery with find_neighbors() directly."
+                    "Parameter enable_hybrid=True is only supported for "
+                    "api_version='v2', V1 hybrid search uses 'HybridQuery' with "
+                    "'find_neighbors()' directly."
                 )
 
         # V2 validation and initialization
@@ -441,35 +444,36 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # v2 requires collection_id
             if not self.collection_id:
                 raise ValueError(
-                    "collection_id is required for v2.0 API. "
-                    "Please provide a valid collection ID."
+                    "Parameter 'collection_id' is required for api_version='v2'."
                 )
             # v1-exclusive parameters must not be set in v2
             if self.index_id is not None:
                 raise ValueError(
-                    "Parameter 'index_id' is only valid for api_version='v1'. "
-                    "For v2, use collection_id instead."
+                    "Parameter 'index_id' is only valid for api_version='v1', "
+                    "use 'collection_id' instead for 'v2'."
                 )
             if self.endpoint_id is not None:
                 raise ValueError(
-                    "Parameter 'endpoint_id' is only valid for api_version='v1'. "
-                    "For v2, use collection_id instead."
+                    "Parameter 'endpoint_id' is only valid for api_version='v1', "
+                    "use 'collection_id' instead for 'v2'."
                 )
             if self.gcs_bucket_name is not None:
                 raise ValueError(
-                    "Parameter 'gcs_bucket_name' is only valid for api_version='v1'. "
-                    "v2 does not require a staging bucket."
+                    "Parameter 'gcs_bucket_name' is only valid for api_version='v1', "
+                    "'v2' does not require a staging bucket."
                 )
-
-        if self.hybrid_ranker == "vertex":
             if (
-                self.vertex_ranker_title_field is None
+                self.hybrid_ranker == "vertex"
+                and self.vertex_ranker_title_field is None
                 and self.vertex_ranker_content_field is None
             ):
                 _logger.warning(
-                    "VertexRanker works best with title_field and/or content_field configured. "
-                    "Consider setting vertex_ranker_title_field or vertex_ranker_content_field."
+                    "For 'hybrid_ranker'='vertex', consider setting "
+                    "'vertex_ranker_title_field' or 'vertex_ranker_content_field' "
+                    "for better results"
                 )
+            # ensure the appropriate SDK is installed
+            self._sdk_manager.ensure_v2_available()
 
     @override
     @classmethod

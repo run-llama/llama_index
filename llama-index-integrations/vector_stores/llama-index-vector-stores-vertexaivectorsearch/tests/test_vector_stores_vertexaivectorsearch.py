@@ -522,7 +522,9 @@ class TestV2ParameterValidation:
 
     def test_v1_requires_index_id(self):
         """Test that v1 raises error when index_id is missing."""
-        with pytest.raises(ValueError, match="index_id is required for v1"):
+        with pytest.raises(
+            ValueError, match=r".index_id. is required for api_version=.v1."
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -532,7 +534,9 @@ class TestV2ParameterValidation:
 
     def test_v1_requires_endpoint_id(self):
         """Test that v1 raises error when endpoint_id is missing."""
-        with pytest.raises(ValueError, match="endpoint_id is required for v1"):
+        with pytest.raises(
+            ValueError, match=r".endpoint_id. is required for api_version=.v1."
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -543,7 +547,7 @@ class TestV2ParameterValidation:
     def test_v1_rejects_collection_id(self):
         """Test that v1 raises error when collection_id is provided."""
         with pytest.raises(
-            ValueError, match="collection_id.*only valid for api_version='v2'"
+            ValueError, match=r".collection_id. is only valid for api_version=.v2."
         ):
             VertexAIVectorStore(
                 project_id="test-project",
@@ -556,7 +560,9 @@ class TestV2ParameterValidation:
 
     def test_v2_requires_collection_id(self):
         """Test that v2 raises error when collection_id is missing."""
-        with pytest.raises(ValueError, match="collection_id is required for v2"):
+        with pytest.raises(
+            ValueError, match=r".collection_id. is required for api_version=.v2."
+        ):
             VertexAIVectorStore(
                 project_id="test-project",
                 region="us-central1",
@@ -566,7 +572,7 @@ class TestV2ParameterValidation:
     def test_v2_rejects_index_id(self):
         """Test that v2 raises error when index_id is provided."""
         with pytest.raises(
-            ValueError, match="index_id.*only valid for api_version='v1'"
+            ValueError, match=".index_id. is only valid for api_version=.v1."
         ):
             VertexAIVectorStore(
                 project_id="test-project",
@@ -579,7 +585,7 @@ class TestV2ParameterValidation:
     def test_v2_rejects_endpoint_id(self):
         """Test that v2 raises error when endpoint_id is provided."""
         with pytest.raises(
-            ValueError, match="endpoint_id.*only valid for api_version='v1'"
+            ValueError, match=".endpoint_id. is only valid for api_version=.v1."
         ):
             VertexAIVectorStore(
                 project_id="test-project",
