@@ -1,8 +1,9 @@
 import pytest
 from typing import Any, List
-from llama_index.core.indices.vector_store.base import VectorStoreIndex
+
 from llama_index.core.indices.keyword_table.simple_base import SimpleKeywordTableIndex
-from llama_index.core.schema import Document
+from llama_index.core.indices.vector_store.base import VectorStoreIndex
+from llama_index.core.schema import BaseNode, Document, TransformComponent
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
@@ -229,3 +230,35 @@ async def test_adelete_ref_doc_calls_vector_store_with_ref_doc_id_only(
     assert delete_log == ["my-doc-id"], (
         f"Expected delete() called once with ref_doc_id only, got: {delete_log}"
     )
+
+
+@pytest.mark.asyncio
+async def test_arefresh_ref_docs_kwargs_applied_to_all_documents(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
+) -> None:
+    received_kwargs: List[dict] = []
+
+    class KwargsRecorder(TransformComponent):
+        def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+            received_kwargs.append(dict(kwargs))
+            return nodes
+
+    docs = [
+        Document(id_="1", text="doc one"),
+        Document(id_="2", text="doc two"),
+        Document(id_="3", text="doc three"),
+    ]
+    index = VectorStoreIndex(
+        [], transformations=[KwargsRecorder()], embed_model=mock_embed_model
+    )
+
+    refreshed = await index.arefresh_ref_docs(docs, insert_kwargs={"my_flag": True})
+
+    assert refreshed == [True, True, True]
+    assert len(received_kwargs) == 3
+    for i, kw in enumerate(received_kwargs):
+        assert kw.get("my_flag") is True, (
+            f"doc {i + 1}: expected my_flag=True, got {kw}"
+        )
