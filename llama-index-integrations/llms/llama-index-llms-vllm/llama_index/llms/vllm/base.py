@@ -247,13 +247,15 @@ class Vllm(LLM):
             "n": self.n,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
             "logprobs": self.logprobs,
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
+        # vLLM >=0.19 removed `best_of` from SamplingParams; only emit it when set.
+        if self.best_of is not None:
+            base_kwargs["best_of"] = self.best_of
         return {**base_kwargs}
 
     @atexit.register
