@@ -157,6 +157,40 @@ _SANDBOX_ALLOWED_IMPORTS = {
 }
 
 
+def _format_string_has_dunder_field(format_string: str) -> bool:
+    """
+    Return True if ``format_string`` references a dunder attribute via a
+    field-path expression such as ``{0.__class__.__bases__}``.
+
+    ``str.format`` / ``str.format_map`` evaluate field paths through CPython's
+    C-level ``_PyObject_LookupAttr`` in the ``_string`` module, which bypasses
+    the AST-level dunder check below. Without validating the format string
+    itself, sandboxed code can write::
+
+        '{0.__class__.__bases__[0].__subclasses__}'.format(any_value)
+
+    and traverse dunder attributes the sandbox is trying to forbid.
+    """
+    import string as _string_module
+
+    try:
+        parsed = list(_string_module.Formatter().parse(format_string))
+    except (ValueError, TypeError):
+        # Malformed format strings will raise their normal error at call time.
+        return False
+
+    for _literal_text, field_name, _format_spec, _conversion in parsed:
+        if not field_name:
+            continue
+        # field_name examples: "0", "0.foo", "0.foo.bar[2]", "name.attr".
+        # Split on '.' and '[' to inspect every attribute segment.
+        for segment in re.split(r"[\.\[]", field_name):
+            segment = segment.rstrip("]")
+            if segment.startswith("__"):
+                return True
+    return False
+
+
 def _validate_generated_code(code: str) -> None:
     """Reject generated code that accesses dunder/private attrs or unsafe imports."""
     tree = ast.parse(code)
@@ -186,6 +220,20 @@ def _validate_generated_code(code: str) -> None:
             raise RuntimeError(
                 f"Generated code accesses a dunder attribute '{node.attr}' "
                 f"which is not allowed in the sandbox"
+            )
+        # ``str.format`` / ``str.format_map`` bypass the AST-level dunder check
+        # above because the dunder traversal lives inside a string literal
+        # rather than as an ast.Attribute node. Reject string-constant format
+        # strings whose field paths reference dunders.
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and _format_string_has_dunder_field(node.value)
+        ):
+            raise RuntimeError(
+                "Generated code contains a format string with a dunder "
+                "field-path (e.g. '{0.__class__}'); str.format / str.format_map "
+                "would otherwise traverse dunder attributes the sandbox forbids."
             )
 
 
