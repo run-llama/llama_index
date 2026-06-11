@@ -80,6 +80,18 @@ def test_google_rerank():
     reranker._client.rank.assert_called_once()
 
 
+def test_google_rerank_async_client_is_lazy():
+    with mock.patch(
+        "llama_index.postprocessor.google_rerank.base.discoveryengine",
+        create=True,
+    ) as mock_discoveryengine:
+        with mock.patch("google.auth.default", return_value=(None, "test-project")):
+            GoogleRerank(project_id="test-project")
+
+    mock_discoveryengine.RankServiceClient.assert_called_once()
+    mock_discoveryengine.RankServiceAsyncClient.assert_not_called()
+
+
 @pytest.mark.asyncio
 async def test_google_rerank_async():
     reranker = _create_reranker(top_n=2)
@@ -90,24 +102,31 @@ async def test_google_rerank_async():
             {"index": 0, "score": 0.70},
         ]
     )
-    reranker._async_client.rank = AsyncMock(return_value=mock_response)
 
     input_nodes = [
         NodeWithScore(node=TextNode(id_="1", text="hello world")),
         NodeWithScore(node=TextNode(id_="2", text="goodbye world")),
     ]
 
+    async_client = MagicMock()
+    async_client.rank = AsyncMock(return_value=mock_response)
+
     query_bundle = QueryBundle(query_str="goodbye")
-    actual_nodes = await reranker.apostprocess_nodes(
-        input_nodes, query_bundle=query_bundle
-    )
+    with mock.patch(
+        "llama_index.postprocessor.google_rerank.base.discoveryengine.RankServiceAsyncClient",
+        return_value=async_client,
+    ) as mock_async_client_cls:
+        actual_nodes = await reranker.apostprocess_nodes(
+            input_nodes, query_bundle=query_bundle
+        )
 
     assert len(actual_nodes) == 2
     assert actual_nodes[0].node.get_content() == "goodbye world"
     assert actual_nodes[0].score == pytest.approx(0.90)
     assert actual_nodes[1].node.get_content() == "hello world"
     assert actual_nodes[1].score == pytest.approx(0.70)
-    reranker._async_client.rank.assert_called_once()
+    mock_async_client_cls.assert_called_once()
+    async_client.rank.assert_called_once()
 
 
 def test_google_rerank_empty_nodes():
