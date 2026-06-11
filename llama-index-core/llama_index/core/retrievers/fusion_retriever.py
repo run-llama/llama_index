@@ -179,11 +179,14 @@ class QueryFusionRetriever(BaseRetriever):
         for query_tuple, nodes_with_scores in results.items():
             for node_with_score in nodes_with_scores:
                 min_score, max_score = min_max_scores[query_tuple]
-                # Scale the score to be between 0 and 1
+                # Scale the score to be between 0 and 1.
+                # node_with_score.score is Optional[float]; treat None as 0.0,
+                # consistent with how min/max bounds are computed above.
+                raw_score = node_with_score.score or 0.0
                 if max_score == min_score:
                     node_with_score.score = 1.0 if max_score > 0 else 0.0
                 else:
-                    node_with_score.score = (node_with_score.score - min_score) / (
+                    node_with_score.score = (raw_score - min_score) / (
                         max_score - min_score
                     )
                 # Scale by the weight of the retriever
