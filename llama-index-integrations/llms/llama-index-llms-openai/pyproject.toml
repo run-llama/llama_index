@@ -19,7 +19,7 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.7.5"
+version = "0.7.9"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.10,<4.0"

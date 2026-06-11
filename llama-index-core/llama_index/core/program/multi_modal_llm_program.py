@@ -107,7 +107,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
 
         if image_documents and all(
             isinstance(doc, ImageNode) for doc in image_documents
@@ -146,7 +146,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
 
         if image_documents and all(
             isinstance(doc, ImageNode) for doc in image_documents

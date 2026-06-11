@@ -631,11 +631,19 @@ async def test_chat_prompt_helper_atruncate_multimodal(
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
+    prompt_helper1_strict = ChatPromptHelper(
+        # Both chunks are allotted enough space for the text block only
+        context_window=20 + await tb.aestimate_tokens() * len(messages),
+        num_output=0,
+        chunk_overlap_ratio=0,
+        tokenizer=mock_tokenizer,
+        strict_truncation=True,
+    )
     truncated_messages1 = await prompt_helper1.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages1_strict = await prompt_helper1.atruncate(
-        prompt=mm_prompt, messages=messages, padding=0, strict=True
+    truncated_messages1_strict = await prompt_helper1_strict.atruncate(
+        prompt=mm_prompt, messages=messages, padding=0
     )
 
     prompt_helper2 = ChatPromptHelper(
@@ -646,11 +654,20 @@ async def test_chat_prompt_helper_atruncate_multimodal(
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
+    prompt_helper2_strict = ChatPromptHelper(
+        # Both chunks are allotted enough space for the text and audio blocks
+        context_window=20
+        + (await tb.aestimate_tokens() + await ab.aestimate_tokens()) * len(messages),
+        num_output=0,
+        chunk_overlap_ratio=0,
+        tokenizer=mock_tokenizer,
+        strict_truncation=True,
+    )
     truncated_messages2 = await prompt_helper2.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages2_strict = await prompt_helper2.atruncate(
-        prompt=mm_prompt, messages=messages, padding=0, strict=True
+    truncated_messages2_strict = await prompt_helper2_strict.atruncate(
+        prompt=mm_prompt, messages=messages, padding=0
     )
 
     prompt_helper3 = ChatPromptHelper(
@@ -662,11 +679,21 @@ async def test_chat_prompt_helper_atruncate_multimodal(
         chunk_overlap_ratio=0,
         tokenizer=mock_tokenizer,
     )
+    prompt_helper3_strict = ChatPromptHelper(
+        # Both chunks are allotted enough space for text all tokens
+        context_window=20
+        + sum([await b.aestimate_tokens() for b in [tb, ab, ib, db, vb]])
+        * len(messages),
+        num_output=0,
+        chunk_overlap_ratio=0,
+        tokenizer=mock_tokenizer,
+        strict_truncation=True,
+    )
     truncated_messages3 = await prompt_helper3.atruncate(
         prompt=mm_prompt, messages=messages, padding=0
     )
-    truncated_messages3_strict = await prompt_helper3.atruncate(
-        prompt=mm_prompt, messages=messages, padding=0, strict=True
+    truncated_messages3_strict = await prompt_helper3_strict.atruncate(
+        prompt=mm_prompt, messages=messages, padding=0
     )
 
     assert truncated_messages1 == [
