@@ -45,6 +45,7 @@ from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
     BEDROCK_NO_TEMP_MODELS,
+    HAS_AIOBOTO3,
     ThinkingDict,
     bedrock_modelname_to_context_size,
     converse_with_retry,
@@ -206,6 +207,7 @@ class BedrockConverse(FunctionCallingLLM):
 
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
+    _asession: Any = PrivateAttr(default=None)
     _async_client: Any = PrivateAttr(default=None)
     _boto_client_kwargs: Any = PrivateAttr()
 
@@ -361,6 +363,11 @@ class BedrockConverse(FunctionCallingLLM):
             )
 
         self._async_client = async_client
+
+        if HAS_AIOBOTO3:
+            import aioboto3
+
+            self._asession = aioboto3.Session(**session_kwargs)
 
     @classmethod
     def class_name(cls) -> str:
@@ -758,7 +765,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
-            client=self._async_client or self._client,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -768,6 +775,9 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
+            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
@@ -809,7 +819,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response_gen = await converse_with_retry_async(
-            client=self._async_client or self._client,
+            client=self._async_client if HAS_AIOBOTO3 else self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
             system_prompt_caching=self.system_prompt_caching,
@@ -820,6 +830,9 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=self.guardrail_version,
             guardrail_stream_processing_mode=self.guardrail_stream_processing_mode,
             trace=self.trace,
+            session=self._asession,
+            config=self._config,
+            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
