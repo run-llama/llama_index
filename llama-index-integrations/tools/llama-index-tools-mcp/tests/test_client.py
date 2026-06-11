@@ -259,3 +259,98 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_handles_all_mcp_content_block_types():
+    """Regression for #21270.
+
+    `BasicMCPClient.get_prompt` previously only handled `TextContent` and
+    `ImageContent`. `EmbeddedResource` raised `NotImplementedError` and any
+    other valid MCP `ContentBlock` (`AudioContent`, `ResourceLink`) raised
+    `ValueError`, so any server that returned those types broke the call.
+    Verify all five spec-valid content types now translate without raising.
+    """
+    from contextlib import asynccontextmanager
+    from unittest.mock import patch
+
+    from llama_index.core.llms import (
+        AudioBlock,
+        DocumentBlock,
+        ImageBlock,
+        TextBlock,
+    )
+    from mcp import types
+
+    prompt_messages = [
+        types.PromptMessage(
+            role="user", content=types.TextContent(type="text", text="hello")
+        ),
+        types.PromptMessage(
+            role="user",
+            content=types.ImageContent(type="image", data="aW1nLWI2NA==", mimeType="image/png"),
+        ),
+        types.PromptMessage(
+            role="user",
+            content=types.AudioContent(type="audio", data="YXVkaW8tYjY0", mimeType="audio/wav"),
+        ),
+        types.PromptMessage(
+            role="user",
+            content=types.EmbeddedResource(
+                type="resource",
+                resource=types.TextResourceContents(
+                    uri="resource://doc-text", mimeType="text/plain", text="inline text"
+                ),
+            ),
+        ),
+        types.PromptMessage(
+            role="user",
+            content=types.EmbeddedResource(
+                type="resource",
+                resource=types.BlobResourceContents(
+                    uri="resource://doc-blob",
+                    mimeType="application/pdf",
+                    blob="cGRmLWI2NA==",
+                ),
+            ),
+        ),
+        types.PromptMessage(
+            role="user",
+            content=types.ResourceLink(
+                type="resource_link",
+                name="report.pdf",
+                uri="resource://report",
+                mimeType="application/pdf",
+            ),
+        ),
+    ]
+
+    class _FakeSession:
+        async def get_prompt(self, _name, _args):
+            return types.GetPromptResult(messages=prompt_messages)
+
+    @asynccontextmanager
+    async def _fake_run_session(self):
+        yield _FakeSession()
+
+    client = BasicMCPClient("ignored", args=[], timeout=5)
+    with patch.object(BasicMCPClient, "_run_session", _fake_run_session):
+        result = await client.get_prompt("any")
+
+    assert [
+        type(msg.blocks[0]).__name__ for msg in result
+    ] == [
+        "TextBlock",
+        "ImageBlock",
+        "AudioBlock",
+        "TextBlock",
+        "DocumentBlock",
+        "DocumentBlock",
+    ]
+    assert isinstance(result[0].blocks[0], TextBlock) and result[0].blocks[0].text == "hello"
+    assert isinstance(result[1].blocks[0], ImageBlock)
+    assert isinstance(result[2].blocks[0], AudioBlock)
+    assert isinstance(result[3].blocks[0], TextBlock) and result[3].blocks[0].text == "inline text"
+    assert isinstance(result[4].blocks[0], DocumentBlock)
+    assert isinstance(result[5].blocks[0], DocumentBlock)
+    assert result[5].blocks[0].title == "report.pdf"

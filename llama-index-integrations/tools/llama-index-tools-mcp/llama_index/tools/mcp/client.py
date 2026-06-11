@@ -27,7 +27,13 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import (
+    AudioBlock,
+    ChatMessage,
+    DocumentBlock,
+    ImageBlock,
+    TextBlock,
+)
 
 
 class StreamingHandler(logging.Handler):
@@ -398,9 +404,68 @@ class BasicMCPClient(ClientSession):
                             ],
                         )
                     )
+                elif isinstance(message.content, types.AudioContent):
+                    # MCP `AudioContent.data` is base64-encoded; mirror
+                    # `ImageContent` and pass through unchanged so
+                    # `AudioBlock.resolve_audio()` decodes lazily downstream.
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                AudioBlock(
+                                    audio=message.content.data,
+                                    format=message.content.mimeType,
+                                )
+                            ],
+                        )
+                    )
                 elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
+                    resource = message.content.resource
+                    if isinstance(resource, types.TextResourceContents):
+                        # Embedded text resource — inline as a TextBlock so the
+                        # text content reaches the LLM. URI / mimeType is
+                        # tracked via the wrapping ChatMessage role only.
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[TextBlock(text=resource.text)],
+                            )
+                        )
+                    elif isinstance(resource, types.BlobResourceContents):
+                        # Embedded binary resource — pass through as a
+                        # DocumentBlock; MCP keeps the payload base64-encoded
+                        # which DocumentBlock handles directly.
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[
+                                    DocumentBlock(
+                                        data=resource.blob,
+                                        url=str(resource.uri),
+                                        document_mimetype=resource.mimeType,
+                                    )
+                                ],
+                            )
+                        )
+                    else:  # pragma: no cover - future-proofing
+                        raise ValueError(
+                            f"Unsupported embedded resource type: {type(resource)}"
+                        )
+                elif isinstance(message.content, types.ResourceLink):
+                    # ResourceLink points to a resource the client must fetch
+                    # itself; surface the link via DocumentBlock so downstream
+                    # adapters can resolve it.
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                DocumentBlock(
+                                    url=str(message.content.uri),
+                                    title=message.content.name,
+                                    document_mimetype=message.content.mimeType,
+                                )
+                            ],
+                        )
                     )
                 else:
                     raise ValueError(
