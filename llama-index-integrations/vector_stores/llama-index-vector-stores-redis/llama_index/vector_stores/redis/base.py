@@ -58,6 +58,10 @@ NO_INDEXED_FILTERS = (
 )
 
 
+def _node_id_from_redis_key(key: str, prefix: str, key_separator: str) -> str:
+    return key.removeprefix(f"{prefix}{key_separator}")
+
+
 class TokenEscaper:
     """
     Escape punctuation within an input string. Taken from RedisOM Python.
@@ -356,7 +360,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Added {len(keys)} documents to index {self._async_index.name}")
         return [
-            key.strip(self._async_index.prefix + self._async_index.key_separator)
+            _node_id_from_redis_key(
+                key, self._async_index.prefix, self._async_index.key_separator
+            )
             for key in keys
         ]
 
@@ -408,7 +414,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         keys = self._index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
         logger.info(f"Added {len(keys)} documents to index {self._index.name}")
         return [
-            key.strip(self._index.prefix + self._index.key_separator) for key in keys
+            _node_id_from_redis_key(key, self._index.prefix, self._index.key_separator)
+            for key in keys
         ]
 
     def _build_node_id_filter_expression(self, node_ids: list[str]) -> FilterExpression:

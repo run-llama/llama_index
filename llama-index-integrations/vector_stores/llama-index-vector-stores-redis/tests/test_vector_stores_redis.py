@@ -10,7 +10,25 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
 )
 from llama_index.vector_stores.redis import RedisVectorStore
+from llama_index.vector_stores.redis.base import _node_id_from_redis_key
 from llama_index.vector_stores.redis.schema import RedisVectorStoreSchema
+
+
+def test_node_id_from_redis_key_removes_exact_prefix():
+    node_id = "e7b95ae7-6369-404d-8287-1f4504121563"
+    redis_key = f"semantic_cache_doc:{node_id}"
+
+    assert (
+        _node_id_from_redis_key(redis_key, "semantic_cache_doc", ":")
+        == "e7b95ae7-6369-404d-8287-1f4504121563"
+    )
+
+
+def test_node_id_from_redis_key_preserves_suffix_characters_from_prefix():
+    node_id = "e7b95ae7-6369-404d-8287-1f4504121563-doc"
+    redis_key = f"semantic_cache_doc:{node_id}"
+
+    assert _node_id_from_redis_key(redis_key, "semantic_cache_doc", ":") == node_id
 
 
 def _build_filterable_schema(index_name: str) -> RedisVectorStoreSchema:
