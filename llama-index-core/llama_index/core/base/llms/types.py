@@ -39,6 +39,7 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     Field,
     FilePath,
+    SerializeAsAny,
     field_serializer,
     field_validator,
     model_validator,
@@ -1283,7 +1284,7 @@ class ChatResponse(BaseModel):
     """Chat response."""
 
     message: ChatMessage
-    raw: Optional[Any] = None
+    raw: SerializeAsAny[Optional[Any]] = None
     delta: Optional[str] = None
     logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
@@ -1312,7 +1313,7 @@ class CompletionResponse(BaseModel):
 
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[Any] = None
+    raw: SerializeAsAny[Optional[Any]] = None
     logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
