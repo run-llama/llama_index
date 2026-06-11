@@ -254,6 +254,8 @@ class Vllm(LLM):
             "top_k": self.top_k,
             "top_p": self.top_p,
         }
+        if self.best_of is None:
+            base_kwargs.pop("best_of")
         return {**base_kwargs}
 
     @atexit.register
