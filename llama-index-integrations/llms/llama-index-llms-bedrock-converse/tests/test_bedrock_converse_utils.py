@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import aioboto3
 import pytest
 from botocore.config import Config
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_none
 from llama_index.core.base.llms.types import (
     AudioBlock,
     CacheControl,
@@ -32,6 +33,7 @@ from llama_index.llms.bedrock_converse.utils import (
     messages_to_converse_messages,
     tools_to_converse_tools,
 )
+import llama_index.llms.bedrock_converse.utils as bedrock_utils
 
 EXP_RESPONSE = "Test"
 EXP_STREAM_RESPONSE = ["Test ", "value"]
@@ -982,6 +984,121 @@ async def test_converse_with_retry_async_uses_provided_client_streaming(
                 pass
             patched_stream.assert_called_once()
             patched_session_client.assert_not_called()
+
+
+class TransientStreamSetupError(Exception):
+    pass
+
+
+class AsyncStreamSetupRetryClient:
+    def __init__(self, fail_on_calls: int = 1) -> None:
+        self.calls = 0
+        self.fail_on_calls = fail_on_calls
+
+    async def converse_stream(self, **kwargs):
+        self.calls += 1
+        if self.calls <= self.fail_on_calls:
+            raise TransientStreamSetupError("temporary setup failure")
+
+        async def stream_generator():
+            yield {
+                "contentBlockDelta": {
+                    "delta": {"text": "retried"},
+                    "contentBlockIndex": 0,
+                }
+            }
+
+        return {"stream": stream_generator()}
+
+
+class AsyncMidStreamFailureClient:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def converse_stream(self, **kwargs):
+        self.calls += 1
+
+        async def stream_generator():
+            yield {
+                "contentBlockDelta": {
+                    "delta": {"text": "first"},
+                    "contentBlockIndex": 0,
+                }
+            }
+            raise TransientStreamSetupError("mid-stream failure")
+
+        return {"stream": stream_generator()}
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_retries_stream_setup(
+    mock_aioboto3_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        bedrock_utils,
+        "_create_retry_decorator_async",
+        lambda max_retries: retry(
+            reraise=True,
+            stop=stop_after_attempt(max_retries),
+            wait=wait_none(),
+            retry=retry_if_exception_type(TransientStreamSetupError),
+        ),
+    )
+    session = aioboto3.Session()
+    async_client = AsyncStreamSetupRetryClient()
+
+    response_gen = await converse_with_retry_async(
+        session=session,
+        config=Config(),
+        model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+        messages=[],
+        stream=True,
+        client=async_client,
+        max_retries=2,
+    )
+
+    events = [event async for event in response_gen]
+
+    assert async_client.calls == 2
+    assert events[0]["contentBlockDelta"]["delta"]["text"] == "retried"
+
+
+@pytest.mark.asyncio
+async def test_converse_with_retry_async_does_not_retry_mid_stream_errors(
+    mock_aioboto3_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        bedrock_utils,
+        "_create_retry_decorator_async",
+        lambda max_retries: retry(
+            reraise=True,
+            stop=stop_after_attempt(max_retries),
+            wait=wait_none(),
+            retry=retry_if_exception_type(TransientStreamSetupError),
+        ),
+    )
+    session = aioboto3.Session()
+    async_client = AsyncMidStreamFailureClient()
+
+    response_gen = await converse_with_retry_async(
+        session=session,
+        config=Config(),
+        model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+        messages=[],
+        stream=True,
+        client=async_client,
+        max_retries=2,
+    )
+
+    events = []
+    with pytest.raises(TransientStreamSetupError):
+        async for event in response_gen:
+            events.append(event)
+
+    assert async_client.calls == 1
+    assert events[0]["contentBlockDelta"]["delta"]["text"] == "first"
 
 
 def test_thinking_dict_enabled_requires_budget():
