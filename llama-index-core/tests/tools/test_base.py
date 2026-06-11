@@ -538,3 +538,24 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_async_output_document_and_video_blocks() -> None:
+    """Test that async tools preserve document and video output blocks."""
+
+    async def get_blocks() -> list:
+        return [
+            DocumentBlock(data=b"fake-pdf-bytes", document_mimetype="application/pdf"),
+            VideoBlock(video=b"fake-video-bytes", video_mimetype="video/mp4"),
+            TextBlock(text="Summary of the assets"),
+        ]
+
+    tool = FunctionTool.from_defaults(get_blocks)
+    tool_output = await tool.acall()
+
+    assert len(tool_output.blocks) == 3
+    assert isinstance(tool_output.blocks[0], DocumentBlock)
+    assert isinstance(tool_output.blocks[1], VideoBlock)
+    assert isinstance(tool_output.blocks[2], TextBlock)
+    assert tool_output.content == "Summary of the assets"
