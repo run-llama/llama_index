@@ -468,7 +468,7 @@ def test_ensure_chat_message_is_serializable(MockSyncOpenAI: MagicMock) -> None:
                 )
             ],
         )
-        data = response.message.dict()
+        data = response.message.model_dump()
         assert isinstance(data, dict)
         assert isinstance(data["additional_kwargs"], dict)
         assert isinstance(data["additional_kwargs"]["test"]["choices"], list)
