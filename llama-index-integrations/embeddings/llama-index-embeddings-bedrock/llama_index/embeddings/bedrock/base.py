@@ -13,6 +13,13 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
+try:
+    import aioboto3
+
+    HAS_AIOBOTO3 = True
+except ImportError:
+    HAS_AIOBOTO3 = False
+
 
 class PROVIDERS(str, Enum):
     AMAZON = "amazon"
@@ -122,6 +129,7 @@ class BedrockEmbedding(BaseEmbedding):
 
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
+    _asession: Any = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -205,6 +213,9 @@ class BedrockEmbedding(BaseEmbedding):
             raise ImportError(
                 "boto3 package not found, install with 'pip install boto3'"
             )
+
+        if HAS_AIOBOTO3:
+            self._asession = aioboto3.Session(**session_kwargs)
 
         # Prior to general availability, custom boto3 wheel files were
         # distributed that used the bedrock service to invokeModel.
@@ -527,7 +538,8 @@ class BedrockEmbedding(BaseEmbedding):
         """
         Get the embedding asynchronously for the given payload.
 
-        Delegates to the synchronous implementation via asyncio.to_thread.
+        Uses native async with aioboto3 when available, otherwise delegates
+        to the synchronous implementation via asyncio.to_thread.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
@@ -537,7 +549,28 @@ class BedrockEmbedding(BaseEmbedding):
             Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
 
         """
-        return await asyncio.to_thread(self._get_embedding, payload, type)
+        if HAS_AIOBOTO3 and self._asession is not None:
+            provider = self._get_provider()
+            request_body = self._get_request_body(provider, payload, type)
+
+            async with self._asession.client(
+                "bedrock-runtime", config=self._config
+            ) as client:
+                response = await client.invoke_model(
+                    body=request_body,
+                    modelId=self.application_inference_profile_arn or self.model_name,
+                    accept="application/json",
+                    contentType="application/json",
+                )
+                streaming_body = await response.get("body").read()
+                resp = json.loads(streaming_body.decode("utf-8"))
+
+            identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
+            if identifiers is None:
+                raise ValueError("Provider not supported")
+            return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
+        else:
+            return await asyncio.to_thread(self._get_embedding, payload, type)
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
         return await self._aget_embedding(query, "query")

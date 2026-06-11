@@ -38,6 +38,9 @@ dependencies = [
     "llama-index-core>=0.13.0,<0.15",
 ]
 
+[project.optional-dependencies]
+async = ["aioboto3>=13.0.0"]
+
 [tool.codespell]
 check-filenames = true
 check-hidden = true
