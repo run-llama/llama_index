@@ -380,7 +380,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             for node_id in node_ids:
                 self._index_struct.delete(node_id)
                 await self._docstore.adelete_document(node_id, raise_error=False)
-            self._storage_context.index_store.add_index_struct(self._index_struct)
+            await self._storage_context.index_store.async_add_index_struct(self._index_struct)
 
     def delete_nodes(
         self,
@@ -456,7 +456,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         await asyncio.gather(*tasks)
 
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        await self._storage_context.index_store.async_add_index_struct(self._index_struct)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
