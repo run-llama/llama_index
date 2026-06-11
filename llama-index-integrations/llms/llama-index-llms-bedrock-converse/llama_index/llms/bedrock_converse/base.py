@@ -338,7 +338,7 @@ class BedrockConverse(FunctionCallingLLM):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" " 'pip install boto3'"
+                "boto3 package not found, install with 'pip install boto3'"
             )
 
         # Prior to general availability, custom boto3 wheel files were
@@ -409,12 +409,12 @@ class BedrockConverse(FunctionCallingLLM):
         Returns a tuple containing content, tool call ids, and status by parsing the
         response from a Bedrock Converse (non-streaming) request.
         """
-        assert (
-            response is not None or content is not None
-        ), f"Either response or content must be provided. Got response: {response}, content: {content}"
-        assert (
-            response is None or content is None
-        ), f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+        assert response is not None or content is not None, (
+            f"Either response or content must be provided. Got response: {response}, content: {content}"
+        )
+        assert response is None or content is None, (
+            f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+        )
         tool_call_ids = []
         status = []
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
