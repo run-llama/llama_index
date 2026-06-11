@@ -227,7 +227,9 @@ class QueryPlanTool(BaseTool):
 
         nodes_dict = {node.id: node for node in query_plan.nodes}
         root_nodes = self._find_root_nodes(nodes_dict)
-        if len(root_nodes) > 1:
-            raise ValueError("Query plan should have exactly one root node.")
+        if len(root_nodes) != 1:
+            raise ValueError(
+                f"Query plan must have exactly one root node, found {len(root_nodes)}."
+            )
 
         return self._execute_node(root_nodes[0], nodes_dict)
