@@ -755,9 +755,9 @@ def converse_with_retry(
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
         if guardrail_stream_processing_mode and stream:
-            converse_kwargs["guardrailConfig"][
-                "streamProcessingMode"
-            ] = guardrail_stream_processing_mode
+            converse_kwargs["guardrailConfig"]["streamProcessingMode"] = (
+                guardrail_stream_processing_mode
+            )
 
     converse_kwargs = join_two_dicts(
         converse_kwargs,
