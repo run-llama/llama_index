@@ -106,7 +106,13 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
     _token_max_tokens: float = PrivateAttr(default=0.0)
     _token_refill_rate: float = PrivateAttr(default=0.0)
     _last_refill_time: float = PrivateAttr(default=0.0)
+    # _lock guards the shared mutable state in *synchronous* code paths.
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    # _async_lock is created lazily on first async use, always bound to the
+    # running event loop.  Using threading.Lock inside async_acquire would
+    # block the event loop thread, causing latency spikes and deadlocks under
+    # concurrent async callers.
+    _async_lock: Optional[asyncio.Lock] = PrivateAttr(default=None)
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
@@ -200,13 +206,19 @@ class TokenBucketRateLimiter(BaseRateLimiter, BaseModel):
         """
         Wait until one request is allowed (asynchronous).
 
+        Uses ``asyncio.Lock`` (created lazily) instead of ``threading.Lock``
+        so that concurrent callers cooperatively yield to the event loop while
+        waiting, rather than blocking the event loop thread.
+
         Args:
             num_tokens: Estimated token count for this request.  Only
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if self._async_lock is None:
+            self._async_lock = asyncio.Lock()
         while True:
-            with self._lock:
+            async with self._async_lock:
                 self._refill()
                 wait = self._wait_time(num_tokens)
                 if wait <= 0:
@@ -283,7 +295,13 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
 
     _request_timestamps: Deque[float] = PrivateAttr(default_factory=deque)
     _token_usage: Deque[Tuple[float, float]] = PrivateAttr(default_factory=deque)
+    # _lock guards the shared mutable state in *synchronous* code paths.
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    # _async_lock is created lazily on first async use, always bound to the
+    # running event loop.  Using threading.Lock inside async_acquire would
+    # block the event loop thread, causing latency spikes and deadlocks under
+    # concurrent async callers.
+    _async_lock: Optional[asyncio.Lock] = PrivateAttr(default=None)
 
     @model_validator(mode="after")
     def _check_limits(self) -> "SlidingWindowRateLimiter":
@@ -381,14 +399,20 @@ class SlidingWindowRateLimiter(BaseRateLimiter, BaseModel):
         """
         Wait until one request is allowed (asynchronous).
 
+        Uses ``asyncio.Lock`` (created lazily) instead of ``threading.Lock``
+        so that concurrent callers cooperatively yield to the event loop while
+        waiting, rather than blocking the event loop thread.
+
         Args:
             num_tokens: Estimated token count for this request.  Only
                 consulted when ``tokens_per_minute`` is configured.
 
         """
+        if self._async_lock is None:
+            self._async_lock = asyncio.Lock()
         while True:
             now = time.monotonic()
-            with self._lock:
+            async with self._async_lock:
                 self._prune_request_timestamps(now)
                 self._prune_token_usage(now)
                 wait = self._wait_time(now, num_tokens)

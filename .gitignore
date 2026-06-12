@@ -13,6 +13,7 @@ migration_scripts/
 **/.claude
 !/.claude
 /.claude/settings.local.json
+AGENTS.md
 
 # Local development
 venv/
