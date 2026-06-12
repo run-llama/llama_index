@@ -18,6 +18,7 @@ from typing import (
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import (
+    BaseContentBlock,
     ChatMessage,
     ContentBlock,
     TextBlock,
@@ -337,6 +338,31 @@ class Memory(BaseMemory):
             video_token_size_estimate=video_token_size_estimate,
         )
 
+    def _estimate_block_tokens(self, block: BaseContentBlock) -> int:
+        """Estimate the token count for a single content block."""
+        if isinstance(block, CachePoint):
+            return 0
+        if isinstance(block, TextBlock):
+            return len(self.tokenizer_fn(block.text))
+        if isinstance(block, ImageBlock):
+            return self.image_token_size_estimate
+        if isinstance(block, VideoBlock):
+            return self.video_token_size_estimate
+        if isinstance(block, AudioBlock):
+            return self.audio_token_size_estimate
+        if isinstance(block, DocumentBlock):
+            return self.document_token_size_estimate
+        if isinstance(block, ToolCallBlock):
+            return len(self.tokenizer_fn(block.model_dump_json()))
+        if isinstance(block, ThinkingBlock):
+            return block.num_tokens or len(self.tokenizer_fn(block.content or ""))
+        if isinstance(block, (CitableBlock, CitationBlock)):
+            return sum(
+                self._estimate_block_tokens(nested) for nested in block.nested_blocks
+            )
+        # Fallback so future block types can't silently regress to zero tokens.
+        return len(self.tokenizer_fn(block.model_dump_json()))
+
     def _estimate_token_count(
         self,
         message_or_blocks: Union[
@@ -348,21 +374,10 @@ class Memory(BaseMemory):
 
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
-            blocks: List[
-                Union[
-                    TextBlock,
-                    ImageBlock,
-                    VideoBlock,
-                    AudioBlock,
-                    DocumentBlock,
-                    CitableBlock,
-                    CitationBlock,
-                    ThinkingBlock,
-                ]
-            ] = []
+            blocks: List[ContentBlock] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +395,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -427,16 +442,7 @@ class Memory(BaseMemory):
 
         # Estimate the token count for each block
         for block in blocks:
-            if isinstance(block, TextBlock):
-                token_count += len(self.tokenizer_fn(block.text))
-            elif isinstance(block, ImageBlock):
-                token_count += self.image_token_size_estimate
-            elif isinstance(block, VideoBlock):
-                token_count += self.video_token_size_estimate
-            elif isinstance(block, AudioBlock):
-                token_count += self.audio_token_size_estimate
-            elif isinstance(block, DocumentBlock):
-                token_count += self.document_token_size_estimate
+            token_count += self._estimate_block_tokens(block)
 
         return token_count
 
