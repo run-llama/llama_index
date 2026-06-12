@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pytest
@@ -70,6 +71,27 @@ def test_chat(chat_engine: MultiModalCondensePlusContextChatEngine):
     assert "Hello World!" in str(response)
     assert "What is the capital of the moon?" in str(response)
     assert len(chat_engine.chat_history) == 4
+
+
+def test_chat_logs_omit_chat_content(
+    chat_engine: MultiModalCondensePlusContextChatEngine, caplog
+):
+    chat_engine.chat("remember secret-token-123")
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG):
+        chat_engine.chat("use secret-token-456")
+
+    chat_engine_logs = "\n".join(
+        record.getMessage()
+        for record in caplog.records
+        if (
+            record.name
+            == "llama_index.core.chat_engine.multi_modal_condense_plus_context"
+        )
+    )
+    assert "secret-token-123" not in chat_engine_logs
+    assert "secret-token-456" not in chat_engine_logs
 
 
 def test_chat_stream(chat_engine: MultiModalCondensePlusContextChatEngine):

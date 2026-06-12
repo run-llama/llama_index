@@ -138,7 +138,7 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
             return latest_message
 
         chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
+        logger.debug("Condensing chat history for standalone question")
 
         llm_input = self._condense_prompt_template.format(
             chat_history=chat_history_str, question=latest_message
@@ -154,7 +154,7 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
             return latest_message
 
         chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
+        logger.debug("Condensing chat history for standalone question")
 
         llm_input = self._condense_prompt_template.format(
             chat_history=chat_history_str, question=latest_message
@@ -194,7 +194,7 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)  # type: ignore
-        logger.info(f"Condensed question: {condensed_question}")
+        logger.info("Generated condensed question")
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
 
@@ -221,7 +221,7 @@ class MultiModalCondensePlusContextChatEngine(BaseChatEngine):
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)  # type: ignore
-        logger.info(f"Condensed question: {condensed_question}")
+        logger.info("Generated condensed question")
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
 
