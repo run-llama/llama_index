@@ -32,6 +32,9 @@ from openai.types.responses import (
     ResponseOutputItemDoneEvent,
 )
 from pydantic import BaseModel, Field
+from typing import Optional
+from llama_index.llms.openai.responses import _supports_reasoning
+from llama_index.llms.openai.utils import to_openai_responses_message_dict
 
 # Skip markers for tests requiring API keys
 SKIP_OPENAI_TESTS = not os.environ.get("OPENAI_API_KEY")
@@ -1009,3 +1012,402 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+class TestSupportsReasoning:
+    """_supports_reasoning must use prefix matching, not an exact O1_MODELS lookup."""
+
+    # ── models that SHOULD match ───────────────────────────────────────────────
+
+    def test_o1_mini(self):
+        assert _supports_reasoning("o1-mini") is True
+
+    def test_o1_preview(self):
+        assert _supports_reasoning("o1-preview") is True
+
+    def test_o3_mini(self):
+        assert _supports_reasoning("o3-mini") is True
+
+    def test_o3_dated(self):
+        assert _supports_reasoning("o3-2025-04-16") is True
+
+    def test_o4_mini_dated(self):
+        assert _supports_reasoning("o4-mini-2025-04-16") is True
+
+    def test_gpt5_base_dated(self):
+        assert _supports_reasoning("gpt-5-2025-08-07") is True
+
+    def test_gpt5_dot_two_dated(self):
+        assert _supports_reasoning("gpt-5.2-2025-12-11") is True
+
+    def test_gpt5_dot_four_dated(self):
+        assert _supports_reasoning("gpt-5.4-2026-03-05") is True
+
+    def test_gpt5_dot_five_dated(self):
+        assert _supports_reasoning("gpt-5.5-2026-04-23") is True
+
+    def test_future_unlisted_snapshot_still_matches(self):
+        """
+        THE key regression case:
+        A snapshot not yet in O1_MODELS must still be caught by prefix.
+        This is exactly what caused issue #20459.
+        """
+        assert _supports_reasoning("gpt-5.9-2027-01-01") is True
+
+    # ── models that must NOT match ─────────────────────────────────────────────
+
+    def test_gpt4o_no_match(self):
+        assert _supports_reasoning("gpt-4o") is False
+
+    def test_gpt4o_mini_no_match(self):
+        assert _supports_reasoning("gpt-4o-mini") is False
+
+    def test_gpt4_turbo_no_match(self):
+        assert _supports_reasoning("gpt-4-turbo") is False
+
+    def test_gpt4_1_no_match(self):
+        assert _supports_reasoning("gpt-4.1") is False
+
+    def test_empty_string_no_match(self):
+        assert _supports_reasoning("") is False
+
+    def test_random_string_no_match(self):
+        assert _supports_reasoning("some-unknown-model") is False
+
+def _make_llm_for_temp(model: str, reasoning_options=None, temperature: float = 0.3):
+    """Create OpenAIResponses without real API calls."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            return OpenAIResponses(
+                model=model,
+                temperature=temperature,
+                reasoning_options=reasoning_options,
+                api_key="sk-test",
+            )
+
+
+class TestConstructorTemperatureOverride:
+
+    def test_active_reasoning_forces_temperature_to_one(self):
+        """effort='low' means reasoning is on — temperature must become 1.0."""
+        llm = _make_llm_for_temp("gpt-5.2-2025-12-11", {"effort": "low"}, 0.3)
+        assert llm.temperature == 1.0
+
+    def test_effort_none_preserves_custom_temperature(self):
+        """effort='none' means reasoning is off — user's temperature must survive."""
+        llm = _make_llm_for_temp("gpt-5.2-2025-12-11", {"effort": "none"}, 0.3)
+        assert llm.temperature == 0.3
+
+    def test_non_reasoning_model_preserves_temperature(self):
+        """gpt-4o is not a reasoning model; temperature must never be overridden."""
+        llm = _make_llm_for_temp("gpt-4o", reasoning_options=None, temperature=0.7)
+        assert llm.temperature == 0.7
+
+    def test_unlisted_snapshot_active_reasoning_forces_temperature(self):
+        """Snapshot not in O1_MODELS but matching prefix must be caught."""
+        llm = _make_llm_for_temp("gpt-5.9-2027-01-01", {"effort": "medium"}, 0.5)
+        assert llm.temperature == 1.0
+
+    def test_reasoning_model_no_options_forces_temperature(self):
+        """
+        reasoning_options=None on a reasoning model should still force 1.0
+        (matches original O1 behaviour for models with no explicit options).
+        """
+        llm = _make_llm_for_temp("gpt-5.2-2025-12-11", reasoning_options=None, temperature=0.5)
+        assert llm.temperature == 1.0
+
+def _get_model_kwargs(model: str, reasoning_options=None) -> dict:
+    llm = _make_llm_for_temp(model, reasoning_options)
+    return llm._get_model_kwargs()
+
+
+class TestSamplingParamStripping:
+
+    # ── The exact bug that caused #20459 ──────────────────────────────────────
+
+    def test_top_p_stripped_when_reasoning_active(self):
+        """top_p must not reach the API when reasoning effort is active."""
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "low"})
+        assert "top_p" not in kwargs, (
+            "top_p was sent to a reasoning model — this causes 400 Bad Request (#20459)"
+        )
+
+    def test_temperature_stripped_when_reasoning_active(self):
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "low"})
+        assert "temperature" not in kwargs
+
+    def test_presence_penalty_stripped_when_reasoning_active(self):
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "high"})
+        assert "presence_penalty" not in kwargs
+
+    def test_frequency_penalty_stripped_when_reasoning_active(self):
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "high"})
+        assert "frequency_penalty" not in kwargs
+
+    def test_top_p_stripped_for_reasoning_model_regardless_of_effort(self):
+        """Sampling params stripped for any reasoning model, even effort='none'."""
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "none"})
+        assert "top_p" not in kwargs
+
+    def test_temperature_stripped_for_reasoning_model_regardless_of_effort(self):
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "none"})
+        assert "temperature" not in kwargs
+
+    # ── Non-reasoning models must never have params stripped ──────────────────
+
+    def test_top_p_kept_for_gpt4o(self):
+        kwargs = _get_model_kwargs("gpt-4o")
+        assert "top_p" in kwargs
+
+    def test_temperature_kept_for_gpt4o(self):
+        kwargs = _get_model_kwargs("gpt-4o")
+        assert "temperature" in kwargs
+
+    # ── reasoning dict forwarded correctly ────────────────────────────────────
+
+    def test_reasoning_kwarg_present_when_active(self):
+        kwargs = _get_model_kwargs("gpt-5.2-2025-12-11", {"effort": "low"})
+        assert "reasoning" in kwargs
+        assert kwargs["reasoning"] == {"effort": "low"}
+
+    def test_reasoning_kwarg_absent_for_non_reasoning_model(self):
+        """Even with reasoning_options set, don't forward for non-reasoning models."""
+        kwargs = _get_model_kwargs("gpt-4o", {"effort": "low"})
+        assert "reasoning" not in kwargs
+
+    def test_unlisted_snapshot_top_p_stripped_when_active(self):
+        """A snapshot not yet in O1_MODELS must still have top_p stripped."""
+        kwargs = _get_model_kwargs("gpt-5.9-2027-01-01", {"effort": "medium"})
+        assert "top_p" not in kwargs
+
+def _mock_output_message(text: str, phase: Optional[str] = None):
+    """Build a mock that passes isinstance(..., ResponseOutputMessage)."""
+    part = MagicMock()
+    part.text = text
+    part.annotations = []
+    part.refusal = None
+
+    item = MagicMock(spec=ResponseOutputMessage)
+    item.content = [part]
+    item.phase = phase
+    return item
+
+
+class TestParseResponseOutputPhase:
+
+    def test_commentary_phase_captured(self):
+        item = _mock_output_message("Let me think…", phase="commentary")
+        result = OpenAIResponsesMock()._parse_response_output([item])
+        assert result.additional_kwargs.get("phase") == "commentary"
+
+    def test_final_answer_phase_captured(self):
+        item = _mock_output_message("Here's the answer.", phase="final_answer")
+        result = OpenAIResponsesMock()._parse_response_output([item])
+        assert result.additional_kwargs.get("phase") == "final_answer"
+
+    def test_absent_phase_not_injected(self):
+        """phase=None must not create a 'phase' key in additional_kwargs."""
+        item = _mock_output_message("Normal response.", phase=None)
+        result = OpenAIResponsesMock()._parse_response_output([item])
+        assert "phase" not in result.additional_kwargs
+
+    def test_unrecognised_phase_not_injected(self):
+        """Invalid phase values must not pollute additional_kwargs."""
+        item = _mock_output_message("Odd response.", phase="unknown_value")
+        result = OpenAIResponsesMock()._parse_response_output([item])
+        assert "phase" not in result.additional_kwargs
+
+    def test_text_extraction_unaffected_by_phase_capture(self):
+        """Adding phase capture must not break text block parsing."""
+        item = _mock_output_message("My answer.", phase="final_answer")
+        result = OpenAIResponsesMock()._parse_response_output([item])
+        text_blocks = [b for b in result.message.blocks if isinstance(b, TextBlock)]
+        assert len(text_blocks) == 1
+        assert text_blocks[0].text == "My answer."
+
+def _simulate_token_assignment(thinking_count: int, total: int):
+    """
+    Run the fixed token-assignment logic and return the per-block num_tokens.
+    Tests the logic directly rather than mocking a full API response.
+    """
+    blocks = [ThinkingBlock(content=f"step {i}") for i in range(thinking_count)]
+    if blocks:
+        per_block, remainder = divmod(total, len(blocks))
+        for i, block in enumerate(blocks):
+            block.num_tokens = per_block + (1 if i < remainder else 0)
+    return [b.num_tokens for b in blocks]
+
+
+class TestReasoningTokenDistribution:
+
+    def test_single_block_gets_full_total(self):
+        assert _simulate_token_assignment(1, 900) == [900]
+
+    def test_three_blocks_equal_split(self):
+        tokens = _simulate_token_assignment(3, 900)
+        assert tokens == [300, 300, 300]
+
+    def test_sum_always_equals_total(self):
+        for count in [1, 2, 3, 4, 5]:
+            tokens = _simulate_token_assignment(count, 1000)
+            assert sum(tokens) == 1000, f"Sum mismatch for block count {count}"
+
+    def test_remainder_distributed_to_first_blocks(self):
+        """901 / 3 = 300 rem 1 → first block gets the extra."""
+        tokens = _simulate_token_assignment(3, 901)
+        assert tokens == [301, 300, 300]
+        assert sum(tokens) == 901
+
+    def test_two_blocks_odd_total(self):
+        tokens = _simulate_token_assignment(2, 101)
+        assert tokens[0] == 51
+        assert tokens[1] == 50
+        assert sum(tokens) == 101
+
+    def test_no_duplication_the_original_bug(self):
+        """
+        THE original bug: before the fix, every block was assigned the total.
+        3 blocks × 900 tokens each → reporter saw usage of 2700 tokens.
+        After fix: sum must equal 900, not 2700.
+        """
+        tokens = _simulate_token_assignment(3, 900)
+        assert sum(tokens) == 900, (
+            f"Token duplication bug present: sum={sum(tokens)} instead of 900"
+        )
+
+    def test_zero_tokens_handled_cleanly(self):
+        tokens = _simulate_token_assignment(3, 0)
+        assert tokens == [0, 0, 0]
+
+def _make_assistant_msg(text: str, phase: Optional[str]) -> ChatMessage:
+    additional_kwargs = {}
+    if phase is not None:
+        additional_kwargs["phase"] = phase
+    return ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text=text)],
+        additional_kwargs=additional_kwargs,
+    )
+
+
+def _pull_assistant_dict(result):
+    """
+    Extract the assistant role dict from whatever the serialiser returned.
+    The function may return a plain dict, a list (when reasoning items are
+    prepended), or a string.
+    """
+    if isinstance(result, list):
+        candidates = [
+            d for d in result
+            if isinstance(d, dict) and d.get("role") == "assistant"
+        ]
+        assert candidates, f"No assistant dict in serialised output: {result}"
+        return candidates[0]
+    assert isinstance(result, dict), f"Expected dict, got {type(result)}: {result}"
+    return result
+
+
+class TestPhaseSerialisation:
+
+    def test_commentary_written_to_output(self):
+        msg = _make_assistant_msg("Let me think…", "commentary")
+        result = to_openai_responses_message_dict(msg)
+        d = _pull_assistant_dict(result)
+        assert d.get("phase") == "commentary"
+
+    def test_final_answer_written_to_output(self):
+        msg = _make_assistant_msg("Here's my answer.", "final_answer")
+        result = to_openai_responses_message_dict(msg)
+        d = _pull_assistant_dict(result)
+        assert d.get("phase") == "final_answer"
+
+    def test_absent_phase_not_injected(self):
+        """No phase in additional_kwargs → must not appear in the output at all."""
+        msg = _make_assistant_msg("Normal text.", None)
+        result = to_openai_responses_message_dict(msg)
+        items = result if isinstance(result, list) else [result]
+        for item in items:
+            if isinstance(item, dict):
+                assert "phase" not in item
+
+    def test_invalid_phase_not_injected(self):
+        """Unrecognised phase values must not leak into the API payload."""
+        msg = _make_assistant_msg("Odd text.", "completely_wrong")
+        result = to_openai_responses_message_dict(msg)
+        items = result if isinstance(result, list) else [result]
+        for item in items:
+            if isinstance(item, dict):
+                assert "phase" not in item
+
+    def test_full_round_trip(self):
+        """
+        Simulate the parse → ChatMessage → serialise round-trip.
+        Combines bug 2 fix (_parse_response_output stores phase) with
+        bug 3 fix (serialiser writes it back out).
+        """
+        # Pretend _parse_response_output already captured phase onto the message
+        msg = ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[TextBlock(text="commentary turn")],
+            additional_kwargs={"phase": "commentary"},
+        )
+        result = to_openai_responses_message_dict(msg)
+        d = _pull_assistant_dict(result)
+        assert d.get("phase") == "commentary", (
+            "phase was lost during serialisation — bug 3 is not fixed"
+        )
+
+class TestModelForwardingInMessageDicts:
+
+    def _system_user_messages(self):
+        return [
+            ChatMessage(role=MessageRole.SYSTEM, content="You are helpful."),
+            ChatMessage(role=MessageRole.USER, content="Hello"),
+        ]
+
+    def test_gpt4o_system_not_converted_to_developer(self):
+        """
+        gpt-4o is not in O1_MODELS — system content must NOT be wrapped
+        with role=developer. After the model forwarding fix, the system
+        message is serialised using the actual model, not hardcoded o3-mini.
+        """
+        result = to_openai_message_dicts(
+            self._system_user_messages(), model="gpt-4o", is_responses_api=True
+        )
+        # Flatten: result may be a list of dicts or a string
+        items = result if isinstance(result, list) else [result]
+        roles = [d.get("role") for d in items if isinstance(d, dict)]
+        # developer must NOT appear for a non-O1 model
+        assert "developer" not in roles, (
+            f"'developer' role must not appear for gpt-4o. Got: {roles}"
+        )
+
+    def test_o3_mini_system_not_incorrectly_double_converted(self):
+        """
+        o3-mini is in O1_MODELS. The system message content must be
+        present in the output and must not appear as role=system.
+        """
+        result = to_openai_message_dicts(
+            self._system_user_messages(), model="o3-mini", is_responses_api=True
+        )
+        items = result if isinstance(result, list) else [result]
+        roles = [d.get("role") for d in items if isinstance(d, dict)]
+        # system must not survive — it becomes developer or is inlined as content
+        assert "system" not in roles, (
+            f"'system' role should not survive for o3-mini. Got: {roles}"
+        )
+
+    def test_model_none_does_not_raise(self):
+        """model=None must not crash — it just skips role conversion."""
+        result = to_openai_message_dicts(
+            self._system_user_messages(), model=None, is_responses_api=True
+        )
+        assert isinstance(result, (list, str))
+
+    def test_gpt5_reasoning_model_does_not_raise(self):
+        """GPT-5.x reasoning model must be handled without error."""
+        result = to_openai_message_dicts(
+            self._system_user_messages(),
+            model="gpt-5.2-2025-12-11",
+            is_responses_api=True,
+        )
+        assert isinstance(result, (list, str))

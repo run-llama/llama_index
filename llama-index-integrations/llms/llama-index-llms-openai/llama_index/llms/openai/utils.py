@@ -562,11 +562,16 @@ def to_openai_message_dict(
             "role": message.role.value,
             "content": (
                 content_txt
-                if message.role.value in ("assistant", "tool", "system")
+                if message.role.value in ("system", "developer")
                 or all(isinstance(block, TextBlock) for block in message.blocks)
                 else content
             ),
         }
+
+        phase = message.additional_kwargs.get("phase")
+        if phase in ("commentary", "final_answer"):
+            message_dict["phase"] = phase
+
         if already_has_tool_calls:
             existing_tool_calls = []
             for c in content:
@@ -769,6 +774,12 @@ def to_openai_responses_message_dict(
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
+    # Preserve phase so commentary vs final_answer survives round-trips (#21124 bug 3)
+    if message.role == MessageRole.ASSISTANT:
+        _phase = message.additional_kwargs.get("phase")
+        if _phase in ("commentary", "final_answer"):
+            message_dict["phase"] = _phase
+
     null_keys = [key for key, value in message_dict.items() if value is None]
     # if drop_none is True, remove keys with None values
     if drop_none:
@@ -792,12 +803,13 @@ def to_openai_message_dicts(
     if is_responses_api:
         final_message_dicts = []
         for message in messages:
-            message_dicts = to_openai_responses_message_dict(
-                message,
-                drop_none=drop_none,
-                model="o3-mini",  # hardcode to ensure developer messages are used
-                store=store,
-            )
+            for message in messages:
+                        message_dicts = to_openai_responses_message_dict(
+                            message,
+                            drop_none=drop_none,
+                            model=model,  # forward actual model so role conversion is accurate
+                            store=store,
+                        )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
             elif isinstance(message_dicts, str):
