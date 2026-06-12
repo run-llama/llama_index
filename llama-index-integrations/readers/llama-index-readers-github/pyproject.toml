@@ -82,6 +82,9 @@ GitHubRepositoryCollaboratorsReader = "rwood-97"
 GitHubRepositoryIssuesReader = "moncho"
 GithubRepositoryReader = "ahmetkca"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
