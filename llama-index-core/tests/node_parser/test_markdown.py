@@ -25,6 +25,57 @@ Header 2 content
     assert splits[1].text == "# Header 2\nHeader 2 content"
 
 
+def test_header_splits_with_line_metadata() -> None:
+    markdown_parser = MarkdownNodeParser(include_line_metadata=True)
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Main Header
+
+Header 1 content
+
+# Header 2
+Header 2 content
+    """
+            )
+        ]
+    )
+    assert len(splits) == 2
+    assert splits[0].metadata == {
+        "header_path": "/",
+        "start_line": 1,
+        "end_line": 3,
+    }
+    assert splits[1].metadata == {
+        "header_path": "/",
+        "start_line": 5,
+        "end_line": 6,
+    }
+    assert splits[0].text == "# Main Header\n\nHeader 1 content"
+    assert splits[1].text == "# Header 2\nHeader 2 content"
+
+
+def test_line_metadata_respects_include_metadata() -> None:
+    markdown_parser = MarkdownNodeParser(
+        include_metadata=False,
+        include_line_metadata=True,
+    )
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Main Header
+
+Header 1 content
+    """
+            )
+        ]
+    )
+    assert len(splits) == 1
+    assert splits[0].metadata == {}
+
+
 def test_header_splits_with_forwardslash() -> None:
     markdown_parser = MarkdownNodeParser(
         header_path_separator="\u203a"
