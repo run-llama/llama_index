@@ -1904,6 +1904,7 @@ dependencies = [
     { name = "llama-index-core" },
     { name = "pandas" },
     { name = "pypdf" },
+    { name = "pyyaml" },
     { name = "striprtf" },
 ]
 
