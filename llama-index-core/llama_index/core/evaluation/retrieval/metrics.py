@@ -442,7 +442,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
     ):
         try:
             api_key = api_key or os.environ["COHERE_API_KEY"]
-        except IndexError:
+        except KeyError:
             raise ValueError(
                 "Must pass in cohere api key or "
                 "specify via COHERE_API_KEY environment variable "
