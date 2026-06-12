@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional, Tuple, Union
 
 from google.cloud import bigquery
@@ -6,6 +7,10 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
 )
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# SQL injection via the JSON path embedded in the WHERE clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 
 
 def build_where_clause_and_params(
@@ -107,6 +112,11 @@ def _build_filter_clause(
     str, List[Union[bigquery.ScalarQueryParameter, bigquery.ArrayQueryParameter]]
 ]:
     field = filter_.key
+    if not _SAFE_METADATA_KEY.match(field or ""):
+        raise ValueError(
+            f"Unsafe metadata filter key {field!r}; "
+            f"must match {_SAFE_METADATA_KEY.pattern}"
+        )
     operator = filter_.operator
     value = filter_.value
 
@@ -124,12 +134,12 @@ def _build_filter_clause(
     elif operator == FilterOperator.TEXT_MATCH:
         bigquery_operator = _llama_to_bigquery_operator(operator)
         clause = (
-            f"SAFE.JSON_VALUE(metadata, '$.\"{field}\"') {bigquery_operator} '{value}'"
+            f"SAFE.JSON_VALUE(metadata, '$.\"{field}\"') {bigquery_operator} ?"
         )
         params = [bigquery.ScalarQueryParameter(name=None, type_="STRING", value=value)]
     elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
         bigquery_operator = _llama_to_bigquery_operator(operator)
-        clause = f"LOWER(SAFE.JSON_VALUE(metadata, '$.\"{field}\"')) {bigquery_operator} LOWER('{value}')"
+        clause = f"LOWER(SAFE.JSON_VALUE(metadata, '$.\"{field}\"')) {bigquery_operator} LOWER(?)"
         params = [bigquery.ScalarQueryParameter(name=None, type_="STRING", value=value)]
     else:
         bigquery_operator = _llama_to_bigquery_operator(operator)
