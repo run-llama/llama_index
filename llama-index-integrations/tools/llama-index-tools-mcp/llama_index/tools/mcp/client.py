@@ -27,7 +27,7 @@ from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformat
 from mcp import types
 from pydantic import AnyUrl
 
-from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock, AudioBlock
 
 
 class StreamingHandler(logging.Handler):
@@ -399,12 +399,76 @@ class BasicMCPClient(ClientSession):
                         )
                     )
                 elif isinstance(message.content, types.EmbeddedResource):
-                    raise NotImplementedError(
-                        "Embedded resources are not supported yet"
+                    resource = message.content.resource
+                    if isinstance(resource, types.TextResourceContents):
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[TextBlock(text=resource.text)],
+                            )
+                        )
+                    elif isinstance(resource, types.BlobResourceContents):
+                        # Binary embedded resource — attempt to include as text
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[
+                                    TextBlock(
+                                        text=f"[Embedded resource: {resource.uri}]"
+                                    )
+                                ],
+                            )
+                        )
+                    else:
+                        llama_messages.append(
+                            ChatMessage(
+                                role=message.role,
+                                blocks=[
+                                    TextBlock(
+                                        text=f"[Embedded resource: {message.content}]"
+                                    )
+                                ],
+                            )
+                        )
+                elif hasattr(types, 'AudioContent') and isinstance(
+                    message.content, types.AudioContent
+                ):
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                AudioBlock(
+                                    audio=message.content.data,
+                                    audio_mimetype=message.content.mimeType,
+                                )
+                            ],
+                        )
+                    )
+                elif hasattr(types, 'ResourceLink') and isinstance(
+                    message.content, types.ResourceLink
+                ):
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[
+                                TextBlock(
+                                    text=f"[Resource: {message.content.uri}]"
+                                )
+                            ],
+                        )
                     )
                 else:
-                    raise ValueError(
-                        f"Unsupported content type: {type(message.content)}"
+                    # Gracefully handle unknown content types instead of crashing
+                    warnings.warn(
+                        f"Unsupported MCP content type: {type(message.content).__name__}. "
+                        "Falling back to text representation.",
+                        stacklevel=2,
+                    )
+                    llama_messages.append(
+                        ChatMessage(
+                            role=message.role,
+                            blocks=[TextBlock(text=str(message.content))],
+                        )
                     )
 
             return llama_messages
