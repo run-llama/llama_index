@@ -7,6 +7,10 @@ from typing import Any, Dict, List, NamedTuple, Optional, Literal, Sequence
 from urllib.parse import quote_plus
 
 import sqlalchemy
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# SQL injection via the JSON path embedded in the WHERE clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -346,6 +350,11 @@ class AlibabaCloudMySQLVectorStore(BasePydanticVectorStore):
     def _build_filter_clause(
         self, filter_: MetadataFilter, global_param_counter: List[int]
     ) -> tuple[str, dict]:
+        if not _SAFE_METADATA_KEY.match(filter_.key or ""):
+            raise ValueError(
+                f"Unsafe metadata filter key {filter_.key!r}; "
+                f"must match {_SAFE_METADATA_KEY.pattern}"
+            )
         params = {}
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
