@@ -83,6 +83,6 @@ You can also skip creation, and connect to an existing knowledge graph using an 
 
 Querying a Property Graph Index is also highly flexible. Retrieval works by using several sub-retrievers and combining results. By default, keyword + synoymn expanasion is used, as well as vector retrieval (if your graph was embedded), to retrieve relevant triples.
 
-You can also chose to include the source text in addition to the retrieved triples (unavailble for graphs created outside of LlamaIndex).
+You can also choose to include the source text in addition to the retrieved triples (unavailable for graphs created outside of LlamaIndex).
 
 See more in the [full guide for Property Graphs](/python/framework/module_guides/indexing/lpg_index_guide).
