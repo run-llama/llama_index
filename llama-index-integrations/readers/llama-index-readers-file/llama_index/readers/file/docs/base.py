@@ -46,7 +46,10 @@ class PDFReader(BaseReader):
         """Parse file."""
         fs = fs or get_default_fs()
         _Path = Path if is_default_fs(fs) else PurePosixPath
-        if not isinstance(file, (Path, PurePosixPath)):
+
+        # Prevent mangling of remote URIs (like s3://) by avoiding local Path casting
+        is_remote_uri = isinstance(file, str) and "://" in file
+        if not is_remote_uri and not isinstance(file, (Path, PurePosixPath)):
             file = _Path(file)
 
         try:
@@ -67,11 +70,14 @@ class PDFReader(BaseReader):
             # Get the number of pages in the PDF document
             num_pages = len(pdf.pages)
 
+            # Safely extract the file name whether it's a Path object or a remote URI string
+            extracted_name = file.name if hasattr(file, "name") else str(file).split("/")[-1]
+
             docs = []
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                metadata = {"file_name": file.name}
+                metadata = {"file_name": extracted_name}
                 if extra_info is not None:
                     metadata.update(extra_info)
 
@@ -126,7 +132,7 @@ class DocxReader(BaseReader):
                 text = docx2txt.process(f)
         else:
             text = docx2txt.process(file)
-        metadata = {"file_name": file.name}
+        metadata = {"file_name": extracted_name}
         if extra_info is not None:
             metadata.update(extra_info)
 
