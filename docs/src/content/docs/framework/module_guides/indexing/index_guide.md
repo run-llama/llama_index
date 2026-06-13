@@ -81,7 +81,7 @@ You can also skip creation, and connect to an existing knowledge graph using an 
 
 ### Querying
 
-Querying a Property Graph Index is also highly flexible. Retrieval works by using several sub-retrievers and combining results. By default, keyword + synoymn expanasion is used, as well as vector retrieval (if your graph was embedded), to retrieve relevant triples.
+Querying a Property Graph Index is also highly flexible. Retrieval works by using several sub-retrievers and combining results. By default, keyword + synonym expansion is used, as well as vector retrieval (if your graph was embedded), to retrieve relevant triples.
 
 You can also choose to include the source text in addition to the retrieved triples (unavailable for graphs created outside of LlamaIndex).
 
