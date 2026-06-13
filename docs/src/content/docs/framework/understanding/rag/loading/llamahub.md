@@ -12,8 +12,6 @@ LlamaHub contains a registry of open-source data connectors that you can easily 
 Get started with:
 
 ```python
-from llama_index.core import download_loader
-
 from llama_index.readers.google import GoogleDocsReader
 
 loader = GoogleDocsReader()
