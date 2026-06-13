@@ -294,7 +294,8 @@ class AlibabaCloudOpenSearchStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        filter = f"{DEFAULT_DOC_ID_KEY}='{ref_doc_id}'"
+        escaped_ref_doc_id = str(ref_doc_id).replace("'", "''")
+        filter = f"{DEFAULT_DOC_ID_KEY}='{escaped_ref_doc_id}'"
         request = models.FetchRequest(table_name=self._config.table_name, filter=filter)
 
         response = self._client.fetch(request)
