@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+    "pytest-mock==3.11.1",
+]
+
+[project]
+name = "llama-index-memory-recollect"
+version = "0.1.0"
+description = "LlamaIndex memory integration for Recollect long-term agent memory"
+authors = [{ name = "Cobus Greyling", email = "cobusgreyling@users.noreply.github.com" }]
+requires-python = "<4.0,>=3.10"
+readme = "README.md"
+license = "Apache-2.0"
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "recollect-ai>=0.2.0,<0.3.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.memory.recollect"
+
+[tool.llamahub.class_authors]
+RecollectMemory = "Cobus Greyling"
