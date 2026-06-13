@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict
 
 import requests
@@ -59,7 +60,9 @@ class CogniswitchQueryEngine(BaseQueryEngine):
         return self.query_knowledge(query_bundle.query_str)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
-        return self.query_knowledge(query_bundle.query_str)
+        # query_knowledge issues a blocking requests.post; offload it so awaiting
+        # aquery() does not stall the event loop.
+        return await asyncio.to_thread(self.query_knowledge, query_bundle.query_str)
 
     def _get_prompt_modules(self) -> Dict[str, Any]:
         """Get prompts."""
