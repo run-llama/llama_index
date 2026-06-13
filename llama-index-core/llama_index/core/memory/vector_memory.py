@@ -5,6 +5,7 @@ Memory backed by a vector database.
 
 """
 
+import json
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
@@ -144,11 +145,20 @@ class VectorMemory(BaseMemory):
         nodes = retriever.retrieve(input or "")
 
         # retrieve underlying messages
-        return [
-            ChatMessage.model_validate(sub_dict)
-            for node in nodes
-            for sub_dict in node.metadata["sub_dicts"]
-        ]
+        messages: List[ChatMessage] = []
+        for node in nodes:
+            sub_dicts = node.metadata.get("sub_dicts", [])
+            # Handle both serialized (JSON string, for flat-metadata vector
+            # stores like ChromaDB) and raw list forms for backward
+            # compatibility.
+            if isinstance(sub_dicts, str):
+                try:
+                    sub_dicts = json.loads(sub_dicts)
+                except json.JSONDecodeError:
+                    continue
+            for sub_dict in sub_dicts:
+                messages.append(ChatMessage.model_validate(sub_dict))
+        return messages
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
@@ -172,7 +182,18 @@ class VectorMemory(BaseMemory):
             # logic in self.put().)
             self.vector_index.delete_nodes([self.cur_batch_textnode.id_])
 
-        self.vector_index.insert_nodes([self.cur_batch_textnode])
+        # Serialize sub_dicts to a JSON string for compatibility with vector
+        # stores that require flat metadata (e.g. ChromaDB, SingleStoreDB).
+        # The original list form is restored after insertion so that in-memory
+        # append operations in put() continue to work.
+        original_sub_dicts = self.cur_batch_textnode.metadata["sub_dicts"]
+        self.cur_batch_textnode.metadata["sub_dicts"] = json.dumps(
+            original_sub_dicts
+        )
+        try:
+            self.vector_index.insert_nodes([self.cur_batch_textnode])
+        finally:
+            self.cur_batch_textnode.metadata["sub_dicts"] = original_sub_dicts
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
