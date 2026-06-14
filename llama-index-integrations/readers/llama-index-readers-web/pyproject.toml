@@ -86,6 +86,7 @@ dependencies = [
     "markdownify>=1.1.0",
     "oxylabs>=2.0.0",
     "firecrawl-py>=4.3.3",
+    "crw>=0.1.0",
     "Scrapy>=2.13.3",
 ]
 
@@ -111,6 +112,7 @@ AgentQLWebReader = "jayfish0"
 AsyncWebPageReader = "Hironsan"
 BeautifulSoupWebReader = "thejessezhang"
 BrowserbaseWebReader = "llama-index"
+CrwWebReader = "llama-index"
 FireCrawlWebReader = "llama-index"
 HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
