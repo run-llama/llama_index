@@ -552,11 +552,19 @@ class OpenAIResponses(FunctionCallingLLM):
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
         if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
-            for block in chat_response.message.blocks:
-                if isinstance(block, ThinkingBlock):
-                    block.num_tokens = (
-                        response.usage.output_tokens_details.reasoning_tokens
-                    )
+            reasoning_blocks = [
+                b
+                for b in chat_response.message.blocks
+                if isinstance(b, ThinkingBlock)
+            ]
+            if reasoning_blocks:
+                total = (
+                    response.usage.output_tokens_details.reasoning_tokens or 0
+                )
+                per_block = total // len(reasoning_blocks)
+                remainder = total % len(reasoning_blocks)
+                for i, block in enumerate(reasoning_blocks):
+                    block.num_tokens = per_block + (1 if i < remainder else 0)
 
         return chat_response
 
