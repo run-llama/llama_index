@@ -1,5 +1,6 @@
 """OneDrive files reader."""
 
+import asyncio
 import logging
 import os
 import tempfile
@@ -808,7 +809,10 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[str]:
-        return self.list_resources(
+        # list_resources issues blocking requests; offload so awaiting
+        # alist_resources does not stall the event loop.
+        return await asyncio.to_thread(
+            self.list_resources,
             folder_id=folder_id,
             file_ids=file_ids,
             folder_path=folder_path,
@@ -831,7 +835,9 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     async def aget_resource_info(
         self, resource_id: str, *args: Any, **kwargs: Any
     ) -> Dict:
-        return self.get_resource_info(resource_id, *args, **kwargs)
+        return await asyncio.to_thread(
+            self.get_resource_info, resource_id, *args, **kwargs
+        )
 
     def load_resource(
         self, resource_id: str, *args: Any, **kwargs: Any
@@ -841,7 +847,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     async def aload_resource(
         self, resource_id: str, *args: Any, **kwargs: Any
     ) -> List[Document]:
-        return self.load_resource(resource_id, *args, **kwargs)
+        return await asyncio.to_thread(self.load_resource, resource_id, *args, **kwargs)
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -859,4 +865,4 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                 return f.read()
 
     async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
-        return self.read_file_content(input_file, **kwargs)
+        return await asyncio.to_thread(self.read_file_content, input_file, **kwargs)
