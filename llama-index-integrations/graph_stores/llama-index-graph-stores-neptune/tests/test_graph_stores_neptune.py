@@ -19,3 +19,9 @@ def test_neptune_database_graph_store():
 def test_neptune_base_graph_store():
     names_of_bases = [b.__name__ for b in NeptuneBaseGraphStore.__bases__]
     assert GraphStore.__name__ in names_of_bases
+
+
+def test_neptune_graph_stores_do_not_advertise_vector_queries():
+    assert NeptuneBaseGraphStore.supports_vector_queries is False
+    assert NeptuneAnalyticsGraphStore.supports_vector_queries is False
+    assert NeptuneDatabaseGraphStore.supports_vector_queries is False

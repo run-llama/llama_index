@@ -13,6 +13,8 @@ class NeptuneBaseGraphStore(GraphStore):
     and NeptuneAnalyticsGraphStore classes.
     """
 
+    supports_vector_queries: bool = False
+
     def __init__() -> None:
         pass
 
