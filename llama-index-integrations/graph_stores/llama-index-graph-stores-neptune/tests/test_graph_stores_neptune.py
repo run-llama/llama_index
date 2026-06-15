@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core.graph_stores.types import GraphStore
 from llama_index.graph_stores.neptune import (
     NeptuneAnalyticsGraphStore,
@@ -21,7 +23,13 @@ def test_neptune_base_graph_store():
     assert GraphStore.__name__ in names_of_bases
 
 
-def test_neptune_graph_stores_do_not_advertise_vector_queries():
-    assert NeptuneBaseGraphStore.supports_vector_queries is False
-    assert NeptuneAnalyticsGraphStore.supports_vector_queries is False
-    assert NeptuneDatabaseGraphStore.supports_vector_queries is False
+@pytest.mark.parametrize(
+    "graph_store_cls",
+    [
+        NeptuneBaseGraphStore,
+        NeptuneAnalyticsGraphStore,
+        NeptuneDatabaseGraphStore,
+    ],
+)
+def test_neptune_graph_stores_do_not_advertise_vector_queries(graph_store_cls):
+    assert graph_store_cls.supports_vector_queries is False
