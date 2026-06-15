@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 from llama_index.core.graph_stores.types import GraphStore
 from .neptune import refresh_schema
 
@@ -13,9 +13,9 @@ class NeptuneBaseGraphStore(GraphStore):
     and NeptuneAnalyticsGraphStore classes.
     """
 
-    supports_vector_queries: bool = False
+    supports_vector_queries: ClassVar[bool] = False
 
-    def __init__() -> None:
+    def __init__(self) -> None:
         pass
 
     @property
