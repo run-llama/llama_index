@@ -2,9 +2,13 @@ import pytest
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    CitableBlock,
     DocumentBlock,
     ImageBlock,
     AudioBlock,
+    TextBlock,
+    ThinkingBlock,
+    ToolCallBlock,
     VideoBlock,
 )
 from llama_index.core.memory.memory import Memory
@@ -74,6 +78,65 @@ async def test_estimate_token_count_document(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.document_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_tool_call(memory):
+    """Tool-call blocks must be counted from their serialized form (#21950)."""
+    block = ToolCallBlock(
+        tool_name="search",
+        tool_kwargs={"query": "what is the capital of France?"},
+    )
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(block.model_dump_json()))
+    assert count > 0
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_includes_tool_calls_in_total(memory):
+    """A message mixing text and a tool call counts both (regression for #21950)."""
+    tool_call = ToolCallBlock(
+        tool_name="search", tool_kwargs={"query": "long query " * 20}
+    )
+    message = ChatMessage(
+        role="assistant", blocks=[TextBlock(text="Calling tool"), tool_call]
+    )
+    count = memory._estimate_token_count(message)
+    expected = len(memory.tokenizer_fn("Calling tool")) + len(
+        memory.tokenizer_fn(tool_call.model_dump_json())
+    )
+    assert count == expected
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_thinking(memory):
+    """Thinking blocks must be counted from their content."""
+    block = ThinkingBlock(content="Let me reason about this step by step.")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(block.content))
+    assert count > 0
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_thinking_uses_reported_tokens(memory):
+    """A provider-reported `num_tokens` is used directly when available."""
+    block = ThinkingBlock(content="some reasoning", num_tokens=123)
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == 123
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citable(memory):
+    """Citable blocks must count their nested text content."""
+    block = CitableBlock(
+        title="title", source="source", content=[TextBlock(text="cited text here")]
+    )
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn("cited text here"))
 
 
 @pytest.mark.asyncio

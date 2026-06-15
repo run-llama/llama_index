@@ -358,11 +358,12 @@ class Memory(BaseMemory):
                     CitableBlock,
                     CitationBlock,
                     ThinkingBlock,
+                    ToolCallBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +381,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -437,6 +438,21 @@ class Memory(BaseMemory):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
                 token_count += self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                # Tool calls add their name and serialized arguments to the
+                # prompt, so they must be counted. Mirrors
+                # ToolCallBlock.aestimate_tokens.
+                token_count += len(self.tokenizer_fn(block.model_dump_json()))
+            elif isinstance(block, ThinkingBlock):
+                # Mirrors ThinkingBlock.aestimate_tokens: prefer the provider
+                # reported token count, otherwise estimate from the content.
+                token_count += block.num_tokens or len(
+                    self.tokenizer_fn(block.content or "")
+                )
+            elif isinstance(block, CitableBlock):
+                token_count += self._estimate_token_count(block.content)
+            elif isinstance(block, CitationBlock):
+                token_count += self._estimate_token_count([block.cited_content])
 
         return token_count
 
