@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    TextBlock,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
@@ -40,6 +41,32 @@ def is_function(message: ChatMessage) -> bool:
         "tool_calls" in message.additional_kwargs
         and len(message.additional_kwargs["tool_calls"]) > 0
     )
+
+
+def set_streamed_message_text(message: ChatMessage, text: str) -> None:
+    """
+    Set the final text of a streamed message before writing it to history.
+
+    Assigning to ``ChatMessage.content`` raises ``ValueError`` when the
+    message holds more than one block, or a single non-text block (e.g. a
+    ``ThinkingBlock`` produced by a reasoning model). Consolidate the text
+    blocks into a single ``TextBlock`` at the position of the first one while
+    preserving any non-text blocks and their order.
+    """
+    new_text_block = TextBlock(text=text)
+    new_blocks: List[Any] = []
+    inserted = False
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            if not inserted:
+                new_blocks.append(new_text_block)
+                inserted = True
+            # Drop any additional text blocks; they are consolidated above.
+        else:
+            new_blocks.append(block)
+    if not inserted:
+        new_blocks.append(new_text_block)
+    message.blocks = new_blocks
 
 
 class ChatResponseMode(str, Enum):
@@ -191,7 +218,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                set_streamed_message_text(chat.message, final_text.strip())
                 memory.put(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
@@ -249,7 +276,7 @@ class StreamingAgentChatResponse:
             if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
-                chat.message.content = final_text.strip()  # final message
+                set_streamed_message_text(chat.message, final_text.strip())
                 await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
