@@ -355,14 +355,15 @@ class Memory(BaseMemory):
                     VideoBlock,
                     AudioBlock,
                     DocumentBlock,
+                    ToolCallBlock,
+                    ThinkingBlock,
                     CitableBlock,
                     CitationBlock,
-                    ThinkingBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +381,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -398,6 +399,10 @@ class Memory(BaseMemory):
                         AudioBlock,
                         VideoBlock,
                         DocumentBlock,
+                        ToolCallBlock,
+                        ThinkingBlock,
+                        CitableBlock,
+                        CitationBlock,
                         CachePoint,
                     ),
                 )
@@ -414,6 +419,10 @@ class Memory(BaseMemory):
                                     AudioBlock,
                                     VideoBlock,
                                     DocumentBlock,
+                                    ToolCallBlock,
+                                    ThinkingBlock,
+                                    CitableBlock,
+                                    CitationBlock,
                                 ],
                                 item,
                             )
@@ -437,6 +446,25 @@ class Memory(BaseMemory):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
                 token_count += self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                # Serialize tool name + kwargs to approximate token usage
+                tool_str = block.tool_name + " " + str(block.tool_kwargs)
+                token_count += len(self.tokenizer_fn(tool_str))
+            elif isinstance(block, ThinkingBlock):
+                # ThinkingBlock may carry a pre-computed token count from the model
+                if block.num_tokens is not None:
+                    token_count += block.num_tokens
+                elif block.content:
+                    token_count += len(self.tokenizer_fn(block.content))
+            elif isinstance(block, (CitableBlock, CitationBlock)):
+                # Recurse into nested content blocks (TextBlock / ImageBlock / DocumentBlock)
+                for nested in block.nested_blocks:
+                    if isinstance(nested, TextBlock):
+                        token_count += len(self.tokenizer_fn(nested.text))
+                    elif isinstance(nested, ImageBlock):
+                        token_count += self.image_token_size_estimate
+                    elif isinstance(nested, DocumentBlock):
+                        token_count += self.document_token_size_estimate
 
         return token_count
 
