@@ -355,10 +355,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             data, id_field=NODE_ID_FIELD_NAME, **add_kwargs
         )
         logger.info(f"Added {len(keys)} documents to index {self._async_index.name}")
-        return [
-            key.strip(self._async_index.prefix + self._async_index.key_separator)
-            for key in keys
-        ]
+        prefix = self._async_index.prefix + self._async_index.key_separator
+        return [key.removeprefix(prefix) for key in keys]
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
@@ -407,9 +405,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         # Load nodes to Redis
         keys = self._index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
         logger.info(f"Added {len(keys)} documents to index {self._index.name}")
-        return [
-            key.strip(self._index.prefix + self._index.key_separator) for key in keys
-        ]
+        prefix = self._index.prefix + self._index.key_separator
+        return [key.removeprefix(prefix) for key in keys]
 
     def _build_node_id_filter_expression(self, node_ids: list[str]) -> FilterExpression:
         """Build a Redis filter expression for one or more node IDs."""
