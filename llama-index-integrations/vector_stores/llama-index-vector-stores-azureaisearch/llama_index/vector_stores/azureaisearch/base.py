@@ -896,7 +896,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             _,
         ) in self._metadata_to_index_field_map.items():
             metadata_value = metadata.get(metadata_field_name)
-            if metadata_value:
+            # Use an explicit ``is not None`` check so that falsy-but-valid
+            # values (0, "", [], False) are written to the index instead of
+            # being silently dropped (and read back as None).
+            if metadata_value is not None:
                 index_doc[index_field_name] = metadata_value
 
         return index_doc

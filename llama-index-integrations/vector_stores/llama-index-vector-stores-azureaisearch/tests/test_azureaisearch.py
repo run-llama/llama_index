@@ -503,3 +503,52 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_default_index_mapping_preserves_falsy_metadata() -> None:
+    """Falsy metadata values must be written to the index, not dropped (#21385)."""
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys=[
+            "zero",
+            "empty_str",
+            "empty_list",
+            "flag",
+            "none_val",
+        ],
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+    )
+
+    enriched_doc = {
+        "id": "1",
+        "chunk": "some text",
+        "embedding": [0.1, 0.2],
+        "metadata": "{}",
+        "doc_id": "doc-1",
+    }
+    metadata = {
+        "zero": 0,
+        "empty_str": "",
+        "empty_list": [],
+        "flag": False,
+        "none_val": None,
+    }
+
+    index_doc = vector_store._default_index_mapping(enriched_doc, metadata)
+
+    assert index_doc["zero"] == 0
+    assert index_doc["empty_str"] == ""
+    assert index_doc["empty_list"] == []
+    assert index_doc["flag"] is False
+    # None values should still be skipped.
+    assert "none_val" not in index_doc
