@@ -123,7 +123,6 @@ PyMuPDFReader = "iamarunbrahma"
 RTFReader = "FunkyOz"
 UnstructuredReader = "thejessezhang"
 VideoAudioReader = "llama-index"
-FunASRAudioReader = "sriharan0804"
 FunASRReader = "sriharan0804"
 XMLReader = "mmaatouk"
 

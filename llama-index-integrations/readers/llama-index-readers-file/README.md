@@ -23,7 +23,6 @@ Provides support for the following loaders:
 - PptxReader
 - PandasCSVReader
 - VideoAudioReader
-- FunASRAudioReader
 - FunASRReader
 - UnstructuredReader
 - PyMuPDFReader
@@ -61,7 +60,7 @@ from llama_index.readers.file import (
     PptxReader,
     PandasCSVReader,
     VideoAudioReader,
-    FunASRAudioReader,
+    
     FunASRReader,
     UnstructuredReader,
     PyMuPDFReader,
@@ -200,18 +199,6 @@ documents = SimpleDirectoryReader(
     "./data", file_extractor=file_extractor
 ).load_data()
 
-# FunASR Audio Reader example
-# Requires a running FunASR OpenAI-compatible server:
-# funasr-server --device cpu --model sensevoice --port 8000
-parser = FunASRAudioReader(
-    endpoint_url="http://localhost:8000",
-    model="sensevoice",)
-file_extractor = {
-    ".mp3": parser,
-    ".wav": parser,}
-documents = SimpleDirectoryReader(
-    "./data", file_extractor=file_extractor
-).load_data()
 
 # FunASR Reader example
 # Requires FunASR: pip install funasr
