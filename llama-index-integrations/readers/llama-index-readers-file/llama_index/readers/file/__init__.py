@@ -20,7 +20,6 @@ from llama_index.readers.file.tabular import (
 )
 from llama_index.readers.file.unstructured import UnstructuredReader
 from llama_index.readers.file.video_audio import VideoAudioReader
-from llama_index.readers.file.funasr_audio import FunASRAudioReader
 from llama_index.readers.file.funasr import FunASRReader
 from llama_index.readers.file.xml import XMLReader
 
@@ -41,7 +40,6 @@ __all__ = [
     "PandasCSVReader",
     "PandasExcelReader",
     "VideoAudioReader",
-    "FunASRAudioReader",
     "FunASRReader",
     "UnstructuredReader",
     "PyMuPDFReader",
