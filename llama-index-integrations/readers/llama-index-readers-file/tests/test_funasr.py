@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from llama_index.readers.funasr import FunASRReader
+from llama_index.readers.file.funasr.base import FunASRReader
 
 
 def test_funasr_reader_extracts_text(tmp_path: Path) -> None:

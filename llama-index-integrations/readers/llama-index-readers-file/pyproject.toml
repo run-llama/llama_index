@@ -76,6 +76,8 @@ dependencies = [
     "pandas>=2.0.0,<3",
     "llama-index-core>=0.13.0,<0.15",
     "defusedxml>=0.7.1",
+    "requests>=2.31.0,<3",
+    "funasr>=1.3.0",
 ]
 
 [project.optional-dependencies]
@@ -121,6 +123,8 @@ PyMuPDFReader = "iamarunbrahma"
 RTFReader = "FunkyOz"
 UnstructuredReader = "thejessezhang"
 VideoAudioReader = "llama-index"
+FunASRAudioReader = "sriharan0804"
+FunASRReader = "sriharan0804"
 XMLReader = "mmaatouk"
 
 [tool.mypy]
