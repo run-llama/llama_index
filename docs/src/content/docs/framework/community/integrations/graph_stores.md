@@ -44,3 +44,18 @@ We support a `TiDBGraphStore` integration, for persisting graphs directly in [Ti
 See the associated guides below:
 
 - [TiDB Graph Store](/python/examples/index_structs/knowledge_graph/tidbkgindexdemo)
+
+## `SynapCoresPropertyGraphStore`
+
+We support a `SynapCoresPropertyGraphStore` integration that implements the full `PropertyGraphStore` ABC against [SynapCores](https://synapcores.com), a self-hosted AI-native SQL engine that combines vector search, graph traversal, SQL, and AI inference in a single binary. The integration declares both `supports_structured_queries=True` (Cypher pass-through with named-param binding) and `supports_vector_queries=True` (cosine over `ChunkNode` embeddings), implements the depth-bounded `get_rel_map` primitive used by `PropertyGraphIndex.as_retriever()`, and persists entities, relations, and chunks as native Cypher nodes.
+
+To start the engine locally:
+
+```sh
+docker run -p 8080:8080 -e AIDB_ACCEPT_LICENSE=1 synapcores/community:latest
+```
+
+See the associated guides below:
+
+- [SynapCores Property Graph Store](https://github.com/SynapCores/synapcores-llamaindex/blob/master/notebooks/property_graph_synapcores.ipynb)
+- [`llama-index-graph-stores-synapcores` on PyPI](https://pypi.org/project/llama-index-graph-stores-synapcores/)
