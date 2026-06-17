@@ -2,11 +2,13 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypeAlias, Union
 
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ class KalturaESearchReader(BaseReader):
         kaltura_api_endpoint: str = "https://cdnapi-ev.kaltura.com/",
         request_timeout: int = 500,
         should_log_api_calls: bool = False,
+        timeout: Optional[_Timeout] = 60,
     ) -> None:
         """
         Initialize a new instance of KalturaESearchReader.
@@ -52,6 +55,7 @@ class KalturaESearchReader(BaseReader):
         self.should_log_api_calls = should_log_api_calls
         # Kaltura libraries will be loaded when they are needed
         self._kaltura_loaded = False
+        self._timeout = timeout
 
     def _load_kaltura(self):
         """Load Kaltura libraries and initialize the Kaltura client."""
@@ -174,7 +178,7 @@ class KalturaESearchReader(BaseReader):
             cap_json_url = self.client.caption.captionAsset.serveAsJson(
                 caption_asset_id
             )
-            return requests.get(cap_json_url).json()
+            return requests.get(cap_json_url, timeout=self._timeout).json()
         except Exception as e:
             logger.error(f"An error occurred while getting captions: {e}")
             return {}

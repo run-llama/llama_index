@@ -1,11 +1,13 @@
 """Text to Image tool spec."""
 
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, TypeAlias, Union
 
 import openai
 import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
+_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class TextToImageToolSpec(BaseToolSpec):
@@ -13,9 +15,12 @@ class TextToImageToolSpec(BaseToolSpec):
 
     spec_functions = ["generate_images", "show_images", "generate_image_variation"]
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, timeout: Optional[_Timeout] = 60
+    ) -> None:
         if api_key:
             openai.api_key = api_key
+        self._timeout = timeout
 
     def generate_images(
         self, prompt: str, n: Optional[int] = 1, size: Optional[str] = "256x256"
@@ -52,7 +57,11 @@ class TextToImageToolSpec(BaseToolSpec):
         """
         try:
             response = openai.Image.create_variation(
-                image=BytesIO(requests.get(url).content).getvalue(), n=n, size=size
+                image=BytesIO(
+                    requests.get(url, timeout=self._timeout).content
+                ).getvalue(),
+                n=n,
+                size=size,
             )
             return [image["url"] for image in response["data"]]
         except openai.error.OpenAIError as e:
@@ -71,5 +80,7 @@ class TextToImageToolSpec(BaseToolSpec):
 
         for url in urls:
             plt.figure()
-            plt.imshow(Image.open(BytesIO(requests.get(url).content)))
+            plt.imshow(
+                Image.open(BytesIO(requests.get(url, timeout=self._timeout).content))
+            )
         return "images rendered successfully"

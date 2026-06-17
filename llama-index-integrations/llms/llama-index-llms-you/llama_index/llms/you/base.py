@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Generator, Literal, Optional
+from typing import Any, Dict, Generator, Literal, Optional, TypeAlias, Union
 
 import requests
 import sseclient
@@ -15,24 +15,30 @@ from llama_index.core.bridge.pydantic import Field
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
+_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
-def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
+
+def _request(
+    base_url: str, api_key: str, timeout: Optional[_Timeout] = 60, **kwargs
+) -> Dict[str, Any]:
     """
     NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
-    response = requests.post(base_url, headers=headers, json=kwargs)
+    response = requests.post(base_url, headers=headers, timeout=timeout, json=kwargs)
     response.raise_for_status()
     return response.json()
 
 
 def _request_stream(
-    base_url: str, api_key: str, **kwargs
+    base_url: str, api_key: str, timeout: Optional[_Timeout] = 60, **kwargs
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
-    response = requests.post(base_url, headers=headers, stream=True, json=params)
+    response = requests.post(
+        base_url, headers=headers, timeout=timeout, stream=True, json=params
+    )
     response.raise_for_status()
 
     client = sseclient.SSEClient(response)

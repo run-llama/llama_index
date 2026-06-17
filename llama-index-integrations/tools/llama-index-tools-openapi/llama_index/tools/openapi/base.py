@@ -2,11 +2,13 @@
 
 import json
 from collections import OrderedDict
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, TypeAlias, Union
 
 import requests
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
+_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class OpenAPIToolSpec(BaseToolSpec):
@@ -24,15 +26,18 @@ class OpenAPIToolSpec(BaseToolSpec):
         spec: Optional[dict] = None,
         url: Optional[str] = None,
         operation_id_filter: Callable[[str], bool] = None,
+        timeout: Optional[_Timeout] = 60,
     ):
         import yaml
+
+        self._timeout = timeout
 
         if spec and url:
             raise ValueError("Only provide one of OpenAPI dict or url")
         elif spec:
             pass
         elif url:
-            response = requests.get(url).text
+            response = requests.get(url, timeout=self._timeout).text
             spec = yaml.safe_load(response)
         else:
             raise ValueError("You must provide a url or OpenAPI spec as a dict")
