@@ -2184,7 +2184,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             Ranker object (RRF only currently)
 
         """
-        from google.cloud.vectorsearch_v1beta import Ranker, ReciprocalRankFusion
+        from google.cloud.vectorsearch_v1beta import (
+            Ranker,
+            ReciprocalRankFusion,
+            VertexRanker,
+        )
 
         match self.hybrid_ranker:
             case "rrf":
@@ -2196,17 +2200,6 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 weights = calculate_rrf_weights(alpha, num_searches)
                 return Ranker(rrf=ReciprocalRankFusion(weights=weights))
             case "vertex":
-                try:
-                    from google.cloud.vectorsearch_v1beta import (  # type: ignore[attr-defined]
-                        VertexRanker,
-                    )
-                except ImportError as e:
-                    raise ImportError(
-                        "Support for hybrid_ranker='vertex' requires "
-                        "'google-cloud-vectorsearch>=0.11.0' and is not available in "
-                        "the currently installed version"
-                    ) from e
-
                 title_template: str | None = None
                 content_template: str | None = None
                 if self.vertex_ranker_title_field:
@@ -2214,7 +2207,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 if self.vertex_ranker_content_field:
                     content_template = f"{{{{ {self.vertex_ranker_content_field} }}}}"
                 return Ranker(
-                    vertex=VertexRanker(
+                    vertex_ranker=VertexRanker(
                         text_record_spec=VertexRanker.TextRecordSpec(
                             query=query.query_str or "",
                             title_template=title_template,

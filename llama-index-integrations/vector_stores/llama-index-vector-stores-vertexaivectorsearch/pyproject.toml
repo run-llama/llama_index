@@ -51,7 +51,7 @@ dependencies = [
 
 [project.optional-dependencies]
 v2 = [
-    "google-cloud-vectorsearch>=0.10.0",
+    "google-cloud-vectorsearch>=0.11.0",
 ]
 
 [tool.codespell]
