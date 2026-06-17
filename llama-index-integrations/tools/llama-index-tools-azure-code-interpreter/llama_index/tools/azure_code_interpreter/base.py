@@ -229,7 +229,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         opened_file = None
         if local_file_path:
             remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
-            data = opened_file = open(local_file_path, "rb")
+            opened_file = open(local_file_path, "rb")
+            data = opened_file
 
         try:
             access_token = self.access_token_provider()
