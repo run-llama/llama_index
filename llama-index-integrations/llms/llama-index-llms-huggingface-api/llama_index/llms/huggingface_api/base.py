@@ -495,8 +495,10 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                         raw=chunk,
                     )
 
-                await self._async_client.close()
-
+                if self._async_client is not None and hasattr(self._async_client, 'close'):
+                   result = self._async_client.close()
+                   if result is not None:
+                      await result
             return gen()
         else:
             prompt = self.messages_to_prompt(messages)
