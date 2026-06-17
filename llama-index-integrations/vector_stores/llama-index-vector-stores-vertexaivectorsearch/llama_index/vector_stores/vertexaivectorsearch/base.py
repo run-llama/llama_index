@@ -135,7 +135,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         V1 API: `pip install llama-index-vector-stores-vertexaivectorsearch`
 
         ```python
-        from
+        from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
         vector_store = VertexAIVectorStore(
             api_version="v1",
             project_id=PROJECT_ID,
@@ -148,14 +149,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         V2 API: `pip install llama-index-vector-stores-vertexaivectorsearch[v2]`
 
         ```python
-        from
+        from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
         vector_store = VertexAIVectorStore(
             api_version="v2",
             project_id=PROJECT_ID,
             region=REGION,
-            collection_id="<Vertex collection name>"
-            credentials=... # already built credentials object, OR
-            credential_path="..."
+            collection_id="<Vertex collection name>",
+            # other fields, e.g. credentials(_path)
         )
         ```
 
@@ -358,14 +359,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     credentials: Credentials | None = Field(
         default=None,
         description=(
-            "[V2] The credentials to use for authentication (if applicable). Takes "
+            "The credentials to use for authentication (if applicable). Takes "
             "precedents over 'credentials_path'."
         ),
         exclude=True,  # not serializable
     )
     credentials_path: str | None = Field(
         default=None,
-        description="[V2] The path where access credentials are stored (if applicable).",
+        description="The path where access credentials are stored (if applicable).",
     )
     v2_client_options: dict[str, Any] = Field(
         default_factory=dict,
@@ -544,9 +545,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import VectorSearchServiceClient
 
-        credentials = self._sdk_manager.get_v2_credentials()
         return VectorSearchServiceClient(
-            credentials=credentials,
+            credentials=self._sdk_manager.get_credentials(),
             client_options=ClientOptions(**self.v2_client_options),
         )
 
@@ -556,9 +556,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectServiceClient
 
-        credentials = self._sdk_manager.get_v2_credentials()
         return DataObjectServiceClient(
-            credentials=credentials,
+            credentials=self._sdk_manager.get_credentials(),
             client_options=ClientOptions(**self.v2_client_options),
         )
 
@@ -568,10 +567,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectServiceAsyncClient
 
-        credentials = self._sdk_manager.get_v2_credentials()
         # NOTE: async clients *must* be lazy initialized to ensure the right async loop
         return DataObjectServiceAsyncClient(
-            credentials=credentials,
+            credentials=self._sdk_manager.get_credentials(),
             client_options=ClientOptions(**self.v2_client_options),
         )
 
@@ -581,9 +579,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceClient
 
-        credentials = self._sdk_manager.get_v2_credentials()
         return DataObjectSearchServiceClient(
-            credentials=credentials,
+            credentials=self._sdk_manager.get_credentials(),
             client_options=ClientOptions(**self.v2_client_options),
         )
 
@@ -593,10 +590,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.api_core.client_options import ClientOptions
         from google.cloud.vectorsearch_v1beta import DataObjectSearchServiceAsyncClient
 
-        credentials = self._sdk_manager.get_v2_credentials()
         # NOTE: async clients *must* be lazy initialized to ensure the right async loop
         return DataObjectSearchServiceAsyncClient(
-            credentials=credentials,
+            credentials=self._sdk_manager.get_credentials(),
             client_options=ClientOptions(**self.v2_client_options),
         )
 
@@ -666,10 +662,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Add nodes to index.
 
         Args:
-            nodes: List[BaseNode]: list of nodes
-            is_complete_overwrite: bool:
+            nodes (list[BaseNode]): list of nodes
+            is_complete_overwrite (bool):
                 (V1 only) whether it is an append or overwrite operation
-            add_operation: Literal["create", "update"] | None:
+            add_operation (Literal["create", "update"] | None):
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **add_kwargs: additional keyword arguments to be passed to implementations
 
@@ -722,9 +718,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Add nodes to index using v1 API.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
-            is_complete_overwrite: bool: (V1 only) whether it is an append or overwrite operation
+            nodes (list[BaseNode]): list of nodes with embeddings
+            is_complete_overwrite (bool): (V1 only) whether it is an append or overwrite operation
             **add_kwargs: additional keyword arguments (not used)
+
+        Returns:
+            The IDs of the nodes added to the index.
 
         """
         ids = []
@@ -764,8 +763,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Add nodes to index using the V2 'create' API.
 
         Args:
-            nodes: List[BaseNode]: list of nodes
+            nodes (list[BaseNode]): list of nodes
             **add_kwargs: additional keyword arguments (not used)
+
+        Returns:
+            The IDs of the nodes added to the index.
 
         """
         from google.cloud.vectorsearch_v1beta import BatchCreateDataObjectsRequest
@@ -806,8 +808,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Add nodes to index using the V2 'update' API.
 
         Args:
-            nodes: List[BaseNode]: list of nodes
+            nodes (list[BaseNode]): list of nodes
             **add_kwargs: additional keyword arguments (not used)
+
+        Returns:
+            The IDs of the nodes updated in the index.
 
         """
         from google.cloud.vectorsearch_v1beta import BatchUpdateDataObjectsRequest
@@ -889,10 +894,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Asynchronously add nodes to index.
 
         Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
-            is_complete_overwrite: bool:
+            nodes (list[BaseNode]): list of nodes with embeddings
+            is_complete_overwrite (bool):
                 (V1 only) whether it is an append or overwrite operation
-            add_operation: Literal["create", "update"] | None:
+            add_operation (Literal["create", "update"] | None):
                 (V2 only) Specify the operation to be used, overriding ``.add_operation``
             **add_kwargs: additional keyword arguments to be passed to implementations
 
@@ -938,6 +943,17 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     async def _async_add_v2_create(
         self, nodes: Sequence[BaseNode], **add_kwargs: Any
     ) -> list[str]:
+        """
+        Asynchronously dd nodes to index using the V2 'create' API.
+
+        Args:
+            nodes (list[BaseNode]): list of nodes
+            **add_kwargs: additional keyword arguments (not used)
+
+        Returns:
+            The IDs of the nodes added to the index.
+
+        """
         node_ids, requests = self._build_v2_create_requests(nodes)
         tasks = [
             self._async_create_batch(
@@ -1012,14 +1028,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         self, nodes: Sequence[BaseNode], **add_kwargs: Any
     ) -> list[str]:
         """
-        Asynchronously update nodes in the collection using v2 API.
+        Asynchronously add nodes to index using the V2 'update' API.
 
         Args:
-            nodes: List of nodes
-            **add_kwargs: Additional keyword arguments (not used)
+            nodes (list[BaseNode]): list of nodes
+            **add_kwargs: additional keyword arguments (not used)
 
         Returns:
-            List of node IDs
+            The IDs of the nodes updated in the index.
 
         """
         node_ids, requests = self._build_v2_update_requests(nodes)
@@ -1135,7 +1151,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Delete nodes using ref_doc_id with v2 API.
 
         Args:
-            ref_doc_id: The document ID to delete
+            ref_doc_id (str): The document ID to delete
             **delete_kwargs: Additional keyword arguments (not used)
 
         """
@@ -1147,11 +1163,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(
             f"Deleting nodes with '{self.doc_id_field}'={ref_doc_id} from v2 collection"
         )
-        query_request = self._build_filter_query_request(
+        query_request = self._build_v2_filter_query_request(
             v2_filter={self.doc_id_field: {"$eq": ref_doc_id}}
         )
         query_results = self.v2_search_client.query_data_objects(query_request)
-        time_taken, result = self._sync_delete_query_result(query_results)
+        time_taken, result = self._sync_delete_v2_query_result(query_results)
         _logger.info(
             f"Delete operation for {self.doc_id_field}={ref_doc_id} finished in "
             f"{time_taken:.2f}, {result!s}",
@@ -1159,7 +1175,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
-    def _build_filter_query_request(
+    def _build_v2_filter_query_request(
         self,
         v2_filter: dict[str, Any],
         output_fields: "OutputFields | None" = None,
@@ -1182,19 +1198,19 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
         )
 
-    def _sync_delete_query_result(
+    def _sync_delete_v2_query_result(
         self, paged_resp: "QueryDataObjectsPager"
     ) -> tuple[float, DeleteBatchResult]:
         """Synchronously delete all nodes included in the results of a query."""
         requests = [
             batch_request
             for page in paged_resp.pages
-            if (batch_request := self._build_batch_delete_request(page)) is not None
+            if (batch_request := self._build_v2_batch_delete_request(page)) is not None
         ]
         _logger.debug(f"Deleting query results in {len(requests)} batches")
-        return self._sync_delete_batches(requests)
+        return self._sync_delete_v2_batches(requests)
 
-    def _build_batch_delete_request(
+    def _build_v2_batch_delete_request(
         self, page: "QueryDataObjectsResponse"
     ) -> "BatchDeleteDataObjectsRequest | None":
         from google.cloud.vectorsearch_v1beta import (
@@ -1210,7 +1226,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             )
         return None
 
-    def _sync_delete_batches(
+    def _sync_delete_v2_batches(
         self, requests: list["BatchDeleteDataObjectsRequest"]
     ) -> tuple[float, DeleteBatchResult]:
         """Execute a set of batch delete requests and output combined results."""
@@ -1262,7 +1278,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         Asynchronously delete nodes using ref_doc_id with v2 API.
 
         Args:
-            ref_doc_id: The document ID to delete
+            ref_doc_id (str): The document ID to delete
             **delete_kwargs: Additional keyword arguments
 
         """
@@ -1274,11 +1290,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _logger.info(
             f"Deleting nodes with '{self.doc_id_field}'={ref_doc_id} from v2 collection"
         )
-        query_request = self._build_filter_query_request(
+        query_request = self._build_v2_filter_query_request(
             v2_filter={self.doc_id_field: {"$eq": ref_doc_id}}
         )
         paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
-        time_taken, result = await self._async_delete_query_result(paged_resp)
+        time_taken, result = await self._async_delete_v2_query_result(paged_resp)
         _logger.info(
             f"Delete operation for {self.doc_id_field}={ref_doc_id} finished in "
             f"{time_taken:.2f}, {result!s}",
@@ -1286,7 +1302,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
-    async def _async_delete_query_result(
+    async def _async_delete_v2_query_result(
         self, result_pager: "QueryDataObjectsAsyncPager"
     ) -> tuple[float, DeleteBatchResult]:
         """
@@ -1299,8 +1315,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         tasks = []
         batch_idx = 1
         async for page in result_pager.pages:
-            if batch_request := self._build_batch_delete_request(page):
-                tasks.append(self._async_delete_batch(batch_idx, batch_request))
+            if batch_request := self._build_v2_batch_delete_request(page):
+                tasks.append(self._async_v2_delete_batch(batch_idx, batch_request))
                 batch_idx += 1
         time_start = time.perf_counter()
         results: list[DeleteBatchResult] = await asyncio.gather(*tasks)
@@ -1308,11 +1324,12 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         batch_result = sum(results, DeleteBatchResult())
         return time_taken, batch_result
 
-    async def _async_delete_batch(
+    async def _async_v2_delete_batch(
         self,
         batch_idx: int,
         request: "BatchDeleteDataObjectsRequest",
     ) -> DeleteBatchResult:
+        """Execute a single async batch delete operation."""
         async with self._async_request_semaphore:
             size = len(request.requests)
             try:
@@ -1451,50 +1468,52 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
         # prepare filters and output fields once for all search types
         v2_filter = convert_filters_to_v2_format(query.filters)
-        output_fields = self._get_output_fields(query.output_fields)
+        output_fields = self._get_v2_query_output_fields(query.output_fields)
 
         # Route based on query mode
         match query.mode:
             case VectorStoreQueryMode.DEFAULT:
-                request = self._build_default_request(query, v2_filter, output_fields)
+                request = self._build_v2_default_query_request(
+                    query, v2_filter, output_fields
+                )
                 results = self.v2_search_client.search_data_objects(request)
-                return self._process_search_results(results)
+                return self._process_v2_sync_search_results(results)
             case VectorStoreQueryMode.SPARSE:
                 request = SearchDataObjectsRequest(
                     parent=self.v2_collection_parent,
-                    vector_search=self._build_sparse_vector_search(
+                    vector_search=self._build_v2_sparse_vector_search(
                         query, sparse_embedding, v2_filter, output_fields
                     ),
                 )
                 results = self.v2_search_client.search_data_objects(request)
-                return self._process_search_results(results)
+                return self._process_v2_sync_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
                 request = SearchDataObjectsRequest(
                     parent=self.v2_collection_parent,
-                    text_search=self._build_text_search(
+                    text_search=self._build_v2_text_search(
                         query, v2_filter, output_fields
                     ),
                 )
                 results = self.v2_search_client.search_data_objects(request)
-                return self._process_search_results(results)
+                return self._process_v2_sync_search_results(results)
             case VectorStoreQueryMode.HYBRID:
-                batch_request = self._build_hybrid_query_request(
+                batch_request = self._build_v2_hybrid_query_request(
                     query, sparse_embedding, v2_filter, output_fields
                 )
                 batch_results = self.v2_search_client.batch_search_data_objects(
                     batch_request
                 )
-                return self._process_batch_search_results(
+                return self._process_v2_batch_search_results(
                     batch_results, batch_request.combine.top_k
                 )
             case VectorStoreQueryMode.SEMANTIC_HYBRID:
-                batch_request = self._build_semantic_hybrid_query_request(
+                batch_request = self._build_v2_semantic_hybrid_query_request(
                     query, sparse_embedding, v2_filter, output_fields
                 )
                 batch_results = self.v2_search_client.batch_search_data_objects(
                     batch_request
                 )
-                return self._process_batch_search_results(
+                return self._process_v2_batch_search_results(
                     batch_results, batch_request.combine.top_k
                 )
             case _:
@@ -1568,34 +1587,36 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
         # prepare filters and output fields once for all search types
         v2_filter = convert_filters_to_v2_format(query.filters)
-        output_fields = self._get_output_fields(query.output_fields)
+        output_fields = self._get_v2_query_output_fields(query.output_fields)
 
         # Route based on query mode
         match query.mode:
             case VectorStoreQueryMode.DEFAULT:
-                request = self._build_default_request(query, v2_filter, output_fields)
+                request = self._build_v2_default_query_request(
+                    query, v2_filter, output_fields
+                )
                 results = await self.v2_search_async_client.search_data_objects(request)
-                return await self._process_async_search_results(results)
+                return await self._process_v2_async_search_results(results)
             case VectorStoreQueryMode.SPARSE:
                 request = SearchDataObjectsRequest(
                     parent=self.v2_collection_parent,
-                    vector_search=self._build_sparse_vector_search(
+                    vector_search=self._build_v2_sparse_vector_search(
                         query, sparse_embedding, v2_filter, output_fields
                     ),
                 )
                 results = await self.v2_search_async_client.search_data_objects(request)
-                return await self._process_async_search_results(results)
+                return await self._process_v2_async_search_results(results)
             case VectorStoreQueryMode.TEXT_SEARCH:
                 request = SearchDataObjectsRequest(
                     parent=self.v2_collection_parent,
-                    text_search=self._build_text_search(
+                    text_search=self._build_v2_text_search(
                         query, v2_filter, output_fields
                     ),
                 )
                 results = await self.v2_search_async_client.search_data_objects(request)
-                return await self._process_async_search_results(results)
+                return await self._process_v2_async_search_results(results)
             case VectorStoreQueryMode.HYBRID:
-                batch_request = self._build_hybrid_query_request(
+                batch_request = self._build_v2_hybrid_query_request(
                     query, sparse_embedding, v2_filter, output_fields
                 )
                 batch_results = (
@@ -1603,11 +1624,11 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                         batch_request
                     )
                 )
-                return self._process_batch_search_results(
+                return self._process_v2_batch_search_results(
                     batch_results, batch_request.combine.top_k
                 )
             case VectorStoreQueryMode.SEMANTIC_HYBRID:
-                batch_request = self._build_semantic_hybrid_query_request(
+                batch_request = self._build_v2_semantic_hybrid_query_request(
                     query, sparse_embedding, v2_filter, output_fields
                 )
                 batch_results = (
@@ -1615,7 +1636,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                         batch_request
                     )
                 )
-                return self._process_batch_search_results(
+                return self._process_v2_batch_search_results(
                     batch_results, batch_request.combine.top_k
                 )
             case _:
@@ -1624,7 +1645,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"DEFAULT, SPARSE, TEXT_SEARCH, HYBRID, SEMANTIC_HYBRID"
                 )
 
-    def _get_output_fields(
+    def _get_v2_query_output_fields(
         self, output_fields: list[str] | None
     ) -> dict[str, list[str]]:
         if not output_fields:
@@ -1647,7 +1668,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             out_fields["vector_fields"] = sorted(vector_fields)
         return out_fields
 
-    def _build_default_request(
+    def _build_v2_default_query_request(
         self,
         query: VectorStoreQuery,
         v2_filter: dict[str, Any] | None,
@@ -1660,7 +1681,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.debug(f"Using dense search for mode={query.mode.value}")
             request = SearchDataObjectsRequest(
                 parent=self.v2_collection_parent,
-                vector_search=self._build_dense_vector_search(
+                vector_search=self._build_v2_dense_vector_search(
                     query, v2_filter, output_fields
                 ),
             )
@@ -1668,13 +1689,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             _logger.debug(f"Using semantic search for mode={query.mode.value}")
             request = SearchDataObjectsRequest(
                 parent=self.v2_collection_parent,
-                semantic_search=self._build_semantic_search(
+                semantic_search=self._build_v2_semantic_search(
                     query, v2_filter, output_fields
                 ),
             )
         return request
 
-    def _build_dense_vector_search(
+    def _build_v2_dense_vector_search(
         self,
         query: VectorStoreQuery,
         v2_filter: dict[str, Any] | None,
@@ -1717,7 +1738,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             search_args["filter"] = v2_filter
         return VectorSearch(search_args)
 
-    def _build_sparse_vector_search(
+    def _build_v2_sparse_vector_search(
         self,
         query: VectorStoreQuery,
         sparse_embedding: SparseEmbedding | None,
@@ -1764,7 +1785,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             search_args["filter"] = v2_filter
         return VectorSearch(search_args)
 
-    def _build_text_search(
+    def _build_v2_text_search(
         self,
         query: VectorStoreQuery,
         v2_filter: dict[str, Any] | None,
@@ -1807,7 +1828,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             search_args["filter"] = v2_filter
         return TextSearch(search_args)
 
-    def _build_semantic_search(
+    def _build_v2_semantic_search(
         self,
         query: VectorStoreQuery,
         v2_filter: dict[str, Any] | None,
@@ -1877,7 +1898,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             search_args["filter"] = v2_filter
         return SemanticSearch(search_args)
 
-    def _build_hybrid_query_request(
+    def _build_v2_hybrid_query_request(
         self,
         query: VectorStoreQuery,
         sparse_embedding: SparseEmbedding | None,
@@ -1932,31 +1953,33 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # always use text search
         searches: list[Search] = [
-            Search(text_search=self._build_text_search(query, v2_filter, output_fields))
+            Search(
+                text_search=self._build_v2_text_search(query, v2_filter, output_fields)
+            )
         ]
 
         # use dense search if an embedding exists
         if query.query_embedding is not None:
-            dense_search = self._build_dense_vector_search(
+            dense_search = self._build_v2_dense_vector_search(
                 query, v2_filter, output_fields
             )
             searches.append(Search(vector_search=dense_search))
         # use sparse vector search if the embedding is passed
         if sparse_embedding is not None:
-            sparse_search = self._build_sparse_vector_search(
+            sparse_search = self._build_v2_sparse_vector_search(
                 query, sparse_embedding, v2_filter, output_fields
             )
             searches.append(Search(vector_search=sparse_search))
         # if neither dense nor sparse were passed, fall back to semantic search
         if len(searches) == 1:
-            semantic_search = self._build_semantic_search(
+            semantic_search = self._build_v2_semantic_search(
                 query, v2_filter, output_fields
             )
             searches.append(Search(semantic_search=semantic_search))
 
         # set up ranker
         top_k = query.hybrid_top_k or query.sparse_top_k or query.similarity_top_k
-        ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
+        ranker = self._build_v2_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
             parent=self.v2_collection_parent,
             searches=searches,
@@ -1965,7 +1988,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             ),
         )
 
-    def _build_semantic_hybrid_query_request(
+    def _build_v2_semantic_hybrid_query_request(
         self,
         query: VectorStoreQuery,
         sparse_embedding: SparseEmbedding | None,
@@ -2013,7 +2036,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         # always use semantic search
         searches: list[Search] = [
             Search(
-                semantic_search=self._build_semantic_search(
+                semantic_search=self._build_v2_semantic_search(
                     query, v2_filter, output_fields
                 )
             )
@@ -2022,21 +2045,21 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if query.query_embedding is not None:
             searches.append(
                 Search(
-                    vector_search=self._build_dense_vector_search(
+                    vector_search=self._build_v2_dense_vector_search(
                         query, v2_filter, output_fields
                     )
                 )
             )
         # use sparse vector search if the embedding is passed
         if sparse_embedding is not None:
-            sparse_search = self._build_sparse_vector_search(
+            sparse_search = self._build_v2_sparse_vector_search(
                 query, sparse_embedding, v2_filter, output_fields
             )
             searches.append(Search(vector_search=sparse_search))
 
         # set up ranker
         top_k = query.hybrid_top_k or query.similarity_top_k
-        ranker = self._build_ranker(query, num_searches=len(searches), top_k=top_k)
+        ranker = self._build_v2_ranker(query, num_searches=len(searches), top_k=top_k)
         return BatchSearchDataObjectsRequest(
             parent=self.v2_collection_parent,
             searches=searches,
@@ -2045,7 +2068,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             ),
         )
 
-    def _process_search_results(
+    def _process_v2_sync_search_results(
         self, results: "SearchDataObjectsPager"
     ) -> VectorStoreQueryResult:
         """
@@ -2069,7 +2092,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             scores.append(self._extract_score(result))
         return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
 
-    async def _process_async_search_results(
+    async def _process_v2_async_search_results(
         self, results: "SearchDataObjectsAsyncPager"
     ) -> VectorStoreQueryResult:
         """
@@ -2093,7 +2116,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             scores.append(self._extract_score(result))
         return VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=ids)
 
-    def _process_batch_search_results(
+    def _process_v2_batch_search_results(
         self, batch_results: "BatchSearchDataObjectsResponse", top_k: int
     ) -> VectorStoreQueryResult:
         """
@@ -2146,7 +2169,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             return float(result.rank_score)
         return 1.0
 
-    def _build_ranker(
+    def _build_v2_ranker(
         self, query: VectorStoreQuery, num_searches: int, top_k: int
     ) -> "Ranker":
         """
@@ -2269,13 +2292,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         time_taken: float = 0.0
         result = DeleteBatchResult()
         if node_ids:
-            batches = self._prepare_delete_by_id_requests(node_ids)
+            batches = self._prepare_v2_delete_by_id_requests(node_ids)
             _logger.info(
                 f"Deleting {len(node_ids)} nodes by ID in {len(batches)} batches "
                 f"(batch_size={self.batch_size})"
             )
             # execute deletion
-            time_taken, result = self._sync_delete_batches(batches)
+            time_taken, result = self._sync_delete_v2_batches(batches)
 
         elif filters is not None:
             if v2_filter := convert_filters_to_v2_format(filters):
@@ -2283,9 +2306,9 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     f"Deleting nodes matching filters={v2_filter} from v2 collection: "
                     f"{self.collection_id}"
                 )
-                query = self._build_filter_query_request(v2_filter)
+                query = self._build_v2_filter_query_request(v2_filter)
                 query_results = self.v2_search_client.query_data_objects(query)
-                time_taken, result = self._sync_delete_query_result(query_results)
+                time_taken, result = self._sync_delete_v2_query_result(query_results)
             else:
                 _logger.warning(
                     f"Input filter set is empty after conversion, "
@@ -2298,7 +2321,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if not result.succeeded:
             raise VertexAIDeleteError(result)
 
-    def _prepare_delete_by_id_requests(
+    def _prepare_v2_delete_by_id_requests(
         self, node_ids: Sequence[str]
     ) -> list["BatchDeleteDataObjectsRequest"]:
         """Batch node IDs into a set of batch requests."""
@@ -2369,8 +2392,10 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         if node_ids:
             # batch the calls
             tasks = [
-                self._async_delete_batch(i, req)
-                for i, req in enumerate(self._prepare_delete_by_id_requests(node_ids))
+                self._async_v2_delete_batch(i, req)
+                for i, req in enumerate(
+                    self._prepare_v2_delete_by_id_requests(node_ids)
+                )
             ]
             # execute deletion
             _logger.info(
@@ -2387,11 +2412,13 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                 _logger.info(
                     f"Deleting nodes matching filters (batch_size={self.batch_size}): {v2_filter}"
                 )
-                query = self._build_filter_query_request(v2_filter)
+                query = self._build_v2_filter_query_request(v2_filter)
                 query_result = await self.v2_search_async_client.query_data_objects(
                     query
                 )
-                time_taken, result = await self._async_delete_query_result(query_result)
+                time_taken, result = await self._async_delete_v2_query_result(
+                    query_result
+                )
             else:
                 _logger.warning(
                     f"Input filter set is empty after conversion, "
@@ -2443,7 +2470,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             output_fields=OutputFields(metadata_fields=["*"]),
         )
         paged_resp = self.v2_search_client.query_data_objects(query_request)
-        time_taken, result = self._sync_delete_query_result(paged_resp)
+        time_taken, result = self._sync_delete_v2_query_result(paged_resp)
         _logger.info(
             f"Clear operation for collection finished in {time_taken:.2f}s, {result!s}"
         )
@@ -2483,7 +2510,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             output_fields=OutputFields(metadata_fields=["*"]),
         )
         paged_resp = await self.v2_search_async_client.query_data_objects(query_request)
-        time_taken, result = await self._async_delete_query_result(paged_resp)
+        time_taken, result = await self._async_delete_v2_query_result(paged_resp)
         _logger.info(
             f"Clear operation for collection finished in {time_taken:.2f}s, {result!s}"
         )
@@ -2554,7 +2581,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         from google.cloud.vectorsearch_v1beta import DataObject, OutputFields
 
         # build the appropriate filter set based on input
-        filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
+        filter_expr = self._prepare_v2_get_nodes_filters(node_ids, filters)
         if not filter_expr:
             _logger.warning(
                 f"Input filter set is empty after conversion, input={filters}"
@@ -2562,7 +2589,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             return []
 
         # send the query
-        query = self._build_filter_query_request(
+        query = self._build_v2_filter_query_request(
             filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
         )
         start: float = time.perf_counter()
@@ -2647,7 +2674,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         # build the appropriate filter set based on input
         start: float = time.perf_counter()
-        filter_expr = self._prepare_get_nodes_filters(node_ids, filters)
+        filter_expr = self._prepare_v2_get_nodes_filters(node_ids, filters)
         if not filter_expr:
             _logger.warning(
                 f"Input filter set is empty after conversion, input={filters}"
@@ -2655,7 +2682,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             return []
 
         # send the query and convert results to nodes
-        query = self._build_filter_query_request(
+        query = self._build_v2_filter_query_request(
             filter_expr, output_fields=OutputFields(**self.get_nodes_output_fields)
         )
         query_results = await self.v2_search_async_client.query_data_objects(query)
@@ -2673,7 +2700,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
         return nodes
 
-    def _prepare_get_nodes_filters(
+    def _prepare_v2_get_nodes_filters(
         self, node_ids: list[str] | None, filters: MetadataFilters | None
     ) -> dict[str, Any]:
         if node_ids and filters:
@@ -2833,14 +2860,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             # special case: the default dense embedding
             if self.embedding_field in data_obj.vectors:
                 vector_data = data_obj.vectors[self.embedding_field]
-                vector = self._extract_dense_vector(vector_data)
+                vector = self._extract_v2_dense_vector(vector_data)
                 if vector is not None:
                     embedding = vector
             # extract other known dense vectors
             for dense_field in self.dense_embedding_fields:
                 if dense_field in data_obj.vectors:
                     vector_data = data_obj.vectors[dense_field]
-                    vector = self._extract_dense_vector(vector_data)
+                    vector = self._extract_v2_dense_vector(vector_data)
                     if vector is not None:
                         metadata[dense_field] = vector
             # extract any known sparse vectors
@@ -2849,7 +2876,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             ):
                 if sparse_field in data_obj.vectors:
                     sparse_data = data_obj.vectors[sparse_field]
-                    sparse_vector = self._extract_sparse_vector(sparse_data)
+                    sparse_vector = self._extract_v2_sparse_vector(sparse_data)
                     if sparse_vector is not None:
                         metadata[sparse_field] = sparse_vector
         return TextNode(
@@ -2861,7 +2888,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         )
 
     @staticmethod
-    def _extract_dense_vector(vector: "Vector") -> list[float] | None:
+    def _extract_v2_dense_vector(vector: "Vector") -> list[float] | None:
         from google.cloud.vectorsearch_v1beta import DenseVector
 
         if hasattr(vector, "dense") and isinstance(vector.dense, DenseVector):
@@ -2869,7 +2896,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         return None
 
     @staticmethod
-    def _extract_sparse_vector(
+    def _extract_v2_sparse_vector(
         vector: "Vector",
     ) -> dict[str, list[float] | list[int]] | None:
         from google.cloud.vectorsearch_v1beta import SparseVector

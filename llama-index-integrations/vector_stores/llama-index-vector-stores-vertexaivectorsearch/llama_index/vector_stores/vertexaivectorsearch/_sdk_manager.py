@@ -55,11 +55,16 @@ class VectorSearchSDKManager:
             self._credentials = None
 
         # v2 client is initialized lazily
-        self._v2_available = (
-            importlib.util.find_spec("google.cloud.vectorsearch_v1beta") is not None
-        )
+        self._v2_available = self._module_exists("google.cloud.vectorsearch_v1beta")
 
         self.initialize_aiplatform()
+
+    @staticmethod
+    def _module_exists(module_name: str) -> bool:
+        try:
+            return importlib.util.find_spec(module_name) is not None
+        except ModuleNotFoundError:
+            return False
 
     def initialize_aiplatform(self) -> None:
         """Initializes aiplatform."""
@@ -68,6 +73,10 @@ class VectorSearchSDKManager:
             location=self._region,
             credentials=self._credentials,
         )
+
+    def get_credentials(self) -> "Credentials | None":
+        """Access prepared credentials if available."""
+        return self._credentials
 
     def get_gcs_client(self) -> storage.Client:
         """
@@ -162,14 +171,3 @@ class VectorSearchSDKManager:
                 "Vertex v2 operations require the 'v2' extra, install with: "
                 '`pip install "llama-index-vector-stores-vertexaivectorsearch[v2]"`'
             )
-
-    def get_v2_credentials(self) -> "Credentials | None":
-        """
-        Access the prepared credentials for the V2 collection, if available.
-
-        Raises:
-            ImportError: If the 'v2' extra is not installed with this package
-
-        """
-        self.ensure_v2_available()
-        return self._credentials
