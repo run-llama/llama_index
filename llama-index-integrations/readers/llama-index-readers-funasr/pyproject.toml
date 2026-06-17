@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llama-index-readers-funasr"
+version = "0.1.0"
+description = "llama-index readers FunASR (SenseVoice / Paraformer / Fun-ASR-Nano) integration"
+authors = [{name = "FunASR"}]
+requires-python = ">=3.10,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = ["funasr", "sensevoice", "paraformer", "speech-to-text", "asr", "audio", "transcription"]
+dependencies = [
+    "llama-index-core>=0.13.0,<0.15",
+    "funasr>=1.1.0",
+    "librosa",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
