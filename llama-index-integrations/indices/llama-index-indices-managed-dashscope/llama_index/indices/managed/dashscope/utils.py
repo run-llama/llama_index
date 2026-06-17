@@ -1,12 +1,10 @@
-from typing import TypeAlias, Union, Optional
+from typing import Optional
 
 import requests
 import time
 
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
-
-def post(base_url: str, headers: dict, params: dict, timeout: Optional[_Timeout]):
+def post(base_url: str, headers: dict, params: dict, timeout: Optional[float] = 60.0):
     response = requests.post(base_url, headers=headers, json=params, timeout=timeout)
     if response.status_code != 200:
         raise RuntimeError(response.text)
@@ -16,7 +14,7 @@ def post(base_url: str, headers: dict, params: dict, timeout: Optional[_Timeout]
     return response_dict
 
 
-def get(base_url: str, headers: dict, params: dict, timeout: Optional[_Timeout] = 60):
+def get(base_url: str, headers: dict, params: dict, timeout: Optional[float] = 60.0):
     response = requests.get(base_url, headers=headers, params=params, timeout=timeout)
     if response.status_code != 200:
         raise RuntimeError(response.text)
@@ -28,7 +26,7 @@ def get(base_url: str, headers: dict, params: dict, timeout: Optional[_Timeout] 
 
 
 def get_pipeline_id(
-    base_url: str, headers: dict, params: dict, timeout: Optional[_Timeout]
+    base_url: str, headers: dict, params: dict, timeout: Optional[float] = 60.0
 ):
     response_dict = get(base_url, headers, params, timeout)
     return response_dict.get("id", "")
@@ -38,7 +36,7 @@ def run_ingestion(
     request_url: str,
     headers: dict,
     verbose: bool = False,
-    timeout: Optional[_Timeout] = None,
+    timeout: Optional[float] = 60.0,
 ):
     ingestion_status = ""
     failed_docs = []

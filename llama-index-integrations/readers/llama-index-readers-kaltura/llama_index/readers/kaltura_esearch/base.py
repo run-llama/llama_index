@@ -2,13 +2,11 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, TypeAlias, Union
+from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,7 @@ class KalturaESearchReader(BaseReader):
         kaltura_api_endpoint: str = "https://cdnapi-ev.kaltura.com/",
         request_timeout: int = 500,
         should_log_api_calls: bool = False,
-        timeout: Optional[_Timeout] = 60,
+        timeout: Optional[float] = 60.0,
     ) -> None:
         """
         Initialize a new instance of KalturaESearchReader.

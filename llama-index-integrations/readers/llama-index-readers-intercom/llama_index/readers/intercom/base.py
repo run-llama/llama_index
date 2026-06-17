@@ -1,12 +1,10 @@
 """Intercom reader."""
 
 import json
-from typing import List, TypeAlias, Union, Optional
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class IntercomReader(BaseReader):
@@ -15,11 +13,12 @@ class IntercomReader(BaseReader):
 
     Args:
         personal_access_token (str): Intercom token.
+        timeout (float | None): Timeout in seconds. Default is 60.0
 
     """
 
     def __init__(
-        self, intercom_access_token: str, timeout: Optional[_Timeout] = 60
+        self, intercom_access_token: str, timeout: Optional[float] = 60.0
     ) -> None:
         """Initialize Intercom reader."""
         self.intercom_access_token = intercom_access_token

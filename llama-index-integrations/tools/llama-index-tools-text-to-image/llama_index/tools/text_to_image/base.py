@@ -1,13 +1,11 @@
 """Text to Image tool spec."""
 
 from io import BytesIO
-from typing import List, Optional, TypeAlias, Union
+from typing import List, Optional
 
 import openai
 import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class TextToImageToolSpec(BaseToolSpec):
@@ -16,7 +14,7 @@ class TextToImageToolSpec(BaseToolSpec):
     spec_functions = ["generate_images", "show_images", "generate_image_variation"]
 
     def __init__(
-        self, api_key: Optional[str] = None, timeout: Optional[_Timeout] = 60
+        self, api_key: Optional[str] = None, timeout: Optional[float] = 60.0
     ) -> None:
         if api_key:
             openai.api_key = api_key

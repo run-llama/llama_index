@@ -1,14 +1,12 @@
 """Wolfram Alpha tool spec."""
 
 import urllib.parse
-from typing import Optional, TypeAlias, Union
+from typing import Optional
 
 import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 QUERY_URL_TMPL = "https://www.wolframalpha.com/api/v1/llm-api"
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class WolframAlphaToolSpec(BaseToolSpec):
@@ -20,7 +18,7 @@ class WolframAlphaToolSpec(BaseToolSpec):
         self,
         app_id: Optional[str] = None,
         api_params: Optional[dict] = None,
-        timeout: Optional[_Timeout] = 60,
+        timeout: Optional[float] = 60.0,
     ) -> None:
         """Initialize with parameters."""
         self.token = app_id

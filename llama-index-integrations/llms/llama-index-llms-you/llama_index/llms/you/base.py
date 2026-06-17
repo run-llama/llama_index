@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Generator, Literal, Optional, TypeAlias, Union
+from typing import Any, Dict, Generator, Literal, Optional
 
 import requests
 import sseclient
@@ -15,11 +15,9 @@ from llama_index.core.bridge.pydantic import Field
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
-
 
 def _request(
-    base_url: str, api_key: str, timeout: Optional[_Timeout] = 60, **kwargs
+    base_url: str, api_key: str, timeout: Optional[float] = 60.0, **kwargs
 ) -> Dict[str, Any]:
     """
     NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
@@ -32,7 +30,7 @@ def _request(
 
 
 def _request_stream(
-    base_url: str, api_key: str, timeout: Optional[_Timeout] = 60, **kwargs
+    base_url: str, api_key: str, timeout: Optional[float] = 60.0, **kwargs
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)

@@ -1,12 +1,10 @@
 """Zendesk reader."""
 
 import json
-from typing import List, TypeAlias, Union, Optional
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class ZendeskReader(BaseReader):
@@ -16,6 +14,7 @@ class ZendeskReader(BaseReader):
     Args:
         zendesk_subdomain (str): Zendesk subdomain
         locale (str): Locale of articles
+        timeout (float | None): Timeout in seconds. Default is 60.0
 
     """
 
@@ -23,7 +22,7 @@ class ZendeskReader(BaseReader):
         self,
         zendesk_subdomain: str,
         locale: str = "en-us",
-        timeout: Optional[_Timeout] = 60,
+        timeout: Optional[float] = 60.0,
     ) -> None:
         """Initialize Zendesk reader."""
         self.zendesk_subdomain = zendesk_subdomain

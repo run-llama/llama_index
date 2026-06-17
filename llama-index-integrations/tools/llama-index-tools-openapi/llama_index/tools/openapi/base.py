@@ -2,13 +2,11 @@
 
 import json
 from collections import OrderedDict
-from typing import List, Optional, Callable, TypeAlias, Union
+from typing import List, Optional, Callable
 
 import requests
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-
-_Timeout: TypeAlias = Union[float, tuple[float, float], tuple[float, None]]
 
 
 class OpenAPIToolSpec(BaseToolSpec):
@@ -26,7 +24,7 @@ class OpenAPIToolSpec(BaseToolSpec):
         spec: Optional[dict] = None,
         url: Optional[str] = None,
         operation_id_filter: Callable[[str], bool] = None,
-        timeout: Optional[_Timeout] = 60,
+        timeout: Optional[float] = 60.0,
     ):
         import yaml
 
