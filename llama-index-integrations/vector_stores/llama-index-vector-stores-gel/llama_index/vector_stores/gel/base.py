@@ -1,12 +1,19 @@
 import logging
+import re
 from typing import (
     Any,
+    Dict,
     List,
     Optional,
     Sequence,
+    Tuple,
 )
 
 from llama_index.core.schema import BaseNode, TextNode
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# EdgeQL injection via the json_get path embedded in the filter clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -140,56 +147,82 @@ DELETE_ALL_QUERY = format_query(
 )
 
 
-def get_filter_clause(filters: MetadataFilters) -> str:
-    """Convert metadata filters to Gel query filter clause."""
+def get_filter_clause(
+    filters: MetadataFilters, params: Optional[Dict[str, Any]] = None
+) -> Tuple[str, Dict[str, Any]]:
+    """Convert metadata filters to Gel query filter clause.
+
+    Returns a (clause, params) tuple. The clause references EdgeQL named
+    parameters (e.g. ``<str>$flt_0``); callers must forward ``**params``
+    to ``client.query(...)``.
+    """
+    if params is None:
+        params = {}
     subclauses = []
     for filter in filters.filters:
         if isinstance(filter, MetadataFilters):
-            subclause = get_filter_clause(filter)
+            subclause, _ = get_filter_clause(filter, params)
         elif isinstance(filter, MetadataFilter):
-            formatted_value = (
-                f'"{filter.value}"' if isinstance(filter.value, str) else filter.value
-            )
+            if not _SAFE_METADATA_KEY.match(filter.key or ""):
+                raise ValueError(
+                    f"Unsafe metadata filter key {filter.key!r}; "
+                    f"must match {_SAFE_METADATA_KEY.pattern}"
+                )
+            pname = f"flt_{len(params)}"
+            params[pname] = filter.value
+            if isinstance(filter.value, str):
+                value_expr = f"<str>${pname}"
+            elif isinstance(filter.value, bool):
+                value_expr = f"<bool>${pname}"
+            elif isinstance(filter.value, int):
+                value_expr = f"<int64>${pname}"
+            elif isinstance(filter.value, float):
+                value_expr = f"<float64>${pname}"
+            elif isinstance(filter.value, list):
+                inner = filter.value[0] if filter.value else ""
+                if isinstance(inner, str):
+                    value_expr = f"<array<str>>${pname}"
+                elif isinstance(inner, bool):
+                    value_expr = f"<array<bool>>${pname}"
+                elif isinstance(inner, int):
+                    value_expr = f"<array<int64>>${pname}"
+                elif isinstance(inner, float):
+                    value_expr = f"<array<float64>>${pname}"
+                else:
+                    raise ValueError(
+                        f"Unsupported filter list element type: {type(inner)}"
+                    )
+            else:
+                raise ValueError(
+                    f"Unsupported filter value type: {type(filter.value)}"
+                )
+            key_expr = f'<str>json_get(.metadata, "{filter.key}")'
             if filter.operator == FilterOperator.EQ.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") = {formatted_value}'
-                )
+                subclause = f"{key_expr} = {value_expr}"
             elif filter.operator == FilterOperator.GT.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") > {formatted_value}'
-                )
+                subclause = f"{key_expr} > {value_expr}"
             elif filter.operator == FilterOperator.LT.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") < {formatted_value}'
-                )
+                subclause = f"{key_expr} < {value_expr}"
             elif filter.operator == FilterOperator.NE.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") != {formatted_value}'
-                )
+                subclause = f"{key_expr} != {value_expr}"
             elif filter.operator == FilterOperator.GTE.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") >= {formatted_value}'
-                )
+                subclause = f"{key_expr} >= {value_expr}"
             elif filter.operator == FilterOperator.LTE.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") <= {formatted_value}'
-                )
+                subclause = f"{key_expr} <= {value_expr}"
             elif filter.operator == FilterOperator.IN.value:
-                subclause = f'<str>json_get(.metadata, "{filter.key}") in array_unpack({formatted_value})'
+                subclause = f"{key_expr} in array_unpack({value_expr})"
             elif filter.operator == FilterOperator.NIN.value:
-                subclause = f'<str>json_get(.metadata, "{filter.key}") not in array_unpack({formatted_value})'
+                subclause = f"{key_expr} not in array_unpack({value_expr})"
             elif filter.operator == FilterOperator.ANY.value:
-                subclause = f'any(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
+                subclause = f"any({key_expr} = array_unpack({value_expr}))"
             elif filter.operator == FilterOperator.ALL.value:
-                subclause = f'all(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
+                subclause = f"all({key_expr} = array_unpack({value_expr}))"
             elif filter.operator == FilterOperator.TEXT_MATCH.value:
-                subclause = (
-                    f'<str>json_get(.metadata, "{filter.key}") like {formatted_value}'
-                )
+                subclause = f"{key_expr} like {value_expr}"
             elif filter.operator == FilterOperator.CONTAINS.value:
-                subclause = f'contains(<str>json_get(.metadata, "{filter.key}"), {formatted_value})'
+                subclause = f"contains({key_expr}, {value_expr})"
             elif filter.operator == FilterOperator.IS_EMPTY.value:
-                subclause = f'not exists <str>json_get(.metadata, "{filter.key}")'
+                subclause = f"not exists {key_expr}"
             else:
                 raise ValueError(f"Unknown operator: {filter.operator}")
 
@@ -197,12 +230,13 @@ def get_filter_clause(filters: MetadataFilters) -> str:
 
     if filters.condition == FilterCondition.AND:
         filter_clause = " and ".join(subclauses)
-        return "(" + filter_clause + ")" if len(subclauses) > 1 else filter_clause
+        clause = "(" + filter_clause + ")" if len(subclauses) > 1 else filter_clause
     elif filters.condition == FilterCondition.OR:
         filter_clause = " or ".join(subclauses)
-        return "(" + filter_clause + ")" if len(subclauses) > 1 else filter_clause
+        clause = "(" + filter_clause + ")" if len(subclauses) > 1 else filter_clause
     else:
         raise ValueError(f"Unknown condition: {filters.condition}")
+    return clause, params
 
 
 class GelVectorStore(BasePydanticVectorStore):
@@ -439,9 +473,12 @@ class GelVectorStore(BasePydanticVectorStore):
         """Query vector store."""
         assert query.query_embedding is not None, "query_embedding is required"
 
-        filter_clause = (
-            "filter " + get_filter_clause(query.filters) if query.filters else ""
-        )
+        filter_params: Dict[str, Any] = {}
+        if query.filters:
+            clause_text, filter_params = get_filter_clause(query.filters)
+            filter_clause = "filter " + clause_text
+        else:
+            filter_clause = ""
 
         assert query.mode == VectorStoreQueryMode.DEFAULT
 
@@ -456,6 +493,7 @@ class GelVectorStore(BasePydanticVectorStore):
             query_embedding=query.query_embedding,
             collection_name=self.collection_name,
             limit=query.similarity_top_k,
+            **filter_params,
         )
 
         return VectorStoreQueryResult(
@@ -478,9 +516,12 @@ class GelVectorStore(BasePydanticVectorStore):
         """Async version of query."""
         assert query.query_embedding is not None, "query_embedding is required"
 
-        filter_clause = (
-            "filter " + get_filter_clause(query.filters) if query.filters else ""
-        )
+        filter_params: Dict[str, Any] = {}
+        if query.filters:
+            clause_text, filter_params = get_filter_clause(query.filters)
+            filter_clause = "filter " + clause_text
+        else:
+            filter_clause = ""
 
         assert query.mode == VectorStoreQueryMode.DEFAULT
 
@@ -495,6 +536,7 @@ class GelVectorStore(BasePydanticVectorStore):
             query_embedding=query.query_embedding,
             collection_name=self.collection_name,
             limit=query.similarity_top_k,
+            **filter_params,
         )
 
         return VectorStoreQueryResult(
