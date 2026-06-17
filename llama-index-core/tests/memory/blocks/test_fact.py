@@ -1,12 +1,17 @@
 import pytest
-from typing import List
+from typing import Any, List
 
 from llama_index.core.memory.memory_blocks.fact import (
     FactExtractionMemoryBlock,
     DEFAULT_FACT_EXTRACT_PROMPT,
     DEFAULT_FACT_CONDENSE_PROMPT,
 )
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    TextBlock,
+    ToolCallBlock,
+)
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import MockLLM
 
@@ -18,8 +23,14 @@ class MyMockLLM(MockLLM):
         super().__init__(*args, **kwargs)
         self._responses = responses
         self._index = 0
+        self._messages_history: List[List[ChatMessage]] = []
 
-    async def achat(self, messages: List[ChatMessage], **kwargs) -> ChatResponse:
+    @property
+    def messages_history(self) -> List[List[ChatMessage]]:
+        return self._messages_history
+
+    async def achat(self, messages: List[ChatMessage], **kwargs: Any) -> ChatResponse:
+        self.messages_history.append(messages)
         response = self._responses[self._index]
         self._index += 1
         return response
@@ -50,6 +61,30 @@ def sample_messages():
         ChatMessage(
             role=MessageRole.USER,
             content="I work as a software engineer and I'm allergic to peanuts.",
+        ),
+    ]
+
+
+@pytest.fixture
+def tool_history_messages():
+    """Create messages with provider-native tool content."""
+    return [
+        ChatMessage(role=MessageRole.USER, content="Find my next flight."),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ToolCallBlock(
+                    tool_call_id="call_123",
+                    tool_name="lookup_flight",
+                    tool_kwargs={"destination": "Paris"},
+                )
+            ],
+            additional_kwargs={"tool_calls": [{"name": "lookup_flight"}]},
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="Flight AF123 leaves at 5pm.",
+            additional_kwargs={"tool_call_id": "call_123"},
         ),
     ]
 
@@ -127,6 +162,90 @@ async def test_aput_with_duplicate_facts(mock_extraction_llm, sample_messages):
         "John lives in New York",
         "John is a software engineer",
     ]
+
+
+@pytest.mark.asyncio
+async def test_aput_flattens_tool_history_before_fact_extraction(
+    tool_history_messages,
+):
+    """Test aput flattens tool blocks before calling the fact LLM."""
+    mock_llm = MyMockLLM(
+        responses=[
+            ChatResponse(
+                message=ChatMessage(
+                    content="<facts><fact>User asked about a flight</fact></facts>"
+                )
+            ),
+        ]
+    )
+    memory_block = FactExtractionMemoryBlock(llm=mock_llm)
+
+    await memory_block.aput(tool_history_messages)
+
+    assert len(mock_llm.messages_history) == 1
+    fact_messages = mock_llm.messages_history[0]
+    assert all(message.role != MessageRole.TOOL for message in fact_messages)
+    assert all(
+        not isinstance(block, ToolCallBlock)
+        for message in fact_messages
+        for block in message.blocks
+    )
+
+    conversation_message = fact_messages[0]
+    assert conversation_message.role == MessageRole.USER
+    assert len(conversation_message.blocks) == 1
+    assert isinstance(conversation_message.blocks[0], TextBlock)
+    conversation_text = conversation_message.blocks[0].text
+    assert "<message role='user'>Find my next flight.</message>" in conversation_text
+    assert "<message role='tool'>Flight AF123 leaves at 5pm." in conversation_text
+    assert "lookup_flight" not in conversation_text
+    assert "tool_call_id" not in conversation_text
+    assert memory_block.facts == ["User asked about a flight"]
+
+
+@pytest.mark.asyncio
+async def test_aput_flattens_tool_history_before_condensing(
+    tool_history_messages,
+):
+    """Test condensing uses the same flattened history as extraction."""
+    mock_llm = MyMockLLM(
+        responses=[
+            ChatResponse(
+                message=ChatMessage(
+                    content=(
+                        "<facts>"
+                        "<fact>User asked about a flight</fact>"
+                        "<fact>Flight AF123 leaves at 5pm</fact>"
+                        "</facts>"
+                    )
+                )
+            ),
+            ChatResponse(
+                message=ChatMessage(
+                    content="<facts><fact>User asked about AF123</fact></facts>"
+                )
+            ),
+        ]
+    )
+    memory_block = FactExtractionMemoryBlock(llm=mock_llm, max_facts=1)
+
+    await memory_block.aput(tool_history_messages)
+
+    assert len(mock_llm.messages_history) == 2
+    for llm_messages in mock_llm.messages_history:
+        assert all(message.role != MessageRole.TOOL for message in llm_messages)
+        assert all(
+            not isinstance(block, ToolCallBlock)
+            for message in llm_messages
+            for block in message.blocks
+        )
+        assert llm_messages[0].role == MessageRole.USER
+        conversation_text = llm_messages[0].content or ""
+        assert "Flight AF123 leaves at 5pm." in conversation_text
+        assert "lookup_flight" not in conversation_text
+        assert "tool_call_id" not in conversation_text
+
+    assert memory_block.facts == ["User asked about AF123"]
 
 
 @pytest.mark.asyncio
