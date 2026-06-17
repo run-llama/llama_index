@@ -76,13 +76,13 @@ def format_text(
     return f"{instruction} {text}".strip()
 
 
-def get_pooling_mode(model_name: Optional[str]) -> str:
+def get_pooling_mode(model_name: Optional[str], timeout: float = 30.0) -> str:
     pooling_config_url = (
         f"https://huggingface.co/{model_name}/raw/main/1_Pooling/config.json"
     )
 
     try:
-        response = requests.get(pooling_config_url)
+        response = requests.get(pooling_config_url, timeout=timeout)
         config_data = response.json()
 
         cls_token = config_data.get("pooling_mode_cls_token", False)
