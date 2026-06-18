@@ -19,6 +19,7 @@ from llama_index.core.base.llms.types import (
     CitationBlock,
 )
 from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.fallback import FallbackLLM
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import (
     MockLLM,
@@ -28,6 +29,7 @@ from llama_index.core.llms.mock import (
 
 __all__ = [
     "CustomLLM",
+    "FallbackLLM",
     "LLM",
     "ChatMessage",
     "ChatResponse",
