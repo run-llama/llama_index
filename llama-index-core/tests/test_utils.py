@@ -20,6 +20,7 @@ from llama_index.core.utils import (
     get_tokenizer,
     iter_batch,
     print_text,
+    resolve_binary,
     retry_on_exceptions_with_backoff,
     truncate_text,
 )
@@ -353,3 +354,52 @@ def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
         mock_user_cache_dir.return_value = "/should/not/be/used"
         get_cache_dir()
         mock_user_cache_dir.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+        "http://127.0.0.1:8080/admin",
+        "http://localhost/admin",
+        "http://10.0.0.5/internal",
+        "http://192.168.1.1/",
+        "http://[::1]/admin",
+    ],
+)
+def test_resolve_binary_blocks_ssrf_to_internal_hosts(url: str) -> None:
+    with pytest.raises(ValueError, match="disallowed host"):
+        resolve_binary(url=url)
+
+
+@pytest.mark.parametrize("url", ["file:///etc/passwd", "ftp://example.com/file"])
+def test_resolve_binary_blocks_disallowed_schemes(url: str) -> None:
+    with pytest.raises(ValueError, match="Unsupported URL scheme"):
+        resolve_binary(url=url)
+
+
+def test_resolve_binary_blocks_redirect_to_internal_host() -> None:
+    """A remote redirect must not be able to retarget the fetch at an internal host."""
+
+    class FakeResponse:
+        def __init__(self, redirect_target: Optional[str] = None) -> None:
+            self.is_redirect = redirect_target is not None
+            self.is_permanent_redirect = False
+            self.headers = {"location": redirect_target} if redirect_target else {}
+            self.content = b"ok"
+
+        def raise_for_status(self) -> None:
+            pass
+
+    def fake_get(url, headers=None, timeout=None, allow_redirects=None):
+        if url == "https://public.example.com/img":
+            return FakeResponse(redirect_target="http://169.254.169.254/latest/meta-data/")
+        raise AssertionError(f"unexpected request to {url}")
+
+    with mock.patch("llama_index.core.utils.requests.get", side_effect=fake_get):
+        with pytest.raises(ValueError, match="disallowed host"):
+            resolve_binary(url="https://public.example.com/img")
+
+
+def test_resolve_binary_data_url_still_works() -> None:
+    assert resolve_binary(url="data:text/plain;base64,aGVsbG8=").read() == b"hello"
