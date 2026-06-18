@@ -1,6 +1,10 @@
+import json
 from typing import Any, Optional
 from urllib.parse import urlparse
 
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.llms import ChatMessage
+from llama_index.core.storage.chat_store.base import BaseChatStore
 from sqlalchemy import (
     Index,
     Column,
@@ -13,11 +17,36 @@ from sqlalchemy import (
     inspect,
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
-from llama_index.core.llms import ChatMessage
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.dialects.postgresql import JSON, ARRAY, JSONB, VARCHAR
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.storage.chat_store.base import BaseChatStore
+
+
+def _normalize_proto_plus(value: Any) -> Any:
+    # google.ai.generativelanguage FunctionCall is a proto-plus message. Its
+    # JSON conversion is exposed on the class rather than the instance.
+    to_dict = getattr(type(value), "to_dict", None)
+    if hasattr(value, "_pb") and callable(to_dict):
+        return _normalize_proto_plus(to_dict(value))
+
+    if isinstance(value, dict):
+        return {key: _normalize_proto_plus(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_normalize_proto_plus(item) for item in value]
+
+    return value
+
+
+def _message_to_json(message: ChatMessage) -> str:
+    message = message.model_copy(
+        update={"additional_kwargs": _normalize_proto_plus(message.additional_kwargs)}
+    )
+    return message.model_dump_json()
+
+
+def _message_from_stored_value(value: Any) -> ChatMessage:
+    if isinstance(value, str):
+        value = json.loads(value)
+    return ChatMessage.model_validate(value)
 
 
 def get_data_model(
@@ -236,7 +265,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [message.model_dump_json() for message in messages],
+                "value": [_message_to_json(message) for message in messages],
             }
 
             # Execute the bulk upsert
@@ -258,7 +287,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [message.model_dump_json() for message in messages],
+                "value": [_message_to_json(message) for message in messages],
             }
 
             # Execute the bulk upsert
@@ -272,7 +301,7 @@ class PostgresChatStore(BaseChatStore):
             result = result.scalars().first()
             if result:
                 return [
-                    ChatMessage.model_validate(removed_message)
+                    _message_from_stored_value(removed_message)
                     for removed_message in result.value
                 ]
             return []
@@ -284,7 +313,7 @@ class PostgresChatStore(BaseChatStore):
             result = result.scalars().first()
             if result:
                 return [
-                    ChatMessage.model_validate(removed_message)
+                    _message_from_stored_value(removed_message)
                     for removed_message in result.value
                 ]
             return []
@@ -301,7 +330,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [message.model_dump_json()]}
+            params = {"key": key, "value": [_message_to_json(message)]}
             session.execute(stmt, params)
             session.commit()
 
@@ -317,7 +346,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [message.model_dump_json()]}
+            params = {"key": key, "value": [_message_to_json(message)]}
             await session.execute(stmt, params)
             await session.commit()
 
@@ -364,7 +393,7 @@ class PostgresChatStore(BaseChatStore):
             session.execute(stmt, params)
             session.commit()
 
-            return ChatMessage.model_validate(removed_message)
+            return _message_from_stored_value(removed_message)
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
@@ -395,7 +424,7 @@ class PostgresChatStore(BaseChatStore):
             await session.execute(stmt, params)
             await session.commit()
 
-            return ChatMessage.model_validate(removed_message)
+            return _message_from_stored_value(removed_message)
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
@@ -422,7 +451,7 @@ class PostgresChatStore(BaseChatStore):
             session.execute(stmt, params)
             session.commit()
 
-            return ChatMessage.model_validate(removed_message)
+            return _message_from_stored_value(removed_message)
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async version of Delete last message for a key."""
@@ -449,7 +478,7 @@ class PostgresChatStore(BaseChatStore):
             await session.execute(stmt, params)
             await session.commit()
 
-            return ChatMessage.model_validate(removed_message)
+            return _message_from_stored_value(removed_message)
 
     def get_keys(self) -> list[str]:
         """Get all keys."""
