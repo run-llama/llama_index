@@ -90,8 +90,17 @@ def _escape_json_path_segment(segment: str) -> str:
         raise ValueError("Metadata filter key segment cannot be empty")
     if _JSON_PATH_SAFE_SEGMENT.match(segment):
         return segment
-    escaped = segment.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    # The JSON-path is embedded inside a single-quoted SQL literal
+    # (see _enhance_filter_key below), so a single-quote in the segment
+    # would terminate the literal and enable SQL injection. The previous
+    # implementation only escaped ``\`` and ``"`` (sufficient for the
+    # JSON-path grammar but NOT for the surrounding SQL literal). Reject
+    # any segment outside the safe-identifier allowlist instead of
+    # attempting partial SQL escaping.
+    raise ValueError(
+        f"Unsafe metadata filter key segment {segment!r}; "
+        f"must match {_JSON_PATH_SAFE_SEGMENT.pattern}"
+    )
 
 
 def _build_text_clause(sql: str, params: Dict[str, Any], expanding_params: Set[str]):
