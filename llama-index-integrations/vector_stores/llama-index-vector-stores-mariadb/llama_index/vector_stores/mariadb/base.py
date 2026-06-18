@@ -2,10 +2,15 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+import re
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import quote_plus
 
 import sqlalchemy
+
+# Allow only safe identifier characters in metadata-filter keys to prevent
+# SQL injection via the JSON path embedded in the WHERE clause.
+_SAFE_METADATA_KEY = re.compile(r"^[A-Za-z0-9_]+$")
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -331,23 +336,35 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             _logger.warning("Unsupported operator: %s, fallback to '='", operator)
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> str:
-        filter_value = filter_.value
+    def _build_filter_clause(
+        self, filter_: MetadataFilter, params: Dict[str, Any]
+    ) -> str:
+        if not _SAFE_METADATA_KEY.match(filter_.key or ""):
+            raise ValueError(
+                f"Unsafe metadata filter key {filter_.key!r}; "
+                f"must match {_SAFE_METADATA_KEY.pattern}"
+            )
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            values = []
+            placeholders = []
             for v in filter_.value:
-                if isinstance(v, str):
-                    value = f"'{v}'"
+                name = f"f_{len(params)}"
+                params[name] = v
+                placeholders.append(f":{name}")
+            filter_value = f"({', '.join(placeholders)})"
+        else:
+            name = f"f_{len(params)}"
+            params[name] = filter_.value
+            filter_value = f":{name}"
 
-                values.append(value)
-            filter_value = ", ".join(values)
-            filter_value = f"({filter_value})"
-        elif isinstance(filter_.value, str):
-            filter_value = f"'{filter_.value}'"
+        return (
+            f"JSON_VALUE(metadata, '$.{filter_.key}') "
+            f"{self._to_mariadb_operator(filter_.operator)} {filter_value}"
+        )
 
-        return f"JSON_VALUE(metadata, '$.{filter_.key}') {self._to_mariadb_operator(filter_.operator)} {filter_value}"
-
-    def _filters_to_where_clause(self, filters: MetadataFilters) -> str:
+    def _filters_to_where_clause(
+        self, filters: MetadataFilters, params: Dict[str, Any]
+    ) -> str:
         conditions = {
             FilterCondition.OR: "OR",
             FilterCondition.AND: "AND",
@@ -361,11 +378,11 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         clauses: List[str] = []
         for filter_ in filters.filters:
             if isinstance(filter_, MetadataFilter):
-                clauses.append(self._build_filter_clause(filter_))
+                clauses.append(self._build_filter_clause(filter_, params))
                 continue
 
             if isinstance(filter_, MetadataFilters):
-                subfilters = self._filters_to_where_clause(filter_)
+                subfilters = self._filters_to_where_clause(filter_, params)
                 if subfilters:
                     clauses.append(f"({subfilters})")
                 continue
@@ -411,9 +428,10 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             VEC_DISTANCE_COSINE(embedding, VEC_FromText('{query.query_embedding}')) AS distance
         FROM `{self.table_name}`"""
 
+        filter_params: Dict[str, Any] = {}
         if query.filters:
             stmt += f"""
-        WHERE {self._filters_to_where_clause(query.filters)}"""
+        WHERE {self._filters_to_where_clause(query.filters, filter_params)}"""
 
         stmt += f"""
         ORDER BY distance
@@ -421,7 +439,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         """
 
         with self._engine.connect() as connection:
-            result = connection.execute(sqlalchemy.text(stmt))
+            result = connection.execute(sqlalchemy.text(stmt), filter_params)
 
         results = []
         for item in result:
