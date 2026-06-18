@@ -219,7 +219,7 @@ class GoogleIndex(BaseManagedIndex):
             will follow with the originally provided passages, which will have
             a score from the retrieval.
 
-            `Response`'s `metadata` may also have have an entry with key
+            `Response`'s `metadata` may also have an entry with key
             `answerable_probability`, which is the probability that the grounded
             answer is likely correct.
 

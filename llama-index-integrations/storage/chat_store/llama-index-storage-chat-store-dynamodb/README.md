@@ -39,7 +39,7 @@ You can use any of the following AWS arguments to setup the required `boto3` res
 - `aws_access_key_id`
 - `aws_secret_access_key`
 - `aws_session_token`
-- `botocore_session` - A pre-existing existing Botocore session.
+- `botocore_session` - A pre-existing Botocore session.
 - `botocore_config`
 
 As an example, if you have already assumed an AWS profile in your local environment or within an AWS compute
