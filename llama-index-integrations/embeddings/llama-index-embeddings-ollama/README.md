@@ -119,6 +119,7 @@ embed_model = OllamaEmbedding(
     base_url="http://localhost:11434",  # Optional: Ollama server URL (default: http://localhost:11434)
     embed_batch_size=10,  # Optional: Batch size for embeddings (default: 10)
     keep_alive="5m",  # Optional: How long to keep model in memory (default: "5m")
+    dimensions=768,  # Optional: Number of dimensions for the embedding output (default: None, uses model default)
     query_instruction=None,  # Optional: Instruction to prepend to queries
     text_instruction=None,  # Optional: Instruction to prepend to text
     ollama_additional_kwargs={},  # Optional: Additional kwargs for Ollama API
@@ -132,6 +133,7 @@ embed_model = OllamaEmbedding(
 - **`base_url`** (optional): The base URL of your Ollama server. Defaults to `"http://localhost:11434"`
 - **`embed_batch_size`** (optional): Number of texts to process in each batch. Must be between 1 and 2048. Defaults to 10
 - **`keep_alive`** (optional): Controls how long the model stays loaded in memory after a request. Can be a duration string (e.g., `"5m"`, `"10s"`) or a number of seconds. Defaults to `"5m"`
+- **`dimensions`** (optional): The number of dimensions for the embedding output. Only supported by some models (e.g., `mxbai-embed-large`). When set to `None` (default), uses the model's default dimension.
 - **`query_instruction`** (optional): Instruction text to prepend to query strings before embedding
 - **`text_instruction`** (optional): Instruction text to prepend to document text before embedding
 - **`ollama_additional_kwargs`** (optional): Additional keyword arguments to pass to the Ollama API
@@ -157,6 +159,26 @@ text_embedding = embed_model.get_text_embedding(
 )
 # Internally processes: "Represent the document for retrieval: Machine learning is a method of data analysis."
 ```
+
+## Custom Embedding Dimensions
+
+Some Ollama embedding models support specifying a custom output dimension. This is useful when you need a smaller embedding vector to reduce storage and computation costs:
+
+```python
+from llama_index.embeddings.ollama import OllamaEmbedding
+
+# Use a custom dimension (requires model support, e.g., mxbai-embed-large)
+embed_model = OllamaEmbedding(
+    model_name="mxbai-embed-large",
+    base_url="http://localhost:11434",
+    dimensions=768,  # Reduce from default 1024 to 768
+)
+
+embedding = embed_model.get_text_embedding("Hello, world!")
+print(f"Embedding dimension: {len(embedding)}")  # Output: 768
+```
+
+> **Note**: Not all models support custom dimensions. Check your model's documentation. When `dimensions` is `None` (default), the model's default dimension is used.
 
 ## Async Usage
 

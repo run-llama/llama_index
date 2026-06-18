@@ -1,12 +1,10 @@
 import os
-import pytest
-
 from unittest.mock import patch
+
+import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
-
 from ollama import Client
-
 
 # This section of code checks and actual integration with a local ollama server (if it exists)
 # And the actual embedding
@@ -230,3 +228,123 @@ class TestInstructionFunctionality:
         # Verify instructions are accessible as attributes
         assert embedder.query_instruction == "Query:"
         assert embedder.text_instruction == "Text:"
+
+
+@pytest.mark.asyncio
+class TestDimensionsFunctionality:
+    """Test cases for the dimensions parameter."""
+
+    def test_dimensions_default_none(self):
+        """Test that dimensions defaults to None."""
+        embedder = OllamaEmbedding(model_name="test-model")
+        assert embedder.dimensions is None
+
+    def test_dimensions_set_correctly(self):
+        """Test that dimensions is properly set."""
+        embedder = OllamaEmbedding(model_name="test-model", dimensions=768)
+        assert embedder.dimensions == 768
+
+    def test_dimensions_passed_to_single_embedding(self):
+        """Test that dimensions is passed to the client embed call for single embeddings."""
+        embedder = OllamaEmbedding(model_name="test-model", dimensions=512)
+
+        with patch.object(embedder._client, "embed") as mock_client_embed:
+            mock_result = type("Result", (), {"embeddings": [[0.1, 0.2]]})()
+            mock_client_embed.return_value = mock_result
+
+            embedder.get_general_text_embedding("test text")
+
+            mock_client_embed.assert_called_once_with(
+                model="test-model",
+                input="test text",
+                options={},
+                keep_alive=None,
+                dimensions=512,
+            )
+
+    @pytest.mark.asyncio
+    async def test_dimensions_passed_to_async_single_embedding(self):
+        """Test that dimensions is passed to the async client embed call."""
+        embedder = OllamaEmbedding(model_name="test-model", dimensions=256)
+
+        with patch.object(embedder._async_client, "embed") as mock_async_embed:
+            mock_result = type("Result", (), {"embeddings": [[0.1, 0.2]]})()
+            mock_async_embed.return_value = mock_result
+
+            await embedder.aget_general_text_embedding("test text")
+
+            mock_async_embed.assert_called_once_with(
+                model="test-model",
+                input="test text",
+                options={},
+                keep_alive=None,
+                dimensions=256,
+            )
+
+    def test_dimensions_passed_to_batch_embedding(self):
+        """Test that dimensions is passed to the client embed call for batch embeddings."""
+        embedder = OllamaEmbedding(model_name="test-model", dimensions=384)
+
+        with patch.object(embedder._client, "embed") as mock_client_embed:
+            mock_result = type("Result", (), {"embeddings": [[0.1, 0.2], [0.3, 0.4]]})()
+            mock_client_embed.return_value = mock_result
+
+            embedder.get_general_text_embeddings(["text 1", "text 2"])
+
+            mock_client_embed.assert_called_once_with(
+                model="test-model",
+                input=["text 1", "text 2"],
+                options={},
+                keep_alive=None,
+                dimensions=384,
+            )
+
+    @pytest.mark.asyncio
+    async def test_dimensions_passed_to_async_batch_embedding(self):
+        """Test that dimensions is passed to the async client embed call for batch embeddings."""
+        embedder = OllamaEmbedding(model_name="test-model", dimensions=1024)
+
+        with patch.object(embedder._async_client, "embed") as mock_async_embed:
+            mock_result = type("Result", (), {"embeddings": [[0.1, 0.2], [0.3, 0.4]]})()
+            mock_async_embed.return_value = mock_result
+
+            await embedder.aget_general_text_embeddings(["text 1", "text 2"])
+
+            mock_async_embed.assert_called_once_with(
+                model="test-model",
+                input=["text 1", "text 2"],
+                options={},
+                keep_alive=None,
+                dimensions=1024,
+            )
+
+
+def test_dimensions_none_not_passed_to_client():
+    """Test that when dimensions is None, it is passed as None to the client."""
+    embedder = OllamaEmbedding(model_name="test-model")
+
+    with patch.object(embedder._client, "embed") as mock_client_embed:
+        mock_result = type("Result", (), {"embeddings": [[0.1, 0.2]]})()
+        mock_client_embed.return_value = mock_result
+
+        embedder.get_general_text_embedding("test text")
+
+        mock_client_embed.assert_called_once_with(
+            model="test-model",
+            input="test text",
+            options={},
+            keep_alive=None,
+            dimensions=None,
+        )
+
+
+def test_dimensions_accessible_as_attribute():
+    """Test that dimensions is accessible as a class attribute."""
+    embedder = OllamaEmbedding(
+        model_name="test-model",
+        query_instruction="Query:",
+        text_instruction="Text:",
+        dimensions=768,
+    )
+
+    assert embedder.dimensions == 768
