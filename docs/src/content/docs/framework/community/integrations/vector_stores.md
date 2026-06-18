@@ -22,6 +22,7 @@ as the storage backend for `VectorStoreIndex`.
 - Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
+- CockroachDB (`CockroachDBVectorStore`). Native `VECTOR(n)` + C-SPANN distributed ANN. [Quickstart](https://pypi.org/project/llama-index-cockroachdb/).
 - Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
@@ -1231,6 +1232,7 @@ documents = reader.load_data(
 - [Milvus Full-Text Search](/python/examples/vector_stores/milvusfulltextsearchdemo)
 - [Milvus Hybrid Search](/python/examples/vector_stores/milvushybridindexdemo)
 - [MyScale](/python/examples/vector_stores/myscaleindexdemo)
+- [CockroachDB](/python/examples/vector_stores/cockroachdbdemo)
 - [ElsaticSearch](/python/examples/vector_stores/elasticsearchindexdemo)
 - [FAISS](/python/examples/vector_stores/faissindexdemo)
 - [MongoDB Atlas](/python/examples/vector_stores/mongodbatlasvectorsearch)
