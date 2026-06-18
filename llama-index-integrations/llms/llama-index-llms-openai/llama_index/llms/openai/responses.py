@@ -262,7 +262,9 @@ class OpenAIResponses(FunctionCallingLLM):
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
-    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
+    api_key: Optional[str] = Field(
+        default=None, description="The OpenAI API key.", exclude=True, repr=False
+    )
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
     context_window: Optional[int] = Field(

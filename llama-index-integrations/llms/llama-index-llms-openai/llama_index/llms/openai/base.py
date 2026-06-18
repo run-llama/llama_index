@@ -227,7 +227,9 @@ class OpenAI(FunctionCallingLLM):
         ),
     )
 
-    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
+    api_key: Optional[str] = Field(
+        default=None, description="The OpenAI API key.", exclude=True, repr=False
+    )
     api_base: Optional[str] = Field(
         default=None, description="The base URL for OpenAI API."
     )
