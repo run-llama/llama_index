@@ -12,6 +12,45 @@ from llama_index.core.schema import BaseNode, NodeWithScore
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
+# Classes allowed during deserialization of the BGE-M3 multi-embed store.
+# The store contains numpy arrays and plain Python collections. Restricting
+# unpickling to this allowlist prevents arbitrary code execution via crafted
+# pickle payloads placed in the persist directory (CWE-502, CVE-2024-14021).
+_BGE_M3_SAFE_PICKLE_CLASSES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("builtins", "dict"),
+        ("builtins", "list"),
+        ("builtins", "set"),
+        ("builtins", "tuple"),
+        ("builtins", "str"),
+        ("builtins", "bytes"),
+        ("builtins", "int"),
+        ("builtins", "float"),
+        ("builtins", "complex"),
+        ("builtins", "bool"),
+        ("builtins", "NoneType"),
+        ("numpy", "ndarray"),
+        ("numpy", "dtype"),
+        ("numpy", "float64"),
+        ("numpy", "float32"),
+        ("numpy", "int64"),
+        ("numpy", "int32"),
+    }
+)
+
+
+class _SafeUnpickler(pickle.Unpickler):
+    """Unpickler restricted to classes needed by the BGE-M3 multi-embed store."""
+
+    def find_class(self, module: str, name: str) -> type:
+        if (module, name) in _BGE_M3_SAFE_PICKLE_CLASSES:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Refusing to unpickle '{module}.{name}': class not in "
+            f"BGE-M3 allowlist. If you need to load custom object types, "
+            f"use a purpose-built serialization format instead of pickle."
+        )
+
 
 class BGEM3Index(BaseIndex[IndexDict]):
     """
@@ -154,9 +193,10 @@ class BGEM3Index(BaseIndex[IndexDict]):
             int(k): v for k, v in index.index_struct.nodes_dict.items()
         }
         index._docs_pos_to_node_id = docs_pos_to_node_id
-        index._multi_embed_store = pickle.load(
-            open(Path(persist_dir) / "multi_embed_store.pkl", "rb")
-        )
+        # Use restricted unpickler to prevent arbitrary code execution
+        # via crafted pickle payloads (CWE-502, CVE-2024-14021).
+        with open(Path(persist_dir) / "multi_embed_store.pkl", "rb") as f:
+            index._multi_embed_store = _SafeUnpickler(f).load()
         return index
 
     def query(self, query_str: str, top_k: int = 10) -> List[NodeWithScore]:

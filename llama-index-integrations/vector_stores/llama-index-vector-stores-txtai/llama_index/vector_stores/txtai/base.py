@@ -12,6 +12,39 @@ import pickle
 from pathlib import Path
 from typing import Any, List, Optional, cast
 
+# Classes allowed during deserialization of txtai config files.
+# The config is a plain dictionary with primitive values (strings, ints,
+# floats, lists). Restricting unpickling to builtin types prevents arbitrary
+# code execution via crafted pickle payloads (CWE-502).
+_TXTAI_SAFE_PICKLE_CLASSES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("builtins", "dict"),
+        ("builtins", "list"),
+        ("builtins", "tuple"),
+        ("builtins", "set"),
+        ("builtins", "str"),
+        ("builtins", "bytes"),
+        ("builtins", "int"),
+        ("builtins", "float"),
+        ("builtins", "complex"),
+        ("builtins", "bool"),
+        ("builtins", "NoneType"),
+    }
+)
+
+
+class _SafeUnpickler(pickle.Unpickler):
+    """Unpickler restricted to builtin types needed by txtai config."""
+
+    def find_class(self, module: str, name: str) -> type:
+        if (module, name) in _TXTAI_SAFE_PICKLE_CLASSES:
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Refusing to unpickle '{module}.{name}': class not in "
+            f"txtai allowlist. If you need to load custom object types, "
+            f"use a purpose-built serialization format instead of pickle."
+        )
+
 import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
@@ -121,9 +154,10 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         jsonconfig = config_path.exists()
         # Determine if config is json or pickle
         config_path = config_path if jsonconfig else parent_directory / "config"
-        # Load configuration
+        # Load configuration with restricted unpickler to prevent
+        # arbitrary code execution (CWE-502, CVE-2024-14021).
         with open(config_path, "r" if jsonconfig else "rb") as f:
-            config = json.load(f) if jsonconfig else pickle.load(f)
+            config = json.load(f) if jsonconfig else _SafeUnpickler(f).load()
 
         logger.info(f"Loading {__name__} from {persist_path}.")
         txtai_index = txtai.ann.ANNFactory.create(config)
