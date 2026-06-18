@@ -472,7 +472,12 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             for r in response:
-                if r["message"]["content"] is None:
+                # Skip chunks that carry neither content nor thinking — but
+                # keep thinking-only chunks (e.g. from gpt-oss/DeepSeek-R1/QwQ)
+                # so reasoning text isn't silently dropped on the stream (#21232).
+                if r["message"]["content"] is None and not r["message"].get(
+                    "thinking"
+                ):
                     continue
 
                 r = dict(r)
@@ -556,7 +561,10 @@ class Ollama(FunctionCallingLLM):
             all_tool_calls = []
 
             async for r in response:
-                if r["message"]["content"] is None:
+                # Same as stream_chat above: keep thinking-only chunks (#21232).
+                if r["message"]["content"] is None and not r["message"].get(
+                    "thinking"
+                ):
                     continue
 
                 r = dict(r)
