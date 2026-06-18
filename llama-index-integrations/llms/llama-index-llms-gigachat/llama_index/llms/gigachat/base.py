@@ -116,6 +116,10 @@ class GigaChatLLM(CustomLLM):
                     messages=[Messages(role="user", content=prompt)],
                 )
             )
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         return CompletionResponse(
             text=response.choices[0].message.content,
         )
@@ -161,6 +165,10 @@ class GigaChatLLM(CustomLLM):
                     ],
                 )
             )
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         return ChatResponse(
             message=ChatMessage(
                 content=response.choices[0].message.content,

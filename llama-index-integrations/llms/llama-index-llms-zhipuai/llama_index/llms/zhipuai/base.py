@@ -252,6 +252,10 @@ class ZhipuAI(FunctionCallingLLM):
             timeout=self.timeout,
             extra_body=self.model_kwargs,
         )
+        if not raw_response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         tool_calls = raw_response.choices[0].message.tool_calls or []
         return ChatResponse(
             message=ChatMessage(
@@ -287,6 +291,10 @@ class ZhipuAI(FunctionCallingLLM):
             task_status = raw_response.task_status
             get_count += 1
             await asyncio.sleep(1)
+        if not raw_response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         tool_calls = raw_response.choices[0].message.tool_calls or []
         return ChatResponse(
             message=ChatMessage(

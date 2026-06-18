@@ -97,6 +97,10 @@ def call_ark_llm(prompt: str) -> str:
         reasoning_effort="medium",
         extra_headers={"x-is-encrypted": "true"},
     )
+    if not completion.choices:
+        raise ValueError(
+            "LLM returned empty response"
+        )  # pact: guard empty choices list
     return completion.choices[0].message.content
 
 
@@ -130,12 +134,12 @@ async def run_async_query_demo(
 
 
 def build_vector_store() -> VolcengineMySQLVectorStore:
-    """Initialize VolcengineMySQLVectorStore with local connection params.
+    """
+    Initialize VolcengineMySQLVectorStore with local connection params.
 
     Uses the same instance as the user's other demos, but this function
     can be adapted easily to different hosts/credentials.
     """
-
     # MySQL connection parameters are read from environment variables and must
     # be provided by the user for this demo.
     host = os.getenv("VEM_HOST")

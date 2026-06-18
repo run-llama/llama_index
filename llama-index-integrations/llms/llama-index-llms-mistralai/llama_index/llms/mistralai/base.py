@@ -60,7 +60,6 @@ from mistralai.azure.client import models as mistral_azure_models
 from mistralai.client import Mistral
 from mistralai.client import models as mistral_models
 
-
 if TYPE_CHECKING:
     from mistralai.client.models import ContentChunk, Messages
     from mistralai.client.models import (
@@ -416,6 +415,10 @@ class MistralAI(FunctionCallingLLM):
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
 
         if self.model in MISTRAL_AI_REASONING_MODELS:
+            if not response.choices:
+                raise ValueError(
+                    "LLM returned empty response"
+                )  # pact: guard empty choices list
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content or []
             )
@@ -802,6 +805,10 @@ class MistralAI(FunctionCallingLLM):
                 model=self.model, prompt=prompt, suffix=suffix
             )
 
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         return CompletionResponse(
             text=response.choices[0].message.content, raw=dict(response)
         )

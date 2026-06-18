@@ -111,6 +111,10 @@ class Friendli(LLM):
             **get_chat_request(messages),
             **all_kwargs,
         )
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=response.choices[0].message.content
@@ -130,6 +134,10 @@ class Friendli(LLM):
             stream=False,
             **all_kwargs,
         )
+        if not response.choices:
+            raise ValueError(
+                "LLM returned empty response"
+            )  # pact: guard empty choices list
         return CompletionResponse(
             text=response.choices[0].text,
             additional_kwargs={"usage": response.usage.__dict__},
