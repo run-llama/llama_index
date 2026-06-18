@@ -19,6 +19,9 @@ from llama_index.protocols.ag_ui.events import (
     StateSnapshotWorkflowEvent,
     StateDeltaWorkflowEvent,
     MessagesSnapshotWorkflowEvent,
+    ReasoningMessageStartWorkflowEvent,
+    ReasoningMessageContentWorkflowEvent,
+    ReasoningMessageEndWorkflowEvent,
     RunStartedWorkflowEvent,
     RunFinishedWorkflowEvent,
     RunErrorWorkflowEvent,
@@ -41,6 +44,9 @@ AG_UI_EVENTS = (
     MessagesSnapshotWorkflowEvent,
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
+    ReasoningMessageStartWorkflowEvent,
+    ReasoningMessageContentWorkflowEvent,
+    ReasoningMessageEndWorkflowEvent,
     CustomWorkflowEvent,
 )
 

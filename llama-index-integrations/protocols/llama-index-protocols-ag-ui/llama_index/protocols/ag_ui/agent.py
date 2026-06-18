@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -12,6 +13,9 @@ from llama_index.core.workflow import Context, Workflow, step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.protocols.ag_ui.events import (
     MessagesSnapshotWorkflowEvent,
+    ReasoningMessageContentWorkflowEvent,
+    ReasoningMessageEndWorkflowEvent,
+    ReasoningMessageStartWorkflowEvent,
     StateSnapshotWorkflowEvent,
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
@@ -82,6 +86,113 @@ DEFAULT_STATE_PROMPT = """<state>
 
 {user_input}
 """
+
+
+# OpenAI Responses-API event type that carries an incremental reasoning
+# summary delta. Matched by string so we don't import the openai type (the
+# type name has also moved across openai-python releases).
+_RESPONSES_REASONING_DELTA_TYPE = "response.reasoning_summary_text.delta"
+
+# Prefix shared by every Responses-API reasoning event type string
+# (e.g. ``response.reasoning_summary_text.delta``,
+# ``response.reasoning_text.delta``). Used only to detect a reasoning-shaped
+# event we could not parse, so an upstream SDK rename surfaces loudly instead
+# of silently dropping all reasoning.
+_RESPONSES_REASONING_TYPE_PREFIX = "response.reasoning"
+
+_logger = logging.getLogger(__name__)
+
+# One-time-warning dedupe for unmatched reasoning-shaped raw types.
+_warned_unmatched_reasoning_types: set = set()
+
+
+def _warn_unmatched_reasoning_once(raw_type: str) -> None:
+    """
+    Emit a one-time warning for a reasoning-shaped but unparsed raw type.
+
+    Reasoning is strictly additive, so the caller still gets ``""`` and the
+    stream is unaffected. This only makes an OpenAI-SDK event-type rename
+    greppable instead of an invisible regression.
+    """
+    if raw_type in _warned_unmatched_reasoning_types:
+        return
+    _warned_unmatched_reasoning_types.add(raw_type)
+    _logger.warning(
+        "Saw a reasoning-shaped stream event raw_type=%r that does not match "
+        "the known delta type %r (and exposed no extractable delta); dropping "
+        "reasoning for this chunk. The OpenAI SDK may have renamed the "
+        "reasoning event type -- update _RESPONSES_REASONING_DELTA_TYPE.",
+        raw_type,
+        _RESPONSES_REASONING_DELTA_TYPE,
+    )
+
+
+def _extract_reasoning_delta(resp: ChatResponse) -> str:
+    """
+    Pull an incremental reasoning delta off a streamed chat response.
+
+    Handles both LLM transports this package can drive:
+
+    * **Responses API** (``OpenAIResponses`` -- the native-reasoning path for
+      gpt-5, o3, o4-mini, ...). Each yielded ``ChatResponse`` carries the raw
+      ``ResponseStreamEvent`` on ``resp.raw``; a
+      ``response.reasoning_summary_text.delta`` event exposes the incremental
+      summary text on ``.delta``.
+    * **Chat Completions** (legacy ``OpenAI`` LLM, DeepSeek / vLLM
+      ``reasoning_content`` convention). ``resp.raw`` is a
+      ``ChatCompletionChunk`` whose ``delta`` carries ``reasoning_content`` in
+      ``model_extra`` (pydantic) or directly.
+
+    Returns ``""`` when the chunk carries no reasoning delta (or has an
+    unexpected shape) so the caller can treat reasoning as strictly additive.
+    """
+    raw = getattr(resp, "raw", None)
+    if raw is None:
+        return ""
+
+    # --- Responses API: response.reasoning_summary_text.delta -------------
+    raw_type = getattr(raw, "type", None)
+    if raw_type is None and isinstance(raw, dict):
+        raw_type = raw.get("type")
+    if raw_type == _RESPONSES_REASONING_DELTA_TYPE:
+        delta = getattr(raw, "delta", None)
+        if delta is None and isinstance(raw, dict):
+            delta = raw.get("delta")
+        if delta:
+            return str(delta)
+        _warn_unmatched_reasoning_once(str(raw_type))
+        return ""
+
+    # An unmatched event that still clearly looks like reasoning (the SDK
+    # likely renamed the delta type) -- warn once and drop.
+    if isinstance(raw_type, str) and raw_type.startswith(
+        _RESPONSES_REASONING_TYPE_PREFIX
+    ):
+        _warn_unmatched_reasoning_once(raw_type)
+        return ""
+
+    # --- Chat Completions: delta.reasoning_content ------------------------
+    choices = getattr(raw, "choices", None)
+    if choices is None and isinstance(raw, dict):
+        choices = raw.get("choices")
+    if not choices:
+        return ""
+    first = choices[0]
+    delta = getattr(first, "delta", None)
+    if delta is None and isinstance(first, dict):
+        delta = first.get("delta")
+    if delta is None:
+        return ""
+    # Pydantic model: non-standard fields land in ``model_extra``.
+    extra = getattr(delta, "model_extra", None)
+    if isinstance(extra, dict) and extra.get("reasoning_content"):
+        return str(extra["reasoning_content"])
+    direct = getattr(delta, "reasoning_content", None)
+    if direct:
+        return str(direct)
+    if isinstance(delta, dict) and delta.get("reasoning_content"):
+        return str(delta["reasoning_content"])
+    return ""
 
 
 class InputEvent(StartEvent):
@@ -237,10 +348,43 @@ class AGUIChatWorkflow(Workflow):
         )
 
         resp_id = str(uuid.uuid4())
+        reasoning_msg_id: Optional[str] = None
         resp = ChatResponse(message=ChatMessage(role="assistant", content=""))
 
         async for resp in resp_gen:
+            # Emit reasoning deltas (Responses-API summary deltas or
+            # chat-completions ``reasoning_content``) ahead of any text. The
+            # reasoning message is finalized before the first text chunk so the
+            # AG-UI reasoning channel closes cleanly ahead of the assistant
+            # message.
+            reasoning_delta = _extract_reasoning_delta(resp)
+            # Load-bearing non-empty guard: ReasoningMessageContentEvent.delta
+            # is Field(min_length=1), so emitting an empty delta would raise a
+            # pydantic ValidationError mid-stream.
+            if reasoning_delta:
+                if reasoning_msg_id is None:
+                    reasoning_msg_id = str(uuid.uuid4())
+                    ctx.write_event_to_stream(
+                        ReasoningMessageStartWorkflowEvent(
+                            message_id=reasoning_msg_id,
+                            role="reasoning",
+                        )
+                    )
+                ctx.write_event_to_stream(
+                    ReasoningMessageContentWorkflowEvent(
+                        message_id=reasoning_msg_id,
+                        delta=reasoning_delta,
+                    )
+                )
+
             if resp.delta:
+                if reasoning_msg_id is not None:
+                    ctx.write_event_to_stream(
+                        ReasoningMessageEndWorkflowEvent(
+                            message_id=reasoning_msg_id,
+                        )
+                    )
+                    reasoning_msg_id = None
                 ctx.write_event_to_stream(
                     TextMessageChunkWorkflowEvent(
                         role="assistant",
@@ -249,6 +393,15 @@ class AGUIChatWorkflow(Workflow):
                         message_id=resp_id,
                     )
                 )
+
+        # If the model produced reasoning but no assistant text (pure
+        # tool-call turn), still close the reasoning message.
+        if reasoning_msg_id is not None:
+            ctx.write_event_to_stream(
+                ReasoningMessageEndWorkflowEvent(
+                    message_id=reasoning_msg_id,
+                )
+            )
 
         chat_history.append(resp.message)
         await ctx.store.set("chat_history", chat_history)

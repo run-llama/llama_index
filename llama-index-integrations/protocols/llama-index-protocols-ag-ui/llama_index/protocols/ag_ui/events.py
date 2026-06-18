@@ -15,6 +15,9 @@ from ag_ui.core.events import (
     MessagesSnapshotEvent,
     RawEvent,
     CustomEvent,
+    ReasoningMessageStartEvent,
+    ReasoningMessageContentEvent,
+    ReasoningMessageEndEvent,
     RunStartedEvent,
     RunFinishedEvent,
     RunErrorEvent,
@@ -75,6 +78,18 @@ class RawWorkflowEvent(RawEvent, Event):
 
 class CustomWorkflowEvent(CustomEvent, Event):
     type: EventType = EventType.CUSTOM
+
+
+class ReasoningMessageStartWorkflowEvent(ReasoningMessageStartEvent, Event):
+    type: EventType = EventType.REASONING_MESSAGE_START
+
+
+class ReasoningMessageContentWorkflowEvent(ReasoningMessageContentEvent, Event):
+    type: EventType = EventType.REASONING_MESSAGE_CONTENT
+
+
+class ReasoningMessageEndWorkflowEvent(ReasoningMessageEndEvent, Event):
+    type: EventType = EventType.REASONING_MESSAGE_END
 
 
 class RunStartedWorkflowEvent(RunStartedEvent, Event):
