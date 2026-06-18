@@ -704,6 +704,53 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### FutureAGI
+
+[FutureAGI](https://futureagi.com) is the end-to-end agent engineering and optimization platform that makes AI agents self-improve. It gives teams one place to simulate edge cases before launch, evaluate what actually happens in production, protect users from unsafe outputs in real time, and turn every trace into signal for the next version. Everything runs on one platform and one feedback loop, from first prototype to production
+
+#### Usage Pattern
+
+Install the required packages:
+
+```bash
+pip install traceAI-llamaindex llama-index
+```
+
+Set up your environment variables. You can get your API keys from your [FutureAGI dashboard](https://app.futureagi.com):
+
+```python
+import os
+
+os.environ["FI_API_KEY"] = "your-fi-api-key"
+os.environ["FI_SECRET_KEY"] = "your-fi-secret-key"
+```
+
+Register the trace provider and instrument LlamaIndex:
+
+```python
+from fi_instrumentation import register
+from fi_instrumentation.fi_types import ProjectType
+from traceai_llamaindex import LlamaIndexInstrumentor
+
+# Set up the trace provider
+trace_provider = register(
+    project_type=ProjectType.OBSERVE,
+    project_name="llama_index_app"
+)
+
+# Instrument LlamaIndex
+LlamaIndexInstrumentor().instrument(tracer_provider=trace_provider)
+```
+
+Now all LlamaIndex operations are automatically traced.
+
+![FutureAGI LlamaIndex Tracing](./../../_static/integrations/future-agi.png)
+
+#### Guides
+
+- [FutureAGI LlamaIndex Integration](https://docs.futureagi.com/docs/integrations/traceai/llamaindex)
+- [traceAI-llamaindex on GitHub](https://github.com/future-agi/traceAI/tree/main/python/frameworks/llama_index)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
