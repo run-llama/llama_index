@@ -152,7 +152,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -199,7 +199,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -387,7 +387,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -435,7 +435,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             )
         )
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
@@ -500,7 +500,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 )
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 ) as event:
                     if self.rate_limiter is not None:
                         self.rate_limiter.acquire()
@@ -554,7 +554,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 )
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 )
                 callback_payloads.append((event_id, cur_batch))
 
