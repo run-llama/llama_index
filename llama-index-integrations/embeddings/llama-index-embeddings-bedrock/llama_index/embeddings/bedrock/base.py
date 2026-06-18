@@ -122,6 +122,7 @@ class BedrockEmbedding(BaseEmbedding):
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
     _asession: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -132,6 +133,7 @@ class BedrockEmbedding(BaseEmbedding):
         aws_session_token: Optional[str] = None,
         region_name: Optional[str] = None,
         client: Optional[Any] = None,
+        async_client: Optional[Any] = None,
         botocore_session: Optional[Any] = None,
         botocore_config: Optional[Any] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -218,6 +220,8 @@ class BedrockEmbedding(BaseEmbedding):
             self._client = session.client("bedrock-runtime", config=self._config)
         else:
             self._client = session.client("bedrock", config=self._config)
+
+        self._async_client = async_client
 
     @staticmethod
     def list_supported_models() -> Dict[str, List[str]]:
@@ -537,16 +541,14 @@ class BedrockEmbedding(BaseEmbedding):
             Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
 
         """
-        if self._asession is None:
+        if self._async_client is None and self._asession is None:
             raise ValueError("Client not set")
 
         provider = self._get_provider()
         request_body = self._get_request_body(provider, payload, type)
 
-        async with self._asession.client(
-            "bedrock-runtime", config=self._config
-        ) as client:
-            response = await client.invoke_model(
+        if self._async_client is not None:
+            response = await self._async_client.invoke_model(
                 body=request_body,
                 modelId=self.application_inference_profile_arn or self.model_name,
                 accept="application/json",
@@ -554,6 +556,18 @@ class BedrockEmbedding(BaseEmbedding):
             )
             streaming_body = await response.get("body").read()
             resp = json.loads(streaming_body.decode("utf-8"))
+        else:
+            async with self._asession.client(
+                "bedrock-runtime", config=self._config
+            ) as client:
+                response = await client.invoke_model(
+                    body=request_body,
+                    modelId=self.application_inference_profile_arn or self.model_name,
+                    accept="application/json",
+                    contentType="application/json",
+                )
+                streaming_body = await response.get("body").read()
+                resp = json.loads(streaming_body.decode("utf-8"))
 
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:

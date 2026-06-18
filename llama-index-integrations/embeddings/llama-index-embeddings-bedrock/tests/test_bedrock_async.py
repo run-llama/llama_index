@@ -90,3 +90,49 @@ async def test_application_inference_profile_in_invoke_model_request(
             patched_invoke.call_args.kwargs["modelId"]
             == application_inference_profile_arn
         )
+
+
+@pytest.mark.asyncio
+async def test_aget_text_embedding_uses_async_client_when_provided(
+    mock_aioboto3_session,
+):
+    """When async_client is provided, _aget_embedding uses it directly without opening a session client."""
+    async_client = AsyncMockClient()
+    bedrock_embedding = BedrockEmbedding(
+        model_name=Models.TITAN_EMBEDDING,
+        client=aioboto3.Session().client("bedrock-runtime", region_name="us-east-1"),
+        async_client=async_client,
+    )
+
+    with mock.patch.object(
+        AsyncMockClient, "invoke_model", wraps=async_client.invoke_model
+    ) as patched_invoke:
+        with mock.patch.object(AsyncMockSession, "client") as patched_session_client:
+            response = await bedrock_embedding._aget_text_embedding(EXP_REQUEST)
+            patched_invoke.assert_called_once()
+            patched_session_client.assert_not_called()
+
+    assert response == EXP_RESPONSE["embedding"]
+
+
+@pytest.mark.asyncio
+async def test_aget_query_embedding_uses_async_client_when_provided(
+    mock_aioboto3_session,
+):
+    """When async_client is provided, query embeddings also reuse it directly."""
+    async_client = AsyncMockClient()
+    bedrock_embedding = BedrockEmbedding(
+        model_name=Models.TITAN_EMBEDDING,
+        client=aioboto3.Session().client("bedrock-runtime", region_name="us-east-1"),
+        async_client=async_client,
+    )
+
+    with mock.patch.object(
+        AsyncMockClient, "invoke_model", wraps=async_client.invoke_model
+    ) as patched_invoke:
+        with mock.patch.object(AsyncMockSession, "client") as patched_session_client:
+            response = await bedrock_embedding._aget_query_embedding(EXP_REQUEST)
+            patched_invoke.assert_called_once()
+            patched_session_client.assert_not_called()
+
+    assert response == EXP_RESPONSE["embedding"]
