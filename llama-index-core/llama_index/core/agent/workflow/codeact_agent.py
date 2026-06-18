@@ -11,8 +11,9 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
+from llama_index.core.agent.workflow.utils import maybe_model_dump
 from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection, LLM
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -236,11 +237,7 @@ class CodeActAgent(BaseWorkflowAgent):
             full_response_text += delta
 
             # Create a raw object for the event stream
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
+            raw = maybe_model_dump(last_chat_response.raw)
 
             # Write delta to the event stream
             ctx.write_event_to_stream(
@@ -336,11 +333,7 @@ class CodeActAgent(BaseWorkflowAgent):
         await ctx.store.set(self.scratchpad_key, scratchpad)
 
         # Create the raw object for the output
-        raw = (
-            chat_response.raw.model_dump()
-            if isinstance(chat_response.raw, BaseModel)
-            else chat_response.raw
-        )
+        raw = maybe_model_dump(chat_response.raw)
 
         return AgentOutput(
             response=message,

@@ -44,6 +44,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentStreamStructuredOutput,
 )
+from llama_index.core.agent.workflow.utils import maybe_model_dump
 from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -322,11 +323,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             response_stream = await agent.llm.astream_chat(llm_input)
             last_response = None
             async for last_response in response_stream:
-                raw = (
-                    last_response.raw.model_dump()
-                    if isinstance(last_response.raw, BaseModel)
-                    else last_response.raw
-                )
+                raw = maybe_model_dump(last_response.raw)
                 if ctx.is_running:
                     ctx.write_event_to_stream(
                         AgentStream(
@@ -507,7 +504,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         output = AgentOutput(
             response=response.message,
             tool_calls=[],
-            raw=response.raw,
+            raw=maybe_model_dump(response.raw),
             current_agent_name=agent.name,
         )
 
