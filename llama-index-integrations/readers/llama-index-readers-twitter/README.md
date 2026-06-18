@@ -28,6 +28,23 @@ reader = TwitterTweetReader(
 documents = reader.load_data(twitterhandles=["user1", "user2"])
 ```
 
+### Alternative: `GetXAPISearchReader`
+
+For workflows that need search (rather than user-timeline) access, or where the official Twitter developer API is not available, the same package also exposes `GetXAPISearchReader`, which calls the [GetXAPI](https://www.getxapi.com) HTTP API with a single bearer token.
+
+```python
+from llama_index.readers.twitter import GetXAPISearchReader
+
+reader = GetXAPISearchReader(bearer_token="<GetXAPI Bearer Token>")
+
+documents = reader.load_data(
+    query="llamaindex lang:en -is:retweet",
+    limit=50,
+)
+```
+
+Returned `Document` objects carry the tweet text plus `id`, `url`, `author_username`, `author_name`, `created_at`, `like_count`, `retweet_count`, and `reply_count` in `metadata`.
+
 This loader is designed to be used as a way to load data into
 [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently
 used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
