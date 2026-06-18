@@ -21,10 +21,10 @@ jobs:
       version: ${{ steps.build-publish-core.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Install uv and set python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.10"
 
@@ -41,7 +41,7 @@ jobs:
           uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer('gpt-5-mini'))"
 
       - name: Generate build provenance attestations
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
         id: attest
         with:
           subject-path: "llama-index-core/llama_index/core/_static/**/*"
@@ -75,14 +75,14 @@ jobs:
     steps:
       - name: Generate GitHub App Token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           app-id: ${{ secrets.CI_BOT_APP_ID }}
           private-key: ${{ secrets.CI_BOT_PRIVATE_KEY }}
           owner: run-llama
 
       - name: Trigger repository_dispatch
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4
         with:
           token: ${{ steps.app-token.outputs.token }}
           repository: run-llama/workflows-py
@@ -95,10 +95,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Install uv and set python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.10"
 
@@ -120,7 +120,7 @@ jobs:
           uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
 
       - name: Generate Release Notes
-        uses: CSchoel/release-notes-from-changelog@v1
+        uses: CSchoel/release-notes-from-changelog@3594292798d8d7eaed04d0a436a5fa2b22e448c7 # v1
         with:
           version: "$(date +'%Y-%m-%d')"
           begin-pattern: "/^## \\[$(date +'%Y-%m-%d')\\]/"
