@@ -88,6 +88,19 @@ We also do not recommend working on these areas:
 
 ---
 
+## Enterprise deployment readiness docs (recommended contribution shape)
+
+When contributing docs for production-oriented agent deployments, maintainers can review faster if updates include a concise readiness checklist.
+
+Suggested checklist areas:
+
+- Secret and credential boundaries
+- Tool execution controls (allowlists, sandbox assumptions)
+- Observability baseline (trace IDs, error correlation, auditability)
+- Rollback strategy for configuration and prompt changes
+
+For docs PRs in this area, link the motivating issue and include at least one realistic usage example.
+
 ## Development Guidelines
 
 ### Repo Structure
