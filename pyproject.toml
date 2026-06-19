@@ -217,6 +217,8 @@ default-groups = [
 ]
 constraint-dependencies = [
     "aiohttp<3.14.0",
+    "fsspec<2025.1.0",
+    "s3fs<2025.1.0",
 ]
 
 [[tool.uv.index]]
