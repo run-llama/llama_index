@@ -1,4 +1,5 @@
 from abc import ABCMeta
+import copy
 import inspect
 import warnings
 from typing import (
@@ -284,7 +285,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 },
             )
         if not await ctx.store.get("state", default=None):
-            await ctx.store.set("state", self.initial_state)
+            await ctx.store.set("state", copy.deepcopy(self.initial_state))
         if not await ctx.store.get("current_agent_name", default=None):
             await ctx.store.set("current_agent_name", self.root_agent)
         if not await ctx.store.get("handoff_output_prompt", default=None):

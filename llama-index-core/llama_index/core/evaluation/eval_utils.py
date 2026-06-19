@@ -5,19 +5,14 @@ NOTE: These are beta functions, might change.
 
 """
 
-import subprocess
-import tempfile
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.evaluation.base import EvaluationResult
-
-if TYPE_CHECKING:
-    from llama_index.core.llama_dataset import LabelledRagDataset
 
 
 async def aget_responses(
@@ -77,28 +72,6 @@ def get_results_df(
             ).mean()
             metric_dict[metric_key].append(mean_score)
     return pd.DataFrame(metric_dict)
-
-
-def _download_llama_dataset_from_hub(llama_dataset_id: str) -> "LabelledRagDataset":
-    """Uses a subprocess and llamaindex-cli to download a dataset from llama-hub."""
-    from llama_index.core.llama_dataset import LabelledRagDataset
-
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            subprocess.run(
-                [
-                    "llamaindex-cli",
-                    "download-llamadataset",
-                    f"{llama_dataset_id}",
-                    "--download-dir",
-                    f"{tmp}",
-                ]
-            )
-            return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")  # type: ignore
-        except FileNotFoundError as err:
-            raise ValueError(
-                "No dataset associated with the supplied `llama_dataset_id`"
-            ) from err
 
 
 def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:

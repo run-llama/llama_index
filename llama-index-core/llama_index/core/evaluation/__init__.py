@@ -41,16 +41,6 @@ from llama_index.core.evaluation.semantic_similarity import (
     SemanticSimilarityEvaluator,
 )
 
-# import dataset generation too
-from llama_index.core.llama_dataset.legacy.embedding import (
-    EmbeddingQAFinetuneDataset,
-    generate_qa_embedding_pairs,
-)
-
-# aliases for generate_qa_embedding_pairs
-generate_question_context_pairs = generate_qa_embedding_pairs
-LabelledQADataset = EmbeddingQAFinetuneDataset
-
 __all__ = [
     "BaseEvaluator",
     "AnswerRelevancyEvaluator",
@@ -70,9 +60,6 @@ __all__ = [
     "QueryResponseEvaluator",
     "ResponseEvaluator",
     # retrieval
-    "generate_qa_embedding_pairs",
-    "generate_question_context_pairs",
-    "EmbeddingQAFinetuneDataset",
     "BaseRetrievalEvaluator",
     "RetrievalEvalResult",
     "RetrieverEvaluator",
@@ -82,5 +69,4 @@ __all__ = [
     "HitRate",
     "MRR",
     "get_retrieval_results_df",
-    "LabelledQADataset",
 ]

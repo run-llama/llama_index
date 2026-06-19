@@ -10,9 +10,9 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
-    "pytest-mock==3.11.1",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -20,7 +20,7 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    "black[jupyter]<=23.9.1,>=23.7.0",
+    "black[jupyter]>=23.7.0,<=26.5.1",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-qdrant"
-version = "0.10.0"
+version = "0.10.1"
 description = "llama-index vector_stores qdrant integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.14"

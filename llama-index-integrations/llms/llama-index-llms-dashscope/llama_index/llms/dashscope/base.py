@@ -57,27 +57,27 @@ class DashScopeGenerationModels:
 DASHSCOPE_MODEL_META = {
     DashScopeGenerationModels.QWEN_TURBO: {
         "context_window": 1024 * 8,
-        "num_output": 1024 * 8,
+        "num_output": 1500,
         "is_chat_model": True,
     },
     DashScopeGenerationModels.QWEN_PLUS: {
         "context_window": 1024 * 32,
-        "num_output": 1024 * 32,
+        "num_output": 2000,
         "is_chat_model": True,
     },
     DashScopeGenerationModels.QWEN_MAX: {
         "context_window": 1024 * 8,
-        "num_output": 1024 * 8,
+        "num_output": 2000,
         "is_chat_model": True,
     },
     DashScopeGenerationModels.QWEN_MAX_1201: {
         "context_window": 1024 * 8,
-        "num_output": 1024 * 8,
+        "num_output": 2000,
         "is_chat_model": True,
     },
     DashScopeGenerationModels.QWEN_MAX_LONGCONTEXT: {
         "context_window": 1024 * 30,
-        "num_output": 1024 * 30,
+        "num_output": 2000,
         "is_chat_model": True,
     },
 }
@@ -277,9 +277,14 @@ class DashScope(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
+        num_output = self.max_tokens
+        if num_output is None:
+            num_output = DASHSCOPE_MODEL_META.get(self.model_name, {}).get(
+                "num_output", DEFAULT_NUM_OUTPUTS
+            )
         return LLMMetadata(
             context_window=self.context_window,
-            num_output=self.max_tokens,
+            num_output=num_output,
             model_name=self.model_name,
             is_chat_model=True,
             is_function_calling_model=self.is_function_calling_model,
