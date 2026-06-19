@@ -315,7 +315,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             metadata_filters=query.filters
         )
 
-        inner_query = self.table.select(
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+
+        inner_query = table.select(
             StarExpression(),
             FunctionExpression(
                 "array_cosine_similarity"
@@ -349,7 +352,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = outer_query.sql_query()
 
-        rows = self.client.execute(command).arrow().to_pylist()
+        rows = con.execute(command).arrow().to_pylist()
 
         return self._arrow_row_to_query_result(rows)
 
@@ -366,7 +369,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         rows: list[dict[str, Any]] = [self._node_to_arrow_row(node) for node in nodes]
 
         arrow_table = pyarrow.Table.from_pylist(rows)
-        self.client.from_arrow(arrow_table).insert_into(self.table.alias)
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+        con.from_arrow(arrow_table).insert_into(table.alias)
         return [node.node_id for node in nodes]
 
     @override
@@ -389,9 +394,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             filters=filters,
         )
 
-        command = self.table.filter(filter_expression).sql_query()
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+        command = table.filter(filter_expression).sql_query()
 
-        rows = self.client.execute(command).arrow().to_pylist()
+        rows = con.execute(command).arrow().to_pylist()
 
         return [self._arrow_row_to_node(row) for row in rows]
 
@@ -418,9 +425,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             filters=filters,
         )
 
-        command = f"DELETE FROM {self.table.alias} WHERE {filter_expression}"
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+        command = f"DELETE FROM {table.alias} WHERE {filter_expression}"
 
-        self.client.execute(command)
+        con.execute(command)
 
     @override
     async def adelete_nodes(
@@ -437,9 +446,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @override
     def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
         """Clear the vector store."""
-        command = f"DELETE FROM {self.table.alias}"
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+        command = f"DELETE FROM {table.alias}"
 
-        self.client.execute(command)
+        con.execute(command)
 
     @override
     async def aclear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
@@ -459,9 +470,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             "ref_doc_id", ref_doc_id, FilterOperator.EQ
         )
 
-        command = f"DELETE FROM {self.table.alias} WHERE {where_clause}"
+        con = self.client.cursor()
+        table = con.table(self.table_name)
+        command = f"DELETE FROM {table.alias} WHERE {where_clause}"
 
-        self.client.execute(command)
+        con.execute(command)
 
     @override
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:  # noqa: ARG002
