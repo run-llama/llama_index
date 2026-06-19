@@ -21,12 +21,7 @@ from typing import (
     Sequence,
 )
 
-try:
-    # Python 3.10+
-    from types import NoneType  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover
-    # Python 3.9 and below
-    NoneType = type(None)  # type: ignore[misc,assignment]
+from types import NoneType
 
 import filetype
 from tinytag import TinyTag, UnsupportedFormatError

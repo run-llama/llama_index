@@ -19,8 +19,7 @@ from llama_index.llms.openai_like import OpenAILike
 
 # Use these as kwargs for OpenAILike to connect to LocalAIs
 DEFAULT_LOCALAI_PORT = 8080
-# TODO: move to MappingProxyType[str, Any] once Python 3.9+
-LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
+LOCALAI_DEFAULTS: MappingProxyType[str, Any] = MappingProxyType(
     {
         "api_key": "localai_fake",
         "api_type": "localai_fake",
