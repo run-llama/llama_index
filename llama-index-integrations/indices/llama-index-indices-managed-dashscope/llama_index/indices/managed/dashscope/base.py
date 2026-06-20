@@ -141,6 +141,7 @@ class DashScopeCloudIndex(BaseManagedIndex):
         response = requests.post(
             base_url + START_PIPELINE_ENDPOINT.format(pipeline_id=pipeline_id),
             headers=headers,
+            timeout=60,
         )
         response_text = response.json()
         ingestion_id = response_text.get("ingestionId", None)
@@ -268,6 +269,7 @@ class DashScopeCloudIndex(BaseManagedIndex):
             self._base_url + DELETE_DOC_ENDPOINT.format(pipeline_id=pipeline_id),
             json=doc_delete,
             headers=self._headers,
+            timeout=60,
         )
         response_text = response.json()
         if response_text.get("code", "") != Status.SUCCESS.value:

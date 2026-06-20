@@ -52,7 +52,7 @@ class TextToImageToolSpec(BaseToolSpec):
         """
         try:
             response = openai.Image.create_variation(
-                image=BytesIO(requests.get(url).content).getvalue(), n=n, size=size
+                image=BytesIO(requests.get(url, timeout=60).content).getvalue(), n=n, size=size
             )
             return [image["url"] for image in response["data"]]
         except openai.error.OpenAIError as e:
@@ -71,5 +71,5 @@ class TextToImageToolSpec(BaseToolSpec):
 
         for url in urls:
             plt.figure()
-            plt.imshow(Image.open(BytesIO(requests.get(url).content)))
+            plt.imshow(Image.open(BytesIO(requests.get(url, timeout=60).content)))
         return "images rendered successfully"

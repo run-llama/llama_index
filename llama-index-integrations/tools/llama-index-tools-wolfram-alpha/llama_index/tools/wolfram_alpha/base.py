@@ -78,6 +78,6 @@ class WolframAlphaToolSpec(BaseToolSpec):
         params = {"input": query, **self._api_params}
         url = f"{QUERY_URL_TMPL}?{urllib.parse.urlencode(params)}"
         headers = {"Authorization": f"Bearer {self.token}"}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=60)
         response.raise_for_status()
         return response.text

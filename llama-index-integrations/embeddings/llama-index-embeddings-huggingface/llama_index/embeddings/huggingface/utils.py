@@ -82,7 +82,7 @@ def get_pooling_mode(model_name: Optional[str]) -> str:
     )
 
     try:
-        response = requests.get(pooling_config_url)
+        response = requests.get(pooling_config_url, timeout=60)
         config_data = response.json()
 
         cls_token = config_data.get("pooling_mode_cls_token", False)

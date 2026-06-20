@@ -22,7 +22,7 @@ def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
-    response = requests.post(base_url, headers=headers, json=kwargs)
+    response = requests.post(base_url, headers=headers, json=kwargs, timeout=60)
     response.raise_for_status()
     return response.json()
 
@@ -32,7 +32,7 @@ def _request_stream(
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
-    response = requests.post(base_url, headers=headers, stream=True, json=params)
+    response = requests.post(base_url, headers=headers, stream=True, json=params, timeout=60)
     response.raise_for_status()
 
     client = sseclient.SSEClient(response)
