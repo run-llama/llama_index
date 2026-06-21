@@ -164,5 +164,16 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         if len(messages) <= 0:
             return 0
 
-        msg_str = " ".join(str(m.content) for m in messages)
+        msg_strs = []
+        for m in messages:
+            if m.content is not None:
+                msg_strs.append(str(m.content))
+            if m.additional_kwargs and "tool_calls" in m.additional_kwargs:
+                msg_strs.append(json.dumps(m.additional_kwargs["tool_calls"]))
+            if hasattr(m, "blocks"):
+                for block in m.blocks:
+                    if block.block_type == "tool_call":
+                        msg_strs.append(block.model_dump_json())
+
+        msg_str = " ".join(msg_strs)
         return len(self.tokenizer_fn(msg_str))

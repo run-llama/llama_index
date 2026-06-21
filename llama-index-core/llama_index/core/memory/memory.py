@@ -362,7 +362,7 @@ class Memory(BaseMemory):
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +380,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -429,6 +429,8 @@ class Memory(BaseMemory):
         for block in blocks:
             if isinstance(block, TextBlock):
                 token_count += len(self.tokenizer_fn(block.text))
+            elif isinstance(block, ToolCallBlock):
+                token_count += len(self.tokenizer_fn(block.model_dump_json()))
             elif isinstance(block, ImageBlock):
                 token_count += self.image_token_size_estimate
             elif isinstance(block, VideoBlock):
