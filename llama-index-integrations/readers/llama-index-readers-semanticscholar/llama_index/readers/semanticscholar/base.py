@@ -125,16 +125,15 @@ class SemanticScholarReader(BaseReader):
                 try:
                     with open(file_path, "rb") as f:
                         pdf = PdfReader(f)
+                        text = ""
+                        for page in pdf.pages:
+                            text += page.extract_text()
+                        full_text_docs.append(Document(text=text, extra_info=metadata))
                 except Exception as e:
                     logging.error(
                         f"Failed to read pdf with exception: {e}. Skipping document..."
                     )
                     continue
-
-                text = ""
-                for page in pdf.pages:
-                    text += page.extract_text()
-                full_text_docs.append(Document(text=text, extra_info=metadata))
 
         return full_text_docs
 
