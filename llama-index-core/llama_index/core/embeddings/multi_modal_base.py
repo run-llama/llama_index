@@ -38,8 +38,10 @@ class MultiModalEmbedding(BaseEmbedding):
         """
         Embed the input image.
         """
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             image_embedding = self._get_image_embedding(img_file_path)
 
@@ -53,8 +55,10 @@ class MultiModalEmbedding(BaseEmbedding):
 
     async def aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """Get image embedding."""
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
         with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: model_dict}
         ) as event:
             image_embedding = await self._aget_image_embedding(img_file_path)
 
@@ -104,6 +108,8 @@ class MultiModalEmbedding(BaseEmbedding):
                 img_file_paths, show_progress, "Generating image embeddings"
             )
         )
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
 
         for idx, img_file_path in queue_with_progress:
             cur_batch.append(img_file_path)
@@ -114,7 +120,7 @@ class MultiModalEmbedding(BaseEmbedding):
                 # flush
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 ) as event:
                     embeddings = self._get_image_embeddings(cur_batch)
                     result_embeddings.extend(embeddings)
@@ -136,6 +142,8 @@ class MultiModalEmbedding(BaseEmbedding):
         callback_payloads: List[Tuple[str, List[ImageType]]] = []
         result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
         for idx, img_file_path in enumerate(img_file_paths):
             cur_batch.append(img_file_path)
             if (
@@ -145,7 +153,7 @@ class MultiModalEmbedding(BaseEmbedding):
                 # flush
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
-                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                    payload={EventPayload.SERIALIZED: model_dict},
                 )
                 callback_payloads.append((event_id, cur_batch))
                 embeddings_coroutines.append(self._aget_image_embeddings(cur_batch))

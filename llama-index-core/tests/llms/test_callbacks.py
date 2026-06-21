@@ -1,8 +1,14 @@
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
+from llama_index.core.callbacks.llama_debug import LlamaDebugHandler
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.llms.mock import MockLLMWithNonyieldingChatStream
+
+
+class ApiKeyMockLLM(MockLLM):
+    api_key: str = "test-secret-key"
 
 
 @pytest.fixture()
@@ -81,3 +87,14 @@ def test_llm_stream_complete_throws_if_duplicate_prompt(llm: LLM, prompt: str) -
 def test_llm_stream_complete_throws_if_no_prompt(llm: LLM) -> None:
     with pytest.raises(ValueError):
         llm.stream_complete()
+
+
+def test_llm_callback_serialized_payload_redacts_api_key() -> None:
+    handler = LlamaDebugHandler(print_trace_on_end=False)
+    llm = ApiKeyMockLLM(callback_manager=CallbackManager([handler]))
+
+    llm.complete("test prompt")
+
+    start_event = handler.get_events(CBEventType.LLM)[0]
+    serialized = start_event.payload[EventPayload.SERIALIZED]  # type: ignore[index]
+    assert "api_key" not in serialized

@@ -5,7 +5,18 @@ from unittest.mock import patch
 import pytest
 
 from llama_index.core.base.embeddings.base import SimilarityMode, mean_agg
+from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
+from llama_index.core.callbacks.llama_debug import LlamaDebugHandler
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.embeddings.mock_embed_model import MockMultiModalEmbedding
+
+
+class ApiKeyMockEmbedding(MockEmbedding):
+    api_key: str = "test-secret-key"
+
+
+class ApiKeyMockMultiModalEmbedding(MockMultiModalEmbedding):
+    api_key: str = "test-secret-key"
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -100,3 +111,29 @@ def test_mean_agg_empty_list() -> None:
     """Test mean aggregation raises ValueError for empty list."""
     with pytest.raises(ValueError, match="No embeddings to aggregate"):
         mean_agg([])
+
+
+def test_embedding_callback_serialized_payload_redacts_api_key() -> None:
+    handler = LlamaDebugHandler(print_trace_on_end=False)
+    embed_model = ApiKeyMockEmbedding(
+        embed_dim=8, callback_manager=CallbackManager([handler])
+    )
+
+    embed_model.get_text_embedding("Hello world.")
+
+    start_event = handler.get_events(CBEventType.EMBEDDING)[0]
+    serialized = start_event.payload[EventPayload.SERIALIZED]  # type: ignore[index]
+    assert "api_key" not in serialized
+
+
+def test_multi_modal_embedding_callback_serialized_payload_redacts_api_key() -> None:
+    handler = LlamaDebugHandler(print_trace_on_end=False)
+    embed_model = ApiKeyMockMultiModalEmbedding(
+        embed_dim=8, callback_manager=CallbackManager([handler])
+    )
+
+    embed_model.get_image_embedding("image.png")
+
+    start_event = handler.get_events(CBEventType.EMBEDDING)[0]
+    serialized = start_event.payload[EventPayload.SERIALIZED]  # type: ignore[index]
+    assert "api_key" not in serialized
