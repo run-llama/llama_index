@@ -3,7 +3,7 @@ import time
 
 
 def post(base_url: str, headers: dict, params: dict):
-    response = requests.post(base_url, headers=headers, json=params)
+    response = requests.post(base_url, headers=headers, json=params, timeout=60.0)
     if response.status_code != 200:
         raise RuntimeError(response.text)
     response_dict = response.json()
@@ -13,7 +13,7 @@ def post(base_url: str, headers: dict, params: dict):
 
 
 def get(base_url: str, headers: dict, params: dict):
-    response = requests.get(base_url, headers=headers, params=params)
+    response = requests.get(base_url, headers=headers, params=params, timeout=60.0)
     if response.status_code != 200:
         raise RuntimeError(response.text)
 
@@ -36,6 +36,7 @@ def run_ingestion(request_url: str, headers: dict, verbose: bool = False):
         response = requests.get(
             request_url,
             headers=headers,
+            timeout=60.0,
         )
         try:
             response_text = response.json()

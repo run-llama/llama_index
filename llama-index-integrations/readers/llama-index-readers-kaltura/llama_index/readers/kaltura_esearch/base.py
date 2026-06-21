@@ -174,7 +174,7 @@ class KalturaESearchReader(BaseReader):
             cap_json_url = self.client.caption.captionAsset.serveAsJson(
                 caption_asset_id
             )
-            return requests.get(cap_json_url).json()
+            return requests.get(cap_json_url, timeout=self.request_timeout).json()
         except Exception as e:
             logger.error(f"An error occurred while getting captions: {e}")
             return {}
