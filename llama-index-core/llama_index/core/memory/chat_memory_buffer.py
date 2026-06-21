@@ -164,5 +164,10 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         if len(messages) <= 0:
             return 0
 
-        msg_str = " ".join(str(m.content) for m in messages)
-        return len(self.tokenizer_fn(msg_str))
+        token_count = 0
+        for m in messages:
+            msg_str = str(m.content) if m.content is not None else ""
+            token_count += len(self.tokenizer_fn(msg_str))
+            if m.additional_kwargs:
+                token_count += len(self.tokenizer_fn(str(m.additional_kwargs)))
+        return token_count
