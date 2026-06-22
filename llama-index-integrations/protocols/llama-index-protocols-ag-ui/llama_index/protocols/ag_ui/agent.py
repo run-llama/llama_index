@@ -1,3 +1,4 @@
+import copy
 import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -136,7 +137,9 @@ class AGUIChatWorkflow(Workflow):
         self.backend_tools = {
             tool.metadata.name: tool for tool in validated_backend_tools
         }
-        self.initial_state = initial_state or {}
+        self.initial_state = (
+            copy.deepcopy(initial_state) if initial_state is not None else {}
+        )
         self.system_prompt = system_prompt
 
     def _snapshot_messages(self, ctx: Context, chat_history: List[ChatMessage]) -> None:
@@ -184,7 +187,7 @@ class AGUIChatWorkflow(Workflow):
                 state.pop("messages", None)
             else:
                 # initial state is not provided, use the default state
-                state = self.initial_state.copy()
+                state = copy.deepcopy(self.initial_state)
 
             # Save state to context for tools to use
             await ctx.store.set("state", state)
