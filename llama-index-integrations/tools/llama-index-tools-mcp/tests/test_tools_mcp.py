@@ -4,9 +4,11 @@ from typing import Literal, get_args
 import pytest
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step
 from llama_index.tools.mcp import (
     BasicMCPClient,
     McpToolSpec,
+    workflow_as_mcp,
     get_tools_from_mcp_url,
     aget_tools_from_mcp_url,
 )
@@ -693,6 +695,44 @@ def test_get_tools_from_mcp_url_propagates_combined_params(client: BasicMCPClien
     update_schema = update_user_tool.metadata.fn_schema.model_json_schema()
     assert "user_id" not in update_schema["properties"]
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+class TenantStartEvent(StartEvent):
+    tenant_id: str
+
+
+class CountingWorkflow(Workflow):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.history = []
+
+    @step
+    async def echo(self, ctx: Context, ev: TenantStartEvent) -> StopEvent:
+        self.history.append(ev.tenant_id)
+        return StopEvent(result={"history_visible": list(self.history)})
+
+
+@pytest.mark.asyncio
+async def test_workflow_as_mcp_uses_workflow_factory_per_call():
+    created_workflows = []
+
+    def workflow_factory():
+        workflow = CountingWorkflow(timeout=30)
+        created_workflows.append(workflow)
+        return workflow
+
+    app = workflow_as_mcp(
+        CountingWorkflow(timeout=30),
+        workflow_factory=workflow_factory,
+    )
+
+    await app.call_tool("CountingWorkflow", {"run_args": {"tenant_id": "alice"}})
+    await app.call_tool("CountingWorkflow", {"run_args": {"tenant_id": "bob"}})
+
+    assert [workflow.history for workflow in created_workflows] == [
+        ["alice"],
+        ["bob"],
+    ]
 
 
 @pytest.mark.asyncio

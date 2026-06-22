@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+import inspect
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP, Context
@@ -8,6 +9,8 @@ from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow
 from llama_index.tools.mcp.base import McpToolSpec
 from llama_index.tools.mcp.client import BasicMCPClient
+
+WorkflowFactory = Callable[[], Union[Workflow, Awaitable[Workflow]]]
 
 
 def get_tools_from_mcp_url(
@@ -79,6 +82,7 @@ def workflow_as_mcp(
     workflow_name: Optional[str] = None,
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
+    workflow_factory: Optional[WorkflowFactory] = None,
     **fastmcp_init_kwargs: Any,
 ) -> FastMCP:
     """
@@ -97,6 +101,10 @@ def workflow_as_mcp(
         start_event_model (optional):
             The start event model of the workflow. Can be a `BaseModel` or a `StartEvent` class.
             Defaults to the workflow's custom `StartEvent` class.
+        workflow_factory (optional):
+            A callable that returns a fresh workflow instance for each MCP tool call.
+            The returned workflow must be compatible with the provided workflow's
+            start event model. Defaults to reusing the provided workflow instance.
         **fastmcp_init_kwargs:
             Additional keyword arguments to pass to the FastMCP constructor.
 
@@ -117,18 +125,29 @@ def workflow_as_mcp(
     workflow_name = workflow_name or workflow.__class__.__name__
     workflow_description = workflow_description or workflow.__doc__
 
+    async def _get_workflow() -> Workflow:
+        if workflow_factory is None:
+            return workflow
+
+        new_workflow = workflow_factory()
+        if inspect.isawaitable(new_workflow):
+            new_workflow = await new_workflow
+
+        return new_workflow
+
     @app.tool(name=workflow_name, description=workflow_description)
     async def _workflow_tool(run_args: StartEventCLS, context: Context) -> Any:
         # Handle edge cases where the start event is an Event or a BaseModel
         # If the workflow does not have a custom StartEvent class, then we need to handle the event differently
 
-        if isinstance(run_args, Event) and workflow._start_event_class != StartEvent:
-            handler = workflow.run(start_event=run_args)
+        workflow_instance = await _get_workflow()
+        if isinstance(run_args, Event) and StartEventCLS != StartEvent:
+            handler = workflow_instance.run(start_event=run_args)
         elif isinstance(run_args, BaseModel):
-            handler = workflow.run(**run_args.model_dump())
+            handler = workflow_instance.run(**run_args.model_dump())
         elif isinstance(run_args, dict):
             start_event = StartEventCLS.model_validate(run_args)
-            handler = workflow.run(start_event=start_event)
+            handler = workflow_instance.run(start_event=start_event)
         else:
             raise ValueError(f"Invalid start event type: {type(run_args)}")
 
