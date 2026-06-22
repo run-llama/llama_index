@@ -184,9 +184,7 @@ async def test_document_block_aresolve_document_with_path(tmp_path):
     test_file = tmp_path / "test.pdf"
     test_file.write_bytes(b"%PDF-1.4 test content")
 
-    block = DocumentBlock(
-        path=str(test_file), document_mimetype="application/pdf"
-    )
+    block = DocumentBlock(path=str(test_file), document_mimetype="application/pdf")
     result = await block.aresolve_document()
     result.seek(0)
     assert result.read() == b"%PDF-1.4 test content"
