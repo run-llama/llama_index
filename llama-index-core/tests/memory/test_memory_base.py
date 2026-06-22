@@ -6,6 +6,10 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     AudioBlock,
     VideoBlock,
+    ToolCallBlock,
+    ThinkingBlock,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.memory.memory import Memory
 from llama_index.core.storage.chat_store.sql import MessageStatus
@@ -74,6 +78,43 @@ async def test_estimate_token_count_document(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.document_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_tool_call(memory):
+    """Test token counting for tool calls."""
+    block = ToolCallBlock(tool_name="my_tool", tool_kwargs={"arg1": "value1"}, tool_call_id="call_1")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    expected_text = "my_tool {'arg1': 'value1'}"
+    assert count == len(memory.tokenizer_fn(expected_text))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_thinking(memory):
+    """Test token counting for thinking blocks."""
+    block = ThinkingBlock(content="Let me think about this...")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn("Let me think about this..."))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citable(memory):
+    """Test token counting for citable blocks."""
+    block = CitableBlock(title="t", source="s", content="This is a fact.")
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(str(block)))
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_citation(memory):
+    """Test token counting for citation blocks."""
+    block = CitationBlock(title="t", source="s", cited_content="fact", additional_location_info={"page": 1})
+    message = ChatMessage(role="assistant", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == len(memory.tokenizer_fn(str(block)))
 
 
 @pytest.mark.asyncio

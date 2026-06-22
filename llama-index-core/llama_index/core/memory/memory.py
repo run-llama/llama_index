@@ -348,21 +348,10 @@ class Memory(BaseMemory):
 
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
-            blocks: List[
-                Union[
-                    TextBlock,
-                    ImageBlock,
-                    VideoBlock,
-                    AudioBlock,
-                    DocumentBlock,
-                    CitableBlock,
-                    CitationBlock,
-                    ThinkingBlock,
-                ]
-            ] = []
+            blocks: List[ContentBlock] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +369,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -437,6 +426,18 @@ class Memory(BaseMemory):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
                 token_count += self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                # Count tokens from tool name and serialized kwargs
+                tool_text = block.tool_name
+                if block.tool_kwargs:
+                    tool_text += " " + str(block.tool_kwargs)
+                token_count += len(self.tokenizer_fn(tool_text))
+            elif isinstance(block, ThinkingBlock):
+                if block.content:
+                    token_count += len(self.tokenizer_fn(block.content))
+            elif isinstance(block, (CitableBlock, CitationBlock)):
+                # Estimate tokens from the block's string representation
+                token_count += len(self.tokenizer_fn(str(block)))
 
         return token_count
 
