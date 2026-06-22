@@ -80,6 +80,51 @@ def create_sample_documents(n: int) -> List[TextNode]:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
+def test_azureaisearch_add_preserves_falsy_metadata_values() -> None:
+    search_client = mock_client_with_user_agent("search")
+    with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
+        index_documents_batch_instance = MockIndexDocumentsBatch.return_value
+        vector_store = AzureAISearchVectorStore(
+            search_or_index_client=search_client,
+            id_field_key="id",
+            chunk_field_key="content",
+            embedding_field_key="embedding",
+            metadata_string_field_key="metadata",
+            doc_id_field_key="doc_id",
+            filterable_metadata_field_keys={
+                "zero": 0,
+                "empty_string": "",
+                "empty_collection": [],
+                "none_value": "none_value",
+            },
+            hidden_field_keys=["embedding"],
+            index_management=IndexManagement.NO_VALIDATION,
+            embedding_dimensionality=2,
+        )
+        node = TextNode(
+            text="node text",
+            embedding=[0.5, 0.5],
+            metadata={
+                "zero": 0,
+                "empty_string": "",
+                "empty_collection": [],
+                "none_value": None,
+            },
+        )
+
+        vector_store.add([node])
+
+    index_doc = index_documents_batch_instance.add_upload_actions.call_args.args[0]
+    assert index_doc["zero"] == 0
+    assert index_doc["empty_string"] == ""
+    assert index_doc["empty_collection"] == []
+    assert "none_value" not in index_doc
+    search_client.index_documents.assert_called_once()
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
 def test_user_agent_configuration() -> None:
     """Test that user agent is properly configured."""
     # Test with SearchClient
