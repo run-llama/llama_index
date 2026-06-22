@@ -6,6 +6,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 SEARCH_URL_TMPL = "https://api.search.brave.com/res/v1/web/search?{params}"
 
+DEFAULT_TIMEOUT = 10.0
+
 
 class BraveSearchToolSpec(BaseToolSpec):
     """
@@ -14,11 +16,17 @@ class BraveSearchToolSpec(BaseToolSpec):
 
     spec_functions = ["brave_search"]
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, timeout: float = DEFAULT_TIMEOUT) -> None:
         """
         Initialize with parameters.
+
+        Args:
+            api_key (str): The Brave Search API subscription token.
+            timeout (float): Timeout in seconds for the HTTP request, default is 10.0.
+
         """
         self.api_key = api_key
+        self.timeout = timeout
 
     def _make_request(self, params: Dict) -> requests.Response:
         """
@@ -38,7 +46,7 @@ class BraveSearchToolSpec(BaseToolSpec):
         }
         url = SEARCH_URL_TMPL.format(params=urllib.parse.urlencode(params))
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=self.timeout)
         response.raise_for_status()
         return response
 
