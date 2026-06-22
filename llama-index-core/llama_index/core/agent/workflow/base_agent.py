@@ -76,6 +76,35 @@ WORKFLOW_KWARGS = (
 )
 
 
+class _ToolCallContext:
+    """Delegate Context calls while scoping default HITL waiter ids per tool."""
+
+    def __init__(self, ctx: Context, tool_id: str) -> None:
+        self._ctx = ctx
+        self._tool_id = tool_id
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._ctx, name)
+
+    async def wait_for_event(
+        self,
+        event_type: Type[Any],
+        waiter_event: Any = None,
+        waiter_id: Optional[str] = None,
+        requirements: Optional[dict[str, Any]] = None,
+        timeout: Optional[float] = 2000,
+    ) -> Any:
+        if waiter_id is None:
+            waiter_id = f"agent_tool_call:{self._tool_id}"
+        return await self._ctx.wait_for_event(
+            event_type,
+            waiter_event=waiter_event,
+            waiter_id=waiter_id,
+            requirements=requirements,
+            timeout=timeout,
+        )
+
+
 def get_default_llm() -> LLM:
     return Settings.llm
 
@@ -349,8 +378,10 @@ class BaseWorkflowAgent(
         ctx: Context,
         tool: AsyncBaseTool,
         tool_input: dict,
+        tool_id: Optional[str] = None,
     ) -> ToolOutput:
         """Call the given tool with the given input."""
+        tool_id = tool_id or tool.metadata.get_name()
         try:
             if (
                 isinstance(tool, FunctionTool)
@@ -358,7 +389,7 @@ class BaseWorkflowAgent(
                 and tool.ctx_param_name is not None
             ):
                 new_tool_input = {**tool_input}
-                new_tool_input[tool.ctx_param_name] = ctx
+                new_tool_input[tool.ctx_param_name] = _ToolCallContext(ctx, tool_id)
                 tool_output = await tool.acall(**new_tool_input)
             else:
                 tool_output = await tool.acall(**tool_input)
@@ -645,7 +676,7 @@ class BaseWorkflowAgent(
             )
         else:
             tool = tools_by_name[ev.tool_name]
-            result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+            result = await self._call_tool(ctx, tool, ev.tool_kwargs, ev.tool_id)
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,
