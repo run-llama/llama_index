@@ -223,6 +223,20 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                         token_size=token_size,
                     )
                 )
+            elif len(text_splits_by_fns) == 1:
+                # Could not split any further (a single indivisible unit larger
+                # than chunk_size, e.g. a multi-token CJK / emoji character with
+                # a small chunk_size). Recursing on the same text loops forever
+                # and raises RecursionError, so keep it as an oversized split --
+                # _merge() then raises the intended "Single token exceeded chunk
+                # size" ValueError instead of crashing.
+                text_splits.append(
+                    _Split(
+                        text_split_by_fns,
+                        is_sentence=is_sentence,
+                        token_size=token_size,
+                    )
+                )
             else:
                 recursive_text_splits = self._split(
                     text_split_by_fns, chunk_size=chunk_size
