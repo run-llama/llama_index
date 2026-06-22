@@ -7,9 +7,40 @@ from zhipuai.types.chat.chat_completion import (
     CompletionMessage,
     CompletionUsage,
 )
-from llama_index.core.base.llms.types import CompletionResponse
+from zhipuai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    Choice,
+    ChoiceDelta,
+)
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    CompletionResponse,
+    MessageRole,
+)
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.llms.zhipuai import ZhipuAI
+
+
+def _stream_chunk(role, content, index=0):
+    """
+    Build a streaming chunk mirroring the OpenAI-compatible ZhipuAI stream.
+
+    The first chunk carries ``delta.role="assistant"`` while subsequent
+    content chunks have ``delta.role=None`` (the real-world behavior).
+    """
+    return ChatCompletionChunk(
+        id="chatcmpl-test",
+        created=1703487403,
+        model="glm-4",
+        choices=[
+            Choice(
+                index=index,
+                delta=ChoiceDelta(role=role, content=content, tool_calls=None),
+                finish_reason=None,
+            )
+        ],
+        extra_json={},
+    )
 
 
 def test_llm_class():
@@ -62,6 +93,60 @@ def test_zhipuai_completions_with_stop():
     ):
         actual_chat = llm.complete("__query__", stop=["stop_words"])
         assert actual_chat == predict_response
+
+
+def test_zhipuai_stream_chat_role_none_on_later_chunks():
+    """
+    Later stream chunks have delta.role=None and must not raise.
+
+    Regression test: ``ChatMessage.role`` is a non-Optional ``MessageRole``,
+    so passing ``role=None`` (as later chunks deliver) raised a pydantic
+    ValidationError before the ``or MessageRole.ASSISTANT`` fallback was added.
+    """
+    chunks = [
+        _stream_chunk(role="assistant", content="Hello"),
+        _stream_chunk(role=None, content=" there"),
+        _stream_chunk(role=None, content="!"),
+    ]
+
+    llm = ZhipuAI(model="glm-4", api_key="__fake_key__")
+    with mock.patch.object(
+        llm._client.chat.completions, "create", return_value=iter(chunks)
+    ):
+        responses = list(
+            llm.stream_chat([ChatMessage(role=MessageRole.USER, content="hi")])
+        )
+
+    assert len(responses) == len(chunks)
+    for response in responses:
+        assert response.message.role == MessageRole.ASSISTANT
+    assert responses[-1].message.content == "Hello there!"
+
+
+@pytest.mark.asyncio
+async def test_zhipuai_astream_chat_role_none_on_later_chunks():
+    """Async streaming must also tolerate delta.role=None on later chunks."""
+    chunks = [
+        _stream_chunk(role="assistant", content="Hello"),
+        _stream_chunk(role=None, content=" there"),
+        _stream_chunk(role=None, content="!"),
+    ]
+
+    llm = ZhipuAI(model="glm-4", api_key="__fake_key__")
+    with mock.patch.object(
+        llm._client.chat.completions, "create", return_value=iter(chunks)
+    ):
+        responses = [
+            response
+            async for response in await llm.astream_chat(
+                [ChatMessage(role=MessageRole.USER, content="hi")]
+            )
+        ]
+
+    assert len(responses) == len(chunks)
+    for response in responses:
+        assert response.message.role == MessageRole.ASSISTANT
+    assert responses[-1].message.content == "Hello there!"
 
 
 @pytest.mark.skipif(
