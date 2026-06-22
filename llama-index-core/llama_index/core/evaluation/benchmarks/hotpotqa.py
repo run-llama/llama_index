@@ -44,7 +44,9 @@ class HotpotQAEvaluator:
                     os.path.join(dataset_full_path, "dev_distractor.json"), "wb"
                 ) as save_file:
                     # Loop over the chunks and parse the JSON data
-                    for chunk in tqdm.tqdm(response.iter_content(chunk_size=chunk_size)):
+                    for chunk in tqdm.tqdm(
+                        response.iter_content(chunk_size=chunk_size)
+                    ):
                         if chunk:
                             save_file.write(chunk)
             except Exception as e:
