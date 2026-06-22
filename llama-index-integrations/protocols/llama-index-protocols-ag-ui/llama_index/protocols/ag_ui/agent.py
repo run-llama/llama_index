@@ -401,6 +401,32 @@ class AGUIChatWorkflow(Workflow):
                 )
             )
 
+        # Frontend tool calls are dispatched to the client and the workflow
+        # suspends with StopEvent. We still need to record a matching
+        # ChatMessage(role="tool", ...) for each frontend tool_call_id in the
+        # persisted chat_history so the LLM-provider pairing invariant
+        # ("every tool_call_id in an AIMessage must have a matching
+        # ToolMessage") holds at the suspend boundary. The frontend will
+        # typically replace this stub content with the real client-side
+        # result on the next run via a ToolMessage in the input messages,
+        # but writing a stub now keeps history valid in the meantime.
+        for tool_result in frontend_tool_calls:
+            frontend_content = tool_result.tool_output.content
+            if frontend_content is None:
+                frontend_content = (
+                    f"[frontend tool {tool_result.tool_name} dispatched; "
+                    f"result will be provided by the client]"
+                )
+            new_tool_messages.append(
+                ChatMessage(
+                    role="tool",
+                    content=frontend_content,
+                    additional_kwargs={
+                        "tool_call_id": tool_result.tool_call_id,
+                    },
+                )
+            )
+
         # emit a messages snapshot event if there are new messages
         chat_history = await ctx.store.get("chat_history")
         if new_tool_messages:
