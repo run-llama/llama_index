@@ -61,6 +61,8 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -84,7 +86,11 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        self.callback_manager = callback_manager or Settings.callback_manager
+        super().__init__(
+            callback_manager=callback_manager or Settings.callback_manager,
+            object_map=object_map,
+            verbose=verbose,
+        )
 
     @property
     def similarity_top_k(self) -> int:

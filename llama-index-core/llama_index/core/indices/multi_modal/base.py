@@ -135,6 +135,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
+            callback_manager=self._callback_manager,
+            object_map=self._object_map,
             **kwargs,
         )
 
