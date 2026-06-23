@@ -85,6 +85,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
         self.callback_manager = callback_manager or Settings.callback_manager
+        super().__init__(callback_manager=self.callback_manager)
 
     @property
     def similarity_top_k(self) -> int:
