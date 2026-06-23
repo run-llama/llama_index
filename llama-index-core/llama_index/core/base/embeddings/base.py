@@ -4,7 +4,17 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 from typing_extensions import Self
 
 import numpy as np
@@ -25,6 +35,71 @@ from llama_index.core.async_utils import run_jobs
 
 # TODO: change to numpy array
 Embedding = List[float]
+
+
+class EmbeddingResponse:
+    """
+    Response from an embedding call, carrying the vector and optional metadata.
+
+    Mirrors ``CompletionResponse`` / ``ChatResponse`` for LLMs: integrations
+    that can report provider-side token usage return an ``EmbeddingResponse``
+    instead of a plain ``List[float]``.  Integrations that return a plain list
+    continue to work unchanged.
+
+    Args:
+        embedding: The embedding vector.
+        token_count: Provider-reported token count for this call, if available.
+        raw: The raw API response object, for caller inspection.
+
+    """
+
+    __slots__ = ("embedding", "token_count", "raw")
+
+    def __init__(
+        self,
+        embedding: Embedding,
+        token_count: Optional[int] = None,
+        raw: Optional[Any] = None,
+    ) -> None:
+        self.embedding = embedding
+        self.token_count = token_count
+        self.raw = raw
+
+
+EmbeddingResultType = Union[Embedding, EmbeddingResponse]
+BatchEmbeddingResultType = List[EmbeddingResultType]
+
+
+def _unpack_embedding(result: EmbeddingResultType) -> Tuple[Embedding, Optional[int]]:
+    """
+    Unpack an embedding result into (vector, token_count).
+
+    Accepts both plain ``List[float]`` (backwards-compatible) and the new
+    ``EmbeddingResponse``.
+    """
+    if isinstance(result, EmbeddingResponse):
+        return result.embedding, result.token_count
+    return result, None
+
+
+def _unpack_embeddings(
+    results: BatchEmbeddingResultType,
+) -> Tuple[List[Embedding], Optional[int]]:
+    """
+    Unpack a batch of embedding results.
+
+    Returns (embeddings, total_token_count).  Token counts are summed across
+    all items that report them; the total is ``None`` only when *no* item
+    carried a count.
+    """
+    embeddings: List[Embedding] = []
+    total: Optional[int] = None
+    for r in results:
+        emb, tc = _unpack_embedding(r)
+        embeddings.append(emb)
+        if tc is not None:
+            total = (total or 0) + tc
+    return embeddings, total
 
 
 from llama_index.core.instrumentation.events.embedding import (
@@ -116,21 +191,23 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return self
 
     @abstractmethod
-    def _get_query_embedding(self, query: str) -> Embedding:
+    def _get_query_embedding(self, query: str) -> EmbeddingResultType:
         """
         Embed the input query synchronously.
 
-        Subclasses should implement this method. Reference get_query_embedding's
-        docstring for more information.
+        Subclasses should implement this method.  May return a plain
+        ``List[float]`` (backwards-compatible) or an ``EmbeddingResponse``
+        carrying the vector together with provider-reported token usage.
         """
 
     @abstractmethod
-    async def _aget_query_embedding(self, query: str) -> Embedding:
+    async def _aget_query_embedding(self, query: str) -> EmbeddingResultType:
         """
         Embed the input query asynchronously.
 
-        Subclasses should implement this method. Reference get_query_embedding's
-        docstring for more information.
+        Subclasses should implement this method.  May return a plain
+        ``List[float]`` (backwards-compatible) or an ``EmbeddingResponse``
+        carrying the vector together with provider-reported token usage.
         """
 
     @dispatcher.span
@@ -151,13 +228,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 model_dict=model_dict,
             )
         )
+        token_count: Optional[int] = None
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
                     self.rate_limiter.acquire()
-                query_embedding = self._get_query_embedding(query)
+                query_embedding, token_count = _unpack_embedding(
+                    self._get_query_embedding(query)
+                )
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
                     key=query, collection="embeddings"
@@ -168,7 +248,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 else:
                     if self.rate_limiter is not None:
                         self.rate_limiter.acquire()
-                    query_embedding = self._get_query_embedding(query)
+                    query_embedding, token_count = _unpack_embedding(
+                        self._get_query_embedding(query)
+                    )
                     self.embeddings_cache.put(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
@@ -184,6 +266,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
+                token_count=token_count,
             )
         )
         return query_embedding
@@ -198,13 +281,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 model_dict=model_dict,
             )
         )
+        token_count: Optional[int] = None
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
                     await self.rate_limiter.async_acquire()
-                query_embedding = await self._aget_query_embedding(query)
+                query_embedding, token_count = _unpack_embedding(
+                    await self._aget_query_embedding(query)
+                )
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
                     key=query, collection="embeddings"
@@ -215,7 +301,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 else:
                     if self.rate_limiter is not None:
                         await self.rate_limiter.async_acquire()
-                    query_embedding = await self._aget_query_embedding(query)
+                    query_embedding, token_count = _unpack_embedding(
+                        await self._aget_query_embedding(query)
+                    )
                     await self.embeddings_cache.aput(
                         key=query,
                         val={str(uuid.uuid4()): query_embedding},
@@ -232,6 +320,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
+                token_count=token_count,
             )
         )
         return query_embedding
@@ -257,26 +346,26 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         return agg_fn(query_embeddings)
 
     @abstractmethod
-    def _get_text_embedding(self, text: str) -> Embedding:
+    def _get_text_embedding(self, text: str) -> EmbeddingResultType:
         """
         Embed the input text synchronously.
 
-        Subclasses should implement this method. Reference get_text_embedding's
-        docstring for more information.
+        Subclasses should implement this method.  May return a plain
+        ``List[float]`` (backwards-compatible) or an ``EmbeddingResponse``
+        carrying the vector together with provider-reported token usage.
         """
 
-    async def _aget_text_embedding(self, text: str) -> Embedding:
+    async def _aget_text_embedding(self, text: str) -> EmbeddingResultType:
         """
         Embed the input text asynchronously.
 
         Subclasses can implement this method if there is a true async
-        implementation. Reference get_text_embedding's docstring for more
-        information.
+        implementation.
         """
         # Default implementation just falls back on _get_text_embedding
         return self._get_text_embedding(text)
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+    def _get_text_embeddings(self, texts: List[str]) -> BatchEmbeddingResultType:
         """
         Embed the input sequence of text synchronously.
 
@@ -285,7 +374,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         # Default implementation just loops over _get_text_embedding
         return [self._get_text_embedding(text) for text in texts]
 
-    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+    async def _aget_text_embeddings(self, texts: List[str]) -> BatchEmbeddingResultType:
         """
         Embed the input sequence of text asynchronously.
 
@@ -297,7 +386,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
     async def _aget_text_embeddings_rate_limited(
         self, texts: List[str]
-    ) -> List[Embedding]:
+    ) -> BatchEmbeddingResultType:
         """Acquire rate limiter before delegating to _aget_text_embeddings."""
         if self.rate_limiter is not None:
             await self.rate_limiter.async_acquire()
@@ -321,10 +410,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             else:
                 non_cached_texts.append((i, txt))
         if len(non_cached_texts) > 0:
-            text_embeddings = self._get_text_embeddings(
-                [x[1] for x in non_cached_texts]
-            )
-            for j, text_embedding in enumerate(text_embeddings):
+            raw_results = self._get_text_embeddings([x[1] for x in non_cached_texts])
+            unpacked, _ = _unpack_embeddings(raw_results)
+            for j, text_embedding in enumerate(unpacked):
                 orig_i = non_cached_texts[j][0]
                 embeddings[orig_i] = text_embedding
 
@@ -356,10 +444,11 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 non_cached_texts.append((i, txt))
 
         if len(non_cached_texts) > 0:
-            text_embeddings = await self._aget_text_embeddings(
+            raw_results = await self._aget_text_embeddings(
                 [x[1] for x in non_cached_texts]
             )
-            for j, text_embedding in enumerate(text_embeddings):
+            unpacked, _ = _unpack_embeddings(raw_results)
+            for j, text_embedding in enumerate(unpacked):
                 orig_i = non_cached_texts[j][0]
                 embeddings[orig_i] = text_embedding
                 await self.embeddings_cache.aput(
@@ -386,13 +475,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 model_dict=model_dict,
             )
         )
+        token_count: Optional[int] = None
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
                     self.rate_limiter.acquire()
-                text_embedding = self._get_text_embedding(text)
+                text_embedding, token_count = _unpack_embedding(
+                    self._get_text_embedding(text)
+                )
             elif self.embeddings_cache is not None:
                 cached_emb = self.embeddings_cache.get(
                     key=text, collection="embeddings"
@@ -403,7 +495,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 else:
                     if self.rate_limiter is not None:
                         self.rate_limiter.acquire()
-                    text_embedding = self._get_text_embedding(text)
+                    text_embedding, token_count = _unpack_embedding(
+                        self._get_text_embedding(text)
+                    )
                     self.embeddings_cache.put(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
@@ -420,6 +514,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
+                token_count=token_count,
             )
         )
         return text_embedding
@@ -434,13 +529,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 model_dict=model_dict,
             )
         )
+        token_count: Optional[int] = None
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
             if not self.embeddings_cache:
                 if self.rate_limiter is not None:
                     await self.rate_limiter.async_acquire()
-                text_embedding = await self._aget_text_embedding(text)
+                text_embedding, token_count = _unpack_embedding(
+                    await self._aget_text_embedding(text)
+                )
             elif self.embeddings_cache is not None:
                 cached_emb = await self.embeddings_cache.aget(
                     key=text, collection="embeddings"
@@ -451,7 +549,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 else:
                     if self.rate_limiter is not None:
                         await self.rate_limiter.async_acquire()
-                    text_embedding = await self._aget_text_embedding(text)
+                    text_embedding, token_count = _unpack_embedding(
+                        await self._aget_text_embedding(text)
+                    )
                     await self.embeddings_cache.aput(
                         key=text,
                         val={str(uuid.uuid4()): text_embedding},
@@ -468,6 +568,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
+                token_count=token_count,
             )
         )
         return text_embedding
@@ -505,9 +606,12 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     if self.rate_limiter is not None:
                         self.rate_limiter.acquire()
                     if not self.embeddings_cache:
-                        embeddings = self._get_text_embeddings(cur_batch)
+                        embeddings, token_count = _unpack_embeddings(
+                            self._get_text_embeddings(cur_batch)
+                        )
                     elif self.embeddings_cache is not None:
                         embeddings = self._get_text_embeddings_cached(cur_batch)
+                        token_count = None
                     result_embeddings.extend(embeddings)
                     event.on_end(
                         payload={
@@ -519,6 +623,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     EmbeddingEndEvent(
                         chunks=cur_batch,
                         embeddings=embeddings,
+                        token_count=token_count,
                     )
                 )
                 cur_batch = []
@@ -594,17 +699,21 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         else:
             nested_embeddings = []
 
-        result_embeddings = [
-            embedding for embeddings in nested_embeddings for embedding in embeddings
-        ]
+        result_embeddings: List[Embedding] = []
+        unpacked_batches: List[Tuple[List[Embedding], Optional[int]]] = []
+        for batch_results in nested_embeddings:
+            embeddings, token_count = _unpack_embeddings(batch_results)
+            result_embeddings.extend(embeddings)
+            unpacked_batches.append((embeddings, token_count))
 
-        for (event_id, text_batch), embeddings in zip(
-            callback_payloads, nested_embeddings
+        for (event_id, text_batch), (embeddings, token_count) in zip(
+            callback_payloads, unpacked_batches
         ):
             dispatcher.event(
                 EmbeddingEndEvent(
                     chunks=text_batch,
                     embeddings=embeddings,
+                    token_count=token_count,
                 )
             )
             self.callback_manager.on_event_end(

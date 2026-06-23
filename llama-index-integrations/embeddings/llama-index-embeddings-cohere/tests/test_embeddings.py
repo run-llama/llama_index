@@ -240,15 +240,26 @@ def test_create_retry_decorator_retries_on_gateway_timeout():
     assert call_count == 2
 
 
-def test_embed_with_retry():
-    """Test that _embed uses retry logic."""
-    emb = CohereEmbedding(api_key="test_key", max_retries=3)
-
+def _make_mock_response(vectors: list, input_tokens: int = 10) -> MagicMock:
+    """Build a mock Cohere embed response with billed_units metadata."""
     mock_embeddings = MagicMock()
-    mock_embeddings.float = [[0.1, 0.2, 0.3]]
+    mock_embeddings.float = vectors
+
+    billed_units = MagicMock()
+    billed_units.input_tokens = input_tokens
+    meta = MagicMock()
+    meta.billed_units = billed_units
 
     mock_response = MagicMock()
     mock_response.embeddings = mock_embeddings
+    mock_response.meta = meta
+    return mock_response
+
+
+def test_embed_with_retry():
+    """Test that _embed uses retry logic."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+    mock_response = _make_mock_response([[0.1, 0.2, 0.3]])
 
     mock_client = MagicMock()
     mock_client.embed.return_value = mock_response
@@ -256,7 +267,7 @@ def test_embed_with_retry():
     with patch.object(emb, "_get_client", return_value=mock_client):
         result = emb._embed(texts=["test text"])
 
-    assert result == [[0.1, 0.2, 0.3]]
+    assert result[0].embedding == [0.1, 0.2, 0.3]
     mock_client.embed.assert_called_once()
 
 
@@ -264,12 +275,7 @@ def test_embed_with_retry():
 async def test_aembed_with_retry():
     """Test that _aembed uses retry logic."""
     emb = CohereEmbedding(api_key="test_key", max_retries=3)
-
-    mock_embeddings = MagicMock()
-    mock_embeddings.float = [[0.1, 0.2, 0.3]]
-
-    mock_response = MagicMock()
-    mock_response.embeddings = mock_embeddings
+    mock_response = _make_mock_response([[0.1, 0.2, 0.3]])
 
     mock_client = MagicMock()
     mock_client.embed = AsyncMock(return_value=mock_response)
@@ -277,8 +283,55 @@ async def test_aembed_with_retry():
     with patch.object(emb, "_get_async_client", return_value=mock_client):
         result = await emb._aembed(texts=["test text"])
 
-    assert result == [[0.1, 0.2, 0.3]]
+    assert result[0].embedding == [0.1, 0.2, 0.3]
     mock_client.embed.assert_called_once()
+
+
+def test_embed_extracts_billed_token_count():
+    """Test that _embed extracts billed_units.input_tokens from the response."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+    mock_response = _make_mock_response([[0.1, 0.2]], input_tokens=42)
+
+    mock_client = MagicMock()
+    mock_client.embed.return_value = mock_response
+
+    with patch.object(emb, "_get_client", return_value=mock_client):
+        result = emb._embed(texts=["hello"])
+
+    assert len(result) == 1
+    assert result[0].token_count == 42
+
+
+@pytest.mark.asyncio
+async def test_aembed_extracts_billed_token_count():
+    """Test that _aembed extracts billed_units.input_tokens from the response."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+    mock_response = _make_mock_response([[0.1, 0.2]], input_tokens=42)
+
+    mock_client = MagicMock()
+    mock_client.embed = AsyncMock(return_value=mock_response)
+
+    with patch.object(emb, "_get_async_client", return_value=mock_client):
+        result = await emb._aembed(texts=["hello"])
+
+    assert len(result) == 1
+    assert result[0].token_count == 42
+
+
+def test_embed_batch_token_count_on_first_only():
+    """In a batch, token_count appears only on the first EmbeddingResponse."""
+    emb = CohereEmbedding(api_key="test_key", max_retries=3)
+    mock_response = _make_mock_response([[0.1], [0.2], [0.3]], input_tokens=30)
+
+    mock_client = MagicMock()
+    mock_client.embed.return_value = mock_response
+
+    with patch.object(emb, "_get_client", return_value=mock_client):
+        result = emb._embed(texts=["a", "b", "c"])
+
+    assert result[0].token_count == 30
+    assert result[1].token_count is None
+    assert result[2].token_count is None
 
 
 def test_embed_image_with_retry():

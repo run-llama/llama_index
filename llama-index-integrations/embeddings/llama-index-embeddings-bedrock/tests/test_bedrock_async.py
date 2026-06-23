@@ -31,7 +31,11 @@ class AsyncMockClient:
         pass
 
     async def invoke_model(self, *args, **kwargs):
-        return {"contentType": "application/json", "body": AsyncMockStreamReader()}
+        return {
+            "contentType": "application/json",
+            "body": AsyncMockStreamReader(),
+            "ResponseMetadata": {"HTTPHeaders": {}},
+        }
 
 
 class AsyncMockSession:
@@ -58,7 +62,10 @@ def bedrock_embedding(mock_aioboto3_session):
 @pytest.mark.asyncio
 async def test_aget_text_embedding(bedrock_embedding):
     response = await bedrock_embedding._aget_text_embedding(EXP_REQUEST)
-    assert response == EXP_RESPONSE["embedding"]
+    from llama_index.core.base.embeddings.base import EmbeddingResponse
+
+    assert isinstance(response, EmbeddingResponse)
+    assert response.embedding == EXP_RESPONSE["embedding"]
 
 
 @pytest.mark.asyncio

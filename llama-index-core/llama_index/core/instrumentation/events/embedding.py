@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.bridge.pydantic import ConfigDict
@@ -29,11 +29,15 @@ class EmbeddingEndEvent(BaseEvent):
     Args:
         chunks (List[str]): List of chunks.
         embeddings (List[List[float]]): List of embeddings.
+        token_count (Optional[int]): Provider-reported token count for this
+            embedding call.  ``None`` when the integration does not report
+            token usage.
 
     """
 
     chunks: List[str]
     embeddings: List[List[float]]
+    token_count: Optional[int] = None
 
     @classmethod
     def class_name(cls) -> str:
