@@ -3,8 +3,11 @@ import asyncio
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
+    ImageBlock,
+    TextBlock,
 )
 from typing import Any
 from llama_index.core.llms.callbacks import llm_completion_callback
@@ -12,6 +15,7 @@ from llama_index.core.llms.mock import MockLLM
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
+from llama_index.core.chat_engine.types import StreamingAgentChatResponse
 
 
 def test_simple_chat_engine() -> None:
@@ -71,6 +75,57 @@ async def test_simple_chat_engine_astream():
     assert num_iters > 10
     assert "Hello World!" in response.unformatted_response
     assert "What is the capital of the moon?" in response.unformatted_response
+
+
+@pytest.mark.asyncio
+async def test_streaming_history_write_handles_multiblock_final_message():
+    memory = ChatMemoryBuffer.from_defaults()
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="draft"), ImageBlock()],
+    )
+
+    async def stream():
+        yield ChatResponse(message=message, delta="final ")
+        yield ChatResponse(message=message, delta="answer")
+
+    response = StreamingAgentChatResponse(achat_stream=stream())
+    response.awrite_response_to_history_task = asyncio.create_task(
+        response.awrite_response_to_history(memory)
+    )
+
+    chunks = [chunk async for chunk in response.async_response_gen()]
+
+    assert chunks == ["final ", "answer"]
+    assert response.response == "final answer"
+    history = memory.get_all()
+    assert len(history) == 1
+    assert history[0].role == MessageRole.ASSISTANT
+    assert isinstance(history[0].blocks[0], TextBlock)
+    assert history[0].blocks[0].text == "final answer"
+    assert isinstance(history[0].blocks[1], ImageBlock)
+
+
+def test_sync_streaming_history_write_handles_multiblock_final_message():
+    memory = ChatMemoryBuffer.from_defaults()
+    message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[TextBlock(text="draft"), ImageBlock()],
+    )
+
+    def stream():
+        yield ChatResponse(message=message, delta="final ")
+        yield ChatResponse(message=message, delta="answer")
+
+    response = StreamingAgentChatResponse(chat_stream=stream())
+    response.write_response_to_history(memory)
+
+    history = memory.get_all()
+    assert len(history) == 1
+    assert history[0].role == MessageRole.ASSISTANT
+    assert isinstance(history[0].blocks[0], TextBlock)
+    assert history[0].blocks[0].text == "final answer"
+    assert isinstance(history[0].blocks[1], ImageBlock)
 
 
 def test_simple_chat_engine_astream_exception_handling():
