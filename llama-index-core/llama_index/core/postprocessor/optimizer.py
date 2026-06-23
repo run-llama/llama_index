@@ -116,7 +116,11 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                     )
                 )
 
-            text_embeddings = self._embed_model._get_text_embeddings(split_text)
+            from llama_index.core.base.embeddings.base import _unpack_embeddings
+
+            text_embeddings, _ = _unpack_embeddings(
+                self._embed_model._get_text_embeddings(split_text)
+            )
 
             num_top_k = None
             threshold = None

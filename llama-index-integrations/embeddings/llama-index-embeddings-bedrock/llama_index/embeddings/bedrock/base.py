@@ -5,7 +5,11 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from deprecated import deprecated
-from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
+from llama_index.core.base.embeddings.base import (
+    BaseEmbedding,
+    EmbeddingResponse,
+    EmbeddingResultType,
+)
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
@@ -64,6 +68,37 @@ def _parse_cohere_response(
         return embeddings if is_batch else embeddings[0]
 
     raise ValueError(f"Unexpected Cohere embedding response format: {type(embeddings)}")
+
+
+def _extract_bedrock_token_count(
+    response: Dict[str, Any], resp_body: Dict[str, Any]
+) -> Optional[int]:
+    """
+    Extract input token count from a Bedrock invoke_model response.
+
+    Checks two sources in order:
+    1. HTTP header ``x-amzn-bedrock-input-token-count`` (available for all
+       Bedrock models).
+    2. Response body ``inputTextTokenCount`` (Amazon Titan only).
+
+    Returns ``None`` if neither source is available.
+    """
+    try:
+        headers = response.get("ResponseMetadata", {}).get("HTTPHeaders", {})
+        header_count = headers.get("x-amzn-bedrock-input-token-count")
+        if header_count is not None:
+            return int(header_count)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        body_count = resp_body.get("inputTextTokenCount")
+        if body_count is not None:
+            return int(body_count)
+    except (TypeError, ValueError):
+        pass
+
+    return None
 
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
@@ -410,16 +445,16 @@ class BedrockEmbedding(BaseEmbedding):
 
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
-    ) -> Union[Embedding, List[Embedding]]:
+    ) -> Union[EmbeddingResponse, List[EmbeddingResponse]]:
         """
         Get the embedding for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
-            type (Literal[&quot;text&quot;, &quot;query&quot;]): The type of the payload. It can be either "text" or "query".
+            type (Literal["text", "query"]): The type of the payload.
 
         Returns:
-            Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+            Union[EmbeddingResponse, List[EmbeddingResponse]]: The embedding(s) with provider-reported token count.
 
         """
         if self._client is None:
@@ -442,15 +477,32 @@ class BedrockEmbedding(BaseEmbedding):
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
 
-    def _get_query_embedding(self, query: str) -> Embedding:
+        raw_result = identifiers["get_embeddings_func"](resp, isinstance(payload, list))
+        token_count = _extract_bedrock_token_count(response, resp)
+
+        if (
+            isinstance(raw_result, list)
+            and raw_result
+            and isinstance(raw_result[0], list)
+        ):
+            return [
+                EmbeddingResponse(
+                    embedding=v, token_count=token_count if i == 0 else None, raw=resp
+                )
+                for i, v in enumerate(raw_result)
+            ]
+        return EmbeddingResponse(
+            embedding=raw_result, token_count=token_count, raw=resp
+        )
+
+    def _get_query_embedding(self, query: str) -> EmbeddingResultType:
         return self._get_embedding(query, "query")
 
-    def _get_text_embedding(self, text: str) -> Embedding:
+    def _get_text_embedding(self, text: str) -> EmbeddingResultType:
         return self._get_embedding(text, "text")
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+    def _get_text_embeddings(self, texts: List[str]) -> List[EmbeddingResponse]:
         provider = self._get_provider()
         if provider == PROVIDERS.COHERE:
             return self._get_embedding(texts, "text")
@@ -525,16 +577,16 @@ class BedrockEmbedding(BaseEmbedding):
 
     async def _aget_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
-    ) -> Union[Embedding, List[Embedding]]:
+    ) -> Union[EmbeddingResponse, List[EmbeddingResponse]]:
         """
         Get the embedding asynchronously for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
-            type (Literal[&quot;text&quot;, &quot;query&quot;]): The type of the payload. It can be either "text" or "query".
+            type (Literal["text", "query"]): The type of the payload.
 
         Returns:
-            Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+            Union[EmbeddingResponse, List[EmbeddingResponse]]: The embedding(s) with provider-reported token count.
 
         """
         if self._asession is None:
@@ -558,10 +610,27 @@ class BedrockEmbedding(BaseEmbedding):
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
 
-    async def _aget_query_embedding(self, query: str) -> Embedding:
+        raw_result = identifiers["get_embeddings_func"](resp, isinstance(payload, list))
+        token_count = _extract_bedrock_token_count(response, resp)
+
+        if (
+            isinstance(raw_result, list)
+            and raw_result
+            and isinstance(raw_result[0], list)
+        ):
+            return [
+                EmbeddingResponse(
+                    embedding=v, token_count=token_count if i == 0 else None, raw=resp
+                )
+                for i, v in enumerate(raw_result)
+            ]
+        return EmbeddingResponse(
+            embedding=raw_result, token_count=token_count, raw=resp
+        )
+
+    async def _aget_query_embedding(self, query: str) -> EmbeddingResultType:
         return await self._aget_embedding(query, "query")
 
-    async def _aget_text_embedding(self, text: str) -> Embedding:
+    async def _aget_text_embedding(self, text: str) -> EmbeddingResultType:
         return await self._aget_embedding(text, "text")

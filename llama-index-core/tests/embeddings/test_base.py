@@ -4,8 +4,15 @@ from typing import Any, List
 from unittest.mock import patch
 import pytest
 
-from llama_index.core.base.embeddings.base import SimilarityMode, mean_agg
+from llama_index.core.base.embeddings.base import (
+    EmbeddingResponse,
+    SimilarityMode,
+    _unpack_embedding,
+    _unpack_embeddings,
+    mean_agg,
+)
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.instrumentation.events.embedding import EmbeddingEndEvent
 
 
 def mock_get_text_embedding(text: str) -> List[float]:
@@ -100,3 +107,130 @@ def test_mean_agg_empty_list() -> None:
     """Test mean aggregation raises ValueError for empty list."""
     with pytest.raises(ValueError, match="No embeddings to aggregate"):
         mean_agg([])
+
+
+# --- EmbeddingResponse / unpack helpers ---
+
+
+def test_unpack_embedding_plain_list() -> None:
+    """Plain List[float] unpacks to (embedding, None)."""
+    emb, tc = _unpack_embedding([0.1, 0.2])
+    assert emb == [0.1, 0.2]
+    assert tc is None
+
+
+def test_unpack_embedding_response() -> None:
+    """EmbeddingResponse unpacks to (embedding, token_count)."""
+    resp = EmbeddingResponse(embedding=[0.1, 0.2], token_count=42)
+    emb, tc = _unpack_embedding(resp)
+    assert emb == [0.1, 0.2]
+    assert tc == 42
+
+
+def test_unpack_embeddings_plain_list() -> None:
+    """Batch of plain lists produces (embeddings, None)."""
+    embs, tc = _unpack_embeddings([[0.1], [0.2]])
+    assert embs == [[0.1], [0.2]]
+    assert tc is None
+
+
+def test_unpack_embeddings_with_token_counts() -> None:
+    """Batch of EmbeddingResponse sums token counts."""
+    batch = [
+        EmbeddingResponse(embedding=[0.1], token_count=10),
+        EmbeddingResponse(embedding=[0.2], token_count=None),
+        EmbeddingResponse(embedding=[0.3], token_count=5),
+    ]
+    embs, tc = _unpack_embeddings(batch)
+    assert embs == [[0.1], [0.2], [0.3]]
+    assert tc == 15
+
+
+def test_embedding_end_event_token_count_default() -> None:
+    """EmbeddingEndEvent.token_count defaults to None."""
+    event = EmbeddingEndEvent(chunks=["hello"], embeddings=[[0.1]])
+    assert event.token_count is None
+
+
+def test_embedding_end_event_token_count_set() -> None:
+    """EmbeddingEndEvent accepts a token_count value."""
+    event = EmbeddingEndEvent(chunks=["hello"], embeddings=[[0.1]], token_count=42)
+    assert event.token_count == 42
+
+
+def test_embedding_response_surfaces_token_count_in_event() -> None:
+    """
+    When a subclass returns EmbeddingResponse, the dispatched
+    EmbeddingEndEvent carries the token_count.
+    """
+    import llama_index.core.instrumentation as instrument
+    from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+
+    captured: List[EmbeddingEndEvent] = []
+
+    class Capture(BaseEventHandler):
+        @classmethod
+        def class_name(cls) -> str:
+            return "Capture"
+
+        def handle(self, event: Any, **kwargs: Any) -> None:
+            if isinstance(event, EmbeddingEndEvent):
+                captured.append(event)
+
+    handler = Capture()
+    root = instrument.get_dispatcher()
+    root.add_event_handler(handler)
+
+    try:
+
+        class TokenReportingEmbedding(MockEmbedding):
+            def _get_text_embedding(self, text: str) -> EmbeddingResponse:
+                vec = [0.0] * self.embed_dim
+                return EmbeddingResponse(embedding=vec, token_count=99)
+
+            async def _aget_query_embedding(self, query: str) -> EmbeddingResponse:
+                return self._get_text_embedding(query)
+
+            def _get_query_embedding(self, query: str) -> EmbeddingResponse:
+                return self._get_text_embedding(query)
+
+        model = TokenReportingEmbedding(embed_dim=5)
+        result = model.get_text_embedding("test")
+        assert result == [0.0] * 5
+        assert len(captured) == 1
+        assert captured[0].token_count == 99
+    finally:
+        root.event_handlers.remove(handler)
+
+
+def test_plain_embedding_still_works() -> None:
+    """
+    Existing integrations returning plain List[float] continue to work
+    and produce token_count=None in the event.
+    """
+    import llama_index.core.instrumentation as instrument
+    from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+
+    captured: List[EmbeddingEndEvent] = []
+
+    class Capture(BaseEventHandler):
+        @classmethod
+        def class_name(cls) -> str:
+            return "Capture"
+
+        def handle(self, event: Any, **kwargs: Any) -> None:
+            if isinstance(event, EmbeddingEndEvent):
+                captured.append(event)
+
+    handler = Capture()
+    root = instrument.get_dispatcher()
+    root.add_event_handler(handler)
+
+    try:
+        model = MockEmbedding(embed_dim=5)
+        result = model.get_text_embedding("test")
+        assert isinstance(result, list)
+        assert len(captured) == 1
+        assert captured[0].token_count is None
+    finally:
+        root.event_handlers.remove(handler)

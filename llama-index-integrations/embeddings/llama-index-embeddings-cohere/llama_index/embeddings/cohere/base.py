@@ -7,7 +7,11 @@ from typing import Any, Callable, List, Optional, Union
 
 import cohere
 import httpx
-from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embedding
+from llama_index.core.base.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    Embedding,
+    EmbeddingResponse,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
@@ -132,6 +136,26 @@ MAX_EMBED_BATCH_SIZE = 96
 
 # Default max retries for API calls
 DEFAULT_MAX_RETRIES = 10
+
+
+def _extract_billed_input_tokens(response: Any) -> Optional[int]:
+    """
+    Extract billed input token count from a Cohere embed response.
+
+    Returns the provider-reported count from
+    ``response.meta.billed_units.input_tokens``, or ``None`` if unavailable.
+    """
+    try:
+        meta = getattr(response, "meta", None)
+        if meta is None:
+            return None
+        billed = getattr(meta, "billed_units", None)
+        if billed is None:
+            return None
+        count = getattr(billed, "input_tokens", None)
+        return int(count) if count is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -320,7 +344,7 @@ class CohereEmbedding(MultiModalEmbedding):
         self,
         texts: Optional[List[str]] = None,
         input_type: str = "search_document",
-    ) -> List[List[float]]:
+    ) -> List[EmbeddingResponse]:
         """Embed sentences using Cohere."""
         client = self._get_client()
 
@@ -332,15 +356,24 @@ class CohereEmbedding(MultiModalEmbedding):
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
         @retry_decorator
-        def _embed_with_retry() -> List[List[float]]:
-            result = client.embed(
+        def _embed_with_retry() -> List[EmbeddingResponse]:
+            response = client.embed(
                 texts=texts,
                 input_type=input_type,
                 embedding_types=[self.embedding_type],
                 model=self.model_name,
                 truncate=self.truncate,
-            ).embeddings
-            return getattr(result, self.embedding_type, None)
+            )
+            vectors = getattr(response.embeddings, self.embedding_type, None) or []
+            token_count = _extract_billed_input_tokens(response)
+            return [
+                EmbeddingResponse(
+                    embedding=v,
+                    token_count=token_count if i == 0 else None,
+                    raw=response,
+                )
+                for i, v in enumerate(vectors)
+            ]
 
         return _embed_with_retry()
 
@@ -348,7 +381,7 @@ class CohereEmbedding(MultiModalEmbedding):
         self,
         texts: Optional[List[str]] = None,
         input_type: str = "search_document",
-    ) -> List[List[float]]:
+    ) -> List[EmbeddingResponse]:
         """Embed sentences using Cohere."""
         async_client = self._get_async_client()
 
@@ -360,17 +393,24 @@ class CohereEmbedding(MultiModalEmbedding):
         retry_decorator = _create_retry_decorator(max_retries=self.max_retries)
 
         @retry_decorator
-        async def _aembed_with_retry() -> List[List[float]]:
-            result = (
-                await async_client.embed(
-                    texts=texts,
-                    input_type=input_type,
-                    embedding_types=[self.embedding_type],
-                    model=self.model_name,
-                    truncate=self.truncate,
+        async def _aembed_with_retry() -> List[EmbeddingResponse]:
+            response = await async_client.embed(
+                texts=texts,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            )
+            vectors = getattr(response.embeddings, self.embedding_type, None) or []
+            token_count = _extract_billed_input_tokens(response)
+            return [
+                EmbeddingResponse(
+                    embedding=v,
+                    token_count=token_count if i == 0 else None,
+                    raw=response,
                 )
-            ).embeddings
-            return getattr(result, self.embedding_type, None)
+                for i, v in enumerate(vectors)
+            ]
 
         return await _aembed_with_retry()
 
