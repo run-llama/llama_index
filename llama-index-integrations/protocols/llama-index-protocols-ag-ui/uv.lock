@@ -1647,7 +1647,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-protocols-ag-ui"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "ag-ui-protocol" },
