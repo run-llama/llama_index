@@ -1009,3 +1009,59 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][3].content == "hello\nworld"
+
+
+def test_supports_reasoning_model_prefix_matching() -> None:
+    from llama_index.llms.openai.utils import supports_reasoning_model
+
+    assert supports_reasoning_model("gpt-5.2-2025-12-11") is True
+    assert supports_reasoning_model("gpt-5.9-2027-01-01") is True
+    assert supports_reasoning_model("o3-mini") is True
+    assert supports_reasoning_model("gpt-4o") is False
+    assert supports_reasoning_model("gpt-4o-mini") is False
+
+
+def test_get_model_kwargs_unlisted_reasoning_snapshot() -> None:
+    """Unlisted GPT-5 snapshots must forward reasoning and strip sampling params."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model="gpt-5.9-2027-01-01",
+                reasoning_options={"effort": "low"},
+                api_key="sk-test",
+            )
+
+    kwargs = llm._get_model_kwargs()
+
+    assert kwargs["reasoning"] == {"effort": "low"}
+    assert "top_p" not in kwargs
+    assert "temperature" not in kwargs
+
+
+def test_get_model_kwargs_unlisted_reasoning_snapshot_without_options() -> None:
+    """Unlisted reasoning models still reject sampling params by default."""
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model="gpt-5.9-2027-01-01",
+                api_key="sk-test",
+            )
+
+    kwargs = llm._get_model_kwargs()
+
+    assert "reasoning" not in kwargs
+    assert "top_p" not in kwargs
+    assert "temperature" not in kwargs
+
+
+def test_constructor_preserves_temperature_when_reasoning_effort_none() -> None:
+    with patch("llama_index.llms.openai.responses.SyncOpenAI"):
+        with patch("llama_index.llms.openai.responses.AsyncOpenAI"):
+            llm = OpenAIResponses(
+                model="gpt-5.2-2025-12-11",
+                temperature=0.3,
+                reasoning_options={"effort": "none"},
+                api_key="sk-test",
+            )
+
+    assert llm.temperature == 0.3

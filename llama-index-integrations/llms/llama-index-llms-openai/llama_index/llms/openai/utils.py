@@ -100,6 +100,24 @@ O1_MODELS_WITHOUT_FUNCTION_CALLING = {
     "o1-mini-2024-09-12",
 }
 
+
+def supports_reasoning_model(model: str) -> bool:
+    """Return whether a model uses OpenAI reasoning/O-series behavior.
+
+    Known models are resolved via ``O1_MODELS``. Prefix matching covers newly
+    released dated snapshots (e.g. ``gpt-5.9-2027-01-01``) before they are
+    added to the allowlist.
+    """
+    if model in O1_MODELS:
+        return True
+
+    return (
+        model in ("o1", "o3", "o4")
+        or model.startswith(("o1-", "o3-", "o4-"))
+        or model.startswith(("gpt-5", "gpt-5."))
+    )
+
+
 GPT4_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-4-0314 before 2023-06-27,

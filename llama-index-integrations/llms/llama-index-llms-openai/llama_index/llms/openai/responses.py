@@ -93,6 +93,7 @@ from llama_index.llms.openai.utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     resolve_tool_choice,
+    supports_reasoning_model,
     to_openai_message_dicts,
 )
 
@@ -314,8 +315,11 @@ class OpenAIResponses(FunctionCallingLLM):
             api_version=api_version,
         )
 
-        # TODO: Temp forced to 1.0 for o1
-        if model in O1_MODELS:
+        # Reasoning models reject custom temperature when reasoning is active.
+        if supports_reasoning_model(model) and (
+            reasoning_options is None
+            or reasoning_options.get("effort", "none") != "none"
+        ):
             temperature = 1.0
 
         super().__init__(
@@ -421,10 +425,14 @@ class OpenAIResponses(FunctionCallingLLM):
             "user": self.user,
         }
 
-        if self.model in O1_MODELS and self.reasoning_options is not None:
+        if supports_reasoning_model(self.model) and self.reasoning_options is not None:
             model_kwargs["reasoning"] = self.reasoning_options
 
-        if self.reasoning_options is not None or self.model in O1_MODELS:
+        reasoning_active = (
+            supports_reasoning_model(self.model)
+            or self.reasoning_options is not None
+        )
+        if reasoning_active:
             params_to_exclude_for_reasoning = {
                 "top_p",
                 "temperature",
