@@ -3,7 +3,8 @@ from httpx import AsyncClient
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.core.llms import AudioBlock, DocumentBlock, ImageBlock, TextBlock
+from llama_index.tools.mcp.client import _content_to_blocks, enable_sse
 from mcp import types
 
 
@@ -259,3 +260,82 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+def test_content_to_blocks_handles_audio_content():
+    blocks = _content_to_blocks(
+        types.AudioContent(type="audio", data="aGVsbG8=", mimeType="audio/wav")
+    )
+
+    assert len(blocks) == 1
+    assert isinstance(blocks[0], AudioBlock)
+    assert blocks[0].audio == b"aGVsbG8="
+    assert blocks[0].format == "wav"
+
+
+def test_content_to_blocks_handles_embedded_text_resource():
+    blocks = _content_to_blocks(
+        types.EmbeddedResource(
+            type="resource",
+            resource=types.TextResourceContents(
+                uri="resource://note", mimeType="text/plain", text="embedded text"
+            ),
+        )
+    )
+
+    assert blocks == [TextBlock(text="embedded text")]
+
+
+def test_content_to_blocks_handles_embedded_blob_resource():
+    blocks = _content_to_blocks(
+        types.EmbeddedResource(
+            type="resource",
+            resource=types.BlobResourceContents(
+                uri="resource://doc",
+                mimeType="application/pdf",
+                blob="aGVsbG8=",
+            ),
+        )
+    )
+
+    assert len(blocks) == 1
+    assert isinstance(blocks[0], DocumentBlock)
+    assert blocks[0].data == b"aGVsbG8="
+    assert blocks[0].document_mimetype == "application/pdf"
+    assert blocks[0].title == "resource://doc"
+
+
+def test_content_to_blocks_handles_embedded_image_resource():
+    blocks = _content_to_blocks(
+        types.EmbeddedResource(
+            type="resource",
+            resource=types.BlobResourceContents(
+                uri="resource://image",
+                mimeType="image/png",
+                blob="aGVsbG8=",
+            ),
+        )
+    )
+
+    assert len(blocks) == 1
+    assert isinstance(blocks[0], ImageBlock)
+    assert blocks[0].image == b"aGVsbG8="
+    assert blocks[0].image_mimetype == "image/png"
+
+
+def test_content_to_blocks_handles_resource_link():
+    blocks = _content_to_blocks(
+        types.ResourceLink(
+            type="resource_link",
+            uri="resource://doc",
+            name="doc",
+            title="Document",
+            mimeType="application/pdf",
+        )
+    )
+
+    assert len(blocks) == 1
+    assert isinstance(blocks[0], DocumentBlock)
+    assert str(blocks[0].url) == "resource://doc"
+    assert blocks[0].title == "Document"
+    assert blocks[0].document_mimetype == "application/pdf"
