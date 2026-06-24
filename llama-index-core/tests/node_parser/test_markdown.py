@@ -202,3 +202,60 @@ Content
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/"}
+
+
+def test_tilde_fenced_code_block() -> None:
+    """`#` lines inside a ~~~ fenced code block must not be parsed as headers."""
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Header 1
+
+~~~
+# not a header
+more code
+~~~
+
+Body text
+"""
+            )
+        ]
+    )
+
+    # The whole section stays together; the fenced "# not a header" line is not
+    # treated as a header, so there is no spurious extra split.
+    assert len(splits) == 1
+    assert splits[0].metadata == {"header_path": "/"}
+    assert "# not a header" in splits[0].text
+    assert "Body text" in splits[0].text
+
+
+def test_mixed_fence_characters() -> None:
+    """A ``` line inside a ~~~ block is code content and must not close it."""
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Header 1
+
+~~~
+```
+# still inside the tilde fence
+~~~
+
+# Header 2
+Body
+"""
+            )
+        ]
+    )
+
+    # Two sections: the tilde-fenced block belongs to "Header 1" (the inner
+    # ``` and "# still inside ..." do not split it), and "Header 2" follows.
+    assert len(splits) == 2
+    assert splits[0].metadata == {"header_path": "/"}
+    assert "# still inside the tilde fence" in splits[0].text
+    assert splits[1].text == "# Header 2\nBody"
