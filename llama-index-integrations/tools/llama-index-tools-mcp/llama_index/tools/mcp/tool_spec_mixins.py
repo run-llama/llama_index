@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Union, Literal, Type, TYPE_CHECKING
-from pydantic import Field
+from pydantic import ConfigDict, Field, ValidationError
 
 if TYPE_CHECKING:
     from llama_index.tools.mcp.base import McpToolSpec
@@ -134,6 +134,26 @@ class TypeCreationMixin:
         return ref_path.split("#/$defs/")[-1]
 
 
+class ConfigDictExtractionMixin:
+    def _extract_config(self: "McpToolSpec", schema: dict) -> ConfigDict:
+        """Extract Pydantic config from schema."""
+        extra_properties_policy = self._extract_extra_properties_policy(schema)
+        return ConfigDict(extra=extra_properties_policy)
+
+    def _extract_extra_properties_policy(self, schema: dict) -> str:
+        if schema.get("additionalProperties") is True:
+            extra_properties_policy = "allow"
+        elif isinstance(schema.get("additionalProperties"), dict):
+            extra_properties_policy = "allow"
+        elif schema.get("additionalProperties") is False:
+            extra_properties_policy = "forbid"
+        elif schema.get("additionalProperties") is None:
+            extra_properties_policy = "ignore"
+        else:
+            raise ValidationError("Invalid additionalProperties value in schema")
+        return extra_properties_policy
+
+
 class FieldExtractionMixin:
     def _extract_fields(self: "McpToolSpec", schema: dict, defs: dict) -> dict:
         """Extract Pydantic fields from schema."""
@@ -156,7 +176,18 @@ class FieldExtractionMixin:
 
             fields[field_name] = (
                 final_type,
-                Field(default_value, description=field_schema.get("description", "")),
+                Field(default_value, description=field_schema.get("description", None)),
+            )
+
+        additional_properties = schema.get("additionalProperties")
+        # Configure Pydantic to track extra fields with typed validation
+        if isinstance(additional_properties, dict):
+            extra_value_type = self._resolve_field_type(additional_properties, defs)
+            # __pydantic_extra__ enables runtime type checking for dynamic properties
+            # init=False prevents this metadata field from appearing in __init__
+            fields["__pydantic_extra__"] = (
+                Dict[str, extra_value_type],
+                Field(init=False),
             )
 
         return fields
