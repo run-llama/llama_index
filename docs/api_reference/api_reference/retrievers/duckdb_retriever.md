@@ -1,4 +1,3 @@
 ::: llama_index.retrievers.duckdb_retriever
-    options:
-      members:
-        - DuckDBRetriever
+options:
+members: - DuckDBRetriever

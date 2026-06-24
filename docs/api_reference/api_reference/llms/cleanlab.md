@@ -1,4 +1,3 @@
 ::: llama_index.llms.cleanlab
-    options:
-      members:
-        - CleanlabTLM
+options:
+members: - CleanlabTLM

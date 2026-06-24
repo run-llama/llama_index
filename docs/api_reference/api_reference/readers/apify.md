@@ -1,5 +1,3 @@
 ::: llama_index.readers.apify
-    options:
-      members:
-        - ApifyActor
-        - ApifyDataset
+options:
+members: - ApifyActor - ApifyDataset

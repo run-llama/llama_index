@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.elasticsearch
-    options:
-      members:
-        - ElasticsearchStore
+options:
+members: - ElasticsearchStore

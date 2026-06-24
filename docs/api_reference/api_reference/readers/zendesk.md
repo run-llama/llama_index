@@ -1,4 +1,3 @@
 ::: llama_index.readers.zendesk
-    options:
-      members:
-        - ZendeskReader
+options:
+members: - ZendeskReader

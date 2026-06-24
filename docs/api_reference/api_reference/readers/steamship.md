@@ -1,4 +1,3 @@
 ::: llama_index.readers.steamship
-    options:
-      members:
-        - SteamshipFileReader
+options:
+members: - SteamshipFileReader
