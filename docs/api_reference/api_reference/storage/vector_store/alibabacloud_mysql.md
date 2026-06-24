@@ -1,3 +1,4 @@
 ::: llama_index.vector_stores.alibabacloud_mysql
-options:
-members: - AlibabaCloudMySQLVectorStore
+    options:
+      members:
+        - AlibabaCloudMySQLVectorStore

@@ -1,3 +1,4 @@
 ::: llama_index.readers.hubspot
-options:
-members: - HubspotReader
+    options:
+      members:
+        - HubspotReader

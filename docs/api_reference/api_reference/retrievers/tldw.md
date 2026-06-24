@@ -1,3 +1,4 @@
 ::: llama_index.retrievers.tldw
-options:
-members: - TldwRetriever
+    options:
+      members:
+        - TldwRetriever

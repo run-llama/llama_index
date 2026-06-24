@@ -1,3 +1,4 @@
 ::: llama_index.readers.jira
-options:
-members: - JiraReader
+    options:
+      members:
+        - JiraReader

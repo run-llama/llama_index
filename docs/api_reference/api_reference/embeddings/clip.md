@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.clip
-options:
-members: - ClipEmbedding
+    options:
+      members:
+        - ClipEmbedding

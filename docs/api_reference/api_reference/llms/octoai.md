@@ -1,3 +1,4 @@
 ::: llama_index.llms.octoai
-options:
-members: - OctoAI
+    options:
+      members:
+        - OctoAI

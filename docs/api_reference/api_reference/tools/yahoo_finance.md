@@ -1,3 +1,4 @@
 ::: llama_index.tools.yahoo_finance
-options:
-members: - YahooFinanceToolSpec
+    options:
+      members:
+        - YahooFinanceToolSpec
