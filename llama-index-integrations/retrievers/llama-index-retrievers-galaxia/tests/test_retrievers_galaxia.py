@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.retrievers.galaxia import GalaxiaRetriever
+from llama_index.retrievers.galaxia.base import GalaxiaClient
 
 
 def test_retrieve():
@@ -51,3 +52,33 @@ def test_retrieve():
     assert result[0].text == expected_result[0].text
     assert result[0].score == expected_result[0].score
     assert result[0].metadata == expected_result[0].metadata
+
+
+def test_galaxia_client_closes_connection(monkeypatch):
+    conn = MagicMock()
+    monkeypatch.setattr("http.client.HTTPSConnection", lambda api_url: conn)
+
+    client = GalaxiaClient("example.com", "api-key", "kb", n_retries=1, wait_time=0)
+    monkeypatch.setattr(client, "initialize", lambda conn, query: {"operationId": "op"})
+    monkeypatch.setattr(
+        client, "check_status", lambda conn, init_res: {"status": "processed"}
+    )
+    monkeypatch.setattr(
+        client,
+        "get_result",
+        lambda conn, init_res: {"result": {"resultItems": [{"text": "result"}]}},
+    )
+
+    assert client.retrieve("question") == [{"text": "result"}]
+    conn.close.assert_called_once()
+
+
+def test_galaxia_client_closes_connection_on_init_failure(monkeypatch):
+    conn = MagicMock()
+    monkeypatch.setattr("http.client.HTTPSConnection", lambda api_url: conn)
+
+    client = GalaxiaClient("example.com", "api-key", "kb", n_retries=1, wait_time=0)
+    monkeypatch.setattr(client, "initialize", lambda conn, query: {})
+
+    assert client.retrieve("question") is None
+    conn.close.assert_called_once()
