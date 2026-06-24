@@ -97,6 +97,87 @@ async def test_pydantic_models_tool(client: BasicMCPClient):
     )
 
 
+@pytest.mark.parametrize(
+    "json_schema",
+    [
+        pytest.param(
+            {
+                "properties": {
+                    "known": {"title": "Known", "type": "string"},
+                },
+                "required": ["known"],
+                "type": "object",
+            },
+            id="ignore-extra-properties-by-default",
+        ),
+        pytest.param(
+            {
+                "additionalProperties": True,
+                "properties": {
+                    "known": {"title": "Known", "type": "string"},
+                },
+                "required": ["known"],
+                "type": "object",
+            },
+            id="allows-untyped-extra-properties",
+        ),
+        pytest.param(
+            {
+                "additionalProperties": False,
+                "properties": {
+                    "known": {"title": "Known", "type": "string"},
+                },
+                "required": ["known"],
+                "type": "object",
+            },
+            id="forbids-extra-properties",
+        ),
+        pytest.param(
+            {
+                "additionalProperties": {"type": "string"},
+                "properties": {
+                    "known": {"title": "Known", "type": "string"},
+                },
+                "required": ["known"],
+                "type": "object",
+            },
+            id="allows-string-extra-properties",
+        ),
+        pytest.param(
+            {
+                "$defs": {
+                    "Inner": {
+                        "additionalProperties": False,
+                        "properties": {
+                            "value": {"title": "Value", "type": "string"},
+                        },
+                        "required": ["value"],
+                        "title": "Inner",
+                        "type": "object",
+                    },
+                },
+                "additionalProperties": False,
+                "properties": {
+                    "nested": {"$ref": "#/$defs/Inner"},
+                },
+                "required": ["nested"],
+                "type": "object",
+            },
+            id="forbids-extra-properties-in-nested-model",
+        ),
+    ],
+)
+def test_create_model_from_json_schema(client: BasicMCPClient, json_schema: dict):
+    """Test the test_pydantic tool with Pydantic models that use custom type aliases and Literal types."""
+    tool_spec = McpToolSpec(client, allowed_tools=[])
+    pydantic_model = tool_spec.create_model_from_json_schema(json_schema)
+    json_schema_from_pydantic_model = pydantic_model.model_json_schema()
+
+    del json_schema_from_pydantic_model["title"]
+
+    assert json_schema == json_schema_from_pydantic_model
+
+
 def test_pydantic_models_schema_structure(client: BasicMCPClient):
     """Test that the test_pydantic tool generates correct schema structure."""
     tool = McpToolSpec(client, allowed_tools=["test_pydantic"]).to_tool_list()[0]
