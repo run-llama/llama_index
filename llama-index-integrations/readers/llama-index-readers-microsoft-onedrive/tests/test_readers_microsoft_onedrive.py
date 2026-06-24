@@ -1,3 +1,6 @@
+import os
+from unittest.mock import MagicMock, patch
+
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
@@ -31,6 +34,28 @@ def test_serialize():
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
     assert new_reader.required_exts == reader.required_exts
+
+
+def test_download_file_by_url_keeps_file_in_local_dir(tmp_path):
+    reader = OneDriveReader.__new__(OneDriveReader)
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    item = {
+        "name": "../traversal.txt",
+        "@microsoft.graph.downloadUrl": "https://example.test/file",
+    }
+    response = MagicMock()
+    response.content = b"safe contents"
+
+    with patch("requests.get", return_value=response):
+        downloaded_path = reader._download_file_by_url(item, str(download_dir))
+
+    assert os.path.realpath(downloaded_path).startswith(
+        os.path.realpath(download_dir) + os.sep
+    )
+    assert os.path.basename(downloaded_path) == "traversal.txt"
+    assert os.path.exists(downloaded_path)
+    assert not (tmp_path / "traversal.txt").exists()
 
 
 @pytest.fixture()
