@@ -20,11 +20,14 @@ pytestmark = pytest.mark.skipif(
 
 MODEL = "voyage-3.5"
 CONTEXT_MODEL = "voyage-context-3"
+CONTEXT_MODEL_4 = "voyage-context-4"
 VOYAGE_4_MODELS = ["voyage-4", "voyage-4-lite", "voyage-4-large"]
 MULTIMODAL_MODEL = "voyage-multimodal-3.5"
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_embedding_single_document(model: str):
     """Test embedding single document."""
     emb = VoyageEmbedding(model_name=model)
@@ -36,7 +39,9 @@ def test_embedding_single_document(model: str):
     assert isinstance(result[0], float)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_embedding_multiple_documents(model: str):
     """Test embedding multiple documents."""
     emb = VoyageEmbedding(model_name=model, embed_batch_size=2)
@@ -49,7 +54,9 @@ def test_embedding_multiple_documents(model: str):
     assert result[0] != result[1]
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 @pytest.mark.asyncio
 async def test_async_embedding_multiple_documents(model: str):
     """Test async embedding multiple documents."""
@@ -61,7 +68,9 @@ async def test_async_embedding_multiple_documents(model: str):
     assert all(isinstance(emb, list) for emb in result)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_embedding_with_small_batch_size(model: str):
     """Test embedding with small batch size to verify batching works."""
     emb = VoyageEmbedding(model_name=model, embed_batch_size=2)
@@ -75,7 +84,9 @@ def test_embedding_with_small_batch_size(model: str):
     assert result[0] != result[1]
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_embedding_empty_list(model: str):
     """Test embedding with empty list."""
     emb = VoyageEmbedding(model_name=model)
@@ -86,7 +97,9 @@ def test_embedding_empty_list(model: str):
     assert isinstance(result, list)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_embedding_consistency(model: str):
     """Test that same text produces same embedding."""
     emb = VoyageEmbedding(model_name=model)
@@ -136,7 +149,9 @@ async def test_context_model_async_embedding():
     assert all(len(emb) == 512 for emb in result)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_automatic_batching_with_many_documents(model: str):
     """Test automatic batching with many documents."""
     emb = VoyageEmbedding(model_name=model, embed_batch_size=10)
@@ -148,7 +163,9 @@ def test_automatic_batching_with_many_documents(model: str):
     assert all(isinstance(emb, list) for emb in result)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_batching_with_varying_text_lengths(model: str):
     """Test batching with texts of varying lengths."""
     emb = VoyageEmbedding(model_name=model, embed_batch_size=5)
@@ -193,7 +210,9 @@ async def test_async_query_vs_document_embeddings():
     assert len(query_emb) == len(doc_emb)
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 def test_build_batches_with_real_tokenizer(model: str):
     """Test batch building with real tokenizer."""
     emb = VoyageEmbedding(model_name=model, embed_batch_size=10)
@@ -215,7 +234,9 @@ def test_build_batches_with_real_tokenizer(model: str):
         assert batch_size > 0
 
 
-@pytest.mark.parametrize("model", [MODEL, CONTEXT_MODEL, *VOYAGE_4_MODELS])
+@pytest.mark.parametrize(
+    "model", [MODEL, CONTEXT_MODEL, CONTEXT_MODEL_4, *VOYAGE_4_MODELS]
+)
 @pytest.mark.slow
 def test_automatic_batching_with_long_texts(model: str):
     """

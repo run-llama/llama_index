@@ -255,6 +255,7 @@ VoyageAI offers several specialized embedding models:
 
 - **voyage-multimodal-3**: Supports text and image embeddings (1024 dimensions)
 - **voyage-multimodal-3.5**: Supports text, image, and video embeddings (1024 dimensions, supports 256, 512, 2048). Currently in preview.
+- **voyage-context-4**: Contextualized chunk embeddings with 120K batch token limit (1024 dimensions, supports 256, 512, 1024, 2048). Currently in preview.
 - **voyage-context-3**: Enhanced contextual embeddings with 32K batch token limit (1024 dimensions)
 
 ### Legacy Models
@@ -313,6 +314,7 @@ These limits represent the maximum total tokens that can be sent in a single API
 | voyage-3                | 120,000           |
 | voyage-3-lite           | 120,000           |
 | voyage-code-2           | 120,000           |
+| voyage-context-4        | 120,000           |
 | voyage-context-3        | 32,000            |
 
 **Note:** The maximum batch size is 1,000 items per API request. The integration automatically handles batching based on both token limits and batch size.
