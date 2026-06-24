@@ -88,16 +88,19 @@ class HTMLNodeParser(NodeParser):
                 last_tag = tag.name
                 current_section += f"{tag_text.strip()}\n"
             else:
-                html_nodes.append(
-                    self._build_node_from_split(
-                        current_section.strip(), node, {"tag": last_tag}
+                # Skip empty sections (e.g. a container tag whose only children
+                # are themselves extracted tags) to avoid emitting blank nodes.
+                if current_section.strip():
+                    html_nodes.append(
+                        self._build_node_from_split(
+                            current_section.strip(), node, {"tag": last_tag}
+                        )
                     )
-                )
                 if isinstance(tag, Tag):
                     last_tag = tag.name
                 current_section = f"{tag_text}\n"
 
-        if current_section:
+        if current_section.strip():
             html_nodes.append(
                 self._build_node_from_split(
                     current_section.strip(), node, {"tag": last_tag}
