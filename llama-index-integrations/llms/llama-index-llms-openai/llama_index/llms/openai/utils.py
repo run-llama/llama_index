@@ -60,10 +60,10 @@ O1_MODELS: Dict[str, int] = {
     "o4-mini": 200000,
     "o4-mini-2025-04-16": 200000,
     # gpt-5 is a reasoning model, putting it in the o models list
+    # NOTE: the gpt-5* chat variants (e.g. gpt-5.2-chat-latest) are standard chat
+    # models, not reasoning models — they belong in GPT4_MODELS instead (see #20154)
     "gpt-5": 400000,
     "gpt-5-2025-08-07": 400000,
-    "gpt-5-chat": 128000,
-    "gpt-5-chat-latest": 128000,
     "gpt-5-mini": 400000,
     "gpt-5-mini-2025-08-07": 400000,
     "gpt-5-nano": 400000,
@@ -72,17 +72,13 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5-pro-2025-10-06": 400000,
     "gpt-5.1": 400000,
     "gpt-5.1-2025-11-13": 400000,
-    "gpt-5.1-chat-latest": 128000,
     "gpt-5.2": 400000,
     "gpt-5.2-2025-12-11": 400000,
-    "gpt-5.2-chat-latest": 128000,
     "gpt-5.3": 400000,
-    "gpt-5.3-chat-latest": 128000,
     "gpt-5.4": 1050000,
     "gpt-5.4-2026-03-05": 1050000,
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
-    "gpt-5.4-chat-latest": 128000,
     "gpt-5.5": 1050000,
     "gpt-5.5-2026-04-23": 1050000,
 }
@@ -144,8 +140,14 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4.1-2025-04-14": 1047576,
     "gpt-4.1-mini-2025-04-14": 1047576,
     "gpt-4.1-nano-2025-04-14": 1047576,
-    # Latest GPT-5-chat supports setting temperature, so putting it here
+    # GPT-5 chat variants are standard chat models (not reasoning models): they
+    # support setting temperature and must not be treated as O1_MODELS (#20154)
+    "gpt-5-chat": 128000,
     "gpt-5-chat-latest": 128000,
+    "gpt-5.1-chat-latest": 128000,
+    "gpt-5.2-chat-latest": 128000,
+    "gpt-5.3-chat-latest": 128000,
+    "gpt-5.4-chat-latest": 128000,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
