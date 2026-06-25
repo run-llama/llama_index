@@ -392,12 +392,11 @@ class VoyageEmbedding(MultiModalEmbedding):
         for batch, _ in self._build_batches(texts):
             if self.model_name in CONTEXT_MODELS:
                 r = self._client.contextualized_embed(
-                    inputs=batch,
+                    inputs=[batch],
                     model=self.model_name,
                     input_type=input_type,
                     output_dtype=self.output_dtype,
                     output_dimension=self.output_dimension,
-                    chunk_size=32000,
                 ).results
                 embeddings.extend(r[0].embeddings)
             elif self.model_name in MULTIMODAL_MODELS:
@@ -428,12 +427,11 @@ class VoyageEmbedding(MultiModalEmbedding):
         for batch, _ in self._build_batches(texts):
             if self.model_name in CONTEXT_MODELS:
                 ar = await self._aclient.contextualized_embed(
-                    inputs=batch,
+                    inputs=[batch],
                     model=self.model_name,
                     input_type=input_type,
                     output_dtype=self.output_dtype,
                     output_dimension=self.output_dimension,
-                    chunk_size=32000,
                 )
                 r = ar.results
                 embeddings.extend(r[0].embeddings)
