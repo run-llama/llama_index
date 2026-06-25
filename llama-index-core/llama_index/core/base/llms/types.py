@@ -247,7 +247,7 @@ class BaseContentBlock(ABC, BaseModel):
 
 
 class TextBlock(BaseContentBlock):
-    """A representation of text data to directly pass to/from the LLM."""
+    """A representation of text data to directly pass tofrom the LLM."""
 
     block_type: Literal["text"] = "text"
     text: str
