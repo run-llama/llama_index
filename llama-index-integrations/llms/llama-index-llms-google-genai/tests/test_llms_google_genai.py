@@ -2001,6 +2001,34 @@ def test_metadata_fetching(scenario: Dict[str, Any]) -> None:
 
 
 @pytest.mark.asyncio
+async def test_chat_message_to_gemini_thought_signatures() -> None:
+    """Test that chat_message_to_gemini does not aggressively overwrite thought_signatures."""
+    from llama_index.llms.google_genai.utils import chat_message_to_gemini
+
+    # existing thought_signature block
+    msg = ChatMessage(
+        role=MessageRole.MODEL,
+        blocks=[
+            ThinkingBlock(
+                content="thinking process",
+                additional_information={"thought_signature": "signature_123"},
+            ),
+            TextBlock(text="final answer"),
+        ],
+        # no thought_signatures stored separately here - these would normally
+        # overwrite existing blocks.
+        additional_kwargs={},
+    )
+
+    content, _ = await chat_message_to_gemini(msg, client=None, file_mode="hybrid")
+
+    assert len(content.parts) == 2
+    assert content.parts[0].thought is True
+    assert content.parts[0].thought_signature == "signature_123"
+    assert content.parts[1].text == "final answer"
+
+
+@pytest.mark.asyncio
 async def test_create_file_part_passes_display_name_to_file_api():
     mock_file = MagicMock()
     mock_file.state.name = "ACTIVE"

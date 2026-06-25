@@ -411,11 +411,8 @@ async def chat_message_to_gemini(
                 thought_signatures = message.additional_kwargs.get(
                     "thought_signatures", []
                 )
-                part.thought_signature = (
-                    thought_signatures[index]
-                    if index < len(thought_signatures)
-                    else None
-                )
+                if index < len(thought_signatures):
+                    part.thought_signature = thought_signatures[index]
             parts.append(part)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
