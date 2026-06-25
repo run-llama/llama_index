@@ -97,74 +97,98 @@ async def test_pydantic_models_tool(client: BasicMCPClient):
     )
 
 
+additional_properties_test_cases = [
+    pytest.param(
+        {
+            "properties": {
+                "known": {"title": "Known", "type": "string"},
+            },
+            "required": ["known"],
+            "type": "object",
+        },
+        id="ignore-extra-properties-by-default",
+    ),
+    pytest.param(
+        {
+            "additionalProperties": True,
+            "properties": {
+                "known": {"title": "Known", "type": "string"},
+            },
+            "required": ["known"],
+            "type": "object",
+        },
+        id="allows-untyped-extra-properties",
+    ),
+    pytest.param(
+        {
+            "additionalProperties": False,
+            "properties": {
+                "known": {"title": "Known", "type": "string"},
+            },
+            "required": ["known"],
+            "type": "object",
+        },
+        id="forbids-extra-properties",
+    ),
+    pytest.param(
+        {
+            "additionalProperties": {"type": "string"},
+            "properties": {
+                "known": {"title": "Known", "type": "string"},
+            },
+            "required": ["known"],
+            "type": "object",
+        },
+        id="allows-string-extra-properties",
+    ),
+    pytest.param(
+        {
+            "additionalProperties": False,
+            "properties": {
+                "nested": {
+                    "additionalProperties": False,
+                    "properties": {
+                        "value": {"title": "Value", "type": "string"},
+                    },
+                    "required": ["value"],
+                    "title": "Inner",
+                    "type": "object",
+                },
+            },
+            "required": ["nested"],
+            "type": "object",
+        },
+        id="forbids-extra-properties-in-nested-model",
+    ),
+    pytest.param(
+        {
+            "$defs": {
+                "Inner": {
+                    "additionalProperties": False,
+                    "properties": {
+                        "value": {"title": "Value", "type": "string"},
+                    },
+                    "required": ["value"],
+                    "title": "Inner",
+                    "type": "object",
+                },
+            },
+            "additionalProperties": False,
+            "properties": {
+                "nested": {"$ref": "#/$defs/Inner"},
+            },
+            "required": ["nested"],
+            "type": "object",
+        },
+        id="forbids-extra-properties-in-nested-model-with-def",
+    ),
+]
+
+
 @pytest.mark.parametrize(
     "json_schema",
     [
-        pytest.param(
-            {
-                "properties": {
-                    "known": {"title": "Known", "type": "string"},
-                },
-                "required": ["known"],
-                "type": "object",
-            },
-            id="ignore-extra-properties-by-default",
-        ),
-        pytest.param(
-            {
-                "additionalProperties": True,
-                "properties": {
-                    "known": {"title": "Known", "type": "string"},
-                },
-                "required": ["known"],
-                "type": "object",
-            },
-            id="allows-untyped-extra-properties",
-        ),
-        pytest.param(
-            {
-                "additionalProperties": False,
-                "properties": {
-                    "known": {"title": "Known", "type": "string"},
-                },
-                "required": ["known"],
-                "type": "object",
-            },
-            id="forbids-extra-properties",
-        ),
-        pytest.param(
-            {
-                "additionalProperties": {"type": "string"},
-                "properties": {
-                    "known": {"title": "Known", "type": "string"},
-                },
-                "required": ["known"],
-                "type": "object",
-            },
-            id="allows-string-extra-properties",
-        ),
-        pytest.param(
-            {
-                "$defs": {
-                    "Inner": {
-                        "additionalProperties": False,
-                        "properties": {
-                            "value": {"title": "Value", "type": "string"},
-                        },
-                        "required": ["value"],
-                        "title": "Inner",
-                        "type": "object",
-                    },
-                },
-                "additionalProperties": False,
-                "properties": {
-                    "nested": {"$ref": "#/$defs/Inner"},
-                },
-                "required": ["nested"],
-                "type": "object",
-            },
-            id="forbids-extra-properties-in-nested-model",
-        ),
+        *additional_properties_test_cases,
     ],
 )
 def test_create_model_from_json_schema(client: BasicMCPClient, json_schema: dict):
