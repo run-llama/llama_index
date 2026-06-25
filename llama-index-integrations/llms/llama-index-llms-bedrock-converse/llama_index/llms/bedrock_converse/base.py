@@ -1,4 +1,5 @@
 import json
+import re
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -60,6 +61,29 @@ from llama_index.llms.bedrock_converse.utils import (
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+_THINKING_TAG_PATTERN = re.compile(
+    r"<thinking>.*?</thinking>",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _strip_thinking_tags(text: str) -> str:
+    """
+    Strip embedded Nova thinking tags from response text.
+
+    Some Bedrock Nova models return reasoning inside ``<thinking>`` tags within
+    the text block instead of the ``reasoningContent`` field.
+    """
+    if not text:
+        return text
+    cleaned = _THINKING_TAG_PATTERN.sub("", text)
+    unclosed = re.search(r"<thinking>.*$", cleaned, re.DOTALL | re.IGNORECASE)
+    if unclosed:
+        cleaned = cleaned[: unclosed.start()]
+    cleaned = re.sub(r"</thinking>", "", cleaned, flags=re.IGNORECASE)
+    return re.sub(r"<thinking>", "", cleaned, flags=re.IGNORECASE)
 
 
 def _parse_tool_input(raw_input: Any) -> Any:
@@ -429,7 +453,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         for content_block in content_list:
             if text := content_block.get("text", None):
-                blocks.append(TextBlock(text=text))
+                blocks.append(TextBlock(text=_strip_thinking_tags(text)))
             if reasoning_content := content_block.get("reasoningContent", None):
                 # For Converse (non-streaming) requests, reasoning text and signature
                 # are both stored within `reasoningContent.reasoningText`.
@@ -548,11 +572,19 @@ class BedrockConverse(FunctionCallingLLM):
             role = MessageRole.ASSISTANT
             thinking = ""
             thinking_signature = ""
+            clean_text = ""
+            prev_clean_text = ""
 
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+                    if "text" in content_delta:
+                        clean_text = _strip_thinking_tags(content.get("text", ""))
+                        text_delta = clean_text[len(prev_clean_text) :]
+                        prev_clean_text = clean_text
+                    else:
+                        text_delta = ""
 
                     thinking_delta_value = None
                     if "reasoningContent" in content_delta:
@@ -595,7 +627,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 )
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(text=clean_text)
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -638,7 +670,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        delta=content_delta.get("text", ""),
+                        delta=text_delta,
                         raw=chunk,
                         additional_kwargs=response_additional_kwargs,
                     )
@@ -652,7 +684,7 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(text=clean_text)
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -699,7 +731,7 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
+                            TextBlock(text=clean_text)
                         ]
                         if thinking != "":
                             blocks.insert(
@@ -840,11 +872,19 @@ class BedrockConverse(FunctionCallingLLM):
             role = MessageRole.ASSISTANT
             thinking = ""
             thinking_signature = ""
+            clean_text = ""
+            prev_clean_text = ""
 
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+                    if "text" in content_delta:
+                        clean_text = _strip_thinking_tags(content.get("text", ""))
+                        text_delta = clean_text[len(prev_clean_text) :]
+                        prev_clean_text = clean_text
+                    else:
+                        text_delta = ""
 
                     thinking_delta_value = None
                     if "reasoningContent" in content_delta:
@@ -886,7 +926,7 @@ class BedrockConverse(FunctionCallingLLM):
                                     current_tool_call, tool_use_delta
                                 )
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(text=clean_text)
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -930,7 +970,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        delta=content_delta.get("text", ""),
+                        delta=text_delta,
                         raw=chunk,
                         additional_kwargs=response_additional_kwargs,
                     )
@@ -944,7 +984,7 @@ class BedrockConverse(FunctionCallingLLM):
                         tool_calls.append(current_tool_call)
 
                     blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                        TextBlock(text=content.get("text", ""))
+                        TextBlock(text=clean_text)
                     ]
                     if thinking != "":
                         blocks.insert(
@@ -991,7 +1031,7 @@ class BedrockConverse(FunctionCallingLLM):
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
                         blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
-                            TextBlock(text=content.get("text", ""))
+                            TextBlock(text=clean_text)
                         ]
                         if thinking != "":
                             blocks.insert(
