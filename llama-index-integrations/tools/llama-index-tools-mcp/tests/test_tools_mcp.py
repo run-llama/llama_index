@@ -173,7 +173,7 @@ additional_properties_test_cases = [
     ],
 )
 def test_create_model_from_json_schema(client: BasicMCPClient, json_schema: dict):
-    """Test the test_pydantic tool with Pydantic models that use custom type aliases and Literal types."""
+    """Converting a JSON schema into a Pydantic model and back to a JSON schema should yield the original schema."""
     tool_spec = McpToolSpec(client, allowed_tools=[])
     pydantic_model = tool_spec.create_model_from_json_schema(json_schema)
     json_schema_from_pydantic_model = pydantic_model.model_json_schema()
