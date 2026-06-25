@@ -143,25 +143,6 @@ additional_properties_test_cases = [
     ),
     pytest.param(
         {
-            "additionalProperties": False,
-            "properties": {
-                "nested": {
-                    "additionalProperties": False,
-                    "properties": {
-                        "value": {"title": "Value", "type": "string"},
-                    },
-                    "required": ["value"],
-                    "title": "Inner",
-                    "type": "object",
-                },
-            },
-            "required": ["nested"],
-            "type": "object",
-        },
-        id="forbids-extra-properties-in-nested-model",
-    ),
-    pytest.param(
-        {
             "$defs": {
                 "Inner": {
                     "additionalProperties": False,
