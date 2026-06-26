@@ -104,6 +104,20 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         data.pop("api_key", None)
         return data
 
+    def to_payload(self) -> Dict[str, Any]:
+        """
+        Non-sensitive representation of this embedding model for observability.
+
+        Emitted via instrumentation events, so it must never contain credentials
+        (e.g. ``api_key``) or auth headers. Subclasses may override to add safe
+        details.
+        """
+        return {
+            "class_name": self.class_name(),
+            "model_name": self.model_name,
+            "embed_batch_size": self.embed_batch_size,
+        }
+
     @abstractmethod
     def _get_query_embedding(self, query: str) -> SparseEmbedding:
         """Embed the input query synchronously."""
@@ -115,7 +129,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     @dispatcher.span
     def get_query_embedding(self, query: str) -> SparseEmbedding:
         """Embed the input query."""
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -135,7 +149,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> SparseEmbedding:
         """Get query embedding."""
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -202,7 +216,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     @dispatcher.span
     def get_text_embedding(self, text: str) -> SparseEmbedding:
         """Embed the input text."""
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -222,7 +236,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> SparseEmbedding:
         """Async get text embedding."""
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -254,7 +268,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
             get_tqdm_iterable(texts, show_progress, "Generating embeddings")
         )
 
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
         for idx, text in queue_with_progress:
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -285,7 +299,7 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         """Asynchronously get a list of text embeddings, with batching."""
         num_workers = self.num_workers
 
-        model_dict = self.model_dump()
+        model_dict = self.to_payload()
 
         cur_batch: List[str] = []
         callback_payloads: List[List[str]] = []
