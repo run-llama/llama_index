@@ -71,3 +71,15 @@ def test_get_top_k_mmr_embeddings() -> None:
         result_similarities_no_mmr, result_similarities
     ):
         assert np.isclose(result_no_mmr, result_with_mmr, atol=0.00001)
+
+
+def test_get_top_k_mmr_embeddings_respects_zero_threshold() -> None:
+    """Test Maximum Marginal Relevance with an explicit zero threshold."""
+    query_embedding = [1.0, 0.0]
+    embeddings = [[1.0, 0.0], [0.9, 0.0], [0.0, 1.0]]
+
+    _, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, mmr_threshold=0
+    )
+
+    assert result_ids == [0, 2, 1]
