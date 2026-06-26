@@ -358,11 +358,12 @@ class Memory(BaseMemory):
                     CitableBlock,
                     CitationBlock,
                     ThinkingBlock,
+                    ToolCallBlock,
                 ]
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, (CachePoint, ToolCallBlock)):
+                if not isinstance(block, CachePoint):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
@@ -380,7 +381,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, (CachePoint, ToolCallBlock)):
+                        if not isinstance(block, CachePoint):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
@@ -437,6 +438,35 @@ class Memory(BaseMemory):
                 token_count += self.audio_token_size_estimate
             elif isinstance(block, DocumentBlock):
                 token_count += self.document_token_size_estimate
+            elif isinstance(block, ToolCallBlock):
+                token_count += len(
+                    self.tokenizer_fn(
+                        block.tool_name + " " + str(block.tool_kwargs)
+                    )
+                )
+            elif isinstance(block, ThinkingBlock):
+                token_count += block.num_tokens or len(
+                    self.tokenizer_fn(block.content or "")
+                )
+            elif isinstance(block, CitableBlock):
+                token_count += len(
+                    self.tokenizer_fn(block.title + " " + block.source)
+                )
+                for inner in block.content:
+                    if isinstance(inner, TextBlock):
+                        token_count += len(self.tokenizer_fn(inner.text))
+                    elif isinstance(inner, ImageBlock):
+                        token_count += self.image_token_size_estimate
+                    else:
+                        token_count += self.document_token_size_estimate
+            elif isinstance(block, CitationBlock):
+                token_count += len(
+                    self.tokenizer_fn(block.title + " " + block.source)
+                )
+                if isinstance(block.cited_content, TextBlock):
+                    token_count += len(self.tokenizer_fn(block.cited_content.text))
+                else:
+                    token_count += self.image_token_size_estimate
 
         return token_count
 
