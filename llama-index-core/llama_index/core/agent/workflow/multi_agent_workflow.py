@@ -138,7 +138,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 "Initial state is not supported per-agent in AgentWorkflow"
             )
 
-        self.agents = {cfg.name: cfg for cfg in agents}
+        self.agents = {cfg.name: copy.deepcopy(cfg) for cfg in agents}
         if len(agents) == 1:
             root_agent = agents[0].name
         elif root_agent is None:

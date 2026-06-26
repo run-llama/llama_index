@@ -726,3 +726,23 @@ async def test_run_id_default(
     assert handler.run_id is not None
     assert isinstance(handler.run_id, str)
     handler.cancel()
+
+
+def test_agents_stored_by_deepcopy():
+    """Test that AgentWorkflow deepcopies agent configs so two workflows don't share mutable state."""
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[add],
+        llm=MockFunctionCallingLLM(),
+        system_prompt="original",
+    )
+
+    workflow1 = AgentWorkflow(agents=[agent])
+    workflow2 = AgentWorkflow(agents=[agent])
+
+    # Mutate the agent config stored in workflow1
+    workflow1.agents["agent"].system_prompt = "mutated"
+
+    # workflow2 should be unaffected
+    assert workflow2.agents["agent"].system_prompt == "original"
