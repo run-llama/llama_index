@@ -74,7 +74,7 @@ def test_get_top_k_mmr_embeddings() -> None:
 
 
 def test_get_top_k_mmr_embeddings_respects_zero_threshold() -> None:
-    """Test Maximum Marginal Relevance with an explicit zero threshold."""
+    """Test that an explicit zero threshold does not use the MMR default."""
     query_embedding = [1.0, 0.0]
     embeddings = [[1.0, 0.0], [0.9, 0.0], [0.0, 1.0]]
 
