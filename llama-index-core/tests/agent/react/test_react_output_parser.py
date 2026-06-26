@@ -1,8 +1,10 @@
 from llama_index.core.agent.react.output_parser import (
+    ReActOutputParser,
     extract_final_response,
     extract_tool_use,
     parse_action_reasoning_step,
 )
+from llama_index.core.agent.react.types import ResponseReasoningStep
 
 
 def test_parse_action_reasoning_step() -> None:
@@ -206,3 +208,18 @@ Answer: Answer contains Legislative Action: here is the legislative action conte
         answer
         == "Answer contains Legislative Action: here is the legislative action content."
     )
+
+
+def test_react_output_parser_ignores_action_keyword_inside_thought() -> None:
+    mock_input_text = """\
+Thought: The phrase Action: is part of this thought, not a tool call.
+Answer: final answer
+"""
+
+    reasoning_step = ReActOutputParser().parse(mock_input_text)
+
+    assert isinstance(reasoning_step, ResponseReasoningStep)
+    assert reasoning_step.thought == (
+        "The phrase Action: is part of this thought, not a tool call."
+    )
+    assert reasoning_step.response == "final answer"
