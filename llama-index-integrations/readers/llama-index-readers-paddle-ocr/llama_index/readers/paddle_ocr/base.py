@@ -149,27 +149,31 @@ class PDFPaddleOCRReader(BaseReader):
 class PaddleOCRAPIReader(BaseReader):
     """Reader using PaddleOCR official SDK, supports images and PDF files.
 
-    For document-parsing models (PP-StructureV3, PaddleOCR-VL-*), uses
-    parse_document() and returns Markdown text per page.
-    For OCR models (PP-OCRv5, PP-OCRv6), uses ocr() and returns plain text.
+    use_parse=False (default): calls ocr(), returns plain text.
+    use_parse=True: calls parse_document() if the model supports it, otherwise falls back to ocr().
     """
 
     def __init__(
         self,
         token: Optional[str] = None,
         base_url: str = "https://paddleocr.aistudio-app.com",
-        model: str = "PP-StructureV3",
-        use_doc_orientation_classify: bool = True,
-        use_doc_unwarping: bool = True,
+        model: Optional[str] = None,
+        use_parse: bool = False,
+        use_doc_orientation_classify: bool = False,
+        use_doc_unwarping: bool = False,
     ):
         super().__init__()
         self._token = token
         self._base_url = base_url
-        m = model.value if isinstance(model, Model) else model
         valid = {m.value for m in Model}
-        if m not in valid:
-            raise ValueError(f"Invalid model {m!r}. Valid models: {sorted(valid)}")
-        self._model = m
+        if model is not None:
+            m = model.value if isinstance(model, Model) else model
+            if m not in valid:
+                raise ValueError(f"Invalid model {m!r}. Valid models: {sorted(valid)}")
+            self._model = m
+        else:
+            self._model = "PP-OCRv6"
+        self._use_parse = use_parse
         self._use_doc_orientation_classify = use_doc_orientation_classify
         self._use_doc_unwarping = use_doc_unwarping
 
@@ -177,22 +181,22 @@ class PaddleOCRAPIReader(BaseReader):
         return _get_token(self._token)
 
     def _is_parse_model(self) -> bool:
-        return self._model in _PARSE_DOCUMENT_MODELS
+        return self._use_parse and self._model in _PARSE_DOCUMENT_MODELS
 
     def _build_options(self):
         kwargs = dict(
             use_doc_orientation_classify=self._use_doc_orientation_classify,
             use_doc_unwarping=self._use_doc_unwarping,
         )
-        if self._model == "PP-StructureV3":
-            return PPStructureV3Options(**kwargs)
         if self._is_parse_model():
+            if self._model == "PP-StructureV3":
+                return PPStructureV3Options(**kwargs)
             return PaddleOCRVLOptions(**kwargs)
         return OCROptions(**kwargs)
 
     def _pages_to_documents(
-        self, result, file_path: Path, extra_info: Optional[Dict]
-    ) -> List[Document]:
+        self, result, file_path: Path, extra_info: dict | None
+    ) -> list[Document]:
         docs = []
         for i, page in enumerate(getattr(result, "pages", None) or []):
             if self._is_parse_model():
@@ -201,15 +205,15 @@ class PaddleOCRAPIReader(BaseReader):
                 texts = (page.pruned_result or {}).get("rec_texts", [])
                 text = " ".join(t for t in texts if t and t.strip())
             if text.strip():
-                metadata: Dict = {"page": i + 1, "source": str(file_path)}
+                metadata: dict = {"page": i + 1, "source": str(file_path)}
                 if extra_info:
                     metadata.update(extra_info)
                 docs.append(Document(text=text.strip(), metadata=metadata))
         return docs
 
     def load_data(
-        self, file_path: Path, extra_info: Optional[Dict] = None
-    ) -> List[Document]:
+        self, file_path: Path, extra_info: dict | None = None
+    ) -> list[Document]:
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -225,8 +229,8 @@ class PaddleOCRAPIReader(BaseReader):
         return self._pages_to_documents(result, file_path, extra_info)
 
     async def aload_data(
-        self, file_path: Path, extra_info: Optional[Dict] = None
-    ) -> List[Document]:
+        self, file_path: Path, extra_info: dict | None = None
+    ) -> list[Document]:
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")

@@ -175,7 +175,24 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         reader = PaddleOCRAPIReader()
         assert reader._token is None
         assert reader._base_url == "https://paddleocr.aistudio-app.com"
-        assert reader._model == "PP-StructureV3"
+        assert reader._model == "PP-OCRv6"
+        assert reader._use_parse is False
+        assert reader._use_doc_orientation_classify is False
+        assert reader._use_doc_unwarping is False
+
+    def test_init_no_model_defaults_to_ocr(self):
+        assert not PaddleOCRAPIReader()._is_parse_model()
+
+    def test_init_parse_model_selected(self):
+        assert PaddleOCRAPIReader(model="PP-StructureV3", use_parse=True)._is_parse_model()
+
+    def test_is_parse_model_requires_use_parse(self):
+        # model supports parse but use_parse=False → should NOT parse
+        assert not PaddleOCRAPIReader(model="PP-StructureV3", use_parse=False)._is_parse_model()
+
+    def test_is_parse_model_ocr_only_with_use_parse(self):
+        # use_parse=True but model only supports OCR → fallback, not parse
+        assert not PaddleOCRAPIReader(model="PP-OCRv6", use_parse=True)._is_parse_model()
 
     def test_init_invalid_model_raises(self):
         with pytest.raises(ValueError, match="Invalid model"):
@@ -189,8 +206,8 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         assert PaddleOCRAPIReader(model=Model.PP_OCRV6)._model == "PP-OCRv6"
 
     def test_is_parse_model_true(self):
-        assert PaddleOCRAPIReader(model="PP-StructureV3")._is_parse_model()
-        assert PaddleOCRAPIReader(model="PaddleOCR-VL-1.6")._is_parse_model()
+        assert PaddleOCRAPIReader(model="PP-StructureV3", use_parse=True)._is_parse_model()
+        assert PaddleOCRAPIReader(model="PaddleOCR-VL-1.6", use_parse=True)._is_parse_model()
 
     def test_is_parse_model_false(self):
         assert not PaddleOCRAPIReader(model="PP-OCRv6")._is_parse_model()
@@ -198,22 +215,39 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
 
     def test_build_options_structure_v3(self):
         from paddleocr import PPStructureV3Options
-        opts = PaddleOCRAPIReader(model="PP-StructureV3")._build_options()
+        opts = PaddleOCRAPIReader(model="PP-StructureV3", use_parse=True)._build_options()
         assert isinstance(opts, PPStructureV3Options)
-        assert opts.use_doc_orientation_classify is True
-        assert opts.use_doc_unwarping is True
+        assert opts.use_doc_orientation_classify is False
+        assert opts.use_doc_unwarping is False
+
+    def test_build_options_structure_v3_use_parse_false(self):
+        from paddleocr import OCROptions
+        opts = PaddleOCRAPIReader(model="PP-StructureV3", use_parse=False)._build_options()
+        assert isinstance(opts, OCROptions)
 
     def test_build_options_vl_model(self):
         from paddleocr import PaddleOCRVLOptions
-        opts = PaddleOCRAPIReader(model="PaddleOCR-VL-1.6")._build_options()
+        opts = PaddleOCRAPIReader(model="PaddleOCR-VL-1.6", use_parse=True)._build_options()
         assert isinstance(opts, PaddleOCRVLOptions)
-        assert opts.use_doc_orientation_classify is True
-        assert opts.use_doc_unwarping is True
+        assert opts.use_doc_orientation_classify is False
+        assert opts.use_doc_unwarping is False
 
     def test_build_options_ocr_model(self):
         from paddleocr import OCROptions
         opts = PaddleOCRAPIReader(model="PP-OCRv6")._build_options()
         assert isinstance(opts, OCROptions)
+        assert opts.use_doc_orientation_classify is False
+        assert opts.use_doc_unwarping is False
+
+    def test_build_options_with_flags_enabled(self):
+        from paddleocr import PPStructureV3Options
+        opts = PaddleOCRAPIReader(
+            model="PP-StructureV3",
+            use_parse=True,
+            use_doc_orientation_classify=True,
+            use_doc_unwarping=True,
+        )._build_options()
+        assert isinstance(opts, PPStructureV3Options)
         assert opts.use_doc_orientation_classify is True
         assert opts.use_doc_unwarping is True
 
@@ -235,14 +269,14 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__exit__ = Mock(return_value=None)
         mock_client_cls.return_value = mock_client
 
-        docs = PaddleOCRAPIReader(token="tok", model="PP-StructureV3").load_data(
+        docs = PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=True).load_data(
             Path("doc.pdf")
         )
 
         _, kwargs = mock_client.parse_document.call_args
         assert kwargs.get("options") is not None
-        assert kwargs["options"].use_doc_orientation_classify is True
-        assert kwargs["options"].use_doc_unwarping is True
+        assert kwargs["options"].use_doc_orientation_classify is False
+        assert kwargs["options"].use_doc_unwarping is False
         mock_client.ocr.assert_not_called()
         assert len(docs) == 1
         assert docs[0].text == "# Title\n\nSome text"
@@ -265,13 +299,28 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.parse_document.assert_not_called()
         _, kwargs = mock_client.ocr.call_args
         assert kwargs.get("options") is not None
-        assert kwargs["options"].use_doc_orientation_classify is True
-        assert kwargs["options"].use_doc_unwarping is True
+        assert kwargs["options"].use_doc_orientation_classify is False
+        assert kwargs["options"].use_doc_unwarping is False
         assert docs[0].text == "Hello World"
 
     def test_load_data_file_not_found(self):
         with pytest.raises(FileNotFoundError):
             PaddleOCRAPIReader(token="tok").load_data(Path("/nonexistent/file.pdf"))
+
+    @patch("llama_index.readers.paddle_ocr.base.Path.exists", return_value=True)
+    @patch("llama_index.readers.paddle_ocr.base.PaddleOCRClient")
+    def test_load_data_structure_v3_use_parse_false_calls_ocr(self, mock_client_cls, mock_exists):
+        mock_client = Mock()
+        mock_client.ocr.return_value = self._make_ocr_result([["text"]])
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=False).load_data(
+            Path("doc.pdf")
+        )
+        mock_client.ocr.assert_called_once()
+        mock_client.parse_document.assert_not_called()
 
     @patch("llama_index.readers.paddle_ocr.base.Path.exists", return_value=True)
     @patch("llama_index.readers.paddle_ocr.base.PaddleOCRClient")
@@ -284,7 +333,7 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__exit__ = Mock(return_value=None)
         mock_client_cls.return_value = mock_client
 
-        docs = PaddleOCRAPIReader(token="tok").load_data(Path("doc.pdf"))
+        docs = PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=True).load_data(Path("doc.pdf"))
 
         assert len(docs) == 2
         assert docs[0].metadata["page"] == 1
@@ -299,7 +348,7 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__exit__ = Mock(return_value=None)
         mock_client_cls.return_value = mock_client
 
-        docs = PaddleOCRAPIReader(token="tok").load_data(Path("doc.pdf"))
+        docs = PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=True).load_data(Path("doc.pdf"))
         assert len(docs) == 0
 
     @patch("llama_index.readers.paddle_ocr.base.Path.exists", return_value=True)
@@ -311,11 +360,41 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__exit__ = Mock(return_value=None)
         mock_client_cls.return_value = mock_client
 
-        docs = PaddleOCRAPIReader(token="tok").load_data(
+        docs = PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=True).load_data(
             Path("scan.jpg"), extra_info={"author": "Test"}
         )
         assert docs[0].metadata["author"] == "Test"
         assert docs[0].metadata["page"] == 1
+
+    @patch("llama_index.readers.paddle_ocr.base.Path.exists", return_value=True)
+    @patch("llama_index.readers.paddle_ocr.base.PaddleOCRClient")
+    def test_load_data_use_parse_false_with_parse_model_uses_ocr(self, mock_client_cls, mock_exists):
+        mock_client = Mock()
+        mock_client.ocr.return_value = self._make_ocr_result([["text"]])
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=False).load_data(
+            Path("doc.pdf")
+        )
+        mock_client.ocr.assert_called_once()
+        mock_client.parse_document.assert_not_called()
+
+    @patch("llama_index.readers.paddle_ocr.base.Path.exists", return_value=True)
+    @patch("llama_index.readers.paddle_ocr.base.PaddleOCRClient")
+    def test_load_data_use_parse_true_with_ocr_only_model_falls_back(self, mock_client_cls, mock_exists):
+        mock_client = Mock()
+        mock_client.ocr.return_value = self._make_ocr_result([["text"]])
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=None)
+        mock_client_cls.return_value = mock_client
+
+        PaddleOCRAPIReader(token="tok", model="PP-OCRv6", use_parse=True).load_data(
+            Path("doc.pdf")
+        )
+        mock_client.ocr.assert_called_once()
+        mock_client.parse_document.assert_not_called()
 
     def test_aload_data_is_coroutine(self):
         assert asyncio.iscoroutinefunction(PaddleOCRAPIReader.aload_data)
@@ -331,8 +410,8 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_async_client_cls.return_value = mock_client
 
-        docs = asyncio.get_event_loop().run_until_complete(
-            PaddleOCRAPIReader(token="tok").aload_data(Path("scan.jpg"))
+        docs = asyncio.run(
+            PaddleOCRAPIReader(token="tok", model="PP-StructureV3", use_parse=True).aload_data(Path("scan.jpg"))
         )
 
         assert len(docs) == 1
@@ -349,7 +428,7 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_async_client_cls.return_value = mock_client
 
-        docs = asyncio.get_event_loop().run_until_complete(
+        docs = asyncio.run(
             PaddleOCRAPIReader(token="tok", model="PP-OCRv6").aload_data(Path("scan.jpg"))
         )
 
@@ -363,16 +442,16 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
             await PaddleOCRAPIReader(token="tok").aload_data(Path("/nonexistent/file.pdf"))
 
         with pytest.raises(FileNotFoundError):
-            asyncio.get_event_loop().run_until_complete(_run())
+            asyncio.run(_run())
 
     def test_build_options_custom_flags(self):
-        from paddleocr import PPStructureV3Options
+        from paddleocr import OCROptions
         opts = PaddleOCRAPIReader(
             model="PP-StructureV3",
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
         )._build_options()
-        assert isinstance(opts, PPStructureV3Options)
+        assert isinstance(opts, OCROptions)
         assert opts.use_doc_orientation_classify is False
         assert opts.use_doc_unwarping is False
 
@@ -382,7 +461,7 @@ class TestPaddleOCRAPIReader(unittest.TestCase):
         mock_client = Mock()
         result = Mock()
         result.pages = None
-        mock_client.parse_document.return_value = result
+        mock_client.ocr.return_value = result
         mock_client.__enter__ = Mock(return_value=mock_client)
         mock_client.__exit__ = Mock(return_value=None)
         mock_client_cls.return_value = mock_client
