@@ -480,6 +480,24 @@ def test_is_chatcomp_api_supported() -> None:
     assert not is_chatcomp_api_supported("gpt-5.2-pro")
     assert is_chatcomp_api_supported("gpt-5.4")
     assert not is_chatcomp_api_supported("gpt-5.4-pro")
+    # The older pro reasoning models are Responses-API-only too
+    assert not is_chatcomp_api_supported("o1-pro")
+    assert not is_chatcomp_api_supported("o1-pro-2025-03-19")
+    assert not is_chatcomp_api_supported("o3-pro")
+    assert not is_chatcomp_api_supported("o3-pro-2025-06-10")
+    assert not is_chatcomp_api_supported("gpt-5-pro")
+    assert not is_chatcomp_api_supported("gpt-5-pro-2025-10-06")
+    # ...but their non-pro siblings remain chat-completions-supported
+    assert is_chatcomp_api_supported("o1")
+    assert is_chatcomp_api_supported("o3")
+    assert is_chatcomp_api_supported("gpt-5")
+
+
+def test_responses_only_pro_models_raise_helpful_error() -> None:
+    """Constructing the Chat Completions class with a Responses-only model raises."""
+    for model_name in ["o1-pro", "o3-pro", "gpt-5-pro"]:
+        with pytest.raises(ValueError, match="only supported by the Responses API"):
+            OpenAI(model=model_name, api_key="fake")
 
 
 def test_gpt_5_chat_model_support() -> None:
