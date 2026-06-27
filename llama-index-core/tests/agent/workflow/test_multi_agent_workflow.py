@@ -46,6 +46,30 @@ def subtract(a: int, b: int) -> int:
     return a - b
 
 
+def test_agents_isolate_shared_tool_instances():
+    shared_tool = FunctionTool.from_defaults(fn=add)
+    first_agent = FunctionAgent(
+        name="first",
+        description="First agent",
+        tools=[shared_tool],
+        llm=MockFunctionCallingLLM(),
+    )
+    second_agent = FunctionAgent(
+        name="second",
+        description="Second agent",
+        tools=[shared_tool],
+        llm=MockFunctionCallingLLM(),
+    )
+
+    assert first_agent.tools is not None
+    assert second_agent.tools is not None
+    assert first_agent.tools[0] is not second_agent.tools[0]
+    assert first_agent.tools[0].metadata is not second_agent.tools[0].metadata
+
+    first_agent.tools[0].metadata.description = "mutated"
+    assert second_agent.tools[0].metadata.description != "mutated"
+
+
 @pytest.fixture()
 def calculator_agent():
     return ReActAgent(

@@ -80,6 +80,16 @@ def get_default_llm() -> LLM:
     return Settings.llm
 
 
+def _copy_agent_tool(tool: BaseTool) -> BaseTool:
+    """Copy per-agent mutable tool configuration without cloning heavy resources."""
+    tool_copy = copy.copy(tool)
+    if hasattr(tool_copy, "_metadata"):
+        tool_copy._metadata = copy.deepcopy(tool.metadata)
+    if hasattr(tool_copy, "partial_params"):
+        tool_copy.partial_params = copy.deepcopy(tool.partial_params)
+    return tool_copy
+
+
 class BaseWorkflowAgentMeta(WorkflowMeta, ModelMetaclass):
     """Metaclass for BaseWorkflowAgent that properly combines WorkflowMeta, BaseModel's metaclass, and ABCMeta."""
 
@@ -221,7 +231,7 @@ class BaseWorkflowAgent(
             if not isinstance(tool, BaseTool):
                 validated_tools.append(FunctionTool.from_defaults(tool))
             else:
-                validated_tools.append(tool)
+                validated_tools.append(_copy_agent_tool(tool))
 
         for tool in validated_tools:
             if tool.metadata.name == "handoff":
