@@ -284,6 +284,10 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             **kwargs,
         )
 
+        self._model_name = None
+        self._model_type = None
+        self._model_provider = None
+
         self._client = ChatCompletionsClient(
             endpoint=endpoint,
             credential=credential,
