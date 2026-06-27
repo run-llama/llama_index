@@ -315,7 +315,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             metadata_filters=query.filters
         )
 
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
 
         inner_query = table.select(
@@ -369,7 +369,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         rows: list[dict[str, Any]] = [self._node_to_arrow_row(node) for node in nodes]
 
         arrow_table = pyarrow.Table.from_pylist(rows)
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
         con.from_arrow(arrow_table).insert_into(table.alias)
         return [node.node_id for node in nodes]
@@ -394,7 +394,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             filters=filters,
         )
 
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
         command = table.filter(filter_expression).sql_query()
 
@@ -425,7 +425,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             filters=filters,
         )
 
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
         command = f"DELETE FROM {table.alias} WHERE {filter_expression}"
 
@@ -446,7 +446,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @override
     def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
         """Clear the vector store."""
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
         command = f"DELETE FROM {table.alias}"
 
@@ -470,7 +470,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             "ref_doc_id", ref_doc_id, FilterOperator.EQ
         )
 
-        con = self.client.cursor()
+        con = self.client
         table = con.table(self.table_name)
         command = f"DELETE FROM {table.alias} WHERE {where_clause}"
 
