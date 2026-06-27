@@ -891,7 +891,6 @@ def from_openai_token_logprob(
                 for el in openai_token_logprob.top_logprobs
             ]
         except Exception:
-            print(openai_token_logprob)
             raise
     return result
 
