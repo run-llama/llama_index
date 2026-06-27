@@ -102,7 +102,6 @@ _SANDBOX_BUILTINS = {
     "enumerate": enumerate,
     "filter": filter,
     "float": float,
-    "format": format,
     "frozenset": frozenset,
     "hasattr": hasattr,
     "hash": hash,
@@ -187,6 +186,26 @@ def _validate_generated_code(code: str) -> None:
                 f"Generated code accesses a dunder attribute '{node.attr}' "
                 f"which is not allowed in the sandbox"
             )
+        # Reject .format() and .format_map() calls which can be used to
+        # access dunder attributes via string interpolation.
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"format", "format_map"}
+        ):
+            raise RuntimeError(
+                f"Generated code calls '.{node.func.attr}()' which is not "
+                f"allowed in the sandbox"
+            )
+        # Reject string constants that contain dunder patterns inside
+        # braces (format-string field references) that could be used for
+        # sandbox escape via format-string interpolation.
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if re.search(r"\{[^}]*__[a-zA-Z0-9_]+__[^}]*\}", node.value):
+                raise RuntimeError(
+                    f"Generated code contains a format string with dunder "
+                    f"patterns which is not allowed in the sandbox"
+                )
 
 
 def _restricted_import(
