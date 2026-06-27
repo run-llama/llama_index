@@ -32,6 +32,19 @@ def test_create_schema_from_function() -> None:
     assert "required" not in schema
 
 
+def test_create_schema_from_function_ignores_variadic_parameters() -> None:
+    """Test that *args and **kwargs are not exposed as tool parameters."""
+
+    def test_fn(query: str, *args: str, **kwargs: str) -> None:
+        """Test variadic inputs."""
+
+    SchemaCls = create_schema_from_function("test_schema", test_fn)
+    schema = SchemaCls.model_json_schema()
+
+    assert schema["properties"] == {"query": {"title": "Query", "type": "string"}}
+    assert schema["required"] == ["query"]
+
+
 def test_create_schema_from_function_with_field() -> None:
     """Test create_schema_from_function with pydantic.Field."""
 
