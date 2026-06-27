@@ -124,6 +124,15 @@ def test_embed_model_path_returns_nodes() -> None:
     assert all(len(n.get_content()) > 0 for n in nodes)
 
 
+def test_clean_text_advanced_removes_stopwords() -> None:
+    splitter = SemanticDoubleMergingSplitterNodeParser()
+    splitter.language_config.stopwords = {"a", "and", "is", "some", "the", "this"}
+
+    text = "this is a test text containing some stopwords like the and a"
+
+    assert splitter._clean_text_advanced(text) == "test text containing stopwords like"
+
+
 def test_embed_model_similarity_in_range() -> None:
     """_similarity with embed_model returns a value in [0, 1] (cosine-like)."""
     embed = MockEmbedding(embed_dim=4)

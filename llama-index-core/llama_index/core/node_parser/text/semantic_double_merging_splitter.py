@@ -359,7 +359,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         # Remove punctuations
         text = text.translate(str.maketrans("", "", string.punctuation))
         # Remove stopwords
-        tokens = globals_helper.punkt_tokenizer.tokenize(text)
+        tokens = text.split()
         filtered_words = [w for w in tokens if w not in self.language_config.stopwords]
 
         return " ".join(filtered_words)
