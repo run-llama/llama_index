@@ -419,3 +419,26 @@ def test_sql_table_retriever_query_engine_with_cols_retriever(
 | 2 | bar |
 | 8 | hello |"""
     )
+
+
+def test_sql_parsers() -> None:
+    from llama_index.core.indices.struct_store.sql_retriever import (
+        DefaultSQLParser,
+        PGVectorSQLParser,
+    )
+    from llama_index.core.schema import QueryBundle
+    from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+
+    # Test DefaultSQLParser
+    parser = DefaultSQLParser()
+    response = "SQLQuery:SELECT * FROM table;SQLResult: [(1, 'value')]"
+    parsed = parser.parse_response_to_sql(response, QueryBundle("query"))
+    assert parsed == "SELECT * FROM table;"
+
+    # Test PGVectorSQLParser
+    embed_model = MockEmbedding(embed_dim=2)
+    pg_parser = PGVectorSQLParser(embed_model=embed_model)
+    response_pg = "SQLQuery:SELECT * FROM table WHERE vec = [query_vector];SQLResult: [(1, 'value')]"
+    parsed_pg = pg_parser.parse_response_to_sql(response_pg, QueryBundle("query"))
+    assert "SELECT * FROM table WHERE vec =" in parsed_pg
+    assert "[query_vector]" not in parsed_pg

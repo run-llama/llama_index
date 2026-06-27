@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from typing import Any, Dict, List
+from typing import Any, List
 from unittest.mock import MagicMock, call, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -25,8 +25,7 @@ STUB_API_KEY = "stub_key"
 
 # Use these as kwargs for OpenAILike to connect to LocalAIs
 DEFAULT_LOCALAI_PORT = 8080
-# TODO: move to MappingProxyType[str, Any] once Python 3.9+
-LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
+LOCALAI_DEFAULTS: MappingProxyType[str, Any] = MappingProxyType(
     {
         "api_key": "localai_fake",
         "api_type": "localai_fake",

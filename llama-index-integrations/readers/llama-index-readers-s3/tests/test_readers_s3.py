@@ -29,6 +29,7 @@ def s3_base():
         os.environ["AWS_ACCESS_KEY_ID"] = "test"
     if "AWS_SECRET_ACCESS_KEY" not in os.environ:
         os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     yield
     s3_server.stop()
 
