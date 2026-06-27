@@ -266,6 +266,26 @@ async def test_structured_output_fn_agentworkflow(
 
 
 @pytest.mark.asyncio
+async def test_agent_structured_output_fn_agentworkflow(
+    function_agent_struct_fn: FunctionAgent,
+) -> None:
+    wf = AgentWorkflow(
+        agents=[function_agent_struct_fn],
+        root_agent=function_agent_struct_fn.name,
+    )
+    handler = wf.run(user_msg="test")
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+
+    response = await handler
+    assert streaming_event
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
+
+
+@pytest.mark.asyncio
 async def test_astructured_output_fn_agentworkflow(
     function_agent_output_cls: FunctionAgent,
 ) -> None:
