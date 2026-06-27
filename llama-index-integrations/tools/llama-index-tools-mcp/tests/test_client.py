@@ -1,9 +1,13 @@
+import base64
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from httpx import AsyncClient
 import pytest
 
+from llama_index.core.llms import AudioBlock, DocumentBlock, ImageBlock, TextBlock
 from llama_index.tools.mcp import BasicMCPClient
-from llama_index.tools.mcp.client import enable_sse
+from llama_index.tools.mcp.client import _content_to_blocks, enable_sse
 from mcp import types
 
 
@@ -259,3 +263,468 @@ def test_enable_sse():
     # Test command-style inputs (non-URL)
     assert enable_sse("python") is False
     assert enable_sse("/usr/bin/python") is False
+
+
+def _make_session_mock(messages):
+    prompt_result = types.GetPromptResult(messages=messages)
+    mock_session = AsyncMock()
+    mock_session.get_prompt = AsyncMock(return_value=prompt_result)
+    mock_cm = MagicMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_cm.__aexit__ = AsyncMock(return_value=None)
+    return mock_cm
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_text_content():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user", content=types.TextContent(type="text", text="Hello MCP")
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    assert len(result) == 1
+    assert result[0].role == "user"
+    assert isinstance(result[0].blocks[0], TextBlock)
+    assert result[0].blocks[0].text == "Hello MCP"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_image_content():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.ImageContent(
+                    type="image", data=b64, mimeType="image/png"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, ImageBlock)
+    assert block.resolve_image(as_base64=False).read() == raw
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_image_content_urlsafe_b64():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\xfb\xff\xfe"
+    b64_urlsafe = (
+        base64.b64encode(raw).decode().replace("+", "-").replace("/", "_").rstrip("=")
+    )
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.ImageContent(
+                    type="image", data=b64_urlsafe, mimeType="image/png"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, ImageBlock)
+    assert block.resolve_image(as_base64=False).read() == raw
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_audio_content():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.AudioContent(
+                    type="audio", data=b64, mimeType="audio/wav"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.resolve_audio(as_base64=False).read() == raw
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_audio_content_mime_params_stripped():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.AudioContent(
+                    type="audio", data=b64, mimeType="audio/wav; codecs=pcm"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_resource_link():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.ResourceLink(
+                    type="resource_link",
+                    uri="file:///data.json",
+                    name="Data File",
+                    description="A JSON data file",
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert "Data File" in block.text
+    assert "file:///data.json" in block.text
+    assert "A JSON data file" in block.text
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_resource_link_title_preferred():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.ResourceLink(
+                    type="resource_link",
+                    uri="file:///data.json",
+                    name="machine_name",
+                    title="Human-Readable Title",
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert "Human-Readable Title" in block.text
+    assert "machine_name" not in block.text
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_text_resource():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.TextResourceContents(
+                        uri="file:///notes.txt",
+                        mimeType="text/plain",
+                        text="Hello from resource",
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert "file:///notes.txt" in block.text
+    assert "Hello from resource" in block.text
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_image_blob():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///image.png",
+                        mimeType="image/png",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, ImageBlock)
+    assert block.resolve_image(as_base64=False).read() == raw
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_audio_blob():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///sound.wav",
+                        mimeType="audio/wav",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.resolve_audio(as_base64=False).read() == raw
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_audio_blob_mime_params_stripped():
+    client = BasicMCPClient("python", args=[])
+    raw = b"RIFF\x24\x00\x00\x00WAVE"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///sound.wav",
+                        mimeType="audio/wav; codecs=pcm",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, AudioBlock)
+    assert block.format == "wav"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_document_blob():
+    client = BasicMCPClient("python", args=[])
+    raw = b"%PDF-1.4 %\xe2\xe3\xcf\xd3"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///report.pdf",
+                        mimeType="application/pdf",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, DocumentBlock)
+    assert block.resolve_document().read() == raw
+    assert block.document_mimetype == "application/pdf"
+    assert block.title == "report.pdf"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_b64_with_whitespace():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    b64_clean = base64.b64encode(raw).decode()
+    b64_wrapped = "\n".join(b64_clean[i : i + 4] for i in range(0, len(b64_clean), 4))
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///image.png",
+                        mimeType="image/png",
+                        blob=b64_wrapped,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, ImageBlock)
+    assert block.resolve_image(as_base64=False).read() == raw
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_invalid_b64():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///broken.bin",
+                        mimeType="application/octet-stream",
+                        blob="!!!not-valid-base64!!!",
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        with pytest.warns(UserWarning, match="Failed to decode"):
+            result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert "broken.bin" in block.text
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_blob_data_uri_prefix():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    b64 = base64.b64encode(raw).decode()
+    data_uri_blob = f"data:image/png;base64,{b64}"
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///image.png",
+                        mimeType="image/png",
+                        blob=data_uri_blob,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, ImageBlock)
+    assert block.resolve_image(as_base64=False).read() == raw
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_embedded_bare_image_mime_falls_through_to_document():
+    client = BasicMCPClient("python", args=[])
+    raw = b"\x00\x01\x02\x03"
+    b64 = base64.b64encode(raw).decode()
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.EmbeddedResource(
+                    type="resource",
+                    resource=types.BlobResourceContents(
+                        uri="file:///mystery.bin",
+                        mimeType="image/",
+                        blob=b64,
+                    ),
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        result = await client.get_prompt("test")
+    assert isinstance(result[0].blocks[0], DocumentBlock)
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_image_content_invalid_b64():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.ImageContent(
+                    type="image", data="!!!not-valid-base64!!!", mimeType="image/png"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        with pytest.warns(UserWarning, match="Invalid base64 in ImageContent"):
+            result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert block.text == "[ImageContent: invalid base64]"
+
+
+@pytest.mark.asyncio
+async def test_get_prompt_audio_content_invalid_b64():
+    client = BasicMCPClient("python", args=[])
+    mock_cm = _make_session_mock(
+        [
+            types.PromptMessage(
+                role="user",
+                content=types.AudioContent(
+                    type="audio", data="!!!not-valid-base64!!!", mimeType="audio/wav"
+                ),
+            )
+        ]
+    )
+    with patch.object(client, "_run_session", return_value=mock_cm):
+        with pytest.warns(UserWarning, match="Invalid base64 in AudioContent"):
+            result = await client.get_prompt("test")
+    block = result[0].blocks[0]
+    assert isinstance(block, TextBlock)
+    assert block.text == "[AudioContent: invalid base64]"
+
+
+def test_content_to_blocks_unknown_type():
+    unknown = MagicMock(spec=[])  # won't match any isinstance check
+    with pytest.warns(
+        UserWarning, match="Unsupported MCP content type.*rendering placeholder"
+    ):
+        blocks = _content_to_blocks(unknown)
+    assert len(blocks) == 1
+    assert isinstance(blocks[0], TextBlock)
+    assert "Unsupported" in blocks[0].text

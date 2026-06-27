@@ -149,6 +149,21 @@ prompts = await http_client.list_prompts()
 prompt_result = await http_client.get_prompt("greet", {"name": "World"})
 ```
 
+`get_prompt()` converts each MCP prompt message content into LlamaIndex blocks:
+
+| MCP content type                | LlamaIndex block |
+| ------------------------------- | ---------------- |
+| `TextContent`                   | `TextBlock`      |
+| `ImageContent`                  | `ImageBlock`     |
+| `AudioContent`                  | `AudioBlock`     |
+| `ResourceLink`                  | `TextBlock`      |
+| `EmbeddedResource` (text)       | `TextBlock`      |
+| `EmbeddedResource` (image blob) | `ImageBlock`     |
+| `EmbeddedResource` (audio blob) | `AudioBlock`     |
+| `EmbeddedResource` (other blob) | `DocumentBlock`  |
+
+Invalid base64 payloads produce a `TextBlock` placeholder and emit a warning instead of raising.
+
 ### OAuth Authentication
 
 The client supports OAuth 2.0 authentication for connecting to protected MCP servers:
