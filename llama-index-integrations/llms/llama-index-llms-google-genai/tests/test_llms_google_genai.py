@@ -2048,3 +2048,45 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+class TestErrorIfFinishedEarly:
+    """Tests for _error_if_finished_early finish reason handling."""
+
+    def _make_candidate(self, finish_reason: types.FinishReason) -> types.Candidate:
+        candidate = MagicMock(spec=types.Candidate)
+        candidate.finish_reason = finish_reason
+        candidate.safety_ratings = None
+        return candidate
+
+    def test_stop_does_not_raise(self) -> None:
+        from llama_index.llms.google_genai.utils import _error_if_finished_early
+
+        candidate = self._make_candidate(types.FinishReason.STOP)
+        _error_if_finished_early(candidate)
+
+    def test_safety_raises(self) -> None:
+        from llama_index.llms.google_genai.utils import _error_if_finished_early
+
+        candidate = self._make_candidate(types.FinishReason.SAFETY)
+        with pytest.raises(RuntimeError, match="terminated early"):
+            _error_if_finished_early(candidate)
+
+    def test_malformed_function_call_does_not_raise(self) -> None:
+        from llama_index.llms.google_genai.utils import _error_if_finished_early
+
+        candidate = self._make_candidate(types.FinishReason.MALFORMED_FUNCTION_CALL)
+        _error_if_finished_early(candidate)
+
+    def test_unexpected_tool_call_does_not_raise(self) -> None:
+        from llama_index.llms.google_genai.utils import _error_if_finished_early
+
+        candidate = self._make_candidate(types.FinishReason.UNEXPECTED_TOOL_CALL)
+        _error_if_finished_early(candidate)
+
+    def test_recitation_raises(self) -> None:
+        from llama_index.llms.google_genai.utils import _error_if_finished_early
+
+        candidate = self._make_candidate(types.FinishReason.RECITATION)
+        with pytest.raises(RuntimeError, match="terminated early"):
+            _error_if_finished_early(candidate)
