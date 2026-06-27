@@ -39,6 +39,11 @@ except ImportError:
 FilePath = Union[str, Path]
 
 
+def _read_file_as_base64(file_path: str) -> str:
+    with open(file_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
 def retry_decorator(func, wait_seconds: int = 1):
     def wrap(*args, **kwargs):
         while True:
@@ -124,7 +129,7 @@ class AlibabaCloudAISearchDocumentReader(BasePydanticReader):
             if not file_type:
                 file_type = os.path.splitext(file_name)[1][1:]
             document = CreateDocumentAnalyzeTaskRequestDocument(
-                content=base64.b64encode(open(file_path, "rb").read()).decode(),
+                content=_read_file_as_base64(file_path),
                 file_name=file_name,
                 file_type=file_type,
             )
@@ -262,7 +267,7 @@ class AlibabaCloudAISearchImageReader(AlibabaCloudAISearchDocumentReader):
             if not file_type:
                 file_type = os.path.splitext(file_name)[1][1:]
             document = CreateImageAnalyzeTaskRequestDocument(
-                content=base64.b64encode(open(file_path, "rb").read()).decode(),
+                content=_read_file_as_base64(file_path),
                 file_name=file_name,
                 file_type=file_type,
             )
