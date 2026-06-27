@@ -32,6 +32,18 @@ def test_create_schema_from_function() -> None:
     assert "required" not in schema
 
 
+def test_create_schema_from_function_skips_variadic_params() -> None:
+    """Variadic params are implementation details, not LLM-fillable fields."""
+
+    def test_fn(query: str, *args: str, **kwargs: str) -> None:
+        """Test function."""
+
+    SchemaCls = create_schema_from_function("test_schema", test_fn)
+    schema = SchemaCls.model_json_schema()
+    assert set(schema["properties"]) == {"query"}
+    assert schema["required"] == ["query"]
+
+
 def test_create_schema_from_function_with_field() -> None:
     """Test create_schema_from_function with pydantic.Field."""
 
