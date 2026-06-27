@@ -704,6 +704,80 @@ print(f"Response: {response}")
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
+### Vaultak
+
+[Vaultak](https://vaultak.com) is a runtime security platform that wraps every LlamaIndex query,
+agent action, and tool call with real-time protection. Every `FUNCTION_CALL` is risk-scored (0–10)
+and checked against your policy rules before it executes. PII is masked from tool outputs before it
+reaches the LLM. Exceptions trigger automatic rollback and alerts in your Vaultak dashboard.
+
+#### Install
+
+```bash
+pip install llama-index-callbacks-vaultak
+```
+
+Sign up at [vaultak.com](https://vaultak.com) to get your API key (starts with `vtk_`).
+
+#### Usage Pattern
+
+**With a query engine:**
+
+```python
+from llama_index.core.callbacks import CallbackManager
+from llama_index.callbacks.vaultak import VaultakCallbackHandler
+
+handler = VaultakCallbackHandler(api_key="vtk_...")
+callback_manager = CallbackManager([handler])
+
+query_engine = index.as_query_engine(callback_manager=callback_manager)
+response = query_engine.query("Summarize our Q3 revenue data")
+```
+
+**With a ReAct agent:**
+
+```python
+from llama_index.core.agent import ReActAgent
+from llama_index.core.callbacks import CallbackManager
+from llama_index.callbacks.vaultak import VaultakCallbackHandler
+
+handler = VaultakCallbackHandler(
+    api_key="vtk_...",
+    agent_name="prod-agent",
+    block_on_high_risk=True,
+    risk_threshold=6.0,
+)
+
+agent = ReActAgent.from_tools(tools, callback_manager=CallbackManager([handler]))
+```
+
+**Set globally (applies to all LlamaIndex operations):**
+
+```python
+from llama_index.core import Settings
+from llama_index.core.callbacks import CallbackManager
+from llama_index.callbacks.vaultak import VaultakCallbackHandler
+
+Settings.callback_manager = CallbackManager([
+    VaultakCallbackHandler(api_key="vtk_...", agent_name="my-app")
+])
+```
+
+| LlamaIndex event | Vaultak action |
+|---|---|
+| `FUNCTION_CALL` start | Risk-scores the action (0–10); blocks if above threshold |
+| `FUNCTION_CALL` start | Checks tool call against your policy rules |
+| `FUNCTION_CALL` end | Scans output for PII and masks it |
+| `LLM` start | Checks LLM inputs against policy |
+| `EXCEPTION` | Sends alert + triggers rollback |
+| `QUERY` end | Scans final response for PII |
+
+#### Guides
+
+- [Vaultak documentation](https://docs.vaultak.com)
+- [PyPI package](https://pypi.org/project/llama-index-callbacks-vaultak)
+- [GitHub](https://github.com/vaultak/llama-index-vaultak)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
