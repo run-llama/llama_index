@@ -60,3 +60,75 @@ def test_mixins(real_onedrive_reader: OneDriveReader):
     file_content = real_onedrive_reader.read_file_content(resource)
     assert file_content is not None
     assert len(file_content) == resource_info["file_size"]
+
+
+def test_download_file_by_url_rejects_path_traversal_filename(tmp_path, monkeypatch):
+    """Regression for #21867: server-supplied `item['name']` is used to build
+    the local destination path, so a traversal sequence (`../...`) would
+    write outside the caller-supplied download directory. We sanitize via
+    `os.path.basename` and additionally verify the resolved path stays
+    inside `local_dir`.
+    """
+    import os
+
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+
+    # Stub out the network call so the test doesn't depend on a real URL.
+    class _StubResponse:
+        content = b"x"
+
+    monkeypatch.setattr(
+        "llama_index.readers.microsoft_onedrive.base.requests.get",
+        lambda *_a, **_kw: _StubResponse(),
+    )
+
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+    sentinel_outside = tmp_path / "escaped.txt"
+
+    # Filename with a `..` component must be rejected.
+    with pytest.raises(ValueError, match="unsafe name"):
+        reader._download_file_by_url(
+            {"@microsoft.graph.downloadUrl": "http://example.invalid", "name": ".."},
+            str(download_dir),
+        )
+
+    # Filename containing a traversal sequence is sanitized to its basename
+    # and lands inside `download_dir`, never at `sentinel_outside`.
+    written = reader._download_file_by_url(
+        {
+            "@microsoft.graph.downloadUrl": "http://example.invalid",
+            "name": "../escaped.txt",
+        },
+        str(download_dir),
+    )
+    assert not sentinel_outside.exists()
+    assert os.path.realpath(written).startswith(os.path.realpath(str(download_dir)))
+
+
+def test_download_file_by_url_preserves_normal_filename(tmp_path, monkeypatch):
+    """Sibling control test: a benign filename must still round-trip cleanly."""
+    import os
+
+    reader = OneDriveReader(client_id=test_client_id, tenant_id=test_tenant_id)
+
+    class _StubResponse:
+        content = b"hello"
+
+    monkeypatch.setattr(
+        "llama_index.readers.microsoft_onedrive.base.requests.get",
+        lambda *_a, **_kw: _StubResponse(),
+    )
+
+    download_dir = tmp_path / "downloads"
+    download_dir.mkdir()
+
+    written = reader._download_file_by_url(
+        {
+            "@microsoft.graph.downloadUrl": "http://example.invalid",
+            "name": "report.txt",
+        },
+        str(download_dir),
+    )
+    assert os.path.basename(written) == "report.txt"
+    assert open(written, "rb").read() == b"hello"
