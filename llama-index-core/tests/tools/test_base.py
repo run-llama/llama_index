@@ -538,3 +538,15 @@ def test_function_tool_output_document_and_text_blocks() -> None:
     assert isinstance(tool_output.blocks[0], DocumentBlock)
     assert isinstance(tool_output.blocks[1], TextBlock)
     assert tool_output.content == "Summary of the document"
+
+
+def test_function_tool_output_empty_list_as_text() -> None:
+    def get_empty_list() -> list:
+        return []
+
+    tool = FunctionTool.from_defaults(get_empty_list)
+    tool_output = tool.call()
+
+    assert len(tool_output.blocks) == 1
+    assert isinstance(tool_output.blocks[0], TextBlock)
+    assert tool_output.content == "[]"

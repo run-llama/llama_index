@@ -303,7 +303,7 @@ class FunctionTool(AsyncBaseTool):
             ),
         ):
             return [raw_output]
-        elif isinstance(raw_output, list) and all(
+        elif isinstance(raw_output, list) and raw_output and all(
             isinstance(
                 item,
                 (
@@ -321,7 +321,7 @@ class FunctionTool(AsyncBaseTool):
             return raw_output
         elif isinstance(raw_output, (BaseNode, Document)):
             return [TextBlock(text=raw_output.get_content())]
-        elif isinstance(raw_output, list) and all(
+        elif isinstance(raw_output, list) and raw_output and all(
             isinstance(item, (BaseNode, Document)) for item in raw_output
         ):
             return [TextBlock(text=item.get_content()) for item in raw_output]
