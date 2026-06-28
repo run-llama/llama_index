@@ -49,6 +49,7 @@ from llama_index.core.bridge.pydantic import (
     field_serializer,
     field_validator,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -271,6 +272,22 @@ class BaseNode(BaseComponent):
 
     # hash is computed on local field, during the validation process
     model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_identity_kwargs(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            invalid_keys = tuple(
+                key for key in ("document_id", "doc_id", "ref_doc_id") if key in data
+            )
+            if invalid_keys:
+                joined_keys = ", ".join(invalid_keys)
+                raise ValueError(
+                    f"{cls.__name__} does not accept {joined_keys}; set "
+                    "relationships[NodeRelationship.SOURCE] = "
+                    "RelatedNodeInfo(node_id=...) instead."
+                )
+        return data
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
