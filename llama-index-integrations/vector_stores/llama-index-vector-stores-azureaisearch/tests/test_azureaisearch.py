@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Any, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -75,6 +75,15 @@ def create_sample_documents(n: int) -> List[TextNode]:
         )
 
     return nodes
+
+
+class _AsyncSearchResults:
+    def __init__(self, results: List[dict]) -> None:
+        self._results = results
+
+    async def __aiter__(self) -> Any:
+        for result in self._results:
+            yield result
 
 
 @pytest.mark.skipif(
@@ -263,6 +272,49 @@ def test_azureaisearch_query() -> None:
     # Assert the metadata
     assert result.nodes[0].metadata == {"key": "value1"}
     assert result.nodes[1].metadata == {"key": "value2"}
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_delete_escapes_ref_doc_id_filter() -> None:
+    search_client = mock_client_with_user_agent("search")
+    search_client.search.side_effect = [[{"id": "node-id"}], []]
+
+    vector_store = create_mock_vector_store(search_client)
+    vector_store._index_exists = MagicMock(return_value=True)
+
+    vector_store.delete("x' or doc_id ne 'x")
+
+    assert search_client.search.call_args_list[0].kwargs["filter"] == (
+        "doc_id eq 'x'' or doc_id ne ''x'"
+    )
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+@pytest.mark.asyncio
+async def test_adelete_escapes_ref_doc_id_filter() -> None:
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+
+    async_search_client = MagicMock()
+    async_search_client.search = AsyncMock(
+        side_effect=[
+            _AsyncSearchResults([{"id": "node-id"}]),
+            _AsyncSearchResults([]),
+        ]
+    )
+    async_search_client.delete_documents = AsyncMock()
+    vector_store._async_search_client = async_search_client
+    vector_store._aindex_exists = AsyncMock(return_value=True)
+
+    await vector_store.adelete("x' or doc_id ne 'x")
+
+    assert async_search_client.search.call_args_list[0].kwargs["filter"] == (
+        "doc_id eq 'x'' or doc_id ne ''x'"
+    )
 
 
 @pytest.mark.skipif(
