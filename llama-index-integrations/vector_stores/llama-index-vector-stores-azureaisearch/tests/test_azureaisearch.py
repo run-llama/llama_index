@@ -503,3 +503,49 @@ def test_close_does_not_call_external_client_close() -> None:
 
     # Verify close was NOT called on the external search client
     search_client.close.assert_not_called()
+
+
+@pytest.mark.skipif(not azureaisearch_installed, reason="azure-search-documents not installed")
+def test_node_to_index_document_preserves_falsy_metadata_values() -> None:
+    """Regression: falsy metadata values (0, False, '') must not be dropped.
+
+    Previously the guard was ``if metadata_value:`` which silently skipped
+    values like 0, False, and empty strings.  The fix changes it to
+    ``if metadata_value is not None:`` so only missing keys are skipped.
+    """
+    search_client = mock_client_with_user_agent("search")
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys=[
+            ("score", "score_field", None),
+            ("active", "active_field", None),
+            ("tag", "tag_field", None),
+            ("missing", "missing_field", None),
+        ],
+        index_name="test-index",
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+    )
+
+    node = TextNode(
+        text="hello",
+        embedding=[0.1, 0.2],
+        metadata={
+            "score": 0,        # falsy int — must be preserved
+            "active": False,   # falsy bool — must be preserved
+            "tag": "",         # falsy string — must be preserved
+            # "missing" is absent — must not appear in index doc
+        },
+    )
+
+    index_doc = vector_store._node_to_index_document(node)
+
+    assert index_doc["score_field"] == 0,     "falsy int 0 must be indexed"
+    assert index_doc["active_field"] is False, "falsy bool False must be indexed"
+    assert index_doc["tag_field"] == "",       "falsy empty string must be indexed"
+    assert "missing_field" not in index_doc,  "absent key must not appear in index doc"
