@@ -1255,7 +1255,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         elif metadata_filters.condition == FilterCondition.OR:
             odata_expr = " or ".join(odata_filter)
         elif metadata_filters.condition == FilterCondition.NOT:
-            odata_expr = f"not ({odata_filter})"
+            inner_filter = " and ".join(odata_filter)
+            odata_expr = f"not ({inner_filter})"
         else:
             raise ValueError(
                 f"Unsupported filter condition {metadata_filters.condition}"

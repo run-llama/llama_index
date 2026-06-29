@@ -6,10 +6,18 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 from llama_index.vector_stores.azureaisearch import (
     AzureAISearchVectorStore,
     IndexManagement,
+    MetadataIndexFieldType,
 )
 
 try:
@@ -427,6 +435,49 @@ def test_azureaisearch_query_ignores_conflicting_kwargs_and_forwards_extras_for_
         assert called["top"] != extras["top"]
         assert called["select"] != extras["select"]
         assert called["filter"] != extras["filter"]
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_not_filter_builds_valid_odata_expression() -> None:
+    search_client = mock_client_with_user_agent("search")
+    search_client.search.return_value = []
+    vector_store = AzureAISearchVectorStore(
+        search_or_index_client=search_client,
+        id_field_key="id",
+        chunk_field_key="content",
+        embedding_field_key="embedding",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys={
+            "relative_path": ("relative_path", MetadataIndexFieldType.STRING),
+        },
+        hidden_field_keys=["embedding"],
+        index_management=IndexManagement.NO_VALIDATION,
+        embedding_dimensionality=2,
+    )
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="relative_path",
+                value="Base/samp.docx",
+                operator=FilterOperator.EQ,
+            )
+        ],
+        condition=FilterCondition.NOT,
+    )
+    query = VectorStoreQuery(
+        query_embedding=[0.1, 0.2],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+        filters=filters,
+    )
+
+    vector_store.query(query)
+
+    called = search_client.search.call_args[1]
+    assert called["filter"] == "not (relative_path eq 'Base/samp.docx')"
 
 
 @pytest.mark.skipif(
