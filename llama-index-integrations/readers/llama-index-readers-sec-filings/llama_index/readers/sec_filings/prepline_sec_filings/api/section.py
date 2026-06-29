@@ -305,7 +305,8 @@ def ungz_file(file: UploadFile, gz_uncompressed_content_type=None) -> UploadFile
     if filename.endswith(".gz"):
         filename = filename[:-3]
 
-    gzip_file = gzip.open(file.file).read()
+    with gzip.open(file.file) as gz:
+        gzip_file = gz.read()
     return UploadFile(
         file=io.BytesIO(gzip_file),
         size=len(gzip_file),
