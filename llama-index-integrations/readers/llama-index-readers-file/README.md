@@ -38,6 +38,22 @@ Provides support for the following loaders:
 pip install llama-index-readers-file
 ```
 
+```sh
+## Optional dependency for FunASRReader
+
+`FunASRReader` uses the local FunASR Python package for speech-to-text 
+transcription.
+
+To use `FunASRReader`, install the optional dependency:
+
+```bash
+pip install funasr
+```
+
+After installing `funasr`, you can use `FunASRReader` with `SimpleDirectoryReader`
+as shown in the example below.
+```
+
 ## Usage
 
 Once installed, You can import any of the loader. Here's an example usage of one of the loader.
@@ -59,8 +75,7 @@ from llama_index.readers.file import (
     MboxReader,
     PptxReader,
     PandasCSVReader,
-    VideoAudioReader,
-    
+    VideoAudioReader,    
     FunASRReader,
     UnstructuredReader,
     PyMuPDFReader,
@@ -199,10 +214,12 @@ documents = SimpleDirectoryReader(
     "./data", file_extractor=file_extractor
 ).load_data()
 
-
 # FunASR Reader example
-# Requires FunASR: pip install funasr
-
+#
+# FunASR is an optional dependency.
+# Install it before using FunASRReader:
+#
+#   pip install funasr
 parser = FunASRReader(
     model="iic/SenseVoiceSmall",
     device="cpu",)
@@ -216,6 +233,10 @@ documents = SimpleDirectoryReader(
 ).load_data()
 
 
+```
+
+```text
+Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
 ```
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
