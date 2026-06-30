@@ -87,7 +87,9 @@ class MockLLM(CustomLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            num_output=self.max_tokens or -1, is_chat_model=self.is_chat_model
+            context_window=self.max_tokens or -1,
+            num_output=self.max_tokens or -1,
+            is_chat_model=self.is_chat_model,
         )
 
     def _generate_text(self, length: int) -> str:
