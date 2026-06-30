@@ -32,6 +32,17 @@ def test_create_schema_from_function() -> None:
     assert "required" not in schema
 
 
+def test_create_schema_from_function_ignores_var_args() -> None:
+    def search(query: str, *args: str, **kwargs) -> str:
+        return query
+
+    SchemaCls = create_schema_from_function("test_schema", search)
+    schema = SchemaCls.model_json_schema()
+
+    assert set(schema["properties"]) == {"query"}
+    assert schema["required"] == ["query"]
+
+
 def test_create_schema_from_function_with_field() -> None:
     """Test create_schema_from_function with pydantic.Field."""
 

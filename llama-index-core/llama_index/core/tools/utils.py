@@ -1,4 +1,4 @@
-from inspect import signature
+from inspect import Parameter, signature
 from typing import (
     Any,
     Awaitable,
@@ -37,12 +37,15 @@ def create_schema_from_function(
     ignore_fields = ignore_fields or []
     params = signature(func).parameters
 
-    for param_name in params:
+    for param_name, param in params.items():
         if param_name in ignore_fields:
             continue
 
-        param_type = params[param_name].annotation
-        param_default = params[param_name].default
+        if param.kind in (Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD):
+            continue
+
+        param_type = param.annotation
+        param_default = param.default
         description = None
         json_schema_extra: dict[str, Any] = {}
 
@@ -67,10 +70,10 @@ def create_schema_from_function(
         elif param_type == datetime.time:
             json_schema_extra.setdefault("format", "time")
 
-        if param_type is params[param_name].empty:
+        if param_type is param.empty:
             param_type = Any
 
-        if param_default is params[param_name].empty:
+        if param_default is param.empty:
             # Required field
             fields[param_name] = (
                 param_type,
