@@ -114,3 +114,83 @@ The decorator is optional, but provides observability via callbacks on the LLM c
 Note that you may have to adjust the internal prompts to get good performance. Even then, you should be using a sufficiently large LLM to ensure it's capable of handling the complex queries that LlamaIndex uses internally, so your mileage may vary.
 
 A list of all default internal prompts is available [here](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/default_prompts.py), and chat-specific prompts are listed [here](https://github.com/run-llama/llama_index/blob/main/llama_index/prompts/chat_prompts.py). You can also implement [your own custom prompts](/python/framework/module_guides/models/prompts).
+
+## Production Recommendations: Retry and Error Handling
+
+When deploying custom LLMs in production, transient failures (rate limits, timeouts, network issues) are inevitable. The basic examples above intentionally omit error handling for clarity, but production systems should include resilience patterns.
+
+### Adding Retry with Exponential Backoff
+
+A common pattern is wrapping your API call with retry logic:
+
+```python
+import time
+from typing import Any
+import httpx
+from llama_index.core.llms import CustomLLM, CompletionResponse, LLMMetadata
+
+
+class ResilientCustomLLM(CustomLLM):
+    """Custom LLM with retry and timeout handling."""
+
+    context_window: int = 4096
+    num_output: int = 256
+    model_name: str = "custom-resilient"
+    api_endpoint: str = "https://api.example.com/v1/generate"
+    max_retries: int = 3
+    timeout: float = 30.0
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(
+            context_window=self.context_window,
+            num_output=self.num_output,
+            model_name=self.model_name,
+        )
+
+    def _call_with_retry(self, prompt: str) -> str:
+        """Call the external API with retry and exponential backoff."""
+        for attempt in range(self.max_retries):
+            try:
+                response = httpx.post(
+                    self.api_endpoint,
+                    json={"prompt": prompt},
+                    timeout=self.timeout,
+                )
+                # Raise on 4xx/5xx
+                response.raise_for_status()
+                return response.json()["text"]
+
+            except httpx.HTTPStatusError as e:
+                status = e.response.status_code
+                # Don't retry on auth/client errors (4xx except 429)
+                if 400 <= status < 500 and status != 429:
+                    raise
+                # Retry on rate limit (429) and server errors (5xx)
+                if attempt < self.max_retries - 1:
+                    wait = (2**attempt) + 1  # 2s, 4s, 8s...
+                    time.sleep(wait)
+                else:
+                    raise
+
+            except (httpx.TimeoutException, httpx.ConnectError):
+                if attempt < self.max_retries - 1:
+                    wait = (2**attempt) + 1
+                    time.sleep(wait)
+                else:
+                    raise
+
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        text = self._call_with_retry(prompt)
+        if not text:
+            raise ValueError("LLM returned empty response")
+        return CompletionResponse(text=text)
+```
+
+### Key Considerations
+
+1. **Classify errors**: Distinguish retryable errors (429 rate limits, 5xx server errors, timeouts) from non-retryable ones (401 auth, 403 forbidden, 400 bad request).
+2. **Exponential backoff**: Wait progressively longer between retries (e.g., 2s → 4s → 8s) to avoid overwhelming recovering services.
+3. **Response validation**: Check for empty or malformed responses before returning them downstream.
+4. **Fail fast on auth errors**: Don't waste retries on authentication or authorization failures.
+5. **Consider circuit breakers**: If a provider is consistently failing, temporarily stop routing requests to it rather than exhausting retries on every call.
