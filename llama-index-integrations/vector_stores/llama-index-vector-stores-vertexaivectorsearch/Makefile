@@ -1,5 +1,7 @@
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 
+.PHONY: help format lint test tox watch-docs
+
 help:	## Show all Makefile targets.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -11,11 +13,10 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	pre-commit install && git ls-files | xargs pre-commit run --show-diff-on-failure --files
 
 test:	## Run tests via pytest.
-	uv run --extra=v2 pytest tests
+	uv run pytest --cov --cov-fail-under=50 --cov-report=term-missing --cov-branch tests
 
-.PHONY: testcov
-testcov:	## Run tests (with coverage) via pytest and tox.
-	# tests multiple versions and extra dependencies (e.g., 'v2')
+tox:	## Run tests (with coverage) via pytest and tox.
+	# tests multiple versions and extra dependencies
 	uv run tox run-parallel
 
 watch-docs:	## Build and watch documentation.
