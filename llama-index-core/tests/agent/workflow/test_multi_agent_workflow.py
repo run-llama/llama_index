@@ -10,7 +10,7 @@ from llama_index.core.llms import (
     MessageRole,
 )
 from llama_index.core.llms.mock import MockFunctionCallingLLM
-from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.memory import ChatMemoryBuffer, Memory
 from llama_index.core.tools import FunctionTool, ToolSelection
 from workflows import Context
 from workflows.events import (
@@ -209,6 +209,29 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
         for ev in events
     )
     assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_agent_workflow_accepts_memory_object() -> None:
+    """The public Memory object can be passed through workflow.run(memory=...)."""
+    agent = FunctionAgent(
+        name="solo",
+        description="answers",
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [ChatMessage(role=MessageRole.ASSISTANT, content="member answer")]
+            )
+        ),
+        can_handoff_to=[],
+    )
+    workflow = AgentWorkflow(agents=[agent], root_agent="solo", timeout=10)
+    memory = Memory.from_defaults(
+        chat_history=[ChatMessage(role=MessageRole.USER, content="earlier turn")]
+    )
+
+    response = await workflow.run(user_msg="hi", memory=memory)
+
+    assert response.response.content == "member answer"
 
 
 @pytest.mark.asyncio
