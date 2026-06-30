@@ -144,3 +144,16 @@ def test_embed_model_single_sentence_document() -> None:
     nodes = splitter.get_nodes_from_documents([single_doc])
     assert len(nodes) == 1
     assert nodes[0].get_content() == "Only one sentence here."
+
+
+def test_clean_text_advanced_removes_stopwords_by_word() -> None:
+    splitter = SemanticDoubleMergingSplitterNodeParser.from_defaults(
+        embed_model=MockEmbedding(embed_dim=4),
+    )
+    splitter.language_config.stopwords = {"the", "and", "is"}
+
+    cleaned = splitter._clean_text_advanced(
+        "The quick brown fox is fast, and the dog is nearby."
+    )
+
+    assert cleaned == "quick brown fox fast dog nearby"
