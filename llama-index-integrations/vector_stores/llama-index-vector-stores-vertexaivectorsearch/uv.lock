@@ -2309,7 +2309,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-vertexaivectorsearch"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "annotated-types" },
@@ -2330,6 +2330,9 @@ v2 = [
 ]
 
 [package.dev-dependencies]
+ci = [
+    { name = "google-cloud-vectorsearch" },
+]
 dev = [
     { name = "black", extra = ["jupyter"] },
     { name = "codespell", extra = ["toml"] },
@@ -2363,7 +2366,7 @@ requires-dist = [
     { name = "google-auth", specifier = ">=2.14.1" },
     { name = "google-cloud-aiplatform", specifier = ">=1.39.0,<2" },
     { name = "google-cloud-storage", specifier = ">=2.16.0,<3" },
-    { name = "google-cloud-vectorsearch", marker = "extra == 'v2'", specifier = ">=0.10.0" },
+    { name = "google-cloud-vectorsearch", marker = "extra == 'v2'", specifier = ">=0.11.0" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-embeddings-vertex", specifier = ">=0.4.0,<0.5" },
     { name = "pydantic", specifier = ">=2.8.0" },
@@ -2372,6 +2375,7 @@ requires-dist = [
 provides-extras = ["v2"]
 
 [package.metadata.requires-dev]
+ci = [{ name = "google-cloud-vectorsearch", specifier = ">=0.11.0" }]
 dev = [
     { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },

@@ -28,6 +28,12 @@ dev = [
     "types-setuptools==67.1.0.0",
     "tomli>=2.2.1",
 ]
+# dev dependency to ensure CI behavior in the top-level repo
+# correctly captures the test coverage in this repo
+ci = [
+    # this is identical to the 'v2' extra
+    "google-cloud-vectorsearch>=0.11.0",
+]
 
 [project]
 name = "llama-index-vector-stores-vertexaivectorsearch"
@@ -174,6 +180,7 @@ env_list = [
 description = "Run tests with coverage under {base_python}"
 runner = "uv-venv-lock-runner"
 set_env = {COVERAGE_FILE = ".coverage.{py_dot_ver}"}
+only_groups = ["dev"]
 # install 'v2' extra only in tests for v2 environment
 extras = [
     {replace = "if", condition = "factor.v2", then = ["v2"], extend = true},
@@ -212,4 +219,10 @@ commands = [
     {replace = "if", condition = "factor.clean", then = [
         ["coverage", "erase", "--data-file=.coverage.{py_dot_ver}"],
     ], extend = true},
+]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "ci",
 ]
