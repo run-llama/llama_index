@@ -128,6 +128,16 @@ class TestCompactAndRefine:
             "information2",
         ]
 
+    def test_synthesize__streaming_preserves_last_call_chunks(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=4)
+        synthesizer = CompactAndRefine(llm=llm, streaming=True)
+
+        response = synthesizer.synthesize(query="test", nodes=nodes)
+
+        assert list(response.response_gen) == ["text ", "text ", "text ", "text"]
+
     def test_synthesize__multimodal(
         self, multimodal_nodes: list[NodeWithScore]
     ) -> None:
@@ -266,6 +276,18 @@ class TestCompactAndRefine:
             "context",
             "information2",
         ]
+
+    @pytest.mark.asyncio
+    async def test_asynthesize__streaming_preserves_last_call_chunks(
+        self, nodes: list[NodeWithScore]
+    ) -> None:
+        llm = MockLLMWithChatMemoryOfLastCall(max_tokens=4)
+        synthesizer = CompactAndRefine(llm=llm, streaming=True)
+
+        response = await synthesizer.asynthesize(query="test", nodes=nodes)
+
+        chunks = [chunk async for chunk in response.response_gen]
+        assert chunks == ["text ", "text ", "text ", "text"]
 
     @pytest.mark.asyncio
     async def test_asynthesize__multimodal(
