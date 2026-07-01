@@ -1181,7 +1181,7 @@ def test_built_in_tool_in_response() -> None:
     mock_response.usage_metadata = MagicMock()
     mock_response.usage_metadata.model_dump.return_value = {
         "prompt_token_count": 10,
-        "candidates_token_count": 20,
+        "response_token_count": 20,
         "total_token_count": 30,
     }
     mock_response.function_calls = None
