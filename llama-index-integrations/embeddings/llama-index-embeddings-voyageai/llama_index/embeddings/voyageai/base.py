@@ -45,7 +45,9 @@ SUPPORTED_VIDEO_FORMATS = {
 }
 
 VOYAGE_TOTAL_TOKEN_LIMITS = {
-    "voyage-context-4": 120_000,
+    # Contextualized models embed a batch as a single document; a single
+    # contextualized document is limited to 32k tokens per request.
+    "voyage-context-4": 32_000,
     "voyage-context-3": 32_000,
     "voyage-multimodal-3": 320_000,  # 32k per input, 320k total
     "voyage-multimodal-3.5": 320_000,  # 32k per input, 320k total
