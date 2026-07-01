@@ -358,8 +358,11 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         text = re.sub(r"http\S+|www\S+|https\S+", "", text, flags=re.MULTILINE)
         # Remove punctuations
         text = text.translate(str.maketrans("", "", string.punctuation))
-        # Remove stopwords
-        tokens = globals_helper.punkt_tokenizer.tokenize(text)
-        filtered_words = [w for w in tokens if w not in self.language_config.stopwords]
+        # Remove stopwords (split on whitespace, not sentence-tokenizer -- after
+        # stripping punctuation, punkt returns the whole text as one token so
+        # individual stopwords never match)
+        filtered_words = [
+            w for w in text.split() if w not in self.language_config.stopwords
+        ]
 
         return " ".join(filtered_words)
