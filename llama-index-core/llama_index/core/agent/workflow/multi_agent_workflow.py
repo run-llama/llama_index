@@ -24,6 +24,7 @@ from llama_index.core.agent.workflow.base_agent import (
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
     DEFAULT_MAX_ITERATIONS,
+    _ToolCallContext,
     _get_waiting_for_event_exception,
 )
 from llama_index.core.agent.workflow.prompts import DEFAULT_EARLY_STOPPING_PROMPT
@@ -350,8 +351,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         ctx: Context,
         tool: AsyncBaseTool,
         tool_input: dict,
+        tool_id: Optional[str] = None,
     ) -> ToolOutput:
         """Call the given tool with the given input."""
+        tool_id = tool_id or tool.metadata.get_name()
         try:
             if (
                 isinstance(tool, FunctionTool)
@@ -359,7 +362,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 and tool.ctx_param_name is not None
             ):
                 new_tool_input = {**tool_input}
-                new_tool_input[tool.ctx_param_name] = ctx
+                new_tool_input[tool.ctx_param_name] = _ToolCallContext(ctx, tool_id)
                 tool_output = await tool.acall(**new_tool_input)
             else:
                 tool_output = await tool.acall(**tool_input)
@@ -654,7 +657,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
         else:
             tool = tools_by_name[ev.tool_name]
-            result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+            result = await self._call_tool(ctx, tool, ev.tool_kwargs, ev.tool_id)
 
         result_ev = ToolCallResult(
             tool_name=ev.tool_name,

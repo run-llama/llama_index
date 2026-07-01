@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 import pytest
@@ -422,6 +423,69 @@ async def test_agent_with_hitl():
 
     assert response is not None
     assert "HITL successful" in str(response)
+
+
+@pytest.mark.asyncio
+async def test_parallel_hitl_tool_calls_have_scoped_waiters():
+    """Parallel tools that wait for HITL should not overwrite each other."""
+
+    async def hitl(ctx: Context, label: str):
+        resp = await ctx.wait_for_event(
+            HumanResponseEvent,
+            waiter_event=InputRequiredEvent(prefix=f"approve {label}?"),
+            timeout=5,
+        )
+        return f"{label}: {resp.response}"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[hitl],
+        llm=MockFunctionCallingLLM(
+            response_generator=_response_generator_from_list(
+                [
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content="need approval",
+                        additional_kwargs={
+                            "tool_calls": [
+                                ToolSelection(
+                                    tool_id="call_one",
+                                    tool_name="hitl",
+                                    tool_kwargs={"label": "one"},
+                                ),
+                                ToolSelection(
+                                    tool_id="call_two",
+                                    tool_name="hitl",
+                                    tool_kwargs={"label": "two"},
+                                ),
+                            ]
+                        },
+                    ),
+                    ChatMessage(role=MessageRole.ASSISTANT, content="done"),
+                ]
+            )
+        ),
+    )
+
+    workflow = AgentWorkflow(agents=[agent], root_agent="agent", timeout=10)
+    handler = workflow.run(user_msg="test")
+
+    input_required_events = []
+    async for ev in handler.stream_events():
+        if isinstance(ev, InputRequiredEvent):
+            input_required_events.append(ev)
+            handler.ctx.send_event(
+                HumanResponseEvent(response=f"ok {len(input_required_events)}")
+            )
+            if len(input_required_events) == 2:
+                break
+
+    response = await asyncio.wait_for(handler, timeout=10)
+
+    assert len(input_required_events) == 2
+    assert response is not None
+    assert "done" in str(response)
 
 
 @pytest.mark.asyncio
