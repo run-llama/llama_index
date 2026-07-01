@@ -31,6 +31,9 @@ class _OneDriveResourcePayload(BaseModel):
     downloaded_file_path: Optional[str]
 
 
+
+# Default timeout for HTTP requests to prevent indefinite blocking
+_DEFAULT_REQUEST_TIMEOUT = 60  # seconds
 class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     Microsoft OneDrive reader.
@@ -232,7 +235,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         retries = 0
 
         while retries < max_retries:
-            response = requests.get(endpoint, headers=headers)
+            response = requests.get(endpoint, headers=headers, timeout=_DEFAULT_REQUEST_TIMEOUT)
             if response.status_code == 200:
                 return response.json()
             # Check for Ratelimit error, this can happen if you query endpoint recursively
@@ -270,7 +273,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_name = item["name"]
 
         # Download the file.
-        file_data = requests.get(file_download_url)
+        file_data = requests.get(file_download_url, timeout=_DEFAULT_REQUEST_TIMEOUT)
 
         # Save the downloaded file to the specified local directory.
         file_path = os.path.join(local_dir, file_name)
@@ -714,7 +717,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(url=permissions_info_endpoint, headers=headers)
+        response = requests.get(url=permissions_info_endpoint, headers=headers, timeout=_DEFAULT_REQUEST_TIMEOUT)
         permissions = response.json()
         identity_sets = []
 
