@@ -27,6 +27,8 @@ from openai.types.responses import (
     ResponseOutputTextAnnotationAddedEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseReasoningItem,
+    ResponseReasoningSummaryTextDeltaEvent,
+    ResponseReasoningTextDeltaEvent,
     ResponseOutputItem,
     ResponseOutputText,
     ResponseOutputItemDoneEvent,
@@ -177,9 +179,11 @@ def test_process_response_event():
         track_previous_responses=False,
     )
 
-    updated_blocks, _, _, _, _, delta = result
+    updated_blocks, _, _, _, _, delta, thinking_delta = result
     assert updated_blocks == [TextBlock(text="Hello")]
     assert delta == "Hello"
+    # Answer text must not leak into the reasoning channel
+    assert thinking_delta == ""
 
     event = ResponseOutputItemDoneEvent(
         item=ResponseReasoningItem(
@@ -206,7 +210,7 @@ def test_process_response_event():
         track_previous_responses=False,
     )
 
-    updated_blocks, _, _, _, _, _ = result
+    updated_blocks, _, _, _, _, _, _ = result
     assert updated_blocks == [
         ThinkingBlock(
             block_type="thinking",
@@ -247,7 +251,7 @@ def test_process_response_event():
         track_previous_responses=False,
     )
 
-    _, _, _, updated_call, _, _ = result
+    _, _, _, updated_call, _, _, _ = result
     assert updated_call.arguments == '{"arg": "value"'
 
     # Test function call arguments done
@@ -268,7 +272,7 @@ def test_process_response_event():
         track_previous_responses=False,
     )
 
-    final_blocks, _, _, final_current_call, _, _ = result
+    final_blocks, _, _, final_current_call, _, _, _ = result
     completed_tool_calls = [
         block for block in final_blocks if isinstance(block, ToolCallBlock)
     ]
@@ -305,11 +309,76 @@ def test_process_response_event_with_text_annotation():
     )
 
     # The annotation should be added to additional_kwargs["annotations"]
-    _, _, updated_additional_kwargs, _, _, _ = result
+    _, _, updated_additional_kwargs, _, _, _, _ = result
     assert "annotations" in updated_additional_kwargs
     assert updated_additional_kwargs["annotations"] == [
         {"type": "test_annotation", "value": 42}
     ]
+
+
+def test_process_response_event_reasoning_delta():
+    """Reasoning/summary deltas are surfaced on the thinking_delta channel only."""
+    built_in_tool_calls = []
+    additional_kwargs = {}
+    current_tool_call = None
+
+    # Streamed reasoning text
+    event = ResponseReasoningTextDeltaEvent(
+        content_index=0,
+        delta="thinking...",
+        item_id="123",
+        output_index=0,
+        sequence_number=1,
+        type="response.reasoning_text.delta",
+    )
+
+    result = OpenAIResponses.process_response_event(
+        event=event,
+        built_in_tool_calls=built_in_tool_calls,
+        additional_kwargs=additional_kwargs,
+        current_tool_call=current_tool_call,
+        track_previous_responses=False,
+    )
+
+    blocks, _, _, _, _, delta, thinking_delta = result
+    # Reasoning text is surfaced as an incremental ThinkingBlock and on the
+    # thinking_delta channel, but must not leak into the answer delta.
+    assert blocks == [
+        ThinkingBlock(
+            content="thinking...",
+            additional_information=event.model_dump(exclude={"delta"}),
+        )
+    ]
+    assert delta == ""
+    assert thinking_delta == "thinking..."
+
+    # Streamed reasoning summary text
+    event = ResponseReasoningSummaryTextDeltaEvent(
+        delta="summary...",
+        item_id="123",
+        output_index=0,
+        sequence_number=2,
+        summary_index=0,
+        type="response.reasoning_summary_text.delta",
+    )
+
+    result = OpenAIResponses.process_response_event(
+        event=event,
+        built_in_tool_calls=built_in_tool_calls,
+        additional_kwargs=additional_kwargs,
+        current_tool_call=current_tool_call,
+        track_previous_responses=False,
+    )
+
+    blocks, _, _, _, _, delta, thinking_delta = result
+    assert blocks == [
+        ThinkingBlock(
+            content="summary...",
+            additional_information=event.model_dump(exclude={"delta"}),
+        )
+    ]
+    assert delta == ""
+    assert thinking_delta == "summary..."
 
 
 def test_get_tool_calls_from_response():
