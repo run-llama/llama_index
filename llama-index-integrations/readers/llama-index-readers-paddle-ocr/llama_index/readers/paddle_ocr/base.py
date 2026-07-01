@@ -1,17 +1,39 @@
+import io
 import logging
+import os
+import re
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
-import tempfile
-import io
 
-from paddleocr import PaddleOCR
-import pdfplumber
 import fitz  # PyMuPDF
+import pdfplumber
+from paddleocr import (
+    AsyncPaddleOCRClient,
+    Model,
+    OCROptions,
+    PPStructureV3Options,
+    PaddleOCR,
+    PaddleOCRClient,
+    PaddleOCRVLOptions,
+)
 from PIL import Image
-import re
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+
+def _get_token(token: Optional[str]) -> Optional[str]:
+    return token or os.environ.get("PADDLEOCR_ACCESS_TOKEN")
+
+
+# Models that use parse_document(); all others use ocr()
+_PARSE_DOCUMENT_MODELS = {
+    "PP-StructureV3",
+    "PaddleOCR-VL",
+    "PaddleOCR-VL-1.5",
+    "PaddleOCR-VL-1.6",
+}
 
 
 class PDFPaddleOCRReader(BaseReader):
@@ -168,3 +190,120 @@ class PDFPaddleOCRReader(BaseReader):
             return [error_doc]
 
         return documents
+
+
+def _get_token(token: Optional[str]) -> Optional[str]:
+    return token or os.environ.get("PADDLEOCR_ACCESS_TOKEN")
+
+
+class PaddleOCRAPIReader(BaseReader):
+    """
+    Reader using PaddleOCR official SDK, supports images and PDF files.
+
+    use_parse=False (default): calls ocr(), returns plain text.
+    use_parse=True: calls parse_document() if the model supports it, otherwise falls back to ocr().
+    """
+
+    def __init__(
+        self,
+        token: Optional[str] = None,
+        base_url: str = "https://paddleocr.aistudio-app.com",
+        model: Optional[str] = None,
+        use_parse: bool = False,
+        use_doc_orientation_classify: bool = False,
+        use_doc_unwarping: bool = False,
+    ):
+        super().__init__()
+        self._token = token
+        self._base_url = base_url
+        valid = {m.value for m in Model}
+        if model is not None:
+            m = model.value if isinstance(model, Model) else model
+            if m not in valid:
+                raise ValueError(f"Invalid model {m!r}. Valid models: {sorted(valid)}")
+            self._model = m
+        else:
+            self._model = "PP-OCRv6"
+        self._use_parse = use_parse
+        self._use_doc_orientation_classify = use_doc_orientation_classify
+        self._use_doc_unwarping = use_doc_unwarping
+
+    def _get_token(self) -> Optional[str]:
+        return _get_token(self._token)
+
+    def _is_parse_model(self) -> bool:
+        return self._use_parse and self._model in _PARSE_DOCUMENT_MODELS
+
+    def _build_options(self):
+        kwargs = {
+            "use_doc_orientation_classify": self._use_doc_orientation_classify,
+            "use_doc_unwarping": self._use_doc_unwarping,
+        }
+        if self._is_parse_model():
+            if self._model == "PP-StructureV3":
+                return PPStructureV3Options(**kwargs)
+            return PaddleOCRVLOptions(**kwargs)
+        return OCROptions(**kwargs)
+
+    def _pages_to_documents(
+        self, result, file_path: Path, extra_info: dict | None
+    ) -> list[Document]:
+        docs = []
+        for i, page in enumerate(getattr(result, "pages", None) or []):
+            if self._is_parse_model():
+                text = page.markdown_text or ""
+            else:
+                texts = (page.pruned_result or {}).get("rec_texts", [])
+                text = " ".join(t for t in texts if t and t.strip())
+            if text.strip():
+                metadata: dict = {"page": i + 1, "source": str(file_path)}
+                if extra_info:
+                    metadata.update(extra_info)
+                docs.append(Document(text=text.strip(), metadata=metadata))
+        return docs
+
+    def load_data(
+        self, file_path: Path, extra_info: dict | None = None
+    ) -> list[Document]:
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        with PaddleOCRClient(
+            token=self._get_token(), base_url=self._base_url
+        ) as client:
+            if self._is_parse_model():
+                result = client.parse_document(
+                    file_path=str(file_path),
+                    model=self._model,
+                    options=self._build_options(),
+                )
+            else:
+                result = client.ocr(
+                    file_path=str(file_path),
+                    model=self._model,
+                    options=self._build_options(),
+                )
+        return self._pages_to_documents(result, file_path, extra_info)
+
+    async def aload_data(
+        self, file_path: Path, extra_info: dict | None = None
+    ) -> list[Document]:
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        async with AsyncPaddleOCRClient(
+            token=self._get_token(), base_url=self._base_url
+        ) as client:
+            if self._is_parse_model():
+                result = await client.parse_document(
+                    file_path=str(file_path),
+                    model=self._model,
+                    options=self._build_options(),
+                )
+            else:
+                result = await client.ocr(
+                    file_path=str(file_path),
+                    model=self._model,
+                    options=self._build_options(),
+                )
+        return self._pages_to_documents(result, file_path, extra_info)
