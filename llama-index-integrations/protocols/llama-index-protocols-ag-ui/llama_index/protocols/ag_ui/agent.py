@@ -1,3 +1,4 @@
+import copy
 import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -184,7 +185,7 @@ class AGUIChatWorkflow(Workflow):
                 state.pop("messages", None)
             else:
                 # initial state is not provided, use the default state
-                state = self.initial_state.copy()
+                state = copy.deepcopy(self.initial_state)
 
             # Save state to context for tools to use
             await ctx.store.set("state", state)

@@ -1,3 +1,4 @@
+import copy
 from typing import Callable, Dict, Any, List, Optional, Awaitable
 
 from ag_ui.core import RunAgentInput
@@ -109,7 +110,7 @@ def get_default_workflow_factory(
             llm=llm,
             frontend_tools=frontend_tools,
             backend_tools=backend_tools,
-            initial_state=initial_state,
+            initial_state=copy.deepcopy(initial_state),
             system_prompt=system_prompt,
             timeout=timeout,
         )
