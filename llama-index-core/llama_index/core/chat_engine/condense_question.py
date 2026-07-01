@@ -125,7 +125,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             return last_message
 
         chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
+        logger.debug("Condensing chat history for standalone question")
 
         return self._llm.predict(
             self._condense_question_prompt,
@@ -144,7 +144,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             return last_message
 
         chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
+        logger.debug("Condensing chat history for standalone question")
 
         return await self._llm.apredict(
             self._condense_question_prompt,
@@ -179,7 +179,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
+        log_str = "Querying with condensed question"
         logger.info(log_str)
         if self._verbose:
             print(log_str)
@@ -224,7 +224,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
+        log_str = "Querying with condensed question"
         logger.info(log_str)
         if self._verbose:
             print(log_str)
@@ -282,7 +282,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
+        log_str = "Querying with condensed question"
         logger.info(log_str)
         if self._verbose:
             print(log_str)
@@ -327,7 +327,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
+        log_str = "Querying with condensed question"
         logger.info(log_str)
         if self._verbose:
             print(log_str)
