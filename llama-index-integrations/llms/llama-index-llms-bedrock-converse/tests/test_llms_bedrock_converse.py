@@ -152,7 +152,6 @@ class MockClient:
         return {"stream": stream_generator()}
 
 
-
 class AsyncMockClient:
     """Async mock client for native aioboto3 path."""
 
@@ -171,9 +170,20 @@ class AsyncMockClient:
     async def converse_stream(self, *args, **kwargs):
         async def stream_generator():
             for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}, "contentBlockIndex": 0}}
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
             yield {"messageStop": {"stopReason": "end_turn"}}
-            yield {"metadata": {"usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41}, "metrics": {"latencyMs": 886}}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
+
         return {"stream": stream_generator()}
 
 
@@ -183,6 +193,7 @@ class MockAsyncSession:
 
     def client(self, *args, **kwargs):
         return AsyncMockClient()
+
 
 @pytest.fixture()
 def mock_boto3_session(monkeypatch):
@@ -413,16 +424,19 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
     # tool_kwargs must be a dict, not a JSON string
-    assert isinstance(
-        tool_blocks[0].tool_kwargs, dict
-    ), f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
+        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    )
     assert tool_blocks[0].tool_kwargs == {"location": "London"}
     assert tool_blocks[0].tool_name == "get_weather"
     assert tool_blocks[0].tool_call_id == "tool-1"
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(HAS_AIOBOTO3, reason="test uses sync mock, needs dedicated async tool mock for aioboto3 path")
+@pytest.mark.skipif(
+    HAS_AIOBOTO3,
+    reason="test uses sync mock, needs dedicated async tool mock for aioboto3 path",
+)
 async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     """
     Async variant: streaming tool call input is parsed from string to dict.
@@ -494,9 +508,9 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     final = responses[-1]
     tool_blocks = [b for b in final.message.blocks if isinstance(b, ToolCallBlock)]
     assert len(tool_blocks) == 1
-    assert isinstance(
-        tool_blocks[0].tool_kwargs, dict
-    ), f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    assert isinstance(tool_blocks[0].tool_kwargs, dict), (
+        f"Expected dict, got {type(tool_blocks[0].tool_kwargs)}: {tool_blocks[0].tool_kwargs}"
+    )
     assert tool_blocks[0].tool_kwargs == {"location": "London"}
     assert tool_blocks[0].tool_name == "get_weather"
     assert tool_blocks[0].tool_call_id == "tool-1"
@@ -1197,9 +1211,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         if r.additional_kwargs.get("thinking_delta") is not None
         and len(r.additional_kwargs.get("thinking_delta", "")) > 0
     ]
-    assert (
-        len(thinking_responses) > 0
-    ), "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    assert len(thinking_responses) > 0, (
+        "Should have at least one response with non-empty thinking_delta in additional_kwargs"
+    )
 
     # Check that text deltas are separate from thinking deltas
     text_responses = [
@@ -1228,9 +1242,9 @@ async def test_bedrock_converse_thinking_delta_in_additional_kwargs(
         for r in async_responses
         if r.additional_kwargs.get("thinking_delta") is not None
     ]
-    assert (
-        len(async_thinking_responses) > 0
-    ), "Async streaming should also have thinking_delta in additional_kwargs"
+    assert len(async_thinking_responses) > 0, (
+        "Async streaming should also have thinking_delta in additional_kwargs"
+    )
 
 
 @needs_aws_creds
@@ -1288,13 +1302,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
     response_1 = await llm.achat(messages=cache_test_messages_1)
     # Verify cache write tokens are present (first call should write to cache)
     additional_kwargs_1 = getattr(response_1, "additional_kwargs", {})
-    assert (
-        "cache_creation_input_tokens" in additional_kwargs_1
-    ), "First call should show cache creation tokens"
+    assert "cache_creation_input_tokens" in additional_kwargs_1, (
+        "First call should show cache creation tokens"
+    )
     cache_write_tokens_1 = additional_kwargs_1.get("cache_creation_input_tokens", 0)
-    assert (
-        cache_write_tokens_1 > 0
-    ), f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    assert cache_write_tokens_1 > 0, (
+        f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    )
 
     # Second call - should read from cache with different user message
     cache_test_messages_2 = [
@@ -1316,13 +1330,13 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
 
     # Verify cache read tokens are present (second call should read from cache)
     additional_kwargs_2 = getattr(response_2, "additional_kwargs", {})
-    assert (
-        "cache_read_input_tokens" in additional_kwargs_2
-    ), "Second call should show cache read tokens"
+    assert "cache_read_input_tokens" in additional_kwargs_2, (
+        "Second call should show cache read tokens"
+    )
     cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
-    assert (
-        cache_read_tokens_2 > 0
-    ), f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    assert cache_read_tokens_2 > 0, (
+        f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    )
 
     # Verify cache efficiency - cache read tokens should be close to cache write tokens
     # (since we're using the same cached content)
@@ -1387,13 +1401,13 @@ async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
 
     # Verify cache write tokens are present (first call should write to cache automatically)
     additional_kwargs = getattr(response, "additional_kwargs", {})
-    assert (
-        "cache_creation_input_tokens" in additional_kwargs
-    ), "First call should show cache creation tokens when system_prompt_caching=True"
+    assert "cache_creation_input_tokens" in additional_kwargs, (
+        "First call should show cache creation tokens when system_prompt_caching=True"
+    )
     cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
-    assert (
-        cache_write_tokens > 0
-    ), f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    assert cache_write_tokens > 0, (
+        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    )
 
     # Verify response is meaningful
     assert len(str(response.message.content)) > 50, "Response should be substantial"
