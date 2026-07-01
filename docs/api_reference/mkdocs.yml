@@ -595,6 +595,7 @@ plugins:
             - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-aimon-rerank
             - ../../llama-index-integrations/embeddings/llama-index-embeddings-netmind
             - ../../llama-index-integrations/llms/llama-index-llms-novita
+            - ../../llama-index-integrations/llms/llama-index-llms-iflytek
             - ../../llama-index-integrations/llms/llama-index-llms-netmind
             - ../../llama-index-integrations/tools/llama-index-tools-dappier
             - ../../llama-index-integrations/llms/llama-index-llms-asi
