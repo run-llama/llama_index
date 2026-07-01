@@ -69,8 +69,10 @@ ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
 
 ROLES_FROM_GEMINI: dict[str, MessageRole] = {
     ## Gemini has user, model and function roles.
+    ## Some Google Cloud MaaS endpoints return "assistant" instead of "model".
     "user": MessageRole.USER,
     "model": MessageRole.ASSISTANT,
+    "assistant": MessageRole.ASSISTANT,
     "function": MessageRole.TOOL,
 }
 
