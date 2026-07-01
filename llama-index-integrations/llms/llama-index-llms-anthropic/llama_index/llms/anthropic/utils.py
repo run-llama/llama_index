@@ -581,6 +581,16 @@ def force_single_tool_call(response: ChatResponse) -> None:
 # Anthropic models that support prompt caching
 # Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
 ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude Fable 5
+    "claude-fable-5",
+    # Claude 4.8 Opus
+    "claude-opus-4-8",
+    # Claude 4.7 Opus
+    "claude-opus-4-7",
+    # Claude 4.6 Opus
+    "claude-opus-4-6",
+    # Claude 4.6 Sonnet
+    "claude-sonnet-4-6",
     # Claude 4.5 Opus
     "claude-opus-4-5-20251101",
     "claude-opus-4-5",
