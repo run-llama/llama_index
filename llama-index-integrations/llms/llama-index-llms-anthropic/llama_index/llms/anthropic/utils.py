@@ -143,7 +143,7 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
 
 
 def is_function_calling_model(modelname: str) -> bool:
-    return "-3" in modelname or "-4" in modelname
+    return "-3" in modelname or "-4" in modelname or "-5" in modelname
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
