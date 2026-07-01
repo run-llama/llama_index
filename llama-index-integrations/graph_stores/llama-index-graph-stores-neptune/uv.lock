@@ -1848,7 +1848,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-stores-neptune"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
