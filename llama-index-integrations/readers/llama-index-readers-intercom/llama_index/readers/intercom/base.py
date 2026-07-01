@@ -87,7 +87,7 @@ class IntercomReader(BaseReader):
             "authorization": f"Bearer {self.intercom_access_token}",
         }
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=60.0)
 
         response_json = json.loads(response.text)
 
