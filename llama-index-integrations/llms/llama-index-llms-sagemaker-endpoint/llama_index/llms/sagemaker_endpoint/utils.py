@@ -62,8 +62,14 @@ class IOHandler(BaseIOHandler):
         return json.load(codecs.getreader("utf-8")(response))[0]["generated_text"]
 
     def deserialize_streaming_output(self, response: bytes) -> str:
+        # str.lstrip/rstrip treat their argument as a set of characters, not a
+        # literal affix, so they also eat leading/trailing characters of the
+        # generated text itself (e.g. '[{"generated_text":"the answer"}]'
+        # became 'he answer'). Remove the JSON envelope as exact affixes.
         response_str = (
-            response.decode("utf-8").lstrip('[{"generated_text":"').rstrip('"}]')
+            response.decode("utf-8")
+            .removeprefix('[{"generated_text":"')
+            .removesuffix('"}]')
         )
         clean_response = '{"response":"' + response_str + '"}'
 
