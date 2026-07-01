@@ -243,7 +243,7 @@ jupyter-server==2.16.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.4.8
+jupyterlab==4.5.7
     # via
     #   jupyter
     #   notebook
@@ -310,7 +310,7 @@ nltk==3.9.4
     # via llama-index-core
 nodeenv==1.9.1
     # via pre-commit
-notebook==7.4.4
+notebook==7.5.6
     # via jupyter
 notebook-shim==0.2.4
     # via
