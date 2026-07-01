@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP, Context
@@ -75,10 +75,11 @@ async def aget_tools_from_mcp_url(
 
 
 def workflow_as_mcp(
-    workflow: Workflow,
+    workflow: Optional[Workflow] = None,
     workflow_name: Optional[str] = None,
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
+    workflow_factory: Optional[Callable[[], Workflow]] = None,
     **fastmcp_init_kwargs: Any,
 ) -> FastMCP:
     """
@@ -88,8 +89,8 @@ def workflow_as_mcp(
     within MCP, which will
 
     Args:
-        workflow:
-            The workflow to convert.
+        workflow (optional):
+            The workflow instance to convert. This instance is reused for every MCP tool call.
         workflow_name (optional):
             The name of the workflow. Defaults to the workflow class name.
         workflow_description (optional):
@@ -97,6 +98,8 @@ def workflow_as_mcp(
         start_event_model (optional):
             The start event model of the workflow. Can be a `BaseModel` or a `StartEvent` class.
             Defaults to the workflow's custom `StartEvent` class.
+        workflow_factory (optional):
+            Factory that creates a fresh workflow instance for each MCP tool call.
         **fastmcp_init_kwargs:
             Additional keyword arguments to pass to the FastMCP constructor.
 
@@ -104,31 +107,66 @@ def workflow_as_mcp(
         The MCP app object.
 
     """
+    if workflow is None and workflow_factory is None:
+        raise ValueError("Must provide either workflow or workflow_factory.")
+    if workflow is not None and workflow_factory is not None:
+        raise ValueError("Provide either workflow or workflow_factory, not both.")
+
     app = FastMCP(**fastmcp_init_kwargs)
 
     # Dynamically get the start event class -- this is a bit of a hack
-    StartEventCLS = start_event_model or workflow._start_event_class
+    if start_event_model is None:
+        if workflow is None:
+            raise ValueError(
+                "Must provide start_event_model when using workflow_factory without a workflow instance."
+            )
+        StartEventCLS = workflow._start_event_class
+    else:
+        StartEventCLS = start_event_model
+
     if StartEventCLS == StartEvent:
         raise ValueError(
             "Must declare a custom StartEvent class in your workflow or provide a start_event_model."
         )
 
     # Get the workflow name and description
-    workflow_name = workflow_name or workflow.__class__.__name__
-    workflow_description = workflow_description or workflow.__doc__
+    if workflow_name is None:
+        workflow_name = (
+            workflow.__class__.__name__
+            if workflow is not None
+            else getattr(workflow_factory, "__name__", None)
+        )
+    if workflow_name is None:
+        raise ValueError("Must provide workflow_name when it cannot be inferred.")
+
+    workflow_description = (
+        workflow_description
+        if workflow_description is not None
+        else workflow.__doc__
+        if workflow is not None
+        else None
+    )
 
     @app.tool(name=workflow_name, description=workflow_description)
     async def _workflow_tool(run_args: StartEventCLS, context: Context) -> Any:
         # Handle edge cases where the start event is an Event or a BaseModel
         # If the workflow does not have a custom StartEvent class, then we need to handle the event differently
+        active_workflow = (
+            workflow_factory() if workflow_factory is not None else workflow
+        )
+        if active_workflow is None:
+            raise ValueError("Must provide either workflow or workflow_factory.")
 
-        if isinstance(run_args, Event) and workflow._start_event_class != StartEvent:
-            handler = workflow.run(start_event=run_args)
+        if (
+            isinstance(run_args, Event)
+            and active_workflow._start_event_class != StartEvent
+        ):
+            handler = active_workflow.run(start_event=run_args)
         elif isinstance(run_args, BaseModel):
-            handler = workflow.run(**run_args.model_dump())
+            handler = active_workflow.run(**run_args.model_dump())
         elif isinstance(run_args, dict):
             start_event = StartEventCLS.model_validate(run_args)
-            handler = workflow.run(start_event=start_event)
+            handler = active_workflow.run(start_event=start_event)
         else:
             raise ValueError(f"Invalid start event type: {type(run_args)}")
 
