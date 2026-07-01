@@ -137,10 +137,11 @@ class StreamingAgentChatResponse:
         self.set_source_nodes()
 
     def __str__(self) -> str:
-        if self.is_done and not self.queue.empty() and not self.is_function:
-            while self.queue.queue:
-                delta = self.queue.queue.popleft()
-                self.unformatted_response += delta
+        if self.is_done and not self.is_function:
+            if not self.queue.empty():
+                while self.queue.queue:
+                    delta = self.queue.queue.popleft()
+                    self.unformatted_response += delta
             self.response = self.unformatted_response.strip()
         return self.response
 
@@ -264,6 +265,11 @@ class StreamingAgentChatResponse:
             raise
         dispatcher.event(StreamChatEndEvent())
         self.is_done = True
+        # Ensure str() and .response return the accumulated text even when the
+        # caller never iterates async_response_gen (fixes async path leaving
+        # self.response empty after awaiting awrite_response_to_history_task)
+        self.unformatted_response = final_text
+        self.response = final_text.strip()
 
         # These act as is_done events for any consumers waiting
         self.is_function_false_event.set()
