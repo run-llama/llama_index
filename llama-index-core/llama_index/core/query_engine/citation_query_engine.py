@@ -84,7 +84,8 @@ CITATION_REFINE_TEMPLATE = PromptTemplate(
     "{context_msg}"
     "\n------\n"
     "Query: {query_str}\n"
-    "Answer: "
+    "Original Answer: {{ existing_answer }}\n"
+    "New Answer: "
 )
 
 CITATION_CHAT_CONTENT_QA_TEMPLATE = RichPromptTemplate("""
@@ -147,7 +148,8 @@ Begin refining!
 {% endfor %}
 ------
 Query: {{ query_str }}
-Answer:
+Original Answer: {{ existing_answer }}
+New Answer:
 {% endchat %}
 """)
 
