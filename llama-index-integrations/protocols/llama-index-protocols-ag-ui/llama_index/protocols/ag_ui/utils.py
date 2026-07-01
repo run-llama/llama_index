@@ -60,13 +60,16 @@ def llama_index_message_to_ag_ui_message(
             tool_calls=tool_calls,
         )
     elif message.role.value == "tool" or "tool_call_id" in message.additional_kwargs:
+        if "tool_call_id" not in message.additional_kwargs:
+            raise ValueError(
+                "Tool messages must include additional_kwargs['tool_call_id'] "
+                "to preserve the assistant tool-call pairing."
+            )
         return ToolMessage(
             id=msg_id,
             content=message.content or "",
             role="tool",
-            tool_call_id=message.additional_kwargs.get(
-                "tool_call_id", str(uuid.uuid4())
-            ),
+            tool_call_id=message.additional_kwargs["tool_call_id"],
         )
     else:
         raise ValueError(f"Unknown message role: {message.role}")
