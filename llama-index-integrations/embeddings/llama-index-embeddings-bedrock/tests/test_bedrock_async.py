@@ -7,7 +7,7 @@ from botocore.response import StreamingBody
 from llama_index.embeddings.bedrock import BedrockEmbedding, Models
 
 try:
-    import aioboto3
+    import aioboto3  # noqa: F401
 
     HAS_AIOBOTO3 = True
 except ImportError:
