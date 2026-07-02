@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-maritalk"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index llms maritalk integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.12"
