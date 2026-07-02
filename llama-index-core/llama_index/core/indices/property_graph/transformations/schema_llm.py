@@ -1,5 +1,7 @@
 import asyncio
+import logging
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, field_validator
@@ -18,6 +20,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 from llama_index.core.llms.llm import LLM
 
+logger = logging.getLogger(__name__)
 
 DEFAULT_ENTITIES = Literal[
     "PRODUCT",
@@ -122,6 +125,8 @@ class SchemaLLMPathExtractor(TransformComponent):
             Set to ``False`` when using LLM providers that require strict
             schemas (e.g. OpenAI structured outputs, Google Gemini).
             Defaults to True (preserving existing behavior).
+        raise_on_error (bool, optional):
+            Whether to raise exceptions if extraction fails. Defaults to False.
 
     """
 
@@ -134,6 +139,7 @@ class SchemaLLMPathExtractor(TransformComponent):
     possible_entity_props: Optional[List[str]]
     possible_relation_props: Optional[List[str]]
     strict: bool
+    raise_on_error: bool = False
 
     def __init__(
         self,
@@ -151,6 +157,7 @@ class SchemaLLMPathExtractor(TransformComponent):
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
         allow_additional_properties: bool = True,
+        raise_on_error: bool = False,
     ) -> None:
         """Init params."""
         if isinstance(extract_prompt, str):
@@ -248,6 +255,7 @@ class SchemaLLMPathExtractor(TransformComponent):
             possible_entity_props=possible_entity_props,
             possible_relation_props=possible_relation_props,
             strict=strict,
+            raise_on_error=raise_on_error,
         )
 
     @classmethod
@@ -364,7 +372,10 @@ class SchemaLLMPathExtractor(TransformComponent):
                 max_triplets_per_chunk=self.max_triplets_per_chunk,
             )
             triplets = self._prune_invalid_triplets(kg_schema)
-        except (ValueError, TypeError, AttributeError):
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.error(f"Error during extraction: {e!s}", exc_info=True)
+            if self.raise_on_error:
+                raise
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
