@@ -708,6 +708,53 @@ print(f"Response: {response}")
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
 
+### DProvenanceKit
+
+[DProvenanceKit](https://github.com/Therealdk8890/DProvenanceKitPython) is an open-source
+(Apache-2.0) reasoning observability and regression-testing toolkit for AI agents, with zero
+third-party dependencies in its core. It records each LlamaIndex run as a queryable, diffable
+trace with a structural fingerprint of the execution path, and can fail CI when a run's
+reasoning drifts from a golden baseline — for example a dropped retrieval step or a looping
+tool call. The integration attaches through the `CallbackManager`.
+
+#### Usage Pattern
+
+```bash
+pip install "dprovenancekit[llama-index]"
+```
+
+```python
+from llama_index.core import Settings
+from dprovenancekit import DProvenanceKit, SQLiteTraceStore
+from dprovenancekit.integrations.llama_index import (
+    DProvenanceLlamaIndexCallbackHandler,
+    LlamaIndexTraceEvent,
+)
+
+kit = DProvenanceKit(LlamaIndexTraceEvent)
+store = SQLiteTraceStore(LlamaIndexTraceEvent, "traces.sqlite")
+
+# The handler records into an active run
+with kit.run(context_id="qa-session", store=store) as run:
+    handler = DProvenanceLlamaIndexCallbackHandler(run)
+    Settings.callback_manager.add_handler(handler)
+
+    # Execute queries normally; they are recorded to the trace store
+    response = index.as_query_engine().query("What did the author do growing up?")
+
+# Flush buffered events so the recorded run is durable before the script exits
+store.flush()
+```
+
+Recorded traces can then be queried, diffed against a golden run, and gated in CI with the
+`dprovenancekit gate` CLI, the pytest plugin, or the GitHub Action.
+
+#### Guides
+
+- [DProvenanceKit repository and documentation](https://github.com/Therealdk8890/DProvenanceKitPython)
+- [LlamaIndex adapter usage](https://github.com/Therealdk8890/DProvenanceKitPython#llamaindex)
+- [dprovenancekit on PyPI](https://pypi.org/project/dprovenancekit/)
+
 ### Langfuse
 
 This integration is deprecated. We recommend using the new instrumentation-based integration with Langfuse as described [here](https://langfuse.com/docs/integrations/llama-index/get-started).
