@@ -2,7 +2,8 @@
 
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+import re
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import quote_plus
 
 import sqlalchemy
@@ -331,23 +332,37 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             _logger.warning("Unsupported operator: %s, fallback to '='", operator)
             return "="
 
-    def _build_filter_clause(self, filter_: MetadataFilter) -> str:
-        filter_value = filter_.value
+    def _build_filter_clause(
+        self, filter_: MetadataFilter, params: Dict[str, Any]
+    ) -> str:
+        # The JSON path key is interpolated into a SQL string literal ('$.key')
+        # and therefore cannot be a bind parameter. Allowlist it to a safe
+        # identifier charset to prevent SQL injection via the metadata key.
+        if not re.match(r"^[a-zA-Z0-9_]+$", filter_.key):
+            raise ValueError(f"Invalid metadata key format: {filter_.key}")
+
+        operator = self._to_mariadb_operator(filter_.operator)
+
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
-            values = []
+            placeholders = []
             for v in filter_.value:
-                if isinstance(v, str):
-                    value = f"'{v}'"
+                param_name = f"filter_{len(params)}"
+                params[param_name] = v
+                placeholders.append(f":{param_name}")
+            filter_value = f"({', '.join(placeholders)})"
+        else:
+            param_name = f"filter_{len(params)}"
+            params[param_name] = filter_.value
+            filter_value = f":{param_name}"
 
-                values.append(value)
-            filter_value = ", ".join(values)
-            filter_value = f"({filter_value})"
-        elif isinstance(filter_.value, str):
-            filter_value = f"'{filter_.value}'"
+        return f"JSON_VALUE(metadata, '$.{filter_.key}') {operator} {filter_value}"
 
-        return f"JSON_VALUE(metadata, '$.{filter_.key}') {self._to_mariadb_operator(filter_.operator)} {filter_value}"
+    def _filters_to_where_clause(
+        self, filters: MetadataFilters, params: Optional[Dict[str, Any]] = None
+    ) -> Tuple[str, Dict[str, Any]]:
+        if params is None:
+            params = {}
 
-    def _filters_to_where_clause(self, filters: MetadataFilters) -> str:
         conditions = {
             FilterCondition.OR: "OR",
             FilterCondition.AND: "AND",
@@ -361,11 +376,11 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         clauses: List[str] = []
         for filter_ in filters.filters:
             if isinstance(filter_, MetadataFilter):
-                clauses.append(self._build_filter_clause(filter_))
+                clauses.append(self._build_filter_clause(filter_, params))
                 continue
 
             if isinstance(filter_, MetadataFilters):
-                subfilters = self._filters_to_where_clause(filter_)
+                subfilters, params = self._filters_to_where_clause(filter_, params)
                 if subfilters:
                     clauses.append(f"({subfilters})")
                 continue
@@ -373,7 +388,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 f"Unsupported filter type: {type(filter_)}. Must be one of {MetadataFilter}, {MetadataFilters}"
             )
-        return f" {conditions[filters.condition]} ".join(clauses)
+        return f" {conditions[filters.condition]} ".join(clauses), params
 
     def _db_rows_to_query_result(
         self, rows: List[DBEmbeddingRow]
@@ -411,9 +426,11 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             VEC_DISTANCE_COSINE(embedding, VEC_FromText('{query.query_embedding}')) AS distance
         FROM `{self.table_name}`"""
 
+        params: Dict[str, Any] = {}
         if query.filters:
+            where_clause, params = self._filters_to_where_clause(query.filters)
             stmt += f"""
-        WHERE {self._filters_to_where_clause(query.filters)}"""
+        WHERE {where_clause}"""
 
         stmt += f"""
         ORDER BY distance
@@ -421,7 +438,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         """
 
         with self._engine.connect() as connection:
-            result = connection.execute(sqlalchemy.text(stmt))
+            result = connection.execute(sqlalchemy.text(stmt), params)
 
         results = []
         for item in result:
