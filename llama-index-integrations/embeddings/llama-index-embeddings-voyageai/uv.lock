@@ -1988,7 +1988,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-voyageai"
-version = "0.6.0"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2021,7 +2021,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "voyageai", marker = "python_full_version >= '3.9' and python_full_version < '3.13'", specifier = ">=0.3.6,<0.4.0" },
+    { name = "voyageai", marker = "python_full_version >= '3.9' and python_full_version < '3.13'", specifier = ">=0.3.7,<0.4.0" },
 ]
 
 [package.metadata.requires-dev]

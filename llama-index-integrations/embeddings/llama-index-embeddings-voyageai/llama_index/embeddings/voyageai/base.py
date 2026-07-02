@@ -6,8 +6,9 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Generator, List, Optional, Tuple, Union
 
-import voyageai
 from PIL import Image
+
+import voyageai
 
 try:
     from voyageai.video_utils import Video
@@ -82,6 +83,22 @@ class VoyageEmbedding(MultiModalEmbedding):
         voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
             You can either specify the key here or store it as an environment variable.
 
+        max_retries (Optional[int]): Maximum number of retries for API requests. Defaults to 3.
+
+        timeout (Optional[float]): Timeout for API requests. Defaults to 60.0.
+
+        embed_batch_size (Optional[int]): Batch size for embedding. Defaults to None.
+
+        truncation (Optional[bool]): Whether to truncate the input text if it exceeds the model's maximum token limit.
+            Defaults to None, which means truncation is enabled for multimodal models and disabled for text
+            models.
+
+        output_dtype (Optional[str]): Output data type for embeddings. Defaults to None.
+
+        output_dimension (Optional[int]): Output dimension for embeddings. Defaults to None.
+
+        callback_manager (Optional[CallbackManager]): Callback manager for handling callbacks. Defaults to None.
+
     """
 
     _client: voyageai.Client = PrivateAttr(None)
@@ -94,6 +111,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         self,
         model_name: str,
         voyage_api_key: Optional[str] = None,
+        max_retries: Optional[int] = 3,
+        timeout: Optional[float] = 60.0,
         embed_batch_size: Optional[int] = None,
         truncation: Optional[bool] = None,
         output_dtype: Optional[str] = None,
@@ -123,6 +142,19 @@ class VoyageEmbedding(MultiModalEmbedding):
         if embed_batch_size is None:
             embed_batch_size = MAX_BATCH_SIZE
 
+        if voyage_api_key is None:
+            voyage_api_key = os.environ.get("VOYAGE_API_KEY")
+            if voyage_api_key is None:
+                raise ValueError(
+                    "Voyage API key must be provided either as an argument or as an environment variable."
+                )
+
+        if max_retries is None:
+            max_retries = 3
+
+        if timeout is None:
+            timeout = 60.0
+
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
@@ -130,8 +162,12 @@ class VoyageEmbedding(MultiModalEmbedding):
             **kwargs,
         )
 
-        self._client = voyageai.Client(api_key=voyage_api_key)
-        self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
+        self._client = voyageai.Client(
+            api_key=voyage_api_key, max_retries=max_retries, timeout=timeout
+        )
+        self._aclient = voyageai.AsyncClient(
+            api_key=voyage_api_key, max_retries=max_retries, timeout=timeout
+        )
         self.truncation = truncation
         self.output_dtype = output_dtype
         self.output_dimension = output_dimension
