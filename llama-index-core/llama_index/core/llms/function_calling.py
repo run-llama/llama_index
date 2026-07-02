@@ -281,6 +281,7 @@ class FunctionCallingLLM(LLM):
         from llama_index.core.tools.calling import (
             acall_tool_with_selection,
         )
+        from llama_index.core.tools.types import ToolOutput
 
         if not self.metadata.is_function_calling_model:
             return await super().apredict_and_call(
@@ -307,7 +308,23 @@ class FunctionCallingLLM(LLM):
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
-        tool_outputs = await asyncio.gather(*tool_tasks)
+        raw_outputs = await asyncio.gather(*tool_tasks, return_exceptions=True)
+        for r in raw_outputs:
+            if isinstance(r, asyncio.CancelledError):
+                raise r
+        tool_outputs = [
+            ToolOutput(
+                content=f"Unexpected error during tool execution: {r}",
+                tool_name="unknown",
+                raw_input={},
+                raw_output=str(r),
+                is_error=True,
+                exception=r if isinstance(r, Exception) else None,
+            )
+            if isinstance(r, BaseException)
+            else r
+            for r in raw_outputs
+        ]
         tool_outputs_with_error = [
             tool_output for tool_output in tool_outputs if tool_output.is_error
         ]
