@@ -62,12 +62,8 @@ class IOHandler(BaseIOHandler):
         return json.load(codecs.getreader("utf-8")(response))[0]["generated_text"]
 
     def deserialize_streaming_output(self, response: bytes) -> str:
-        response_str = (
-            response.decode("utf-8").lstrip('[{"generated_text":"').rstrip('"}]')
-        )
-        clean_response = '{"response":"' + response_str + '"}'
-
-        return json.loads(clean_response)["response"]
+        response_json = json.loads(response.decode("utf-8"))
+        return response_json[0]["generated_text"]
 
     def remove_prefix(self, raw_text: str, prompt: str) -> str:
         return raw_text[len(prompt) :]
