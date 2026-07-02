@@ -3,9 +3,7 @@ from io import BytesIO
 from typing import Literal
 from unittest.mock import MagicMock, patch
 
-import aioboto3
 import pytest
-from botocore.config import Config
 from llama_index.core.base.llms.types import (
     AudioBlock,
     CacheControl,
@@ -51,21 +49,17 @@ class MockExceptions:
         pass
 
 
-class AsyncMockClient:
+class MockClient:
+    """Sync mock client used for both sync and async (via asyncio.to_thread) tests."""
+
     def __init__(self) -> None:
         self.exceptions = MockExceptions()
 
-    async def __aenter__(self) -> "AsyncMockClient":
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        pass
-
-    async def converse(self, *args, **kwargs):
+    def converse(self, *args, **kwargs):
         return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
 
-    async def converse_stream(self, *args, **kwargs):
-        async def stream_generator():
+    def converse_stream(self, *args, **kwargs):
+        def stream_generator():
             for element in EXP_STREAM_RESPONSE:
                 yield {
                     "contentBlockDelta": {
@@ -73,7 +67,6 @@ class AsyncMockClient:
                         "contentBlockIndex": 0,
                     }
                 }
-            # Add messageStop and metadata events for token usage testing
             yield {"messageStop": {"stopReason": "end_turn"}}
             yield {
                 "metadata": {
@@ -83,19 +76,6 @@ class AsyncMockClient:
             }
 
         return {"stream": stream_generator()}
-
-
-class MockAsyncSession:
-    def __init__(self, *args, **kwargs) -> None:
-        pass
-
-    def client(self, *args, **kwargs):
-        return AsyncMockClient()
-
-
-@pytest.fixture()
-def mock_aioboto3_session(monkeypatch):
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
 
 def test_get_model_name_translates_us():
@@ -731,32 +711,6 @@ def test_messages_to_converse_messages_tool_result_with_image_block(mock_resolve
 
 
 # Tests for converse_with_retry function
-class MockClient:
-    def __init__(self):
-        self.exceptions = MagicMock()
-        self.exceptions.ThrottlingException = Exception
-
-    def converse(self, **kwargs):
-        return {"output": {"message": {"content": [{"text": "Test response"}]}}}
-
-    def converse_stream(self, **kwargs):
-        def stream_generator():
-            yield {
-                "contentBlockDelta": {
-                    "delta": {"text": "Test "},
-                    "contentBlockIndex": 0,
-                }
-            }
-            yield {
-                "contentBlockDelta": {
-                    "delta": {"text": "stream"},
-                    "contentBlockIndex": 0,
-                }
-            }
-
-        return {"stream": stream_generator()}
-
-
 def test_converse_with_retry_string_system_prompt():
     """Test converse_with_retry with string system prompt."""
     client = MockClient()
@@ -853,23 +807,21 @@ def test_converse_with_retry_guardrail_stream_processing_mode(
 @pytest.mark.parametrize("stream_processing_mode", ["sync", "async"])
 async def test_converse_with_retry_async_guardrail_stream_processing_mode(
     stream_processing_mode: Literal["sync", "async"],
-    mock_aioboto3_session,
 ):
     """
     Test use of guardrail_stream_processing_mode in converse_with_retry_async with streaming.
+    Now uses a sync MockClient since converse_with_retry_async delegates to asyncio.to_thread.
     """
-    session = aioboto3.Session()
-    client = AsyncMockClient()
+    client = MockClient()
 
     with patch.object(
-        AsyncMockClient, "converse_stream", wraps=client.converse_stream
+        client, "converse_stream", wraps=client.converse_stream
     ) as patched_converse_stream:
         response_gen = await converse_with_retry_async(
-            session=session,
-            config=Config(),
+            client=client,
             model="anthropic.claude-sonnet-4-5-20250929-v1:0",
             messages=[],
-            stream=True,  # with streaming
+            stream=True,
             guardrail_identifier="IDENT",
             guardrail_version="DRAFT",
             guardrail_stream_processing_mode=stream_processing_mode,
@@ -907,24 +859,19 @@ def test_converse_with_retry_guardrail_stream_processing_mode_without_stream():
 
 
 @pytest.mark.asyncio
-async def test_converse_with_retry_async_guardrail_stream_processing_mode_without_stream(
-    mock_aioboto3_session,
-):
+async def test_converse_with_retry_async_guardrail_stream_processing_mode_without_stream():
     """
     Test use of guardrail_stream_processing_mode in converse_with_retry_async WITHOUT streaming.
+    Now uses a sync MockClient since converse_with_retry_async delegates to asyncio.to_thread.
     """
-    session = aioboto3.Session()
-    client = AsyncMockClient()
+    client = MockClient()
 
-    with patch.object(
-        AsyncMockClient, "converse", wraps=client.converse
-    ) as patched_converse:
+    with patch.object(client, "converse", wraps=client.converse) as patched_converse:
         await converse_with_retry_async(
-            session=session,
-            config=Config(),
+            client=client,
             model="anthropic.claude-sonnet-4-5-20250929-v1:0",
             messages=[],
-            stream=False,  # without streaming
+            stream=False,
             guardrail_identifier="IDENT",
             guardrail_version="DRAFT",
             guardrail_stream_processing_mode="async",
@@ -935,53 +882,37 @@ async def test_converse_with_retry_async_guardrail_stream_processing_mode_withou
 
 
 @pytest.mark.asyncio
-async def test_converse_with_retry_async_uses_provided_client(
-    mock_aioboto3_session,
-):
-    """When client is provided, converse_with_retry_async uses it directly without opening a session client."""
-    session = aioboto3.Session()
-    async_client = AsyncMockClient()
+async def test_converse_with_retry_async_uses_provided_client():
+    """When client is provided, converse_with_retry_async uses it directly."""
+    client = MockClient()
 
-    with patch.object(
-        AsyncMockClient, "converse", wraps=async_client.converse
-    ) as patched_converse:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            await converse_with_retry_async(
-                session=session,
-                config=Config(),
-                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
-                messages=[],
-                stream=False,
-                client=async_client,
-            )
-            patched_converse.assert_called_once()
-            patched_session_client.assert_not_called()
+    with patch.object(client, "converse", wraps=client.converse) as patched_converse:
+        await converse_with_retry_async(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=False,
+        )
+        patched_converse.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_converse_with_retry_async_uses_provided_client_streaming(
-    mock_aioboto3_session,
-):
-    """When client is provided, streaming in converse_with_retry_async uses it directly without opening a session client."""
-    session = aioboto3.Session()
-    async_client = AsyncMockClient()
+async def test_converse_with_retry_async_uses_provided_client_streaming():
+    """When client is provided, streaming in converse_with_retry_async uses it directly."""
+    client = MockClient()
 
     with patch.object(
-        AsyncMockClient, "converse_stream", wraps=async_client.converse_stream
+        client, "converse_stream", wraps=client.converse_stream
     ) as patched_stream:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            response_gen = await converse_with_retry_async(
-                session=session,
-                config=Config(),
-                model="anthropic.claude-sonnet-4-5-20250929-v1:0",
-                messages=[],
-                stream=True,
-                client=async_client,
-            )
-            async for _ in response_gen:
-                pass
-            patched_stream.assert_called_once()
-            patched_session_client.assert_not_called()
+        response_gen = await converse_with_retry_async(
+            client=client,
+            model="anthropic.claude-sonnet-4-5-20250929-v1:0",
+            messages=[],
+            stream=True,
+        )
+        async for _ in response_gen:
+            pass
+        patched_stream.assert_called_once()
 
 
 def test_thinking_dict_enabled_requires_budget():

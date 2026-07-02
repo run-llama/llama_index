@@ -1,4 +1,4 @@
-from inspect import signature
+from inspect import Parameter, signature
 from typing import (
     Any,
     Awaitable,
@@ -39,6 +39,12 @@ def create_schema_from_function(
 
     for param_name in params:
         if param_name in ignore_fields:
+            continue
+
+        if params[param_name].kind in (
+            Parameter.VAR_POSITIONAL,
+            Parameter.VAR_KEYWORD,
+        ):
             continue
 
         param_type = params[param_name].annotation

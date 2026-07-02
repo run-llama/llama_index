@@ -73,6 +73,17 @@ async def test_simple_chat_engine_astream():
     assert "What is the capital of the moon?" in response.unformatted_response
 
 
+@pytest.mark.asyncio
+async def test_simple_chat_engine_astream_response_text_without_draining():
+    engine = SimpleChatEngine.from_defaults()
+    response = await engine.astream_chat("Hello World!")
+    await response.awrite_response_to_history_task
+
+    assert response.response != ""
+    assert str(response) == response.response
+    assert "Hello World!" in str(response)
+
+
 def test_simple_chat_engine_astream_exception_handling():
     """
     Test that an exception thrown while retrieving the streamed LLM response gets bubbled up to the user.
