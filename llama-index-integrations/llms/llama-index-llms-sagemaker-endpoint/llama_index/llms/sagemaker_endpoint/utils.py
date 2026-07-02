@@ -62,12 +62,13 @@ class IOHandler(BaseIOHandler):
         return json.load(codecs.getreader("utf-8")(response))[0]["generated_text"]
 
     def deserialize_streaming_output(self, response: bytes) -> str:
-        response_str = (
-            response.decode("utf-8").lstrip('[{"generated_text":"').rstrip('"}]')
-        )
-        clean_response = '{"response":"' + response_str + '"}'
-
-        return json.loads(clean_response)["response"]
+        # The streaming payload is the same JSON envelope as the non-streaming
+        # output ([{"generated_text": "..."}]), so parse it directly like
+        # deserialize_output. The previous lstrip/rstrip stripping treated the
+        # envelope as a character set and silently truncated generated text that
+        # started or ended with any of those characters (e.g.
+        # '[{"generated_text":"the answer"}]' returned 'he answer').
+        return json.loads(response.decode("utf-8"))[0]["generated_text"]
 
     def remove_prefix(self, raw_text: str, prompt: str) -> str:
         return raw_text[len(prompt) :]
