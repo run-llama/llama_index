@@ -161,7 +161,7 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
 
             # The condensed response replaces the fact list wholesale, so only
             # apply it when it actually contains facts - otherwise an empty or
-            # unparseable response would silently wipe the stored facts.
+            # unparsable response would silently wipe the stored facts.
             if condensed_facts:
                 self.facts = condensed_facts
 

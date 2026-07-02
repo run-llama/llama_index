@@ -55,12 +55,13 @@ def test_condense_branch_replaces_facts_wholesale() -> None:
     rather than being appended. (A real LLM is required to verify the prompt
     itself yields a full snapshot; this only pins the downstream behavior.)
     """
-    llm = _ScriptedLLM(
-        scripted_responses=[
-            "<facts><fact>d</fact></facts>",  # extraction adds one new fact
-            "<facts><fact>x</fact><fact>y</fact></facts>",  # condensed snapshot
-        ]
-    )
+    # MockLLM's __init__ has a fixed signature, so assign the subclass field
+    # after construction (as in tests/llms/test_callbacks.py's _SecretMockLLM).
+    llm = _ScriptedLLM()
+    llm.scripted_responses = [
+        "<facts><fact>d</fact></facts>",  # extraction adds one new fact
+        "<facts><fact>x</fact><fact>y</fact></facts>",  # condensed snapshot
+    ]
     block = FactExtractionMemoryBlock(llm=llm, facts=["a", "b", "c"], max_facts=3)
 
     # Putting a message triggers extraction (-> 4 facts > max 3) then condense.
@@ -71,13 +72,12 @@ def test_condense_branch_replaces_facts_wholesale() -> None:
 
 
 def test_condense_empty_response_preserves_existing_facts() -> None:
-    """An empty or unparseable condense response must not wipe the stored facts."""
-    llm = _ScriptedLLM(
-        scripted_responses=[
-            "<facts><fact>d</fact></facts>",  # extraction pushes list over max
-            "<facts></facts>",  # empty condense response
-        ]
-    )
+    """An empty or unparsable condense response must not wipe the stored facts."""
+    llm = _ScriptedLLM()
+    llm.scripted_responses = [
+        "<facts><fact>d</fact></facts>",  # extraction pushes list over max
+        "<facts></facts>",  # empty condense response
+    ]
     block = FactExtractionMemoryBlock(llm=llm, facts=["a", "b", "c"], max_facts=3)
 
     asyncio_run(block._aput([ChatMessage(role=MessageRole.USER, content="hello")]))
