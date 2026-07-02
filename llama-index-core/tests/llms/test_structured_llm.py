@@ -4,7 +4,7 @@ Tests for StructuredLLM - validates output type before calling model_dump_json.
 Regression tests for
 """
 
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import Any, ClassVar, Dict, Optional, Sequence, Type
 
 import pytest
 from llama_index.core.base.llms.types import (
@@ -18,7 +18,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.llm import LLM, StructuredPredictionResult
 from llama_index.core.llms.structured_llm import StructuredLLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import Model
@@ -122,6 +122,59 @@ class MockLLMReturnsString(MockLLMReturnsModel):
         return "This is not a Pydantic model"  # type: ignore
 
 
+class MockLLMReturnsModelWithSourceResponse(MockLLMReturnsModel):
+    """Mock LLM that can preserve the provider response used for parsing."""
+
+    sync_raw: ClassVar[Dict[str, Any]] = {
+        "id": "sync-response",
+        "usage": {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7},
+    }
+    async_raw: ClassVar[Dict[str, Any]] = {
+        "id": "async-response",
+        "usage": {"prompt_tokens": 5, "completion_tokens": 6, "total_tokens": 11},
+    }
+
+    def _structured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        output = output_cls(name="from_source", value=123)
+        return StructuredPredictionResult(
+            output=output,
+            source_response=ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content="{}"),
+                raw=self.sync_raw,
+                additional_kwargs={
+                    "usage": self.sync_raw["usage"],
+                    "provider_field": "sync",
+                },
+            ),
+        )
+
+    async def _astructured_predict_with_response(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> StructuredPredictionResult[Model]:
+        output = output_cls(name="async_from_source", value=456)
+        return StructuredPredictionResult(
+            output=output,
+            source_response=ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content="{}"),
+                raw=self.async_raw,
+                additional_kwargs={
+                    "usage": self.async_raw["usage"],
+                    "provider_field": "async",
+                },
+            ),
+        )
+
+
 def test_structured_llm_chat_success() -> None:
     """Test that StructuredLLM.chat works correctly with valid model output."""
     llm = MockLLMReturnsModel()
@@ -134,6 +187,7 @@ def test_structured_llm_chat_success() -> None:
     assert isinstance(result.raw, TestOutput)
     assert result.raw.name == "test"
     assert result.raw.value == 42
+    assert result.additional_kwargs["structured_output"] is result.raw
     # content should be valid JSON
     assert '"name"' in result.message.content
     assert '"test"' in result.message.content
@@ -152,6 +206,67 @@ async def test_structured_llm_achat_success() -> None:
     assert isinstance(result.raw, TestOutput)
     assert result.raw.name == "test_async"
     assert result.raw.value == 99
+    assert result.additional_kwargs["structured_output"] is result.raw
+
+
+def test_structured_llm_chat_preserves_source_response() -> None:
+    """StructuredLLM.chat preserves provider raw and response kwargs when available."""
+    llm = MockLLMReturnsModelWithSourceResponse()
+    structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
+
+    result = structured_llm.chat(
+        [ChatMessage(role=MessageRole.USER, content="give me a test")]
+    )
+
+    assert result.raw is llm.sync_raw
+    assert result.additional_kwargs["usage"] == llm.sync_raw["usage"]
+    assert result.additional_kwargs["provider_field"] == "sync"
+    assert isinstance(result.additional_kwargs["structured_output"], TestOutput)
+    assert result.additional_kwargs["structured_output"].name == "from_source"
+    assert '"from_source"' in result.message.content
+
+
+@pytest.mark.asyncio
+async def test_structured_llm_achat_preserves_source_response() -> None:
+    """StructuredLLM.achat preserves provider raw and response kwargs when available."""
+    llm = MockLLMReturnsModelWithSourceResponse()
+    structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
+
+    result = await structured_llm.achat(
+        [ChatMessage(role=MessageRole.USER, content="give me a test")]
+    )
+
+    assert result.raw is llm.async_raw
+    assert result.additional_kwargs["usage"] == llm.async_raw["usage"]
+    assert result.additional_kwargs["provider_field"] == "async"
+    assert isinstance(result.additional_kwargs["structured_output"], TestOutput)
+    assert result.additional_kwargs["structured_output"].name == "async_from_source"
+
+
+def test_structured_llm_chat_falls_back_to_parsed_model_raw() -> None:
+    """Without a source response, StructuredLLM.chat keeps the parsed model in raw."""
+    llm = MockLLMReturnsModel()
+    structured_llm = StructuredLLM(llm=llm, output_cls=TestOutput)
+
+    result = structured_llm.chat(
+        [ChatMessage(role=MessageRole.USER, content="give me a test")]
+    )
+
+    assert isinstance(result.raw, TestOutput)
+    assert result.raw.name == "test"
+
+
+def test_public_structured_predict_still_returns_model() -> None:
+    """The public structured_predict API still returns only the parsed model."""
+    llm = MockLLMReturnsModelWithSourceResponse()
+
+    result = llm.structured_predict(
+        output_cls=TestOutput,
+        prompt=PromptTemplate("give me a test"),
+    )
+
+    assert isinstance(result, TestOutput)
+    assert not isinstance(result, StructuredPredictionResult)
 
 
 def test_structured_llm_chat_raises_on_string_output() -> None:

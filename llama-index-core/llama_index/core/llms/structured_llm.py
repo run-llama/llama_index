@@ -1,7 +1,9 @@
-from typing import Any, Type, Sequence
+from typing import Any, Sequence, Type
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.llms.llm import LLM
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -17,16 +19,12 @@ from llama_index.core.bridge.pydantic import (
     Field,
     SerializeAsAny,
 )
-from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.llms.llm import LLM, StructuredPredictionResult
 from llama_index.core.prompts.base import ChatPromptTemplate
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    chat_to_completion_decorator,
-)
 
 
 class StructuredLLM(LLM):
@@ -49,6 +47,34 @@ class StructuredLLM(LLM):
     def metadata(self) -> LLMMetadata:
         return self.llm.metadata
 
+    def _validate_structured_output(self, output: Any, method_name: str) -> BaseModel:
+        if not isinstance(output, BaseModel):
+            raise TypeError(
+                f"StructuredLLM expected a {self.output_cls.__name__} instance "
+                f"from {method_name}, but got {type(output).__name__}: "
+                f"{output!r}. The underlying LLM failed to produce valid "
+                f"structured output."
+            )
+        return output
+
+    @staticmethod
+    def _prepare_response_kwargs(
+        result: StructuredPredictionResult[BaseModel],
+    ) -> tuple[Any, dict, Any]:
+        source_response = result.source_response
+        output = result.output
+        raw = output
+        additional_kwargs: dict = {}
+        logprobs = None
+
+        if source_response is not None:
+            raw = source_response.raw if source_response.raw is not None else output
+            additional_kwargs = dict(source_response.additional_kwargs or {})
+            logprobs = source_response.logprobs
+
+        additional_kwargs.setdefault("structured_output", output)
+        return raw, additional_kwargs, logprobs
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
@@ -58,21 +84,20 @@ class StructuredLLM(LLM):
 
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
-        output = self.llm.structured_predict(
+        result = self.llm._structured_predict_with_response(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
-        if not isinstance(output, BaseModel):
-            raise TypeError(
-                f"StructuredLLM expected a {self.output_cls.__name__} instance "
-                f"from structured_predict, but got {type(output).__name__}: "
-                f"{output!r}. The underlying LLM failed to produce valid "
-                f"structured output."
-            )
+        output = self._validate_structured_output(
+            result.output, "_structured_predict_with_response"
+        )
+        raw, additional_kwargs, logprobs = self._prepare_response_kwargs(result)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
             ),
-            raw=output,
+            raw=raw,
+            logprobs=logprobs,
+            additional_kwargs=additional_kwargs,
         )
 
     @llm_chat_callback()
@@ -119,21 +144,20 @@ class StructuredLLM(LLM):
 
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
-        output = await self.llm.astructured_predict(
+        result = await self.llm._astructured_predict_with_response(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
-        if not isinstance(output, BaseModel):
-            raise TypeError(
-                f"StructuredLLM expected a {self.output_cls.__name__} instance "
-                f"from astructured_predict, but got {type(output).__name__}: "
-                f"{output!r}. The underlying LLM failed to produce valid "
-                f"structured output."
-            )
+        output = self._validate_structured_output(
+            result.output, "_astructured_predict_with_response"
+        )
+        raw, additional_kwargs, logprobs = self._prepare_response_kwargs(result)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=output.model_dump_json()
             ),
-            raw=output,
+            raw=raw,
+            logprobs=logprobs,
+            additional_kwargs=additional_kwargs,
         )
 
     @llm_chat_callback()
