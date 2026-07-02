@@ -21,6 +21,8 @@ def test_embedding_class():
         (b'[{"generated_text":"data engineering"}]', "data engineering"),
         (b'[{"generated_text":"result: {}"}]', "result: {}"),
         (b'[{"generated_text":"Hello world"}]', "Hello world"),
+        # Escaped quotes inside the generated text are preserved by json parsing.
+        (b'[{"generated_text":"he said \\"hi\\""}]', 'he said "hi"'),
     ],
 )
 def test_deserialize_streaming_output_preserves_text(payload, expected):
