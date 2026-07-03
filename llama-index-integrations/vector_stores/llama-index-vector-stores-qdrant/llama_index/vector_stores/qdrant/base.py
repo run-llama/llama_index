@@ -1201,7 +1201,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         shard_identifier = kwargs.get("shard_identifier")
         shard_key = (
             self._generate_shard_key_selector(shard_identifier)
-            if shard_identifier
+            if shard_identifier is not None
             else None
         )
 

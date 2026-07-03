@@ -71,3 +71,40 @@ def test_get_top_k_mmr_embeddings() -> None:
         result_similarities_no_mmr, result_similarities
     ):
         assert np.isclose(result_no_mmr, result_with_mmr, atol=0.00001)
+
+
+def test_get_top_k_mmr_embeddings_threshold_zero() -> None:
+    """
+    An explicit mmr_threshold of 0 must request maximum diversity.
+
+    The docstring promises that "a mmr_threshold of 0 will strongly avoid
+    similarity to previous results". Because 0 is falsy, ``mmr_threshold or 0.5``
+    silently discarded the value and fell back to 0.5, so the parameter was
+    ignored whenever a caller explicitly asked for full diversity.
+    """
+    query_embedding = [1.0, 0.0]
+    # index 0: relevant to the query
+    # index 1: a near-duplicate of index 0 (redundant)
+    # index 2: orthogonal to the query (maximally diverse)
+    embeddings = [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+
+    # With full diversity (threshold=0) the second pick must be the orthogonal
+    # node, not the duplicate of the first pick.
+    _, result_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=2, mmr_threshold=0.0
+    )
+    assert result_ids == [0, 2]
+
+    # A threshold of 0 must behave differently from the 0.5 default, which keeps
+    # the redundant high-similarity node.
+    _, default_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=2, mmr_threshold=0.5
+    )
+    assert default_ids == [0, 1]
+    assert result_ids != default_ids
+
+    # Leaving mmr_threshold unset still applies the 0.5 default.
+    _, unset_ids = get_top_k_mmr_embeddings(
+        query_embedding, embeddings, similarity_top_k=2
+    )
+    assert unset_ids == [0, 1]
