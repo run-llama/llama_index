@@ -272,7 +272,12 @@ class TextBlock(BaseContentBlock):
                 current_block_texts.append(split.text)
                 current_block_tokens += split_tokens
             else:
-                merged_blocks.append(TextBlock(text=" ".join(current_block_texts)))
+                # Guard against flushing an empty block when the very first split
+                # already exceeds chunk_size (current_block_texts is still empty),
+                # which would emit a spurious TextBlock(text="").  Matches the
+                # guarded final flush below and BaseRecursiveContentBlock.amerge.
+                if current_block_texts:
+                    merged_blocks.append(TextBlock(text=" ".join(current_block_texts)))
                 current_block_texts = [split.text]
                 current_block_tokens = split_tokens
 
