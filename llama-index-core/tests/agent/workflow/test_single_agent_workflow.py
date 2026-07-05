@@ -498,6 +498,59 @@ async def test_function_agent_with_context_and_chat_message():
 
 
 @pytest.mark.asyncio
+async def test_function_agent_refreshes_state_prompt_after_tool_updates():
+    from llama_index.core.workflow import Context
+
+    captured_inputs: List[List[ChatMessage]] = []
+
+    async def update_state(ctx: Context) -> str:
+        state = await ctx.store.get("state")
+        state["counter"] = 1
+        await ctx.store.set("state", state)
+        return "state updated"
+
+    def response_generator(messages: List[ChatMessage], **kwargs) -> ChatMessage:
+        captured_inputs.append(messages)
+        if len(captured_inputs) == 1:
+            return ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content="updating state",
+                additional_kwargs={
+                    "tool_calls": [
+                        ToolSelection(
+                            tool_id="update-state",
+                            tool_name="update_state",
+                            tool_kwargs={},
+                        )
+                    ]
+                },
+            )
+        return ChatMessage(role=MessageRole.ASSISTANT, content="done")
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[update_state],
+        llm=MockFunctionCallingLLM(response_generator=response_generator),
+        initial_state={"counter": 0},
+        state_prompt="Current state: {state}. User message: {msg}",
+        streaming=False,
+    )
+
+    memory = ChatMemoryBuffer.from_defaults(tokenizer_fn=lambda text: text.split())
+    handler = agent.run(user_msg="test", memory=memory)
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert response is not None
+
+    assert "counter': 0" in str(captured_inputs[0][0].content)
+    assert "counter': 1" in str(captured_inputs[1][0].content)
+    assert str(captured_inputs[1][0].content).count("Current state:") == 1
+
+
+@pytest.mark.asyncio
 async def test_run_id_passthrough(function_agent: FunctionAgent) -> None:
     """Test that run_id kwarg is forwarded to the WorkflowHandler."""
     custom_run_id = "test-run-id-12345"
