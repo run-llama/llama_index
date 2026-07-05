@@ -175,6 +175,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             if len(splits) > 1:
                 break
 
+        if not splits:
+            return [text]
+
         new_splits = []
         for split in splits:
             split_len = len(self._tokenizer(split))
