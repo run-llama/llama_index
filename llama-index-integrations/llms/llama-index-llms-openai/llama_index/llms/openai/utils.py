@@ -83,6 +83,8 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5.4-mini": 400000,
     "gpt-5.4-nano": 400000,
     "gpt-5.4-chat-latest": 128000,
+    "gpt-5.5": 1050000,
+    "gpt-5.5-2026-04-23": 1050000,
 }
 
 RESPONSES_API_ONLY_MODELS = {
@@ -231,6 +233,7 @@ JSON_SCHEMA_MODELS = [
     "gpt-5",
     "gpt-5.2",
     "gpt-5.4",
+    "gpt-5.5",
 ]
 
 
@@ -495,11 +498,15 @@ def to_openai_message_dict(
             continue
         elif isinstance(block, ToolCallBlock):
             try:
+                # OpenAI API expects arguments as a JSON string, not a dict
+                arguments = block.tool_kwargs
+                if isinstance(arguments, dict):
+                    arguments = json.dumps(arguments)
                 function_dict = {
                     "type": "function",
                     "function": {
                         "name": block.tool_name,
-                        "arguments": block.tool_kwargs,
+                        "arguments": arguments,
                     },
                     "id": block.tool_call_id,
                 }
@@ -826,9 +833,9 @@ def from_openai_message(
     role = openai_message.role
     blocks: List[ContentBlock] = []
 
-    # Extract reasoning_content if present (used by many OpenAI-compatible
-    # providers for chain-of-thought responses)
-    reasoning_content = getattr(openai_message, "reasoning_content", None)
+    # Extract reasoning content if present. Many OpenAI-compatible providers
+    # use reasoning_content, while vLLM exposes the same trace as reasoning.
+    reasoning_content = get_openai_reasoning_content(openai_message)
     if isinstance(reasoning_content, str) and reasoning_content:
         blocks.append(ThinkingBlock(content=reasoning_content))
 
@@ -857,6 +864,19 @@ def from_openai_message(
         blocks.append(AudioBlock(audio=audio_data, format="mp3"))
 
     return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
+
+
+def get_openai_reasoning_content(message: Any) -> Optional[str]:
+    """Return reasoning text from OpenAI-compatible message objects."""
+    reasoning_content = getattr(message, "reasoning_content", None)
+    if isinstance(reasoning_content, str):
+        return reasoning_content
+
+    reasoning = getattr(message, "reasoning", None)
+    if isinstance(reasoning, str):
+        return reasoning
+
+    return None
 
 
 def from_openai_token_logprob(
