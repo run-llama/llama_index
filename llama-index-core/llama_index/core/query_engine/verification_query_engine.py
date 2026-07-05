@@ -1,75 +1,115 @@
-from typing import Any, List, Optional
+from typing import Any
 from llama_index.core.query_engine import CustomQueryEngine
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.llms.llm import LLM
 from llama_index.core.response.schema import Response
+import json
 
-# The strict adversarial prompt used to audit the base generator
+
 VERIFICATION_PROMPT = """\
-You are an adversarial epistemic fact-checker. 
-A draft response to a user's query has been generated based exclusively on the provided source context.
-Your goal is to actively challenge the response. Parse the response and determine if any claim is hallucinated, contradicted by the context, or unmentioned in the context.
+You are an adversarial fact-checking system.
 
-SOURCE CONTEXT: 
+Your job is to verify whether the DRAFT RESPONSE is fully supported by the SOURCE CONTEXT.
+
+Rules:
+- Only use SOURCE CONTEXT as ground truth
+- Do NOT assume external knowledge
+- Evaluate each claim for support
+
+SOURCE CONTEXT:
 ---------------------
 {context}
 ---------------------
 
-USER QUERY: {query}
-DRAFT RESPONSE: {response}
+USER QUERY:
+{query}
 
-Analyze the draft response strictly against the context. You must output your final verdict in the exact following format:
-VERDICT: [PASS/FAIL]
-EXPLANATION: [Your concise reasoning]
+DRAFT RESPONSE:
+{response}
+
+Return ONLY valid JSON in this format:
+{
+  "verdict": "PASS" or "FAIL",
+  "confidence": float between 0 and 1,
+  "explanation": "brief reasoning"
+}
 """
+
 
 class VerificationQueryEngine(CustomQueryEngine):
     """
-    A post-RAG verification guardrail that wraps an existing query engine.
-    It takes the drafted response and forces an adversarial LLM to cross-reference 
-    it against the retrieved source nodes.
+    Post-RAG verification wrapper that validates responses against retrieved sources.
     """
-    # Define standard Pydantic fields
+
     base_query_engine: BaseQueryEngine
     llm: LLM
     strict_mode: bool = False
+    max_context_chars: int = 12000
+
+    def _truncate_context(self, source_nodes) -> str:
+        context = []
+        total = 0
+
+        for n in source_nodes:
+            content = n.node.get_content()
+            if total + len(content) > self.max_context_chars:
+                break
+            context.append(content)
+            total += len(content)
+
+        return "\n\n".join(context)
 
     def custom_query(self, query_str: str) -> Response:
-        # Step 1: Execute the base query engine to get the drafted response
+        # Step 1: base response
         response = self.base_query_engine.query(query_str)
-        
-        # If no source nodes were retrieved, there is nothing to verify against.
+
         if not response.source_nodes:
-            if self.strict_mode:
-                response.response = "The system could not retrieve any verifiable context to answer this query."
+            response.metadata = response.metadata or {}
+            response.metadata["is_verified"] = False
+            response.metadata["verification_reason"] = "No source nodes retrieved"
             return response
-            
-        # Step 2: Context Assembly (Linear concatenation for simplicity in v1)
-        context_str = "\n\n".join([n.node.get_content() for n in response.source_nodes])
-        
-        # Step 3: Adversarial Verification
+
+        # Step 2: bounded context
+        context_str = self._truncate_context(response.source_nodes)
+
+        # Step 3: verification call
         prompt = VERIFICATION_PROMPT.format(
             context=context_str,
             query=query_str,
             response=response.response
         )
-        
-        verification_result = self.llm.complete(prompt)
-        verdict_text = verification_result.text.strip()
-        
-        # Step 4: Metadata Injection
+
+        raw = self.llm.complete(prompt).text.strip()
+
+        # Step 4: safe JSON parsing
+        try:
+            result = json.loads(raw)
+            verdict = result.get("verdict", "FAIL")
+            confidence = float(result.get("confidence", 0.0))
+            explanation = result.get("explanation", "")
+        except Exception:
+            verdict = "FAIL"
+            confidence = 0.0
+            explanation = "Failed to parse verification output"
+
+        is_pass = verdict.upper() == "PASS"
+
+        # Step 5: metadata injection (safe + structured)
         response.metadata = response.metadata or {}
-        response.metadata["verification_raw_output"] = verdict_text
-        
-        # Determine pass/fail
-        is_pass = "VERDICT: PASS" in verdict_text.upper()
+        response.metadata["verification"] = {
+            "verdict": verdict,
+            "confidence": confidence,
+            "explanation": explanation,
+            "raw_output": raw,
+        }
         response.metadata["is_verified"] = is_pass
-        
-        # Step 5: Output Modification
+
+        # Step 6: strict mode (non-destructive)
         if self.strict_mode and not is_pass:
-            response.response = (
-                "The initial response failed epistemic verification against the retrieved sources. "
-                "The generated claims could not be conclusively substantiated."
+            response.metadata["strict_mode_blocked"] = True
+            response.metadata["original_response"] = response.response
+            response.metadata["warning"] = (
+                "Response failed verification against source context"
             )
-            
+
         return response
