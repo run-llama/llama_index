@@ -122,6 +122,7 @@ plugins:
             - ../../llama-index-integrations/tools/llama-index-tools-slack
             - ../../llama-index-integrations/tools/llama-index-tools-tavily-research
             - ../../llama-index-integrations/tools/llama-index-tools-arxiv
+            - ../../llama-index-integrations/tools/llama-index-tools-bgpt
             - ../../llama-index-integrations/tools/llama-index-tools-vector-db
             - ../../llama-index-integrations/tools/llama-index-tools-code-interpreter
             - ../../llama-index-integrations/tools/llama-index-tools-waii
