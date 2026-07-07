@@ -112,7 +112,7 @@ pip install llama-index-llms-ollama
 pip install llama-index-embeddings-huggingface
 ```
 
-Examples are in the `docs/examples` folder. Indices are in the `indices` folder (see list of indices below).
+Examples are in the `docs/examples` folder. Indices are in the `llama-index-integrations/indices` folder (see list of indices below).
 
 To build a simple vector store index using OpenAI:
 
