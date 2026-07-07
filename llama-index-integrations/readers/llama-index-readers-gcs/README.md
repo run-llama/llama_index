@@ -28,7 +28,7 @@ If no credentials are provided, the loader will attempt to use default credentia
 To use this loader, you need to pass in the name of your GCS Bucket. You can then either parse a single file by passing its key, or parse multiple files using a prefix.
 
 ```python
-from llama_index import GCSReader
+from llama_index.readers.gcs import GCSReader
 import logging
 
 # Set up logging (optional, but recommended)
@@ -71,7 +71,8 @@ Note: If the file is nested in a subdirectory, the key should contain that, e.g.
 All files are parsed with `SimpleDirectoryReader`. You may specify a custom `file_extractor`, relying on any of the loaders in the LlamaIndex library (or your own)!
 
 ```python
-from llama_index import GCSReader, SimpleMongoReader
+from llama_index.readers.gcs import GCSReader
+from llama_index.readers.mongodb import SimpleMongoReader
 
 reader = GCSReader(
     bucket="my-bucket",
