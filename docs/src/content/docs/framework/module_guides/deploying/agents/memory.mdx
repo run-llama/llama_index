@@ -300,6 +300,41 @@ Lastly, there are cases ([like human-in-the-loop](/python/framework/understandin
 response = await agent.run("Hello!", ctx=ctx, memory=memory)
 ```
 
+## Memory vs. Vector Store
+
+LlamaIndex uses vector stores in two related but distinct ways. Keeping the roles separate helps you choose the right component and avoid mixing conversation state with document indexes.
+
+| Concern | `Memory` / `VectorMemoryBlock` | `VectorStoreIndex` + retriever |
+| --- | --- | --- |
+| **What it stores** | Chat history batches, user facts, session preferences | Document chunks from files, wikis, APIs, etc. |
+| **When data is written** | As the agent converses (flushed from short-term memory) | During ingestion / indexing pipelines |
+| **Retrieval trigger** | Latest user turn and recent chat context | User query at RAG time |
+| **Typical output** | System/user message injection for the LLM | `NodeWithScore` context for a query engine |
+| **Lifecycle** | Per session or per user; evolves every turn | Relatively static until documents are re-ingested |
+
+**`VectorMemoryBlock`** (inside `Memory`) archives *conversation* snippets into a vector store and retrieves the most relevant past *messages* when the agent needs long-term recall. It does not replace a document index.
+
+**`VectorStoreIndex`** (with `VectorIndexRetriever` or similar) indexes *external knowledge* and powers RAG over your corpus. It should not be treated as a substitute for agent memory.
+
+A common production pattern combines both:
+
+1. Use `Memory` (optionally with `VectorMemoryBlock`) so the agent remembers prior turns, preferences, and extracted facts.
+2. Use a `VectorStoreIndex` retriever so answers are grounded in your document knowledge base.
+3. Recall memory **before** issuing the RAG query, then pass both memory context and retrieved nodes to the LLM.
+
+```python
+# 1) conversation memory
+memory_context = memory.get()
+
+# 2) document retrieval (separate index)
+nodes = retriever.retrieve("What is our refund policy?")
+
+# 3) combine both in the final prompt
+prompt = build_prompt(memory=memory_context, context_nodes=nodes)
+```
+
+If you only need ordered chat history without semantic lookup, short-term `Memory` or a `StaticMemoryBlock` / `FactExtractionMemoryBlock` is usually enough — you do not need a vector store.
+
 ## (Deprecated) Memory Types
 
 In `llama_index.core.memory`, we offer a few different memory types:
