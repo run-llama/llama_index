@@ -268,6 +268,93 @@ memory = Memory.from_defaults(
 )
 ```
 
+### External Persistent Memory Adapters
+
+For production agents, you often need memory that survives process restarts and can be shared across services. LlamaIndex supports this through two complementary patterns:
+
+1. **Persistent short-term memory** — pass `async_database_uri` (or an `async_engine`) to `Memory.from_defaults()` so chat history is stored in PostgreSQL, SQLite, or any SQLAlchemy-supported backend.
+2. **External long-term memory** — implement a custom `BaseMemoryBlock` that reads and writes to your own store (REST API, key-value service, graph DB, etc.).
+
+A typical adapter implements `_aput()` to archive flushed messages and `_aget()` to fetch relevant context for the current turn:
+
+```python
+from typing import Any, List, Optional
+import json
+from urllib import request
+
+from llama_index.core.llms import ChatMessage
+from llama_index.core.memory import BaseMemoryBlock, Memory
+
+
+class HttpBackedMemoryBlock(BaseMemoryBlock[str]):
+    """Persist flushed chat batches to an external HTTP service."""
+
+    endpoint_url: str = "http://localhost:8080/memory"
+    session_id: str = "default"
+    timeout_seconds: float = 5.0
+
+    async def _aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> str:
+        query = block_kwargs.get("query", "")
+        url = f"{self.endpoint_url}/{self.session_id}?q={query}"
+        # Use asyncio.to_thread for blocking I/O in async workflows
+        import asyncio
+
+        def _fetch() -> str:
+            with request.urlopen(url, timeout=self.timeout_seconds) as resp:
+                payload = json.loads(resp.read().decode())
+                return payload.get("memory", "")
+
+        return await asyncio.to_thread(_fetch)
+
+    async def _aput(self, messages: List[ChatMessage]) -> None:
+        import asyncio
+
+        body = json.dumps(
+            {
+                "session_id": self.session_id,
+                "messages": [
+                    {"role": m.role, "content": m.content} for m in messages
+                ],
+            }
+        ).encode()
+
+        def _post() -> None:
+            req = request.Request(
+                self.endpoint_url,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with request.urlopen(req, timeout=self.timeout_seconds):
+                pass
+
+        await asyncio.to_thread(_post)
+
+    async def atruncate(
+        self, content: str, tokens_to_truncate: int
+    ) -> Optional[str]:
+        # Drop oldest lines when the block exceeds the Memory token budget
+        lines = content.splitlines()
+        return "\n".join(lines[tokens_to_truncate // 4 :])
+
+
+memory = Memory.from_defaults(
+    session_id="user-123",
+    token_limit=40000,
+    memory_blocks=[HttpBackedMemoryBlock(session_id="user-123")],
+    async_database_uri="postgresql+asyncpg://user:pass@localhost:5432/llama",
+)
+```
+
+**Design tips:**
+
+- Scope records with `session_id` (or `user_id`) on both the SQL chat store and your external block.
+- Keep `_aput()` idempotent where possible — flushed batches may be retried.
+- Return empty strings from `_aget()` when the remote store is unavailable; agents should degrade gracefully.
+- Prefer async I/O (`asyncio.to_thread`, `httpx`, or your SDK's async client) so memory lookups do not block the workflow event loop.
+
 ## Memory vs. Workflow Context
 
 At this point in the documentation, you may have encountered cases where you are using a Workflow and are serializing a `Context` object to save and resume a specific workflow state. The workflow `Context` is a complex object that holds runtime information about the workflow, as well as key/value pairs that are shared across workflow steps.
