@@ -215,3 +215,12 @@ url = {https://github.com/jerryjliu/llama_index},
 year = {2022}
 }
 ```
+
+
+## Known Issues and Workarounds
+
+The maintainers are aware of the following issues:
+
+- Issue mentioned in the bug tracker
+- Users should follow the recommended practices
+- See the documentation for more details
