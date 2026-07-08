@@ -25,7 +25,8 @@ class _ScriptedLLM(MockLLM):
 
 
 def test_condense_prompt_requests_full_deduplicated_snapshot() -> None:
-    """The condense prompt must ask for the complete deduplicated snapshot.
+    """
+    The condense prompt must ask for the complete deduplicated snapshot.
 
     The condensed output replaces the stored facts wholesale, so the prompt has
     to request the full list - not just newly added facts - and must not carry
@@ -50,7 +51,8 @@ def test_condense_prompt_requests_full_deduplicated_snapshot() -> None:
 
 
 def test_condense_branch_replaces_facts_wholesale() -> None:
-    """Plumbing-level contract the condense prompt is written to satisfy: once the
+    """
+    Plumbing-level contract the condense prompt is written to satisfy: once the
     fact list exceeds max_facts, the condensed response REPLACES the stored facts
     rather than being appended. (A real LLM is required to verify the prompt
     itself yields a full snapshot; this only pins the downstream behavior.)
