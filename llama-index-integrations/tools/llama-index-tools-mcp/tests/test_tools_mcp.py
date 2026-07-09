@@ -777,3 +777,102 @@ async def test_aget_tools_from_mcp_url_propagates_combined_params(
     # Verify merged params
     assert add_tool.partial_params == {"a": 1.0, "user_id": "global", "b": 2.0}
     assert update_user_tool.partial_params == {"a": 1.0, "user_id": "global"}
+
+
+# --- Regression tests for GH-22141 ---
+
+
+def test_create_model_from_json_schema_preserves_inline_nested_object(
+    client: BasicMCPClient,
+):
+    """
+    Regression test for https://github.com/run-llama/llama_index/issues/22141
+
+    create_model_from_json_schema must build a structured Pydantic model for inline
+    nested objects (type: object with properties, but no $ref/$defs entry).
+    Previously, such schemas fell through to json_type_mapping["object"] (bare Dict),
+    silently stripping all nested field definitions.
+    """
+    from pydantic import BaseModel
+
+    tool_spec = McpToolSpec(client, allowed_tools=[])
+    schema = {
+        "properties": {
+            "nested": {
+                "properties": {"value": {"title": "Value", "type": "string"}},
+                "required": ["value"],
+                "type": "object",
+            },
+        },
+        "required": ["nested"],
+        "type": "object",
+    }
+    model = tool_spec.create_model_from_json_schema(schema)
+
+    assert "nested" in model.model_fields, "Expected 'nested' field in model"
+    nested_annotation = model.model_fields["nested"].annotation
+
+    # The nested field must be a Pydantic BaseModel, NOT a bare Dict
+    assert issubclass(nested_annotation, BaseModel), (
+        f"Expected a Pydantic BaseModel for inline nested object, got {nested_annotation}. "
+        "This means inline nested object properties were dropped (GH-22141)."
+    )
+
+    # The nested model must expose the inner fields
+    assert "value" in nested_annotation.model_fields, (
+        "Expected 'value' field preserved in nested Pydantic model"
+    )
+
+
+def test_create_model_from_json_schema_inline_and_ref_both_structured(
+    client: BasicMCPClient,
+):
+    """
+    Verify that an inline nested object and a $ref-based nested object both produce
+    a structured Pydantic BaseModel field, ensuring parity between the two approaches.
+    """
+    from pydantic import BaseModel
+
+    tool_spec = McpToolSpec(client, allowed_tools=[])
+
+    # Case 1: inline nested object (the previously-broken path)
+    inline_schema = {
+        "properties": {
+            "nested": {
+                "properties": {"value": {"title": "Value", "type": "string"}},
+                "required": ["value"],
+                "type": "object",
+            },
+        },
+        "required": ["nested"],
+        "type": "object",
+    }
+    inline_model = tool_spec.create_model_from_json_schema(inline_schema)
+    inline_nested_type = inline_model.model_fields["nested"].annotation
+    assert issubclass(inline_nested_type, BaseModel), (
+        f"Inline nested object should produce a BaseModel, got {inline_nested_type}"
+    )
+
+    # Case 2: $ref-based nested object (the previously-working path)
+    tool_spec2 = McpToolSpec(client, allowed_tools=[])
+    ref_schema = {
+        "$defs": {
+            "Inner": {
+                "properties": {"value": {"title": "Value", "type": "string"}},
+                "required": ["value"],
+                "title": "Inner",
+                "type": "object",
+            },
+        },
+        "properties": {
+            "nested": {"$ref": "#/$defs/Inner"},
+        },
+        "required": ["nested"],
+        "type": "object",
+    }
+    ref_model = tool_spec2.create_model_from_json_schema(ref_schema)
+    ref_nested_type = ref_model.model_fields["nested"].annotation
+    assert issubclass(ref_nested_type, BaseModel), (
+        f"$ref-based nested object should produce a BaseModel, got {ref_nested_type}"
+    )
+

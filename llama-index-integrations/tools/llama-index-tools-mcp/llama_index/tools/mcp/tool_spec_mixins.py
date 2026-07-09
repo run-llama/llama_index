@@ -93,6 +93,13 @@ class TypeResolutionMixin:
             return self._create_list_type(schema, defs)
         if self._is_simple_object(schema):
             return self._create_dict_type(schema, defs)
+        # Handle inline nested objects: type=object with named properties but no
+        # additionalProperties. Without this branch, such schemas fell through to
+        # json_type_mapping["object"] (bare Dict), silently dropping all nested
+        # field definitions. See: https://github.com/run-llama/llama_index/issues/22141
+        if json_type == "object" and "properties" in schema:
+            model_name = schema.get("title") or f"InlineModel_{id(schema)}"
+            return self._create_model(schema, model_name, defs)
         return json_type_mapping.get(json_type, str)
 
 
