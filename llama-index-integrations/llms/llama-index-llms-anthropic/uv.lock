@@ -2028,7 +2028,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-anthropic"
-version = "0.11.5"
+version = "0.11.9"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic", extra = ["bedrock", "vertex"] },
