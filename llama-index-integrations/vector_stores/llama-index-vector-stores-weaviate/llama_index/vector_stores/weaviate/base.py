@@ -7,6 +7,7 @@ An index that is built on top of an existing vector store.
 
 import logging
 from contextlib import AbstractContextManager
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
@@ -38,6 +39,47 @@ import weaviate
 import weaviate.classes as wvc
 
 _logger = logging.getLogger(__name__)
+
+
+_INTEGRATION_HEADER = "X-Weaviate-Client-Integration"
+
+
+def _integration_header_value() -> str:
+    """Return the value for the Weaviate integration telemetry header."""
+    try:
+        return f"llama-index-python/{version('llama-index-vector-stores-weaviate')}"
+    except PackageNotFoundError:
+        return "llama-index-python"
+
+
+def _register_integration_header(client: Any) -> None:
+    """
+    Best-effort: tag the Weaviate client with the LlamaIndex integration header
+    so Weaviate telemetry can attribute traffic to LlamaIndex.
+
+    Mutates the connection's header objects by reference (mirrors the approach in
+    langchainjs#11088), covering REST and gRPC for both self-created and
+    user-supplied clients, whether or not they are already connected. Silently
+    skips if the client's internal shape changes so telemetry never breaks the
+    store.
+    """
+    if client is None:
+        return
+    try:
+        connection = client._connection
+        value = _integration_header_value()
+        # gRPC metadata source (live dict, mutated by reference)
+        connection.additional_headers[_INTEGRATION_HEADER] = value
+        # REST source dict (used when (re)building the httpx client)
+        connection._headers[_INTEGRATION_HEADER] = value
+        # Live httpx client, if already connected
+        live = getattr(connection, "_client", None)
+        if live is not None and hasattr(live, "headers"):
+            live.headers[_INTEGRATION_HEADER] = value
+        # Rebuild gRPC metadata so the new header is included
+        connection._prepare_grpc_headers()
+    except Exception as e:  # noqa: BLE001 - telemetry must never break the store
+        _logger.debug("Could not register Weaviate integration header: %s", e)
 
 
 _CUSTOM_BATCH_ERROR = (
@@ -319,6 +361,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             raise ValueError(_CUSTOM_BATCH_ERROR)
 
         self._property_types = None
+
+        # tag traffic so Weaviate telemetry can attribute it to LlamaIndex
+        _register_integration_header(getattr(self, "_client", None))
+        _register_integration_header(getattr(self, "_aclient", None))
 
         # create default schema if does not exist
         if self._client is not None:
