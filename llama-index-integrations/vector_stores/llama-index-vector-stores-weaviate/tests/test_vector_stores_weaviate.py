@@ -7,7 +7,12 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
 )
 from llama_index.core.schema import TextNode
-from llama_index.vector_stores.weaviate.base import _is_valid_batch_context_manager
+from llama_index.vector_stores.weaviate.base import (
+    _INTEGRATION_HEADER,
+    _integration_header_value,
+    _is_valid_batch_context_manager,
+    _register_integration_header,
+)
 from llama_index.vector_stores.weaviate import (
     WeaviateVectorStore,
     SyncClientNotProvidedError,
@@ -80,6 +85,43 @@ def test_no_weaviate_client_instance_provided():
     assert not weaviate_client.is_connected()  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
 
 
+def _grpc_header_value(connection, header_name):
+    grpc_headers = connection.grpc_headers() or ()
+    lowered = header_name.lower()
+    for key, value in grpc_headers:
+        if key.lower() == lowered:
+            return value
+    return None
+
+
+def test_integration_header_value_format():
+    value = _integration_header_value()
+    assert value.startswith("llama-index-python")
+
+
+def test_register_integration_header_is_best_effort():
+    # No client / wrong shape must never raise (telemetry must not break the store)
+    _register_integration_header(None)
+    _register_integration_header(object())
+
+
+def test_integration_header_registered_on_sync_client():
+    vector_store = WeaviateVectorStore(
+        client_kwargs={"embedded_options": weaviate.embedded.EmbeddedOptions()}
+    )
+    try:
+        expected = _integration_header_value()
+        connection = vector_store.client._connection
+        # REST: additional_headers (gRPC source), _headers, and the live httpx client
+        assert connection.additional_headers[_INTEGRATION_HEADER] == expected
+        assert connection._headers[_INTEGRATION_HEADER] == expected
+        assert connection._client.headers[_INTEGRATION_HEADER] == expected
+        # gRPC metadata (header keys are lowercased)
+        assert _grpc_header_value(connection, _INTEGRATION_HEADER) == expected
+    finally:
+        del vector_store
+
+
 @pytest.mark.asyncio
 class TestWeaviateAsync:
     @pytest_asyncio.fixture(scope="class")
@@ -130,6 +172,15 @@ class TestWeaviateAsync:
         assert results.similarities[0] == 1.0
 
         assert results.similarities[0] > results.similarities[1]
+
+    async def test_integration_header_registered_on_async_client(
+        self, async_vector_store
+    ):
+        expected = _integration_header_value()
+        connection = async_vector_store.async_client._connection
+        assert connection.additional_headers[_INTEGRATION_HEADER] == expected
+        assert connection._headers[_INTEGRATION_HEADER] == expected
+        assert _grpc_header_value(connection, _INTEGRATION_HEADER) == expected
 
     async def test_async_old_data_gone(self, async_vector_store):
         """Makes sure that no data stays in the database in between tests (otherwise more than one node would be found in the assertion)."""
