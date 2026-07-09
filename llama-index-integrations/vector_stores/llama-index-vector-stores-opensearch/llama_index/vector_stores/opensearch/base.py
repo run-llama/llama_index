@@ -783,7 +783,7 @@ class OpensearchVectorClient:
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
         self._os_client.delete_by_query(
-            index=self._index, body=search_query, refresh=True
+            index=self._index, body=search_query, refresh=not self.is_aoss
         )
 
     async def adelete_by_doc_id(self, doc_id: str) -> None:
@@ -799,7 +799,7 @@ class OpensearchVectorClient:
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
         await self._os_async_client.delete_by_query(
-            index=self._index, body=search_query, refresh=True
+            index=self._index, body=search_query, refresh=not self.is_aoss
         )
 
     def delete_nodes(
@@ -827,7 +827,9 @@ class OpensearchVectorClient:
         if filters:
             query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
-        self._os_client.delete_by_query(index=self._index, body=query, refresh=True)
+        self._os_client.delete_by_query(
+            index=self._index, body=query, refresh=not self.is_aoss
+        )
 
     async def adelete_nodes(
         self,
@@ -855,21 +857,23 @@ class OpensearchVectorClient:
             query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
         await self._os_async_client.delete_by_query(
-            index=self._index, body=query, refresh=True
+            index=self._index, body=query, refresh=not self.is_aoss
         )
 
     def clear(self) -> None:
         """Clears index."""
         self._ensure_initialized()
         query = {"query": {"bool": {"filter": []}}}
-        self._os_client.delete_by_query(index=self._index, body=query, refresh=True)
+        self._os_client.delete_by_query(
+            index=self._index, body=query, refresh=not self.is_aoss
+        )
 
     async def aclear(self) -> None:
         """Clears index."""
         await self._async_ensure_initialized()
         query = {"query": {"bool": {"filter": []}}}
         await self._os_async_client.delete_by_query(
-            index=self._index, body=query, refresh=True
+            index=self._index, body=query, refresh=not self.is_aoss
         )
 
     def close(self) -> None:

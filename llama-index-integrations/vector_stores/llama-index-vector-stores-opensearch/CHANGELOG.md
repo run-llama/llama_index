@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
+## [1.2.1]
+
+- Bugfix: Don't call unsupported `refresh` operation when using Opensearch Serverless
+
 ## [1.0.0]
 
 - Changed engine default from deprecated `nmslib` (since version 3.0.0) to `faiss`
