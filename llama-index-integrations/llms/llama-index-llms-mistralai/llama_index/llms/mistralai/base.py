@@ -482,7 +482,7 @@ class MistralAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
+            tool_call_blocks: List[ToolCallBlock] = []
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -491,7 +491,7 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     for tool_call in delta.tool_calls:
                         if isinstance(tool_call, self._models.ToolCall):
-                            blocks.append(
+                            tool_call_blocks.append(
                                 ToolCallBlock(
                                     tool_call_id=tool_call.id,
                                     tool_name=tool_call.function.name,
@@ -517,18 +517,26 @@ class MistralAI(FunctionCallingLLM):
                 content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
+                thinking_txt = None
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
-
-                    if thinking_txt:
-                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
                     # If thinking hasn't ended, don't include it in the delta
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
+
+                # Rebuild the aggregated blocks from the running state each yield so
+                # the message carries a single cumulative TextBlock (and ThinkingBlock),
+                # mirroring the non-streaming `chat` path. Appending a new block per
+                # chunk would make ChatMessage.content the newline-joined concatenation
+                # of every growing prefix instead of the reply.
+                blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
+                if thinking_txt:
+                    blocks.append(ThinkingBlock(content=thinking_txt))
                 blocks.append(TextBlock(text=content))
+                blocks.extend(tool_call_blocks)
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -641,7 +649,7 @@ class MistralAI(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
-            blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+            tool_call_blocks: List[ToolCallBlock] = []
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -649,7 +657,7 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     for tool_call in delta.tool_calls:
                         if isinstance(tool_call, self._models.ToolCall):
-                            blocks.append(
+                            tool_call_blocks.append(
                                 ToolCallBlock(
                                     tool_call_id=tool_call.id,
                                     tool_name=tool_call.function.name,
@@ -675,10 +683,9 @@ class MistralAI(FunctionCallingLLM):
                 content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
+                thinking_txt = None
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
-                    if thinking_txt:
-                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
@@ -686,7 +693,16 @@ class MistralAI(FunctionCallingLLM):
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
 
+                # Rebuild the aggregated blocks from the running state each yield so
+                # the message carries a single cumulative TextBlock (and ThinkingBlock),
+                # mirroring the non-streaming `chat` path. Appending a new block per
+                # chunk would make ChatMessage.content the newline-joined concatenation
+                # of every growing prefix instead of the reply.
+                blocks: List[ThinkingBlock | TextBlock | ToolCallBlock] = []
+                if thinking_txt:
+                    blocks.append(ThinkingBlock(content=thinking_txt))
                 blocks.append(TextBlock(text=content))
+                blocks.extend(tool_call_blocks)
 
                 yield ChatResponse(
                     message=ChatMessage(
