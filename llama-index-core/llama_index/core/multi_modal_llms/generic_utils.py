@@ -39,8 +39,13 @@ def encode_image(image_path: str) -> str:
     Raises:
         FileNotFoundError: If the `image_path` doesn't exist.
         IOError: If there's an error reading the file.
+        ValueError: If the file is not a valid image format.
 
     """
+    kind = filetype.guess(image_path)
+    if kind is None or not kind.mime.startswith("image/"):
+        raise ValueError(f"Security: File at {image_path} is not a valid image format.")
+
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 

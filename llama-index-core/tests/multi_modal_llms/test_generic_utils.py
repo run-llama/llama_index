@@ -50,7 +50,9 @@ def test_load_image_urls_with_empty_list():
 def test_encode_image():
     """Test successful image encoding."""
     with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-        result = encode_image("fake_image.jpg")
+        with patch("filetype.guess") as mock_guess:
+            mock_guess.return_value = MagicMock(mime="image/jpeg")
+            result = encode_image("fake_image.jpg")
 
     assert result == EXP_BASE64
 
@@ -71,7 +73,9 @@ def test_image_documents_to_base64_multiple_sources(tmp_path: Path):
         mock_get.return_value.content = content
         with patch("os.path.isfile", return_value=True):
             with patch("builtins.open", mock_open(read_data=content)):
-                result = image_documents_to_base64(documents)
+                with patch("filetype.guess") as mock_guess:
+                    mock_guess.return_value = MagicMock(mime="image/png")
+                    result = image_documents_to_base64(documents)
 
     assert len(result) == 4
     assert all(encoding == expected_b64 for encoding in result)
@@ -160,7 +164,9 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
         # patch os.path.isfile
         with patch("os.path.isfile", return_value=True):
             with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-                results = set_base64_and_mimetype_for_image_docs(image_docs)
+                with patch("filetype.guess") as mock_guess:
+                    mock_guess.return_value = MagicMock(mime="image/jpeg")
+                    results = set_base64_and_mimetype_for_image_docs(image_docs)
 
     assert len(results) == 2
     assert results[0].image == expected_b64
