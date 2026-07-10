@@ -234,7 +234,7 @@ jupyter-events==0.12.0
     # via jupyter-server
 jupyter-lsp==2.2.5
     # via jupyterlab
-jupyter-server==2.16.0
+jupyter-server==2.20.0
     # via
     #   jupyter-lsp
     #   jupyterlab
@@ -273,7 +273,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mccabe==0.7.0
     # via pylint
-mistune==3.2.1
+mistune==3.3.0
     # via nbconvert
 multidict==6.6.3
     # via
