@@ -1,13 +1,17 @@
 MINIMAX_MODEL_TO_CONTEXT_WINDOW = {
-    "MiniMax-M3": 524288,
+    "MiniMax-M3": 1000000,
     "MiniMax-M2.7": 204800,
     "MiniMax-M2.7-highspeed": 204800,
+    "MiniMax-M2.5": 204800,
+    "MiniMax-M2.5-highspeed": 204800,
 }
 
 FUNCTION_CALLING_MODELS = {
     "MiniMax-M3",
     "MiniMax-M2.7",
     "MiniMax-M2.7-highspeed",
+    "MiniMax-M2.5",
+    "MiniMax-M2.5-highspeed",
 }
 
 

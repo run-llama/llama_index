@@ -44,17 +44,17 @@ def test_m27_legacy_still_available():
     assert "MiniMax-M2.7-highspeed" in FUNCTION_CALLING_MODELS
 
 
-def test_older_models_removed():
-    """Older M2.5 models should no longer be present."""
-    assert "MiniMax-M2.5" not in MINIMAX_MODEL_TO_CONTEXT_WINDOW
-    assert "MiniMax-M2.5-highspeed" not in MINIMAX_MODEL_TO_CONTEXT_WINDOW
-    assert "MiniMax-M2.5" not in FUNCTION_CALLING_MODELS
-    assert "MiniMax-M2.5-highspeed" not in FUNCTION_CALLING_MODELS
+def test_legacy_models_still_available():
+    """Existing models should remain available for backward compatibility."""
+    assert "MiniMax-M2.5" in MINIMAX_MODEL_TO_CONTEXT_WINDOW
+    assert "MiniMax-M2.5-highspeed" in MINIMAX_MODEL_TO_CONTEXT_WINDOW
+    assert "MiniMax-M2.5" in FUNCTION_CALLING_MODELS
+    assert "MiniMax-M2.5-highspeed" in FUNCTION_CALLING_MODELS
 
 
 def test_context_window_for_m3():
-    """M3 should return the 524,288 context window."""
-    assert get_context_window("MiniMax-M3") == 524288
+    """M3 should return the 1,000,000-token context window."""
+    assert get_context_window("MiniMax-M3") == 1000000
 
 
 def test_context_window_for_m27():

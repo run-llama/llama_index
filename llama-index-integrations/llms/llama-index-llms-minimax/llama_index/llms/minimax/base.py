@@ -12,7 +12,7 @@ class MiniMax(OpenAILike):
     """
     MiniMax LLM.
 
-    MiniMax offers powerful language models with up to 524,288 tokens context window
+    MiniMax offers powerful language models with up to 1,000,000 tokens context window
     through an OpenAI-compatible API.
 
     Examples:

@@ -23,9 +23,11 @@ print(response)
 
 | Model                    | Context Window | Description                                                |
 | ------------------------ | -------------- | ---------------------------------------------------------- |
-| `MiniMax-M3`             | 524,288        | Latest flagship model, default                             |
+| `MiniMax-M3`             | 1,000,000      | Latest flagship model, default                             |
 | `MiniMax-M2.7`           | 204,800        | Previous-generation model, kept for backward compatibility |
 | `MiniMax-M2.7-highspeed` | 204,800        | High-speed variant of M2.7 for low-latency scenarios       |
+| `MiniMax-M2.5`           | 204,800        | Existing model retained for backward compatibility         |
+| `MiniMax-M2.5-highspeed` | 204,800        | High-speed variant retained for backward compatibility     |
 
 ### Environment Variables
 
@@ -41,9 +43,16 @@ from llama_index.llms.minimax import MiniMax
 llm = MiniMax(model="MiniMax-M3")
 ```
 
-### Custom Base URL
+### Regional Base URLs
 
-For users in mainland China, use the domestic API endpoint:
+The `MiniMax` class uses the OpenAI-compatible API. MiniMax publishes matching OpenAI-compatible and Anthropic-compatible endpoints in both regions:
+
+| Region         | OpenAI-compatible base URL    | Anthropic-compatible base URL           | Documentation                        |
+| -------------- | ----------------------------- | --------------------------------------- | ------------------------------------ |
+| Global         | `https://api.minimax.io/v1`   | `https://api.minimax.io/anthropic/v1`   | `https://platform.minimax.io/docs`   |
+| Mainland China | `https://api.minimaxi.com/v1` | `https://api.minimaxi.com/anthropic/v1` | `https://platform.minimaxi.com/docs` |
+
+The global OpenAI-compatible URL is the default. To use the mainland China OpenAI-compatible endpoint, pass it as `api_base`:
 
 ```python
 llm = MiniMax(
