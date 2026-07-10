@@ -108,7 +108,8 @@ def os_stores() -> Generator[List[OpensearchVectorStore], None, None]:
     for client in [client1, client2]:
         # teardown step
         # delete index
-        client._os_client.indices.delete(index=client._index)
+        if client._os_client.indices.exists(index=client._index):
+            client._os_client.indices.delete(index=client._index)
         # close client
         client.close()
 

@@ -1,6 +1,5 @@
 """Elasticsearch/Opensearch vector store."""
 
-import asyncio
 import logging
 import uuid
 import warnings
@@ -23,6 +22,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from llama_index.core.async_utils import asyncio_run
 from opensearchpy.client import Client as OSClient
 
 IMPORT_OPENSEARCH_PY_ERROR = (
@@ -886,12 +886,7 @@ class OpensearchVectorClient:
         if self._owns_os_client and self._os_client is not None:
             self._os_client.close()
         if self._owns_os_async_client and self._os_async_client is not None:
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                asyncio.run(self._os_async_client.close())
-            else:
-                loop.create_task(self._os_async_client.close())
+            asyncio_run(self._os_async_client.close())
 
     async def aclose(self) -> None:
         """
