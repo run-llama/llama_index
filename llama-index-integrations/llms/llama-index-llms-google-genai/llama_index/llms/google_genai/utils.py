@@ -349,8 +349,8 @@ async def chat_message_to_gemini(
     unique_tool_calls = []
     parts = []
     file_api_names = []
-    part = None
     for index, block in enumerate(message.blocks):
+        part = None
         file_api_name = None
 
         if isinstance(block, TextBlock):
