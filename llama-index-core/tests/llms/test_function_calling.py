@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
 from unittest.mock import patch
 
@@ -103,6 +104,15 @@ class Person(BaseModel):
 
 
 @pytest.fixture()
+def person_tool_selection_success(person_tool: FunctionTool) -> ToolSelection:
+    return ToolSelection(
+        tool_id="",
+        tool_name=person_tool.metadata.name,
+        tool_kwargs={"name": "Alice"},
+    )
+
+
+@pytest.fixture()
 def person_tool() -> FunctionTool:
     return get_function_tool(Person)
 
@@ -187,3 +197,35 @@ def test_tool_required_compatibility_with_support(
         args, kwargs = mock_prepare.call_args
         assert "tool_required" in kwargs
         assert kwargs["tool_required"] is True
+
+
+
+@pytest.mark.asyncio
+async def test_apredict_and_call_unknown_tool_name_does_not_leak_task(
+    person_tool: FunctionTool, person_tool_selection_success: ToolSelection
+) -> None:
+    """
+    A tool_call referencing a name that isn't in `tools` (e.g. a hallucinated
+    tool name) used to raise KeyError straight out of asyncio.gather(), which
+    left any other in-flight tool call running as an orphaned, uncancelled
+    task in the background. It should now surface as an errored ToolOutput
+    like any other tool failure, with no task left running afterwards.
+    """
+    unknown_tool_selection = ToolSelection(
+        tool_id="", tool_name="does_not_exist", tool_kwargs={}
+    )
+    llm = MockFunctionCallingLLM([unknown_tool_selection, person_tool_selection_success])
+
+    tasks_before = asyncio.all_tasks()
+    response = await llm.apredict_and_call(tools=[person_tool], allow_parallel_tool_calls=True)
+    await asyncio.sleep(0)
+    tasks_after = asyncio.all_tasks()
+
+    assert not (tasks_after - tasks_before), (
+        "no task should be left running in the background after apredict_and_call returns"
+    )
+    assert len(response.sources) == 2
+    unknown_output, good_output = response.sources
+    assert unknown_output.is_error
+    assert "does_not_exist" in unknown_output.content
+    assert not good_output.is_error
