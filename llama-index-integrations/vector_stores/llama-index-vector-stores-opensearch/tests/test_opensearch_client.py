@@ -1131,3 +1131,152 @@ def test_store_del_suppresses_exceptions() -> None:
 
     # Should not raise
     store.__del__()
+
+
+# ---------------------------------------------------------------------------
+# AOSS refresh-suppression tests
+#
+# On OpenSearch Serverless (AOSS), `refresh` on _delete_by_query and the
+# POST /{index}/_refresh endpoint are not supported. We hook into the
+# opensearch-py Transport.perform_request layer -- the last hop before the
+# HTTP request is serialized -- to prove the wire request never contains
+# `refresh=true` when is_aoss is set.
+# ---------------------------------------------------------------------------
+
+
+def _make_transport_recorded_client(is_aoss: bool):
+    """
+    Build an OpensearchVectorClient with real OpenSearch/AsyncOpenSearch clients
+    whose Transport.perform_request is stubbed to record calls without hitting
+    the network. Returns (client, sync_calls, async_calls).
+    """
+    sync_calls: list[dict] = []
+    async_calls: list[dict] = []
+
+    def _canned_response(url: str):
+        # A minimal response body that satisfies every endpoint we exercise.
+        if "_bulk" in url:
+            return {"errors": False, "items": []}
+        if "_delete_by_query" in url:
+            return {"deleted": 0, "failures": []}
+        if url.endswith("/_refresh"):
+            return {"_shards": {"total": 0, "successful": 0, "failed": 0}}
+        return {}
+
+    def _sync_perform(method, url, params=None, body=None, headers=None):
+        sync_calls.append(
+            {"method": method, "url": url, "params": dict(params or {}), "body": body}
+        )
+        return _canned_response(url)
+
+    async def _async_perform(method, url, params=None, body=None, headers=None):
+        async_calls.append(
+            {"method": method, "url": url, "params": dict(params or {}), "body": body}
+        )
+        return _canned_response(url)
+
+    client = OpensearchVectorClient(
+        endpoint="http://localhost:9200",
+        index="test_refresh_idx",
+        dim=3,
+    )
+    client._os_client.transport.perform_request = _sync_perform
+    client._os_async_client.transport.perform_request = _async_perform
+    # Override AOSS detection (normally driven by AWS4Auth service attribute).
+    client.is_aoss = is_aoss
+    # Skip lazy index initialization -- we don't want its perform_request calls
+    # cluttering our recorded calls, and we don't have a real cluster.
+    client._initialized = True
+    client._efficient_filtering_enabled = False
+
+    return client, sync_calls, async_calls
+
+
+@pytest.mark.parametrize("is_aoss", [True, False])
+def test_delete_operations_refresh_param_respects_aoss(is_aoss: bool) -> None:
+    """
+    delete_by_doc_id / delete_nodes / clear must not send `refresh=true`
+    on AOSS, but must send it otherwise.
+    """
+    client, calls, _ = _make_transport_recorded_client(is_aoss=is_aoss)
+
+    client.delete_by_doc_id("doc-1")
+    client.delete_nodes(node_ids=["a", "b"])
+    client.clear()
+
+    dbq_calls = [c for c in calls if "_delete_by_query" in c["url"]]
+    assert len(dbq_calls) == 3, f"expected 3 _delete_by_query calls, got {dbq_calls}"
+
+    for c in dbq_calls:
+        refresh_true = c["params"].get("refresh") == b"true"
+        if is_aoss:
+            assert not refresh_true, (
+                f"refresh=true leaked into AOSS request params: {c['params']}"
+            )
+        else:
+            assert refresh_true, (
+                f"refresh=true missing from non-AOSS request params: {c['params']}"
+            )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_aoss", [True, False])
+async def test_adelete_operations_refresh_param_respects_aoss(is_aoss: bool) -> None:
+    """Async variant of :func:`test_delete_operations_refresh_param_respects_aoss`."""
+    client, _, calls = _make_transport_recorded_client(is_aoss=is_aoss)
+
+    await client.adelete_by_doc_id("doc-1")
+    await client.adelete_nodes(node_ids=["a", "b"])
+    await client.aclear()
+
+    dbq_calls = [c for c in calls if "_delete_by_query" in c["url"]]
+    assert len(dbq_calls) == 3, f"expected 3 _delete_by_query calls, got {dbq_calls}"
+
+    for c in dbq_calls:
+        refresh_true = c["params"].get("refresh") == b"true"
+        if is_aoss:
+            assert not refresh_true, (
+                f"refresh=true leaked into AOSS request params: {c['params']}"
+            )
+        else:
+            assert refresh_true, (
+                f"refresh=true missing from non-AOSS request params: {c['params']}"
+            )
+
+
+@pytest.mark.parametrize("is_aoss", [True, False])
+def test_index_results_skips_indices_refresh_on_aoss(is_aoss: bool) -> None:
+    """
+    After bulk ingest the `POST /{index}/_refresh` endpoint should be hit only
+    when NOT running against AOSS.
+    """
+    client, calls, _ = _make_transport_recorded_client(is_aoss=is_aoss)
+
+    node = TextNode(text="hi", id_="n1", embedding=[0.1, 0.2, 0.3])
+    client.index_results([node])
+
+    refresh_calls = [c for c in calls if c["url"].endswith("/_refresh")]
+    if is_aoss:
+        assert refresh_calls == [], f"unexpected _refresh call on AOSS: {refresh_calls}"
+    else:
+        assert len(refresh_calls) == 1, (
+            f"expected exactly one _refresh call, got {refresh_calls}"
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_aoss", [True, False])
+async def test_aindex_results_skips_indices_refresh_on_aoss(is_aoss: bool) -> None:
+    """Async variant of :func:`test_index_results_skips_indices_refresh_on_aoss`."""
+    client, _, calls = _make_transport_recorded_client(is_aoss=is_aoss)
+
+    node = TextNode(text="hi", id_="n1", embedding=[0.1, 0.2, 0.3])
+    await client.aindex_results([node])
+
+    refresh_calls = [c for c in calls if c["url"].endswith("/_refresh")]
+    if is_aoss:
+        assert refresh_calls == [], f"unexpected _refresh call on AOSS: {refresh_calls}"
+    else:
+        assert len(refresh_calls) == 1, (
+            f"expected exactly one _refresh call, got {refresh_calls}"
+        )
