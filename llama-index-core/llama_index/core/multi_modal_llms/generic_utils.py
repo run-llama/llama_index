@@ -26,22 +26,61 @@ def load_image_urls(image_urls: List[str]) -> List[ImageDocument]:
     return [ImageDocument(image_url=url) for url in image_urls]
 
 
-def encode_image(image_path: str) -> str:
+def encode_image(image_path: str, allowed_root: Optional[str] = None) -> str:
     """
     Create base64 representation of an image.
 
     Args:
-        image_path (str): Path to the image file
+        image_path (str): Path to the image file.
+        allowed_root (Optional[str]): If provided, the resolved ``image_path``
+            must be located inside this directory (symlinks are also rejected).
+            Use this in applications that build ``ImageDocument`` objects from
+            user-influenced data to prevent path-traversal to unintended files.
+            When *not* provided the only guard applied is the magic-byte check
+            (which already blocks non-image files such as ``/etc/passwd``).
 
     Returns:
         str: Base64 encoded string of the image
 
     Raises:
-        FileNotFoundError: If the `image_path` doesn't exist.
+        FileNotFoundError: If the ``image_path`` doesn't exist.
         IOError: If there's an error reading the file.
-        ValueError: If the file is not a valid image format.
+        ValueError: If the file is not a valid image format, if the resolved
+            path escapes ``allowed_root``, or if a symlink is encountered when
+            ``allowed_root`` is set.
 
     """
+    # ------------------------------------------------------------------
+    # 1. Path-traversal guard (opt-in, activated when allowed_root is set)
+    # ------------------------------------------------------------------
+    if allowed_root is not None:
+        from pathlib import Path
+
+        original = Path(image_path)
+
+        # Reject symlinks before resolving — resolve() dereferences them so
+        # is_symlink() would return False after the call.
+        if original.is_symlink():
+            raise ValueError(
+                f"Security: symlinks are not allowed when allowed_root is set "
+                f"(got '{image_path}')."
+            )
+
+        resolved = original.resolve(strict=True)
+        root = Path(allowed_root).resolve()
+
+        # Ensure the path is inside the allowed directory tree.
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            raise ValueError(
+                f"Security: image path '{image_path}' resolves to '{resolved}', "
+                f"which is outside the allowed root '{root}'."
+            )
+
+    # ------------------------------------------------------------------
+    # 2. Magic-byte guard – blocks non-image files regardless of allowed_root.
+    # ------------------------------------------------------------------
     kind = filetype.guess(image_path)
     if kind is None or not kind.mime.startswith("image/"):
         raise ValueError(f"Security: File at {image_path} is not a valid image format.")
@@ -52,13 +91,18 @@ def encode_image(image_path: str) -> str:
 
 def image_documents_to_base64(
     image_documents: Sequence[ImageDocument],
+    allowed_root: Optional[str] = None,
 ) -> List[str]:
     """
     Convert ImageDocument objects to base64-encoded strings.
 
     Args:
-        image_documents (Sequence[ImageDocument]: Sequence of
-            ImageDocument objects
+        image_documents (Sequence[ImageDocument]): Sequence of
+            ImageDocument objects.
+        allowed_root (Optional[str]): If provided, every file path resolved
+            from ``image_path`` or ``metadata['file_path']`` must reside
+            inside this directory and must not be a symlink. See
+            :func:`encode_image` for details.
 
     Returns:
         List[str]: List of base64-encoded image strings
@@ -73,13 +117,13 @@ def image_documents_to_base64(
         elif image_document.image_path and os.path.isfile(
             image_document.image_path
         ):  # This field is a path to the image, which is then encoded.
-            image_encodings.append(encode_image(image_document.image_path))
+            image_encodings.append(encode_image(image_document.image_path, allowed_root))
         elif (
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
             and os.path.isfile(image_document.metadata["file_path"])
         ):  # Alternative path to the image, which is then encoded.
-            image_encodings.append(encode_image(image_document.metadata["file_path"]))
+            image_encodings.append(encode_image(image_document.metadata["file_path"], allowed_root))
         elif image_document.image_url:  # Image can also be pulled from the URL.
             response = requests.get(image_document.image_url, timeout=(60, 60))
             try:
@@ -89,6 +133,7 @@ def image_documents_to_base64(
             except Exception as e:
                 logger.warning(f"Cannot encode the image pulled from URL -> {e}")
     return image_encodings
+
 
 
 def infer_image_mimetype_from_file_path(image_file_path: str) -> str:

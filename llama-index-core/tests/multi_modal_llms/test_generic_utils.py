@@ -172,3 +172,74 @@ def test_set_base64_and_mimetype_for_image_docs(tmp_path: Path):
     assert results[0].image == expected_b64
     assert results[0].image_mimetype == "image/jpeg"
     assert results[1].image_mimetype == "image/jpeg"
+
+
+# ---------------------------------------------------------------------------
+# Tests for the path-traversal guard (allowed_root parameter)
+# ---------------------------------------------------------------------------
+
+def test_encode_image_path_outside_allowed_root_raises(tmp_path: Path):
+    """File outside allowed_root must raise ValueError."""
+    # Create a real image file in a *different* directory than allowed_root.
+    other_dir = tmp_path / "other"
+    other_dir.mkdir()
+    img_file = other_dir / "secret.jpg"
+    img_file.write_bytes(b"fake-image-bytes")
+
+    allowed = tmp_path / "uploads"
+    allowed.mkdir()
+
+    with patch("filetype.guess") as mock_guess:
+        mock_guess.return_value = MagicMock(mime="image/jpeg")
+        with pytest.raises(ValueError, match="outside the allowed root"):
+            encode_image(str(img_file), allowed_root=str(allowed))
+
+
+def test_encode_image_symlink_rejected_when_allowed_root_set(tmp_path: Path):
+    """Symlinks must be rejected when allowed_root is provided."""
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    # Real target lives inside uploads — but it's a symlink.
+    target = uploads / "real.jpg"
+    target.write_bytes(b"fake-image-bytes")
+    link = uploads / "link.jpg"
+    link.symlink_to(target)
+
+    with patch("filetype.guess") as mock_guess:
+        mock_guess.return_value = MagicMock(mime="image/jpeg")
+        with pytest.raises(ValueError, match="symlinks are not allowed"):
+            encode_image(str(link), allowed_root=str(uploads))
+
+
+def test_encode_image_inside_allowed_root_succeeds(tmp_path: Path):
+    """A legitimate image inside allowed_root must encode successfully."""
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    img_file = uploads / "photo.jpg"
+    img_file.write_bytes(EXP_BINARY)
+
+    with patch("filetype.guess") as mock_guess:
+        mock_guess.return_value = MagicMock(mime="image/jpeg")
+        result = encode_image(str(img_file), allowed_root=str(uploads))
+
+    assert result == EXP_BASE64
+
+
+def test_image_documents_to_base64_allowed_root_blocks_traversal(tmp_path: Path):
+    """image_documents_to_base64 threads allowed_root to encode_image."""
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    secret = outside / "secret.jpg"
+    secret.write_bytes(b"fake")
+
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+
+    doc = ImageDocument(metadata={"file_path": str(secret)})
+
+    with patch("filetype.guess") as mock_guess:
+        mock_guess.return_value = MagicMock(mime="image/jpeg")
+        with patch("os.path.isfile", return_value=True):
+            with pytest.raises(ValueError, match="outside the allowed root"):
+                image_documents_to_base64([doc], allowed_root=str(uploads))
