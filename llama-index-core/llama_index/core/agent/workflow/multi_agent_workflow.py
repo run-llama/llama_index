@@ -756,6 +756,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         agent_name = await ctx.store.get("current_agent_name")
         agent = self.agents[agent_name]
 
+        # A tool may have just mutated ctx.store["state"] (see
+        # handle_tool_call_results above). setup_agent only re-applies the
+        # state_prompt while this flag is False, so it must be reset here;
+        # otherwise the next LLM step reuses the raw user message instead of
+        # being reformatted with whatever the tool changed.
+        await ctx.store.set("formatted_input_with_state", False)
+
         return AgentInput(input=input_messages, current_agent_name=agent.name)
 
     # TODO: Remove the deprecated agent-specific overload. The agent params
