@@ -69,6 +69,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-sonnet-4-6": 1000000,
     "anthropic.claude-opus-4-7": 1000000,
     "anthropic.claude-opus-4-8": 1000000,
+    "anthropic.claude-sonnet-5": 1000000,
     "anthropic.claude-fable-5": 1000000,
 }
 
@@ -87,6 +88,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-sonnet-4-6": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-sonnet-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -116,6 +118,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-6": 1000000,
     "claude-opus-4-7": 1000000,
     "claude-opus-4-8": 1000000,
+    "claude-sonnet-5": 1000000,
     "claude-fable-5": 1000000,
 }
 
@@ -132,13 +135,15 @@ ANTHROPIC_NO_TEMP_MODELS: Tuple[str, ...] = (
     "claude-opus-4-7",
     "anthropic.claude-opus-4-8",
     "claude-opus-4-8",
+    "anthropic.claude-sonnet-5",
+    "claude-sonnet-5",
     "anthropic.claude-fable-5",
     "claude-fable-5",
 )
 
 
 def is_function_calling_model(modelname: str) -> bool:
-    return "-3" in modelname or "-4" in modelname
+    return "-3" in modelname or "-4" in modelname or "-5" in modelname
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
@@ -584,6 +589,8 @@ ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
     "claude-opus-4-7",
     # Claude 4.6 Opus
     "claude-opus-4-6",
+    # Claude 5 Sonnet
+    "claude-sonnet-5",
     # Claude 4.6 Sonnet
     "claude-sonnet-4-6",
     # Claude 4.5 Opus
