@@ -9,7 +9,7 @@ from qdrant_client.http.models import (
     PointStruct,
     Filter,
 )
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -1047,3 +1047,35 @@ async def test_async_hybrid_with_aclient() -> None:
 
     # Collection must exist on the async client (was created via async path)
     assert await aclient.collection_exists("test_hybrid_aclient_14151")
+
+
+@pytest.mark.asyncio
+async def test_aquery_falsy_shard_identifier_not_dropped() -> None:
+    """
+    Regression test: aquery must not silently drop falsy shard identifiers.
+
+    aquery previously used `if shard_identifier` (truthiness check) instead of
+    `if shard_identifier is not None`, causing integer 0 and other falsy values
+    to be silently treated as "no shard identifier provided". All other methods
+    (query, delete, adelete, get_nodes, etc.) correctly use `is not None`.
+    """
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_aquery_shard_falsy",
+        aclient=aclient,
+        client=None,
+    )
+
+    node = TextNode(
+        text="hello",
+        id_="cccccccc-cccc-cccc-cccc-cccccccccccc",
+        embedding=[1.0, 0.0],
+    )
+    await store.async_add([node])
+
+    with patch.object(
+        store, "_generate_shard_key_selector", return_value=None
+    ) as mock_gen:
+        query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=1)
+        await store.aquery(query, shard_identifier=0)
+        mock_gen.assert_called_once_with(0)

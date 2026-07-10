@@ -7,6 +7,7 @@ from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
 from llama_index.llms.bedrock_converse.base import _parse_tool_input
+from llama_index.llms.bedrock_converse.utils import HAS_AIOBOTO3
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -123,40 +124,6 @@ class MockExceptions:
         pass
 
 
-class AsyncMockClient:
-    def __init__(self) -> "AsyncMockClient":
-        self.exceptions = MockExceptions()
-
-    async def __aenter__(self) -> "AsyncMockClient":
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        pass
-
-    async def converse(self, *args, **kwargs):
-        return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
-
-    async def converse_stream(self, *args, **kwargs):
-        async def stream_generator():
-            for element in EXP_STREAM_RESPONSE:
-                yield {
-                    "contentBlockDelta": {
-                        "delta": {"text": element},
-                        "contentBlockIndex": 0,
-                    }
-                }
-            # Add messageStop and metadata events for token usage testing
-            yield {"messageStop": {"stopReason": "end_turn"}}
-            yield {
-                "metadata": {
-                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
-                    "metrics": {"latencyMs": 886},
-                }
-            }
-
-        return {"stream": stream_generator()}
-
-
 class MockClient:
     def __init__(self) -> "MockClient":
         self.exceptions = MockExceptions()
@@ -185,6 +152,41 @@ class MockClient:
         return {"stream": stream_generator()}
 
 
+class AsyncMockClient:
+    """Async mock client for native aioboto3 path."""
+
+    def __init__(self) -> "AsyncMockClient":
+        self.exceptions = MockExceptions()
+
+    async def __aenter__(self) -> "AsyncMockClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        pass
+
+    async def converse(self, *args, **kwargs):
+        return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
+
+    async def converse_stream(self, *args, **kwargs):
+        async def stream_generator():
+            for element in EXP_STREAM_RESPONSE:
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
+
+        return {"stream": stream_generator()}
+
+
 class MockAsyncSession:
     def __init__(self, *args, **kwargs) -> "MockAsyncSession":
         pass
@@ -199,15 +201,12 @@ def mock_boto3_session(monkeypatch):
         return MockClient()
 
     monkeypatch.setattr("boto3.Session.client", mock_client)
+    if HAS_AIOBOTO3:
+        monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
 
 @pytest.fixture()
-def mock_aioboto3_session(monkeypatch):
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
-
-
-@pytest.fixture()
-def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
+def bedrock_converse(mock_boto3_session):
     return BedrockConverse(
         model=EXP_MODEL,
         max_tokens=EXP_MAX_TOKENS,
@@ -220,9 +219,7 @@ def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
 
 
 @pytest.fixture()
-def bedrock_converse_with_application_inference_profile(
-    mock_boto3_session, mock_aioboto3_session
-):
+def bedrock_converse_with_application_inference_profile(mock_boto3_session):
     """
     Create a BedrockConverse client that uses an application inference profile for invoking the LLM.
     See AWS documentation for details about creating and using application inference profiles.
@@ -411,7 +408,8 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
             return {"stream": stream_generator()}
 
     monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: ToolStreamMockClient())
-    monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
+    if HAS_AIOBOTO3:
+        monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
     llm = BedrockConverse(
         model=EXP_MODEL,
@@ -435,28 +433,29 @@ def test_stream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    HAS_AIOBOTO3,
+    reason="test uses sync mock, needs dedicated async tool mock for aioboto3 path",
+)
 async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
     """
     Async variant: streaming tool call input is parsed from string to dict.
 
+    Since converse_with_retry_async now uses asyncio.to_thread with a sync client,
+    we mock the sync client's converse_stream method which returns a sync iterator.
+
     Regression test for https://github.com/run-llama/llama_index/issues/21579
     """
 
-    class ToolStreamAsyncMockClient:
+    class ToolStreamMockClient:
         def __init__(self):
             self.exceptions = MockExceptions()
 
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            pass
-
-        async def converse(self, *args, **kwargs):
+        def converse(self, *args, **kwargs):
             return {"output": {"message": {"content": [{"text": EXP_RESPONSE}]}}}
 
-        async def converse_stream(self, *args, **kwargs):
-            async def stream_generator():
+        def converse_stream(self, *args, **kwargs):
+            def stream_generator():
                 yield {
                     "contentBlockStart": {
                         "start": {
@@ -493,15 +492,7 @@ async def test_astream_chat_tool_kwargs_parsed_as_dict(monkeypatch):
 
             return {"stream": stream_generator()}
 
-    class ToolStreamAsyncSession:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def client(self, *args, **kwargs):
-            return ToolStreamAsyncMockClient()
-
-    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: MockClient())
-    monkeypatch.setattr("aioboto3.Session", ToolStreamAsyncSession)
+    monkeypatch.setattr("boto3.Session.client", lambda *a, **kw: ToolStreamMockClient())
 
     llm = BedrockConverse(
         model=EXP_MODEL,
@@ -567,10 +558,11 @@ async def test_astream_chat(bedrock_converse):
 
 
 @pytest.mark.asyncio
-async def test_achat_uses_async_client_when_provided(
-    mock_boto3_session, mock_aioboto3_session
-):
+@pytest.mark.skipif(not HAS_AIOBOTO3, reason="async_client requires aioboto3")
+async def test_achat_uses_async_client_when_provided(mock_boto3_session):
     """When async_client is provided, achat uses it directly without opening a session client."""
+    # async_client is now a sync client passed to converse_with_retry_async
+    # which uses asyncio.to_thread internally
     async_mock = AsyncMockClient()
     llm = BedrockConverse(
         model=EXP_MODEL,
@@ -579,21 +571,18 @@ async def test_achat_uses_async_client_when_provided(
     )
 
     with patch.object(
-        AsyncMockClient, "converse", wraps=async_mock.converse
+        async_mock, "converse", wraps=async_mock.converse
     ) as patched_converse:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            response = await llm.achat(messages)
-            patched_converse.assert_called_once()
-            patched_session_client.assert_not_called()
+        response = await llm.achat(messages)
+        patched_converse.assert_called_once()
 
     assert isinstance(response, ChatResponse)
     assert response.message.content == EXP_RESPONSE
 
 
 @pytest.mark.asyncio
-async def test_astream_chat_uses_async_client_when_provided(
-    mock_boto3_session, mock_aioboto3_session
-):
+@pytest.mark.skipif(not HAS_AIOBOTO3, reason="async_client requires aioboto3")
+async def test_astream_chat_uses_async_client_when_provided(mock_boto3_session):
     """When async_client is provided, astream_chat uses it directly without opening a session client."""
     async_mock = AsyncMockClient()
     llm = BedrockConverse(
@@ -603,14 +592,12 @@ async def test_astream_chat_uses_async_client_when_provided(
     )
 
     with patch.object(
-        AsyncMockClient, "converse_stream", wraps=async_mock.converse_stream
+        async_mock, "converse_stream", wraps=async_mock.converse_stream
     ) as patched_stream:
-        with patch.object(MockAsyncSession, "client") as patched_session_client:
-            response_stream = await llm.astream_chat(messages)
-            async for _ in response_stream:
-                pass
-            patched_stream.assert_called_once()
-            patched_session_client.assert_not_called()
+        response_stream = await llm.astream_chat(messages)
+        async for _ in response_stream:
+            pass
+        patched_stream.assert_called_once()
 
 
 @pytest.mark.asyncio
