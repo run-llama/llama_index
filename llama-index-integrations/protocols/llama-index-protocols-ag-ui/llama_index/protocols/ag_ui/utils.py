@@ -60,13 +60,23 @@ def llama_index_message_to_ag_ui_message(
             tool_calls=tool_calls,
         )
     elif message.role.value == "tool" or "tool_call_id" in message.additional_kwargs:
+        tool_call_id = message.additional_kwargs.get("tool_call_id")
+        if tool_call_id is None:
+            raise ValueError(
+                "Cannot convert a 'tool' role ChatMessage to an AG-UI ToolMessage: "
+                "'tool_call_id' is missing from additional_kwargs. Fabricating a "
+                "random one here would produce a ToolMessage.tool_call_id that pairs "
+                "with no AssistantMessage.tool_calls[*].id, which most LLM providers "
+                "reject as an invalid message history. Make sure additional_kwargs "
+                "(including 'tool_call_id') survives however this ChatMessage was "
+                "constructed or restored (e.g. memory serialization, custom step "
+                "synthesis) instead of dropping it."
+            )
         return ToolMessage(
             id=msg_id,
             content=message.content or "",
             role="tool",
-            tool_call_id=message.additional_kwargs.get(
-                "tool_call_id", str(uuid.uuid4())
-            ),
+            tool_call_id=tool_call_id,
         )
     else:
         raise ValueError(f"Unknown message role: {message.role}")
