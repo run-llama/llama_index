@@ -5,6 +5,7 @@ An index that is built on top of an existing vector store.
 
 """
 
+import json
 import logging
 from typing import Any, Optional, Dict, cast, List
 
@@ -311,10 +312,11 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
+        metadata_key = json.dumps(str(self._metadata_key))
         items = self._container.query_items(
             query=(
                 "SELECT c.id, c.id AS partitionKey FROM c "
-                f"WHERE c.{self._metadata_key}.ref_doc_id = @ref_doc_id"
+                f'WHERE c[{metadata_key}]["ref_doc_id"] = @ref_doc_id'
             ),
             parameters=[{"name": "@ref_doc_id", "value": ref_doc_id}],
             enable_cross_partition_query=True,
