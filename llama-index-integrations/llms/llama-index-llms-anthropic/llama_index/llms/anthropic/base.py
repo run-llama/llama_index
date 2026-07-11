@@ -504,6 +504,8 @@ class Anthropic(FunctionCallingLLM):
             # Track usage metadata and stop_reason from RawMessage events
             usage_metadata: Dict[str, Any] = {}
             input_tokens: Optional[int] = None
+            cache_creation_input_tokens: Optional[int] = None
+            cache_read_input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             for r in response:
                 thinking_delta = ""
@@ -647,11 +649,21 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageStartEvent):
                     # Capture initial usage metadata from message_start
                     if hasattr(r.message, "usage") and r.message.usage:
-                        # Save input tokens for later
+                        # Save input and cache tokens for later. Anthropic only
+                        # reports the cache token counts on message_start, so we
+                        # carry them forward onto the message_delta usage below.
                         input_tokens = r.message.usage.input_tokens
+                        cache_creation_input_tokens = getattr(
+                            r.message.usage, "cache_creation_input_tokens", None
+                        )
+                        cache_read_input_tokens = getattr(
+                            r.message.usage, "cache_read_input_tokens", None
+                        )
                         usage_metadata = {
                             "input_tokens": r.message.usage.input_tokens,
                             "output_tokens": r.message.usage.output_tokens,
+                            "cache_creation_input_tokens": cache_creation_input_tokens,
+                            "cache_read_input_tokens": cache_read_input_tokens,
                         }
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
@@ -661,6 +673,14 @@ class Anthropic(FunctionCallingLLM):
                         usage_metadata = {
                             "input_tokens": r.usage.input_tokens,
                             "output_tokens": r.usage.output_tokens,
+                            "cache_creation_input_tokens": getattr(
+                                r.usage, "cache_creation_input_tokens", None
+                            )
+                            or cache_creation_input_tokens,
+                            "cache_read_input_tokens": getattr(
+                                r.usage, "cache_read_input_tokens", None
+                            )
+                            or cache_read_input_tokens,
                         }
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason
@@ -761,6 +781,8 @@ class Anthropic(FunctionCallingLLM):
             # Track usage metadata and stop_reason from RawMessage events
             usage_metadata: Dict[str, Any] = {}
             input_tokens: Optional[int] = None
+            cache_creation_input_tokens: Optional[int] = None
+            cache_read_input_tokens: Optional[int] = None
             stop_reason: Optional[str] = None
             async for r in response:
                 thinking_delta = ""
@@ -904,11 +926,21 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, RawMessageStartEvent):
                     # Capture initial usage metadata from message_start
                     if hasattr(r.message, "usage") and r.message.usage:
-                        # Save input tokens for later
+                        # Save input and cache tokens for later. Anthropic only
+                        # reports the cache token counts on message_start, so we
+                        # carry them forward onto the message_delta usage below.
                         input_tokens = r.message.usage.input_tokens
+                        cache_creation_input_tokens = getattr(
+                            r.message.usage, "cache_creation_input_tokens", None
+                        )
+                        cache_read_input_tokens = getattr(
+                            r.message.usage, "cache_read_input_tokens", None
+                        )
                         usage_metadata = {
                             "input_tokens": r.message.usage.input_tokens,
                             "output_tokens": r.message.usage.output_tokens,
+                            "cache_creation_input_tokens": cache_creation_input_tokens,
+                            "cache_read_input_tokens": cache_read_input_tokens,
                         }
                 elif isinstance(r, RawMessageDeltaEvent):
                     # Update usage metadata and capture stop_reason from message_delta
@@ -918,6 +950,14 @@ class Anthropic(FunctionCallingLLM):
                         usage_metadata = {
                             "input_tokens": r.usage.input_tokens,
                             "output_tokens": r.usage.output_tokens,
+                            "cache_creation_input_tokens": getattr(
+                                r.usage, "cache_creation_input_tokens", None
+                            )
+                            or cache_creation_input_tokens,
+                            "cache_read_input_tokens": getattr(
+                                r.usage, "cache_read_input_tokens", None
+                            )
+                            or cache_read_input_tokens,
                         }
                     if hasattr(r, "delta") and hasattr(r.delta, "stop_reason"):
                         stop_reason = r.delta.stop_reason

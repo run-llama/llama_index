@@ -860,6 +860,150 @@ async def test_astream_chat_usage_and_stop_reason_mock():
     assert stop_reason == "max_tokens"
 
 
+def test_stream_chat_usage_includes_cache_tokens_mock():
+    """
+    Mock test for streaming cache-token usage metadata - no API key required.
+
+    Anthropic reports cache_creation_input_tokens and cache_read_input_tokens on
+    the message_start event; the message_delta usage does not repeat them. So
+    stream_chat must carry these token classes forward, the same way it already
+    carries input_tokens forward, otherwise the final usage metadata drops them
+    and only reports input_tokens/output_tokens.
+    """
+    from unittest.mock import MagicMock
+    from anthropic.types import TextDelta, Usage
+
+    mock_text_delta = MagicMock(spec=TextDelta)
+    mock_text_delta.text = "Hi"
+    mock_text_delta.type = "text_delta"
+
+    # message_start carries input, output and the cache token counts
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 15
+    mock_first_usage.output_tokens = 1
+    mock_first_usage.cache_creation_input_tokens = 100
+    mock_first_usage.cache_read_input_tokens = 50
+
+    # message_delta only updates output_tokens; the cache counts are not repeated
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 8
+    mock_last_usage.cache_creation_input_tokens = None
+    mock_last_usage.cache_read_input_tokens = None
+
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+
+    def mock_stream_generator():
+        from anthropic.types import (
+            RawContentBlockDeltaEvent,
+            ContentBlockStopEvent,
+            RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
+        )
+
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
+        yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
+        yield MagicMock(spec=ContentBlockStopEvent, index=0)
+        yield MagicMock(
+            spec=RawMessageDeltaEvent,
+            usage=mock_last_usage,
+            delta=mock_delta,
+        )
+
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_stream_generator()
+    llm._client = mock_client
+
+    messages = [ChatMessage(role="user", content="Test message")]
+    chunks = list(llm.stream_chat(messages))
+
+    assert len(chunks) > 0, "Should yield at least one chunk"
+    usage = chunks[-1].message.additional_kwargs.get("usage")
+    assert usage is not None, "Usage metadata should be captured"
+    assert usage["input_tokens"] == 15
+    assert usage["output_tokens"] == 8
+    # Cache token counts from message_start survive into the final usage metadata
+    assert usage["cache_creation_input_tokens"] == 100
+    assert usage["cache_read_input_tokens"] == 50
+
+
+@pytest.mark.asyncio
+async def test_astream_chat_usage_includes_cache_tokens_mock():
+    """
+    Async version of test_stream_chat_usage_includes_cache_tokens_mock.
+    """
+    from unittest.mock import MagicMock, AsyncMock
+    from anthropic.types import TextDelta, Usage
+
+    mock_text_delta = MagicMock(spec=TextDelta)
+    mock_text_delta.text = "Hi async"
+    mock_text_delta.type = "text_delta"
+
+    mock_first_usage = MagicMock(spec=Usage)
+    mock_first_usage.input_tokens = 20
+    mock_first_usage.output_tokens = 1
+    mock_first_usage.cache_creation_input_tokens = 200
+    mock_first_usage.cache_read_input_tokens = 75
+
+    mock_last_usage = MagicMock(spec=Usage)
+    mock_last_usage.input_tokens = None
+    mock_last_usage.output_tokens = 12
+    mock_last_usage.cache_creation_input_tokens = None
+    mock_last_usage.cache_read_input_tokens = None
+
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+
+    async def mock_async_stream_generator():
+        from anthropic.types import (
+            RawContentBlockDeltaEvent,
+            ContentBlockStopEvent,
+            RawMessageDeltaEvent,
+            RawMessageStartEvent,
+            Message,
+        )
+
+        yield MagicMock(
+            spec=RawMessageStartEvent,
+            message=MagicMock(spec=Message, usage=mock_first_usage),
+        )
+        yield MagicMock(spec=RawContentBlockDeltaEvent, delta=mock_text_delta, index=0)
+        yield MagicMock(spec=ContentBlockStopEvent, index=0)
+        yield MagicMock(
+            spec=RawMessageDeltaEvent,
+            usage=mock_last_usage,
+            delta=mock_delta,
+        )
+
+    llm = Anthropic(model="claude-sonnet-4-5")
+    mock_async_client = AsyncMock()
+    mock_async_client.messages.create = AsyncMock(
+        return_value=mock_async_stream_generator()
+    )
+    llm._aclient = mock_async_client
+
+    messages = [ChatMessage(role="user", content="Test async message")]
+    stream_resp = await llm.astream_chat(messages)
+
+    chunks = []
+    async for chunk in stream_resp:
+        chunks.append(chunk)
+
+    assert len(chunks) > 0, "Should yield at least one chunk"
+    usage = chunks[-1].message.additional_kwargs.get("usage")
+    assert usage is not None, "Usage metadata should be captured in async streaming"
+    assert usage["input_tokens"] == 20
+    assert usage["output_tokens"] == 12
+    assert usage["cache_creation_input_tokens"] == 200
+    assert usage["cache_read_input_tokens"] == 75
+
+
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_API_KEY") is None,
     reason="Anthropic API key not available to test streaming metadata",
