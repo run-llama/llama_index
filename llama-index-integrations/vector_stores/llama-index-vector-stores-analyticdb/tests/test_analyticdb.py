@@ -1,5 +1,7 @@
-from typing import List
+import json
+from typing import Any, List
 from unittest.mock import MagicMock
+
 import pytest
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -109,3 +111,26 @@ def test_build_filter_clause_escapes_metadata_keys_and_values() -> None:
         )
         == "metadata_->>'author'' OR ''1''=''1' = 'x'' OR ''1''=''1'"
     )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        'foo" OR "1"="1',
+        r"foo\bar",
+        "O'Reilly",
+        1,
+        1.5,
+    ],
+)
+def test_build_filter_clause_contains_uses_json_encoding(value: Any) -> None:
+    filter_clause = _build_filter_clause(
+        MetadataFilter(
+            key="tags",
+            value=value,
+            operator=FilterOperator.CONTAINS,
+        )
+    )
+
+    expected_json = json.dumps([value]).replace("'", "''")
+    assert filter_clause == f"metadata_::jsonb->'tags' @> '{expected_json}'"
