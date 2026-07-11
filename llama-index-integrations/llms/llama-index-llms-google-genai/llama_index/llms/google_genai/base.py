@@ -101,6 +101,7 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
                 max_seconds=20,
             )
             return await retry(f)(self, *args, **kwargs)
+
     else:
 
         @functools.wraps(f)
@@ -138,7 +139,7 @@ class GoogleGenAI(FunctionCallingLLM):
     """
 
     model: str = Field(default=DEFAULT_MODEL, description="The Gemini model to use.")
-    temperature: float = Field(
+    temperature: Optional[float] = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
         ge=0.0,
@@ -194,10 +195,10 @@ class GoogleGenAI(FunctionCallingLLM):
         **kwargs: Any,
     ):
         if temperature is None:
-            if "gemini-3" in model:
-                temperature = 1.0
-            else:
+            # Gemini 3-series models may error if temperature is set.
+            if "gemini-3" not in model:
                 temperature = DEFAULT_TEMPERATURE
+
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)

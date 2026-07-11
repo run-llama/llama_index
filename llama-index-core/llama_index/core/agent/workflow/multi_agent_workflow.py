@@ -576,15 +576,26 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
             await ctx.store.set("current_tool_calls", [])
 
-            if self.structured_output_fn is not None:
+            # The workflow-level structured output config takes precedence. When
+            # the workflow defines none, fall back to the running agent's own
+            # structured_output_fn / output_cls so a FunctionAgent configured
+            # with structured output still produces it inside an AgentWorkflow.
+            if self.structured_output_fn is not None or self.output_cls is not None:
+                structured_output_fn = self.structured_output_fn
+                output_cls = self.output_cls
+            else:
+                structured_output_fn = agent.structured_output_fn
+                output_cls = agent.output_cls
+
+            if structured_output_fn is not None:
                 try:
-                    if inspect.iscoroutinefunction(self.structured_output_fn):
-                        output.structured_response = await self.structured_output_fn(
+                    if inspect.iscoroutinefunction(structured_output_fn):
+                        output.structured_response = await structured_output_fn(
                             messages
                         )
                     else:
                         output.structured_response = cast(
-                            Dict[str, Any], self.structured_output_fn(messages)
+                            Dict[str, Any], structured_output_fn(messages)
                         )
                     ctx.write_event_to_stream(
                         AgentStreamStructuredOutput(output=output.structured_response)
@@ -594,7 +605,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                         f"There was a problem with the generation of the structured output: {e}",
                         stacklevel=2,
                     )
-            if self.output_cls is not None:
+            if output_cls is not None:
                 try:
                     llm_input = [*messages]
                     if agent.system_prompt:
@@ -603,7 +614,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             *llm_input,
                         ]
                     output.structured_response = await generate_structured_response(
-                        messages=llm_input, llm=agent.llm, output_cls=self.output_cls
+                        messages=llm_input, llm=agent.llm, output_cls=output_cls
                     )
                     ctx.write_event_to_stream(
                         AgentStreamStructuredOutput(output=output.structured_response)
