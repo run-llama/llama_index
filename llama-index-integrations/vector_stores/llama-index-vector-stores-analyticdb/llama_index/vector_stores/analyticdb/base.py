@@ -53,9 +53,8 @@ def _build_filter_clause(filter_: MetadataFilter) -> str:
         values = ", ".join(f"'{_escape_sql_str(v)}'" for v in filter_.value)
         return f"metadata_->>'{key}' {adb_operator} ({values})"
     elif filter_.operator == FilterOperator.CONTAINS:
-        return (
-            f"metadata_::jsonb->'{key}' {adb_operator} '[\"{_escape_sql_str(filter_.value)}\"]'"
-        )
+        json_literal = _escape_sql_str(json.dumps([filter_.value]))
+        return f"metadata_::jsonb->'{key}' {adb_operator} '{json_literal}'"
     else:
         return f"metadata_->>'{key}' {adb_operator} '{_escape_sql_str(filter_.value)}'"
 
