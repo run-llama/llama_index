@@ -47,10 +47,10 @@ llm = MiniMax(model="MiniMax-M3")
 
 The `MiniMax` class uses the OpenAI-compatible API. MiniMax publishes matching OpenAI-compatible and Anthropic-compatible endpoints in both regions:
 
-| Region         | OpenAI-compatible base URL    | Anthropic-compatible base URL           | Documentation                        |
-| -------------- | ----------------------------- | --------------------------------------- | ------------------------------------ |
-| Global         | `https://api.minimax.io/v1`   | `https://api.minimax.io/anthropic/v1`   | `https://platform.minimax.io/docs`   |
-| Mainland China | `https://api.minimaxi.com/v1` | `https://api.minimaxi.com/anthropic/v1` | `https://platform.minimaxi.com/docs` |
+| Region         | OpenAI-compatible base URL    | Anthropic-compatible base URL        | Documentation                        |
+| -------------- | ----------------------------- | ------------------------------------ | ------------------------------------ |
+| Global         | `https://api.minimax.io/v1`   | `https://api.minimax.io/anthropic`   | `https://platform.minimax.io/docs`   |
+| Mainland China | `https://api.minimaxi.com/v1` | `https://api.minimaxi.com/anthropic` | `https://platform.minimaxi.com/docs` |
 
 The global OpenAI-compatible URL is the default. To use the mainland China OpenAI-compatible endpoint, pass it as `api_base`:
 
