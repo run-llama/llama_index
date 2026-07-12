@@ -215,9 +215,26 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                     f"larger than chunk size {chunk_size}.",
                 )
 
+            # Some tokenizers (e.g. tiktoken) encode a leading space
+            # together with the following word as a single token. Since the
+            # emitted chunk has its leading whitespace stripped (unless
+            # `keep_whitespaces` is set), the first split in `cur_chunk` can
+            # re-tokenize into *more* tokens once that space is removed than
+            # were counted while accumulating `cur_len` below -- e.g. " foo"
+            # is one token but "foo" is two. Left unaccounted for, this lets
+            # the emitted chunk silently exceed `chunk_size`. Compute the
+            # discrepancy so the size check below reflects the chunk as it
+            # will actually be emitted.
+            strip_adjustment = 0
+            if cur_chunk and not self.keep_whitespaces:
+                first_split = cur_chunk[0]
+                strip_adjustment = len(
+                    self._tokenizer(first_split.strip())
+                ) - len(self._tokenizer(first_split))
+
             # if we exceed the chunk size after adding the new split, then
             # we need to end the current chunk and start a new one
-            if cur_len + split_len > chunk_size:
+            if cur_len + strip_adjustment + split_len > chunk_size:
                 # end the previous chunk
                 chunk = (
                     "".join(cur_chunk)

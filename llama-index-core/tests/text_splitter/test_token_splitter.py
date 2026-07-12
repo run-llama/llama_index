@@ -89,3 +89,27 @@ def test_split_with_metadata(english_text: str) -> None:
     for chunk in chunks:
         node_content = chunk + metadata_str
         assert len(tokenizer.encode(node_content)) <= 100
+
+
+def test_merge_respects_chunk_size_across_whitespace_strip() -> None:
+    """Regression test: emitted chunks must never exceed chunk_size.
+
+    Some tokenizers (e.g. tiktoken) encode a leading space together with the
+    following word as a single token (" foo" -> 1 token) while the bare word
+    tokenizes differently ("foo" -> 2 tokens). Since TokenTextSplitter strips
+    leading/trailing whitespace from each emitted chunk (unless
+    keep_whitespaces=True), the accumulated token count used to decide when
+    to close a chunk could previously undercount by the amount the strip
+    inflates the first word's token count, letting the actual emitted chunk
+    silently exceed chunk_size.
+    """
+    tokenizer = tiktoken.get_encoding("cl100k_base").encode
+    text = "coz rdburacy hfnppgmb mam zzoj wxzrv pegjgbs xkjqz"
+    splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=5, tokenizer=tokenizer)
+
+    chunks = splitter.split_text(text)
+
+    for chunk in chunks:
+        assert len(tokenizer(chunk)) <= 20, (
+            f"chunk exceeds chunk_size=20: {len(tokenizer(chunk))} tokens -> {chunk!r}"
+        )
