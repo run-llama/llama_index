@@ -1197,3 +1197,67 @@ async def test_aquery_sparse_without_query_str_raises() -> None:
     )
     with pytest.raises(ValueError, match="query_str"):
         await store.aquery(query)
+
+
+def test_query_sparse_without_sparse_query_fn_raises() -> None:
+    """
+    Regression: query() must raise ValueError when mode=SPARSE but
+    _sparse_query_fn is None.
+
+    set_query_functions() is a public method that lets callers clear
+    sparse_query_fn after construction. Previously this caused the SPARSE
+    branch to be skipped and dense results were returned silently.
+    """
+    from qdrant_client import QdrantClient as SyncQdrantClient
+
+    sparse_fn = MagicMock(return_value=([[0]], [[1.0]]))
+    client = SyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_sparse_no_fn_sync",
+        client=client,
+        enable_hybrid=True,
+        sparse_doc_fn=sparse_fn,
+        sparse_query_fn=sparse_fn,
+    )
+    store.set_query_functions(sparse_query_fn=None)
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str="hello",
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="sparse_query_fn"):
+        store.query(query)
+
+
+@pytest.mark.asyncio
+async def test_aquery_sparse_without_sparse_query_fn_raises() -> None:
+    """
+    Regression: aquery() must raise ValueError when mode=SPARSE but
+    _sparse_query_fn is None.
+
+    set_query_functions() is a public method that lets callers clear
+    sparse_query_fn after construction. Previously this caused the SPARSE
+    branch to be skipped and dense results were returned silently.
+    """
+    sparse_fn = MagicMock(return_value=([[0]], [[1.0]]))
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_sparse_no_fn_async",
+        aclient=aclient,
+        client=None,
+        enable_hybrid=True,
+        sparse_doc_fn=sparse_fn,
+        sparse_query_fn=sparse_fn,
+    )
+    store.set_query_functions(sparse_query_fn=None)
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str="hello",
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="sparse_query_fn"):
+        await store.aquery(query)

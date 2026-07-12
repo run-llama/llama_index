@@ -1068,6 +1068,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Please provide `query_str` in the VectorStoreQuery."
             )
         elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self._sparse_query_fn is None
+        ):
+            raise ValueError(
+                "Sparse search requires a sparse query function. "
+                "Please provide `sparse_query_fn` in the constructor or via "
+                "`set_query_functions`."
+            )
+        elif (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
             and self._sparse_query_fn is not None
@@ -1234,6 +1243,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Sparse search requires a query string. "
                 "Please provide `query_str` in the VectorStoreQuery."
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self._sparse_query_fn is None
+        ):
+            raise ValueError(
+                "Sparse search requires a sparse query function. "
+                "Please provide `sparse_query_fn` in the constructor or via "
+                "`set_query_functions`."
             )
         elif (
             query.mode == VectorStoreQueryMode.HYBRID
