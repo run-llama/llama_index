@@ -172,6 +172,58 @@ def test_list_resources(sharepoint_reader):
     assert file_paths[1] == Path("dummy_site_name/dummy_folder_path/file2.txt")
 
 
+def test_download_same_named_files_from_different_folders(sharepoint_reader):
+    sharepoint_reader.attach_permission_metadata = False
+    remote_paths = [
+        Path("dummy_site_name/Contracts/2025/report.txt"),
+        Path("dummy_site_name/Contracts/2026/report.txt"),
+    ]
+    items = {
+        remote_paths[0]: {
+            "id": "item-2025",
+            "name": "report.txt",
+            "parentReference": {"path": "/drive/root:/Contracts/2025"},
+        },
+        remote_paths[1]: {
+            "id": "item-2026",
+            "name": "report.txt",
+            "parentReference": {"path": "/drive/root:/Contracts/2026"},
+        },
+    }
+
+    with (
+        patch.object(SharePointReader, "list_resources", return_value=remote_paths),
+        patch.object(
+            SharePointReader,
+            "_get_item_from_path",
+            side_effect=lambda path: items[path],
+        ),
+        patch.object(
+            SharePointReader,
+            "_get_file_content_by_url",
+            side_effect=lambda item: f"content:{item['id']}".encode(),
+        ),
+        tempfile.TemporaryDirectory() as temp_dir,
+    ):
+        metadata = sharepoint_reader._download_files_and_extract_metadata(
+            "dummy_folder_id", temp_dir
+        )
+        documents = sharepoint_reader._load_documents_with_metadata(
+            metadata, temp_dir, recursive=False
+        )
+
+        local_names = {Path(file_path).name for file_path in metadata}
+        assert len(metadata) == 2
+        assert len(local_names) == 2
+        assert all(Path(file_path).suffix == ".txt" for file_path in metadata)
+        assert "report.txt" not in local_names
+
+    assert {doc.metadata["file_id"]: doc.text for doc in documents} == {
+        "item-2025": "content:item-2025",
+        "item-2026": "content:item-2026",
+    }
+
+
 def test_load_documents_with_metadata(sharepoint_reader):
     # Setting the _drive_id_endpoint manually to avoid the AttributeError
     sharepoint_reader._drive_id_endpoint = (
