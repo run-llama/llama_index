@@ -1079,3 +1079,121 @@ async def test_aquery_falsy_shard_identifier_not_dropped() -> None:
         query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=1)
         await store.aquery(query, shard_identifier=0)
         mock_gen.assert_called_once_with(0)
+
+
+def test_query_sparse_without_enable_hybrid_raises() -> None:
+    """
+    Regression: query() must raise ValueError when mode=SPARSE but enable_hybrid=False.
+
+    Previously the SPARSE branch was silently skipped and a dense search was
+    returned instead, giving no indication the requested mode was not honoured.
+    """
+    from qdrant_client import QdrantClient as SyncQdrantClient
+
+    client = SyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_sparse_guard_sync",
+        client=client,
+        enable_hybrid=False,
+    )
+    node = TextNode(
+        text="hello",
+        id_="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        embedding=[1.0, 0.0],
+    )
+    store.add([node])
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str="hello",
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="enable_hybrid=True"):
+        store.query(query)
+
+
+def test_query_sparse_without_query_str_raises() -> None:
+    """
+    Regression: query() must raise ValueError when mode=SPARSE but query_str=None.
+
+    Previously query_str=None caused the SPARSE branch to be skipped and the call
+    silently fell through to a dense search.
+    """
+    from qdrant_client import QdrantClient as SyncQdrantClient
+
+    client = SyncQdrantClient(":memory:")
+    # Pass mock sparse fns so enable_hybrid=True doesn't try to import fastembed.
+    sparse_fn = MagicMock(return_value=([[0]], [[1.0]]))
+    store = QdrantVectorStore(
+        collection_name="test_sparse_no_str_sync",
+        client=client,
+        enable_hybrid=True,
+        sparse_doc_fn=sparse_fn,
+        sparse_query_fn=sparse_fn,
+    )
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str=None,
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="query_str"):
+        store.query(query)
+
+
+@pytest.mark.asyncio
+async def test_aquery_sparse_without_enable_hybrid_raises() -> None:
+    """
+    Regression: aquery() must raise ValueError when mode=SPARSE but enable_hybrid=False.
+    """
+    aclient = AsyncQdrantClient(":memory:")
+    store = QdrantVectorStore(
+        collection_name="test_sparse_guard_async",
+        aclient=aclient,
+        client=None,
+        enable_hybrid=False,
+    )
+    node = TextNode(
+        text="hello",
+        id_="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        embedding=[1.0, 0.0],
+    )
+    await store.async_add([node])
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str="hello",
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="enable_hybrid=True"):
+        await store.aquery(query)
+
+
+@pytest.mark.asyncio
+async def test_aquery_sparse_without_query_str_raises() -> None:
+    """
+    Regression: aquery() must raise ValueError when mode=SPARSE but query_str=None.
+    """
+    aclient = AsyncQdrantClient(":memory:")
+    # Pass mock sparse fns so enable_hybrid=True doesn't try to import fastembed.
+    sparse_fn = MagicMock(return_value=([[0]], [[1.0]]))
+    store = QdrantVectorStore(
+        collection_name="test_sparse_no_str_async",
+        aclient=aclient,
+        client=None,
+        enable_hybrid=True,
+        sparse_doc_fn=sparse_fn,
+        sparse_query_fn=sparse_fn,
+    )
+
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0],
+        query_str=None,
+        mode=VectorStoreQueryMode.SPARSE,
+        similarity_top_k=1,
+    )
+    with pytest.raises(ValueError, match="query_str"):
+        await store.aquery(query)
