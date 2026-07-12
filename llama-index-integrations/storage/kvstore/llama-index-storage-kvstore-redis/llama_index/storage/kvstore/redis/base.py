@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -9,6 +9,21 @@ from llama_index.core.storage.kvstore.types import (
 
 from redis.asyncio import Redis as AsyncRedis
 from redis import Redis
+
+
+def _normalize_redis_key(key: Union[str, bytes]) -> str:
+    """
+    Normalize Redis hash field keys to str.
+
+    When the Redis client is configured with ``decode_responses=True``, keys
+    from scan/hscan iterators are already ``str``. With the default
+    ``decode_responses=False``, keys are ``bytes`` and must be decoded.
+    Unconditionally calling ``.decode()`` raises AttributeError in the former
+    case (see issue #22115).
+    """
+    if isinstance(key, bytes):
+        return key.decode("utf-8")
+    return key
 
 
 class RedisKVStore(BaseKVStore):
@@ -158,7 +173,7 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = {}
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[key.decode()] = value
+            collection_kv_dict[_normalize_redis_key(key)] = value
         return collection_kv_dict
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
@@ -166,7 +181,7 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = {}
         async for key, val_str in self._async_redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[key.decode()] = value
+            collection_kv_dict[_normalize_redis_key(key)] = value
         return collection_kv_dict
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
