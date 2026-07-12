@@ -1,3 +1,8 @@
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
 import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_onedrive import OneDriveReader
@@ -31,6 +36,62 @@ def test_serialize():
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
     assert new_reader.required_exts == reader.required_exts
+
+
+def test_download_same_named_files_from_different_folders():
+    reader = OneDriveReader(
+        client_id=test_client_id,
+        tenant_id=test_tenant_id,
+    )
+    items = [
+        {
+            "id": "item-2025",
+            "name": "report.txt",
+            "size": 17,
+            "file": {"mimeType": "text/plain"},
+            "parentReference": {"path": "/drive/root:/Contracts/2025"},
+            "@microsoft.graph.downloadUrl": "https://example.invalid/2025",
+        },
+        {
+            "id": "item-2026",
+            "name": "report.txt",
+            "size": 17,
+            "file": {"mimeType": "text/plain"},
+            "parentReference": {"path": "/drive/root:/Contracts/2026"},
+            "@microsoft.graph.downloadUrl": "https://example.invalid/2026",
+        },
+    ]
+    responses = [
+        SimpleNamespace(content=b"content:item-2025"),
+        SimpleNamespace(content=b"content:item-2026"),
+    ]
+
+    with (
+        patch(
+            "llama_index.readers.microsoft_onedrive.base.requests.get",
+            side_effect=responses,
+        ),
+        tempfile.TemporaryDirectory() as temp_dir,
+    ):
+        payloads = [
+            reader._check_approved_mimetype_and_download_file(item, temp_dir)
+            for item in items
+        ]
+        documents = reader._load_documents_with_metadata(
+            payloads, temp_dir, recursive=False
+        )
+
+        local_names = {Path(payload.downloaded_file_path).name for payload in payloads}
+        assert len(local_names) == 2
+        assert all(
+            Path(payload.downloaded_file_path).suffix == ".txt" for payload in payloads
+        )
+        assert "report.txt" not in local_names
+
+    assert {doc.metadata["file_id"]: doc.text for doc in documents} == {
+        "item-2025": "content:item-2025",
+        "item-2026": "content:item-2026",
+    }
 
 
 @pytest.fixture()
