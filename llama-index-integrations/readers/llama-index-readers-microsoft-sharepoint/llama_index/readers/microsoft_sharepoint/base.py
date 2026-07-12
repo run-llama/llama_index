@@ -395,7 +395,16 @@ class SharePointReader(
 
         for file_path in files_path:
             item = self._get_item_from_path(file_path)
-            metadata.update(self._download_file(item, download_dir))
+            # Extract subfolder from path to preserve directory structure
+            # file_path is like site_name/folder/subfolder/file.txt
+            # We want to preserve folder/subfolder relative to site_name
+            parts = list(file_path.parts)
+            if self.sharepoint_site_name in parts:
+                site_idx = parts.index(self.sharepoint_site_name)
+                subfolder = os.path.join(*parts[site_idx + 1:-1]) if len(parts) > site_idx + 2 else ""
+            else:
+                subfolder = ""
+            metadata.update(self._download_file(item, download_dir, subfolder))
 
         return metadata
 
@@ -423,13 +432,14 @@ class SharePointReader(
 
         return response.content
 
-    def _download_file_by_url(self, item: Dict[str, Any], download_dir: str) -> str:
+    def _download_file_by_url(self, item: Dict[str, Any], download_dir: str, subfolder: str = "") -> str:
         """
         Downloads the file from the provided URL.
 
         Args:
             item (Dict[str, Any]): Dictionary containing file metadata.
             download_dir (str): The directory where the files should be downloaded.
+            subfolder (str): Optional subfolder path to preserve directory structure.
 
         Returns:
             str: The path of the downloaded file in the temporary directory.
@@ -441,9 +451,10 @@ class SharePointReader(
         content = self._get_file_content_by_url(item)
 
         # Create the directory if it does not exist and save the file.
-        if not os.path.exists(download_dir):
-            os.makedirs(download_dir)
-        file_path = os.path.join(download_dir, file_name)
+        target_dir = os.path.join(download_dir, subfolder) if subfolder else download_dir
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        file_path = os.path.join(target_dir, file_name)
         with open(file_path, "wb") as f:
             f.write(content)
 
@@ -542,10 +553,11 @@ class SharePointReader(
         self,
         item: Dict[str, Any],
         download_dir: str,
+        subfolder: str = "",
     ):
         metadata = {}
 
-        file_path = self._download_file_by_url(item, download_dir)
+        file_path = self._download_file_by_url(item, download_dir, subfolder)
 
         metadata[file_path] = self._extract_metadata_for_file(item)
         return metadata
@@ -748,7 +760,7 @@ class SharePointReader(
 
         return file_paths
 
-    def _list_drive_contents(self) -> List[Path]:
+    def _list_drive_contents(self, recursive: bool = True) -> List[Path]:
         """
         Helper method to fetch the contents of the drive.
 
@@ -768,7 +780,7 @@ class SharePointReader(
             if "folder" in item:
                 # Append folder path
                 folder_paths = self._list_folder_contents(
-                    item["id"], recursive=True, current_path=item["name"]
+                    item["id"], recursive=recursive, current_path=item["name"]
                 )
                 file_paths.extend(folder_paths)
             elif "file" in item:
@@ -839,7 +851,7 @@ class SharePointReader(
                 file_paths.extend(folder_contents)
             else:
                 # Fetch drive contents
-                drive_contents = self._list_drive_contents()
+                drive_contents = self._list_drive_contents(recursive)
                 file_paths.extend(drive_contents)
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
