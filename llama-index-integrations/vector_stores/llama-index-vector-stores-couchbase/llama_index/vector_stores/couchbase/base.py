@@ -166,14 +166,18 @@ def _convert_llamaindex_filters_to_sql(
         """Build a single SQL++ condition from a MetadataFilter."""
         field_name = f"d.{metadata_key}.{filter_item.key}"
 
+        def _escape_sql(value: str) -> str:
+            """Escape single quotes to prevent SQL injection."""
+            return value.replace("'", "''")
+
         if filter_item.operator == FilterOperator.EQ:
             if isinstance(filter_item.value, str):
-                return f"{field_name} = '{filter_item.value}'"
+                return f"{field_name} = '{_escape_sql(filter_item.value)}'"
             else:
                 return f"{field_name} = {filter_item.value}"
         elif filter_item.operator == FilterOperator.NE:
             if isinstance(filter_item.value, str):
-                return f"{field_name} != '{filter_item.value}'"
+                return f"{field_name} != '{_escape_sql(filter_item.value)}'"
             else:
                 return f"{field_name} != {filter_item.value}"
         elif filter_item.operator == FilterOperator.GT:
@@ -188,7 +192,7 @@ def _convert_llamaindex_filters_to_sql(
             if isinstance(filter_item.value, list):
                 values = ", ".join(
                     [
-                        f"'{v}'" if isinstance(v, str) else str(v)
+                        f"'{_escape_sql(v)}'" if isinstance(v, str) else str(v)
                         for v in filter_item.value
                     ]
                 )
