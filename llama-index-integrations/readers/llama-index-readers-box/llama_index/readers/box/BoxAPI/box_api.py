@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 import shutil
@@ -148,8 +149,10 @@ def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) ->
         BoxAPIError: If an error occurs while interacting with the Box API.
 
     """
-    # Save the downloaded file to the specified local directory.
-    file_path = os.path.join(temp_dir, box_file.name)
+    # Use the remote file ID to keep same-named files from different folders distinct.
+    file_id_digest = hashlib.sha256(box_file.id.encode()).hexdigest()
+    file_extension = os.path.splitext(box_file.name)[1]
+    file_path = os.path.join(temp_dir, f"{file_id_digest}{file_extension}")
 
     try:
         file_stream: ByteStream = box_client.downloads.download_file(box_file.id)
