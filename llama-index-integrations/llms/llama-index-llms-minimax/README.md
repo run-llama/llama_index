@@ -29,6 +29,19 @@ print(response)
 | `MiniMax-M2.5`           | 204,800        | Existing model retained for backward compatibility         |
 | `MiniMax-M2.5-highspeed` | 204,800        | High-speed variant retained for backward compatibility     |
 
+### Thinking Control
+
+`MiniMax-M3` supports `adaptive` and `disabled` thinking modes. Pass the provider-specific request field through the OpenAI SDK's `extra_body` parameter:
+
+```python
+llm = MiniMax(
+    model="MiniMax-M3",
+    additional_kwargs={
+        "extra_body": {"thinking": {"type": "adaptive"}},
+    },
+)
+```
+
 ### Environment Variables
 
 You can set the `MINIMAX_API_KEY` environment variable instead of passing `api_key` directly:
@@ -59,4 +72,21 @@ llm = MiniMax(
     model="MiniMax-M3",
     api_base="https://api.minimaxi.com/v1",
 )
+```
+
+For Anthropic-compatible calls, use the Anthropic SDK with the base URL for the desired region. Pass the base URL ending in `/anthropic`; the SDK appends `/v1/messages`:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic(
+    api_key="your-api-key",
+    base_url="https://api.minimax.io/anthropic",
+)
+message = client.messages.create(
+    model="MiniMax-M3",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(message.content[0].text)
 ```
