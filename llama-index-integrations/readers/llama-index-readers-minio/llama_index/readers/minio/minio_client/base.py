@@ -131,6 +131,8 @@ class MinioReader(BaseReader):
                         self.bucket, obj.object_name, str(filepath)
                     )
 
+            # recursive=True is required: because we preserve prefix structures to prevent collision,
+            # we must instruct SimpleDirectoryReader to recursively descend into subdirectories.
             loader = SimpleDirectoryReader(
                 temp_dir,
                 file_extractor=self.file_extractor,
