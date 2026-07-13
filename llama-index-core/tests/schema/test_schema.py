@@ -12,10 +12,15 @@ from llama_index.core.schema import (
     ImageNode,
     MediaResource,
     MetadataMode,
+    Node,
+    NodeRelationship,
+    RelatedNodeInfo,
     NodeWithScore,
     ObjectType,
     TextNode,
 )
+from llama_index.core.vector_stores.utils import node_to_metadata_dict
+from llama_index.core.bridge.pydantic import ValidationError
 
 
 @pytest.fixture()
@@ -86,6 +91,42 @@ def test_text_node_with_text_resource():
     assert text_node.text == "This is a test"
 
 
+@pytest.mark.parametrize("bad_kwarg", ["document_id", "doc_id", "ref_doc_id"])
+def test_text_node_rejects_identity_kwargs(bad_kwarg: str) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"TextNode does not accept {bad_kwarg}; set relationships\[NodeRelationship\.SOURCE\]",
+    ):
+        TextNode(text="This is a test", **{bad_kwarg: "source-node"})
+
+
+@pytest.mark.parametrize("bad_kwarg", ["document_id", "doc_id", "ref_doc_id"])
+def test_node_rejects_identity_kwargs(bad_kwarg: str) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=rf"Node does not accept {bad_kwarg}; set relationships\[NodeRelationship\.SOURCE\]",
+    ):
+        Node(
+            text_resource=MediaResource(text="This is a test"),
+            **{bad_kwarg: "source-node"},
+        )
+
+
+def test_text_node_source_relationship_propagates_identity() -> None:
+    source_node_id = "source-node"
+    node = TextNode(text="This is a test")
+    node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+        node_id=source_node_id
+    )
+
+    assert node.ref_doc_id == source_node_id
+
+    metadata = node_to_metadata_dict(node)
+    assert metadata["document_id"] == source_node_id
+    assert metadata["doc_id"] == source_node_id
+    assert metadata["ref_doc_id"] == source_node_id
+
+
 def test_text_node_metadata_separator_consistency() -> None:
     """
     Test that metadata_separator works consistently on TextNode.
@@ -132,6 +173,13 @@ def test_text_node_metadata_separator_consistency() -> None:
     )
     doc_content = doc.get_content(MetadataMode.LLM)
     assert content_correct == doc_content
+
+
+def test_document_doc_id_alias_is_preserved() -> None:
+    doc = Document(doc_id="test")
+
+    assert doc.id_ == "test"
+    assert doc.doc_id == "test"
 
 
 def test_text_node_metadata_separator_roundtrip() -> None:

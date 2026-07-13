@@ -216,7 +216,6 @@ class UnstructuredReader(BaseReader):
                 node = TextNode(
                     text=element.text,
                     metadata=_merge_metadata(element, sequence_number),
-                    doc_id=hash_id,
                     id_=hash_id,
                     **doc_kwargs,
                 )
