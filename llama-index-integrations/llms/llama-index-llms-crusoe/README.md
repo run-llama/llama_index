@@ -70,7 +70,7 @@ for chunk in llm.stream_chat(messages):
 ```python
 from llama_index.llms.crusoe import Crusoe
 
-llm = Crusoe(model="deepseek-ai/DeepSeek-V3-0324")
+llm = Crusoe(model="zai/GLM-5.2")
 resp = llm.complete("Explain quantum computing in simple terms.")
 print(resp)
 ```
@@ -81,7 +81,7 @@ print(resp)
 from llama_index.llms.crusoe import Crusoe
 
 llm = Crusoe(
-    model="meta-llama/Llama-3.3-70B-Instruct",
+    model="nvidia/Nemotron-3-Super-120B-A12B",
     api_key="your-crusoe-api-key",
 )
 resp = llm.complete("Hello!")
@@ -105,13 +105,19 @@ llm = Crusoe(
 
 | Model | Context Window |
 |---|---|
+| `zai/GLM-5.2` | 262,144 |
+| `zai/GLM-5.1` | 202,000 |
+| `nvidia/Nemotron-3-Nano-30B-A3B` | 262,144 |
+| `nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B` | 262,144 |
+| `nvidia/Nemotron-3-Super-120B-A12B` | 262,144 |
+| `nvidia/Nemotron-3-Ultra-550B` | 262,144 |
+| `google/gemma-4-31b-it` | 262,144 |
 | `meta-llama/Llama-3.3-70B-Instruct` | 131,072 |
-| `openai/gpt-oss-120b` | 131,072 |
-| `deepseek-ai/DeepSeek-V3` | 163,840 |
 | `deepseek-ai/DeepSeek-V3-0324` | 163,840 |
-| `deepseek-ai/DeepSeek-R1-0528` | 163,840 |
-| `Qwen/Qwen3-235B-A22B-Instruct-2507` | 262,144 |
-| `google/gemma-3-12b-it` | 131,072 |
-| `moonshotai/Kimi-K2-Thinking` | 262,144 |
+| `deepseek-ai/DeepSeek-V4-Flash` | 1,000,000 |
+| `deepseek-ai/DeepSeek-V4-Pro` | 1,000,000 |
+| `openai/gpt-oss-120b` | 131,072 |
+| `qwen/Qwen3-235B-A22B` | 131,072 |
+| `moonshotai/Kimi-K2.6` | 262,144 |
 
 For the full and up-to-date model list, see the [Crusoe Cloud console](https://console.crusoe.ai).

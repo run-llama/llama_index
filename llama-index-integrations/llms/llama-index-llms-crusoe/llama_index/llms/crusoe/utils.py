@@ -2,16 +2,32 @@ from __future__ import annotations
 
 from typing import Dict
 
-DEFAULT_CRUSOE_API_BASE = "https://managed-inference-api-proxy.crusoecloud.com/v1/"
+DEFAULT_CRUSOE_API_BASE = "https://api.inference.crusoecloud.com/v1/"
+
+ZAI_MODELS: Dict[str, int] = {
+    "zai/GLM-5.2": 262144,
+    "zai/GLM-5.1": 202000,
+}
+
+NVIDIA_MODELS: Dict[str, int] = {
+    "nvidia/Nemotron-3-Nano-30B-A3B": 262144,
+    "nvidia/Nemotron-3-Nano-Omni-Reasoning-30B-A3B": 262144,
+    "nvidia/Nemotron-3-Super-120B-A12B": 262144,
+    "nvidia/Nemotron-3-Ultra-550B": 262144,
+}
+
+GOOGLE_MODELS: Dict[str, int] = {
+    "google/gemma-4-31b-it": 262144,
+}
 
 LLAMA_MODELS: Dict[str, int] = {
     "meta-llama/Llama-3.3-70B-Instruct": 131072,
 }
 
 DEEPSEEK_MODELS: Dict[str, int] = {
-    "deepseek-ai/DeepSeek-R1-0528": 163840,
-    "deepseek-ai/DeepSeek-V3": 163840,
     "deepseek-ai/DeepSeek-V3-0324": 163840,
+    "deepseek-ai/DeepSeek-V4-Flash": 1000000,
+    "deepseek-ai/DeepSeek-V4-Pro": 1000000,
 }
 
 OPENAI_MODELS: Dict[str, int] = {
@@ -19,18 +35,16 @@ OPENAI_MODELS: Dict[str, int] = {
 }
 
 QWEN_MODELS: Dict[str, int] = {
-    "Qwen/Qwen3-235B-A22B-Instruct-2507": 262144,
-}
-
-GOOGLE_MODELS: Dict[str, int] = {
-    "google/gemma-3-12b-it": 131072,
+    "qwen/Qwen3-235B-A22B": 131072,
 }
 
 MOONSHOT_MODELS: Dict[str, int] = {
-    "moonshotai/Kimi-K2-Thinking": 262144,
+    "moonshotai/Kimi-K2.6": 262144,
 }
 
 ALL_AVAILABLE_MODELS: Dict[str, int] = {
+    **ZAI_MODELS,
+    **NVIDIA_MODELS,
     **LLAMA_MODELS,
     **DEEPSEEK_MODELS,
     **OPENAI_MODELS,
@@ -41,12 +55,18 @@ ALL_AVAILABLE_MODELS: Dict[str, int] = {
 
 FUNCTION_CALLING_MODELS: frozenset[str] = frozenset(
     [
+        "zai/GLM-5.2",
+        "zai/GLM-5.1",
+        "nvidia/Nemotron-3-Nano-30B-A3B",
+        "nvidia/Nemotron-3-Super-120B-A12B",
+        "nvidia/Nemotron-3-Ultra-550B",
         "meta-llama/Llama-3.3-70B-Instruct",
         "openai/gpt-oss-120b",
-        "deepseek-ai/DeepSeek-V3",
         "deepseek-ai/DeepSeek-V3-0324",
-        "Qwen/Qwen3-235B-A22B-Instruct-2507",
-        "moonshotai/Kimi-K2-Thinking",
+        "deepseek-ai/DeepSeek-V4-Flash",
+        "deepseek-ai/DeepSeek-V4-Pro",
+        "qwen/Qwen3-235B-A22B",
+        "moonshotai/Kimi-K2.6",
     ]
 )
 

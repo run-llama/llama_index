@@ -13,8 +13,8 @@ from llama_index.llms.crusoe.utils import (
 )
 from llama_index.llms.openai import OpenAI
 
-DEFAULT_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
-DEFAULT_CONTEXT_WINDOW = 131072
+DEFAULT_MODEL = "zai/GLM-5.2"
+DEFAULT_CONTEXT_WINDOW = 262144
 
 
 class Crusoe(OpenAI):
@@ -31,7 +31,7 @@ class Crusoe(OpenAI):
         from llama_index.llms.crusoe import Crusoe
 
         llm = Crusoe(
-            model="meta-llama/Llama-3.3-70B-Instruct",
+            model="zai/GLM-5.2",
             api_key="YOUR_CRUSOE_API_KEY",
         )
         resp = llm.complete("Paul Graham is ")
