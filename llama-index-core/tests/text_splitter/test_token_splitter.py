@@ -2,6 +2,7 @@
 
 from typing import List
 
+import pytest
 import tiktoken
 from llama_index.core.node_parser.text import TokenTextSplitter
 from llama_index.core.node_parser.text.utils import truncate_text
@@ -91,7 +92,21 @@ def test_split_with_metadata(english_text: str) -> None:
         assert len(tokenizer.encode(node_content)) <= 100
 
 
-def test_merge_respects_chunk_size_across_whitespace_strip() -> None:
+@pytest.mark.parametrize(
+    ("text", "chunk_size", "chunk_overlap"),
+    [
+        # original repro: a single word's fused leading-space token count
+        # jumps once stripped, pushing the chunk to 21 tokens on unfixed code.
+        ("coz rdburacy hfnppgmb mam zzoj wxzrv pegjgbs xkjqz", 20, 5),
+        # same class of bug at a much tighter chunk_size, unrelated text.
+        ("tqbmbylk npgzrka dmfjy vwtogkt tqgwioqr tacgtm xvaidhlqxq", 8, 0),
+        # and again at a mid-range chunk_size.
+        ("hoytyof gjzsrwahyf hvbzlrk dodgzcbn nwdfto", 12, 0),
+    ],
+)
+def test_merge_respects_chunk_size_across_whitespace_strip(
+    text: str, chunk_size: int, chunk_overlap: int
+) -> None:
     """Regression test: emitted chunks must never exceed chunk_size.
 
     Some tokenizers (e.g. tiktoken) encode a leading space together with the
@@ -101,15 +116,19 @@ def test_merge_respects_chunk_size_across_whitespace_strip() -> None:
     keep_whitespaces=True), the accumulated token count used to decide when
     to close a chunk could previously undercount by the amount the strip
     inflates the first word's token count, letting the actual emitted chunk
-    silently exceed chunk_size.
+    silently exceed chunk_size. Parametrized over a few independently
+    generated (text, chunk_size) pairs so this checks the general invariant
+    rather than one specific boundary.
     """
     tokenizer = tiktoken.get_encoding("cl100k_base").encode
-    text = "coz rdburacy hfnppgmb mam zzoj wxzrv pegjgbs xkjqz"
-    splitter = TokenTextSplitter(chunk_size=20, chunk_overlap=5, tokenizer=tokenizer)
+    splitter = TokenTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap, tokenizer=tokenizer
+    )
 
     chunks = splitter.split_text(text)
 
     for chunk in chunks:
-        assert len(tokenizer(chunk)) <= 20, (
-            f"chunk exceeds chunk_size=20: {len(tokenizer(chunk))} tokens -> {chunk!r}"
+        assert len(tokenizer(chunk)) <= chunk_size, (
+            f"chunk exceeds chunk_size={chunk_size}: "
+            f"{len(tokenizer(chunk))} tokens -> {chunk!r}"
         )

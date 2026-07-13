@@ -41,7 +41,13 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
     keep_whitespaces: bool = Field(
         default=False,
-        description="Whether to keep leading/trailing whitespaces in the chunk.",
+        description=(
+            "Whether to keep leading/trailing whitespaces in the chunk. "
+            "With the default (False), whitespace is stripped from each emitted "
+            "chunk after the chunk_size check runs, so the accumulated token count "
+            "and the final chunk text can diverge for tokenizers that encode a "
+            "leading space together with the following word as a single token."
+        ),
     )
 
     _tokenizer: Callable = PrivateAttr()
