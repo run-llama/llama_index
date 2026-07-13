@@ -214,6 +214,35 @@ def test_init():
     _ = SambaStudio(sambastudio_url="fake/stream/url", sambastudio_api_key="fake")
 
 
+def test_stream_chat_usage_chunk_emits_empty_delta():
+    """Usage-only final chunk (choices == []) must yield an empty delta so concatenated deltas equal the final content."""
+    client = SambaNovaCloud(sambanova_api_key="fake")
+
+    def fake_streaming_request(messages_dicts, stop=None):
+        yield {
+            "id": "id-0",
+            "choices": [{"delta": {"content": "Hello"}, "finish_reason": None}],
+        }
+        # include_usage=True (the default) appends a trailing usage-only chunk
+        yield {
+            "id": "id-0",
+            "choices": [],
+            "usage": {"total_tokens": 5},
+            "model": "Meta-Llama-3.1-8B-Instruct",
+            "system_fingerprint": "fp",
+            "created": 1,
+        }
+
+    client._handle_streaming_request = fake_streaming_request
+
+    messages = [ChatMessage(role=MessageRole.USER, content="hi")]
+    responses = list(client.stream_chat(messages))
+
+    joined_deltas = "".join(r.delta for r in responses)
+    assert joined_deltas == responses[-1].message.content == "Hello"
+    assert responses[-1].delta == ""
+
+
 if __name__ == "__main__":
     test_sambanovacloud()
     test_sambastudio()
