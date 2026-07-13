@@ -125,8 +125,11 @@ class MinioReader(BaseReader):
                     if is_dir or is_bad_ext:
                         continue
 
-                    filepath = f"{temp_dir}/{file_name}"
-                    minio_client.fget_object(self.bucket, obj.object_name, filepath)
+                    filepath = Path(temp_dir) / obj.object_name
+                    filepath.parent.mkdir(parents=True, exist_ok=True)
+                    minio_client.fget_object(
+                        self.bucket, obj.object_name, str(filepath)
+                    )
 
             loader = SimpleDirectoryReader(
                 temp_dir,
@@ -135,6 +138,7 @@ class MinioReader(BaseReader):
                 filename_as_id=self.filename_as_id,
                 num_files_limit=self.num_files_limit,
                 file_metadata=self.file_metadata,
+                recursive=True,
             )
 
             return loader.load_data()
