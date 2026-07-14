@@ -961,6 +961,23 @@ class OpenAIResponses(FunctionCallingLLM):
         """Model name passed to the Responses API. Subclasses may override (e.g. Azure uses a deployment name)."""
         return self.model
 
+    def _structured_llm_kwargs(
+        self, llm_kwargs: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Merge instance-level reasoning config into structured-prediction kwargs.
+
+        The structured-output path calls responses.parse() directly and does not go
+        through `_get_model_kwargs`, so instance-level `reasoning_options` must be
+        threaded explicitly (same gate as the chat path). Explicit per-call llm_kwargs
+        take precedence.
+        """
+        kwargs: Dict[str, Any] = {}
+        if self.model in O1_MODELS and self.reasoning_options is not None:
+            kwargs["reasoning"] = self.reasoning_options
+        kwargs.update(llm_kwargs or {})
+        return kwargs
+
     @dispatcher.span
     def structured_predict(
         self,
@@ -984,7 +1001,7 @@ class OpenAIResponses(FunctionCallingLLM):
             text_format=output_cls,
             tool_choice="none",
             store=self.store,
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         if response.output_parsed is not None:
             return response.output_parsed
@@ -1013,7 +1030,7 @@ class OpenAIResponses(FunctionCallingLLM):
             text_format=output_cls,
             tool_choice="none",
             store=self.store,
-            **(llm_kwargs or {}),
+            **self._structured_llm_kwargs(llm_kwargs),
         )
         if response.output_parsed is not None:
             return response.output_parsed
