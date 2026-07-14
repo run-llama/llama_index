@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import (
     Any,
+    Dict,
     List,
     Optional,
     Sequence,
@@ -53,6 +54,16 @@ class BaseLLM(BaseComponent, DispatcherSpanMixin):
             LLMMetadata: LLM metadata containing various information about the LLM.
 
         """
+
+    def to_payload(self) -> Dict[str, Any]:
+        """
+        Non-sensitive representation of this LLM for observability.
+
+        Emitted via instrumentation events and callback payloads, so it must
+        never contain credentials (e.g. ``api_key``) or auth headers. Defaults
+        to the model's metadata; subclasses may override to add safe details.
+        """
+        return {"class_name": self.class_name(), **self.metadata.model_dump()}
 
     def convert_chat_messages(self, messages: Sequence[ChatMessage]) -> List[Any]:
         """Convert chat messages to an LLM specific message format."""
