@@ -1,3 +1,4 @@
+import os
 import unittest
 from pathlib import Path
 from typing import List
@@ -13,6 +14,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.core.vector_stores.types import (
+    DEFAULT_PERSIST_FNAME,
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
@@ -485,3 +487,20 @@ def test_from_namespaced_persist_dir(persist_dir: str) -> None:
         persist_dir=persist_dir
     )
     assert vector_store is not None
+
+
+def test_from_namespaced_persist_dir_loads_legacy_unnamespaced_file(
+    tmp_path: Path,
+) -> None:
+    """
+    A store persisted without a namespace prefix (the pre-namespacing
+    on-disk format) must still load via from_namespaced_persist_dir.
+    """
+    legacy_path = os.path.join(str(tmp_path), DEFAULT_PERSIST_FNAME)
+    SimpleVectorStore().persist(persist_path=legacy_path)
+
+    vector_stores = SimpleVectorStore.from_namespaced_persist_dir(
+        persist_dir=str(tmp_path)
+    )
+
+    assert "default" in vector_stores
