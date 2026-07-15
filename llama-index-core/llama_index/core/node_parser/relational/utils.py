@@ -54,7 +54,12 @@ def html_to_df(html_str: str) -> Any:
         )
 
     tree = html.fromstring(html_str)
-    table_element = tree.xpath("//table")[0]
+    table_elements = tree.xpath("//table")
+    if len(table_elements) == 0:
+        # No table in the HTML: return None like md_to_df does for empty
+        # input, rather than raising IndexError on the [0] access.
+        return None
+    table_element = table_elements[0]
     rows = table_element.xpath(".//tr")
 
     data = []
