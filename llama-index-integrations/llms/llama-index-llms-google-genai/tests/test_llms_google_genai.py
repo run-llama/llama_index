@@ -2096,3 +2096,167 @@ async def test_create_file_part_no_display_name_by_default():
     call_kwargs = mock_client.aio.files.upload.call_args
     upload_config = call_kwargs.kwargs.get("config") or call_kwargs[1].get("config")
     assert upload_config.display_name is None
+
+
+def _gemini_response_with_tool_calls(
+    calls: List[dict],
+) -> types.GenerateContentResponse:
+    """Build a minimal GenerateContentResponse containing function calls."""
+    parts = [
+        types.Part(
+            function_call=types.FunctionCall(
+                id=call.get("id"),
+                name=call["name"],
+                args=call["args"],
+            )
+        )
+        for call in calls
+    ]
+    return types.GenerateContentResponse(
+        candidates=[
+            types.Candidate(
+                content=types.Content(role="model", parts=parts),
+                finish_reason=types.FinishReason.STOP,
+            )
+        ]
+    )
+
+
+def test_tool_call_id_captured_from_gemini_id() -> None:
+    """Gemini returns a unique per-call id; it must be preserved on the block."""
+    response = _gemini_response_with_tool_calls(
+        [
+            {
+                "id": "call_aaa",
+                "name": "search_information",
+                "args": {"query": "refund"},
+            },
+            {"id": "call_bbb", "name": "search_information", "args": {"query": "ship"}},
+        ]
+    )
+
+    chat_response = chat_from_gemini_response(response, [])
+    tool_blocks = [
+        b for b in chat_response.message.blocks if isinstance(b, ToolCallBlock)
+    ]
+
+    assert len(tool_blocks) == 2
+    # ids are preserved (not collapsed to the tool name)
+    assert tool_blocks[0].tool_call_id == "call_aaa"
+    assert tool_blocks[1].tool_call_id == "call_bbb"
+    assert tool_blocks[0].tool_name == tool_blocks[1].tool_name == "search_information"
+
+
+def test_tool_call_id_falls_back_to_name_for_vertex() -> None:
+    """Vertex AI returns no id (None); fall back to the tool name as before."""
+    response = _gemini_response_with_tool_calls(
+        [
+            {"id": None, "name": "search_information", "args": {"query": "refund"}},
+            {"id": None, "name": "search_information", "args": {"query": "ship"}},
+        ]
+    )
+
+    chat_response = chat_from_gemini_response(response, [])
+    tool_blocks = [
+        b for b in chat_response.message.blocks if isinstance(b, ToolCallBlock)
+    ]
+
+    assert len(tool_blocks) == 2
+    assert tool_blocks[0].tool_call_id == "search_information"
+    assert tool_blocks[1].tool_call_id == "search_information"
+
+
+def test_get_tool_calls_from_response_surfaces_unique_ids(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Parallel calls to the same tool must yield distinct tool_ids (Gemini)."""
+    response = chat_from_gemini_response(
+        _gemini_response_with_tool_calls(
+            [
+                {
+                    "id": "call_aaa",
+                    "name": "search_information",
+                    "args": {"query": "a"},
+                },
+                {
+                    "id": "call_bbb",
+                    "name": "search_information",
+                    "args": {"query": "b"},
+                },
+            ]
+        ),
+        [],
+    )
+
+    tool_calls = mock_google_genai.get_tool_calls_from_response(response)
+    assert [tc.tool_id for tc in tool_calls] == ["call_aaa", "call_bbb"]
+    assert {tc.tool_name for tc in tool_calls} == {"search_information"}
+
+
+@pytest.mark.asyncio
+async def test_tool_response_roundtrip_echoes_id_gemini() -> None:
+    """A Gemini tool result is serialized with the tool name plus the echoed id."""
+    assistant = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_call_id="call_aaa",
+                tool_name="search_information",
+                tool_kwargs={"query": "refund"},
+            )
+        ],
+    )
+    tool_result = ChatMessage(
+        role=MessageRole.TOOL,
+        content="RESULT",
+        additional_kwargs={"tool_call_id": "call_aaa"},
+    )
+
+    _next, chat_kwargs, _ = await prepare_chat_params(
+        "models/gemini-2.0-flash-001", [assistant, tool_result]
+    )
+    parts = [p for c in [*chat_kwargs["history"], _next] for p in (c.parts or [])]
+
+    fn_call = next(p.function_call for p in parts if p.function_call)
+    fn_resp = next(p.function_response for p in parts if p.function_response)
+
+    # name stays the tool name (not the id) so the model can resolve it
+    assert fn_call.name == "search_information"
+    assert fn_resp.name == "search_information"
+    # the id is echoed on both sides so the pair can be correlated
+    assert fn_call.id == "call_aaa"
+    assert fn_resp.id == "call_aaa"
+
+
+@pytest.mark.asyncio
+async def test_tool_response_roundtrip_omits_id_for_vertex() -> None:
+    """Vertex has no id (tool_call_id == tool name); the wire stays unchanged."""
+    assistant = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            ToolCallBlock(
+                tool_call_id="search_information",
+                tool_name="search_information",
+                tool_kwargs={"query": "refund"},
+            )
+        ],
+    )
+    tool_result = ChatMessage(
+        role=MessageRole.TOOL,
+        content="RESULT",
+        additional_kwargs={"tool_call_id": "search_information"},
+    )
+
+    _next, chat_kwargs, _ = await prepare_chat_params(
+        "models/gemini-2.0-flash-001", [assistant, tool_result]
+    )
+    parts = [p for c in [*chat_kwargs["history"], _next] for p in (c.parts or [])]
+
+    fn_call = next(p.function_call for p in parts if p.function_call)
+    fn_resp = next(p.function_response for p in parts if p.function_response)
+
+    assert fn_call.name == "search_information"
+    assert fn_resp.name == "search_information"
+    # no synthetic id is emitted for Vertex
+    assert fn_call.id is None
+    assert fn_resp.id is None
